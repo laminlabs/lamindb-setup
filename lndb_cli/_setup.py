@@ -2,13 +2,13 @@ from pathlib import Path
 from typing import Union
 
 from cloudpathlib import CloudPath
+from lamin_logger import logger
 from lamindb.dev.db import insert, insert_if_not_exists
 from lamindb.dev.db._engine import get_engine
 from lamindb.do import load
 from sqlmodel import SQLModel
 
-from .._logger import logger
-from ..dev._docs import doc_args
+from ._docs import doc_args
 from ._hub import sign_in_hub, sign_up_hub
 from ._settings import (
     description,
