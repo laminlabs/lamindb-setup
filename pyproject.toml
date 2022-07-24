@@ -13,6 +13,7 @@ dependencies = [
     "cloudpathlib",
     "boto3",
     "appdirs",
+    "lamindb_schema",
 ]
 
 [project.urls]

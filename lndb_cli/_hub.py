@@ -1,10 +1,10 @@
 from typing import Union
 from urllib.request import urlretrieve
 
+from lamin_logger import logger
+from lamindb_schema import id
 from supabase import create_client
 
-from .._logger import logger
-from ..dev import id
 from ._settings import load_or_create_user_settings
 from ._settings_store import Connector, current_user_settings_file
 
