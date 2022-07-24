@@ -12,6 +12,7 @@ dependencies = [
     "sqlmodel",
     "cloudpathlib",
     "boto3",
+    "appdirs",
 ]
 
 [project.urls]
