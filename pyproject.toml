@@ -8,14 +8,18 @@ authors = [{name = "Lamin Labs", email = "laminlabs@gmail.com"}]
 readme = "README.md"
 dynamic = ["version", "description"]
 dependencies = [
-    "lamin_logger",
-    "sqlmodel",
-    "cloudpathlib",
-    "boto3",
-    "appdirs",
     "lamindb_schema",
+    "lamin_logger",
+    "boto3",
+    "hjson",
+    "cloudpathlib",
+    "requests",
+    "sqlmodel",
+    "typeguard",
+    "appdirs",
     "supabase",
     "python-dotenv",
+    "nbproject>=0.2.1",
 ]
 
 [project.urls]
