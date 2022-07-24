@@ -29,7 +29,7 @@ test = [
 ]
 
 [project.scripts]
-lndb = "lamindb.__main__:main"
+lndb = "lndb_cli.__main__:main"
 
 [tool.black]
 preview = true
