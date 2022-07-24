@@ -14,6 +14,8 @@ dependencies = [
     "boto3",
     "appdirs",
     "lamindb_schema",
+    "supabase",
+    "python-dotenv",
 ]
 
 [project.urls]
