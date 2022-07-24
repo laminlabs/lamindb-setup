@@ -8,7 +8,13 @@ authors = [{name = "Lamin Labs", email = "laminlabs@gmail.com"}]
 readme = "README.md"
 dynamic = ["version", "description"]
 dependencies = [
-    "nbproject",
+    "lamindb_schema",
+    "lamin_logger",
+    "boto3",
+    "cloudpathlib",
+    "appdirs",
+    "supabase",
+    "python-dotenv",
 ]
 
 [project.urls]
@@ -23,6 +29,9 @@ test = [
     "pytest>=6.0",
     "pytest-cov",
 ]
+
+[project.scripts]
+lndb = "lndb_cli.__main__:main"
 
 [tool.black]
 preview = true
