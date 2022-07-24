@@ -23,9 +23,8 @@ def sign_up_first_time(email):
     write_user_settings(user_settings)
     secret = sign_up_hub(email)
     if secret is None:  # user already exists
-        raise RuntimeError(
-            "\nUser already exists! Please login instead: `lndb login`\n"
-        )
+        logger.error("User already exists! Please login instead: `lndb login`.")
+        return "user-exists"
     user_settings.user_secret = secret
     write_user_settings(user_settings)
     return None  # user needs to confirm email now
