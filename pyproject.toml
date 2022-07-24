@@ -11,15 +11,10 @@ dependencies = [
     "lamindb_schema",
     "lamin_logger",
     "boto3",
-    "hjson",
     "cloudpathlib",
-    "requests",
-    "sqlmodel",
-    "typeguard",
     "appdirs",
     "supabase",
     "python-dotenv",
-    "nbproject>=0.2.1",
 ]
 
 [project.urls]
