@@ -1,18 +1,10 @@
-"""LaminDB command line tool.
-
-Import the package::
-
-   import lndb_cli
-
-This is the complete API reference:
-
-.. autosummary::
-   :toctree: .
-
-   example_function
-   ExampleClass
-"""
+"""LaminDB command line tool."""
 
 __version__ = "0.0.1"  # denote a pre-release for 0.1.0 with 0.1a1
 
-from ._core import ExampleClass, example_function  # noqa
+from ._settings import (  # noqa
+    InstanceSettings,
+    UserSettings,
+    load_or_create_instance_settings,
+    load_or_create_user_settings,
+)
