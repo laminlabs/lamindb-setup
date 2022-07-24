@@ -1,0 +1,5 @@
+project_name: lndb-cli
+description: LaminDB command line tool
+project_slug: lndb
+repository_name: lndb-cli
+package_name: lndb_cli
