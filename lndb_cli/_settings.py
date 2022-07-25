@@ -155,8 +155,6 @@ class UserSettings:
 def write_instance_settings(settings: InstanceSettings):
     assert settings.instance_name is not None
     type_hints = get_type_hints(InstanceSettingsStore)
-    print(type_hints)
-    print(settings)
     write_settings(settings, current_instance_settings_file, type_hints)
     write_settings(settings, settings_dir / f"{settings.instance_name}.env", type_hints)
 
