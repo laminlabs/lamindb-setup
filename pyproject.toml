@@ -16,6 +16,7 @@ dependencies = [
     "appdirs",
     "supabase",
     "python-dotenv",
+    "biogram",
 ]
 
 [project.urls]

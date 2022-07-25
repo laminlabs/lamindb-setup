@@ -1,4 +1,4 @@
-import lamindb_schema as schema
+import lndb_schema_core as schema_core
 import sqlmodel as sqm
 
 from . import load_or_create_instance_settings
@@ -12,7 +12,7 @@ class insert_if_not_exists:
         settings = load_or_create_instance_settings()
         engine = settings.db_engine()
         with sqm.Session(engine) as session:
-            user = session.get(schema.core.user, user_id)
+            user = session.get(schema_core.user, user_id)
         if user is None:
             user_id = insert.user(user_email, user_id)  # type: ignore
         return user_id
@@ -28,7 +28,7 @@ class insert:
         engine = settings.db_engine()
 
         with sqm.Session(engine) as session:
-            user = schema.core.schema_version(id=version, user_id=user_id)
+            user = schema_core.schema_version(id=version, user_id=user_id)
             session.add(user)
             session.commit()
 
@@ -41,7 +41,7 @@ class insert:
         engine = settings.db_engine()
 
         with sqm.Session(engine) as session:
-            user = schema.core.user(id=user_id, email=user_email)
+            user = schema_core.user(id=user_id, email=user_email)
             session.add(user)
             session.commit()
             session.refresh(user)

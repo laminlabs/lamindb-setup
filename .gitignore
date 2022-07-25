@@ -106,3 +106,4 @@ docs/lndb_cli.*
 lamin_sphinx
 docs/conf.py
 _docs_tmp*
+*.lndb

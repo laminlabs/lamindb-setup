@@ -29,6 +29,7 @@ init = subparsers.add_parser("init", help=init_help)
 aa = init.add_argument
 aa("--storage", type=str, metavar="s", default=None, help=description.storage_dir)
 aa("--db", type=str, metavar="s", default="sqlite", help=description._dbconfig)
+aa("--schema", type=str, metavar="s", default=None, help=description.schema_modules)
 load = subparsers.add_parser("load", help=load_help)
 aa = load.add_argument
 aa("--name", type=str, metavar="s", default=None, help=description.instance_name)
@@ -49,6 +50,7 @@ def main():
         return _setup.setup_instance(
             storage=args.storage,
             dbconfig=args.db,
+            schema=args.schema,
         )
     elif args.command == "load":
         return _settings.switch_instance(

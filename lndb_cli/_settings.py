@@ -64,6 +64,7 @@ class description:
     storage_dir = """Storage root. Either local dir, ``s3://bucket_name`` or ``gs://bucket_name``."""  # noqa
     _dbconfig = """Either "sqlite" or "instance_name, postgres_url"."""
     instance_name = """Instance name."""
+    schema_modules = """Comma-separated string of schema modules."""
 
 
 def instance_from_storage(storage):
@@ -78,6 +79,8 @@ class InstanceSettings:
     """Storage root. Either local dir, ``s3://bucket_name`` or ``gs://bucket_name``."""
     _dbconfig: str = "sqlite"
     """Either "sqlite" or "instance_name, postgres_url"."""
+    schema_modules: str = None  # type: ignore
+    """Comma-separated string of schema modules."""
 
     @property
     def cloud_storage(self) -> bool:
@@ -194,6 +197,7 @@ def setup_instance_from_store(store: InstanceSettingsStore) -> InstanceSettings:
     settings = InstanceSettings()
     settings.storage_dir = setup_storage_dir(store.storage_dir)
     settings._dbconfig = store.dbconfig
+    settings.schema_modules = store.schema_modules
     return settings
 
 
