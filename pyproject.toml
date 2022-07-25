@@ -16,7 +16,6 @@ dependencies = [
     "appdirs",
     "supabase",
     "python-dotenv",
-    "lamindb",
 ]
 
 [project.urls]
