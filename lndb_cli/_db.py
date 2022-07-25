@@ -10,6 +10,13 @@ class insert_if_not_exists:
 
     @classmethod
     def user(cls, user_email, user_id):
+        settings = load_or_create_instance_settings()
+        engine = settings.db_engine()
+        with engine.connect() as conn:
+            statement = sqm.select(schema.core.user).where(
+                schema.core.user.id == user_id
+            )  # noqa
+            results = conn.exec(statement)  # noqa
         df_user = load("user")
         if user_id not in df_user.index:
             user_id = insert.user(user_email, user_id)  # type: ignore
