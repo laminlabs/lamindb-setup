@@ -33,10 +33,15 @@ def setup_instance_db():
         return None
     instance_name = instance_settings.instance_name
     sqlite_file = instance_settings._sqlite_file
+    schema_modules = instance_settings.schema_modules
 
     if sqlite_file.exists():
         logger.info(f"Using instance: {sqlite_file}")
     else:
+        if schema_modules is not None and "biology" in schema_modules:
+            import lndb_schema_biology  # noqa
+
+            logger.info(f"Loading schema module {schema_modules}.")
         SQLModel.metadata.create_all(instance_settings.db_engine())
         instance_settings._update_cloud_sqlite_file()
         logger.info(f"Created instance {instance_name}: {sqlite_file}")
@@ -89,17 +94,20 @@ def log_in_user(
 @doc_args(
     description.storage_dir,
     description._dbconfig,
+    description.schema_modules,
 )
 def setup_instance(
     *,
     storage: Union[str, Path, CloudPath],
     dbconfig: str = "sqlite",
+    schema: Union[str, None] = None,
 ) -> None:
     """Setup LaminDB.
 
     Args:
         storage: {}
         dbconfig: {}
+        schema: {}
     """
     # settings.user_email & settings.user_secret are set
     instance_settings = load_or_create_instance_settings()
@@ -131,12 +139,19 @@ def setup_instance(
             storage = instance_settings.storage_dir
     else:
         instance_settings.storage_dir = setup_storage_dir(storage)
-    write_instance_settings(instance_settings)
 
     # setup _config
     instance_settings._dbconfig = dbconfig
     if dbconfig != "sqlite":
         raise NotImplementedError()
+
+    # setup schema
+    if schema is not None:
+        if schema == "biology":
+            instance_settings.schema_modules = schema
+        else:
+            raise RuntimeError("Unknown schema module. Only know 'biology'.")
     write_instance_settings(instance_settings)
+
     setup_instance_db()
     return None

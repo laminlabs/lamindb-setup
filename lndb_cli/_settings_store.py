@@ -13,6 +13,7 @@ current_user_settings_file = settings_dir / "current_user.env"
 class InstanceSettingsStore(BaseSettings):
     storage_dir: str
     dbconfig: str
+    schema_modules: str
 
     class Config:
         env_file = ".env"

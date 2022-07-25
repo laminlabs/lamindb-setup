@@ -2,6 +2,7 @@
 
 __version__ = "0.1.1"  # denote a pre-release for 0.1.0 with 0.1a1
 
+from ._schema import schema  # noqa
 from ._settings import (  # noqa
     InstanceSettings,
     UserSettings,
