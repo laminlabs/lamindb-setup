@@ -2,6 +2,7 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Any, Dict, Union, get_type_hints
 
+import sqlmodel as sqm
 from appdirs import AppDirs
 from cloudpathlib import CloudPath, S3Client
 
@@ -130,6 +131,10 @@ class InstanceSettings:
         # the great thing about cloudpathlib is that it downloads the
         # remote file to cache as soon as the time stamp is out of date
         return f"sqlite:///{cloud_to_local(self._sqlite_file)}"
+
+    def db_engine(self, future=True):
+        """Database engine."""
+        return sqm.create_engine(self.db, future=future)
 
 
 @dataclass
