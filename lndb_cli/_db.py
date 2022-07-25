@@ -1,7 +1,8 @@
-import lamindb as db
+import lamindb_schema as schema
 import sqlmodel as sqm
 
 from . import load_or_create_instance_settings
+from ._load import load
 
 
 class insert_if_not_exists:
@@ -9,7 +10,7 @@ class insert_if_not_exists:
 
     @classmethod
     def user(cls, user_email, user_id):
-        df_user = db.do.load("user")
+        df_user = load("user")
         if user_id not in df_user.index:
             user_id = insert.user(user_email, user_id)  # type: ignore
         return user_id
@@ -25,7 +26,7 @@ class insert:
         engine = settings.db_engine()
 
         with sqm.Session(engine) as session:
-            user = db.schema.core.schema_version(id=version, user_id=user_id)
+            user = schema.core.schema_version(id=version, user_id=user_id)
             session.add(user)
             session.commit()
 
@@ -38,7 +39,7 @@ class insert:
         engine = settings.db_engine()
 
         with sqm.Session(engine) as session:
-            user = db.schema.core.user(id=user_id, email=user_email)
+            user = schema.core.user(id=user_id, email=user_email)
             session.add(user)
             session.commit()
             session.refresh(user)
