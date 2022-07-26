@@ -3,7 +3,7 @@
 <!-- prettier-ignore -->
 Name | PR | Developer | Date | Version
 --- | --- | --- | --- | ---
-🚚 Make storage public | [6](https://github.com/laminlabs/lndb-setup/pull/6) | [falexwolf](https://github.com/falexwolf) | 2022-07-26 |
+🚚 Make storage public | [6](https://github.com/laminlabs/lndb-setup/pull/6) | [falexwolf](https://github.com/falexwolf) | 2022-07-26 | 0.3.0
 🚸 Expose settings through one `settings` class | [5](https://github.com/laminlabs/lndb-setup/pull/5) | [falexwolf](https://github.com/falexwolf) | 2022-07-26 |
 ♻️ Modularize settings & setup across files, increase coverage, set up documentation | [4](https://github.com/laminlabs/lndb-setup/pull/4) | [falexwolf](https://github.com/falexwolf) | 2022-07-26 |
 ✨ Allow switching schema modules | [3](https://github.com/laminlabs/lndb-setup/pull/3) | [falexwolf](https://github.com/falexwolf) | 2022-07-25 | 0.2.0
