@@ -1,4 +1,4 @@
-"""LaminDB command line tool.
+"""LaminDB setup.
 
 Setup user account (`lndb signup`, `lndb login`):
 
