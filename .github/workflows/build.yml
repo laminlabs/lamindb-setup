@@ -34,7 +34,7 @@ jobs:
       - name: Cache
         uses: actions/cache@v3
         env:
-          cache-name: cache-all
+          cache-name: cache-0
         with:
           path: |
             .nox
@@ -42,7 +42,7 @@ jobs:
           key: ${{ runner.os }}-build-${{ env.cache-name }}-${{ hashFiles('.pre-commit-config.yaml') }}-${{ hashFiles('pyproject.yaml') }}
       - name: Install pip, nox & graphviz
         run: |
-          python -m pip install --upgrade pip
+          python -m pip install pip
           pip install nox
           sudo apt-get -y install graphviz
       - name: Lint

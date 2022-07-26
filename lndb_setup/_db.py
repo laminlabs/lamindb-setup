@@ -1,7 +1,7 @@
 import lndb_schema_core as schema_core
 import sqlmodel as sqm
 
-from . import load_or_create_instance_settings
+from ._settings_load import load_or_create_instance_settings
 
 
 class insert_if_not_exists:

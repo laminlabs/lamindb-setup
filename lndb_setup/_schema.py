@@ -1,6 +1,6 @@
 import sqlalchemy as sql
 
-from ._settings import load_or_create_instance_settings
+from ._settings_load import load_or_create_instance_settings
 
 
 class schema:

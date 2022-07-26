@@ -3,6 +3,8 @@
 ```{toctree}
 :maxdepth: 1
 
-configure
+setup-user
+setup-instance
 schema-modules
+edge-cases
 ```
