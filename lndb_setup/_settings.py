@@ -19,7 +19,11 @@ class classproperty(object):
 
 
 class settings:
-    """Access settings."""
+    """Settings access.
+
+    - :class:`~lndb_setup.InstanceSettings`
+    - :class:`~lndb_setup.UserSettings`
+    """
 
     _user_settings: Union[UserSettings, None] = None
     _instance_settings: Union[InstanceSettings, None] = None
