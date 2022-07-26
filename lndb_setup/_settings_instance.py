@@ -27,6 +27,9 @@ class Storage:
         """Local (cache) filepath from filepath."""
         if self.settings.cloud_storage:
             filepath = filepath.fspath  # type: ignore  # mypy misses CloudPath
+        Path(filepath).parent.mkdir(
+            parents=True, exist_ok=True
+        )  # this should not happen here but is currently needed
         return filepath
 
     # conversion to Path via cloud_to_local() would trigger download
