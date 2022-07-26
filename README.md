@@ -1,4 +1,4 @@
-# lndb-cli: LaminDB command line tool
+# lndb-setup: LaminDB command line tool
 
 This package is in private beta at this moment!
 

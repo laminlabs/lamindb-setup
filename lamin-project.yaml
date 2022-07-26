@@ -1,5 +1,5 @@
 project_name: lndb
 description: Setup & configure LaminDB
 project_slug: lndb
-repository_name: lndb-cli
-package_name: lndb_cli
+repository_name: lndb-setup
+package_name: lndb_setup

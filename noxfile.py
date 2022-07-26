@@ -18,7 +18,7 @@ def build(session):
     session.run(
         "pytest",
         "-s",
-        "--cov=lndb_cli",
+        "--cov=lndb_setup",
         "--cov-append",
         "--cov-report=term-missing",
     )
