@@ -4,13 +4,11 @@ from typing import Union
 from cloudpathlib import CloudPath
 
 from ._settings import InstanceSettings, UserSettings
-from ._settings_save import save_instance_settings, save_user_settings
 from ._settings_store import (
     InstanceSettingsStore,
     UserSettingsStore,
     current_instance_settings_file,
     current_user_settings_file,
-    settings_dir,
 )
 
 
@@ -71,21 +69,3 @@ def setup_user_from_store(store: UserSettingsStore) -> UserSettings:
     settings.user_secret = store.user_secret if store.user_secret != "null" else None
     settings.user_id = store.user_id if store.user_id != "null" else None
     return settings
-
-
-def switch_instance(instance_name: str):
-    InstanceSettings.instance_name
-    settings = load_instance_settings(settings_dir / f"{instance_name}.env")
-    assert settings.instance_name is not None
-    save_instance_settings(settings)
-
-
-def switch_user(user_email: str):
-    settings_file = settings_dir / f"{user_email}.env"
-    if settings_file.exists():
-        settings = load_user_settings(settings_file)
-        assert settings.user_email is not None
-    else:
-        settings = load_or_create_user_settings()
-        settings.user_email = user_email
-    save_user_settings(settings)

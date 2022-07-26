@@ -7,15 +7,16 @@ from sqlmodel import SQLModel
 
 from ._db import insert_if_not_exists
 from ._docs import doc_args
-from ._hub import sign_in_hub, sign_up_hub
-from ._settings import description
+from ._settings import InstanceSettings, description
 from ._settings_load import (
+    load_instance_settings,
     load_or_create_instance_settings,
     load_or_create_user_settings,
     setup_storage_dir,
-    switch_user,
 )
 from ._settings_save import save_instance_settings, save_user_settings
+from ._settings_store import settings_dir
+from ._setup_user import log_in_user
 
 
 def setup_instance_db():
@@ -48,46 +49,12 @@ def setup_instance_db():
     insert_if_not_exists.user(user_settings.user_email, user_settings.user_id)
 
 
-def sign_up_first_time(email):
-    user_settings = load_or_create_user_settings()
-    user_settings.user_email = email
-    save_user_settings(user_settings)
-    secret = sign_up_hub(email)
-    if secret is None:  # user already exists
-        logger.error("User already exists! Please login instead: `lndb login`.")
-        return "user-exists"
-    user_settings.user_secret = secret
-    save_user_settings(user_settings)
-    return None  # user needs to confirm email now
-
-
-def log_in_user(
-    *,
-    email: Union[str, None] = None,
-    secret: Union[str, None] = None,
-):
-    if email:
-        switch_user(email)
-
-    user_settings = load_or_create_user_settings()
-
-    if secret:
-        user_settings.user_secret = secret
-
-    if user_settings.user_email is None:
-        raise RuntimeError(
-            "No stored user email, please call: lndb login --email <your-email>"
-        )
-
-    if user_settings.user_secret is None:
-        raise RuntimeError(
-            "No stored user secret, please call: lndb login --email <your-email>"
-            " --email <your-secret>"
-        )
-
-    user_id = sign_in_hub(user_settings.user_email, user_settings.user_secret)
-    user_settings.user_id = user_id
-    save_user_settings(user_settings)
+def load_instance(instance_name: str):
+    """Load existing instance."""
+    InstanceSettings.instance_name
+    settings = load_instance_settings(settings_dir / f"{instance_name}.env")
+    assert settings.instance_name is not None
+    save_instance_settings(settings)
 
 
 @doc_args(

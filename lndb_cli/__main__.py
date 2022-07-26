@@ -2,7 +2,7 @@ import argparse
 
 from lamin_logger import logger
 
-from . import _settings, _setup
+from . import _settings, _setup_instance, _setup_user
 from ._settings import description
 
 signup_help = "First time sign up & log in after email is confirmed."
@@ -38,16 +38,16 @@ args = parser.parse_args()
 
 def main():
     if args.command == "signup":
-        return _setup.sign_up_first_time(
+        return _setup_user.sign_up_user(
             email=args.email,
         )
     if args.command == "login":
-        return _setup.log_in_user(
+        return _setup_user.log_in_user(
             email=args.email,
             secret=args.secret,
         )
     elif args.command == "init":
-        return _setup.setup_instance(
+        return _setup_instance.setup_instance(
             storage=args.storage,
             dbconfig=args.db,
             schema=args.schema,
