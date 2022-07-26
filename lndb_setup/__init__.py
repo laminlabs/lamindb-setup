@@ -16,7 +16,7 @@ Setup instance (`lndb init`, `lndb load`):
 .. autosummary::
    :toctree:
 
-   setup_instance
+   init_instance
    load_instance
 
 Dev API
@@ -38,5 +38,5 @@ from ._settings_load import (  # noqa
     load_or_create_user_settings,
 )
 from ._settings_user import UserSettings  # noqa
-from ._setup_instance import load_instance, setup_instance  # noqa
+from ._setup_instance import init_instance, load_instance  # noqa
 from ._setup_user import log_in_user, sign_up_user  # noqa

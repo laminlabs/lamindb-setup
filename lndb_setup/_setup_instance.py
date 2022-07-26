@@ -62,9 +62,9 @@ def load_instance(instance_name: str):
     description._dbconfig,
     description.schema_modules,
 )
-def setup_instance(
+def init_instance(
     *,
-    storage: Union[str, Path, CloudPath],
+    storage: Union[str, Path, CloudPath, None] = None,
     dbconfig: str = "sqlite",
     schema: Union[str, None] = None,
 ) -> None:
