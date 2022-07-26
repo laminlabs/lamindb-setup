@@ -42,7 +42,7 @@ jobs:
           key: ${{ runner.os }}-build-${{ env.cache-name }}-${{ hashFiles('.pre-commit-config.yaml') }}-${{ hashFiles('pyproject.yaml') }}
       - name: Install pip, nox & graphviz
         run: |
-          python -m pip install --upgrade pip
+          python -m pip install --upgrade pip<=22.1.2
           pip install nox
           sudo apt-get -y install graphviz
       - name: Lint
