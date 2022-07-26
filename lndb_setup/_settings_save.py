@@ -1,7 +1,7 @@
 from pathlib import Path
 from typing import Any, Dict, Union, get_type_hints
 
-from ._settings import InstanceSettings, UserSettings
+from ._settings_instance import InstanceSettings
 from ._settings_store import (
     InstanceSettingsStore,
     UserSettingsStore,
@@ -9,6 +9,7 @@ from ._settings_store import (
     current_user_settings_file,
     settings_dir,
 )
+from ._settings_user import UserSettings
 
 
 def save_instance_settings(settings: InstanceSettings):

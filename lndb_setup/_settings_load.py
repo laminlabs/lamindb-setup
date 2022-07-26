@@ -3,13 +3,14 @@ from typing import Union
 
 from cloudpathlib import CloudPath
 
-from ._settings import InstanceSettings, UserSettings
+from ._settings_instance import InstanceSettings
 from ._settings_store import (
     InstanceSettingsStore,
     UserSettingsStore,
     current_instance_settings_file,
     current_user_settings_file,
 )
+from ._settings_user import UserSettings
 
 
 def load_or_create_instance_settings():
