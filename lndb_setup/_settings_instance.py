@@ -98,18 +98,18 @@ class InstanceSettings:
         Is a CloudPath if on S3, otherwise a Path.
         """
         filename = instance_from_storage(self.storage_dir)  # type: ignore
-        return self._storage.key_to_filepath(f"{filename}.lndb")
+        return self.storage.key_to_filepath(f"{filename}.lndb")
 
     @property
     def _sqlite_file_local(self):
         """If on cloud storage, update remote file."""
-        return self._storage.cloud_to_local_no_update(self._sqlite_file)
+        return self.storage.cloud_to_local_no_update(self._sqlite_file)
 
     def _update_cloud_sqlite_file(self):
         """If on cloud storage, update remote file."""
         if self.cloud_storage:
             sqlite_file = self._sqlite_file
-            cache_file = self._storage.cloud_to_local_no_update(sqlite_file)
+            cache_file = self.storage.cloud_to_local_no_update(sqlite_file)
             sqlite_file.upload_from(cache_file)
 
     @property
@@ -125,13 +125,13 @@ class InstanceSettings:
         """Database URL."""
         # the great thing about cloudpathlib is that it downloads the
         # remote file to cache as soon as the time stamp is out of date
-        return f"sqlite:///{self._storage.cloud_to_local(self._sqlite_file)}"
+        return f"sqlite:///{self.storage.cloud_to_local(self._sqlite_file)}"
 
     def db_engine(self, future=True):
         """Database engine."""
         return sqm.create_engine(self.db, future=future)
 
     @property
-    def _storage(self):
+    def storage(self) -> Storage:
         """Low-level access to storage location."""
         return Storage(self)
