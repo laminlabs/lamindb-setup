@@ -52,9 +52,13 @@ def setup_instance_db():
 def load_instance(instance_name: str):
     """Load existing instance."""
     InstanceSettings.instance_name
-    settings = load_instance_settings(settings_dir / f"{instance_name}.env")
-    assert settings.instance_name is not None
-    save_instance_settings(settings)
+    instance_settings = load_instance_settings(settings_dir / f"{instance_name}.env")
+    assert instance_settings.instance_name is not None
+    save_instance_settings(instance_settings)
+
+    from ._settings import settings
+
+    settings._instance_settings = None
 
 
 @doc_args(
@@ -120,4 +124,8 @@ def init_instance(
     save_instance_settings(instance_settings)
 
     setup_instance_db()
+
+    from ._settings import settings
+
+    settings._instance_settings = None
     return None
