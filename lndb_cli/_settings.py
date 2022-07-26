@@ -31,15 +31,11 @@ def cloud_to_local(filepath: Union[Path, CloudPath]) -> Path:
     """Local (cache) filepath from filepath."""
     if load_or_create_instance_settings().cloud_storage:
         filepath = filepath.fspath  # type: ignore  # mypy misses CloudPath
-    Path(filepath).parent.mkdir(
-        parents=True, exist_ok=True
-    )  # this should not happen here
     return filepath
 
 
-# conversion to Path via cloud_to_local()
-# would trigger download of remote file to cache if there already
-# is one
+# conversion to Path via cloud_to_local() would trigger download
+# of remote file to cache if there already is one
 # as we don't want this, as this is a pure write operation
 # we manually construct the local file path
 # using the `.parts` attribute in the following line
