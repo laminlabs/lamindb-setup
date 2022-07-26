@@ -25,12 +25,16 @@ def sign_up_user(email):
 def load_user(user_email: str):
     settings_file = settings_dir / f"{user_email}.env"
     if settings_file.exists():
-        settings = load_user_settings(settings_file)
-        assert settings.user_email is not None
+        user_settings = load_user_settings(settings_file)
+        assert user_settings.user_email is not None
     else:
-        settings = load_or_create_user_settings()
-        settings.user_email = user_email
-    save_user_settings(settings)
+        user_settings = load_or_create_user_settings()
+        user_settings.user_email = user_email
+    save_user_settings(user_settings)
+
+    from ._settings import settings
+
+    settings._user_settings = None
 
 
 def log_in_user(
@@ -61,3 +65,7 @@ def log_in_user(
     user_id = sign_in_hub(user_settings.user_email, user_settings.user_secret)
     user_settings.user_id = user_id
     save_user_settings(user_settings)
+
+    from ._settings import settings
+
+    settings._user_settings = None
