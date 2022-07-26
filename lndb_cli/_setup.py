@@ -8,15 +8,14 @@ from sqlmodel import SQLModel
 from ._db import insert_if_not_exists
 from ._docs import doc_args
 from ._hub import sign_in_hub, sign_up_hub
-from ._settings import (
-    description,
+from ._settings import description
+from ._settings_load import (
     load_or_create_instance_settings,
     load_or_create_user_settings,
     setup_storage_dir,
     switch_user,
-    write_instance_settings,
-    write_user_settings,
 )
+from ._settings_save import save_instance_settings, save_user_settings
 
 
 def setup_instance_db():
@@ -52,13 +51,13 @@ def setup_instance_db():
 def sign_up_first_time(email):
     user_settings = load_or_create_user_settings()
     user_settings.user_email = email
-    write_user_settings(user_settings)
+    save_user_settings(user_settings)
     secret = sign_up_hub(email)
     if secret is None:  # user already exists
         logger.error("User already exists! Please login instead: `lndb login`.")
         return "user-exists"
     user_settings.user_secret = secret
-    write_user_settings(user_settings)
+    save_user_settings(user_settings)
     return None  # user needs to confirm email now
 
 
@@ -88,7 +87,7 @@ def log_in_user(
 
     user_id = sign_in_hub(user_settings.user_email, user_settings.user_secret)
     user_settings.user_id = user_id
-    write_user_settings(user_settings)
+    save_user_settings(user_settings)
 
 
 @doc_args(
@@ -127,7 +126,7 @@ def setup_instance(
             )  # need to reload, here, to get user_id
         else:
             raise RuntimeError("Login user: lndb login --email")
-    write_user_settings(user_settings)
+    save_user_settings(user_settings)
 
     # setup storage
     if storage is None:
@@ -151,7 +150,7 @@ def setup_instance(
             instance_settings.schema_modules = schema
         else:
             raise RuntimeError("Unknown schema module. Only know 'biology'.")
-    write_instance_settings(instance_settings)
+    save_instance_settings(instance_settings)
 
     setup_instance_db()
     return None
