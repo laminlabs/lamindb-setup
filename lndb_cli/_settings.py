@@ -1,54 +1,47 @@
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Any, Dict, Union, get_type_hints
+from typing import Union
 
 import sqlmodel as sqm
 from appdirs import AppDirs
 from cloudpathlib import CloudPath, S3Client
 
-from ._settings_store import (
-    InstanceSettingsStore,
-    UserSettingsStore,
-    current_instance_settings_file,
-    current_user_settings_file,
-    settings_dir,
-)
-
 DIRS = AppDirs("lamindb", "laminlabs")
 
 
-def storage_filepath(filekey: Union[Path, CloudPath, str]) -> Union[Path, CloudPath]:
-    """Cloud or local filepath from filekey."""
-    settings = load_or_create_instance_settings()
-    if settings.cloud_storage:
-        client = S3Client(local_cache_dir=settings.cache_dir)
-        return client.CloudPath(settings.storage_dir / filekey)
-    else:
-        return settings.storage_dir / filekey
+class Storage:
+    def __init__(self, settings: "InstanceSettings"):
+        self.settings = settings
 
+    def key_to_filepath(
+        self, filekey: Union[Path, CloudPath, str]
+    ) -> Union[Path, CloudPath]:
+        """Cloud or local filepath from filekey."""
+        if self.settings.cloud_storage:
+            client = S3Client(local_cache_dir=self.settings.cache_dir)
+            return client.CloudPath(self.settings.storage_dir / filekey)
+        else:
+            return self.settings.storage_dir / filekey
 
-def cloud_to_local(filepath: Union[Path, CloudPath]) -> Path:
-    """Local (cache) filepath from filepath."""
-    if load_or_create_instance_settings().cloud_storage:
-        filepath = filepath.fspath  # type: ignore  # mypy misses CloudPath
-    return filepath
+    def cloud_to_local(self, filepath: Union[Path, CloudPath]) -> Path:
+        """Local (cache) filepath from filepath."""
+        if self.settings.cloud_storage:
+            filepath = filepath.fspath  # type: ignore  # mypy misses CloudPath
+        return filepath
 
+    # conversion to Path via cloud_to_local() would trigger download
+    # of remote file to cache if there already is one
+    # in pure write operations that update the cloud, we don't want this
+    # hence, we manually construct the local file path
+    # using the `.parts` attribute in the following line
+    def cloud_to_local_no_update(self, filepath: Union[Path, CloudPath]) -> Path:
+        if self.settings.cloud_storage:
+            return self.settings.cache_dir.joinpath(*filepath.parts[1:])  # type: ignore
+        return filepath
 
-# conversion to Path via cloud_to_local() would trigger download
-# of remote file to cache if there already is one
-# as we don't want this, as this is a pure write operation
-# we manually construct the local file path
-# using the `.parts` attribute in the following line
-def cloud_to_local_no_update(filepath: Union[Path, CloudPath]) -> Path:
-    settings = load_or_create_instance_settings()
-    if settings.cloud_storage:
-        return settings.cache_dir.joinpath(*filepath.parts[1:])  # type: ignore
-    return filepath
-
-
-def local_filepath(filekey: Union[Path, CloudPath, str]) -> Path:
-    """Local (cache) filepath from filekey: `local(filepath(...))`."""
-    return cloud_to_local(storage_filepath(filekey))
+    def local_filepath(self, filekey: Union[Path, CloudPath, str]) -> Path:
+        """Local (cache) filepath from filekey: `local(filepath(...))`."""
+        return self.cloud_to_local(self.key_to_filepath(filekey))
 
 
 # A mere tool for quick access to the docstrings above
@@ -102,18 +95,18 @@ class InstanceSettings:
         Is a CloudPath if on S3, otherwise a Path.
         """
         filename = instance_from_storage(self.storage_dir)  # type: ignore
-        return storage_filepath(f"{filename}.lndb")
+        return self._storage.key_to_filepath(f"{filename}.lndb")
 
     @property
     def _sqlite_file_local(self):
         """If on cloud storage, update remote file."""
-        return cloud_to_local_no_update(self._sqlite_file)
+        return self._storage.cloud_to_local_no_update(self._sqlite_file)
 
     def _update_cloud_sqlite_file(self):
         """If on cloud storage, update remote file."""
         if self.cloud_storage:
             sqlite_file = self._sqlite_file
-            cache_file = cloud_to_local_no_update(sqlite_file)
+            cache_file = self._storage.cloud_to_local_no_update(sqlite_file)
             sqlite_file.upload_from(cache_file)
 
     @property
@@ -129,11 +122,16 @@ class InstanceSettings:
         """Database URL."""
         # the great thing about cloudpathlib is that it downloads the
         # remote file to cache as soon as the time stamp is out of date
-        return f"sqlite:///{cloud_to_local(self._sqlite_file)}"
+        return f"sqlite:///{self._storage.cloud_to_local(self._sqlite_file)}"
 
     def db_engine(self, future=True):
         """Database engine."""
         return sqm.create_engine(self.db, future=future)
+
+    @property
+    def _storage(self):
+        """Low-level access to storage location."""
+        return Storage(self)
 
 
 @dataclass
@@ -146,110 +144,3 @@ class UserSettings:
     """User login secret. Auto-generated."""
     user_id: Union[str, None] = None
     """User ID. Auto-generated."""
-
-
-def write_instance_settings(settings: InstanceSettings):
-    assert settings.instance_name is not None
-    type_hints = get_type_hints(InstanceSettingsStore)
-    write_settings(settings, current_instance_settings_file, type_hints)
-    write_settings(settings, settings_dir / f"{settings.instance_name}.env", type_hints)
-
-
-def write_user_settings(settings: UserSettings):
-    assert settings.user_email is not None
-    type_hints = get_type_hints(UserSettingsStore)
-    write_settings(settings, current_user_settings_file, type_hints)
-    write_settings(settings, settings_dir / f"{settings.user_email}.env", type_hints)
-
-
-def write_settings(
-    settings: Union[InstanceSettings, UserSettings],
-    settings_file: Path,
-    type_hints: Dict[str, Any],
-):
-    with open(settings_file, "w") as f:
-        for key, type in type_hints.items():
-            settings_key = f"_{key}" if key == "dbconfig" else key
-            value = getattr(settings, settings_key)
-            if value is None:
-                value = "null"
-            else:
-                value = type(value)
-            f.write(f"{key}={value}\n")
-
-
-def setup_storage_dir(storage: Union[str, Path, CloudPath]) -> Union[Path, CloudPath]:
-    if str(storage).startswith(("s3://", "gs://")):
-        storage_dir = CloudPath(storage)
-    elif str(storage) == "null":
-        return None
-    else:
-        storage_dir = Path(storage)
-        storage_dir.mkdir(parents=True, exist_ok=True)
-    return storage_dir
-
-
-def setup_instance_from_store(store: InstanceSettingsStore) -> InstanceSettings:
-    settings = InstanceSettings()
-    settings.storage_dir = setup_storage_dir(store.storage_dir)
-    settings._dbconfig = store.dbconfig
-    settings.schema_modules = store.schema_modules
-    return settings
-
-
-def setup_user_from_store(store: UserSettingsStore) -> UserSettings:
-    settings = UserSettings()
-    settings.user_email = store.user_email
-    settings.user_secret = store.user_secret if store.user_secret != "null" else None
-    settings.user_id = store.user_id if store.user_id != "null" else None
-    return settings
-
-
-def load_or_create_instance_settings():
-    """Return current user settings."""
-    if not current_instance_settings_file.exists():
-        global InstanceSettings
-        return InstanceSettings()
-    else:
-        settings = load_instance_settings(current_instance_settings_file)
-        return settings
-
-
-def load_instance_settings(instance_settings_file: Path):
-    settings_store = InstanceSettingsStore(_env_file=instance_settings_file)
-    settings = setup_instance_from_store(settings_store)
-    return settings
-
-
-def load_or_create_user_settings():
-    """Return current user settings."""
-    if not current_user_settings_file.exists():
-        global UserSettings
-        return UserSettings()
-    else:
-        settings = load_user_settings(current_user_settings_file)
-        return settings
-
-
-def load_user_settings(user_settings_file: Path):
-    settings_store = UserSettingsStore(_env_file=user_settings_file)
-    settings = setup_user_from_store(settings_store)
-    return settings
-
-
-def switch_instance(instance_name: str):
-    InstanceSettings.instance_name
-    settings = load_instance_settings(settings_dir / f"{instance_name}.env")
-    assert settings.instance_name is not None
-    write_instance_settings(settings)
-
-
-def switch_user(user_email: str):
-    settings_file = settings_dir / f"{user_email}.env"
-    if settings_file.exists():
-        settings = load_user_settings(settings_file)
-        assert settings.user_email is not None
-    else:
-        settings = load_or_create_user_settings()
-        settings.user_email = user_email
-    write_user_settings(settings)
