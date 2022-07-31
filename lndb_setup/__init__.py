@@ -37,7 +37,7 @@ Dev API
    Storage
 """
 
-__version__ = "0.3.1"  # denote a pre-release for 0.1.0 with 0.1a1
+__version__ = "0.3.2"  # denote a pre-release for 0.1.0 with 0.1a1
 from . import _check_versions  # noqa
 from ._schema import schema  # noqa
 from ._settings import settings  # noqa
