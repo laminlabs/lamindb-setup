@@ -123,10 +123,14 @@ def init_instance(
 
     # setup schema
     if schema is not None:
-        if schema == "biology":
-            instance_settings.schema_modules = schema
-        else:
-            raise RuntimeError("Unknown schema module. Only know 'biology'.")
+        known_modules = ["bionty", "wetlab"]
+        validated_schema = []
+        for module in known_modules:
+            if module in schema:
+                validated_schema.append(module)
+        if len(validated_schema) == 0:
+            raise RuntimeError(f"Unknown schema modules. Only know {known_modules}.")
+        instance_settings.schema_modules = ", ".join(validated_schema)
     save_instance_settings(instance_settings)
 
     setup_instance_db()
