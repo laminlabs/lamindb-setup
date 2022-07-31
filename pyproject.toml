@@ -8,7 +8,9 @@ authors = [{name = "Lamin Labs", email = "laminlabs@gmail.com"}]
 readme = "README.md"
 dynamic = ["version", "description"]
 dependencies = [
-    "lamindb_schema",
+    "lamindb_schema>=0.3.1",
+    "lndb_schema_core>=0.2.0",
+    "lndb_schema_wetlab>=0.1.1",
     "lamin_logger",
     "boto3",
     "cloudpathlib",
