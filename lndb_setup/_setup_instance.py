@@ -39,6 +39,8 @@ def setup_instance_db():
         logger.info(f"Using instance: {sqlite_file}")
     else:
         msg = "Loading schema modules: core"
+        import lndb_schema_core  # noqa
+
         if schema_modules is not None and "bionty" in schema_modules:
             import lndb_schema_bionty  # noqa
 
