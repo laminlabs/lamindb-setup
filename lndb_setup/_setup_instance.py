@@ -38,10 +38,16 @@ def setup_instance_db():
     if sqlite_file.exists():
         logger.info(f"Using instance: {sqlite_file}")
     else:
-        if schema_modules is not None and "biology" in schema_modules:
-            import lndb_schema_biology  # noqa
+        msg = "Loading schema modules: core"
+        if schema_modules is not None and "bionty" in schema_modules:
+            import lndb_schema_bionty  # noqa
 
-            logger.info(f"Loading schema module {schema_modules}.")
+            msg += ", bionty"
+        if schema_modules is not None and "wetlab" in schema_modules:
+            import lndb_schema_wetlab  # noqa
+
+            msg += ", wetlab"
+        logger.info(f"{msg}.")
         SQLModel.metadata.create_all(instance_settings.db_engine())
         instance_settings._update_cloud_sqlite_file()
         logger.info(f"Created instance {instance_name}: {sqlite_file}")
