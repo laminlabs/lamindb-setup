@@ -49,7 +49,7 @@ def main():
             password=args.password,
         )
     elif args.command == "init":
-        return _setup_instance.init_instance(
+        return _setup_instance.init(
             storage=args.storage,
             dbconfig=args.db,
             schema=args.schema,
