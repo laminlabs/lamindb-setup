@@ -6,7 +6,7 @@ from . import _setup_instance, _setup_user
 from ._settings_instance import instance_description as instance
 from ._settings_user import user_description as user
 
-signup_help = "First time sign up & log in after email is confirmed."
+signup_help = "First time sign up."
 login_help = "Log in an already-signed-up user."
 init_help = "Init & config instance with db & storage."
 load_help = "Load instance by name."
