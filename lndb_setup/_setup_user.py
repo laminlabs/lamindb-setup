@@ -37,6 +37,11 @@ def load_user(email: str = None, handle: str = None):
         assert user_settings.email is not None
     else:
         user_settings = load_or_create_user_settings()
+        if email is None:
+            raise RuntimeError(
+                "Use your email for your first login in a compute environment. "
+                "After that, you can use your handle."
+            )
         user_settings.email = email
         user_settings.handle = handle
         save_user_settings(user_settings)
@@ -72,9 +77,15 @@ def login(
             " --email <your-password>"
         )
 
-    user_id, user_handle = sign_in_hub(
+    response = sign_in_hub(
         user_settings.email, user_settings.password, user_settings.handle
     )
+    if response == "could-not-login":
+        return response
+    else:
+        user_id, user_handle = response
+    if handle is None:
+        logger.info(f"Your user handle is '{user_handle}'.")
     user_settings.id = user_id
     user_settings.handle = user_handle
     save_user_settings(user_settings)

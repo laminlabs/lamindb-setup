@@ -23,7 +23,12 @@ aa("email", type=str, metavar="s", help=user.email)
 aa("handle", type=str, metavar="s", help=user.handle)
 login = subparsers.add_parser("login", help=login_help)
 aa = login.add_argument
-aa("user", type=str, metavar="s", help="Email or user handle.")
+aa(
+    "user",
+    type=str,
+    metavar="s",
+    help="Email or user handle. Email is needed at first login in current environment.",
+)  # noqa
 aa("--password", type=str, metavar="s", default=None, help=user.password)
 # instance settings
 init = subparsers.add_parser("init", help=init_help)
