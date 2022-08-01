@@ -7,7 +7,8 @@ from sqlmodel import SQLModel
 
 from ._db import insert_if_not_exists
 from ._docs import doc_args
-from ._settings_instance import InstanceSettings, description
+from ._settings_instance import InstanceSettings
+from ._settings_instance import instance_description as description
 from ._settings_load import (
     load_instance_settings,
     load_or_create_instance_settings,

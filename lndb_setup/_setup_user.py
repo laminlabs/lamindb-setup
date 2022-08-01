@@ -8,10 +8,11 @@ from ._settings_save import save_user_settings
 from ._settings_store import settings_dir
 
 
-def sign_up_user(email):
+def sign_up_user(email: str, handle: str = None):
     """Sign up user."""
     user_settings = load_or_create_user_settings()
     user_settings.email = email
+    user_settings.handle = handle
     save_user_settings(user_settings)
     password = sign_up_hub(email)
     if password is None:  # user already exists
@@ -41,6 +42,7 @@ def log_in_user(
     *,
     email: Union[str, None] = None,
     password: Union[str, None] = None,
+    handle: Union[str, None] = None,
 ):
     """Log in user."""
     if email:
@@ -62,7 +64,9 @@ def log_in_user(
             " --email <your-password>"
         )
 
-    user_id = sign_in_hub(user_settings.email, user_settings.password)
+    user_id = sign_in_hub(
+        user_settings.email, user_settings.password, user_settings.handle
+    )
     user_settings.id = user_id
     save_user_settings(user_settings)
 

@@ -17,8 +17,14 @@ def connect_hub():
     return create_client(connector.url, connector.key)
 
 
-def sign_up_hub(email) -> Union[str, None]:
+def sign_up_hub(email, handle=None) -> Union[str, None]:
     hub = connect_hub()
+    data = hub.table("usermeta").select("*").eq("handle", handle).execute()
+    if len(data.data) > 0:  # handle is no longer available
+        raise RuntimeError(
+            "The desired user handle is no longer available, please choose a different"
+            " one."
+        )
     password = id.id_secret()  # generate new password
     user = hub.auth.sign_up(email=email, password=password)
     # if user already exists a fake user object without identity is returned
@@ -49,7 +55,7 @@ def sign_up_hub(email) -> Union[str, None]:
         return None
 
 
-def sign_in_hub(email, password):
+def sign_in_hub(email, password, handle=None):
     hub = connect_hub()
     session = hub.auth.sign_in(email=email, password=password)
     data = hub.table("usermeta").select("*").eq("id", session.user.id.hex).execute()
@@ -57,10 +63,12 @@ def sign_in_hub(email, password):
         user_id = data.data[0]["lnid"]
     else:  # user registration on hub gets completed below
         user_id = id.id_user()
+        if handle is None:
+            handle = user_id
         hub.postgrest.auth(session.access_token)
         data = (
             hub.table("usermeta")
-            .insert({"id": session.user.id.hex, "lnid": user_id, "handle": user_id})
+            .insert({"id": session.user.id.hex, "lnid": user_id, "handle": handle})
             .execute()
         )
         assert len(data.data) > 0
