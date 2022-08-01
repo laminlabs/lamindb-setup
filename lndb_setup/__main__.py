@@ -33,7 +33,7 @@ aa("--db", type=str, metavar="s", default="sqlite", help=instance._dbconfig)
 aa("--schema", type=str, metavar="s", default=None, help=instance.schema_modules)
 load = subparsers.add_parser("load", help=load_help)
 aa = load.add_argument
-aa("--name", type=str, metavar="s", default=None, help=instance.instance_name)
+aa("--name", type=str, metavar="s", default=None, help=instance.name)
 args = parser.parse_args()
 
 

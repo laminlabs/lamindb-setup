@@ -32,7 +32,7 @@ def setup_instance_db():
     if instance_settings.storage_dir is None:
         logger.warning("Instance is not configured. Call `lndb init` or `lndb load`.")
         return None
-    instance_name = instance_settings.instance_name
+    instance_name = instance_settings.name
     sqlite_file = instance_settings._sqlite_file
     schema_modules = instance_settings.schema_modules
 
@@ -60,11 +60,11 @@ def setup_instance_db():
 
 def load_instance(instance_name: str):
     """Load existing instance."""
-    InstanceSettings.instance_name
+    InstanceSettings.name
     instance_settings = load_instance_settings(
         settings_dir / f"instance-{instance_name}.env"
     )
-    assert instance_settings.instance_name is not None
+    assert instance_settings.name is not None
     save_instance_settings(instance_settings)
 
     from ._settings import settings

@@ -13,11 +13,11 @@ from ._settings_user import UserSettings
 
 
 def save_instance_settings(settings: InstanceSettings):
-    assert settings.instance_name is not None
+    assert settings.name is not None
     type_hints = get_type_hints(InstanceSettingsStore)
     save_settings(settings, current_instance_settings_file, type_hints)
     save_settings(
-        settings, settings_dir / f"instance-{settings.instance_name}.env", type_hints
+        settings, settings_dir / f"instance-{settings.name}.env", type_hints
     )  # noqa
 
 
