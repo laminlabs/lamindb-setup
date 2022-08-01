@@ -81,7 +81,7 @@ def login(
     )
     if response == "could-not-login":
         return response
-    elif response == "complete-login":
+    elif response == "complete-signup":
         return response
     else:
         user_id, user_handle = response

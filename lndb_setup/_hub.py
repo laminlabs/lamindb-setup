@@ -65,9 +65,9 @@ def sign_in_hub(email, password, handle=None):
                 f"Passed handle {handle} does not match your account handle"
                 f" {user_handle}! Using account handle {user_handle}."
             )
-    else:  # user registration on hub gets completed below
-        logger.error("Complete login on the hub.")
-        return "complete-login"
+    else:  # user did not complete signup as usermeta has no matching row
+        logger.error("Complete signup on your account page.")
+        return "complete-signup"
     hub.auth.sign_out()
     return user_id, user_handle
 
