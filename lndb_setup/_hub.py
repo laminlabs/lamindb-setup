@@ -21,10 +21,7 @@ def sign_up_hub(email, handle) -> Union[str, None]:
     hub = connect_hub()
     data = hub.table("usermeta").select("*").eq("handle", handle).execute()
     if len(data.data) > 0:  # handle is no longer available
-        raise RuntimeError(
-            "The desired user handle is no longer available, please choose a different"
-            " one."
-        )
+        return "handle-exists"
     password = id.id_secret()  # generate new password
     user = hub.auth.sign_up(email=email, password=password)
     # if user already exists a fake user object without identity is returned
