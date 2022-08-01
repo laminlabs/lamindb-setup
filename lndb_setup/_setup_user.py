@@ -75,6 +75,8 @@ def login(
     user_id, user_handle = sign_in_hub(
         user_settings.email, user_settings.password, user_settings.handle
     )
+    if handle is None:
+        logger.info(f"Your user handle is '{user_handle}'.")
     user_settings.id = user_id
     user_settings.handle = user_handle
     save_user_settings(user_settings)

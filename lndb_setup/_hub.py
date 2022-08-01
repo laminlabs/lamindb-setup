@@ -59,10 +59,10 @@ def sign_in_hub(email, password, handle=None):
     if len(data.data) > 0:  # user is completely registered
         user_id = data.data[0]["lnid"]
         user_handle = data.data[0]["handle"]
-        if handle != user_handle:
+        if handle is not None and handle != user_handle:
             logger.warning(
                 f"Provided handle {handle} does not match your account handle"
-                f" {user_handle}. Using account handle!"
+                f" {user_handle}! Using account handle {user_handle}."
             )
     else:  # user registration on hub gets completed below
         user_id = id.id_user()
