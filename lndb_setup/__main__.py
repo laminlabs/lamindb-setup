@@ -19,14 +19,14 @@ subparsers = parser.add_subparsers(dest="command")
 # user settings
 signup = subparsers.add_parser("signup", help=signup_help)
 aa = signup.add_argument
-aa("email", type=str, metavar="s", help=user.email)
-aa("handle", type=str, metavar="s", help=user.handle)
+aa("email", type=str, metavar="email", help=user.email)
+aa("handle", type=str, metavar="handle", help=user.handle)
 login = subparsers.add_parser("login", help=login_help)
 aa = login.add_argument
 aa(
     "user",
     type=str,
-    metavar="s",
+    metavar="user",
     help="Email or user handle. Email is needed at first login in current environment.",
 )  # noqa
 aa("--password", type=str, metavar="s", default=None, help=user.password)
