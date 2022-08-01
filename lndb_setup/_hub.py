@@ -17,8 +17,11 @@ def connect_hub():
     return create_client(connector.url, connector.key)
 
 
-def sign_up_hub(email) -> Union[str, None]:
+def sign_up_hub(email, handle) -> Union[str, None]:
     hub = connect_hub()
+    data = hub.table("usermeta").select("*").eq("handle", handle).execute()
+    if len(data.data) > 0:  # handle is no longer available
+        return "handle-exists"
     password = id.id_secret()  # generate new password
     user = hub.auth.sign_up(email=email, password=password)
     # if user already exists a fake user object without identity is returned
@@ -37,8 +40,8 @@ def sign_up_hub(email) -> Union[str, None]:
                 " lamin.ai."
             )
         logger.info(
-            "Please *confirm* the sign-up email. After that, proceed to `lndb"
-            " init`!\n\n"
+            "Please *confirm* the sign-up email. After that, login with `lndb login"
+            f" {handle}`!\n\n"
             f"Generated login password: {password}.\n"
             f"Email & password persist in: {current_user_settings_file}.\n"  # noqa
             "Going forward, credentials are auto-loaded. "  # noqa
@@ -49,24 +52,33 @@ def sign_up_hub(email) -> Union[str, None]:
         return None
 
 
-def sign_in_hub(email, password):
+def sign_in_hub(email, password, handle=None):
     hub = connect_hub()
     session = hub.auth.sign_in(email=email, password=password)
     data = hub.table("usermeta").select("*").eq("id", session.user.id.hex).execute()
     if len(data.data) > 0:  # user is completely registered
         user_id = data.data[0]["lnid"]
+        user_handle = data.data[0]["handle"]
+        if handle != user_handle:
+            logger.warning(
+                f"Provided handle {handle} does not match your account handle"
+                f" {user_handle}. Using account handle!"
+            )
     else:  # user registration on hub gets completed below
         user_id = id.id_user()
+        if handle is None:
+            handle = user_id
         hub.postgrest.auth(session.access_token)
         data = (
             hub.table("usermeta")
-            .insert({"id": session.user.id.hex, "lnid": user_id, "handle": user_id})
+            .insert({"id": session.user.id.hex, "lnid": user_id, "handle": handle})
             .execute()
         )
+        user_handle = handle
         assert len(data.data) > 0
         logger.info(f"Completed user sign up, generated user_id: {user_id}.")
     hub.auth.sign_out()
-    return user_id
+    return user_id, user_handle
 
 
 def create_instance(instance_name):

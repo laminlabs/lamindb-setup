@@ -2,6 +2,7 @@ from pathlib import Path
 from typing import Union
 
 from cloudpathlib import CloudPath
+from pydantic.error_wrappers import ValidationError
 
 from ._settings_instance import InstanceSettings
 from ._settings_store import (
@@ -24,7 +25,13 @@ def load_or_create_instance_settings():
 
 
 def load_instance_settings(instance_settings_file: Path):
-    settings_store = InstanceSettingsStore(_env_file=instance_settings_file)
+    try:
+        settings_store = InstanceSettingsStore(_env_file=instance_settings_file)
+    except ValidationError:
+        raise RuntimeError(
+            "Your instance settings file is invalid, please delete"
+            f" {instance_settings_file} and init the instance again."
+        )
     settings = setup_instance_from_store(settings_store)
     return settings
 
@@ -40,7 +47,13 @@ def load_or_create_user_settings():
 
 
 def load_user_settings(user_settings_file: Path):
-    settings_store = UserSettingsStore(_env_file=user_settings_file)
+    try:
+        settings_store = UserSettingsStore(_env_file=user_settings_file)
+    except ValidationError:
+        raise RuntimeError(
+            "Your user settings file is invalid, please delete"
+            f" {user_settings_file} and log in again."
+        )
     settings = setup_user_from_store(settings_store)
     return settings
 
@@ -69,4 +82,5 @@ def setup_user_from_store(store: UserSettingsStore) -> UserSettings:
     settings.email = store.email
     settings.password = store.password if store.password != "null" else None
     settings.id = store.id if store.id != "null" else None
+    settings.handle = store.handle if store.handle != "null" else None
     return settings

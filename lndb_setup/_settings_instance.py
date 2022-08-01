@@ -47,15 +47,10 @@ class Storage:
         return self.cloud_to_local(self.key_to_filepath(filekey))
 
 
-# A mere tool for quick access to the docstrings above
-# I thought I had it work to read from the docstrings above, but doesn't seem so
-class description:
-    email = """User email."""
-    password = """User login password. Auto-generated."""
-    user_id = """User ID. Auto-generated."""
+class instance_description:
     storage_dir = """Storage root. Either local dir, ``s3://bucket_name`` or ``gs://bucket_name``."""  # noqa
     _dbconfig = """Either "sqlite" or "instance_name, postgres_url"."""
-    instance_name = """Instance name."""
+    name = """Instance name."""
     schema_modules = """Comma-separated string of schema modules."""
 
 
@@ -113,7 +108,7 @@ class InstanceSettings:
             sqlite_file.upload_from(cache_file)
 
     @property
-    def instance_name(self) -> str:
+    def name(self) -> str:
         """Name of LaminDB instance, which corresponds to exactly one database."""
         if self._dbconfig == "sqlite":
             return instance_from_storage(self.storage_dir)

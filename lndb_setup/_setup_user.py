@@ -8,12 +8,16 @@ from ._settings_save import save_user_settings
 from ._settings_store import settings_dir
 
 
-def sign_up_user(email):
+def sign_up_user(email: str, handle: str):
     """Sign up user."""
     user_settings = load_or_create_user_settings()
     user_settings.email = email
+    user_settings.handle = handle
     save_user_settings(user_settings)
-    password = sign_up_hub(email)
+    password = sign_up_hub(email, handle)
+    if password == "handle-exists":  # handle already exists
+        logger.error("The handle already exists. Please choose a different one.")
+        return "handle-exists"
     if password is None:  # user already exists
         logger.error("User already exists! Please login instead: `lndb login`.")
         return "user-exists"
@@ -22,29 +26,37 @@ def sign_up_user(email):
     return None  # user needs to confirm email now
 
 
-def load_user(email: str):
-    settings_file = settings_dir / f"{email}.env"
+def load_user(email: str = None, handle: str = None):
+    if email is not None:
+        settings_file = settings_dir / f"user-{email}.env"
+    if handle is not None:
+        settings_file = settings_dir / f"user-{handle}.env"
     if settings_file.exists():
         user_settings = load_user_settings(settings_file)
+        save_user_settings(user_settings)  # needed to save to current_user.env
         assert user_settings.email is not None
     else:
         user_settings = load_or_create_user_settings()
         user_settings.email = email
-    save_user_settings(user_settings)
+        user_settings.handle = handle
+        save_user_settings(user_settings)
 
     from ._settings import settings
 
-    settings._user_settings = None
+    settings._user_settings = None  # this is to refresh a settings instance
 
 
 def log_in_user(
+    user: str,
     *,
-    email: Union[str, None] = None,
     password: Union[str, None] = None,
 ):
     """Log in user."""
-    if email:
-        load_user(email)
+    if "@" in user:
+        email, handle = user, None
+    else:
+        email, handle = None, user
+    load_user(email, handle)
 
     user_settings = load_or_create_user_settings()
 
@@ -52,9 +64,7 @@ def log_in_user(
         user_settings.password = password
 
     if user_settings.email is None:
-        raise RuntimeError(
-            "No stored user email, please call: lndb login --email <your-email>"
-        )
+        raise RuntimeError("No stored user email, please call: lndb login {user}")
 
     if user_settings.password is None:
         raise RuntimeError(
@@ -62,8 +72,11 @@ def log_in_user(
             " --email <your-password>"
         )
 
-    user_id = sign_in_hub(user_settings.email, user_settings.password)
+    user_id, user_handle = sign_in_hub(
+        user_settings.email, user_settings.password, user_settings.handle
+    )
     user_settings.id = user_id
+    user_settings.handle = user_handle
     save_user_settings(user_settings)
 
     from ._settings import settings
