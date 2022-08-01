@@ -3,6 +3,7 @@
 <!-- prettier-ignore -->
 Name | PR | Developer | Date | Version
 --- | --- | --- | --- | ---
+✨ Require registering a `user_handle` and rename `instance_name` to `name` | [9](https://github.com/laminlabs/lndb-setup/pull/9) | [falexwolf](https://github.com/falexwolf) | 2022-08-01 |
 🚚 Rename `user_email` to `email`, `user_secret` to `password`, and `user_id` to `id` | [8](https://github.com/laminlabs/lndb-setup/pull/8) | [falexwolf](https://github.com/falexwolf) | 2022-08-01 |
 🩹 Import core schema at setup time | [commit](https://github.com/laminlabs/lndb-setup/commit/1d12339836a06cfee25991f3e4ba3c7c73620570) | [falexwolf](https://github.com/falexwolf) | 2022-07-31 | 0.3.1
 ⬆️ Upgrade to `lamindb-schema` 0.3.1 | [7](https://github.com/laminlabs/lndb-setup/pull/7) | [falexwolf](https://github.com/falexwolf) | 2022-07-31 | 0.3.1
