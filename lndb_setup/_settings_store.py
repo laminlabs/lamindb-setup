@@ -22,7 +22,7 @@ class InstanceSettingsStore(BaseSettings):
 class UserSettingsStore(BaseSettings):
     email: str
     password: str
-    user_id: str
+    id: str
 
     class Config:
         env_file = ".env"

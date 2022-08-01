@@ -10,5 +10,5 @@ class UserSettings:
     """User email."""
     password: Union[str, None] = None
     """User login password. Auto-generated."""
-    user_id: Union[str, None] = None
+    id: Union[str, None] = None
     """User ID. Auto-generated."""

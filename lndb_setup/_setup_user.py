@@ -63,7 +63,7 @@ def log_in_user(
         )
 
     user_id = sign_in_hub(user_settings.email, user_settings.password)
-    user_settings.user_id = user_id
+    user_settings.id = user_id
     save_user_settings(user_settings)
 
     from ._settings import settings
