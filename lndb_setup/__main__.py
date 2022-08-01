@@ -44,13 +44,8 @@ def main():
             handle=args.handle,
         )
     if args.command == "login":
-        if "@" in args.user:
-            email, handle = args.user, None
-        else:
-            email, handle = None, args.user
         return _setup_user.log_in_user(
-            email=email,
-            handle=handle,
+            args.user,
             password=args.password,
         )
     elif args.command == "init":

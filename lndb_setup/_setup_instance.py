@@ -98,12 +98,11 @@ def init_instance(
             user_settings.email is not None
             and user_settings.password is not None  # noqa
         ):
-            # complete user setup, this *only* happens after *sign_up_first_time*
+            # complete user setup, this *only* happens after *sign_up*
             logger.info("Completing user sign up. Only happens once!")
             log_in_user(
-                email=user_settings.email,
+                user_settings.handle,
                 password=user_settings.password,
-                handle=user_settings.handle,
             )
             user_settings = (
                 load_or_create_user_settings()

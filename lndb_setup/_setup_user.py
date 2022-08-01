@@ -38,22 +38,24 @@ def load_user(email: str = None, handle: str = None):
         user_settings = load_or_create_user_settings()
         user_settings.email = email
         user_settings.handle = handle
-    save_user_settings(user_settings)
+        save_user_settings(user_settings)
 
     from ._settings import settings
 
-    settings._user_settings = None
+    settings._user_settings = None  # this is to refresh a settings instance
 
 
 def log_in_user(
+    user: str,
     *,
-    email: Union[str, None] = None,
     password: Union[str, None] = None,
-    handle: Union[str, None] = None,
 ):
     """Log in user."""
-    if email:
-        load_user(email, handle)
+    if "@" in user:
+        email, handle = user, None
+    else:
+        email, handle = None, user
+    load_user(email, handle)
 
     user_settings = load_or_create_user_settings()
 
