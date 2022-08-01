@@ -39,9 +39,18 @@ args = parser.parse_args()
 
 def main():
     if args.command == "signup":
+        if args.handle is None:
+            response = input(
+                "Do you want to provide a unique user handle like on Twitter or"
+                " GitHub?\nType your desired handle or abort with 'n'."
+            )
+            if response == "n":
+                handle = None
+            else:
+                handle = response
         return _setup_user.sign_up_user(
             email=args.email,
-            handle=args.handle,
+            handle=handle,
         )
     if args.command == "login":
         if "@" in args.user:

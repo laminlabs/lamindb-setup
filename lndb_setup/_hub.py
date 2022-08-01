@@ -77,6 +77,7 @@ def sign_in_hub(email, password, handle=None):
             .insert({"id": session.user.id.hex, "lnid": user_id, "handle": handle})
             .execute()
         )
+        user_handle = handle
         assert len(data.data) > 0
         logger.info(f"Completed user sign up, generated user_id: {user_id}.")
     hub.auth.sign_out()
