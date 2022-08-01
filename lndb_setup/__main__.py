@@ -20,7 +20,7 @@ subparsers = parser.add_subparsers(dest="command")
 signup = subparsers.add_parser("signup", help=signup_help)
 aa = signup.add_argument
 aa("email", type=str, metavar="s", help=user.email)
-aa("--handle", type=str, metavar="s", default=None, help=user.handle)
+aa("handle", type=str, metavar="s", help=user.handle)
 login = subparsers.add_parser("login", help=login_help)
 aa = login.add_argument
 aa("user", type=str, metavar="s", help="Email or user handle.")
@@ -39,18 +39,9 @@ args = parser.parse_args()
 
 def main():
     if args.command == "signup":
-        if args.handle is None:
-            response = input(
-                "Do you want to provide a unique user handle like on Twitter or"
-                " GitHub?\nType your desired handle or abort with 'n'."
-            )
-            if response == "n":
-                handle = None
-            else:
-                handle = response
         return _setup_user.sign_up_user(
             email=args.email,
-            handle=handle,
+            handle=user.handle,
         )
     if args.command == "login":
         if "@" in args.user:
