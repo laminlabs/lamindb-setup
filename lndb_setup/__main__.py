@@ -41,7 +41,7 @@ def main():
     if args.command == "signup":
         return _setup_user.sign_up_user(
             email=args.email,
-            handle=user.handle,
+            handle=args.handle,
         )
     if args.command == "login":
         if "@" in args.user:
