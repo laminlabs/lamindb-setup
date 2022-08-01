@@ -55,7 +55,7 @@ def main():
             schema=args.schema,
         )
     elif args.command == "load":
-        return _setup_instance.load_instance(
+        return _setup_instance.load(
             instance_name=args.name,
         )
     else:

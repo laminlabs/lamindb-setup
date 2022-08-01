@@ -24,7 +24,7 @@ Setup instance (`lndb init`, `lndb load`):
    :toctree:
 
    init
-   load_instance
+   load
 
 Dev API
 -------
@@ -43,5 +43,5 @@ from ._schema import schema  # noqa
 from ._settings import settings  # noqa
 from ._settings_instance import InstanceSettings, Storage  # noqa
 from ._settings_user import UserSettings  # noqa
-from ._setup_instance import init, load_instance  # noqa
+from ._setup_instance import init, load  # noqa
 from ._setup_user import login, signup  # noqa
