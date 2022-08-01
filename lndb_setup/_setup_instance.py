@@ -93,7 +93,7 @@ def init_instance(
     """
     user_settings = load_or_create_user_settings()
     if user_settings.id is None:
-        logger.error(f"Login: lndb login {user_settings.handle}")
+        logger.error("Login: lndb login user")
         return "need-to-login-first"
 
     # empty instance settings
