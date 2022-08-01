@@ -19,11 +19,11 @@ subparsers = parser.add_subparsers(dest="command")
 signup = subparsers.add_parser("signup", help=signup_help)
 aa = signup.add_argument
 aa("--email", type=str, metavar="s", default=None, help=description.email)
-aa("--secret", type=str, metavar="s", default=None, help=description.user_secret)
+aa("--password", type=str, metavar="s", default=None, help=description.password)
 login = subparsers.add_parser("login", help=login_help)
 aa = login.add_argument
 aa("--email", type=str, metavar="s", default=None, help=description.email)
-aa("--secret", type=str, metavar="s", default=None, help=description.user_secret)
+aa("--password", type=str, metavar="s", default=None, help=description.password)
 # instance settings
 init = subparsers.add_parser("init", help=init_help)
 aa = init.add_argument
@@ -44,7 +44,7 @@ def main():
     if args.command == "login":
         return _setup_user.log_in_user(
             email=args.email,
-            secret=args.secret,
+            password=args.password,
         )
     elif args.command == "init":
         return _setup_instance.init_instance(

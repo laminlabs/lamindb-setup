@@ -8,7 +8,7 @@ class UserSettings:
 
     email: str = None  # type: ignore
     """User email."""
-    user_secret: Union[str, None] = None
-    """User login secret. Auto-generated."""
+    password: Union[str, None] = None
+    """User login password. Auto-generated."""
     user_id: Union[str, None] = None
     """User ID. Auto-generated."""

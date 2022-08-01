@@ -21,7 +21,7 @@ class InstanceSettingsStore(BaseSettings):
 
 class UserSettingsStore(BaseSettings):
     email: str
-    user_secret: str
+    password: str
     user_id: str
 
     class Config:

@@ -87,17 +87,17 @@ def init_instance(
         dbconfig: {}
         schema: {}
     """
-    # settings.email & settings.user_secret are set
+    # settings.email & settings.password are set
     instance_settings = load_or_create_instance_settings()
     user_settings = load_or_create_user_settings()
     if user_settings.user_id is None:
         if (
             user_settings.email is not None
-            and user_settings.user_secret is not None  # noqa
+            and user_settings.password is not None  # noqa
         ):
             # complete user setup, this *only* happens after *sign_up_first_time*
             logger.info("Completing user sign up. Only happens once!")
-            log_in_user(email=user_settings.email, secret=user_settings.user_secret)
+            log_in_user(email=user_settings.email, password=user_settings.password)
             user_settings = (
                 load_or_create_user_settings()
             )  # need to reload, here, to get user_id

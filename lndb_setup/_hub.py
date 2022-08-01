@@ -19,8 +19,8 @@ def connect_hub():
 
 def sign_up_hub(email) -> Union[str, None]:
     hub = connect_hub()
-    secret = id.id_secret()  # generate new secret
-    user = hub.auth.sign_up(email=email, password=secret)
+    password = id.id_password()  # generate new password
+    user = hub.auth.sign_up(email=email, password=password)
     # if user already exists a fake user object without identity is returned
     if user.identities:
         # if user had called sign-up before, but not confirmed their email
@@ -39,19 +39,19 @@ def sign_up_hub(email) -> Union[str, None]:
         logger.info(
             "Please *confirm* the sign-up email. After that, proceed to `lndb"
             " init`!\n\n"
-            f"Generated login secret: {secret}.\n"
-            f"Email & secret persist in: {current_user_settings_file}.\n"  # noqa
+            f"Generated login password: {password}.\n"
+            f"Email & password persist in: {current_user_settings_file}.\n"  # noqa
             "Going forward, credentials are auto-loaded. "  # noqa
-            "In case of loss, you can always recover your secret via email."
+            "In case of loss, you can always recover your password via email."
         )
-        return secret
+        return password
     else:
         return None
 
 
-def sign_in_hub(email, secret):
+def sign_in_hub(email, password):
     hub = connect_hub()
-    session = hub.auth.sign_in(email=email, password=secret)
+    session = hub.auth.sign_in(email=email, password=password)
     data = hub.table("usermeta").select("*").eq("id", session.user.id.hex).execute()
     if len(data.data) > 0:  # user is completely registered
         user_id = data.data[0]["lnid"]
@@ -73,7 +73,7 @@ def create_instance(instance_name):
     hub = connect_hub()
     user_settings = load_or_create_user_settings()
     session = hub.auth.sign_in(
-        email=user_settings.email, password=user_settings.user_secret
+        email=user_settings.email, password=user_settings.password
     )
     hub.postgrest.auth(session.access_token)
     # data = hub.table("user_instance").select("instance_id").eq("user_id", session.user.id.hex).execute()  # noqa
