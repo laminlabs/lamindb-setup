@@ -39,23 +39,23 @@ args = parser.parse_args()
 
 def main():
     if args.command == "signup":
-        return _setup_user.sign_up_user(
+        return _setup_user.signup(
             email=args.email,
             handle=args.handle,
         )
     if args.command == "login":
-        return _setup_user.log_in_user(
+        return _setup_user.login(
             args.user,
             password=args.password,
         )
     elif args.command == "init":
-        return _setup_instance.init_instance(
+        return _setup_instance.init(
             storage=args.storage,
             dbconfig=args.db,
             schema=args.schema,
         )
     elif args.command == "load":
-        return _setup_instance.load_instance(
+        return _setup_instance.load(
             instance_name=args.name,
         )
     else:
