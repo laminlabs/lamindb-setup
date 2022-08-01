@@ -15,8 +15,8 @@ Setup user account (`lndb signup`, `lndb login`):
 .. autosummary::
    :toctree:
 
-   sign_up_user
-   log_in_user
+   signup
+   login
 
 Setup instance (`lndb init`, `lndb load`):
 
@@ -44,4 +44,4 @@ from ._settings import settings  # noqa
 from ._settings_instance import InstanceSettings, Storage  # noqa
 from ._settings_user import UserSettings  # noqa
 from ._setup_instance import init_instance, load_instance  # noqa
-from ._setup_user import log_in_user, sign_up_user  # noqa
+from ._setup_user import login, signup  # noqa

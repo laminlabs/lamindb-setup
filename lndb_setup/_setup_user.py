@@ -8,7 +8,7 @@ from ._settings_save import save_user_settings
 from ._settings_store import settings_dir
 
 
-def sign_up_user(email: str, handle: str):
+def signup(email: str, handle: str):
     """Sign up user."""
     user_settings = load_or_create_user_settings()
     user_settings.email = email
@@ -46,7 +46,7 @@ def load_user(email: str = None, handle: str = None):
     settings._user_settings = None  # this is to refresh a settings instance
 
 
-def log_in_user(
+def login(
     user: str,
     *,
     password: Union[str, None] = None,
