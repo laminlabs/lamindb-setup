@@ -17,7 +17,7 @@ def connect_hub():
     return create_client(connector.url, connector.key)
 
 
-def sign_up_hub(email, handle=None) -> Union[str, None]:
+def sign_up_hub(email, handle) -> Union[str, None]:
     hub = connect_hub()
     data = hub.table("usermeta").select("*").eq("handle", handle).execute()
     if len(data.data) > 0:  # handle is no longer available
@@ -44,7 +44,7 @@ def sign_up_hub(email, handle=None) -> Union[str, None]:
             )
         logger.info(
             "Please *confirm* the sign-up email. After that, login with `lndb login"
-            " <handle>`!\n\n"
+            f" {handle}`!\n\n"
             f"Generated login password: {password}.\n"
             f"Email & password persist in: {current_user_settings_file}.\n"  # noqa
             "Going forward, credentials are auto-loaded. "  # noqa

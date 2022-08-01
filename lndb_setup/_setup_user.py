@@ -14,7 +14,7 @@ def sign_up_user(email: str, handle: str = None):
     user_settings.email = email
     user_settings.handle = handle
     save_user_settings(user_settings)
-    password = sign_up_hub(email)
+    password = sign_up_hub(email, handle)
     if password is None:  # user already exists
         logger.error("User already exists! Please login instead: `lndb login`.")
         return "user-exists"
