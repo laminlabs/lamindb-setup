@@ -77,9 +77,13 @@ def login(
             " --email <your-password>"
         )
 
-    user_id, user_handle = sign_in_hub(
+    response = sign_in_hub(
         user_settings.email, user_settings.password, user_settings.handle
     )
+    if response == "could-not-login":
+        return response
+    else:
+        user_id, user_handle = response
     if handle is None:
         logger.info(f"Your user handle is '{user_handle}'.")
     user_settings.id = user_id
