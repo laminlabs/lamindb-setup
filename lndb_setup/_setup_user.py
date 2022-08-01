@@ -37,6 +37,11 @@ def load_user(email: str = None, handle: str = None):
         assert user_settings.email is not None
     else:
         user_settings = load_or_create_user_settings()
+        if email is None:
+            raise RuntimeError(
+                "Use your email for your first login in a compute environment. "
+                "After that, you can use your handle."
+            )
         user_settings.email = email
         user_settings.handle = handle
         save_user_settings(user_settings)
