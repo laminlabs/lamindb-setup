@@ -23,7 +23,7 @@ aa("email", type=str, metavar="s", help=user.email)
 aa("--handle", type=str, metavar="s", default=None, help=user.handle)
 login = subparsers.add_parser("login", help=login_help)
 aa = login.add_argument
-aa("--email", type=str, metavar="s", default=None, help=user.email)
+aa("user", type=str, metavar="s", help="Email or user handle.")
 aa("--password", type=str, metavar="s", default=None, help=user.password)
 # instance settings
 init = subparsers.add_parser("init", help=init_help)
@@ -44,8 +44,13 @@ def main():
             handle=args.handle,
         )
     if args.command == "login":
+        if "@" in args.user:
+            email, handle = args.user, None
+        else:
+            email, handle = None, args.user
         return _setup_user.log_in_user(
-            email=args.email,
+            email=email,
+            handle=handle,
             password=args.password,
         )
     elif args.command == "init":

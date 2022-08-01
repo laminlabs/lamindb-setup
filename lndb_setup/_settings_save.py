@@ -16,14 +16,20 @@ def save_instance_settings(settings: InstanceSettings):
     assert settings.instance_name is not None
     type_hints = get_type_hints(InstanceSettingsStore)
     save_settings(settings, current_instance_settings_file, type_hints)
-    save_settings(settings, settings_dir / f"{settings.instance_name}.env", type_hints)
+    save_settings(
+        settings, settings_dir / f"instance-{settings.instance_name}.env", type_hints
+    )  # noqa
 
 
 def save_user_settings(settings: UserSettings):
     assert settings.email is not None
     type_hints = get_type_hints(UserSettingsStore)
     save_settings(settings, current_user_settings_file, type_hints)
-    save_settings(settings, settings_dir / f"{settings.email}.env", type_hints)
+    save_settings(settings, settings_dir / f"user-{settings.email}.env", type_hints)
+    if settings.handle is not None:
+        save_settings(
+            settings, settings_dir / f"user-{settings.handle}.env", type_hints
+        )  # noqa
 
 
 def save_settings(

@@ -23,14 +23,18 @@ def sign_up_user(email: str, handle: str = None):
     return None  # user needs to confirm email now
 
 
-def load_user(email: str):
-    settings_file = settings_dir / f"{email}.env"
+def load_user(email: str = None, handle: str = None):
+    if email is not None:
+        settings_file = settings_dir / f"user-{email}.env"
+    if handle is not None:
+        settings_file = settings_dir / f"user-{handle}.env"
     if settings_file.exists():
         user_settings = load_user_settings(settings_file)
         assert user_settings.email is not None
     else:
         user_settings = load_or_create_user_settings()
         user_settings.email = email
+        user_settings.handle = handle
     save_user_settings(user_settings)
 
     from ._settings import settings
@@ -46,7 +50,7 @@ def log_in_user(
 ):
     """Log in user."""
     if email:
-        load_user(email)
+        load_user(email, handle)
 
     user_settings = load_or_create_user_settings()
 
@@ -64,10 +68,11 @@ def log_in_user(
             " --email <your-password>"
         )
 
-    user_id = sign_in_hub(
+    user_id, user_handle = sign_in_hub(
         user_settings.email, user_settings.password, user_settings.handle
     )
     user_settings.id = user_id
+    user_settings.handle = user_handle
     save_user_settings(user_settings)
 
     from ._settings import settings

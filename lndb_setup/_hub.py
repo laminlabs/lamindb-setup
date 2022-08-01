@@ -61,6 +61,12 @@ def sign_in_hub(email, password, handle=None):
     data = hub.table("usermeta").select("*").eq("id", session.user.id.hex).execute()
     if len(data.data) > 0:  # user is completely registered
         user_id = data.data[0]["lnid"]
+        user_handle = data.data[0]["handle"]
+        if handle != user_handle:
+            logger.warning(
+                f"Provided handle {handle} does not match your account handle"
+                f" {user_handle}. Using account handle!"
+            )
     else:  # user registration on hub gets completed below
         user_id = id.id_user()
         if handle is None:
@@ -74,7 +80,7 @@ def sign_in_hub(email, password, handle=None):
         assert len(data.data) > 0
         logger.info(f"Completed user sign up, generated user_id: {user_id}.")
     hub.auth.sign_out()
-    return user_id
+    return user_id, user_handle
 
 
 def create_instance(instance_name):
