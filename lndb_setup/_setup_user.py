@@ -33,6 +33,7 @@ def load_user(email: str = None, handle: str = None):
         settings_file = settings_dir / f"user-{handle}.env"
     if settings_file.exists():
         user_settings = load_user_settings(settings_file)
+        save_user_settings(user_settings)  # needed to save to current_user.env
         assert user_settings.email is not None
     else:
         user_settings = load_or_create_user_settings()
@@ -63,9 +64,7 @@ def log_in_user(
         user_settings.password = password
 
     if user_settings.email is None:
-        raise RuntimeError(
-            "No stored user email, please call: lndb login --email <your-email>"
-        )
+        raise RuntimeError("No stored user email, please call: lndb login {user}")
 
     if user_settings.password is None:
         raise RuntimeError(
