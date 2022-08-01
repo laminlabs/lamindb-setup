@@ -15,9 +15,8 @@ from ._settings_load import (
     load_or_create_user_settings,
     setup_storage_dir,
 )
-from ._settings_save import save_instance_settings, save_user_settings
+from ._settings_save import save_instance_settings
 from ._settings_store import settings_dir
-from ._setup_user import log_in_user
 
 
 def setup_instance_db():
@@ -81,10 +80,10 @@ def load_instance(instance_name: str):
 )
 def init_instance(
     *,
-    storage: Union[str, Path, CloudPath, None] = None,
+    storage: Union[str, Path, CloudPath],
     dbconfig: str = "sqlite",
     schema: Union[str, None] = None,
-) -> None:
+) -> Union[None, str]:
     """Setup LaminDB.
 
     Args:
@@ -92,37 +91,16 @@ def init_instance(
         dbconfig: {}
         schema: {}
     """
-    # settings.email & settings.password are set
-    instance_settings = load_or_create_instance_settings()
     user_settings = load_or_create_user_settings()
     if user_settings.id is None:
-        if (
-            user_settings.email is not None
-            and user_settings.password is not None  # noqa
-        ):
-            # complete user setup, this *only* happens after *sign_up*
-            logger.info("Completing user sign up. Only happens once!")
-            log_in_user(
-                user_settings.handle,
-                password=user_settings.password,
-            )
-            user_settings = (
-                load_or_create_user_settings()
-            )  # need to reload, here, to get user_id
-        else:
-            raise RuntimeError("Login user: lndb login --email")
-    save_user_settings(user_settings)
+        logger.error(f"Login: lndb login {user_settings.handle}")
+        return "need-to-login-first"
+
+    # empty instance settings
+    instance_settings = InstanceSettings()
 
     # setup storage
-    if storage is None:
-        if instance_settings.storage_dir is None:
-            raise RuntimeError(
-                "No storage in .env, please call: lndb init --storage <location>"
-            )
-        else:
-            storage = instance_settings.storage_dir
-    else:
-        instance_settings.storage_dir = setup_storage_dir(storage)
+    instance_settings.storage_dir = setup_storage_dir(storage)
 
     # setup _config
     instance_settings._dbconfig = dbconfig
