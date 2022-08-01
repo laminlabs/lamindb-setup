@@ -17,11 +17,8 @@ def connect_hub():
     return create_client(connector.url, connector.key)
 
 
-def sign_up_hub(email, handle) -> Union[str, None]:
+def sign_up_hub(email) -> Union[str, None]:
     hub = connect_hub()
-    data = hub.table("usermeta").select("*").eq("handle", handle).execute()
-    if len(data.data) > 0:  # handle is no longer available
-        return "handle-exists"
     password = id.id_secret()  # generate new password
     user = hub.auth.sign_up(email=email, password=password)
     # if user already exists a fake user object without identity is returned
@@ -41,8 +38,8 @@ def sign_up_hub(email, handle) -> Union[str, None]:
             )
         logger.info(
             "Please *confirm* the sign-up email. After that, login with `lndb login"
-            f" {handle}`!\n\n"
-            f"Generated login password: {password}.\n"
+            f" {email}`!\n\n"
+            f"Generated password: {password}.\n"
             f"Email & password persist in: {current_user_settings_file}.\n"  # noqa
             "Going forward, credentials are auto-loaded. "  # noqa
             "In case of loss, you can always recover your password via email."
@@ -65,22 +62,12 @@ def sign_in_hub(email, password, handle=None):
         user_handle = data.data[0]["handle"]
         if handle is not None and handle != user_handle:
             logger.warning(
-                f"Provided handle {handle} does not match your account handle"
+                f"Passed handle {handle} does not match your account handle"
                 f" {user_handle}! Using account handle {user_handle}."
             )
     else:  # user registration on hub gets completed below
-        user_id = id.id_user()
-        if handle is None:
-            handle = user_id
-        hub.postgrest.auth(session.access_token)
-        data = (
-            hub.table("usermeta")
-            .insert({"id": session.user.id.hex, "lnid": user_id, "handle": handle})
-            .execute()
-        )
-        user_handle = handle
-        assert len(data.data) > 0
-        logger.info(f"Completed user sign up, generated user_id: {user_id}.")
+        logger.error("Complete login on the hub.")
+        return "complete-login"
     hub.auth.sign_out()
     return user_id, user_handle
 

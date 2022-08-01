@@ -20,14 +20,13 @@ subparsers = parser.add_subparsers(dest="command")
 signup = subparsers.add_parser("signup", help=signup_help)
 aa = signup.add_argument
 aa("email", type=str, metavar="email", help=user.email)
-aa("handle", type=str, metavar="handle", help=user.handle)
 login = subparsers.add_parser("login", help=login_help)
 aa = login.add_argument
 aa(
     "user",
     type=str,
     metavar="user",
-    help="Email or user handle. Email is needed at first login in current environment.",
+    help="Email or user handle. Email is needed at first login.",
 )  # noqa
 aa("--password", type=str, metavar="s", default=None, help=user.password)
 # instance settings
@@ -44,10 +43,7 @@ args = parser.parse_args()
 
 def main():
     if args.command == "signup":
-        return _setup_user.signup(
-            email=args.email,
-            handle=args.handle,
-        )
+        return _setup_user.signup(email=args.email)
     if args.command == "login":
         return _setup_user.login(
             args.user,
