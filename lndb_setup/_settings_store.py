@@ -20,9 +20,9 @@ class InstanceSettingsStore(BaseSettings):
 
 
 class UserSettingsStore(BaseSettings):
-    user_email: str
-    user_secret: str
-    user_id: str
+    email: str
+    password: str
+    id: str
 
     class Config:
         env_file = ".env"

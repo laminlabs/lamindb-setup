@@ -50,8 +50,8 @@ class Storage:
 # A mere tool for quick access to the docstrings above
 # I thought I had it work to read from the docstrings above, but doesn't seem so
 class description:
-    user_email = """User email."""
-    user_secret = """User login secret. Auto-generated."""
+    email = """User email."""
+    password = """User login password. Auto-generated."""
     user_id = """User ID. Auto-generated."""
     storage_dir = """Storage root. Either local dir, ``s3://bucket_name`` or ``gs://bucket_name``."""  # noqa
     _dbconfig = """Either "sqlite" or "instance_name, postgres_url"."""

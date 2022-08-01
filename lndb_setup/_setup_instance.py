@@ -54,7 +54,7 @@ def setup_instance_db():
         instance_settings._update_cloud_sqlite_file()
         logger.info(f"Created instance {instance_name}: {sqlite_file}")
 
-    insert_if_not_exists.user(user_settings.user_email, user_settings.user_id)
+    insert_if_not_exists.user(user_settings.email, user_settings.id)
 
 
 def load_instance(instance_name: str):
@@ -87,19 +87,17 @@ def init_instance(
         dbconfig: {}
         schema: {}
     """
-    # settings.user_email & settings.user_secret are set
+    # settings.email & settings.password are set
     instance_settings = load_or_create_instance_settings()
     user_settings = load_or_create_user_settings()
-    if user_settings.user_id is None:
+    if user_settings.id is None:
         if (
-            user_settings.user_email is not None
-            and user_settings.user_secret is not None  # noqa
+            user_settings.email is not None
+            and user_settings.password is not None  # noqa
         ):
             # complete user setup, this *only* happens after *sign_up_first_time*
             logger.info("Completing user sign up. Only happens once!")
-            log_in_user(
-                email=user_settings.user_email, secret=user_settings.user_secret
-            )
+            log_in_user(email=user_settings.email, password=user_settings.password)
             user_settings = (
                 load_or_create_user_settings()
             )  # need to reload, here, to get user_id
