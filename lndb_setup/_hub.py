@@ -43,8 +43,8 @@ def sign_up_hub(email, handle=None) -> Union[str, None]:
                 " lamin.ai."
             )
         logger.info(
-            "Please *confirm* the sign-up email. After that, proceed to `lndb"
-            " init`!\n\n"
+            "Please *confirm* the sign-up email. After that, login with `lndb login"
+            " <handle>`!\n\n"
             f"Generated login password: {password}.\n"
             f"Email & password persist in: {current_user_settings_file}.\n"  # noqa
             "Going forward, credentials are auto-loaded. "  # noqa
