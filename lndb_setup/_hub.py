@@ -19,7 +19,7 @@ def connect_hub():
 
 def sign_up_hub(email) -> Union[str, None]:
     hub = connect_hub()
-    password = id.id_password()  # generate new password
+    password = id.id_secret()  # generate new password
     user = hub.auth.sign_up(email=email, password=password)
     # if user already exists a fake user object without identity is returned
     if user.identities:
