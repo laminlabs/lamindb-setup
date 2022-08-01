@@ -20,10 +20,10 @@ def save_instance_settings(settings: InstanceSettings):
 
 
 def save_user_settings(settings: UserSettings):
-    assert settings.user_email is not None
+    assert settings.email is not None
     type_hints = get_type_hints(UserSettingsStore)
     save_settings(settings, current_user_settings_file, type_hints)
-    save_settings(settings, settings_dir / f"{settings.user_email}.env", type_hints)
+    save_settings(settings, settings_dir / f"{settings.email}.env", type_hints)
 
 
 def save_settings(

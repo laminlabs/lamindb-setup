@@ -6,7 +6,7 @@ from typing import Union
 class UserSettings:
     """User Settings written during setup."""
 
-    user_email: str = None  # type: ignore
+    email: str = None  # type: ignore
     """User email."""
     user_secret: Union[str, None] = None
     """User login secret. Auto-generated."""

@@ -66,7 +66,7 @@ def setup_instance_from_store(store: InstanceSettingsStore) -> InstanceSettings:
 
 def setup_user_from_store(store: UserSettingsStore) -> UserSettings:
     settings = UserSettings()
-    settings.user_email = store.user_email
+    settings.email = store.email
     settings.user_secret = store.user_secret if store.user_secret != "null" else None
     settings.user_id = store.user_id if store.user_id != "null" else None
     return settings

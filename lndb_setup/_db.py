@@ -8,13 +8,13 @@ class insert_if_not_exists:
     """Insert data if it does not yet exist."""
 
     @classmethod
-    def user(cls, user_email, user_id):
+    def user(cls, email, user_id):
         settings = load_or_create_instance_settings()
         engine = settings.db_engine()
         with sqm.Session(engine) as session:
             user = session.get(schema_core.user, user_id)
         if user is None:
-            user_id = insert.user(user_email, user_id)  # type: ignore
+            user_id = insert.user(email, user_id)  # type: ignore
         return user_id
 
 
@@ -35,13 +35,13 @@ class insert:
         settings._update_cloud_sqlite_file()
 
     @classmethod
-    def user(cls, user_email, user_id):
+    def user(cls, email, user_id):
         """User."""
         settings = load_or_create_instance_settings()
         engine = settings.db_engine()
 
         with sqm.Session(engine) as session:
-            user = schema_core.user(id=user_id, email=user_email)
+            user = schema_core.user(id=user_id, email=email)
             session.add(user)
             session.commit()
             session.refresh(user)

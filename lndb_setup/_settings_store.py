@@ -20,7 +20,7 @@ class InstanceSettingsStore(BaseSettings):
 
 
 class UserSettingsStore(BaseSettings):
-    user_email: str
+    email: str
     user_secret: str
     user_id: str
 

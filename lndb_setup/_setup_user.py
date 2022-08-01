@@ -11,7 +11,7 @@ from ._settings_store import settings_dir
 def sign_up_user(email):
     """Sign up user."""
     user_settings = load_or_create_user_settings()
-    user_settings.user_email = email
+    user_settings.email = email
     save_user_settings(user_settings)
     secret = sign_up_hub(email)
     if secret is None:  # user already exists
@@ -22,14 +22,14 @@ def sign_up_user(email):
     return None  # user needs to confirm email now
 
 
-def load_user(user_email: str):
-    settings_file = settings_dir / f"{user_email}.env"
+def load_user(email: str):
+    settings_file = settings_dir / f"{email}.env"
     if settings_file.exists():
         user_settings = load_user_settings(settings_file)
-        assert user_settings.user_email is not None
+        assert user_settings.email is not None
     else:
         user_settings = load_or_create_user_settings()
-        user_settings.user_email = user_email
+        user_settings.email = email
     save_user_settings(user_settings)
 
     from ._settings import settings
@@ -51,7 +51,7 @@ def log_in_user(
     if secret:
         user_settings.user_secret = secret
 
-    if user_settings.user_email is None:
+    if user_settings.email is None:
         raise RuntimeError(
             "No stored user email, please call: lndb login --email <your-email>"
         )
@@ -62,7 +62,7 @@ def log_in_user(
             " --email <your-secret>"
         )
 
-    user_id = sign_in_hub(user_settings.user_email, user_settings.user_secret)
+    user_id = sign_in_hub(user_settings.email, user_settings.user_secret)
     user_settings.user_id = user_id
     save_user_settings(user_settings)
 

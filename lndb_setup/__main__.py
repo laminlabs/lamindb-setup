@@ -18,11 +18,11 @@ subparsers = parser.add_subparsers(dest="command")
 # user settings
 signup = subparsers.add_parser("signup", help=signup_help)
 aa = signup.add_argument
-aa("--email", type=str, metavar="s", default=None, help=description.user_email)
+aa("--email", type=str, metavar="s", default=None, help=description.email)
 aa("--secret", type=str, metavar="s", default=None, help=description.user_secret)
 login = subparsers.add_parser("login", help=login_help)
 aa = login.add_argument
-aa("--email", type=str, metavar="s", default=None, help=description.user_email)
+aa("--email", type=str, metavar="s", default=None, help=description.email)
 aa("--secret", type=str, metavar="s", default=None, help=description.user_secret)
 # instance settings
 init = subparsers.add_parser("init", help=init_help)

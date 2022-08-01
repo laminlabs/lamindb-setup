@@ -17,10 +17,10 @@ def connect_hub():
     return create_client(connector.url, connector.key)
 
 
-def sign_up_hub(user_email) -> Union[str, None]:
+def sign_up_hub(email) -> Union[str, None]:
     hub = connect_hub()
     secret = id.id_secret()  # generate new secret
-    user = hub.auth.sign_up(email=user_email, password=secret)
+    user = hub.auth.sign_up(email=email, password=secret)
     # if user already exists a fake user object without identity is returned
     if user.identities:
         # if user had called sign-up before, but not confirmed their email
@@ -49,9 +49,9 @@ def sign_up_hub(user_email) -> Union[str, None]:
         return None
 
 
-def sign_in_hub(user_email, secret):
+def sign_in_hub(email, secret):
     hub = connect_hub()
-    session = hub.auth.sign_in(email=user_email, password=secret)
+    session = hub.auth.sign_in(email=email, password=secret)
     data = hub.table("usermeta").select("*").eq("id", session.user.id.hex).execute()
     if len(data.data) > 0:  # user is completely registered
         user_id = data.data[0]["lnid"]
@@ -73,7 +73,7 @@ def create_instance(instance_name):
     hub = connect_hub()
     user_settings = load_or_create_user_settings()
     session = hub.auth.sign_in(
-        email=user_settings.user_email, password=user_settings.user_secret
+        email=user_settings.email, password=user_settings.user_secret
     )
     hub.postgrest.auth(session.access_token)
     # data = hub.table("user_instance").select("instance_id").eq("user_id", session.user.id.hex).execute()  # noqa
