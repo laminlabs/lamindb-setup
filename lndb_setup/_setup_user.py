@@ -111,6 +111,8 @@ def login(
                 # log in the user
                 # hence, simply end log in here
                 return None
+            # there is a remaining case where there could be a file that
+            # has no tables in it, we're ignoring this for now
         insert_if_not_exists.user(
             settings.user.email, settings.user.id, settings.user.handle
         )
