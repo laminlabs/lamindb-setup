@@ -3,7 +3,7 @@
 <!-- prettier-ignore -->
 Name | PR | Developer | Date | Version
 --- | --- | --- | --- | ---
-🚸 Safe login in case of partially deleted instance | [14](https://github.com/laminlabs/lndb-setup/pull/14) | [falexwolf](https://github.com/falexwolf) | 2022-08-02 |
+🚸 Safe login in case of partially deleted instance | [14](https://github.com/laminlabs/lndb-setup/pull/14) | [falexwolf](https://github.com/falexwolf) | 2022-08-02 | 0.4.3
 :bug: Log in user into instance db | [13](https://github.com/laminlabs/lndb-setup/pull/13) | [falexwolf](https://github.com/falexwolf) | 2022-08-02 | 0.4.2
 🚸 Remove handle from signup | [12](https://github.com/laminlabs/lndb-setup/pull/12) | [falexwolf](https://github.com/falexwolf) | 2022-08-02 |
 ✅ Test edge case | [11](https://github.com/laminlabs/lndb-setup/pull/11) | [falexwolf](https://github.com/falexwolf) | 2022-08-01 | 0.4.1
