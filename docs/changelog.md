@@ -3,7 +3,7 @@
 <!-- prettier-ignore -->
 Name | PR | Developer | Date | Version
 --- | --- | --- | --- | ---
-:bug: Log in user into instance db | [13](https://github.com/laminlabs/lndb-setup/pull/13) | [falexwolf](https://github.com/falexwolf) | 2022-08-02 |
+:bug: Log in user into instance db | [13](https://github.com/laminlabs/lndb-setup/pull/13) | [falexwolf](https://github.com/falexwolf) | 2022-08-02 | 0.4.2
 🚸 Remove handle from signup | [12](https://github.com/laminlabs/lndb-setup/pull/12) | [falexwolf](https://github.com/falexwolf) | 2022-08-02 |
 ✅ Test edge case | [11](https://github.com/laminlabs/lndb-setup/pull/11) | [falexwolf](https://github.com/falexwolf) | 2022-08-01 | 0.4.1
 📝 Renamed top-level API functions to match CLI names | [10](https://github.com/laminlabs/lndb-setup/pull/10) | [falexwolf](https://github.com/falexwolf) | 2022-08-01 | 0.4.0
