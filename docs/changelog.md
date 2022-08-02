@@ -3,6 +3,7 @@
 <!-- prettier-ignore -->
 Name | PR | Developer | Date | Version
 --- | --- | --- | --- | ---
+🚸 Remove handle from signup | [12](https://github.com/laminlabs/lndb-setup/pull/12) | [falexwolf](https://github.com/falexwolf) | 2022-08-02 |
 ✅ Test edge case | [11](https://github.com/laminlabs/lndb-setup/pull/11) | [falexwolf](https://github.com/falexwolf) | 2022-08-01 | 0.4.1
 📝 Renamed top-level API functions to match CLI names | [10](https://github.com/laminlabs/lndb-setup/pull/10) | [falexwolf](https://github.com/falexwolf) | 2022-08-01 | 0.4.0
 ✨ Require registering a `user_handle` and rename `instance_name` to `name` | [9](https://github.com/laminlabs/lndb-setup/pull/9) | [falexwolf](https://github.com/falexwolf) | 2022-08-01 |
