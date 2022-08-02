@@ -8,13 +8,12 @@ from ._settings_save import save_user_settings
 from ._settings_store import settings_dir
 
 
-def signup(email: str, handle: str):
+def signup(email: str):
     """Sign up user."""
     user_settings = load_or_create_user_settings()
     user_settings.email = email
-    user_settings.handle = handle
     save_user_settings(user_settings)
-    password = sign_up_hub(email, handle)
+    password = sign_up_hub(email)
     if password == "handle-exists":  # handle already exists
         logger.error("The handle already exists. Please choose a different one.")
         return "handle-exists"
@@ -81,6 +80,8 @@ def login(
         user_settings.email, user_settings.password, user_settings.handle
     )
     if response == "could-not-login":
+        return response
+    elif response == "complete-signup":
         return response
     else:
         user_id, user_handle = response
