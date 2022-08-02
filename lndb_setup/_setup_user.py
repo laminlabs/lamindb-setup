@@ -98,6 +98,19 @@ def login(
 
     # log in user into instance db
     if settings.instance.name is not None:
+        # the above if condition is not safe enough
+        # users might delete a database but still keeping the
+        # current_instance.env settings file around
+        # hence, the if condition will pass despite the database
+        # having actually been deleted
+        # so, let's do another check
+        if settings.instance._dbconfig == "sqlite":
+            # let's check whether the sqlite file is actually available
+            if not settings.instance._sqlite_file.exists():
+                # if the file doesn't exist, there is no need to
+                # log in the user
+                # hence, simply end log in here
+                return None
         insert_if_not_exists.user(
             settings.user.email, settings.user.id, settings.user.handle
         )
