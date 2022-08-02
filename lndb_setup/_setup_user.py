@@ -2,6 +2,7 @@ from typing import Union
 
 from lamin_logger import logger
 
+from ._db import insert_if_not_exists
 from ._hub import sign_in_hub, sign_up_hub
 from ._settings_load import load_or_create_user_settings, load_user_settings
 from ._settings_save import save_user_settings
@@ -94,3 +95,9 @@ def login(
     from ._settings import settings
 
     settings._user_settings = None
+
+    # log in user into instance db
+    if settings.instance.name is not None:
+        insert_if_not_exists.user(
+            settings.user.email, settings.user.id, settings.user.handle
+        )

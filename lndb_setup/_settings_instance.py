@@ -108,8 +108,10 @@ class InstanceSettings:
             sqlite_file.upload_from(cache_file)
 
     @property
-    def name(self) -> str:
+    def name(self) -> Union[str, None]:
         """Name of LaminDB instance, which corresponds to exactly one database."""
+        if self.storage_dir is None:  # not yet initialized
+            return None
         if self._dbconfig == "sqlite":
             return instance_from_storage(self.storage_dir)
         else:
