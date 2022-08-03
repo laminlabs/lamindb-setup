@@ -1,11 +1,12 @@
 from pathlib import Path
 from typing import Union
 
+import sqlmodel as sqm
 from cloudpathlib import CloudPath
 from lamin_logger import logger
 from sqlmodel import SQLModel
 
-from ._db import insert_if_not_exists
+from ._db import insert, insert_if_not_exists
 from ._docs import doc_args
 from ._settings_instance import InstanceSettings
 from ._settings_instance import instance_description as description
@@ -37,6 +38,29 @@ def setup_instance_db():
 
     if sqlite_file.exists():
         logger.info(f"Using instance: {sqlite_file}")
+        import lndb_schema_core  # noqa
+
+        with sqm.Session(instance_settings.db_engine()) as session:
+            version_table = session.exec(
+                sqm.select(lndb_schema_core.version_yvzi)
+            ).all()
+
+        versions = [row.v for row in version_table]
+
+        current_version = lndb_schema_core.__version__
+
+        if current_version not in versions:
+            result = input(
+                "[Run this dialogue on the command line *outside* Jupyter]\nDid you"
+                f" already migrate your db to schema version {current_version}? (y/n)"
+            )
+            if result == "y":
+                insert.version_yvzi(current_version, user_settings.id)
+            else:
+                logger.warning(
+                    "\nEither migrate your instance db schema to version"
+                    f" {current_version}.\nOr install the latest schema {versions}."
+                )
     else:
         msg = "Loading schema modules: core"
         import lndb_schema_core  # noqa
@@ -52,6 +76,7 @@ def setup_instance_db():
         logger.info(f"{msg}.")
         SQLModel.metadata.create_all(instance_settings.db_engine())
         instance_settings._update_cloud_sqlite_file()
+        insert.version_yvzi(lndb_schema_core.__version__, user_settings.id)
         logger.info(f"Created instance {instance_name}: {sqlite_file}")
 
     insert_if_not_exists.user(
