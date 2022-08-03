@@ -22,16 +22,15 @@ class insert:
     """Insert data."""
 
     @classmethod
-    def schema_version(cls, version, user_id):
+    def version_yvzi(cls, version, user_id):
         """User."""
         settings = load_or_create_instance_settings()
         engine = settings.db_engine()
 
         with sqm.Session(engine) as session:
-            user = schema_core.schema_version(id=version, user_id=user_id)
-            session.add(user)
+            row = schema_core.version_yvzi(v=version, user_id=user_id)
+            session.add(row)
             session.commit()
-
         settings._update_cloud_sqlite_file()
 
     @classmethod
