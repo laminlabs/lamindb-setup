@@ -3,7 +3,7 @@
 <!-- prettier-ignore -->
 Name | PR | Developer | Date | Version
 --- | --- | --- | --- | ---
-✨ Add schema version check back in | [16](https://github.com/laminlabs/lndb-setup/pull/16) | [falexwolf](https://github.com/falexwolf) | 2022-08-03 |
+✨ Add schema version check back in | [16](https://github.com/laminlabs/lndb-setup/pull/16) | [falexwolf](https://github.com/falexwolf) | 2022-08-03 | 0.5.0
 🚸 Safe login in case of partially deleted instance | [14](https://github.com/laminlabs/lndb-setup/pull/14) | [falexwolf](https://github.com/falexwolf) | 2022-08-02 | 0.4.3
 :bug: Log in user into instance db | [13](https://github.com/laminlabs/lndb-setup/pull/13) | [falexwolf](https://github.com/falexwolf) | 2022-08-02 | 0.4.2
 🚸 Remove handle from signup | [12](https://github.com/laminlabs/lndb-setup/pull/12) | [falexwolf](https://github.com/falexwolf) | 2022-08-02 |
