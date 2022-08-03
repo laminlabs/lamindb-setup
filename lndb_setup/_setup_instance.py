@@ -51,16 +51,16 @@ def setup_instance_db():
 
         if current_version not in versions:
             logger.info(
-                "[Run this dialogue on the command line *outside* Jupyter]\nDid you"
-                f" already migrate your db to schema version {current_version}? (y/n)"
+                "Did you already migrate your db to core schema v{current_version}?"
+                " (y/n)"
             )
             logger.info(
-                "If yes, run `lndb_setup._db.insert.version_yvzi(current_version,"
+                f"If yes, run `lndb_setup._db.insert.version_yvzi({current_version},"
                 " user_settings.id)`"
             )
             logger.warning(
                 "If no, either migrate your instance db schema to version"
-                f" {current_version}.\nOr install the latest schema {versions}."
+                f" {current_version}.\nOr install the latest version {versions}."
             )
     else:
         msg = "Loading schema modules: core"
