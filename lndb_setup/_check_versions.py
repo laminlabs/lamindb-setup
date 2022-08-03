@@ -4,5 +4,5 @@ from packaging import version
 
 if version.parse(lamindb_schema_v) < version.parse("0.3.0"):
     raise RuntimeError("lamindb needs lamindb_schema_v >= 0.3.0")
-if version.parse(lndb_schema_core_v) < version.parse("0.2.1"):
-    raise RuntimeError("lamindb needs lndb_schema_core_v >= 0.2.1")
+if version.parse(lndb_schema_core_v) < version.parse("0.3.0"):
+    raise RuntimeError("lamindb needs lndb_schema_core_v >= 0.3.0")
