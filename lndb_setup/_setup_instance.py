@@ -77,7 +77,10 @@ def setup_instance_db():
         SQLModel.metadata.create_all(instance_settings.db_engine())
         instance_settings._update_cloud_sqlite_file()
         insert.version_yvzi(lndb_schema_core.__version__, user_settings.id)
-        logger.info(f"Created instance {instance_name}: {sqlite_file}")
+        logger.info(
+            f"Created instance {instance_name} with core schema"
+            f" v{lndb_schema_core.__version__}: {sqlite_file}"
+        )
 
     insert_if_not_exists.user(
         user_settings.email, user_settings.id, user_settings.handle
