@@ -87,7 +87,7 @@ def login(
     else:
         user_id, user_handle = response
     if handle is None:
-        logger.info(f"Your user handle is '{user_handle}'.")
+        logger.info(f"Your handle is {user_handle} and your id is {user_id}.")
     user_settings.id = user_id
     user_settings.handle = user_handle
     save_user_settings(user_settings)

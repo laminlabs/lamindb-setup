@@ -56,7 +56,7 @@ def setup_instance_db():
             )
             logger.info(
                 f"If yes, run `lndb_setup._db.insert.version_yvzi({current_version},"
-                " user_settings.id)`"
+                " db.settings.user.id)`"
             )
             logger.warning(
                 "If no, either migrate your instance db schema to version"
