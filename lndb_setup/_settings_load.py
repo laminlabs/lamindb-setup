@@ -64,7 +64,7 @@ def setup_storage_dir(storage: Union[str, Path, CloudPath]) -> Union[Path, Cloud
     elif str(storage) == "null":
         return None
     else:
-        storage_dir = Path(storage)
+        storage_dir = Path(storage).absolute()
         storage_dir.mkdir(parents=True, exist_ok=True)
     return storage_dir
 
