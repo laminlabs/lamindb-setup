@@ -74,6 +74,10 @@ def setup_instance_db():
             import lndb_schema_wetlab  # noqa
 
             msg += ", wetlab"
+        if schema_modules is not None and "bfx" in schema_modules:
+            import lndb_bfx_pipeline.schema  # noqa
+
+            msg += ", bfx"
         logger.info(f"{msg}.")
         SQLModel.metadata.create_all(instance_settings.db_engine())
         instance_settings._update_cloud_sqlite_file()
@@ -138,7 +142,7 @@ def init(
 
     # setup schema
     if schema is not None:
-        known_modules = ["bionty", "wetlab"]
+        known_modules = ["bionty", "wetlab", "bfx"]
         validated_schema = []
         for module in known_modules:
             if module in schema:
