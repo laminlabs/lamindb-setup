@@ -51,7 +51,7 @@ def setup_instance_db():
 
         if current_version not in versions:
             logger.info(
-                "Did you already migrate your db to core schema v{current_version}?"
+                f"Did you already migrate your db to core schema v{current_version}?"
                 " (y/n)"
             )
             logger.info(
