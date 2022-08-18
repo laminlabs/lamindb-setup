@@ -51,8 +51,7 @@ def setup_instance_db():
 
         if current_version not in versions:
             logger.info(
-                "Did you already migrate your db to core schema v{current_version}?"
-                " (y/n)"
+                f"Did you already migrate to core schema module v{current_version}?"
             )
             logger.info(
                 f"If yes, run `lndb_setup._db.insert.version_yvzi({current_version},"
