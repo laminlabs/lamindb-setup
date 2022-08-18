@@ -15,7 +15,8 @@ class insert_if_not_exists:
             user = session.get(schema_core.user, user_id)
         if user is None:
             user_id = insert.user(email, user_id, handle)  # type: ignore
-            settings._update_cloud_sqlite_file()
+            # do not update sqlite on the cloud as this happens within
+            # insert.user
 
         return user_id
 
