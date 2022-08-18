@@ -3,6 +3,7 @@
 <!-- prettier-ignore -->
 Name | PR | Developer | Date | Version
 --- | --- | --- | --- | ---
+🔊 Fix logging error | [20](https://github.com/laminlabs/lndb-setup/pull/20) | [falexwolf](https://github.com/falexwolf) | 2022-08-18 |
 ✨ Integrate instance setup with lndb-bfx-pipeline | [19](https://github.com/laminlabs/lndb-setup/pull/19) | [bpenteado](https://github.com/bpenteado) | 2022-08-18 |
 Correct login error message | [18](https://github.com/laminlabs/lndb-setup/pull/18) | [fredericenard](https://github.com/fredericenard) | 2022-08-17 |
 🧱 Settings with absolute path | [17](https://github.com/laminlabs/lndb-setup/pull/17) | [fredericenard](https://github.com/fredericenard) | 2022-08-10 | 0.5.1
