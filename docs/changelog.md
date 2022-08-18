@@ -3,6 +3,7 @@
 <!-- prettier-ignore -->
 Name | PR | Developer | Date | Version
 --- | --- | --- | --- | ---
+🔧 Switch to dedicated lndb-setup test bucket | [21](https://github.com/laminlabs/lndb-setup/pull/21) | [falexwolf](https://github.com/falexwolf) | 2022-08-18 |
 🔊 Fix logging error | [20](https://github.com/laminlabs/lndb-setup/pull/20) | [falexwolf](https://github.com/falexwolf) | 2022-08-18 |
 ✨ Integrate instance setup with lndb-bfx-pipeline | [19](https://github.com/laminlabs/lndb-setup/pull/19) | [bpenteado](https://github.com/bpenteado) | 2022-08-18 |
 Correct login error message | [18](https://github.com/laminlabs/lndb-setup/pull/18) | [fredericenard](https://github.com/fredericenard) | 2022-08-17 |
