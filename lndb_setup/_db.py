@@ -5,7 +5,10 @@ from ._settings_load import load_or_create_instance_settings
 
 
 class insert_if_not_exists:
-    """Insert data if it does not yet exist."""
+    """Insert data if it does not yet exist.
+
+    A wrapper around the `insert` class below.
+    """
 
     @classmethod
     def user(cls, email, user_id, handle):
@@ -15,7 +18,8 @@ class insert_if_not_exists:
             user = session.get(schema_core.user, user_id)
         if user is None:
             user_id = insert.user(email, user_id, handle)  # type: ignore
-            settings._update_cloud_sqlite_file()
+            # do not update sqlite on the cloud as this happens within
+            # insert.user
 
         return user_id
 
@@ -33,6 +37,7 @@ class insert:
             row = schema_core.version_yvzi(v=version, user_id=user_id)
             session.add(row)
             session.commit()
+
         settings._update_cloud_sqlite_file()
 
     @classmethod
