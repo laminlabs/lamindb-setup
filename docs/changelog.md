@@ -3,6 +3,7 @@
 <!-- prettier-ignore -->
 Name | PR | Developer | Date | Version
 --- | --- | --- | --- | ---
+🚚 Rename schema modules | [22](https://github.com/laminlabs/lndb-setup/pull/22) | [falexwolf](https://github.com/falexwolf) | 2022-08-19 |
 🔧 Switch to dedicated lndb-setup test bucket | [21](https://github.com/laminlabs/lndb-setup/pull/21) | [falexwolf](https://github.com/falexwolf) | 2022-08-18 | 0.5.2
 🔊 Fix logging error | [20](https://github.com/laminlabs/lndb-setup/pull/20) | [falexwolf](https://github.com/falexwolf) | 2022-08-18 |
 ✨ Integrate instance setup with lndb-bfx-pipeline | [19](https://github.com/laminlabs/lndb-setup/pull/19) | [bpenteado](https://github.com/bpenteado) | 2022-08-18 |
