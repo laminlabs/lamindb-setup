@@ -88,6 +88,10 @@ def setup_instance_db():
         user_settings.email, user_settings.id, user_settings.handle
     )
 
+    insert_if_not_exists.storage(
+        instance_settings.storage_dir, instance_settings.storage_region
+    )
+
 
 def load(instance_name: str):
     """Load existing instance."""
