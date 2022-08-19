@@ -112,7 +112,7 @@ def load(instance_name: str):
 def init(
     *,
     storage: Union[str, Path, CloudPath],
-    storage_region: Optional[str],
+    storage_region: Optional[str] = None,
     dbconfig: str = "sqlite",
     schema: Union[str, None] = None,
 ) -> Union[None, str]:
