@@ -9,8 +9,8 @@ readme = "README.md"
 dynamic = ["version", "description"]
 dependencies = [
     "lamindb_schema>=0.3.1",
-    "lndb_schema_core>=0.3.0",
-    "lndb_schema_wetlab>=0.1.1",
+    "lnschema_core>=0.3.0",
+    "lnschema_wetlab>=0.1.1",
     "lamin_logger",
     "boto3",
     "cloudpathlib",
