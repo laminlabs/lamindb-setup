@@ -31,9 +31,9 @@ class insert_if_not_exists:
         with sqm.Session(engine) as session:
             storage = session.get(schema_core.storage, root)
         if storage is None:
-            storage_root = insert.storage(root, region)  # type: ignore
+            root = insert.storage(root, region)  # type: ignore
 
-        return storage_root
+        return root
 
 
 class insert:
