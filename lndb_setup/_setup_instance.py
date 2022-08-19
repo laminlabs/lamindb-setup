@@ -38,16 +38,14 @@ def setup_instance_db():
 
     if sqlite_file.exists():
         logger.info(f"Using instance: {sqlite_file}")
-        import lndb_schema_core  # noqa
+        import lnschema_core  # noqa
 
         with sqm.Session(instance_settings.db_engine()) as session:
-            version_table = session.exec(
-                sqm.select(lndb_schema_core.version_yvzi)
-            ).all()
+            version_table = session.exec(sqm.select(lnschema_core.version_yvzi)).all()
 
         versions = [row.v for row in version_table]
 
-        current_version = lndb_schema_core.__version__
+        current_version = lnschema_core.__version__
 
         if current_version not in versions:
             logger.info(
@@ -63,27 +61,27 @@ def setup_instance_db():
             )
     else:
         msg = "Loading schema modules: core"
-        import lndb_schema_core  # noqa
+        import lnschema_core  # noqa
 
         if schema_modules is not None and "bionty" in schema_modules:
-            import lndb_schema_bionty  # noqa
+            import lnschema_bionty  # noqa
 
             msg += ", bionty"
         if schema_modules is not None and "wetlab" in schema_modules:
-            import lndb_schema_wetlab  # noqa
+            import lnschema_wetlab  # noqa
 
             msg += ", wetlab"
         if schema_modules is not None and "bfx" in schema_modules:
-            import lndb_bfx_pipeline.schema  # noqa
+            import lnbfx.schema  # noqa
 
             msg += ", bfx"
         logger.info(f"{msg}.")
         SQLModel.metadata.create_all(instance_settings.db_engine())
         instance_settings._update_cloud_sqlite_file()
-        insert.version_yvzi(lndb_schema_core.__version__, user_settings.id)
+        insert.version_yvzi(lnschema_core.__version__, user_settings.id)
         logger.info(
             f"Created instance {instance_name} with core schema"
-            f" v{lndb_schema_core.__version__}: {sqlite_file}"
+            f" v{lnschema_core.__version__}: {sqlite_file}"
         )
 
     insert_if_not_exists.user(

@@ -1,4 +1,4 @@
-import lndb_schema_core as schema_core
+import lnschema_core as schema_core
 import sqlmodel as sqm
 
 from ._settings_load import load_or_create_instance_settings
