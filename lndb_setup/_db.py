@@ -23,6 +23,18 @@ class insert_if_not_exists:
 
         return user_id
 
+    @classmethod
+    def storage(cls, root, region):
+        root = str(root)
+        settings = load_or_create_instance_settings()
+        engine = settings.db_engine()
+        with sqm.Session(engine) as session:
+            storage = session.get(schema_core.storage, root)
+        if storage is None:
+            root = insert.storage(root, region)  # type: ignore
+
+        return root
+
 
 class insert:
     """Insert data."""
@@ -55,3 +67,24 @@ class insert:
         settings._update_cloud_sqlite_file()
 
         return user.id
+
+    @classmethod
+    def storage(cls, root, region):
+        """Storage."""
+        settings = load_or_create_instance_settings()
+        engine = settings.db_engine()
+
+        if "s3" in root:
+            storage_type = "s3"
+        else:
+            storage_type = None
+
+        with sqm.Session(engine) as session:
+            storage = schema_core.storage(root=root, region=region, type=storage_type)
+            session.add(storage)
+            session.commit()
+            session.refresh(storage)
+
+        settings._update_cloud_sqlite_file()
+
+        return storage.root

@@ -33,6 +33,7 @@ aa("--password", type=str, metavar="s", default=None, help=user.password)
 init = subparsers.add_parser("init", help=init_help)
 aa = init.add_argument
 aa("--storage", type=str, metavar="s", help=instance.storage_dir)
+aa("--region", type=str, metavar="s", help=instance.storage_region)
 aa("--db", type=str, metavar="s", default="sqlite", help=instance._dbconfig)
 aa("--schema", type=str, metavar="s", default=None, help=instance.schema_modules)
 load = subparsers.add_parser("load", help=load_help)
@@ -52,6 +53,7 @@ def main():
     elif args.command == "init":
         return _setup_instance.init(
             storage=args.storage,
+            storage_region=args.region,
             dbconfig=args.db,
             schema=args.schema,
         )

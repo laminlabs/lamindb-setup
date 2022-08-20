@@ -1,5 +1,5 @@
 from pathlib import Path
-from typing import Union
+from typing import Optional, Union
 
 import sqlmodel as sqm
 from cloudpathlib import CloudPath
@@ -88,6 +88,10 @@ def setup_instance_db():
         user_settings.email, user_settings.id, user_settings.handle
     )
 
+    insert_if_not_exists.storage(
+        instance_settings.storage_dir, instance_settings.storage_region
+    )
+
 
 def load(instance_name: str):
     """Load existing instance."""
@@ -105,12 +109,14 @@ def load(instance_name: str):
 
 @doc_args(
     description.storage_dir,
+    description.storage_dir,
     description._dbconfig,
     description.schema_modules,
 )
 def init(
     *,
     storage: Union[str, Path, CloudPath],
+    storage_region: Optional[str] = None,
     dbconfig: str = "sqlite",
     schema: Union[str, None] = None,
 ) -> Union[None, str]:
@@ -118,6 +124,7 @@ def init(
 
     Args:
         storage: {}
+        storage_region: {}
         dbconfig: {}
         schema: {}
     """
@@ -131,6 +138,7 @@ def init(
 
     # setup storage
     instance_settings.storage_dir = setup_storage_dir(storage)
+    instance_settings.storage_region = storage_region
 
     # setup _config
     instance_settings._dbconfig = dbconfig
