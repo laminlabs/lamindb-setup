@@ -3,6 +3,7 @@
 <!-- prettier-ignore -->
 Name | PR | Developer | Date | Version
 --- | --- | --- | --- | ---
+Use id to reference storage | [24](https://github.com/laminlabs/lndb-setup/pull/24) | [fredericenard](https://github.com/fredericenard) | 2022-08-23 |
 Track cloud workspace location | [23](https://github.com/laminlabs/lndb-setup/pull/23) | [fredericenard](https://github.com/fredericenard) | 2022-08-20 | 0.5.4
 🚚 Rename schema modules | [22](https://github.com/laminlabs/lndb-setup/pull/22) | [falexwolf](https://github.com/falexwolf) | 2022-08-19 | 0.5.3
 🔧 Switch to dedicated lndb-setup test bucket | [21](https://github.com/laminlabs/lndb-setup/pull/21) | [falexwolf](https://github.com/falexwolf) | 2022-08-18 | 0.5.2
