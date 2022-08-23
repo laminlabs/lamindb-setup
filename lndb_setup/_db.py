@@ -29,8 +29,10 @@ class insert_if_not_exists:
         settings = load_or_create_instance_settings()
         engine = settings.db_engine()
         with sqm.Session(engine) as session:
-            storage = session.get(schema_core.storage, root)
-        if storage is None:
+            storage = session.exec(
+                sqm.select(schema_core.storage).where(schema_core.storage.root == root)
+            ).first()
+        if not storage:
             root = insert.storage(root, region)  # type: ignore
 
         return root
