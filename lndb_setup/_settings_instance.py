@@ -91,7 +91,7 @@ class InstanceSettings:
 
     @property
     def _sqlite_file(self) -> Union[Path, CloudPath]:
-        """Database SQLite filepath.
+        """SQLite file.
 
         Is a CloudPath if on S3, otherwise a Path.
         """
@@ -99,16 +99,16 @@ class InstanceSettings:
         return self.storage.key_to_filepath(f"{filename}.lndb")
 
     @property
-    def _sqlite_file_local(self):
-        """If on cloud storage, update remote file."""
+    def _sqlite_file_local(self) -> Path:
+        """Cached local sqlite file."""
         return self.storage.cloud_to_local_no_update(self._sqlite_file)
 
-    def _update_cloud_sqlite_file(self):
+    def _update_cloud_sqlite_file(self) -> None:
         """If on cloud storage, update remote file."""
         if self.cloud_storage:
             sqlite_file = self._sqlite_file
             cache_file = self.storage.cloud_to_local_no_update(sqlite_file)
-            sqlite_file.upload_from(cache_file)
+            sqlite_file.upload_from(cache_file)  # type: ignore
 
     @property
     def name(self) -> Union[str, None]:
