@@ -27,20 +27,18 @@ def setup_instance_db():
     - Database creation.
     - Sign-up and/or log-in.
     """
-    instance_settings = load_or_create_instance_settings()
+    isettings = load_or_create_instance_settings()
     user_settings = load_or_create_user_settings()
-    if instance_settings.storage_dir is None:
+    if isettings.storage_dir is None:
         logger.warning("Instance is not configured. Call `lndb init` or `lndb load`.")
         return None
-    instance_name = instance_settings.name
-    sqlite_file = instance_settings._sqlite_file
-    schema_modules = instance_settings.schema_modules
+    schema_modules = isettings.schema_modules
 
-    if sqlite_file.exists():
-        logger.info(f"Using instance: {sqlite_file}")
+    if isettings._sqlite_file.exists():
+        logger.info(f"Using instance: {isettings._sqlite_file}")
         import lnschema_core  # noqa
 
-        with sqm.Session(instance_settings.db_engine()) as session:
+        with sqm.Session(isettings.db_engine()) as session:
             version_table = session.exec(sqm.select(lnschema_core.version_yvzi)).all()
 
         versions = [row.v for row in version_table]
@@ -48,18 +46,22 @@ def setup_instance_db():
         current_version = lnschema_core.__version__
 
         if current_version not in versions:
-            logger.info(
-                f"Did you already migrate to core schema module v{current_version}?"
+            logger.error(
+                f"Your database does not seem up-to-date with installed core schema module v{current_version}.\n"  # noqa
+                f"If you already migrated, run `lndb_setup._db.insert.version_yvzi({current_version}, db.settings.user.id)`\n"  # noqa
+                f"If not, migrate to core schema version {current_version} or install {versions[-1]}."  # noqa
             )
-            logger.info(
-                f"If yes, run `lndb_setup._db.insert.version_yvzi({current_version},"
-                " db.settings.user.id)`"
-            )
-            logger.warning(
-                "If no, either migrate your instance db schema to version"
-                f" {current_version}.\nOr install the latest version {versions}."
-            )
+            return None
     else:
+        if isettings.cloud_storage and isettings._sqlite_file_local.exists():
+            logger.error(
+                "Your cached local SQLite file still exists, while your cloud SQLite"
+                " file was deleted.\nPlease delete"
+                f" {isettings._sqlite_file_local} or add it to the cloud"
+                " location."
+            )
+            return None
+
         msg = "Loading schema modules: core"
         import lnschema_core  # noqa
 
@@ -76,21 +78,19 @@ def setup_instance_db():
 
             msg += ", bfx"
         logger.info(f"{msg}.")
-        SQLModel.metadata.create_all(instance_settings.db_engine())
-        instance_settings._update_cloud_sqlite_file()
+        SQLModel.metadata.create_all(isettings.db_engine())
+        isettings._update_cloud_sqlite_file()
         insert.version_yvzi(lnschema_core.__version__, user_settings.id)
         logger.info(
-            f"Created instance {instance_name} with core schema"
-            f" v{lnschema_core.__version__}: {sqlite_file}"
+            f"Created instance {isettings.name} with core schema"
+            f" v{lnschema_core.__version__}: {isettings._sqlite_file}"
         )
 
     insert_if_not_exists.user(
         user_settings.email, user_settings.id, user_settings.handle
     )
 
-    insert_if_not_exists.storage(
-        instance_settings.storage_dir, instance_settings.storage_region
-    )
+    insert_if_not_exists.storage(isettings.storage_dir, isettings.storage_region)
 
 
 def load(instance_name: str):
