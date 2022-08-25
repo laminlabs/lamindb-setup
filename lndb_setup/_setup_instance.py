@@ -1,6 +1,7 @@
 from pathlib import Path
 from typing import Optional, Union
 
+import lnschema_core
 import sqlmodel as sqm
 from cloudpathlib import CloudPath
 from lamin_logger import logger
@@ -20,6 +21,18 @@ from ._settings_save import save_instance_settings
 from ._settings_store import settings_dir
 
 
+def configure_schema_wetlab(schema_modules):
+    if "retro" in schema_modules:
+        file_loc = lnschema_core.__file__.replace("core", "wetlab")
+        with open(file_loc, "r") as f:
+            content = f.read()
+        with open(file_loc, "w") as f:
+            content = content.replace(
+                '_tables = ["biosample", "techsample"]', "_tables = []"
+            )
+            f.write(content)
+
+
 def setup_instance_db():
     """Setup database.
 
@@ -36,7 +49,6 @@ def setup_instance_db():
 
     if isettings._sqlite_file.exists():
         logger.info(f"Using instance: {isettings._sqlite_file}")
-        import lnschema_core  # noqa
 
         with sqm.Session(isettings.db_engine()) as session:
             version_table = session.exec(sqm.select(lnschema_core.version_yvzi)).all()
@@ -49,7 +61,7 @@ def setup_instance_db():
             logger.error(
                 f"Your database does not seem up-to-date with installed core schema module v{current_version}.\n"  # noqa
                 f"If you already migrated, run `lndb_setup._db.insert.version_yvzi({current_version}, db.settings.user.id)`\n"  # noqa
-                f"If not, migrate to core schema version {current_version} or install {versions[-1]}."  # noqa
+                f"If not, migrate to core schema version {current_version} or install {versions}."  # noqa
             )
             return None
     else:
@@ -63,13 +75,14 @@ def setup_instance_db():
             return None
 
         msg = "Loading schema modules: core"
-        import lnschema_core  # noqa
 
         if schema_modules is not None and "bionty" in schema_modules:
             import lnschema_bionty  # noqa
 
             msg += ", bionty"
         if schema_modules is not None and "wetlab" in schema_modules:
+            configure_schema_wetlab(schema_modules)
+
             import lnschema_wetlab  # noqa
 
             msg += ", wetlab"
@@ -77,6 +90,11 @@ def setup_instance_db():
             import lnbfx.schema  # noqa
 
             msg += ", bfx"
+
+        if schema_modules is not None and "retro" in schema_modules:
+            import lnschema_retro  # noqa
+
+            msg += ", retro"
         logger.info(f"{msg}.")
         SQLModel.metadata.create_all(isettings.db_engine())
         isettings._update_cloud_sqlite_file()
@@ -147,7 +165,7 @@ def init(
 
     # setup schema
     if schema is not None:
-        known_modules = ["bionty", "wetlab", "bfx"]
+        known_modules = ["bionty", "wetlab", "bfx", "retro"]
         validated_schema = []
         for module in known_modules:
             if module in schema:
@@ -155,6 +173,7 @@ def init(
         if len(validated_schema) == 0:
             raise RuntimeError(f"Unknown schema modules. Only know {known_modules}.")
         instance_settings.schema_modules = ", ".join(validated_schema)
+
     save_instance_settings(instance_settings)
 
     setup_instance_db()
