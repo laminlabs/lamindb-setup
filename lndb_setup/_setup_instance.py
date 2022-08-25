@@ -1,9 +1,11 @@
 from pathlib import Path
 from typing import Optional, Union
 
+import lnschema_core
 import sqlmodel as sqm
 from cloudpathlib import CloudPath
 from lamin_logger import logger
+from sqlmodel import SQLModel
 
 from ._db import insert, insert_if_not_exists
 from ._docs import doc_args
@@ -17,6 +19,18 @@ from ._settings_load import (
 )
 from ._settings_save import save_instance_settings
 from ._settings_store import settings_dir
+
+
+def configure_schema_wetlab(schema_modules):
+    if "retro" in schema_modules:
+        file_loc = lnschema_core.__file__.replace("core", "wetlab")
+        with open(file_loc, "r") as f:
+            content = f.read()
+        with open(file_loc, "w") as f:
+            content = content.replace(
+                '_tables = ["biosample", "techsample"]', "_tables = []"
+            )
+            f.write(content)
 
 
 def setup_instance_db():
@@ -63,13 +77,13 @@ def setup_instance_db():
 
         msg = "Loading schema modules: core"
 
-        import lnschema_core  # noqa
-
         if schema_modules is not None and "bionty" in schema_modules:
             import lnschema_bionty  # noqa
 
             msg += ", bionty"
         if schema_modules is not None and "wetlab" in schema_modules:
+            configure_schema_wetlab(schema_modules)
+
             import lnschema_wetlab  # noqa
 
             msg += ", wetlab"
@@ -83,7 +97,7 @@ def setup_instance_db():
 
             msg += ", retro"
         logger.info(f"{msg}.")
-
+        SQLModel.metadata.create_all(isettings.db_engine())
         isettings._update_cloud_sqlite_file()
         insert.version_yvzi(lnschema_core.__version__, user_settings.id)
         logger.info(
