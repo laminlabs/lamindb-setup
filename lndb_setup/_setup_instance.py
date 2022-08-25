@@ -49,7 +49,6 @@ def setup_instance_db():
 
     if isettings._sqlite_file.exists():
         logger.info(f"Using instance: {isettings._sqlite_file}")
-        import lnschema_core  # noqa
 
         with sqm.Session(isettings.db_engine()) as session:
             version_table = session.exec(sqm.select(lnschema_core.version_yvzi)).all()
