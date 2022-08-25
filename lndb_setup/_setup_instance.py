@@ -4,7 +4,6 @@ from typing import Optional, Union
 import sqlmodel as sqm
 from cloudpathlib import CloudPath
 from lamin_logger import logger
-from sqlmodel import SQLModel
 
 from ._db import insert, insert_if_not_exists
 from ._docs import doc_args
@@ -49,7 +48,7 @@ def setup_instance_db():
             logger.error(
                 f"Your database does not seem up-to-date with installed core schema module v{current_version}.\n"  # noqa
                 f"If you already migrated, run `lndb_setup._db.insert.version_yvzi({current_version}, db.settings.user.id)`\n"  # noqa
-                f"If not, migrate to core schema version {current_version} or install {versions[-1]}."  # noqa
+                f"If not, migrate to core schema version {current_version} or install {versions}."  # noqa
             )
             return None
     else:
@@ -63,6 +62,7 @@ def setup_instance_db():
             return None
 
         msg = "Loading schema modules: core"
+
         import lnschema_core  # noqa
 
         if schema_modules is not None and "bionty" in schema_modules:
@@ -77,8 +77,13 @@ def setup_instance_db():
             import lnbfx.schema  # noqa
 
             msg += ", bfx"
+
+        if schema_modules is not None and "retro" in schema_modules:
+            import lnschema_retro  # noqa
+
+            msg += ", retro"
         logger.info(f"{msg}.")
-        SQLModel.metadata.create_all(isettings.db_engine())
+
         isettings._update_cloud_sqlite_file()
         insert.version_yvzi(lnschema_core.__version__, user_settings.id)
         logger.info(
@@ -147,7 +152,7 @@ def init(
 
     # setup schema
     if schema is not None:
-        known_modules = ["bionty", "wetlab", "bfx"]
+        known_modules = ["bionty", "wetlab", "bfx", "retro"]
         validated_schema = []
         for module in known_modules:
             if module in schema:
@@ -155,6 +160,7 @@ def init(
         if len(validated_schema) == 0:
             raise RuntimeError(f"Unknown schema modules. Only know {known_modules}.")
         instance_settings.schema_modules = ", ".join(validated_schema)
+
     save_instance_settings(instance_settings)
 
     setup_instance_db()
