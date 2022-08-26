@@ -9,7 +9,7 @@ readme = "README.md"
 dynamic = ["version", "description"]
 dependencies = [
     "lnschema_core>=0.4.1",
-    "lnschema_wetlab==0.3.0",
+    "lnschema_wetlab>=0.3.1",
     "lamin_logger",
     "boto3",
     "cloudpathlib",
