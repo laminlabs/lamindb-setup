@@ -33,6 +33,12 @@ def configure_schema_wetlab(schema_modules):
             f.write(content)
 
 
+def update_db(isettings, usettings):
+    insert_if_not_exists.user(usettings.email, usettings.id, usettings.handle)
+
+    insert_if_not_exists.storage(isettings.storage_dir, isettings.storage_region)
+
+
 def setup_instance_db():
     """Setup database.
 
@@ -104,25 +110,21 @@ def setup_instance_db():
             f" v{lnschema_core.__version__}: {isettings._sqlite_file}"
         )
 
-    insert_if_not_exists.user(
-        user_settings.email, user_settings.id, user_settings.handle
-    )
-
-    insert_if_not_exists.storage(isettings.storage_dir, isettings.storage_region)
+    update_db(isettings, user_settings)
 
 
 def load(instance_name: str):
     """Load existing instance."""
-    InstanceSettings.name
-    instance_settings = load_instance_settings(
-        settings_dir / f"instance-{instance_name}.env"
-    )
-    assert instance_settings.name is not None
-    save_instance_settings(instance_settings)
+    user_settings = load_or_create_user_settings()
+    isettings = load_instance_settings(settings_dir / f"instance-{instance_name}.env")
+    assert isettings.name is not None
+    save_instance_settings(isettings)
 
     from ._settings import settings
 
     settings._instance_settings = None
+
+    update_db(isettings, user_settings)
 
 
 @doc_args(
