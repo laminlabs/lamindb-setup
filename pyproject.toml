@@ -12,7 +12,7 @@ dependencies = [
     "lamin_logger",
     "boto3",
     "cloudpathlib",
-    "sqlmodel",
+    "sqlmodel>=0.0.7",
     "appdirs",
     "supabase",
     "python-dotenv",
