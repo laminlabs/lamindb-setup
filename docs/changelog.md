@@ -3,6 +3,7 @@
 <!-- prettier-ignore -->
 Name | PR | Developer | Date | Version
 --- | --- | --- | --- | ---
+🐛 Fix bugs related to setting up storage | [29](https://github.com/laminlabs/lndb-setup/pull/29) | [falexwolf](https://github.com/falexwolf) | 2022-08-30 |
 🆙 Updated dependencies | [28](https://github.com/laminlabs/lndb-setup/pull/28) | [sunnyosun](https://github.com/sunnyosun) | 2022-08-26 | 0.6.1
 ✨ Make tables in schema modules configurable | [27](https://github.com/laminlabs/lndb-setup/pull/27) | [sunnyosun](https://github.com/sunnyosun) | 2022-08-25 | 0.6.0
 🚸 Safer logging and errors for out-of-date schema | [26](https://github.com/laminlabs/lndb-setup/pull/26) | [falexwolf](https://github.com/falexwolf) | 2022-08-24 |
