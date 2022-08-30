@@ -9,7 +9,7 @@ The present developer docs provide the reference for the API that underlies the 
 
 - [API](api)
 - [Guides](guides/index)
-- [Notes](notes/index) on design choices.
+- [Notes](notes/index)
 - [Changelog](changelog)
 
 ```{toctree}
