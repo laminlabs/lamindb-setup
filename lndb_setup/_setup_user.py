@@ -4,6 +4,7 @@ from lamin_logger import logger
 
 from ._db import insert_if_not_exists
 from ._hub import sign_in_hub, sign_up_hub
+from ._schema import schema
 from ._settings_load import load_or_create_user_settings, load_user_settings
 from ._settings_save import save_user_settings
 from ._settings_store import settings_dir
@@ -111,8 +112,12 @@ def login(
                 # log in the user
                 # hence, simply end log in here
                 return None
-            # there is a remaining case where there could be a file that
-            # has no tables in it, we're ignoring this for now
+            # if the file exists but does not have a user table, raise a warning
+            if "user" not in schema.list_entities():
+                logger.warning(
+                    f"An SQLite file {settings.instance._sqlite_file} exists but does not have a user table. "  # noqa
+                )
+                return None
         insert_if_not_exists.user(
             settings.user.email, settings.user.id, settings.user.handle
         )

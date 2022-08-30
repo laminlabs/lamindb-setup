@@ -6,7 +6,7 @@ from lnschema_core import id
 from supabase import create_client
 
 from ._settings_load import load_or_create_user_settings
-from ._settings_store import Connector, current_user_settings_file
+from ._settings_store import Connector, settings_dir
 
 
 def connect_hub():
@@ -36,13 +36,14 @@ def sign_up_hub(email) -> Union[str, None]:
                 " link in the confirmation email that you should have received from"
                 " lamin.ai."
             )
+        usettings_file = settings_dir / f"user-{email}.env"
         logger.info(
             "Please *confirm* the sign-up email. After that, login with `lndb login"
             f" {email}`!\n\n"
             f"Generated password: {password}.\n"
-            f"Email & password persist in: {current_user_settings_file}.\n"  # noqa
+            f"Email & password persist in: {usettings_file}.\n"  # noqa
             "Going forward, credentials are auto-loaded. "  # noqa
-            "In case of loss, you can always recover your password via email."
+            "In case of loss, recover your password via email: https://lamin.ai."
         )
         return password
     else:

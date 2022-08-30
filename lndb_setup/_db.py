@@ -32,7 +32,7 @@ class insert_if_not_exists:
             storage = session.exec(
                 sqm.select(schema_core.storage).where(schema_core.storage.root == root)
             ).first()
-        if not storage:
+        if storage is None:
             root = insert.storage(root, region)  # type: ignore
 
         return root
@@ -79,7 +79,7 @@ class insert:
         if "s3" in root:
             storage_type = "s3"
         else:
-            storage_type = None
+            storage_type = "local"
 
         with sqm.Session(engine) as session:
             storage = schema_core.storage(root=root, region=region, type=storage_type)
