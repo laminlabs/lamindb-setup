@@ -3,7 +3,7 @@
 <!-- prettier-ignore -->
 Name | PR | Developer | Date | Version
 --- | --- | --- | --- | ---
-✨ Automatically add storage region | [33](https://github.com/laminlabs/lndb-setup/pull/33) | [falexwolf](https://github.com/falexwolf) | 2022-09-05 |
+✨ Automatically add storage region | [33](https://github.com/laminlabs/lndb-setup/pull/33) | [falexwolf](https://github.com/falexwolf) | 2022-09-05 | 0.6.2
 🚚 Rename guides to guide | [32](https://github.com/laminlabs/lndb-setup/pull/32) | [falexwolf](https://github.com/falexwolf) | 2022-09-05 |
 ✅ Make schema tests safer | [30](https://github.com/laminlabs/lndb-setup/pull/30) | [falexwolf](https://github.com/falexwolf) | 2022-08-30 |
 🐛 Fix bugs related to setting up storage | [29](https://github.com/laminlabs/lndb-setup/pull/29) | [falexwolf](https://github.com/falexwolf) | 2022-08-30 |
