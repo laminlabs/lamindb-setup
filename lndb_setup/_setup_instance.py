@@ -166,6 +166,8 @@ def init(
         # returns `None` for us-east-1
         # returns a string like "eu-central-1" etc. for all other regions
         storage_region = response["LocationConstraint"]
+        if storage_region is None:
+            storage_region = "us-east-1"
 
     instance_settings.storage_region = storage_region
 
