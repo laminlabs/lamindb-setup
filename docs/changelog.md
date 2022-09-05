@@ -3,6 +3,7 @@
 <!-- prettier-ignore -->
 Name | PR | Developer | Date | Version
 --- | --- | --- | --- | ---
+🚚 Rename guides to guide | [32](https://github.com/laminlabs/lndb-setup/pull/32) | [falexwolf](https://github.com/falexwolf) | 2022-09-05 |
 ✅ Make schema tests safer | [30](https://github.com/laminlabs/lndb-setup/pull/30) | [falexwolf](https://github.com/falexwolf) | 2022-08-30 |
 🐛 Fix bugs related to setting up storage | [29](https://github.com/laminlabs/lndb-setup/pull/29) | [falexwolf](https://github.com/falexwolf) | 2022-08-30 |
 🆙 Updated dependencies | [28](https://github.com/laminlabs/lndb-setup/pull/28) | [sunnyosun](https://github.com/sunnyosun) | 2022-08-26 | 0.6.1
