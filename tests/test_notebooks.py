@@ -10,7 +10,7 @@ def test_notebooks():
 
     for check_folder in docs_folder.glob("./**"):
         # these are the notebook testpaths
-        if not str(check_folder).endswith(("guides", "tutorials")):
+        if not str(check_folder).endswith(("guide", "tutorials")):
             continue
         logger.debug(f"\n{check_folder}")
         test.execute_notebooks(check_folder, write=True)

@@ -3,21 +3,15 @@
 :end-line: 1
 ```
 
-The typical way of setting up and configuring LaminDB is through the CLI `lndb` and it is fully covered in the LaminDB tutorials.
+For most use cases, set up LaminDB through the CLI `lndb` as covered in the [LaminDB guide](https://lamin.ai/docs/db/guide).
 
-The present developer docs provide the reference for the API that underlies the CLI: `lndb_setup`.
-
-- [API](api)
-- [Guides](guides/index)
-- [Notes](notes/index)
-- [Changelog](changelog)
+These docs provide the reference for the API that underlies the CLI: `lndb_setup`.
 
 ```{toctree}
 :maxdepth: 1
-:hidden:
 
+guide/index
 api
-guides/index
 notes/index
 changelog
 ```
