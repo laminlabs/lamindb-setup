@@ -163,6 +163,8 @@ def init(
         response = boto3.client("s3").get_bucket_location(
             Bucket=storage_root_str.replace("s3://", "")
         )
+        # returns `None` for us-east-1
+        # returns a string like "eu-central-1" etc. for all other regions
         storage_region = response["LocationConstraint"]
 
     instance_settings.storage_region = storage_region
