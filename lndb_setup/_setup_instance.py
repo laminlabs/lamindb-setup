@@ -161,7 +161,7 @@ def init(
         import boto3
 
         response = boto3.client("s3").get_bucket_location(
-            storage_root_str.replace("s3://", "")
+            Bucket=storage_root_str.replace("s3://", "")
         )
         storage_region = response["LocationConstraint"]
 
