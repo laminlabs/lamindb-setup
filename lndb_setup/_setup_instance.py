@@ -19,6 +19,7 @@ from ._settings_load import (
 )
 from ._settings_save import save_instance_settings
 from ._settings_store import settings_dir
+from ._setup_storage import get_storage_region
 
 
 def configure_schema_wetlab(schema_modules):
@@ -155,19 +156,7 @@ def init(
 
     # setup storage
     instance_settings.storage_dir = setup_storage_dir(storage)
-    storage_root_str = str(instance_settings.storage_dir)
-    storage_region = None
-    if storage_root_str.startswith("s3://"):
-        import boto3
-
-        response = boto3.client("s3").get_bucket_location(
-            Bucket=storage_root_str.replace("s3://", "")
-        )
-        # returns `None` for us-east-1
-        # returns a string like "eu-central-1" etc. for all other regions
-        storage_region = response["LocationConstraint"]
-
-    instance_settings.storage_region = storage_region
+    instance_settings.storage_region = get_storage_region(instance_settings.storage_dir)
 
     # setup _config
     instance_settings._dbconfig = dbconfig
