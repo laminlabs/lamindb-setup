@@ -1,5 +1,5 @@
 from pathlib import Path
-from typing import Optional, Union
+from typing import Union
 
 import lnschema_core
 import sqlmodel as sqm
@@ -129,14 +129,12 @@ def load(instance_name: str):
 
 @doc_args(
     description.storage_dir,
-    description.storage_dir,
     description._dbconfig,
     description.schema_modules,
 )
 def init(
     *,
     storage: Union[str, Path, CloudPath],
-    storage_region: Optional[str] = None,
     dbconfig: str = "sqlite",
     schema: Union[str, None] = None,
 ) -> Union[None, str]:
@@ -144,7 +142,6 @@ def init(
 
     Args:
         storage: {}
-        storage_region: {}
         dbconfig: {}
         schema: {}
     """
@@ -158,6 +155,16 @@ def init(
 
     # setup storage
     instance_settings.storage_dir = setup_storage_dir(storage)
+    storage_root_str = str(instance_settings.storage_dir)
+    storage_region = None
+    if storage_root_str.startswith("s3://"):
+        import boto3
+
+        response = boto3.client("s3").get_bucket_location(
+            Bucket=storage_root_str.replace("s3://", "")
+        )
+        storage_region = response["LocationConstraint"]
+
     instance_settings.storage_region = storage_region
 
     # setup _config
