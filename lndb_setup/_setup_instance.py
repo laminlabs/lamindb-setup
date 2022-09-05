@@ -158,6 +158,15 @@ def init(
 
     # setup storage
     instance_settings.storage_dir = setup_storage_dir(storage)
+    storage_root_str = str(instance_settings.storage_dir)
+    if storage_root_str.startswith("s3://"):
+        import boto3
+
+        response = boto3.client("s3").get_bucket_location(
+            storage_root_str.replace("s3://", "")
+        )
+        storage_region = response["LocationConstraint"]
+
     instance_settings.storage_region = storage_region
 
     # setup _config

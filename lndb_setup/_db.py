@@ -76,8 +76,10 @@ class insert:
         settings = load_or_create_instance_settings()
         engine = settings.db_engine()
 
-        if "s3" in root:
+        if str(root).startswith("s3://"):
             storage_type = "s3"
+        elif str(root).startswith("gs://"):
+            storage_type = "gs"
         else:
             storage_type = "local"
 
