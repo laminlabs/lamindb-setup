@@ -3,6 +3,7 @@
 <!-- prettier-ignore -->
 Name | PR | Developer | Date | Version
 --- | --- | --- | --- | ---
+✅ Add GCP test bucket | [35](https://github.com/laminlabs/lndb-setup/pull/35) | [falexwolf](https://github.com/falexwolf) | 2022-09-06 |
 🚸 Call out storage location `us-east-1` and re-factor | [34](https://github.com/laminlabs/lndb-setup/pull/34) | [falexwolf](https://github.com/falexwolf) | 2022-09-05 |
 ✨ Automatically add storage region | [33](https://github.com/laminlabs/lndb-setup/pull/33) | [falexwolf](https://github.com/falexwolf) | 2022-09-05 | 0.6.2
 🚚 Rename guides to guide | [32](https://github.com/laminlabs/lndb-setup/pull/32) | [falexwolf](https://github.com/falexwolf) | 2022-09-05 |
