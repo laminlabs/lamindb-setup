@@ -33,6 +33,7 @@ test = [
     "bionty>=0.2.4",
     "lnschema_bionty>=0.2.3",
     "lnschema_wetlab>=0.3.1",
+    "cloudpathlib[gs]",
 ]
 
 [project.scripts]
