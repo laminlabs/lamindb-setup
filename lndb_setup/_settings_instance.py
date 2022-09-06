@@ -4,7 +4,7 @@ from typing import Optional, Union
 
 import sqlmodel as sqm
 from appdirs import AppDirs
-from cloudpathlib import CloudPath, S3Client
+from cloudpathlib import CloudPath, GSClient, S3Client
 
 DIRS = AppDirs("lamindb", "laminlabs")
 
@@ -13,12 +13,34 @@ class Storage:
     def __init__(self, settings: "InstanceSettings"):
         self.settings = settings
 
+    @property
+    def type(self) -> str:
+        """AWS S3 vs. Google Cloud vs. local.
+
+        Returns "s3" or "gs" or "local".
+        """
+        if str(self.settings.storage_dir).startswith("s3://"):
+            storage_type = "s3"
+        elif str(self.settings.storage_dir).startswith("gs://"):
+            storage_type = "gs"
+        else:
+            storage_type = "local"
+        return storage_type
+
     def key_to_filepath(
         self, filekey: Union[Path, CloudPath, str]
     ) -> Union[Path, CloudPath]:
         """Cloud or local filepath from filekey."""
         if self.settings.cloud_storage:
-            client = S3Client(local_cache_dir=self.settings.cache_dir)
+            if self.type == "s3":
+                client = S3Client(local_cache_dir=self.settings.cache_dir)
+            elif self.type == "gs":
+                client = GSClient(local_cache_dir=self.settings.cache_dir)
+            else:
+                raise RuntimeError(
+                    "Currently, only AWS S3 and Google cloud are supported for cloud"
+                    " storage."
+                )
             return client.CloudPath(self.settings.storage_dir / filekey)
         else:
             return self.settings.storage_dir / filekey
