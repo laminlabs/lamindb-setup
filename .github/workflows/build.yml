@@ -54,6 +54,13 @@ jobs:
           aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           aws-region: eu-central-1
+      - name: Configure Google Cloud
+        id: "auth"
+        uses: "google-github-actions/auth@v0"
+        with:
+          credentials_json: "${{ secrets.GCP_CREDENTIALS }}"
+      - name: "Set up Cloud SDK"
+        uses: "google-github-actions/setup-gcloud@v0"
       - name: Build
         run: |
           nox -s build --python ${{ matrix.python-version }}
