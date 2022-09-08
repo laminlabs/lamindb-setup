@@ -23,7 +23,7 @@ from ._setup_storage import get_storage_region
 
 
 def configure_schema_wetlab(schema_modules):
-    if "retro" in schema_modules:
+    def _no_biosample_techsample():
         file_loc = lnschema_core.__file__.replace("core", "wetlab")
         with open(file_loc, "r") as f:
             content = f.read()
@@ -32,6 +32,9 @@ def configure_schema_wetlab(schema_modules):
                 '_tables = ["biosample", "techsample"]', "_tables = []"
             )
             f.write(content)
+
+    if any([i in schema_modules for i in {"retro", "swarm"}]):
+        _no_biosample_techsample()
 
 
 def update_db(isettings, usettings):
@@ -102,6 +105,10 @@ def setup_instance_db():
             import lnschema_retro  # noqa
 
             msg += ", retro"
+        if schema_modules is not None and "swarm" in schema_modules:
+            import maren.schema  # noqa
+
+            msg += ", swarm"
         logger.info(f"{msg}.")
         SQLModel.metadata.create_all(isettings.db_engine())
         isettings._update_cloud_sqlite_file()
@@ -165,7 +172,7 @@ def init(
 
     # setup schema
     if schema is not None:
-        known_modules = ["bionty", "wetlab", "bfx", "retro"]
+        known_modules = ["bionty", "wetlab", "bfx", "retro", "swarm"]
         validated_schema = []
         for module in known_modules:
             if module in schema:
