@@ -1,3 +1,4 @@
+from pathlib import Path
 from subprocess import call
 
 import lamin_logger as logger
@@ -20,7 +21,23 @@ def migrate(
     else:
         raise NotImplementedError
 
-    migration_status = call("python -m alembic --name yvzi upgrade head")
+    schema_root = Path(lnschema_core.__file__).parent
+    alembic_ini = schema_root / "alembic.ini"
+
+    with open(alembic_ini) as f:
+        content = f.read()
+
+    content = content.replace(
+        "sqlalchemy.url = sqlite:///tests/testdb.lndb",
+        "sqlalchemy.url = {isettings._sqlite_file_local}",
+    )
+
+    with open(alembic_ini, "w") as f:
+        f.write(content)
+
+    migration_status = call(
+        f"cd {schema_root}; python -m alembic --name yvzi upgrade head"
+    )
 
     if migration_status == 0:
         logger.success(f"Successfully migrated {schema} to v{version}.")
