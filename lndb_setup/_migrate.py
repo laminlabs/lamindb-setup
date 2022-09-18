@@ -1,8 +1,9 @@
+import os
 from pathlib import Path
 from subprocess import call
 
-import lamin_logger as logger
 import sqlmodel as sqm
+from lamin_logger import logger
 
 from ._db import insert
 from ._settings_instance import InstanceSettings
@@ -28,7 +29,14 @@ def check_migrate(
     current_version = lnschema_core.__version__
 
     if current_version not in versions:
+        logger.warning(
+            "Run the command in the shell to respond to the following dialogue."
+        )
+
         response = input("Do you want to migrate (y/n)?")
+
+        if os.environ.get("NBPRJ_TEST_NBPATH") is not None:
+            response = "y"
 
         if response != "y":
             logger.warning(
