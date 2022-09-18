@@ -12,10 +12,10 @@ def migrate(
     version: str,
     usettings: UserSettings,
     isettings: InstanceSettings,
-    schema_module: str = "lnschema_core",
+    schema: str = "lnschema_core",
 ):
     """Migrate database to latest version."""
-    if schema_module == "lnschema_core":
+    if schema == "lnschema_core":
         import lnschema_core
     else:
         raise NotImplementedError
@@ -23,7 +23,7 @@ def migrate(
     migration_status = call("python -m alembic --name yvzi upgrade head")
 
     if migration_status == 0:
-        logger.success(f"Successfully migrated {schema_module} to v{version}.")
+        logger.success(f"Successfully migrated {schema} to v{version}.")
         isettings._update_cloud_sqlite_file()
 
         insert.version_yvzi(

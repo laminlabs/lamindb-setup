@@ -75,7 +75,7 @@ def setup_instance_db():
                 version=current_version,
                 usettings=user_settings,
                 isettings=isettings,
-                schema_module="lnschema_core",
+                schema="lnschema_core",
             )
 
             logger.error(
