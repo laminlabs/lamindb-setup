@@ -68,9 +68,11 @@ def setup_instance_db():
         current_version = lnschema_core.__version__
 
         if current_version not in versions:
+            migration = lnschema_core._migration
+
             logger.error(
                 f"Your database does not seem up-to-date with installed core schema module v{current_version}.\n"  # noqa
-                f"If you already migrated, run `lndb_setup._db.insert.version_yvzi({current_version}, db.settings.user.id)`\n"  # noqa
+                f"If you already migrated, run `lndb_setup._db.insert.version_yvzi({current_version}, {migration}, db.settings.user.id)`\n"  # noqa
                 f"If not, migrate to core schema version {current_version} or install {versions}."  # noqa
             )
             return None
@@ -112,7 +114,10 @@ def setup_instance_db():
         logger.info(f"{msg}.")
         SQLModel.metadata.create_all(isettings.db_engine())
         isettings._update_cloud_sqlite_file()
-        insert.version_yvzi(lnschema_core.__version__, user_settings.id)
+        insert.version_yvzi(
+            lnschema_core.__version__, lnschema_core._migration, user_settings.id
+        )
+        insert.migration_yvzi(lnschema_core._migration)
         logger.info(
             f"Created instance {isettings.name} with core schema"
             f" v{lnschema_core.__version__}: {isettings._sqlite_file}"
