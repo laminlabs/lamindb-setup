@@ -46,3 +46,5 @@ def migrate(
         insert.version_yvzi(
             lnschema_core.__version__, lnschema_core._migration, usettings.id
         )
+    else:
+        logger.error("Automatic migration failed.")
