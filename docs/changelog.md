@@ -3,6 +3,7 @@
 <!-- prettier-ignore -->
 Name | PR | Developer | Date | Version
 --- | --- | --- | --- | ---
+✨ Populate migration upon instance init | [38](https://github.com/laminlabs/lndb-setup/pull/38) | [falexwolf](https://github.com/falexwolf) | 2022-09-18 |
 🍱 Added swarm biosample schema | [36](https://github.com/laminlabs/lndb-setup/pull/36) | [sunnyosun](https://github.com/sunnyosun) | 2022-09-08 | 0.6.3
 ✅ Add GCP test bucket | [35](https://github.com/laminlabs/lndb-setup/pull/35) | [falexwolf](https://github.com/falexwolf) | 2022-09-06 |
 🚸 Call out storage location `us-east-1` and re-factor | [34](https://github.com/laminlabs/lndb-setup/pull/34) | [falexwolf](https://github.com/falexwolf) | 2022-09-05 |
