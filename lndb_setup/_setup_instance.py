@@ -2,13 +2,13 @@ from pathlib import Path
 from typing import Union
 
 import lnschema_core
-import sqlmodel as sqm
 from cloudpathlib import CloudPath
 from lamin_logger import logger
 from sqlmodel import SQLModel
 
 from ._db import insert, insert_if_not_exists
 from ._docs import doc_args
+from ._migrate import check_migrate
 from ._settings_instance import InstanceSettings
 from ._settings_instance import instance_description as description
 from ._settings_load import (
@@ -59,24 +59,7 @@ def setup_instance_db():
 
     if isettings._sqlite_file.exists():
         logger.info(f"Using instance: {isettings._sqlite_file}")
-
-        with sqm.Session(isettings.db_engine()) as session:
-            version_table = session.exec(sqm.select(lnschema_core.version_yvzi)).all()
-
-        versions = [row.v for row in version_table]
-
-        current_version = lnschema_core.__version__
-
-        if current_version not in versions:
-            from ._migrate import migrate
-
-            migrate(
-                version=current_version,
-                usettings=user_settings,
-                isettings=isettings,
-                schema="lnschema_core",
-            )
-            return None
+        check_migrate(usettings=user_settings, isettings=isettings)
     else:
         if isettings.cloud_storage and isettings._sqlite_file_local.exists():
             logger.error(
@@ -138,6 +121,7 @@ def load(instance_name: str):
 
     settings._instance_settings = None
 
+    check_migrate(usettings=user_settings, isettings=isettings)
     update_db(isettings, user_settings)
 
 
