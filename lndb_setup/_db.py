@@ -63,7 +63,7 @@ class insert:
         engine = settings.db_engine()
 
         with sqm.Session(engine) as session:
-            row = schema_core.version_yvzi(version_num=migration)
+            row = schema_core.migration_yvzi(version_num=migration)
             session.add(row)
             session.commit()
 
