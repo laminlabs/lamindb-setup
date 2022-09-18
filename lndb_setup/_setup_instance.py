@@ -69,6 +69,14 @@ def setup_instance_db():
 
         if current_version not in versions:
             migration = lnschema_core._migration
+            from ._migrate import migrate
+
+            migrate(
+                version=current_version,
+                usettings=user_settings,
+                isettings=isettings,
+                schema_module="lnschema_core",
+            )
 
             logger.error(
                 f"Your database does not seem up-to-date with installed core schema module v{current_version}.\n"  # noqa
