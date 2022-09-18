@@ -42,13 +42,28 @@ class insert:
     """Insert data."""
 
     @classmethod
-    def version_yvzi(cls, version, user_id):
-        """User."""
+    def version_yvzi(cls, version, migration, user_id):
+        """Core schema module version."""
         settings = load_or_create_instance_settings()
         engine = settings.db_engine()
 
         with sqm.Session(engine) as session:
-            row = schema_core.version_yvzi(v=version, user_id=user_id)
+            row = schema_core.version_yvzi(
+                v=version, migration=migration, user_id=user_id
+            )
+            session.add(row)
+            session.commit()
+
+        settings._update_cloud_sqlite_file()
+
+    @classmethod
+    def migration_yvzi(cls, migration):
+        """Core schema module migration."""
+        settings = load_or_create_instance_settings()
+        engine = settings.db_engine()
+
+        with sqm.Session(engine) as session:
+            row = schema_core.version_yvzi(version_num=migration)
             session.add(row)
             session.commit()
 
