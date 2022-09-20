@@ -120,8 +120,11 @@ def load(instance_name: str):
 
     settings._instance_settings = None
 
-    check_migrate(usettings=user_settings, isettings=isettings)
+    message = check_migrate(usettings=user_settings, isettings=isettings)
+    if message == "migrate-failed":
+        return message
     update_db(isettings, user_settings)
+    return message
 
 
 @doc_args(

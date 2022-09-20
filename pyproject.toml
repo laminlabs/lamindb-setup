@@ -17,6 +17,7 @@ dependencies = [
     "supabase",
     "python-dotenv",
     "erdiagram",
+    "alembic",
 ]
 
 [project.urls]

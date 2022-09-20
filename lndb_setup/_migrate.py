@@ -44,12 +44,14 @@ def check_migrate(
                 )
                 return None
 
-        migrate(
+        return migrate(
             version=current_version,
             usettings=usettings,
             isettings=isettings,
             schema="lnschema_core",
         )
+    else:
+        return "migrate-unnecessary"
 
 
 def modify_alembic_ini(
@@ -98,7 +100,9 @@ def migrate(
 
     modify_alembic_ini(filepath, isettings)
 
-    process = run("alembic --name yvzi upgrade head", cwd=f"{schema_root}", shell=True)
+    process = run(
+        "python -m alembic --name yvzi upgrade head", cwd=f"{schema_root}", shell=True
+    )
 
     if process.returncode == 0:
         logger.success(f"Successfully migrated {schema} to v{version}.")
@@ -111,3 +115,8 @@ def migrate(
         logger.error("Automatic migration failed.")
 
     modify_alembic_ini(filepath, isettings, revert=True)
+
+    if process.returncode == 0:
+        return "migrate-success"
+    else:
+        return "migrate-failed"
