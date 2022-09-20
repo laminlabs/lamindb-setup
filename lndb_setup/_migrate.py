@@ -111,8 +111,7 @@ def migrate(
 
     if process.returncode == 0:
         logger.success(f"Successfully migrated {schema} to v{version}.")
-        isettings._update_cloud_sqlite_file()
-
+        # The following call will also update the sqlite file in the cloud.
         insert.version_yvzi(
             lnschema_core.__version__, lnschema_core._migration, usettings.id
         )
