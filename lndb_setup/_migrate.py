@@ -35,7 +35,10 @@ def check_migrate(
                 "Run the command in the shell to respond to the following dialogue."
             )
 
-            response = input("Do you want to migrate (y/n)?")
+            response = input(
+                f"Do you want to migrate from {versions[-1]} to"
+                f" {current_version} (y/n)?"
+            )
 
             if response != "y":
                 logger.warning(
@@ -43,6 +46,8 @@ def check_migrate(
                     "Either install a previous API version or migrate the database."
                 )
                 return None
+        else:
+            logger.info("Migrating from {versions[-1]} to {current_version}.")
 
         return migrate(
             version=current_version,
