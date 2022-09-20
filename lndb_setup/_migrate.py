@@ -29,8 +29,8 @@ def check_migrate(
     current_version = lnschema_core.__version__
 
     if current_version not in versions:
-        # run a confirmation dialogue outside the test environment
-        if os.environ.get("NBPRJ_TEST_SESSION") is not None:
+        # run a confirmation dialogue outside a pytest run
+        if "PYTEST_CURRENT_TEST" not in os.environ:
             logger.warning(
                 "Run the command in the shell to respond to the following dialogue."
             )
