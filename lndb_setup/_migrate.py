@@ -53,6 +53,34 @@ def check_migrate(
         )
 
 
+def modify_alembic_ini(
+    filepath: Path, isettings: InstanceSettings, revert: bool = False
+):
+    sl_from, sl_to = "lnschema_core/migrations", "migrations"
+    url_from, url_to = (
+        "sqlite:///tests/testdb.lndb",
+        f"sqlite:///{isettings._sqlite_file_local}",
+    )  # noqa
+
+    if revert:
+        sl_from, sl_to = sl_to, sl_from
+        url_from, url_to = url_to, url_from
+
+    with open(filepath) as f:
+        content = f.read()
+
+    content = content.replace(
+        f"script_location = {sl_from}",
+        f"script_location = {sl_to}",
+    ).replace(
+        f"sqlalchemy.url = {url_from}",
+        f"sqlalchemy.url = {url_to}",
+    )
+
+    with open(filepath, "w") as f:
+        f.write(content)
+
+
 def migrate(
     *,
     version: str,
@@ -67,20 +95,9 @@ def migrate(
         raise NotImplementedError
 
     schema_root = Path(lnschema_core.__file__).parent
-    alembic_ini = schema_root / "alembic.ini"
+    filepath = schema_root / "alembic.ini"
 
-    # modify alembic.ini
-    with open(alembic_ini) as f:
-        content = f.read()
-    content = content.replace(
-        "script_location = lnschema_core/migrations",
-        "script_location = migrations",
-    ).replace(
-        "sqlalchemy.url = sqlite:///tests/testdb.lndb",
-        f"sqlalchemy.url = sqlite:///{isettings._sqlite_file_local}",
-    )
-    with open(alembic_ini, "w") as f:
-        f.write(content)
+    modify_alembic_ini(filepath, isettings)
 
     retcode = call("alembic --name yvzi upgrade head", cwd=f"{schema_root}", shell=True)
 
@@ -94,15 +111,4 @@ def migrate(
     else:
         logger.error("Automatic migration failed.")
 
-    # clean up
-    with open(alembic_ini) as f:
-        content = f.read()
-    content = content.replace(
-        "script_location = migrations",
-        "script_location = lnschema_core/migrations",
-    ).replace(
-        f"sqlalchemy.url = sqlite:///{isettings._sqlite_file_local}",
-        "sqlalchemy.url = sqlite:///tests/testdb.lndb",
-    )
-    with open(alembic_ini, "w") as f:
-        f.write(content)
+    modify_alembic_ini(filepath, isettings, revert=True)
