@@ -69,22 +69,22 @@ def migrate(
     schema_root = Path(lnschema_core.__file__).parent
     alembic_ini = schema_root / "alembic.ini"
 
+    # modify alembic.ini
     with open(alembic_ini) as f:
         content = f.read()
-
     content = content.replace(
+        "script_location = lnschema_core/migrations",
+        "script_location = migrations",
+    ).replace(
         "sqlalchemy.url = sqlite:///tests/testdb.lndb",
-        "sqlalchemy.url = {isettings._sqlite_file_local}",
+        f"sqlalchemy.url = sqlite:///{isettings._sqlite_file_local}",
     )
-
     with open(alembic_ini, "w") as f:
         f.write(content)
 
-    migration_status = call(
-        f"cd {schema_root}; python -m alembic --name yvzi upgrade head"
-    )
+    retcode = call("alembic --name yvzi upgrade head", cwd=f"{schema_root}", shell=True)
 
-    if migration_status == 0:
+    if retcode == 0:
         logger.success(f"Successfully migrated {schema} to v{version}.")
         isettings._update_cloud_sqlite_file()
 
@@ -93,3 +93,16 @@ def migrate(
         )
     else:
         logger.error("Automatic migration failed.")
+
+    # clean up
+    with open(alembic_ini) as f:
+        content = f.read()
+    content = content.replace(
+        "script_location = migrations",
+        "script_location = lnschema_core/migrations",
+    ).replace(
+        f"sqlalchemy.url = sqlite:///{isettings._sqlite_file_local}",
+        "sqlalchemy.url = sqlite:///tests/testdb.lndb",
+    )
+    with open(alembic_ini, "w") as f:
+        f.write(content)
