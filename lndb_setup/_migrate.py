@@ -1,6 +1,6 @@
 import os
 from pathlib import Path
-from subprocess import call
+from subprocess import run
 
 import sqlmodel as sqm
 from lamin_logger import logger
@@ -98,9 +98,9 @@ def migrate(
 
     modify_alembic_ini(filepath, isettings)
 
-    retcode = call("alembic --name yvzi upgrade head", cwd=f"{schema_root}", shell=True)
+    process = run("alembic --name yvzi upgrade head", cwd=f"{schema_root}", shell=True)
 
-    if retcode == 0:
+    if process.returncode == 0:
         logger.success(f"Successfully migrated {schema} to v{version}.")
         isettings._update_cloud_sqlite_file()
 
