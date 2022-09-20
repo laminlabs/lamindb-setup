@@ -29,21 +29,20 @@ def check_migrate(
     current_version = lnschema_core.__version__
 
     if current_version not in versions:
-        logger.warning(
-            "Run the command in the shell to respond to the following dialogue."
-        )
-
-        response = input("Do you want to migrate (y/n)?")
-
+        # run a confirmation dialogue outside the test environment
         if os.environ.get("NBPRJ_TEST_SESSION") is not None:
-            response = "y"
-
-        if response != "y":
             logger.warning(
-                "Your database does not seem up to date with the latest schema."
-                "Either install a previous API version or migrate the database."
+                "Run the command in the shell to respond to the following dialogue."
             )
-            return None
+
+            response = input("Do you want to migrate (y/n)?")
+
+            if response != "y":
+                logger.warning(
+                    "Your database does not seem up to date with the latest schema."
+                    "Either install a previous API version or migrate the database."
+                )
+                return None
 
         migrate(
             version=current_version,
