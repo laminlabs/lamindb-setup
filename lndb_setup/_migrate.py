@@ -35,7 +35,7 @@ def check_migrate(
 
         response = input("Do you want to migrate (y/n)?")
 
-        if os.environ.get("NBPRJ_TEST_NBPATH") is not None:
+        if os.environ.get("NBPRJ_TEST_SESSION") is not None:
             response = "y"
 
         if response != "y":
