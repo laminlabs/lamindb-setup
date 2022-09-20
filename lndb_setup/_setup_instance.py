@@ -101,7 +101,6 @@ def setup_instance_db():
         insert.version_yvzi(
             lnschema_core.__version__, lnschema_core._migration, user_settings.id
         )
-        insert.migration_yvzi(lnschema_core._migration)
         logger.info(
             f"Created instance {isettings.name} with core schema"
             f" v{lnschema_core.__version__}: {isettings._sqlite_file}"
