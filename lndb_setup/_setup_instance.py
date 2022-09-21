@@ -51,7 +51,7 @@ def setup_instance_db():
     - Sign-up and/or log-in.
     """
     isettings = load_or_create_instance_settings()
-    user_settings = load_or_create_user_settings()
+    usettings = load_or_create_user_settings()
     if isettings.storage_dir is None:
         logger.warning("Instance is not configured. Call `lndb init` or `lndb load`.")
         return None
@@ -59,7 +59,7 @@ def setup_instance_db():
 
     if isettings._sqlite_file.exists():
         logger.info(f"Using instance: {isettings._sqlite_file}")
-        check_migrate(usettings=user_settings, isettings=isettings)
+        check_migrate(usettings=usettings, isettings=isettings)
     else:
         if isettings.cloud_storage and isettings._sqlite_file_local.exists():
             logger.error(
@@ -99,19 +99,19 @@ def setup_instance_db():
         SQLModel.metadata.create_all(isettings.db_engine())
         isettings._update_cloud_sqlite_file()
         insert.version_yvzi(
-            lnschema_core.__version__, lnschema_core._migration, user_settings.id
+            lnschema_core.__version__, lnschema_core._migration, usettings.id
         )
         logger.info(
             f"Created instance {isettings.name} with core schema"
             f" v{lnschema_core.__version__}: {isettings._sqlite_file}"
         )
 
-    update_db(isettings, user_settings)
+    update_db(isettings, usettings)
 
 
 def load(instance_name: str):
     """Load existing instance."""
-    user_settings = load_or_create_user_settings()
+    usettings = load_or_create_user_settings()
     isettings = load_instance_settings(settings_dir / f"instance-{instance_name}.env")
     assert isettings.name is not None
     save_instance_settings(isettings)
@@ -120,10 +120,10 @@ def load(instance_name: str):
 
     settings._instance_settings = None
 
-    message = check_migrate(usettings=user_settings, isettings=isettings)
+    message = check_migrate(usettings=usettings, isettings=isettings)
     if message == "migrate-failed":
         return message
-    update_db(isettings, user_settings)
+    update_db(isettings, usettings)
     return message
 
 
@@ -145,8 +145,8 @@ def init(
         dbconfig: {}
         schema: {}
     """
-    user_settings = load_or_create_user_settings()
-    if user_settings.id is None:
+    usettings = load_or_create_user_settings()
+    if usettings.id is None:
         logger.error("Login: lndb login user")
         return "need-to-login-first"
 
