@@ -3,6 +3,7 @@
 <!-- prettier-ignore -->
 Name | PR | Developer | Date | Version
 --- | --- | --- | --- | ---
+✨ Automatic migration for core schema module | [39](https://github.com/laminlabs/lndb-setup/pull/39) | [falexwolf](https://github.com/falexwolf) | 2022-09-21 |
 ✨ Populate migration upon instance init | [38](https://github.com/laminlabs/lndb-setup/pull/38) | [falexwolf](https://github.com/falexwolf) | 2022-09-18 |
 🍱 Added swarm biosample schema | [36](https://github.com/laminlabs/lndb-setup/pull/36) | [sunnyosun](https://github.com/sunnyosun) | 2022-09-08 | 0.6.3
 ✅ Add GCP test bucket | [35](https://github.com/laminlabs/lndb-setup/pull/35) | [falexwolf](https://github.com/falexwolf) | 2022-09-06 |
