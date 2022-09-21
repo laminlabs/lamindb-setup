@@ -45,6 +45,7 @@ jobs:
           python -m pip install pip
           pip install nox
           sudo apt-get -y install graphviz
+          sudo apt-get install sqlite3=3.37.2
       - name: Lint
         run: |
           nox -s lint
