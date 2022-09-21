@@ -66,7 +66,7 @@ def modify_alembic_ini(
     url_from, url_to = (
         "sqlite:///tests/testdb.lndb",
         f"sqlite:///{isettings._sqlite_file_local}",
-    )  # noqa
+    )
 
     if revert:
         sl_from, sl_to = sl_to, sl_from
@@ -106,7 +106,9 @@ def migrate(
     modify_alembic_ini(filepath, isettings)
 
     process = run(
-        "python -m alembic --name yvzi upgrade head", cwd=f"{schema_root}", shell=True
+        "python -m alembic --name yvzi upgrade --sql 3b60b87450c0:049d7dfc80a8",
+        cwd=f"{schema_root}",
+        shell=True,
     )
 
     if process.returncode == 0:
