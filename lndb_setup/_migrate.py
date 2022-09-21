@@ -47,7 +47,7 @@ def check_migrate(
                 )
                 return None
         else:
-            logger.info("Migrating from {versions[-1]} to {current_version}.")
+            logger.info(f"Migrating from {versions[-1]} to {current_version}.")
 
         return migrate(
             version=current_version,
@@ -106,7 +106,7 @@ def migrate(
     modify_alembic_ini(filepath, isettings)
 
     process = run(
-        "python -m alembic --name yvzi upgrade --sql 3b60b87450c0:049d7dfc80a8",
+        "python -m alembic --name yvzi upgrade head",
         cwd=f"{schema_root}",
         shell=True,
     )
