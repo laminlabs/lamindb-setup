@@ -8,12 +8,12 @@ on:
 
 jobs:
   build:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-22.04
     strategy:
       fail-fast: false
       matrix:
         python-version: ["3.9"]
-    timeout-minutes: 6
+    timeout-minutes: 10
 
     steps:
       - name: Checkout main
@@ -34,17 +34,18 @@ jobs:
       - name: Cache
         uses: actions/cache@v3
         env:
-          cache-name: cache-2
+          cache-name: cache-4
         with:
           path: |
             .nox
             ~/.cache/pre-commit
           key: ${{ runner.os }}-build-${{ env.cache-name }}-${{ hashFiles('.pre-commit-config.yaml') }}-${{ hashFiles('pyproject.yaml') }}
-      - name: Install pip, nox & graphviz
+      - name: Install dependencies
         run: |
           python -m pip install pip
           pip install nox
           sudo apt-get -y install graphviz
+          sudo apt-get install sqlite3-tools=3.37.2-2
       - name: Lint
         run: |
           nox -s lint

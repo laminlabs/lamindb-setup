@@ -2,13 +2,13 @@ from pathlib import Path
 from typing import Union
 
 import lnschema_core
-import sqlmodel as sqm
 from cloudpathlib import CloudPath
 from lamin_logger import logger
 from sqlmodel import SQLModel
 
 from ._db import insert, insert_if_not_exists
 from ._docs import doc_args
+from ._migrate import check_migrate
 from ._settings_instance import InstanceSettings
 from ._settings_instance import instance_description as description
 from ._settings_load import (
@@ -59,23 +59,7 @@ def setup_instance_db():
 
     if isettings._sqlite_file.exists():
         logger.info(f"Using instance: {isettings._sqlite_file}")
-
-        with sqm.Session(isettings.db_engine()) as session:
-            version_table = session.exec(sqm.select(lnschema_core.version_yvzi)).all()
-
-        versions = [row.v for row in version_table]
-
-        current_version = lnschema_core.__version__
-
-        if current_version not in versions:
-            migration = lnschema_core._migration
-
-            logger.error(
-                f"Your database does not seem up-to-date with installed core schema module v{current_version}.\n"  # noqa
-                f"If you already migrated, run `lndb_setup._db.insert.version_yvzi({current_version}, {migration}, db.settings.user.id)`\n"  # noqa
-                f"If not, migrate to core schema version {current_version} or install {versions}."  # noqa
-            )
-            return None
+        check_migrate(usettings=user_settings, isettings=isettings)
     else:
         if isettings.cloud_storage and isettings._sqlite_file_local.exists():
             logger.error(
@@ -117,7 +101,6 @@ def setup_instance_db():
         insert.version_yvzi(
             lnschema_core.__version__, lnschema_core._migration, user_settings.id
         )
-        insert.migration_yvzi(lnschema_core._migration)
         logger.info(
             f"Created instance {isettings.name} with core schema"
             f" v{lnschema_core.__version__}: {isettings._sqlite_file}"
@@ -137,7 +120,11 @@ def load(instance_name: str):
 
     settings._instance_settings = None
 
+    message = check_migrate(usettings=user_settings, isettings=isettings)
+    if message == "migrate-failed":
+        return message
     update_db(isettings, user_settings)
+    return message
 
 
 @doc_args(

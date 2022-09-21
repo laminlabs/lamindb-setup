@@ -48,23 +48,16 @@ class insert:
         engine = settings.db_engine()
 
         with sqm.Session(engine) as session:
-            row = schema_core.version_yvzi(
-                v=version, migration=migration, user_id=user_id
+            session.add(
+                schema_core.version_yvzi(
+                    v=version, migration=migration, user_id=user_id
+                )
             )
-            session.add(row)
-            session.commit()
-
-        settings._update_cloud_sqlite_file()
-
-    @classmethod
-    def migration_yvzi(cls, migration):
-        """Core schema module migration."""
-        settings = load_or_create_instance_settings()
-        engine = settings.db_engine()
-
-        with sqm.Session(engine) as session:
-            row = schema_core.migration_yvzi(version_num=migration)
-            session.add(row)
+            # only update migration table if it hasn't already auto-updated
+            # by the migration tool
+            exists = session.get(schema_core.migration_yvzi, migration)
+            if exists is None:
+                session.add(schema_core.migration_yvzi(version_num=migration))
             session.commit()
 
         settings._update_cloud_sqlite_file()
