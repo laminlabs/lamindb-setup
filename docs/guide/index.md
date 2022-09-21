@@ -7,6 +7,5 @@ setup-user
 setup-instance
 schema-modules
 edge-cases
-migrate-prepare
 migrate
 ```
