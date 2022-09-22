@@ -42,25 +42,46 @@ class insert:
     """Insert data."""
 
     @classmethod
-    def version_yvzi(cls, version, migration, user_id):
-        """Core schema module version."""
+    def version(
+        cls,
+        schema: str,
+        version: str,
+        migration: str,
+        user_id: str,
+        cloud_sqlite: bool = True,
+    ):
+        """Core schema module version.
+
+        Args:
+            schema: Schema module ID.
+            version: Python package version string.
+            migration: Migration version string.
+            user_id: User ID.
+            cloud_sqlite: Update cloud SQLite file or not.
+        """
         settings = load_or_create_instance_settings()
         engine = settings.db_engine()
 
+        if schema == "yvzi":
+            import lnschema_core as schema_module
+        elif schema == "zdno":
+            import lnschema_bionty as schema_module
+        else:
+            raise NotImplementedError
+
         with sqm.Session(engine) as session:
-            session.add(
-                schema_core.version_yvzi(
-                    v=version, migration=migration, user_id=user_id
-                )
-            )
+            version_table = getattr(schema_module, "version_{schema}")
+            session.add(version_table(v=version, migration=migration, user_id=user_id))
             # only update migration table if it hasn't already auto-updated
             # by the migration tool
-            exists = session.get(schema_core.migration_yvzi, migration)
+            migration_table = getattr(schema_module, "migration_{schema}")
+            exists = session.get(migration_table, migration)
             if exists is None:
-                session.add(schema_core.migration_yvzi(version_num=migration))
+                session.add(migration_table(version_num=migration))
             session.commit()
 
-        settings._update_cloud_sqlite_file()
+        if cloud_sqlite:
+            settings._update_cloud_sqlite_file()
 
     @classmethod
     def user(cls, email, user_id, handle):

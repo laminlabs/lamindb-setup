@@ -114,8 +114,11 @@ def migrate(
     if process.returncode == 0:
         logger.success(f"Successfully migrated {schema} to v{version}.")
         # The following call will also update the sqlite file in the cloud.
-        insert.version_yvzi(
-            lnschema_core.__version__, lnschema_core._migration, usettings.id
+        insert.version(
+            "yvzi",
+            lnschema_core.__version__,
+            lnschema_core._migration,
+            usettings.id,  # type: ignore
         )
     else:
         logger.error("Automatic migration failed.")
