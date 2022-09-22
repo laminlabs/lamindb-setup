@@ -14,55 +14,75 @@ def check_migrate(
     *,
     usettings: UserSettings,
     isettings: InstanceSettings,
-    schema: str = "lnschema_core",
 ):
-    if schema == "lnschema_core":
-        import lnschema_core
-    else:
-        raise NotImplementedError
+    status = []
 
-    with sqm.Session(isettings.db_engine()) as session:
-        version_table = session.exec(sqm.select(lnschema_core.version_yvzi)).all()
-
-    versions = [row.v for row in version_table]
-
-    current_version = lnschema_core.__version__
-
-    if current_version not in versions and len(versions) > 0:
-        # run a confirmation dialogue outside a pytest run
-        if "PYTEST_CURRENT_TEST" not in os.environ:
-            logger.warning(
-                "Run the command in the shell to respond to the following dialogue."
-            )
-
-            response = input(
-                f"Do you want to migrate from {versions[-1]} to"
-                f" {current_version} (y/n)?"
-            )
-
-            if response != "y":
-                logger.warning(
-                    "Your database does not seem up to date with the latest schema."
-                    "Either install a previous API version or migrate the database."
-                )
-                return None
+    for schema_name in ["core"] + isettings.schema_modules.split(", "):
+        if schema_name == "core":
+            schema_id = "yvzi"
+            import lnschema_core as schema_module
+        elif schema_name == "bionty":
+            schema_id = "zdno"
+            import lnschema_bionty as schema_module
         else:
-            logger.info(f"Migrating from {versions[-1]} to {current_version}.")
+            logger.info(f"Migration for {schema_name} not yet implemented.")
+            continue
 
-        return migrate(
-            version=current_version,
-            usettings=usettings,
-            isettings=isettings,
-            schema="lnschema_core",
-        )
+        with sqm.Session(isettings.db_engine()) as session:
+            version_table = getattr(schema_module, f"version_{schema_id}")
+            versions = session.exec(sqm.select(version_table)).all()
+
+        versions = [row.v for row in versions]
+
+        current_version = schema_module.__version__
+
+        if current_version not in versions and len(versions) > 0:
+            # run a confirmation dialogue outside a pytest run
+            if "PYTEST_CURRENT_TEST" not in os.environ:
+                logger.warning(
+                    "Run the command in the shell to respond to the following dialogue."
+                )
+
+                response = input(
+                    f"Do you want to migrate {schema_name} from {versions[-1]} to"
+                    f" {current_version} (y/n)?"
+                )
+
+                if response != "y":
+                    logger.warning(
+                        f"Your db does not match the latest versio of schema {schema_name}."  # noqa
+                        "Either install a previous API version or migrate the database."
+                    )
+                    return None
+            else:
+                logger.info(
+                    f"Migrating {schema_name} from {versions[-1]} to {current_version}."
+                )
+
+            status.append(
+                migrate(
+                    version=current_version,
+                    usettings=usettings,
+                    isettings=isettings,
+                    schema_name=schema_name,
+                    schema_id=schema_id,
+                )
+            )
+        else:
+            status.append("migrate-unnecessary")
+
+    if "migrate-failed" in status:
+        return "migrate-failed"
+    elif "migrate-success" in status:
+        return "migrate-success"
     else:
         return "migrate-unnecessary"
 
 
 def modify_alembic_ini(
-    filepath: Path, isettings: InstanceSettings, revert: bool = False
+    filepath: Path, isettings: InstanceSettings, schema_name: str, revert: bool = False
 ):
-    sl_from, sl_to = "lnschema_core/migrations", "migrations"
+    sl_from, sl_to = f"lnschema_{schema_name}/migrations", "migrations"
     url_from, url_to = (
         "sqlite:///tests/testdb.lndb",
         f"sqlite:///{isettings._sqlite_file_local}",
@@ -92,38 +112,41 @@ def migrate(
     version: str,
     usettings: UserSettings,
     isettings: InstanceSettings,
-    schema: str = "lnschema_core",
+    schema_name: str = "core",
+    schema_id: str = "yvzi",
 ):
     """Migrate database to latest version."""
-    if schema == "lnschema_core":
-        import lnschema_core
+    if schema_name == "core":
+        import lnschema_core as schema_module
+    elif schema_name == "bionty":
+        import lnschema_bionty as schema_module
     else:
         raise NotImplementedError
 
-    schema_root = Path(lnschema_core.__file__).parent
+    schema_root = Path(schema_module.__file__).parent
     filepath = schema_root / "alembic.ini"
 
-    modify_alembic_ini(filepath, isettings)
+    modify_alembic_ini(filepath, isettings, schema_name)
 
     process = run(
-        "python -m alembic --name yvzi upgrade head",
+        f"python -m alembic --name {schema_id} upgrade head",
         cwd=f"{schema_root}",
         shell=True,
     )
 
     if process.returncode == 0:
-        logger.success(f"Successfully migrated {schema} to v{version}.")
+        logger.success(f"Successfully migrated schema {schema_name} to v{version}.")
         # The following call will also update the sqlite file in the cloud.
         insert.version(
-            "yvzi",
-            lnschema_core.__version__,
-            lnschema_core._migration,
+            schema_id,
+            schema_module.__version__,
+            schema_module._migration,
             usettings.id,  # type: ignore
         )
     else:
         logger.error("Automatic migration failed.")
 
-    modify_alembic_ini(filepath, isettings, revert=True)
+    modify_alembic_ini(filepath, isettings, schema_name, revert=True)
 
     if process.returncode == 0:
         return "migrate-success"
