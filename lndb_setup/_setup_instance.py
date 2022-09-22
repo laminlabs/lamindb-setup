@@ -53,7 +53,7 @@ def setup_instance_db():
                 " location."
             )
             return None
-        setup_schema(isettings)
+        setup_schema(isettings, usettings)
         logger.info(
             f"Created instance {isettings.name} with core schema"
             f" v{lnschema_core.__version__}: {isettings._sqlite_file}"
