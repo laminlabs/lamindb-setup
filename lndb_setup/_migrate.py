@@ -25,7 +25,8 @@ def check_migrate(
             schema_id = "zdno"
             import lnschema_bionty as schema_module
         else:
-            raise NotImplementedError
+            logger.info(f"Migration for {schema_name} not yet implemented.")
+            continue
 
         with sqm.Session(isettings.db_engine()) as session:
             version_table = getattr(schema_module, f"version_{schema_id}")
