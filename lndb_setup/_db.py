@@ -70,11 +70,11 @@ class insert:
             raise NotImplementedError
 
         with sqm.Session(engine) as session:
-            version_table = getattr(schema_module, "version_{schema}")
+            version_table = getattr(schema_module, f"version_{schema}")
             session.add(version_table(v=version, migration=migration, user_id=user_id))
             # only update migration table if it hasn't already auto-updated
             # by the migration tool
-            migration_table = getattr(schema_module, "migration_{schema}")
+            migration_table = getattr(schema_module, f"migration_{schema}")
             exists = session.get(migration_table, migration)
             if exists is None:
                 session.add(migration_table(version_num=migration))
