@@ -1,5 +1,5 @@
-import lamin_logger as logger
 import lnschema_core
+from lamin_logger import logger
 from sqlmodel import SQLModel
 
 from ._db import insert
