@@ -138,7 +138,7 @@ def migrate(
         logger.success(f"Successfully migrated schema {schema_name} to v{version}.")
         # The following call will also update the sqlite file in the cloud.
         insert.version(
-            "yvzi",
+            schema_id,
             schema_module.__version__,
             schema_module._migration,
             usettings.id,  # type: ignore
