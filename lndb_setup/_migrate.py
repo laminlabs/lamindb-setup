@@ -28,7 +28,7 @@ def check_migrate(
 
     current_version = lnschema_core.__version__
 
-    if current_version not in versions:
+    if current_version not in versions and len(versions) > 0:
         # run a confirmation dialogue outside a pytest run
         if "PYTEST_CURRENT_TEST" not in os.environ:
             logger.warning(
@@ -114,8 +114,11 @@ def migrate(
     if process.returncode == 0:
         logger.success(f"Successfully migrated {schema} to v{version}.")
         # The following call will also update the sqlite file in the cloud.
-        insert.version_yvzi(
-            lnschema_core.__version__, lnschema_core._migration, usettings.id
+        insert.version(
+            "yvzi",
+            lnschema_core.__version__,
+            lnschema_core._migration,
+            usettings.id,  # type: ignore
         )
     else:
         logger.error("Automatic migration failed.")

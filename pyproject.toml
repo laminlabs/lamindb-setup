@@ -32,7 +32,7 @@ test = [
     "pytest>=6.0",
     "pytest-cov",
     "bionty>=0.2.4",
-    "lnschema_bionty>=0.2.3",
+    "lnschema_bionty>=0.3.0",
     "lnschema_wetlab>=0.3.1",
     "cloudpathlib[gs]",
 ]
