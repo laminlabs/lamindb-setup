@@ -78,9 +78,9 @@ def check_migrate(
 
 
 def modify_alembic_ini(
-    filepath: Path, isettings: InstanceSettings, revert: bool = False
+    filepath: Path, isettings: InstanceSettings, schema_name: str, revert: bool = False
 ):
-    sl_from, sl_to = "lnschema_core/migrations", "migrations"
+    sl_from, sl_to = f"lnschema_{schema_name}/migrations", "migrations"
     url_from, url_to = (
         "sqlite:///tests/testdb.lndb",
         f"sqlite:///{isettings._sqlite_file_local}",
@@ -124,7 +124,7 @@ def migrate(
     schema_root = Path(schema_module.__file__).parent
     filepath = schema_root / "alembic.ini"
 
-    modify_alembic_ini(filepath, isettings)
+    modify_alembic_ini(filepath, isettings, schema_name)
 
     process = run(
         f"python -m alembic --name {schema_id} upgrade head",
@@ -144,7 +144,7 @@ def migrate(
     else:
         logger.error("Automatic migration failed.")
 
-    modify_alembic_ini(filepath, isettings, revert=True)
+    modify_alembic_ini(filepath, isettings, schema_name, revert=True)
 
     if process.returncode == 0:
         return "migrate-success"
