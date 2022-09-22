@@ -64,6 +64,7 @@ def check_migrate(
                 usettings=usettings,
                 isettings=isettings,
                 schema_name=schema_name,
+                schema_id=schema_id,
             )
         else:
             status += "migrate-unnecessary"
@@ -110,6 +111,7 @@ def migrate(
     usettings: UserSettings,
     isettings: InstanceSettings,
     schema_name: str = "core",
+    schema_id: str = "yvzi",
 ):
     """Migrate database to latest version."""
     if schema_name == "core":
@@ -125,7 +127,7 @@ def migrate(
     modify_alembic_ini(filepath, isettings)
 
     process = run(
-        "python -m alembic --name yvzi upgrade head",
+        f"python -m alembic --name {schema_id} upgrade head",
         cwd=f"{schema_root}",
         shell=True,
     )
