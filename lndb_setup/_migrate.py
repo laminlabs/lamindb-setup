@@ -28,7 +28,7 @@ def check_migrate(
 
     current_version = lnschema_core.__version__
 
-    if current_version not in versions:
+    if current_version not in versions and len(versions) > 0:
         # run a confirmation dialogue outside a pytest run
         if "PYTEST_CURRENT_TEST" not in os.environ:
             logger.warning(
