@@ -59,15 +59,17 @@ def check_migrate(
                     f"Migrating {schema_name} from {versions[-1]} to {current_version}."
                 )
 
-            status += migrate(
-                version=current_version,
-                usettings=usettings,
-                isettings=isettings,
-                schema_name=schema_name,
-                schema_id=schema_id,
+            status.append(
+                migrate(
+                    version=current_version,
+                    usettings=usettings,
+                    isettings=isettings,
+                    schema_name=schema_name,
+                    schema_id=schema_id,
+                )
             )
         else:
-            status += "migrate-unnecessary"
+            status.append("migrate-unnecessary")
 
     if "migrate-failed" in status:
         return "migrate-failed"
