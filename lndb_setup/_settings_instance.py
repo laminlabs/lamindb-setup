@@ -5,6 +5,8 @@ from typing import Optional, Union
 import sqlmodel as sqm
 from appdirs import AppDirs
 from cloudpathlib import CloudPath, GSClient, S3Client
+from cloudpathlib.exceptions import OverwriteNewerLocalError
+from lamin_logger import logger
 
 DIRS = AppDirs("lamindb", "laminlabs")
 
@@ -47,12 +49,23 @@ class Storage:
 
     def cloud_to_local(self, filepath: Union[Path, CloudPath]) -> Path:
         """Local (cache) filepath from filepath."""
-        if self.settings.cloud_storage:
-            filepath = filepath.fspath  # type: ignore  # mypy misses CloudPath
-        Path(filepath).parent.mkdir(
+        try:
+            # the following will auto-update the local cache if the cloud file is newer
+            # if both have the same age, it will keep it as is
+            if self.settings.cloud_storage:
+                local_filepath = filepath.fspath  # type: ignore  # mypy misses CloudPath  # noqa
+        except OverwriteNewerLocalError:
+            local_filepath = self.cloud_to_local_no_update(filepath)  # type: ignore
+            logger.warning(
+                f"Local file ({local_filepath}) for cloud path ({filepath}) is newer on disk than in cloud.\n"  # noqa
+                "It seems you manually updated the database locally and didn't push changes to the cloud.\n"  # noqa
+                "This can lead to data loss if somebody else modified the cloud file in"
+                " the meantime."
+            )
+        Path(local_filepath).parent.mkdir(
             parents=True, exist_ok=True
         )  # this should not happen here but is currently needed
-        return filepath
+        return local_filepath
 
     # conversion to Path via cloud_to_local() would trigger download
     # of remote file to cache if there already is one
