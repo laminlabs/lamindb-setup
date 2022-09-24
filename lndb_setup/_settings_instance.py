@@ -86,10 +86,10 @@ class Storage:
 
 class instance_description:
     storage_dir = """Storage root. Either local dir, ``s3://bucket_name`` or ``gs://bucket_name``."""  # noqa
-    storage_region = """Cloud storage region for s3 and gcp"""
+    storage_region = """Cloud storage region for s3 and Google Cloud."""
     _dbconfig = """Either "sqlite" or "instance_name, postgres_url"."""
     name = """Instance name."""
-    schema_modules = """Comma-separated string of schema modules."""
+    schema_modules = """Comma-separated string of schema modules. None if not set."""
 
 
 def instance_from_storage(storage):
@@ -100,14 +100,14 @@ def instance_from_storage(storage):
 class InstanceSettings:
     """Instance settings written during setup."""
 
-    storage_dir: Union[CloudPath, Path] = None
+    storage_dir: Union[CloudPath, Path] = None  # None is just for init, can't be None
     """Storage root. Either local dir, ``s3://bucket_name`` or ``gs://bucket_name``."""
     storage_region: Optional[str] = None
-    """Cloud storage region for s3 and gcp."""
+    """Cloud storage region for s3 and Google Cloud."""
     _dbconfig: str = "sqlite"
     """Either "sqlite" or "instance_name, postgres_url"."""
-    schema_modules: str = None  # type: ignore
-    """Comma-separated string of schema modules."""
+    schema_modules: Optional[str] = None  # type: ignore
+    """Comma-separated string of schema modules. None if not set."""
 
     @property
     def cloud_storage(self) -> bool:
