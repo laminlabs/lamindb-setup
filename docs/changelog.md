@@ -3,6 +3,7 @@
 <!-- prettier-ignore -->
 Name | PR | Developer | Date | Version
 --- | --- | --- | --- | ---
+:art: Explicitly treat no schema modules as None | [45](https://github.com/laminlabs/lndb-setup/pull/45) | [falexwolf](https://github.com/falexwolf) | 2022-09-24 |
 🚸 Do not error if local file is newer, print warning instead | [44](https://github.com/laminlabs/lndb-setup/pull/44) | [falexwolf](https://github.com/falexwolf) | 2022-09-24 |
 :art: Simplify version selection | [43](https://github.com/laminlabs/lndb-setup/pull/43) | [falexwolf](https://github.com/falexwolf) | 2022-09-24 |
 ✅ Test bionty migration | [42](https://github.com/laminlabs/lndb-setup/pull/42) | [falexwolf](https://github.com/falexwolf) | 2022-09-22 | 0.7.1
