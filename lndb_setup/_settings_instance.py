@@ -53,7 +53,9 @@ class Storage:
             # the following will auto-update the local cache if the cloud file is newer
             # if both have the same age, it will keep it as is
             if self.settings.cloud_storage:
-                local_filepath = filepath.fspath  # type: ignore  # mypy misses CloudPath  # noqa
+                local_filepath = CloudPath(filepath).fspath
+            else:
+                local_filepath = Path(filepath)
         except OverwriteNewerLocalError:
             local_filepath = self.cloud_to_local_no_update(filepath)  # type: ignore
             logger.warning(
