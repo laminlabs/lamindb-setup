@@ -30,9 +30,7 @@ def check_migrate(
 
         with sqm.Session(isettings.db_engine()) as session:
             version_table = getattr(schema_module, f"version_{schema_id}")
-            versions = session.exec(sqm.select(version_table)).all()
-
-        versions = [row.v for row in versions]
+            versions = session.exec(sqm.select(version_table.v)).all()
 
         current_version = schema_module.__version__
 
