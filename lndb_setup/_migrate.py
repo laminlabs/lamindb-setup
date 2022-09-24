@@ -17,7 +17,11 @@ def check_migrate(
 ):
     status = []
 
-    for schema_name in ["core"] + isettings.schema_modules.split(", "):
+    schema_names = []
+    if isettings.schema_modules is not None:
+        schema_names = isettings.schema_modules.split(", ")
+
+    for schema_name in ["core"] + schema_names:
         if schema_name == "core":
             schema_id = "yvzi"
             import lnschema_core as schema_module

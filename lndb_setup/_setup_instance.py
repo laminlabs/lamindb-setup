@@ -125,6 +125,8 @@ def init(
         if len(validated_schema) == 0:
             raise RuntimeError(f"Unknown schema modules. Only know {known_modules}.")
         instance_settings.schema_modules = ", ".join(validated_schema)
+    else:
+        instance_settings.schema_modules = None
 
     save_instance_settings(instance_settings)
 
