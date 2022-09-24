@@ -3,6 +3,7 @@
 <!-- prettier-ignore -->
 Name | PR | Developer | Date | Version
 --- | --- | --- | --- | ---
+:art: Simplify version selection | [43](https://github.com/laminlabs/lndb-setup/pull/43) | [falexwolf](https://github.com/falexwolf) | 2022-09-24 |
 ✅ Test bionty migration | [42](https://github.com/laminlabs/lndb-setup/pull/42) | [falexwolf](https://github.com/falexwolf) | 2022-09-22 | 0.7.1
 ✨ Track versions and migrations of bionty | [41](https://github.com/laminlabs/lndb-setup/pull/41) | [falexwolf](https://github.com/falexwolf) | 2022-09-22 |
 🚚 Rename `user_settings` to `usettings` | [40](https://github.com/laminlabs/lndb-setup/pull/40) | [falexwolf](https://github.com/falexwolf) | 2022-09-21 | 0.7.0
