@@ -57,7 +57,7 @@ def main():
         )
     elif args.command == "load":
         return _setup_instance.load(
-            instance_name=args.name,
+            instance_name=args.instance,
         )
     else:
         logger.error("Invalid command. Try `lndb -h`.")
