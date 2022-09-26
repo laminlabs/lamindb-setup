@@ -3,6 +3,7 @@
 <!-- prettier-ignore -->
 Name | PR | Developer | Date | Version
 --- | --- | --- | --- | ---
+🚑 Fix CLI load | [commit](https://github.com/laminlabs/lndb-setup/commit/1ca92fd5c340da101b759d4e3d687982dd0338ef) | [falexwolf](https://github.com/falexwolf) | 2022-09-26 | 0.8.1
 🚸 Make load arg positional | [46](https://github.com/laminlabs/lndb-setup/pull/46) | [falexwolf](https://github.com/falexwolf) | 2022-09-26 | 0.8.0
 🎨 Explicitly treat no schema modules as None | [45](https://github.com/laminlabs/lndb-setup/pull/45) | [falexwolf](https://github.com/falexwolf) | 2022-09-24 |
 🚸 Do not error if local file is newer, print warning instead | [44](https://github.com/laminlabs/lndb-setup/pull/44) | [falexwolf](https://github.com/falexwolf) | 2022-09-24 |
