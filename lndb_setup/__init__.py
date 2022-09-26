@@ -37,7 +37,7 @@ Dev API
    Storage
 """
 
-__version__ = "0.7.1"
+__version__ = "0.8.0"
 from . import _check_versions  # noqa
 from ._schema import schema  # noqa
 from ._settings import settings  # noqa

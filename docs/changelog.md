@@ -3,10 +3,10 @@
 <!-- prettier-ignore -->
 Name | PR | Developer | Date | Version
 --- | --- | --- | --- | ---
-🚸 Make load arg positional | [46](https://github.com/laminlabs/lndb-setup/pull/46) | [falexwolf](https://github.com/falexwolf) | 2022-09-26 |
-:art: Explicitly treat no schema modules as None | [45](https://github.com/laminlabs/lndb-setup/pull/45) | [falexwolf](https://github.com/falexwolf) | 2022-09-24 |
+🚸 Make load arg positional | [46](https://github.com/laminlabs/lndb-setup/pull/46) | [falexwolf](https://github.com/falexwolf) | 2022-09-26 | 0.8.0
+🎨 Explicitly treat no schema modules as None | [45](https://github.com/laminlabs/lndb-setup/pull/45) | [falexwolf](https://github.com/falexwolf) | 2022-09-24 |
 🚸 Do not error if local file is newer, print warning instead | [44](https://github.com/laminlabs/lndb-setup/pull/44) | [falexwolf](https://github.com/falexwolf) | 2022-09-24 |
-:art: Simplify version selection | [43](https://github.com/laminlabs/lndb-setup/pull/43) | [falexwolf](https://github.com/falexwolf) | 2022-09-24 |
+🎨 Simplify version selection | [43](https://github.com/laminlabs/lndb-setup/pull/43) | [falexwolf](https://github.com/falexwolf) | 2022-09-24 |
 ✅ Test bionty migration | [42](https://github.com/laminlabs/lndb-setup/pull/42) | [falexwolf](https://github.com/falexwolf) | 2022-09-22 | 0.7.1
 ✨ Track versions and migrations of bionty | [41](https://github.com/laminlabs/lndb-setup/pull/41) | [falexwolf](https://github.com/falexwolf) | 2022-09-22 |
 🚚 Rename `user_settings` to `usettings` | [40](https://github.com/laminlabs/lndb-setup/pull/40) | [falexwolf](https://github.com/falexwolf) | 2022-09-21 | 0.7.0
