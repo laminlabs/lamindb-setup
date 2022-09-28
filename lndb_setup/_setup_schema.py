@@ -6,20 +6,19 @@ from ._db import insert
 from ._settings_instance import InstanceSettings
 from ._settings_user import UserSettings
 
+# def configure_schema_wetlab(schema_modules):
+#     def _no_biosample_techsample():
+#         file_loc = lnschema_core.__file__.replace("core", "wetlab")
+#         with open(file_loc, "r") as f:
+#             content = f.read()
+#         with open(file_loc, "w") as f:
+#             content = content.replace(
+#                 '_tables = ["biosample", "techsample"]', "_tables = []"
+#             )
+#             f.write(content)
 
-def configure_schema_wetlab(schema_modules):
-    def _no_biosample_techsample():
-        file_loc = lnschema_core.__file__.replace("core", "wetlab")
-        with open(file_loc, "r") as f:
-            content = f.read()
-        with open(file_loc, "w") as f:
-            content = content.replace(
-                '_tables = ["biosample", "techsample"]', "_tables = []"
-            )
-            f.write(content)
-
-    if any([i in schema_modules for i in {"retro", "swarm"}]):
-        _no_biosample_techsample()
+#     if any([i in schema_modules for i in {"retro", "swarm"}]):
+#         _no_biosample_techsample()
 
 
 def setup_schema(isettings: InstanceSettings, usettings: UserSettings):
@@ -32,8 +31,6 @@ def setup_schema(isettings: InstanceSettings, usettings: UserSettings):
 
         msg += ", bionty"
     if schema_modules is not None and "wetlab" in schema_modules:
-        configure_schema_wetlab(schema_modules)
-
         import lnschema_wetlab  # noqa
 
         msg += ", wetlab"
