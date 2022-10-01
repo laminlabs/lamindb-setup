@@ -40,7 +40,7 @@ Dev API
 __version__ = "0.8.2"
 from . import _check_versions  # noqa
 from ._schema import schema  # noqa
-from ._settings import settings  # noqa
+from ._settings import settings_from_env  # noqa
 from ._settings_instance import InstanceSettings, Storage  # noqa
 from ._settings_user import UserSettings  # noqa
 from ._setup_instance import init, load  # noqa

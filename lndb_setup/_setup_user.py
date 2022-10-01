@@ -47,9 +47,9 @@ def load_user(email: str = None, handle: str = None):
         user_settings.handle = handle
         save_user_settings(user_settings)
 
-    from ._settings import settings
+    from ._settings import settings_from_env
 
-    settings._user_settings = None  # this is to refresh a settings instance
+    settings_from_env._user_settings = None  # this is to refresh a settings instance
 
 
 def login(
@@ -93,21 +93,21 @@ def login(
     user_settings.handle = user_handle
     save_user_settings(user_settings)
 
-    from ._settings import settings
+    from ._settings import settings_from_env
 
-    settings._user_settings = None
+    settings_from_env._user_settings = None
 
     # log in user into instance db
-    if settings.instance.name is not None:
+    if settings_from_env.instance.name is not None:
         # the above if condition is not safe enough
         # users might delete a database but still keeping the
         # current_instance.env settings file around
         # hence, the if condition will pass despite the database
         # having actually been deleted
         # so, let's do another check
-        if settings.instance._dbconfig == "sqlite":
+        if settings_from_env.instance._dbconfig == "sqlite":
             # let's check whether the sqlite file is actually available
-            if not settings.instance._sqlite_file.exists():
+            if not settings_from_env.instance._sqlite_file.exists():
                 # if the file doesn't exist, there is no need to
                 # log in the user
                 # hence, simply end log in here
@@ -115,9 +115,9 @@ def login(
             # if the file exists but does not have a user table, raise a warning
             if "user" not in schema.list_entities():
                 logger.warning(
-                    f"An SQLite file {settings.instance._sqlite_file} exists but does not have a user table. "  # noqa
+                    f"An SQLite file {settings_from_env.instance._sqlite_file} exists but does not have a user table. "  # noqa
                 )
                 return None
         insert_if_not_exists.user(
-            settings.user.email, settings.user.id, settings.user.handle
+            settings_from_env.user.email, settings_from_env.user.id, settings_from_env.user.handle
         )

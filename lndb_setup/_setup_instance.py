@@ -69,9 +69,9 @@ def load(instance_name: str):
     assert isettings.name is not None
     save_instance_settings(isettings)
 
-    from ._settings import settings
+    from ._settings import settings_from_env
 
-    settings._instance_settings = None
+    settings_from_env._instance_settings = None
 
     message = check_migrate(usettings=usettings, isettings=isettings)
     if message == "migrate-failed":
@@ -132,7 +132,7 @@ def init(
 
     setup_instance_db()
 
-    from ._settings import settings
+    from ._settings import settings_from_env
 
-    settings._instance_settings = None
+    settings_from_env._instance_settings = None
     return None
