@@ -155,14 +155,17 @@ class InstanceSettings:
         if self._dbconfig == "sqlite":
             return instance_from_storage(self.storage_dir)
         else:
-            return self._dbconfig.split(",")[0]
+            return self._dbconfig.split("/")[-1]
 
     @property
     def db(self) -> str:
         """Database URL."""
         # the great thing about cloudpathlib is that it downloads the
         # remote file to cache as soon as the time stamp is out of date
-        return f"sqlite:///{self.storage.cloud_to_local(self._sqlite_file)}"
+        if self._dbconfig == "sqlite":
+            return f"sqlite:///{self.storage.cloud_to_local(self._sqlite_file)}"
+        else:
+            return self._dbconfig
 
     def db_engine(self, future=True):
         """Database engine."""

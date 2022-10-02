@@ -112,8 +112,6 @@ def init(
 
     # setup _config
     instance_settings._dbconfig = dbconfig
-    if dbconfig != "sqlite":
-        raise NotImplementedError()
 
     # setup schema
     if schema is not None:
