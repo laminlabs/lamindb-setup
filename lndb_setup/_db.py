@@ -1,3 +1,5 @@
+from typing import Any
+
 import lnschema_core as schema_core
 import sqlmodel as sqm
 
@@ -44,37 +46,33 @@ class insert:
     @classmethod
     def version(
         cls,
-        schema: str,
-        version: str,
-        migration: str,
+        *,
+        schema_module: Any,
         user_id: str,
         cloud_sqlite: bool = True,
     ):
         """Core schema module version.
 
         Args:
-            schema: Schema module ID.
-            version: Python package version string.
-            migration: Migration version string.
+            schema_module: The schema module.
             user_id: User ID.
             cloud_sqlite: Update cloud SQLite file or not.
         """
         settings = load_or_create_instance_settings()
         engine = settings.db_engine()
 
-        if schema == "yvzi":
-            import lnschema_core as schema_module
-        elif schema == "zdno":
-            import lnschema_bionty as schema_module
-        else:
-            raise NotImplementedError
+        schema_id, version, migration = (
+            schema_module._schema_id,
+            schema_module.__version__,
+            schema_module._migration,
+        )
 
         with sqm.Session(engine) as session:
-            version_table = getattr(schema_module, f"version_{schema}")
+            version_table = getattr(schema_module, f"version_{schema_id}")
             session.add(version_table(v=version, migration=migration, user_id=user_id))
             # only update migration table if it hasn't already auto-updated
             # by the migration tool and if migration is not None!
-            migration_table = getattr(schema_module, f"migration_{schema}")
+            migration_table = getattr(schema_module, f"migration_{schema_id}")
             exists = session.get(migration_table, migration)
             if exists is None and migration is not None:
                 session.add(migration_table(version_num=migration))

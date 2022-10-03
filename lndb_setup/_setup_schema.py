@@ -59,27 +59,21 @@ def setup_schema(isettings: InstanceSettings, usettings: UserSettings):
     insert.user(email=usettings.email, user_id=usettings.id, handle=usettings.handle)
 
     insert.version(
-        "yvzi",
-        lnschema_core.__version__,
-        lnschema_core._migration,
+        lnschema_core,
         usettings.id,  # type: ignore
         cloud_sqlite=False,
     )
 
     if schema_modules is not None and "bionty" in schema_modules:
         insert.version(
-            "zdno",
-            lnschema_bionty.__version__,
-            lnschema_bionty._migration,
+            lnschema_bionty,
             usettings.id,  # type: ignore
             cloud_sqlite=False,
         )
 
     if schema_modules is not None and "harmonic-docking" in schema_modules:
         insert.version(
-            "ijib",
-            lnschema_harmonic_docking.__version__,
-            lnschema_harmonic_docking._migration,
+            lnschema_harmonic_docking,
             usettings.id,  # type: ignore
             cloud_sqlite=False,
         )
