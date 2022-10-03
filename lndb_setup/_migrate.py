@@ -1,6 +1,7 @@
 import os
 from pathlib import Path
 from subprocess import run
+from typing import Any
 
 import sqlmodel as sqm
 from lamin_logger import logger
@@ -28,6 +29,9 @@ def check_migrate(
         elif schema_name == "bionty":
             schema_id = "zdno"
             import lnschema_bionty as schema_module
+        elif schema_name == "harmonic-docking":
+            schema_id = "ijib"
+            import lnschema_harmonic_docking as schema_module
         else:
             logger.info(f"Migration for {schema_name} not yet implemented.")
             continue
@@ -68,6 +72,7 @@ def check_migrate(
                     isettings=isettings,
                     schema_name=schema_name,
                     schema_id=schema_id,
+                    schema_module=schema_module,
                 )
             )
         else:
@@ -114,17 +119,11 @@ def migrate(
     version: str,
     usettings: UserSettings,
     isettings: InstanceSettings,
-    schema_name: str = "core",
-    schema_id: str = "yvzi",
+    schema_name: str,
+    schema_id: str,
+    schema_module: Any,
 ):
     """Migrate database to latest version."""
-    if schema_name == "core":
-        import lnschema_core as schema_module
-    elif schema_name == "bionty":
-        import lnschema_bionty as schema_module
-    else:
-        raise NotImplementedError
-
     schema_root = Path(schema_module.__file__).parent
     filepath = schema_root / "alembic.ini"
 
