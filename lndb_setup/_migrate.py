@@ -33,7 +33,11 @@ def check_migrate(
             logger.info(f"Migration for {schema_name} not yet implemented.")
             continue
 
-        schema_id = schema_module._schema_id
+        schema_id = str(
+            schema_module._schema_id
+            if hasattr(schema_module, "_schema_id")
+            else schema_module._schema,
+        )  # backward compat
 
         with sqm.Session(isettings.db_engine()) as session:
             version_table = getattr(schema_module, f"version_{schema_id}")

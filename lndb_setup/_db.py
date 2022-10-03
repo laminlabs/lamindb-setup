@@ -62,7 +62,9 @@ class insert:
         engine = settings.db_engine()
 
         schema_id, version, migration = (
-            schema_module._schema_id,
+            schema_module._schema_id
+            if hasattr(schema_module, "_schema_id")
+            else schema_module._schema,  # backward compat
             schema_module.__version__,
             schema_module._migration,
         )
