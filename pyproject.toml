@@ -34,6 +34,7 @@ test = [
     "bionty>=0.2.4",
     "lnschema_bionty>=0.3.0",
     "lnschema_wetlab>=0.5.0",
+    "lnbfx",
     "cloudpathlib[gs]",
 ]
 
