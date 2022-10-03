@@ -3,7 +3,7 @@
 <!-- prettier-ignore -->
 Name | PR | Developer | Date | Version
 --- | --- | --- | --- | ---
-✨ Implement migrations for all schema modules | [52](https://github.com/laminlabs/lndb-setup/pull/52) | [falexwolf](https://github.com/falexwolf) | 2022-10-03 |
+✨ Implement migrations for all schema modules | [52](https://github.com/laminlabs/lndb-setup/pull/52) | [falexwolf](https://github.com/falexwolf) | 2022-10-03 | 0.9.0
 ✨ Add docking schema module | [51](https://github.com/laminlabs/lndb-setup/pull/51) | [falexwolf](https://github.com/falexwolf) | 2022-10-03 |
 🏗️ Make setup compatible with postgres | [50](https://github.com/laminlabs/lndb-setup/pull/50) | [fredericenard](https://github.com/fredericenard) | 2022-10-03 | 0.8.3
 🔥 Removed `configure_schema_wetlab` | [47](https://github.com/laminlabs/lndb-setup/pull/47) | [sunnyosun](https://github.com/sunnyosun) | 2022-09-28 | 0.8.2
