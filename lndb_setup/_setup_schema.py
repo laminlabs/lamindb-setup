@@ -30,7 +30,7 @@ def setup_schema(isettings: InstanceSettings, usettings: UserSettings):
     else:
         schema_names = []
 
-    msg = "Loading schema modules: core"
+    msg = "Loading schema modules: "
 
     for schema_name in ["core"] + schema_names:
         importlib.import_module(get_schema_module_name(schema_name))
