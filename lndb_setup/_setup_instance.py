@@ -54,8 +54,9 @@ def setup_instance_db():
                 " location."
             )
             return None
-        if schema_exists(isettings) and isettings._dbconfig != "sqlite":
-            return None
+        if isettings._dbconfig != "sqlite":
+            if schema_exists(isettings):
+                return None
         setup_schema(isettings, usettings)
         logger.info(
             f"Created instance {isettings.name} with core schema"
