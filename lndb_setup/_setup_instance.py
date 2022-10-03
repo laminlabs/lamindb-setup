@@ -1,7 +1,6 @@
 from pathlib import Path
 from typing import Union
 
-import lnschema_core
 from cloudpathlib import CloudPath
 from lamin_logger import logger
 from sqlalchemy import text
@@ -58,10 +57,6 @@ def setup_instance_db():
             if schema_exists(isettings):
                 return None
         setup_schema(isettings, usettings)
-        logger.info(
-            f"Created instance {isettings.name} with core schema"
-            f" v{lnschema_core.__version__}: {isettings._sqlite_file}"
-        )
 
     update_db(isettings, usettings)
 
