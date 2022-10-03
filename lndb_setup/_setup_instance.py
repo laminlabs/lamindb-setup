@@ -137,20 +137,16 @@ def init(
 
     # setup schema
     if schema is not None:
-        known_modules = [
-            "bionty",
-            "wetlab",
-            "bfx",
-            "retro",
-            "swarm",
-            "harmonic-docking",
-        ]
+        from ._setup_schema import known_schema_names
+
         validated_schema = []
-        for module in known_modules:
+        for module in known_schema_names:
             if module in schema:
                 validated_schema.append(module)
         if len(validated_schema) == 0:
-            raise RuntimeError(f"Unknown schema modules. Only know {known_modules}.")
+            raise RuntimeError(
+                f"Unknown schema modules. Only know {known_schema_names}."
+            )
         instance_settings.schema_modules = ", ".join(validated_schema)
     else:
         instance_settings.schema_modules = None

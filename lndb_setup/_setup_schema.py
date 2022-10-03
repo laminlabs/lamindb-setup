@@ -1,3 +1,5 @@
+import importlib
+
 import lnschema_core
 from lamin_logger import logger
 from sqlmodel import SQLModel
@@ -6,51 +8,28 @@ from ._db import insert
 from ._settings_instance import InstanceSettings
 from ._settings_user import UserSettings
 
-# def configure_schema_wetlab(schema_modules):
-#     def _no_biosample_techsample():
-#         file_loc = lnschema_core.__file__.replace("core", "wetlab")
-#         with open(file_loc, "r") as f:
-#             content = f.read()
-#         with open(file_loc, "w") as f:
-#             content = content.replace(
-#                 '_tables = ["biosample", "techsample"]', "_tables = []"
-#             )
-#             f.write(content)
-
-#     if any([i in schema_modules for i in {"retro", "swarm"}]):
-#         _no_biosample_techsample()
+known_schema_names = [
+    "bionty",
+    "wetlab",
+    "bfx",
+    "retro",
+    "swarm",
+    "harmonic-docking",
+]
 
 
 def setup_schema(isettings: InstanceSettings, usettings: UserSettings):
-    schema_modules = isettings.schema_modules
+    if isettings.schema_modules is not None:
+        schema_names = isettings.schema_modules.split(", ")
+    else:
+        schema_names = []
 
     msg = "Loading schema modules: core"
 
-    if schema_modules is not None and "bionty" in schema_modules:
-        import lnschema_bionty  # noqa
-
-        msg += ", bionty"
-    if schema_modules is not None and "wetlab" in schema_modules:
-        import lnschema_wetlab  # noqa
-
-        msg += ", wetlab"
-    if schema_modules is not None and "bfx" in schema_modules:
-        import lnbfx.schema  # noqa
-
-        msg += ", bfx"
-
-    if schema_modules is not None and "retro" in schema_modules:
-        import lnschema_retro  # noqa
-
-        msg += ", retro"
-    if schema_modules is not None and "swarm" in schema_modules:
-        import maren.schema  # noqa
-
-        msg += ", swarm"
-    if schema_modules is not None and "harmonic-docking" in schema_modules:
-        import lnschema_harmonic_docking  # noqa
-
-        msg += ", harmonic-docking"
+    for schema_name in schema_names:
+        schema_module_name = f"lnschema_{schema_name.replace('-', '_')}"
+        importlib.import_module(schema_module_name)
+        msg += f", {schema_name}"
 
     logger.info(f"{msg}.")
 
@@ -64,16 +43,11 @@ def setup_schema(isettings: InstanceSettings, usettings: UserSettings):
         cloud_sqlite=False,
     )
 
-    if schema_modules is not None and "bionty" in schema_modules:
+    for schema_name in schema_names:
+        schema_module_name = f"lnschema_{schema_name.replace('-', '_')}"
+        schema_module = importlib.import_module(schema_module_name)
         insert.version(
-            schema_module=lnschema_bionty,
-            user_id=usettings.id,  # type: ignore
-            cloud_sqlite=False,
-        )
-
-    if schema_modules is not None and "harmonic-docking" in schema_modules:
-        insert.version(
-            schema_module=lnschema_harmonic_docking,
+            schema_module=schema_module,
             user_id=usettings.id,  # type: ignore
             cloud_sqlite=False,
         )

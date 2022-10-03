@@ -1,3 +1,4 @@
+import importlib
 import os
 from pathlib import Path
 from subprocess import run
@@ -18,20 +19,14 @@ def check_migrate(
 ):
     status = []
 
-    schema_names = []
     if isettings.schema_modules is not None:
         schema_names = isettings.schema_modules.split(", ")
+    else:
+        schema_names = []
 
     for schema_name in ["core"] + schema_names:
-        if schema_name == "core":
-            import lnschema_core as schema_module
-        elif schema_name == "bionty":
-            import lnschema_bionty as schema_module
-        elif schema_name == "harmonic-docking":
-            import lnschema_harmonic_docking as schema_module
-        else:
-            logger.info(f"Migration for {schema_name} not yet implemented.")
-            continue
+        schema_module_name = f"lnschema_{schema_name.replace('-', '_')}"
+        schema_module = importlib.import_module(schema_module_name)
 
         schema_id = str(
             schema_module._schema_id
