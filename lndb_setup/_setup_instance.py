@@ -54,7 +54,7 @@ def setup_instance_db():
                 " location."
             )
             return None
-        if schema_exists(isettings):
+        if schema_exists(isettings) and isettings._dbconfig != "sqlite":
             return None
         setup_schema(isettings, usettings)
         logger.info(
