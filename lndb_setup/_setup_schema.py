@@ -31,12 +31,10 @@ def setup_schema(isettings: InstanceSettings, usettings: UserSettings):
         schema_names = []
 
     msg = "Loading schema modules: "
-
     for schema_name in ["core"] + schema_names:
-        importlib.import_module(get_schema_module_name(schema_name))
-        msg += f"{schema_name},"
-
-    logger.info(f"{msg[:-1]}.")  # exclude the last comma
+        schema_module = importlib.import_module(get_schema_module_name(schema_name))
+        msg += f"{schema_name}=={schema_module.__version__}, "
+    logger.info(f"{msg[:-2]}.")  # exclude the last comma
 
     SQLModel.metadata.create_all(isettings.db_engine())
 
@@ -51,3 +49,5 @@ def setup_schema(isettings: InstanceSettings, usettings: UserSettings):
         )
 
     isettings._update_cloud_sqlite_file()
+
+    logger.info(f"Created instance {isettings.name}: {isettings._sqlite_file}")
