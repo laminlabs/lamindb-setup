@@ -3,7 +3,7 @@
 <!-- prettier-ignore -->
 Name | PR | Developer | Date | Version
 --- | --- | --- | --- | ---
-🏗️ Make setup compatible with postgres | [50](https://github.com/laminlabs/lndb-setup/pull/50) | [fredericenard](https://github.com/fredericenard) | 2022-10-03 |
+🏗️ Make setup compatible with postgres | [50](https://github.com/laminlabs/lndb-setup/pull/50) | [fredericenard](https://github.com/fredericenard) | 2022-10-03 | 0.8.3
 🔥 Removed `configure_schema_wetlab` | [47](https://github.com/laminlabs/lndb-setup/pull/47) | [sunnyosun](https://github.com/sunnyosun) | 2022-09-28 | 0.8.2
 🚑 Fix CLI load | [commit](https://github.com/laminlabs/lndb-setup/commit/1ca92fd5c340da101b759d4e3d687982dd0338ef) | [falexwolf](https://github.com/falexwolf) | 2022-09-26 | 0.8.1
 🚸 Make load arg positional | [46](https://github.com/laminlabs/lndb-setup/pull/46) | [falexwolf](https://github.com/falexwolf) | 2022-09-26 | 0.8.0
