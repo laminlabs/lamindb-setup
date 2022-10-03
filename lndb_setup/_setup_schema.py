@@ -1,6 +1,5 @@
 import importlib
 
-import lnschema_core
 from lamin_logger import logger
 from sqlmodel import SQLModel
 
@@ -26,7 +25,7 @@ def setup_schema(isettings: InstanceSettings, usettings: UserSettings):
 
     msg = "Loading schema modules: core"
 
-    for schema_name in schema_names:
+    for schema_name in ["core"] + schema_names:
         schema_module_name = f"lnschema_{schema_name.replace('-', '_')}"
         importlib.import_module(schema_module_name)
         msg += f", {schema_name}"
@@ -37,13 +36,7 @@ def setup_schema(isettings: InstanceSettings, usettings: UserSettings):
 
     insert.user(email=usettings.email, user_id=usettings.id, handle=usettings.handle)
 
-    insert.version(
-        schema_module=lnschema_core,
-        user_id=usettings.id,  # type: ignore
-        cloud_sqlite=False,
-    )
-
-    for schema_name in schema_names:
+    for schema_name in ["core"] + schema_names:
         schema_module_name = f"lnschema_{schema_name.replace('-', '_')}"
         schema_module = importlib.import_module(schema_module_name)
         insert.version(
