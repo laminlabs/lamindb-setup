@@ -10,6 +10,7 @@ from lamin_logger import logger
 from ._db import insert
 from ._settings_instance import InstanceSettings
 from ._settings_user import UserSettings
+from ._setup_schema import get_schema_module_name
 
 
 def check_migrate(
@@ -25,8 +26,7 @@ def check_migrate(
         schema_names = []
 
     for schema_name in ["core"] + schema_names:
-        schema_module_name = f"lnschema_{schema_name.replace('-', '_')}"
-        schema_module = importlib.import_module(schema_module_name)
+        schema_module = importlib.import_module(get_schema_module_name(schema_name))
 
         schema_id = str(
             schema_module._schema_id
@@ -87,7 +87,10 @@ def check_migrate(
 def modify_alembic_ini(
     filepath: Path, isettings: InstanceSettings, schema_name: str, revert: bool = False
 ):
-    sl_from, sl_to = f"lnschema_{schema_name}/migrations", "migrations"
+    schema_module_path = (
+        get_schema_module_name(schema_name).replace(".", "/") + "/migrations"
+    )
+    sl_from, sl_to = schema_module_path, "migrations"
     url_from, url_to = (
         "sqlite:///tests/testdb.lndb",
         f"sqlite:///{isettings._sqlite_file_local}",
