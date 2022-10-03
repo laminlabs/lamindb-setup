@@ -4,6 +4,7 @@ from typing import Union
 import lnschema_core
 from cloudpathlib import CloudPath
 from lamin_logger import logger
+from sqlalchemy import text
 
 from ._db import insert_if_not_exists
 from ._docs import doc_args
@@ -53,6 +54,9 @@ def setup_instance_db():
                 " location."
             )
             return None
+        if isettings._dbconfig != "sqlite":
+            if schema_exists(isettings):
+                return None
         setup_schema(isettings, usettings)
         logger.info(
             f"Created instance {isettings.name} with core schema"
@@ -60,6 +64,24 @@ def setup_instance_db():
         )
 
     update_db(isettings, usettings)
+
+
+def schema_exists(isettings: InstanceSettings):
+    with isettings.db_engine().connect() as conn:
+        results = conn.execute(
+            text(
+                """
+            SELECT EXISTS (
+                SELECT FROM
+                    information_schema.tables
+                WHERE
+                    table_schema LIKE 'public' AND
+                    table_name = 'user'
+            );
+        """
+            )
+        ).first()
+        return results[0]
 
 
 def load(instance_name: str):
@@ -112,8 +134,6 @@ def init(
 
     # setup _config
     instance_settings._dbconfig = dbconfig
-    if dbconfig != "sqlite":
-        raise NotImplementedError()
 
     # setup schema
     if schema is not None:

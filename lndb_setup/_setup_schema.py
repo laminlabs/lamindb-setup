@@ -52,6 +52,8 @@ def setup_schema(isettings: InstanceSettings, usettings: UserSettings):
 
     SQLModel.metadata.create_all(isettings.db_engine())
 
+    insert.user(email=usettings.email, user_id=usettings.id, handle=usettings.handle)
+
     insert.version(
         "yvzi",
         lnschema_core.__version__,
