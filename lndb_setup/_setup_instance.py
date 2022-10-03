@@ -130,6 +130,16 @@ def init(
 
     # setup storage
     instance_settings.storage_dir = setup_storage_dir(storage)
+    if dbconfig == "sqlite":
+        from ._settings_save import get_instance_settings_file
+
+        if get_instance_settings_file(instance_settings.name).exists():
+            if not instance_settings._sqlite_file.exists():
+                raise RuntimeError(
+                    "Instance name already exists for another storage root."
+                    "You created an instance somewhere else with the same name."
+                )
+
     instance_settings.storage_region = get_storage_region(instance_settings.storage_dir)
 
     # setup _config
