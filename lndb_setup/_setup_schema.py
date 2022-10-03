@@ -47,6 +47,10 @@ def setup_schema(isettings: InstanceSettings, usettings: UserSettings):
         import maren.schema  # noqa
 
         msg += ", swarm"
+    if schema_modules is not None and "harmonic-docking" in schema_modules:
+        import lnschema_harmonic_docking  # noqa
+
+        msg += ", harmonic-docking"
 
     logger.info(f"{msg}.")
 
@@ -55,19 +59,22 @@ def setup_schema(isettings: InstanceSettings, usettings: UserSettings):
     insert.user(email=usettings.email, user_id=usettings.id, handle=usettings.handle)
 
     insert.version(
-        "yvzi",
-        lnschema_core.__version__,
-        lnschema_core._migration,
-        usettings.id,  # type: ignore
+        schema_module=lnschema_core,
+        user_id=usettings.id,  # type: ignore
         cloud_sqlite=False,
     )
 
     if schema_modules is not None and "bionty" in schema_modules:
         insert.version(
-            "zdno",
-            lnschema_bionty.__version__,
-            lnschema_bionty._migration,
-            usettings.id,  # type: ignore
+            schema_module=lnschema_bionty,
+            user_id=usettings.id,  # type: ignore
+            cloud_sqlite=False,
+        )
+
+    if schema_modules is not None and "harmonic-docking" in schema_modules:
+        insert.version(
+            schema_module=lnschema_harmonic_docking,
+            user_id=usettings.id,  # type: ignore
             cloud_sqlite=False,
         )
 

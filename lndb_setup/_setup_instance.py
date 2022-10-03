@@ -137,7 +137,14 @@ def init(
 
     # setup schema
     if schema is not None:
-        known_modules = ["bionty", "wetlab", "bfx", "retro", "swarm"]
+        known_modules = [
+            "bionty",
+            "wetlab",
+            "bfx",
+            "retro",
+            "swarm",
+            "harmonic-docking",
+        ]
         validated_schema = []
         for module in known_modules:
             if module in schema:

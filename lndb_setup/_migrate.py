@@ -1,6 +1,7 @@
 import os
 from pathlib import Path
 from subprocess import run
+from typing import Any
 
 import sqlmodel as sqm
 from lamin_logger import logger
@@ -23,14 +24,20 @@ def check_migrate(
 
     for schema_name in ["core"] + schema_names:
         if schema_name == "core":
-            schema_id = "yvzi"
             import lnschema_core as schema_module
         elif schema_name == "bionty":
-            schema_id = "zdno"
             import lnschema_bionty as schema_module
+        elif schema_name == "harmonic-docking":
+            import lnschema_harmonic_docking as schema_module
         else:
             logger.info(f"Migration for {schema_name} not yet implemented.")
             continue
+
+        schema_id = str(
+            schema_module._schema_id
+            if hasattr(schema_module, "_schema_id")
+            else schema_module._schema,
+        )  # backward compat
 
         with sqm.Session(isettings.db_engine()) as session:
             version_table = getattr(schema_module, f"version_{schema_id}")
@@ -68,6 +75,7 @@ def check_migrate(
                     isettings=isettings,
                     schema_name=schema_name,
                     schema_id=schema_id,
+                    schema_module=schema_module,
                 )
             )
         else:
@@ -114,17 +122,11 @@ def migrate(
     version: str,
     usettings: UserSettings,
     isettings: InstanceSettings,
-    schema_name: str = "core",
-    schema_id: str = "yvzi",
+    schema_name: str,
+    schema_id: str,
+    schema_module: Any,
 ):
     """Migrate database to latest version."""
-    if schema_name == "core":
-        import lnschema_core as schema_module
-    elif schema_name == "bionty":
-        import lnschema_bionty as schema_module
-    else:
-        raise NotImplementedError
-
     schema_root = Path(schema_module.__file__).parent
     filepath = schema_root / "alembic.ini"
 
@@ -140,10 +142,8 @@ def migrate(
         logger.success(f"Successfully migrated schema {schema_name} to v{version}.")
         # The following call will also update the sqlite file in the cloud.
         insert.version(
-            schema_id,
-            schema_module.__version__,
-            schema_module._migration,
-            usettings.id,  # type: ignore
+            schema_module=schema_module,
+            user_id=usettings.id,  # type: ignore
         )
     else:
         logger.error("Automatic migration failed.")
