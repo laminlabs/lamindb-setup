@@ -6,7 +6,7 @@ from pydantic import BaseSettings
 
 def get_settings_dir():
     if "LAMIN_BASE_SETTINGS_DIR" in os.environ:
-        return os.environ["LAMIN_BASE_SETTINGS_DIR"] / ".lndb"
+        return Path(os.environ["LAMIN_BASE_SETTINGS_DIR"]) / ".lndb"
     else:
         return Path.home() / ".lndb"
 
