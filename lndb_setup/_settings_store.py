@@ -1,10 +1,19 @@
+import os
 from pathlib import Path
 
 from pydantic import BaseSettings
 
+
+def get_settings_dir():
+    if "LAMIN_BASE_SETTINGS_DIR" in os.environ:
+        return os.environ["LAMIN_BASE_SETTINGS_DIR"] / ".lndb"
+    else:
+        return Path.home() / ".lndb"
+
+
 # user_config_dir in appdirs is weird on MacOS!
 # hence, let's take home/.lndb
-settings_dir = Path.home() / ".lndb"
+settings_dir = get_settings_dir()
 settings_dir.mkdir(parents=True, exist_ok=True)
 current_instance_settings_file = settings_dir / "current_instance.env"
 current_user_settings_file = settings_dir / "current_user.env"
