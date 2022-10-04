@@ -3,7 +3,7 @@
 <!-- prettier-ignore -->
 Name | PR | Developer | Date | Version
 --- | --- | --- | --- | ---
-Cast base settings dir as Path | [57](https://github.com/laminlabs/lndb-setup/pull/57) | [fredericenard](https://github.com/fredericenard) | 2022-10-04 | 0.9.3
+Cast base settings dir as Path | [57](https://github.com/laminlabs/lndb-setup/pull/57) | [fredericenard](https://github.com/fredericenard) | 2022-10-04 | 0.9.4
 :construction: Enable other settings location | [56](https://github.com/laminlabs/lndb-setup/pull/56) | [fredericenard](https://github.com/fredericenard) | 2022-10-04 | 0.9.2
 🔊 Better logging during instance creation | [55](https://github.com/laminlabs/lndb-setup/pull/55) | [falexwolf](https://github.com/falexwolf) | 2022-10-03 |
 :bug: Ensure compat with lnbfx | [53](https://github.com/laminlabs/lndb-setup/pull/53) | [falexwolf](https://github.com/falexwolf) | 2022-10-03 | 0.9.1
