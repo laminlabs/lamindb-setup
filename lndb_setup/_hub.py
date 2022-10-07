@@ -20,7 +20,9 @@ def connect_hub():
 def sign_up_hub(email) -> Union[str, None]:
     hub = connect_hub()
     password = id.id_secret()  # generate new password
-    user = hub.auth.sign_up(email=email, password=password)
+    user = hub.auth.sign_up(
+        email=email, password=password, redirect_to="https://lamin.ai/signup"
+    )
     # if user already exists a fake user object without identity is returned
     if user.identities:
         # if user had called sign-up before, but not confirmed their email
