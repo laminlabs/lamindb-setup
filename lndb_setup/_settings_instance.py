@@ -145,7 +145,7 @@ class InstanceSettings:
         if self.cloud_storage:
             sqlite_file = self._sqlite_file
             cache_file = self.storage.cloud_to_local_no_update(sqlite_file)
-            sqlite_file.upload_from(cache_file)  # type: ignore
+            sqlite_file.upload_from(cache_file, force_overwrite_to_cloud=True)  # type: ignore  # noqa
 
     @property
     def name(self) -> Union[str, None]:
