@@ -3,6 +3,7 @@
 <!-- prettier-ignore -->
 Name | PR | Developer | Date | Version
 --- | --- | --- | --- | ---
+:bug: Fix storage not inserted during instance setup | [59](https://github.com/laminlabs/lndb-setup/pull/59) | [fredericenard](https://github.com/fredericenard) | 2022-10-07 |
 Cast base settings dir as Path | [57](https://github.com/laminlabs/lndb-setup/pull/57) | [fredericenard](https://github.com/fredericenard) | 2022-10-04 | 0.9.4
 :construction: Enable other settings location | [56](https://github.com/laminlabs/lndb-setup/pull/56) | [fredericenard](https://github.com/fredericenard) | 2022-10-04 | 0.9.2
 🔊 Better logging during instance creation | [55](https://github.com/laminlabs/lndb-setup/pull/55) | [falexwolf](https://github.com/falexwolf) | 2022-10-03 |
