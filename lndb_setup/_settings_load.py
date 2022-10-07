@@ -72,7 +72,12 @@ def setup_storage_dir(storage: Union[str, Path, CloudPath]) -> Union[Path, Cloud
 def setup_instance_from_store(store: InstanceSettingsStore) -> InstanceSettings:
     settings = InstanceSettings()
     settings.storage_dir = setup_storage_dir(store.storage_dir)
-    settings._dbconfig = store.dbconfig
+    settings._db_type = store.db_type
+    settings._db_cloud_provider = store.db_cloud_provider
+    settings._db_connection_string = store.db_connection_string
+    settings._db_host = store.db_host
+    settings._db_port = store.db_port
+    settings._db_name = store.db_name
     settings.schema_modules = (
         store.schema_modules if store.schema_modules != "null" else None
     )

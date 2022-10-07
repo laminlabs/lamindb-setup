@@ -87,9 +87,14 @@ class Storage:
 class instance_description:
     storage_dir = """Storage root. Either local dir, ``s3://bucket_name`` or ``gs://bucket_name``."""  # noqa
     storage_region = """Cloud storage region for s3 and Google Cloud."""
-    _dbconfig = """Either "sqlite" or "instance_name, postgres_url"."""
     name = """Instance name."""
     schema_modules = """Comma-separated string of schema modules. None if not set."""
+    _db_type = """Either "sqlite" or "postgres"."""
+    _db_cloud_provider = """Either "aws" or "gcp"."""
+    _db_connection_string = """Database connection string."""
+    _db_host = """Database host."""
+    _db_port = """Database port."""
+    _db_name = """Database name."""
 
 
 def instance_from_storage(storage):
@@ -104,8 +109,18 @@ class InstanceSettings:
     """Storage root. Either local dir, ``s3://bucket_name`` or ``gs://bucket_name``."""
     storage_region: Optional[str] = None
     """Cloud storage region for s3 and Google Cloud."""
-    _dbconfig: str = "sqlite"
-    """Either "sqlite" or "instance_name, postgres_url"."""
+    _db_type: Optional[str] = None
+    """Either "sqlite" or "postgres"."""
+    _db_cloud_provider: Optional[str] = None
+    """Either "aws" or "gcp"."""
+    _db_connection_string: Optional[str] = None
+    """Database connection string."""
+    _db_host: Optional[str] = None
+    """Database host."""
+    _db_port: Optional[str] = None
+    """Database port."""
+    _db_name: Optional[str] = None
+    """Database name."""
     schema_modules: Optional[str] = None  # type: ignore
     """Comma-separated string of schema modules. None if not set."""
 
@@ -152,24 +167,44 @@ class InstanceSettings:
         """Name of LaminDB instance, which corresponds to exactly one database."""
         if self.storage_dir is None:  # not yet initialized
             return None
-        if self._dbconfig == "sqlite":
+        elif self._db_type == "sqlite":
             return instance_from_storage(self.storage_dir)
+        elif self._db_type == "postgres":
+            if self._db_cloud_provider == "gcp":
+                return self._db_name
+            elif self._db_connection_string:
+                return self._db_connection_string.split("/")[-1]
+            else:
+                raise Exception
         else:
-            return self._dbconfig.split("/")[-1]
+            raise Exception
 
     @property
-    def db(self) -> str:
+    def db(self) -> Union[str, None]:
         """Database URL."""
         # the great thing about cloudpathlib is that it downloads the
         # remote file to cache as soon as the time stamp is out of date
-        if self._dbconfig == "sqlite":
+        if self._db_type == "sqlite":
             return f"sqlite:///{self.storage.cloud_to_local(self._sqlite_file)}"
+        elif self._db_type == "postgres":
+            if self._db_cloud_provider == "gcp":
+                return None
+            elif self._db_connection_string:
+                return self._db_connection_string
+            else:
+                raise Exception
         else:
-            return self._dbconfig
+            raise Exception
 
     def db_engine(self, future=True):
         """Database engine."""
-        return sqm.create_engine(self.db, future=future)
+        if self._db_cloud_provider == "gcp":
+            if self._db_type == "postgres":
+                return None
+            else:
+                raise Exception
+        else:
+            return sqm.create_engine(self.db, future=future)
 
     @property
     def storage(self) -> Storage:

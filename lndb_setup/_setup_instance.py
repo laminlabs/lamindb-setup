@@ -53,7 +53,7 @@ def setup_instance_db():
                 " location."
             )
             return None
-        if isettings._dbconfig != "sqlite":
+        if isettings._db_type != "sqlite":
             if schema_exists(isettings):
                 return None
         setup_schema(isettings, usettings)
@@ -99,21 +99,36 @@ def load(instance_name: str):
 
 @doc_args(
     description.storage_dir,
-    description._dbconfig,
     description.schema_modules,
+    description._db_type,
+    description._db_cloud_provider,
+    description._db_connection_string,
+    description._db_host,
+    description._db_port,
+    description._db_name,
 )
 def init(
     *,
     storage: Union[str, Path, CloudPath],
-    dbconfig: str = "sqlite",
     schema: Union[str, None] = None,
+    db_type: str,
+    db_cloud_provider: str,
+    db_connection_string: str,
+    db_host: str,
+    db_port: str,
+    db_name: str,
 ) -> Union[None, str]:
     """Setup LaminDB.
 
     Args:
         storage: {}
-        dbconfig: {}
         schema: {}
+        db_type: {}
+        db_cloud_provider: {}
+        db_connection_string: {}
+        db_host: {}
+        db_port: {}
+        db_name: {}
     """
     usettings = load_or_create_user_settings()
     if usettings.id is None:
@@ -128,7 +143,12 @@ def init(
     instance_settings.storage_region = get_storage_region(instance_settings.storage_dir)
 
     # setup _config
-    instance_settings._dbconfig = dbconfig
+    instance_settings._db_type = db_type
+    instance_settings._db_cloud_provider = db_cloud_provider
+    instance_settings._db_connection_string = db_connection_string
+    instance_settings._db_host = db_host
+    instance_settings._db_port = db_port
+    instance_settings._db_name = db_name
 
     # setup schema
     if schema is not None:

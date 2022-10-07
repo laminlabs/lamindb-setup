@@ -105,7 +105,7 @@ def login(
         # hence, the if condition will pass despite the database
         # having actually been deleted
         # so, let's do another check
-        if settings.instance._dbconfig == "sqlite":
+        if settings.instance._db_type == "sqlite":
             # let's check whether the sqlite file is actually available
             if not settings.instance._sqlite_file.exists():
                 # if the file doesn't exist, there is no need to

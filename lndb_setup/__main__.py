@@ -33,8 +33,19 @@ aa("--password", type=str, metavar="s", default=None, help=user.password)
 init = subparsers.add_parser("init", help=init_help)
 aa = init.add_argument
 aa("--storage", type=str, metavar="s", help=instance.storage_dir)
-aa("--db", type=str, metavar="s", default="sqlite", help=instance._dbconfig)
 aa("--schema", type=str, metavar="s", default=None, help=instance.schema_modules)
+aa("--db-type", type=str, metavar="s", default="sqlite", help=instance._db_type)
+aa(
+    "--db-cloud-provider",
+    type=str,
+    metavar="s",
+    default=None,
+    help=instance._db_cloud_provider,
+)
+aa("--db-connection-string", type=str, metavar="s", help=instance._db_connection_string)
+aa("--db-host", type=str, metavar="s", help=instance._db_host)
+aa("--db-port", type=str, metavar="s", help=instance._db_port)
+aa("--db-name", type=str, metavar="s", help=instance._db_name)
 load = subparsers.add_parser("load", help=load_help)
 aa = load.add_argument
 aa("instance", type=str, metavar="s", default=None, help=instance.name)
@@ -52,8 +63,13 @@ def main():
     elif args.command == "init":
         return _setup_instance.init(
             storage=args.storage,
-            dbconfig=args.db,
             schema=args.schema,
+            db_type=args.db_type,
+            db_cloud_provider=args.db_cloud_provider,
+            db_connection_string=args.db_connection_string,
+            db_host=args.db_host,
+            db_port=args.db_port,
+            db_name=args.db_name,
         )
     elif args.command == "load":
         return _setup_instance.load(

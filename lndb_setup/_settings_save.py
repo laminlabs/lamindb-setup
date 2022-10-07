@@ -40,7 +40,7 @@ def save_settings(
     with open(settings_file, "w") as f:
         for key, type in type_hints.items():
             if "__" not in key:
-                settings_key = f"_{key}" if key == "dbconfig" else key
+                settings_key = f"_{key}" if "db" in key else key
                 value = getattr(settings, settings_key)
                 if value is None:
                     value = "null"
