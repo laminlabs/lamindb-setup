@@ -54,9 +54,8 @@ def setup_instance_db():
             )
             return None
         if isettings._dbconfig != "sqlite":
-            if schema_exists(isettings):
-                return None
-        setup_schema(isettings, usettings)
+            if not schema_exists(isettings):
+                setup_schema(isettings, usettings)
 
     update_db(isettings, usettings)
 
