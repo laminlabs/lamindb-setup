@@ -41,7 +41,10 @@ def setup_schema(isettings: InstanceSettings, usettings: UserSettings):
 
     # we could try to also retrieve the user name here at some point
     insert.user(
-        email=usettings.email, user_id=usettings.id, handle=usettings.handle, name=None
+        email=usettings.email,
+        user_id=usettings.id,
+        handle=usettings.handle,
+        name=usettings.name,
     )
 
     for schema_name in ["core"] + schema_names:

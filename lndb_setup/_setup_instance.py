@@ -25,7 +25,7 @@ from ._setup_storage import get_storage_region
 def update_db(isettings, usettings):
     # we should also think about updating the user name here at some point!
     # (passing user.name from cloud to the upsert as is done in setup_user.py)
-    upsert.user(usettings.email, usettings.id, usettings.handle)
+    upsert.user(usettings.email, usettings.id, usettings.handle, usettings.name)
 
     insert_if_not_exists.storage(isettings.storage_root, isettings.storage_region)
 
