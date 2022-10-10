@@ -37,6 +37,7 @@ test = [
     "lnschema_wetlab>=0.5.0",
     "lnbfx>=0.4.1",
     "cloudpathlib[gs]",
+    "nbproject_test>=0.3.1",
 ]
 
 [project.scripts]
