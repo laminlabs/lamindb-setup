@@ -2,6 +2,7 @@ from typing import Any
 
 import lnschema_core as schema_core
 import sqlmodel as sqm
+from lamin_logger import logger
 
 from ._settings_load import load_or_create_instance_settings
 
@@ -35,8 +36,11 @@ class upsert:
                     if update_name:
                         msg += f"{user.name} -> {name} "
                         user.name = name
+                    logger.info(msg)
                     session.add(user)
                     session.commit()
+
+                settings._update_cloud_sqlite_file()
 
         return user_id
 
