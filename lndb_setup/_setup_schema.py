@@ -10,6 +10,7 @@ from ._settings_user import UserSettings
 known_schema_names = [
     "bionty",
     "wetlab",
+    "drylab",
     "bfx",
     "retro",
     "swarm",
