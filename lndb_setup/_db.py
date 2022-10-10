@@ -18,6 +18,7 @@ class upsert:
             # do not update sqlite on the cloud as this happens within
             # insert.user
         else:
+            # update the user record
             update_email = email != user.email
             update_handle = handle != user.handle
             update_name = name != user.name
@@ -34,6 +35,8 @@ class upsert:
                     if update_name:
                         msg += f"{user.name} -> {name} "
                         user.name = name
+                    session.add(user)
+                    session.commit()
 
         return user_id
 
