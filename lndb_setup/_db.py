@@ -8,7 +8,7 @@ from ._settings_load import load_or_create_instance_settings
 
 class upsert:
     @classmethod
-    def user(cls, email, user_id, handle, name):
+    def user(cls, email: str, user_id: str, handle: str, name: str = None):
         settings = load_or_create_instance_settings()
         engine = settings.db_engine()
         with sqm.Session(engine) as session:
@@ -23,7 +23,7 @@ class upsert:
             update_handle = handle != user.handle
             update_name = name != user.name
 
-            if any(update_email, update_handle, update_name):
+            if any((update_email, update_handle, update_name)):
                 with sqm.Session(engine) as session:
                     msg = "Updating: "
                     if update_email:
