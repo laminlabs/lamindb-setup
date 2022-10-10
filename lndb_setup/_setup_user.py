@@ -10,7 +10,7 @@ from ._settings_save import save_user_settings
 from ._settings_store import settings_dir
 
 
-def signup(email: str):
+def signup(email: str) -> Union[str, None]:
     """Sign up user."""
     user_settings = load_or_create_user_settings()
     user_settings.email = email
@@ -27,7 +27,7 @@ def signup(email: str):
     return None  # user needs to confirm email now
 
 
-def load_user(email: str = None, handle: str = None):
+def load_user(email: str = None, handle: str = None) -> Union[str, None]:
     if email is not None:
         settings_file = settings_dir / f"user-{email}.env"
     if handle is not None:
@@ -51,12 +51,14 @@ def load_user(email: str = None, handle: str = None):
 
     settings._user_settings = None  # this is to refresh a settings instance
 
+    return None
+
 
 def login(
     user: str,
     *,
     password: Union[str, None] = None,
-):
+) -> Union[str, None]:
     """Log in user."""
     if "@" in user:
         email, handle = user, None
@@ -126,3 +128,5 @@ def login(
             settings.user.handle,
             settings.user.name,
         )
+
+    return None
