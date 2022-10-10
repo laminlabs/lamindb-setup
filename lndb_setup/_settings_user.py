@@ -4,20 +4,23 @@ from typing import Union
 
 class user_description:
     email = """User email."""
-    password = """User login password. Auto-generated if not provided."""
-    id = """User ID. Auto-generated."""
-    handle = "Unique handle. Like a Twitter handle or a GitHub username."
+    password = """User password."""
+    id = """User ID."""
+    handle = "Unique handle."
+    name = "Full name."
 
 
 @dataclass
 class UserSettings:
-    """User Settings written during setup."""
+    """User data. All synched from cloud."""
 
     email: str = None  # type: ignore
     """User email."""
     password: Union[str, None] = None
-    """User login password. Auto-generated if not provided."""
+    """User password."""
     id: Union[str, None] = None
-    """User ID. Auto-generated."""
+    """User ID."""
     handle: Union[str, None] = None
-    "Unique handle. Like a Twitter handle or a GitHub username."
+    "Unique handle."
+    name: Union[str, None] = None
+    "Full name."
