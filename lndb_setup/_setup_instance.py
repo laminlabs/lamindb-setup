@@ -5,7 +5,7 @@ from cloudpathlib import CloudPath
 from lamin_logger import logger
 from sqlalchemy import text
 
-from ._db import insert_if_not_exists
+from ._db import insert_if_not_exists, upsert
 from ._docs import doc_args
 from ._migrate import check_migrate
 from ._settings_instance import InstanceSettings
@@ -23,7 +23,9 @@ from ._setup_storage import get_storage_region
 
 
 def update_db(isettings, usettings):
-    insert_if_not_exists.user(usettings.email, usettings.id, usettings.handle)
+    # we should also think about updating the user name here at some point!
+    # (passing user.name from cloud to the upsert as is done in setup_user.py)
+    upsert.user(usettings.email, usettings.id, usettings.handle)
 
     insert_if_not_exists.storage(isettings.storage_dir, isettings.storage_region)
 

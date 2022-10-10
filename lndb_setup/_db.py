@@ -2,8 +2,47 @@ from typing import Any
 
 import lnschema_core as schema_core
 import sqlmodel as sqm
+from lamin_logger import logger
 
 from ._settings_load import load_or_create_instance_settings
+
+
+class upsert:
+    @classmethod
+    def user(cls, email: str, user_id: str, handle: str, name: str = None):
+        settings = load_or_create_instance_settings()
+        engine = settings.db_engine()
+        with sqm.Session(engine) as session:
+            user = session.get(schema_core.user, user_id)
+        if user is None:
+            user_id = insert.user(email, user_id, handle, name)  # type: ignore
+            # do not update sqlite on the cloud as this happens within
+            # insert.user
+        else:
+            # update the user record
+            update_email = email != user.email
+            update_handle = handle != user.handle
+            update_name = name != user.name
+
+            if any((update_email, update_handle, update_name)):
+                with sqm.Session(engine) as session:
+                    msg = "Updating: "
+                    if update_email:
+                        msg += f"{user.email} -> {email} "
+                        user.email = email
+                    if update_handle:
+                        msg += f"{user.handle} -> {handle} "
+                        user.handle = handle
+                    if update_name:
+                        msg += f"{user.name} -> {name} "
+                        user.name = name
+                    logger.info(msg)
+                    session.add(user)
+                    session.commit()
+
+                settings._update_cloud_sqlite_file()
+
+        return user_id
 
 
 class insert_if_not_exists:
@@ -11,19 +50,6 @@ class insert_if_not_exists:
 
     A wrapper around the `insert` class below.
     """
-
-    @classmethod
-    def user(cls, email, user_id, handle):
-        settings = load_or_create_instance_settings()
-        engine = settings.db_engine()
-        with sqm.Session(engine) as session:
-            user = session.get(schema_core.user, user_id)
-        if user is None:
-            user_id = insert.user(email, user_id, handle)  # type: ignore
-            # do not update sqlite on the cloud as this happens within
-            # insert.user
-
-        return user_id
 
     @classmethod
     def storage(cls, root, region):
@@ -84,13 +110,13 @@ class insert:
             settings._update_cloud_sqlite_file()
 
     @classmethod
-    def user(cls, email, user_id, handle):
+    def user(cls, email, user_id, handle, name):
         """User."""
         settings = load_or_create_instance_settings()
         engine = settings.db_engine()
 
         with sqm.Session(engine) as session:
-            user = schema_core.user(id=user_id, email=email, handle=handle)
+            user = schema_core.user(id=user_id, email=email, handle=handle, name=name)
             session.add(user)
             session.commit()
             session.refresh(user)

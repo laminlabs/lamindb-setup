@@ -2,7 +2,7 @@ from typing import Union
 
 from lamin_logger import logger
 
-from ._db import insert_if_not_exists
+from ._db import upsert
 from ._hub import sign_in_hub, sign_up_hub
 from ._schema import schema
 from ._settings_load import load_or_create_user_settings, load_user_settings
@@ -86,7 +86,7 @@ def login(
     elif response == "complete-signup":
         return response
     else:
-        user_id, user_handle = response
+        user_id, user_handle, user_name = response
     if handle is None:
         logger.info(f"Your handle is {user_handle} and your id is {user_id}.")
     user_settings.id = user_id
@@ -98,6 +98,7 @@ def login(
     settings._user_settings = None
 
     # log in user into instance db
+    # (upsert local user record with cloud data)
     if settings.instance.name is not None:
         # the above if condition is not safe enough
         # users might delete a database but still keeping the
@@ -118,6 +119,6 @@ def login(
                     f"An SQLite file {settings.instance._sqlite_file} exists but does not have a user table. "  # noqa
                 )
                 return None
-        insert_if_not_exists.user(
-            settings.user.email, settings.user.id, settings.user.handle
+        upsert.user(
+            settings.user.email, settings.user.id, settings.user.handle, user_name
         )
