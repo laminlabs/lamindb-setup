@@ -91,6 +91,7 @@ def login(
         logger.info(f"Your handle is {user_handle} and your id is {user_id}.")
     user_settings.id = user_id
     user_settings.handle = user_handle
+    user_settings.name = user_name
     save_user_settings(user_settings)
 
     from ._settings import settings
@@ -120,5 +121,8 @@ def login(
                 )
                 return None
         upsert.user(
-            settings.user.email, settings.user.id, settings.user.handle, user_name
+            settings.user.email,
+            settings.user.id,
+            settings.user.handle,
+            settings.user.name,
         )

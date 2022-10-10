@@ -34,6 +34,7 @@ class UserSettingsStore(BaseSettings):
     password: str
     id: str
     handle: str
+    name: str
 
     class Config:
         env_file = ".env"
