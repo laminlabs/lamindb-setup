@@ -64,7 +64,7 @@ def instance_exists(isettings: InstanceSettings):
     if isettings._sqlite_file.exists():
         return True
     elif isettings._dbconfig != "sqlite":
-        with isettings.db_engine().connect() as conn:
+        with isettings.engine.connect() as conn:
             results = conn.execute(
                 text(
                     """

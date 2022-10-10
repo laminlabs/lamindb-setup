@@ -34,7 +34,7 @@ def check_migrate(
             else schema_module._schema,
         )  # backward compat
 
-        with sqm.Session(isettings.db_engine()) as session:
+        with sqm.Session(isettings.engine) as session:
             version_table = getattr(schema_module, f"version_{schema_id}")
             versions = session.exec(sqm.select(version_table.v)).all()
 

@@ -37,7 +37,7 @@ def setup_schema(isettings: InstanceSettings, usettings: UserSettings):
         msg += f"{schema_name}=={schema_module.__version__}, "
     logger.info(f"{msg[:-2]}.")  # exclude the last comma
 
-    SQLModel.metadata.create_all(isettings.db_engine())
+    SQLModel.metadata.create_all(isettings.engine)
 
     # we could try to also retrieve the user name here at some point
     insert.user(

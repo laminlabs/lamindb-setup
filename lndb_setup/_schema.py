@@ -12,7 +12,7 @@ class schema:
         import erdiagram
 
         settings = load_or_create_instance_settings()
-        engine = settings.db_engine()
+        engine = settings.engine
         metadata = sql.MetaData(bind=engine)
         metadata.reflect()
         graph = erdiagram.create_schema_graph(
@@ -32,7 +32,7 @@ class schema:
         """Return all entities in the db."""
         metadata = sql.MetaData()
         settings = load_or_create_instance_settings()
-        engine = settings.db_engine()
+        engine = settings.engine
         metadata.reflect(bind=engine)
         table_names = [table.name for table in metadata.sorted_tables]
         return table_names

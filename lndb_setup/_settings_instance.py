@@ -167,9 +167,17 @@ class InstanceSettings:
         else:
             return self._dbconfig
 
-    def db_engine(self, future=True):
+    def create_engine(self, future=True):
+        """Create database engine."""
+        return sqm.create_engine(self.db, future)
+
+    @property
+    def engine(self):
         """Database engine."""
-        return sqm.create_engine(self.db, future=future)
+        if self._engine is None:
+            return self.create_engine()
+        else:
+            self._engine
 
     @property
     def storage(self) -> Storage:

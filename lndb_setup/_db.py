@@ -11,7 +11,7 @@ class upsert:
     @classmethod
     def user(cls, email: str, user_id: str, handle: str, name: str = None):
         settings = load_or_create_instance_settings()
-        engine = settings.db_engine()
+        engine = settings.engine
         with sqm.Session(engine) as session:
             user = session.get(schema_core.user, user_id)
         if user is None:
@@ -56,7 +56,7 @@ class insert_if_not_exists:
     def storage(cls, root, region):
         root = str(root)
         settings = load_or_create_instance_settings()
-        engine = settings.db_engine()
+        engine = settings.engine
         with sqm.Session(engine) as session:
             storage = session.exec(
                 sqm.select(schema_core.storage).where(schema_core.storage.root == root)
@@ -86,7 +86,7 @@ class insert:
             cloud_sqlite: Update cloud SQLite file or not.
         """
         settings = load_or_create_instance_settings()
-        engine = settings.db_engine()
+        engine = settings.engine
 
         schema_id, version, migration = (
             schema_module._schema_id
@@ -115,7 +115,7 @@ class insert:
     def user(cls, email, user_id, handle, name):
         """User."""
         settings = load_or_create_instance_settings()
-        engine = settings.db_engine()
+        engine = settings.engine
 
         with sqm.Session(engine) as session:
             user = schema_core.user(id=user_id, email=email, handle=handle, name=name)
@@ -131,7 +131,7 @@ class insert:
     def storage(cls, root, region):
         """Storage."""
         settings = load_or_create_instance_settings()
-        engine = settings.db_engine()
+        engine = settings.engine
 
         with sqm.Session(engine) as session:
             storage = schema_core.storage(
