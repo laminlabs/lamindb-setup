@@ -3,6 +3,7 @@
 <!-- prettier-ignore -->
 Name | PR | Developer | Date | Version
 --- | --- | --- | --- | ---
+✨ Add drylab schema | [63](https://github.com/laminlabs/lndb-setup/pull/63) | [falexwolf](https://github.com/falexwolf) | 2022-10-10 |
 🚚 Rename `storage_dir` to `storage_root` | [65](https://github.com/laminlabs/lndb-setup/pull/65) | [falexwolf](https://github.com/falexwolf) | 2022-10-10 |
 :sparkles: Add user name to settings | [64](https://github.com/laminlabs/lndb-setup/pull/64) | [falexwolf](https://github.com/falexwolf) | 2022-10-10 |
 :bug: Fix incompatibility with postgres | [61](https://github.com/laminlabs/lndb-setup/pull/61) | [fredericenard](https://github.com/fredericenard) | 2022-10-10 | 0.10.1
