@@ -1,5 +1,5 @@
-def get_storage_region(storage_dir):
-    storage_root_str = str(storage_dir)
+def get_storage_region(storage_root):
+    storage_root_str = str(storage_root)
     storage_region = None
 
     if storage_root_str.startswith("s3://"):

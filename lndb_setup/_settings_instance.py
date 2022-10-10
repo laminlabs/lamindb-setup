@@ -21,9 +21,9 @@ class Storage:
 
         Returns "s3" or "gs" or "local".
         """
-        if str(self.settings.storage_dir).startswith("s3://"):
+        if str(self.settings.storage_root).startswith("s3://"):
             storage_type = "s3"
-        elif str(self.settings.storage_dir).startswith("gs://"):
+        elif str(self.settings.storage_root).startswith("gs://"):
             storage_type = "gs"
         else:
             storage_type = "local"
@@ -43,9 +43,9 @@ class Storage:
                     "Currently, only AWS S3 and Google cloud are supported for cloud"
                     " storage."
                 )
-            return client.CloudPath(self.settings.storage_dir / filekey)
+            return client.CloudPath(self.settings.storage_root / filekey)
         else:
-            return self.settings.storage_dir / filekey
+            return self.settings.storage_root / filekey
 
     def cloud_to_local(self, filepath: Union[Path, CloudPath]) -> Path:
         """Local (cache) filepath from filepath."""
@@ -85,7 +85,7 @@ class Storage:
 
 
 class instance_description:
-    storage_dir = """Storage root. Either local dir, ``s3://bucket_name`` or ``gs://bucket_name``."""  # noqa
+    storage_root = """Storage root. Either local dir, ``s3://bucket_name`` or ``gs://bucket_name``."""  # noqa
     storage_region = """Cloud storage region for s3 and Google Cloud."""
     _dbconfig = """Either "sqlite" or "instance_name, postgres_url"."""
     name = """Instance name."""
@@ -100,7 +100,7 @@ def instance_from_storage(storage):
 class InstanceSettings:
     """Instance settings written during setup."""
 
-    storage_dir: Union[CloudPath, Path] = None  # None is just for init, can't be None
+    storage_root: Union[CloudPath, Path] = None  # None is just for init, can't be None
     """Storage root. Either local dir, ``s3://bucket_name`` or ``gs://bucket_name``."""
     storage_region: Optional[str] = None
     """Cloud storage region for s3 and Google Cloud."""
@@ -111,8 +111,8 @@ class InstanceSettings:
 
     @property
     def cloud_storage(self) -> bool:
-        """`True` if `storage_dir` is in cloud, `False` otherwise."""
-        return isinstance(self.storage_dir, CloudPath)
+        """`True` if `storage_root` is in cloud, `False` otherwise."""
+        return isinstance(self.storage_root, CloudPath)
 
     @property
     def cache_dir(
@@ -132,7 +132,7 @@ class InstanceSettings:
 
         Is a CloudPath if on S3, otherwise a Path.
         """
-        filename = instance_from_storage(self.storage_dir)  # type: ignore
+        filename = instance_from_storage(self.storage_root)  # type: ignore
         return self.storage.key_to_filepath(f"{filename}.lndb")
 
     @property
@@ -150,10 +150,10 @@ class InstanceSettings:
     @property
     def name(self) -> Union[str, None]:
         """Name of LaminDB instance, which corresponds to exactly one database."""
-        if self.storage_dir is None:  # not yet initialized
+        if self.storage_root is None:  # not yet initialized
             return None
         if self._dbconfig == "sqlite":
-            return instance_from_storage(self.storage_dir)
+            return instance_from_storage(self.storage_root)
         else:
             return self._dbconfig.split("/")[-1]
 
