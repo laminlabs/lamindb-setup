@@ -43,8 +43,8 @@ def setup_instance_db():
         logger.warning("Instance is not configured. Call `lndb init` or `lndb load`.")
         return None
 
-    if isettings._sqlite_file.exists():
-        logger.info(f"Using instance: {isettings._sqlite_file}")
+    if instance_exists(isettings):
+        logger.info(f"Loading instance: {isettings.name}")
         check_migrate(usettings=usettings, isettings=isettings)
     else:
         if isettings.cloud_storage and isettings._sqlite_file_local.exists():
@@ -55,31 +55,32 @@ def setup_instance_db():
                 " location."
             )
             return None
-        if isettings._dbconfig != "sqlite":
-            if not schema_exists(isettings):
-                setup_schema(isettings, usettings)
-        else:
-            setup_schema(isettings, usettings)
+        setup_schema(isettings, usettings)
 
     update_db(isettings, usettings)
 
 
-def schema_exists(isettings: InstanceSettings):
-    with isettings.db_engine().connect() as conn:
-        results = conn.execute(
-            text(
-                """
-            SELECT EXISTS (
-                SELECT FROM
-                    information_schema.tables
-                WHERE
-                    table_schema LIKE 'public' AND
-                    table_name = 'user'
-            );
-        """
-            )
-        ).first()
-        return results[0]
+def instance_exists(isettings: InstanceSettings):
+    if isettings._sqlite_file.exists():
+        return True
+    elif isettings._dbconfig != "sqlite":
+        with isettings.db_engine().connect() as conn:
+            results = conn.execute(
+                text(
+                    """
+                SELECT EXISTS (
+                    SELECT FROM
+                        information_schema.tables
+                    WHERE
+                        table_schema LIKE 'public' AND
+                        table_name = 'user'
+                );
+            """
+                )
+            ).first()
+            return results[0]
+    else:
+        return False
 
 
 def load(instance_name: str):

@@ -91,10 +91,9 @@ def modify_alembic_ini(
         get_schema_module_name(schema_name).replace(".", "/") + "/migrations"
     )
     sl_from, sl_to = schema_module_path, "migrations"
-    url_from, url_to = (
-        "sqlite:///tests/testdb.lndb",
-        f"sqlite:///{isettings._sqlite_file_local}",
-    )
+    url_from = "sqlite:///tests/testdb.lndb"
+    url_to_sqlite = f"sqlite:///{isettings._sqlite_file_local}"
+    url_to = url_to_sqlite if isettings._dbconfig == "sqlite" else isettings._dbconfig
 
     if revert:
         sl_from, sl_to = sl_to, sl_from
