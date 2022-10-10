@@ -108,6 +108,8 @@ class InstanceSettings:
     """Either "sqlite" or "instance_name, postgres_url"."""
     schema_modules: Optional[str] = None  # type: ignore
     """Comma-separated string of schema modules. None if not set."""
+    _engine = None
+    """Database engine."""
 
     @property
     def cloud_storage(self) -> bool:
@@ -169,7 +171,8 @@ class InstanceSettings:
 
     def create_engine(self, future=True):
         """Create database engine."""
-        return sqm.create_engine(self.db, future)
+        self._engine = sqm.create_engine(self.db, future)
+        return self._engine
 
     @property
     def engine(self):
