@@ -3,6 +3,7 @@
 <!-- prettier-ignore -->
 Name | PR | Developer | Date | Version
 --- | --- | --- | --- | ---
+✨ Track user name | [62](https://github.com/laminlabs/lndb-setup/pull/62) | [falexwolf](https://github.com/falexwolf) | 2022-10-10 |
 🐛 Redirect user after signup | [60](https://github.com/laminlabs/lndb-setup/pull/60) | [fredericenard](https://github.com/fredericenard) | 2022-10-07 | 0.10.0
 🐛 Fix storage not inserted during instance setup | [59](https://github.com/laminlabs/lndb-setup/pull/59) | [fredericenard](https://github.com/fredericenard) | 2022-10-07 |
 🩹 Cast base settings dir as Path | [57](https://github.com/laminlabs/lndb-setup/pull/57) | [fredericenard](https://github.com/fredericenard) | 2022-10-04 | 0.9.4
