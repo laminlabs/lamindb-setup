@@ -32,7 +32,7 @@ aa("--password", type=str, metavar="s", default=None, help=user.password)
 # instance settings
 init = subparsers.add_parser("init", help=init_help)
 aa = init.add_argument
-aa("--storage", type=str, metavar="s", help=instance.storage_dir)
+aa("--storage", type=str, metavar="s", help=instance.storage_root)
 aa("--db", type=str, metavar="s", default="sqlite", help=instance._dbconfig)
 aa("--schema", type=str, metavar="s", default=None, help=instance.schema_modules)
 load = subparsers.add_parser("load", help=load_help)

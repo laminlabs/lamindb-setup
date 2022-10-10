@@ -14,7 +14,7 @@ from ._settings_load import (
     load_instance_settings,
     load_or_create_instance_settings,
     load_or_create_user_settings,
-    setup_storage_dir,
+    setup_storage_root,
 )
 from ._settings_save import save_instance_settings
 from ._settings_store import settings_dir
@@ -27,7 +27,7 @@ def update_db(isettings, usettings):
     # (passing user.name from cloud to the upsert as is done in setup_user.py)
     upsert.user(usettings.email, usettings.id, usettings.handle)
 
-    insert_if_not_exists.storage(isettings.storage_dir, isettings.storage_region)
+    insert_if_not_exists.storage(isettings.storage_root, isettings.storage_region)
 
 
 def setup_instance_db():
@@ -39,7 +39,7 @@ def setup_instance_db():
     """
     isettings = load_or_create_instance_settings()
     usettings = load_or_create_user_settings()
-    if isettings.storage_dir is None:
+    if isettings.storage_root is None:
         logger.warning("Instance is not configured. Call `lndb init` or `lndb load`.")
         return None
 
@@ -102,7 +102,7 @@ def load(instance_name: str):
 
 
 @doc_args(
-    description.storage_dir,
+    description.storage_root,
     description._dbconfig,
     description.schema_modules,
 )
@@ -128,8 +128,10 @@ def init(
     instance_settings = InstanceSettings()
 
     # setup storage
-    instance_settings.storage_dir = setup_storage_dir(storage)
-    instance_settings.storage_region = get_storage_region(instance_settings.storage_dir)
+    instance_settings.storage_root = setup_storage_root(storage)
+    instance_settings.storage_region = get_storage_region(
+        instance_settings.storage_root
+    )
 
     # setup _config
     instance_settings._dbconfig = dbconfig
