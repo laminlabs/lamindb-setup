@@ -171,7 +171,7 @@ class InstanceSettings:
 
     def create_engine(self, future=True):
         """Create database engine."""
-        self._engine = sqm.create_engine(self.db, future)
+        self._engine = sqm.create_engine(self.db, future=future)
         return self._engine
 
     @property
