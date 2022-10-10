@@ -22,7 +22,8 @@ class upsert:
             # update the user record
             update_email = email != user.email
             update_handle = handle != user.handle
-            update_name = name != user.name
+            # name = None is currently understood as no user name yet provided
+            update_name = name != user.name and name is not None
 
             if any((update_email, update_handle, update_name)):
                 with sqm.Session(engine) as session:
