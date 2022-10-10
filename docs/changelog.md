@@ -3,12 +3,12 @@
 <!-- prettier-ignore -->
 Name | PR | Developer | Date | Version
 --- | --- | --- | --- | ---
-🚸 Fixed migration retrieval warning | [67](https://github.com/laminlabs/lndb-setup/pull/67) | [falexwolf](https://github.com/falexwolf) | 2022-10-10 |
-:bug: Populate user name | [66](https://github.com/laminlabs/lndb-setup/pull/66) | [falexwolf](https://github.com/falexwolf) | 2022-10-10 |
+🚸 Fixed migration retrieval warning | [67](https://github.com/laminlabs/lndb-setup/pull/67) | [falexwolf](https://github.com/falexwolf) | 2022-10-10 | 0.11.0
+🐛 Populate user name | [66](https://github.com/laminlabs/lndb-setup/pull/66) | [falexwolf](https://github.com/falexwolf) | 2022-10-10 |
 ✨ Add drylab schema | [63](https://github.com/laminlabs/lndb-setup/pull/63) | [falexwolf](https://github.com/falexwolf) | 2022-10-10 |
 🚚 Rename `storage_dir` to `storage_root` | [65](https://github.com/laminlabs/lndb-setup/pull/65) | [falexwolf](https://github.com/falexwolf) | 2022-10-10 |
-:sparkles: Add user name to settings | [64](https://github.com/laminlabs/lndb-setup/pull/64) | [falexwolf](https://github.com/falexwolf) | 2022-10-10 |
-:bug: Fix incompatibility with postgres | [61](https://github.com/laminlabs/lndb-setup/pull/61) | [fredericenard](https://github.com/fredericenard) | 2022-10-10 | 0.10.1
+✨ Add user name to settings | [64](https://github.com/laminlabs/lndb-setup/pull/64) | [falexwolf](https://github.com/falexwolf) | 2022-10-10 |
+🐛 Fix incompatibility with postgres | [61](https://github.com/laminlabs/lndb-setup/pull/61) | [fredericenard](https://github.com/fredericenard) | 2022-10-10 | 0.10.1
 ✨ Track user name | [62](https://github.com/laminlabs/lndb-setup/pull/62) | [falexwolf](https://github.com/falexwolf) | 2022-10-10 |
 🐛 Redirect user after signup | [60](https://github.com/laminlabs/lndb-setup/pull/60) | [fredericenard](https://github.com/fredericenard) | 2022-10-07 | 0.10.0
 🐛 Fix storage not inserted during instance setup | [59](https://github.com/laminlabs/lndb-setup/pull/59) | [fredericenard](https://github.com/fredericenard) | 2022-10-07 |
