@@ -38,7 +38,10 @@ def setup_schema(isettings: InstanceSettings, usettings: UserSettings):
 
     SQLModel.metadata.create_all(isettings.db_engine())
 
-    insert.user(email=usettings.email, user_id=usettings.id, handle=usettings.handle)
+    # we could try to also retrieve the user name here at some point
+    insert.user(
+        email=usettings.email, user_id=usettings.id, handle=usettings.handle, name=None
+    )
 
     for schema_name in ["core"] + schema_names:
         schema_module = importlib.import_module(get_schema_module_name(schema_name))

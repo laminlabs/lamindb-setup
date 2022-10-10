@@ -63,6 +63,7 @@ def sign_in_hub(email, password, handle=None):
     if len(data.data) > 0:  # user is completely registered
         user_id = data.data[0]["lnid"]
         user_handle = data.data[0]["handle"]
+        user_name = data.data[0]["name"]
         if handle is not None and handle != user_handle:
             logger.warning(
                 f"Passed handle {handle} does not match your account handle"
@@ -72,7 +73,7 @@ def sign_in_hub(email, password, handle=None):
         logger.error("Complete signup on your account page.")
         return "complete-signup"
     hub.auth.sign_out()
-    return user_id, user_handle
+    return user_id, user_handle, user_name
 
 
 def create_instance(instance_name):
