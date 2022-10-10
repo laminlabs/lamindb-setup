@@ -3,6 +3,7 @@
 <!-- prettier-ignore -->
 Name | PR | Developer | Date | Version
 --- | --- | --- | --- | ---
+:bug: Populate user name | [66](https://github.com/laminlabs/lndb-setup/pull/66) | [falexwolf](https://github.com/falexwolf) | 2022-10-10 |
 ✨ Add drylab schema | [63](https://github.com/laminlabs/lndb-setup/pull/63) | [falexwolf](https://github.com/falexwolf) | 2022-10-10 |
 🚚 Rename `storage_dir` to `storage_root` | [65](https://github.com/laminlabs/lndb-setup/pull/65) | [falexwolf](https://github.com/falexwolf) | 2022-10-10 |
 :sparkles: Add user name to settings | [64](https://github.com/laminlabs/lndb-setup/pull/64) | [falexwolf](https://github.com/falexwolf) | 2022-10-10 |
