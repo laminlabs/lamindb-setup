@@ -34,8 +34,8 @@ def setup_schema(isettings: InstanceSettings, usettings: UserSettings):
     msg = "Loading schema modules: "
     for schema_name in ["core"] + schema_names:
         schema_module = importlib.import_module(get_schema_module_name(schema_name))
-        msg += f"{schema_name}=={schema_module.__version__}, "
-    logger.info(f"{msg[:-2]}.")  # exclude the last comma
+        msg += f"{schema_name}=={schema_module.__version__} "
+    logger.info(f"{msg}")
 
     SQLModel.metadata.create_all(isettings.db_engine())
 
