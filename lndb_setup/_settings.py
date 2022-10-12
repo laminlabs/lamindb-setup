@@ -2,10 +2,11 @@ from typing import Union
 
 from ._settings_instance import InstanceSettings
 from ._settings_load import (
-    load_instance_settings_from_parameters,
+    load_instance_settings_from_store,
     load_or_create_instance_settings,
     load_or_create_user_settings,
 )
+from ._settings_store import InstanceSettingsStore
 from ._settings_user import UserSettings
 
 
@@ -43,11 +44,8 @@ class settings:
             cls._instance_settings = load_or_create_instance_settings()
         return cls._instance_settings  # type: ignore
 
-    def instance_from_params(
-        cls, storage_root: str, storage_region: str, dbconfig: str, schema_modules: str
-    ) -> InstanceSettings:
+    @staticmethod
+    def instance_from_store(settings_store: InstanceSettingsStore) -> InstanceSettings:
         """Instance-related settings."""
-        instance_settings = load_instance_settings_from_parameters(
-            storage_root, storage_region, dbconfig, schema_modules
-        )
+        instance_settings = load_instance_settings_from_store(settings_store)
         return instance_settings
