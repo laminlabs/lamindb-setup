@@ -2,6 +2,7 @@ from typing import Union
 
 from ._settings_instance import InstanceSettings
 from ._settings_load import (
+    load_instance_settings_from_parameters,
     load_or_create_instance_settings,
     load_or_create_user_settings,
 )
@@ -41,3 +42,12 @@ class settings:
         if cls._instance_settings is None:
             cls._instance_settings = load_or_create_instance_settings()
         return cls._instance_settings  # type: ignore
+
+    def instance_from_params(
+        cls, storage_root: str, storage_region: str, dbconfig: str, schema_modules: str
+    ) -> InstanceSettings:
+        """Instance-related settings."""
+        instance_settings = load_instance_settings_from_parameters(
+            storage_root, storage_region, dbconfig, schema_modules
+        )
+        return instance_settings

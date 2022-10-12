@@ -36,6 +36,22 @@ def load_instance_settings(instance_settings_file: Path):
     return settings
 
 
+def load_instance_settings_from_parameters(
+    storage_root: str, storage_region: str, dbconfig: str, schema_modules: str
+):
+    try:
+        settings_store = InstanceSettingsStore(
+            storage_root=storage_root,
+            storage_region=storage_region,
+            dbconfig=dbconfig,
+            schema_modules=schema_modules,
+        )
+    except ValidationError:
+        raise RuntimeError("Your instance settings prameters are invalid.")
+    settings = setup_instance_from_store(settings_store)
+    return settings
+
+
 def load_or_create_user_settings():
     """Return current user settings."""
     if not current_user_settings_file.exists():
