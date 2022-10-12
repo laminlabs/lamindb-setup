@@ -99,13 +99,6 @@ class insert:
         with sqm.Session(engine) as session:
             version_table = getattr(schema_module, f"version_{schema_id}")
             session.add(version_table(v=version, migration=migration, user_id=user_id))
-            # only update migration table if it hasn't already auto-updated
-            # by the migration tool and if migration is not None!
-            if migration is not None:
-                migration_table = getattr(schema_module, f"migration_{schema_id}")
-                exists = session.get(migration_table, migration)
-                if exists is None:
-                    session.add(migration_table(version_num=migration))
             session.commit()
 
         if cloud_sqlite:
