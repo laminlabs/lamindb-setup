@@ -1,5 +1,7 @@
+from datetime import datetime
 from typing import Union
 
+import jwt
 from lamin_logger import logger
 
 from ._db import upsert
@@ -15,14 +17,14 @@ def signup(email: str) -> Union[str, None]:
     user_settings = load_or_create_user_settings()
     user_settings.email = email
     save_user_settings(user_settings)
-    password = sign_up_hub(email)
-    if password == "handle-exists":  # handle already exists
-        logger.error("The handle already exists. Please choose a different one.")
-        return "handle-exists"
-    if password is None:  # user already exists
+    access_token = sign_up_hub(email)
+    # if password == "handle-exists":  # handle already exists
+    #     logger.error("The handle already exists. Please choose a different one.")
+    #     return "handle-exists"
+    if access_token is None:  # user already exists
         logger.error("User already exists! Please login instead: `lndb login`.")
         return "user-exists"
-    user_settings.password = password
+    user_settings.access_token = access_token
     save_user_settings(user_settings)
     return None  # user needs to confirm email now
 
@@ -68,32 +70,42 @@ def login(
 
     user_settings = load_or_create_user_settings()
 
-    if password:
-        user_settings.password = password
-
     if user_settings.email is None:
         raise RuntimeError("No stored user email, please call: lndb login {user}")
 
-    if user_settings.password is None:
-        raise RuntimeError(
-            "No stored user password, please call: lndb login --email <your-email>"
-            " --password <your-password>"
-        )
+    if password is None:
+        if user_settings.access_token is None:
+            raise RuntimeError(
+                "No stored user access token, please call: lndb login --email"
+                " <your-email> --password <your-password>"
+            )
+        else:
+            session_payload = jwt.decode(
+                user_settings.access_token,
+                algorithms="HS256",
+                options={"verify_signature": False},
+            )
+            if session_payload["exp"] <= datetime.now().timestamp():
+                raise RuntimeError(
+                    "User access token expired, please call: lndb login --email"
+                    " <your-email> --password <your-password>"
+                )
 
     response = sign_in_hub(
-        user_settings.email, user_settings.password, user_settings.handle
+        user_settings.email, password, user_settings.access_token, user_settings.handle
     )
     if response == "could-not-login":
         return response
     elif response == "complete-signup":
         return response
     else:
-        user_id, user_handle, user_name = response
+        user_id, user_handle, user_name, access_token = response
     if handle is None:
         logger.info(f"Your handle is {user_handle} and your id is {user_id}.")
     user_settings.id = user_id
     user_settings.handle = user_handle
     user_settings.name = user_name
+    user_settings.access_token = access_token
     save_user_settings(user_settings)
 
     from ._settings import settings

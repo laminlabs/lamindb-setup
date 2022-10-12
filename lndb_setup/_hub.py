@@ -3,7 +3,7 @@ from urllib.request import urlretrieve
 
 from lamin_logger import logger
 from lnschema_core import id
-from supabase import create_client
+from supabase import client, create_client
 
 from ._settings_load import load_or_create_user_settings
 from ._settings_store import Connector, settings_dir
@@ -23,6 +23,7 @@ def sign_up_hub(email) -> Union[str, None]:
     user = hub.auth.sign_up(
         email=email, password=password, redirect_to="https://lamin.ai/signup"
     )
+    access_token = user.access_token
     # if user already exists a fake user object without identity is returned
     if user.identities:
         # if user had called sign-up before, but not confirmed their email
@@ -47,17 +48,21 @@ def sign_up_hub(email) -> Union[str, None]:
             "Going forward, credentials are auto-loaded. "  # noqa
             "In case of loss, recover your password via email: https://lamin.ai."
         )
-        return password
+        return access_token
     else:
         return None
 
 
-def sign_in_hub(email, password, handle=None):
+def sign_in_hub(
+    email: str, password: str = None, access_token: str = None, handle=None
+):
     hub = connect_hub()
-    try:
-        session = hub.auth.sign_in(email=email, password=password)
-    except Exception:  # this is bad, but I don't find APIError right now
-        logger.error("Could not login. Probably your password is wrong.")
+    if password:
+        session = sign_in_hub_with_password(email, password, hub)
+    elif access_token:
+        session = sign_in_hub_with_access_token(access_token, hub)
+    else:
+        logger.error("You must provide a password or an access token to sign in.")
         return "could-not-login"
     data = hub.table("usermeta").select("*").eq("id", session.user.id.hex).execute()
     if len(data.data) > 0:  # user is completely registered
@@ -73,7 +78,29 @@ def sign_in_hub(email, password, handle=None):
         logger.error("Complete signup on your account page.")
         return "complete-signup"
     hub.auth.sign_out()
-    return user_id, user_handle, user_name
+    return user_id, user_handle, user_name, session.access_token
+
+
+def sign_in_hub_with_password(email: str, password: str, hub: client.Client):
+    try:
+        session = hub.auth.sign_in(email=email, password=password)
+        return session
+    except Exception:  # this is bad, but I don't find APIError right now
+        logger.error("Could not login. Probably your password is wrong.")
+        return "could-not-login"
+
+
+def sign_in_hub_with_access_token(access_token: str, hub: client.Client):
+    try:
+        session = hub.auth.set_auth(access_token)
+        return session
+    except Exception:  # this is bad, but I don't find APIError right now
+        logger.error(
+            "Could not login. Probably your access token is wrong."
+            "Please call: lndb login --email <your-email>"
+            " --password <your-password>"
+        )
+        return "could-not-login"
 
 
 def create_instance(instance_name):

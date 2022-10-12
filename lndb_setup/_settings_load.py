@@ -83,7 +83,7 @@ def setup_instance_from_store(store: InstanceSettingsStore) -> InstanceSettings:
 def setup_user_from_store(store: UserSettingsStore) -> UserSettings:
     settings = UserSettings()
     settings.email = store.email
-    settings.password = store.password if store.password != "null" else None
+    settings.access_token = store.access_token if store.access_token != "null" else None
     settings.id = store.id if store.id != "null" else None
     settings.handle = store.handle if store.handle != "null" else None
     settings.name = store.name if store.name != "null" else None
