@@ -3,6 +3,7 @@
 <!-- prettier-ignore -->
 Name | PR | Developer | Date | Version
 --- | --- | --- | --- | ---
+🚸 Only write migration version upon schema creation | [71](https://github.com/laminlabs/lndb-setup/pull/71) | [falexwolf](https://github.com/falexwolf) | 2022-10-12 |
 🚸 Enforce foreign key constraints in SQLite | [70](https://github.com/laminlabs/lndb-setup/pull/70) | [falexwolf](https://github.com/falexwolf) | 2022-10-10 | 0.12.0
 📝 Overhaul docs | [69](https://github.com/laminlabs/lndb-setup/pull/69) | [falexwolf](https://github.com/falexwolf) | 2022-10-10 |
 🚸 Fixed migration retrieval warning | [67](https://github.com/laminlabs/lndb-setup/pull/67) | [falexwolf](https://github.com/falexwolf) | 2022-10-10 | 0.11.0
