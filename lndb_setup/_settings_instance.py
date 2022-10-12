@@ -156,7 +156,7 @@ class InstanceSettings:
 
     def _update_cloud_sqlite_file(self) -> None:
         """If on cloud storage, update remote file."""
-        if self.cloud_storage:
+        if self.cloud_storage and self._dbconfig == "sqlite":
             sqlite_file = self._sqlite_file
             cache_file = self.storage.cloud_to_local_no_update(sqlite_file)
             sqlite_file.upload_from(cache_file, force_overwrite_to_cloud=True)  # type: ignore  # noqa
