@@ -18,7 +18,8 @@ dependencies = [
     "python-dotenv",
     "erdiagram",
     "alembic",
-    "psycopg2-binary"
+    "psycopg2-binary",
+    "pyjwt"
 ]
 
 [project.urls]
