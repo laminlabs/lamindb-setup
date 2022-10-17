@@ -1,6 +1,8 @@
+from datetime import datetime
 from pathlib import Path
 from typing import Union
 
+import jwt
 from cloudpathlib import CloudPath
 from pydantic.error_wrappers import ValidationError
 
@@ -12,6 +14,7 @@ from ._settings_store import (
     current_user_settings_file,
 )
 from ._settings_user import UserSettings
+from ._setup_user import login
 
 
 def load_or_create_instance_settings():
@@ -81,11 +84,19 @@ def setup_instance_from_store(store: InstanceSettingsStore) -> InstanceSettings:
 
 
 def setup_user_from_store(store: UserSettingsStore) -> UserSettings:
-    settings = UserSettings()
-    settings.email = store.email
-    settings.password = store.password if store.password != "null" else None
-    settings.access_token = store.access_token
-    settings.id = store.id if store.id != "null" else None
-    settings.handle = store.handle if store.handle != "null" else None
-    settings.name = store.name if store.name != "null" else None
-    return settings
+    access_token_payload = jwt.decode(
+        store.access_token, algorithms="HS256", options={"verify_signature": False}
+    )
+    # Enable to refresh access token when expired
+    if datetime.fromtimestamp(access_token_payload["exp"]) <= datetime.now():
+        login(user=store.email, password=store.password)
+        return load_or_create_user_settings()
+    else:
+        settings = UserSettings()
+        settings.email = store.email
+        settings.password = store.password if store.password != "null" else None
+        settings.access_token = store.access_token
+        settings.id = store.id if store.id != "null" else None
+        settings.handle = store.handle if store.handle != "null" else None
+        settings.name = store.name if store.name != "null" else None
+        return settings
