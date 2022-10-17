@@ -1,4 +1,3 @@
-from typing import Union
 from urllib.request import urlretrieve
 
 from lamin_logger import logger
@@ -17,7 +16,7 @@ def connect_hub():
     return create_client(connector.url, connector.key)
 
 
-def sign_up_hub(email) -> Union[str, None]:
+def sign_up_hub(email) -> str:
     hub = connect_hub()
     password = id.id_secret()  # generate new password
     user = hub.auth.sign_up(
@@ -49,7 +48,7 @@ def sign_up_hub(email) -> Union[str, None]:
         )
         return password
     else:
-        return None
+        return "handle-exists"
 
 
 def sign_in_hub(email, password, handle=None):
@@ -73,7 +72,7 @@ def sign_in_hub(email, password, handle=None):
         logger.error("Complete signup on your account page.")
         return "complete-signup"
     hub.auth.sign_out()
-    return user_id, user_handle, user_name
+    return user_id, user_handle, user_name, session.access_token
 
 
 def create_instance(instance_name):

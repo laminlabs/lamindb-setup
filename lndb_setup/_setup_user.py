@@ -15,14 +15,14 @@ def signup(email: str) -> Union[str, None]:
     user_settings = load_or_create_user_settings()
     user_settings.email = email
     save_user_settings(user_settings)
-    password = sign_up_hub(email)
-    if password == "handle-exists":  # handle already exists
+    response = sign_up_hub(email)
+    if response == "handle-exists":  # handle already exists
         logger.error("The handle already exists. Please choose a different one.")
         return "handle-exists"
-    if password is None:  # user already exists
+    if response is None:  # user already exists
         logger.error("User already exists! Please login instead: `lndb login`.")
         return "user-exists"
-    user_settings.password = password
+    user_settings.password = response
     save_user_settings(user_settings)
     return None  # user needs to confirm email now
 
@@ -88,12 +88,13 @@ def login(
     elif response == "complete-signup":
         return response
     else:
-        user_id, user_handle, user_name = response
+        user_id, user_handle, user_name, access_token = response
     if handle is None:
         logger.info(f"Your handle is {user_handle} and your id is {user_id}.")
     user_settings.id = user_id
     user_settings.handle = user_handle
     user_settings.name = user_name
+    user_settings.access_token = access_token
     save_user_settings(user_settings)
 
     from ._settings import settings

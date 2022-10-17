@@ -18,6 +18,8 @@ class UserSettings:
     """User email."""
     password: Union[str, None] = None
     """User password."""
+    access_token: Union[str, None] = None
+    """User access token."""
     id: Union[str, None] = None
     """User ID."""
     handle: Union[str, None] = None
