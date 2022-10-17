@@ -49,7 +49,7 @@ def sign_up_hub(email) -> Union[str, None]:
         )
         return password
     else:
-        return None
+        return "handle-exists"
 
 
 def sign_in_hub(email, password, handle=None):
