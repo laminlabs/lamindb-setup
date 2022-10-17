@@ -45,11 +45,9 @@ class settings:
         return cls._instance_settings  # type: ignore
 
     @staticmethod
-    def _instance(
-        cls, settings_store: InstanceSettingsStore = None
-    ) -> InstanceSettings:
+    def _instance(settings_store: InstanceSettingsStore = None) -> InstanceSettings:
         """Instance-related settings optionally based on parameter."""
         if settings_store:
             instance_settings = load_instance_settings_from_store(settings_store)
             return instance_settings
-        return cls.instance
+        return settings.instance
