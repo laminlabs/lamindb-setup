@@ -22,8 +22,7 @@ def signup(email: str) -> Union[str, None]:
     if response is None:  # user already exists
         logger.error("User already exists! Please login instead: `lndb login`.")
         return "user-exists"
-    user_settings.password = response.password
-    user_settings.access_token = response.access_token
+    user_settings.password = response
     save_user_settings(user_settings)
     return None  # user needs to confirm email now
 

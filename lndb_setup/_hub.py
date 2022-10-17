@@ -1,4 +1,3 @@
-from typing import Any
 from urllib.request import urlretrieve
 
 from lamin_logger import logger
@@ -17,13 +16,12 @@ def connect_hub():
     return create_client(connector.url, connector.key)
 
 
-def sign_up_hub(email) -> Any:
+def sign_up_hub(email) -> str:
     hub = connect_hub()
     password = id.id_secret()  # generate new password
     user = hub.auth.sign_up(
         email=email, password=password, redirect_to="https://lamin.ai/signup"
     )
-    access_token = user.access_token
     # if user already exists a fake user object without identity is returned
     if user.identities:
         # if user had called sign-up before, but not confirmed their email
@@ -48,7 +46,7 @@ def sign_up_hub(email) -> Any:
             "Going forward, credentials are auto-loaded. "  # noqa
             "In case of loss, recover your password via email: https://lamin.ai."
         )
-        return password, access_token
+        return password
     else:
         return "handle-exists"
 
