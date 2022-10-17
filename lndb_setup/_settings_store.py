@@ -32,6 +32,7 @@ class InstanceSettingsStore(BaseSettings):
 class UserSettingsStore(BaseSettings):
     email: str
     password: str
+    access_token: str
     id: str
     handle: str
     name: str
