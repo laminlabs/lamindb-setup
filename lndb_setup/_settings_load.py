@@ -36,6 +36,11 @@ def load_instance_settings(instance_settings_file: Path):
     return settings
 
 
+def load_instance_settings_from_store(settings_store: InstanceSettingsStore):
+    settings = setup_instance_from_store(settings_store)
+    return settings
+
+
 def load_or_create_user_settings():
     """Return current user settings."""
     if not current_user_settings_file.exists():
