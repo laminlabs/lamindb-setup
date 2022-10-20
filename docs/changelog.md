@@ -3,6 +3,7 @@
 <!-- prettier-ignore -->
 Name | PR | Developer | Date | Version
 --- | --- | --- | --- | ---
+🩹 Fix password error message at login | [79](https://github.com/laminlabs/lndb-setup/pull/79) | [bpenteado](https://github.com/bpenteado) | 2022-10-20 |
 :sparkles: Enable to bypass instance settings file | [72](https://github.com/laminlabs/lndb-setup/pull/72) | [fredericenard](https://github.com/fredericenard) | 2022-10-18 |
 Store access token | [76](https://github.com/laminlabs/lndb-setup/pull/76) | [fredericenard](https://github.com/fredericenard) | 2022-10-17 |
 🐛 Fix sqlite file update | [74](https://github.com/laminlabs/lndb-setup/pull/74) | [falexwolf](https://github.com/falexwolf) | 2022-10-12 | 0.12.1
