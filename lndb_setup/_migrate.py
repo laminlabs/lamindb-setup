@@ -27,7 +27,7 @@ def check_migrate(
 
     for schema_name in ["core"] + schema_names:
         schema_module = importlib.import_module(get_schema_module_name(schema_name))
-        if schema_module.migration is None:
+        if schema_module._migration is None:
             status.append("migrate-unnecessary")
             continue
 
