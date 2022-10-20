@@ -76,7 +76,7 @@ def login(
 
     if user_settings.password is None:
         raise RuntimeError(
-            "No stored user password, please call: lndb login --email <your-email>"
+            "No stored user password, please call: lndb login <your-email>"
             " --password <your-password>"
         )
 
