@@ -3,10 +3,10 @@
 <!-- prettier-ignore -->
 Name | PR | Developer | Date | Version
 --- | --- | --- | --- | ---
-:bug: Skip migration if None | [80](https://github.com/laminlabs/lndb-setup/pull/80) | [falexwolf](https://github.com/falexwolf) | 2022-10-20 |
+🐛 Skip migration if None | [80](https://github.com/laminlabs/lndb-setup/pull/80) | [falexwolf](https://github.com/falexwolf) | 2022-10-20 | 0.12.2
 🩹 Fix password error message at login | [79](https://github.com/laminlabs/lndb-setup/pull/79) | [bpenteado](https://github.com/bpenteado) | 2022-10-20 |
-:sparkles: Enable to bypass instance settings file | [72](https://github.com/laminlabs/lndb-setup/pull/72) | [fredericenard](https://github.com/fredericenard) | 2022-10-18 |
-Store access token | [76](https://github.com/laminlabs/lndb-setup/pull/76) | [fredericenard](https://github.com/fredericenard) | 2022-10-17 |
+✨ Enable to bypass instance settings file | [72](https://github.com/laminlabs/lndb-setup/pull/72) | [fredericenard](https://github.com/fredericenard) | 2022-10-18 |
+✨ Store access token | [76](https://github.com/laminlabs/lndb-setup/pull/76) | [fredericenard](https://github.com/fredericenard) | 2022-10-17 |
 🐛 Fix sqlite file update | [74](https://github.com/laminlabs/lndb-setup/pull/74) | [falexwolf](https://github.com/falexwolf) | 2022-10-12 | 0.12.1
 🚸 Only write migration version upon schema creation | [71](https://github.com/laminlabs/lndb-setup/pull/71) | [falexwolf](https://github.com/falexwolf) | 2022-10-12 |
 🚸 Enforce foreign key constraints in SQLite | [70](https://github.com/laminlabs/lndb-setup/pull/70) | [falexwolf](https://github.com/falexwolf) | 2022-10-10 | 0.12.0
