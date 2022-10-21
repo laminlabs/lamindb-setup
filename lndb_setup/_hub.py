@@ -1,6 +1,7 @@
 from urllib.request import urlretrieve
 
 from lamin_logger import logger
+from lndb_hub import Entities
 from lnschema_core import id
 from supabase import create_client
 
@@ -14,6 +15,16 @@ def connect_hub():
     )
     connector = Connector(_env_file=connector_file)
     return create_client(connector.url, connector.key)
+
+
+def connect_hub_with_auth():
+    hub = connect_hub()
+    user_settings = load_or_create_user_settings()
+    session = hub.auth.sign_in(
+        email=user_settings.email, password=user_settings.password
+    )
+    hub.postgrest.auth(session.access_token)
+    return hub
 
 
 def sign_up_hub(email) -> str:
@@ -75,32 +86,11 @@ def sign_in_hub(email, password, handle=None):
     return user_id, user_handle, user_name, session.access_token
 
 
-def create_instance(instance_name):
-    hub = connect_hub()
-    user_settings = load_or_create_user_settings()
-    session = hub.auth.sign_in(
-        email=user_settings.email, password=user_settings.password
+def create_instance_if_not_exists(storage):
+    hub = connect_hub_with_auth()
+    entities = Entities(hub)
+    entities.storage.insert_if_not_exists(
+        id=storage.id, root=storage.root, region=storage.region, type=storage.type
     )
-    hub.postgrest.auth(session.access_token)
-    # data = hub.table("user_instance").select("instance_id").eq("user_id", session.user.id.hex).execute()  # noqa
-    instance_id = id.id_instance()
-    data = (
-        hub.table("instance")
-        .insert({"lnid": instance_id, "handle": instance_id, "name": instance_name})
-        .execute()
-    )
-    assert len(data.data) > 0
-    data = (
-        hub.table("user_instance")
-        .insert(
-            {
-                "user_id": session.user.id.hex,
-                "instance_id": data.data[0]["id"],
-                "is_owner": True,
-            }
-        )  # noqa
-        .execute()
-    )
-    assert len(data.data) > 0
+    entities.instance.insert_if_not_exists(storage.id)
     hub.auth.sign_out()
-    return instance_id

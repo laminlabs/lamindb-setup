@@ -62,9 +62,9 @@ class insert_if_not_exists:
                 sqm.select(schema_core.storage).where(schema_core.storage.root == root)
             ).first()
         if storage is None:
-            root = insert.storage(root, region)  # type: ignore
+            storage = insert.storage(root, region)  # type: ignore
 
-        return root
+        return storage
 
 
 class insert:
@@ -136,4 +136,4 @@ class insert:
 
         settings._update_cloud_sqlite_file()
 
-        return storage.root
+        return storage

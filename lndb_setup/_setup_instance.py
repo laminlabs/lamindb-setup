@@ -7,6 +7,7 @@ from sqlalchemy import text
 
 from ._db import insert_if_not_exists, upsert
 from ._docs import doc_args
+from ._hub import create_instance_if_not_exists
 from ._migrate import check_migrate
 from ._settings_instance import InstanceSettings
 from ._settings_instance import instance_description as description
@@ -27,7 +28,10 @@ def update_db(isettings, usettings):
     # (passing user.name from cloud to the upsert as is done in setup_user.py)
     upsert.user(usettings.email, usettings.id, usettings.handle, usettings.name)
 
-    insert_if_not_exists.storage(isettings.storage_root, isettings.storage_region)
+    storage = insert_if_not_exists.storage(
+        isettings.storage_root, isettings.storage_region
+    )
+    create_instance_if_not_exists(storage)
 
 
 def setup_instance_db():
