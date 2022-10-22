@@ -7,7 +7,7 @@ from sqlalchemy import text
 
 from ._db import insert_if_not_exists, upsert
 from ._docs import doc_args
-from ._hub import create_instance_if_not_exists
+from ._hub import push_instance_if_not_exists
 from ._migrate import check_migrate
 from ._settings_instance import InstanceSettings
 from ._settings_instance import instance_description as description
@@ -31,7 +31,7 @@ def update_db(isettings, usettings):
     storage = insert_if_not_exists.storage(
         isettings.storage_root, isettings.storage_region
     )
-    create_instance_if_not_exists(storage)
+    push_instance_if_not_exists(storage)
 
 
 def setup_instance_db():

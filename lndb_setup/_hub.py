@@ -85,7 +85,7 @@ def sign_in_hub(email, password, handle=None):
     return user_id, user_handle, user_name, session.access_token
 
 
-def create_instance_if_not_exists(storage):
+def push_instance_if_not_exists(storage):
     hub = connect_hub_with_auth()
     from lndb_hub import Entities
 
