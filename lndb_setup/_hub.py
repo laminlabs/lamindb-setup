@@ -87,7 +87,7 @@ def sign_in_hub(email, password, handle=None):
 
 def push_instance_if_not_exists(storage):
     hub = connect_hub_with_auth()
-    from lndb_hub import Entities
+    from lndb_hub._entities import Entities
 
     entities = Entities(hub)
     entities.storage.insert_if_not_exists(
