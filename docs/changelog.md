@@ -3,6 +3,7 @@
 <!-- prettier-ignore -->
 Name | PR | Developer | Date | Version
 --- | --- | --- | --- | ---
+:sparkles: Push instance during setup | [81](https://github.com/laminlabs/lndb-setup/pull/81) | [fredericenard](https://github.com/fredericenard) | 2022-10-22 |
 🐛 Skip migration if None | [80](https://github.com/laminlabs/lndb-setup/pull/80) | [falexwolf](https://github.com/falexwolf) | 2022-10-20 | 0.12.2
 🩹 Fix password error message at login | [79](https://github.com/laminlabs/lndb-setup/pull/79) | [bpenteado](https://github.com/bpenteado) | 2022-10-20 |
 ✨ Enable to bypass instance settings file | [72](https://github.com/laminlabs/lndb-setup/pull/72) | [fredericenard](https://github.com/fredericenard) | 2022-10-18 |
