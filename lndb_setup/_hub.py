@@ -1,7 +1,6 @@
 from urllib.request import urlretrieve
 
 from lamin_logger import logger
-from lndb_hub import Entities
 from lnschema_core import id
 from supabase import create_client
 
@@ -88,6 +87,8 @@ def sign_in_hub(email, password, handle=None):
 
 def create_instance_if_not_exists(storage):
     hub = connect_hub_with_auth()
+    from lndb_hub import Entities
+
     entities = Entities(hub)
     entities.storage.insert_if_not_exists(
         id=storage.id, root=storage.root, region=storage.region, type=storage.type
