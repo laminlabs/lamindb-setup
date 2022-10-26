@@ -1,6 +1,5 @@
-import uuid
 import os
-
+import uuid
 from urllib.request import urlretrieve
 
 from lamin_logger import logger
