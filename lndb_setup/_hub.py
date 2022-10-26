@@ -111,7 +111,9 @@ def push_instance_if_not_exists(storage: storage):
 
     # Warning: instance name is not unique
     # we have to find another to check if an instance exists
-    response = hub.table("instance").select("*").eq("name", storage.id).execute()
+    response = (
+        hub.table("instance").select("*").eq("name", settings.instance.name).execute()
+    )
     if len(response.data) == 0:
         instance_fields = {
             "id": str(uuid.uuid4()),
