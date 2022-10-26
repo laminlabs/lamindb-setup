@@ -1,8 +1,11 @@
+import uuid
 from urllib.request import urlretrieve
 
 from lamin_logger import logger
-from lnschema_core import id
+from lnschema_core import id, storage
 from supabase import create_client
+
+from lndb_setup import settings
 
 from ._settings_load import load_or_create_user_settings
 from ._settings_store import Connector, settings_dir
@@ -85,13 +88,36 @@ def sign_in_hub(email, password, handle=None):
     return user_id, user_handle, user_name, session.access_token
 
 
-def push_instance_if_not_exists(storage):
+def push_instance_if_not_exists(storage: storage):
     hub = connect_hub_with_auth()
-    from lndb_hub._entities import Entities
 
-    entities = Entities(hub)
-    entities.storage.insert_if_not_exists(
-        id=storage.id, root=storage.root, region=storage.region, type=storage.type
-    )
-    entities.instance.insert_if_not_exists(storage.id)
+    response = hub.table("storage").select("*").eq("id", storage.id).execute()
+    if len(response.data) == 0:
+        storage_fields = {
+            "id": storage.id,
+            "root": str(storage.root),
+            "region": storage.region,
+            "type": storage.type,
+        }
+        data = hub.table("storage").insert(storage_fields).execute()
+        assert len(data.data) == 1
+
+    # Warning: instance name is not unique
+    # we have to find another to check if an instance exists
+    response = hub.table("instance").select("*").eq("name", storage.id).execute()
+    if len(response.data) == 0:
+        instance_fields = {
+            "id": str(uuid.uuid4()),
+            "name": settings.instance.name,
+            "owner_id": hub.auth.session().user.id.hex,
+            "storage_id": storage.id,
+            "dbconfig": settings.instance._dbconfig,
+            "cache_dir": str(settings.instance.cache_dir),
+            "sqlite_file": str(settings.instance._sqlite_file),
+            "sqlite_file_local": str(settings.instance._sqlite_file_local),
+            "db": settings.instance.db,
+        }
+        data = hub.table("instance").insert(instance_fields).execute()
+        assert len(data.data) == 1
+
     hub.auth.sign_out()
