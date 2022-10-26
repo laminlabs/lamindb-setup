@@ -1,4 +1,6 @@
 import uuid
+import os
+
 from urllib.request import urlretrieve
 
 from lamin_logger import logger
@@ -11,10 +13,16 @@ from ._settings_load import load_or_create_user_settings
 from ._settings_store import Connector, settings_dir
 
 
+def get_connectore_file_url():
+    if "LAMIN_DEV" in os.environ:
+        if os.environ["LAMIN_DEV"] == "true":
+            return "https://lamin-site-assets.s3.amazonaws.com/connector_dev.env"
+    return "https://lamin-site-assets.s3.amazonaws.com/connector.env"
+
+
 def connect_hub():
-    connector_file, _ = urlretrieve(
-        "https://lamin-site-assets.s3.amazonaws.com/connector.env"
-    )
+    file_url = get_connectore_file_url()
+    connector_file, _ = urlretrieve(file_url)
     connector = Connector(_env_file=connector_file)
     return create_client(connector.url, connector.key)
 
