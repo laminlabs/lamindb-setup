@@ -106,8 +106,8 @@ def push_instance_if_not_exists(storage: storage):
             "region": storage.region,
             "type": storage.type,
         }
-        data = hub.table("storage").insert(storage_fields).execute()
-        assert len(data.data) == 1
+        data = hub.table("storage").insert(storage_fields).execute().data
+        assert len(data) == 1
 
     # Warning: instance name is not unique
     # we have to find another to check if an instance exists
@@ -126,7 +126,26 @@ def push_instance_if_not_exists(storage: storage):
             "sqlite_file_local": str(settings.instance._sqlite_file_local),
             "db": settings.instance.db,
         }
-        data = hub.table("instance").insert(instance_fields).execute()
-        assert len(data.data) == 1
+        data = hub.table("instance").insert(instance_fields).execute().data
+        assert len(data) == 1
+        instance_id = data["id"]
+    else:
+        assert len(response.data) == 1
+        instance_id = response.data[0]["id"]
+
+    response = (
+        hub.table("user_instance")
+        .select("*")
+        .eq("user_id", hub.auth.session().user.id.hex)
+        .eq("instance_id", instance_id)
+        .execute()
+    )
+    if len(response.data) == 0:
+        user_instance_fields = {
+            "user_id": hub.auth.session().user.id.hex,
+            "instance_id": instance_id,
+        }
+        data = hub.table("user_instance").insert(user_instance_fields).execute().data
+        assert len(data) == 1
 
     hub.auth.sign_out()
