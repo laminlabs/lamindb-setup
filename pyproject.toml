@@ -19,8 +19,7 @@ dependencies = [
     "erdiagram",
     "alembic",
     "psycopg2-binary",
-    "pyjwt",
-    "lndb_hub"
+    "pyjwt"
 ]
 
 [project.urls]
