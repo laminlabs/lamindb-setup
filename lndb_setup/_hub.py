@@ -128,7 +128,7 @@ def push_instance_if_not_exists(storage: storage):
         }
         data = hub.table("instance").insert(instance_fields).execute().data
         assert len(data) == 1
-        instance_id = data["id"]
+        instance_id = data[0]["id"]
     else:
         assert len(response.data) == 1
         instance_id = response.data[0]["id"]
