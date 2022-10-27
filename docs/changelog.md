@@ -3,7 +3,7 @@
 <!-- prettier-ignore -->
 Name | PR | Developer | Date | Version
 --- | --- | --- | --- | ---
-:bug: Add entry in user_instance table | [89](https://github.com/laminlabs/lndb-setup/pull/89) | [fredericenard](https://github.com/fredericenard) | 2022-10-27 |
+:bug: Add entry in user_instance table | [89](https://github.com/laminlabs/lndb-setup/pull/89) | [fredericenard](https://github.com/fredericenard) | 2022-10-27 | 0.13.2
 :bug: Fix instance exists check | [88](https://github.com/laminlabs/lndb-setup/pull/88) | [fredericenard](https://github.com/fredericenard) | 2022-10-26 | 0.13.1
 Remove lndb hub depency | [86](https://github.com/laminlabs/lndb-setup/pull/86) | [fredericenard](https://github.com/fredericenard) | 2022-10-26 | 0.13.0
 :art: Remove lndb_hub dependency | [85](https://github.com/laminlabs/lndb-setup/pull/85) | [fredericenard](https://github.com/fredericenard) | 2022-10-26 |
