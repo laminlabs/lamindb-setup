@@ -38,8 +38,7 @@ Dev API
 """
 
 __version__ = "0.13.2"
-# hide the supabase error in a thread on windows
-import os
+from os import name as _os_name
 
 from . import _check_versions  # noqa
 from ._schema import schema  # noqa
@@ -49,15 +48,19 @@ from ._settings_user import UserSettings  # noqa
 from ._setup_instance import init, load  # noqa
 from ._setup_user import login, signup  # noqa
 
-if os.name == "nt":
-    import threading
+# hide the supabase error in a thread on windows
+if _os_name == "nt":
+    from sys import version_info
 
-    original_excepthook = threading.excepthook
+    if version_info.minor > 7:
+        import threading
 
-    def except_hook(args):
-        is_overflow = args.exc_type is OverflowError
-        for_timeout = str(args.exc_value) == "timeout value is too large"
-        if not (is_overflow and for_timeout):
-            original_excepthook(args)
+        _original_excepthook = threading.excepthook
 
-    threading.excepthook = except_hook
+        def _except_hook(args):
+            is_overflow = args.exc_type is OverflowError
+            for_timeout = str(args.exc_value) == "timeout value is too large"
+            if not (is_overflow and for_timeout):
+                _original_excepthook(args)
+
+        threading.excepthook = _except_hook
