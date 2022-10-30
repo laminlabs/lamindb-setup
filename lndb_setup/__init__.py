@@ -50,9 +50,9 @@ from ._setup_user import login, signup  # noqa
 
 # hide the supabase error in a thread on windows
 if _os_name == "nt":
-    from sys import version_info
+    from sys import version_info as _python_version
 
-    if version_info.minor > 7:
+    if _python_version.minor > 7:
         import threading
 
         _original_excepthook = threading.excepthook
