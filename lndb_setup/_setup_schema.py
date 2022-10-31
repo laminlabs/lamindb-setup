@@ -1,11 +1,11 @@
 import importlib
 
+import sqlalchemy as sa
 import sqlmodel as sqm
 from lamin_logger import logger
 
 from ._db import insert
 from ._settings_instance import InstanceSettings
-from ._settings_load import load_or_create_instance_settings
 from ._settings_user import UserSettings
 
 known_schema_names = [
@@ -33,10 +33,26 @@ def setup_schema(isettings: InstanceSettings, usettings: UserSettings):
         schema_names = []
 
     msg = "Loading schema modules: "
+
     for schema_name in ["core"] + schema_names:
+        # create the schema module in case it doesn't exist
+        if isettings._dbconfig != "sqlite":
+            with isettings.db_engine().connect() as conn:
+                if not conn.dialect.has_schema(conn, schema_name):
+                    conn.execute(sa.schema.CreateSchema(schema_name))
+                conn.commit()
         schema_module = importlib.import_module(get_schema_module_name(schema_name))
         msg += f"{schema_name}=={schema_module.__version__} "
     logger.info(f"{msg}")
+
+    # add naming convention for alembic
+    sqm.SQLModel.metadata.naming_convention = {
+        "ix": "ix_%(column_0_label)s",
+        "uq": "uq_%(table_name)s_%(column_0_name)s",
+        "ck": "ck_%(table_name)s_`%(constraint_name)s`",
+        "fk": "fk_%(table_name)s_%(column_0_name)s_%(referred_table_name)s",
+        "pk": "pk_%(table_name)s",
+    }
 
     sqm.SQLModel.metadata.create_all(isettings.db_engine())
 
@@ -57,17 +73,10 @@ def setup_schema(isettings: InstanceSettings, usettings: UserSettings):
         )
         # this is the only time we need manipulate the migration table
         # in all other cases alembic is going to to do this for us
-        schema_id, migration = (
-            schema_module._schema_id
-            if hasattr(schema_module, "_schema_id")
-            else schema_module._schema,  # backward compat
-            schema_module._migration,
-        )
+        schema_id, migration = schema_module._schema_id, schema_module._migration
         if migration is not None:
             migration_table = getattr(schema_module, f"migration_{schema_id}")
-            settings = load_or_create_instance_settings()
-            engine = settings.db_engine()
-            with sqm.Session(engine) as session:
+            with sqm.Session(isettings.db_engine()) as session:
                 session.add(migration_table(version_num=migration))
                 session.commit()
     isettings._update_cloud_sqlite_file()
