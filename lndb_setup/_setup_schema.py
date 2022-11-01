@@ -81,4 +81,4 @@ def setup_schema(isettings: InstanceSettings, usettings: UserSettings):
                 session.commit()
     isettings._update_cloud_sqlite_file()
 
-    logger.info(f"Created instance {isettings.name}: {isettings._sqlite_file}")
+    logger.info(f"Created instance {isettings.name}.")
