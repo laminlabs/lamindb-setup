@@ -75,7 +75,10 @@ def setup_schema(isettings: InstanceSettings, usettings: UserSettings):
         # in all other cases alembic is going to to do this for us
         schema_id, migration = schema_module._schema_id, schema_module._migration
         if migration is not None:
-            migration_table = getattr(schema_module, f"migration_{schema_id}")
+            table_loc = (
+                schema_module.dev if hasattr(schema_module, "dev") else schema_module
+            )
+            migration_table = getattr(table_loc, f"migration_{schema_id}")
             with sqm.Session(isettings.db_engine()) as session:
                 session.add(migration_table(version_num=migration))
                 session.commit()

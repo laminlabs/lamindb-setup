@@ -31,14 +31,13 @@ def check_migrate(
             status.append("migrate-unnecessary")
             continue
 
-        schema_id = str(
-            schema_module._schema_id
-            if hasattr(schema_module, "_schema_id")
-            else schema_module._schema,
-        )  # backward compat
+        schema_id = schema_module._schema_id
 
         with sqm.Session(isettings.db_engine()) as session:
-            version_table = getattr(schema_module, f"version_{schema_id}")
+            table_loc = (
+                schema_module.dev if hasattr(schema_module, "dev") else schema_module
+            )
+            version_table = getattr(table_loc, f"version_{schema_id}")
             versions = session.exec(sqm.select(version_table.v)).all()
 
         current_version = schema_module.__version__

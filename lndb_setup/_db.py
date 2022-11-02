@@ -89,15 +89,16 @@ class insert:
         engine = settings.db_engine()
 
         schema_id, version, migration = (
-            schema_module._schema_id
-            if hasattr(schema_module, "_schema_id")
-            else schema_module._schema,  # backward compat
+            schema_module._schema_id,
             schema_module.__version__,
             schema_module._migration,
         )
 
         with sqm.Session(engine) as session:
-            version_table = getattr(schema_module, f"version_{schema_id}")
+            table_loc = (
+                schema_module.dev if hasattr(schema_module, "dev") else schema_module
+            )
+            version_table = getattr(table_loc, f"version_{schema_id}")
             session.add(version_table(v=version, migration=migration, user_id=user_id))
             session.commit()
 
