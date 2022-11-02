@@ -68,7 +68,7 @@ def sign_up_hub(email) -> str:
         )
         return password
     else:
-        return "handle-exists"
+        return "user-exists"
 
 
 def sign_in_hub(email, password, handle=None):
