@@ -3,15 +3,15 @@
 <!-- prettier-ignore -->
 Name | PR | Developer | Date | Version
 --- | --- | --- | --- | ---
-:green_heart: Fix static lnschema_core import | [93](https://github.com/laminlabs/lndb-setup/pull/93) | [falexwolf](https://github.com/falexwolf) | 2022-11-03 |
+💚 Fix static lnschema_core import | [93](https://github.com/laminlabs/lndb-setup/pull/93) | [falexwolf](https://github.com/falexwolf) | 2022-11-03 | 0.14.0
 ✨ Modularize SQL schema & camel-case Python table classes | [92](https://github.com/laminlabs/lndb-setup/pull/92) | [falexwolf](https://github.com/falexwolf) | 2022-11-03 |
-:adhesive_bandage: Hide supabase error in a thread on Windows | [90](https://github.com/laminlabs/lndb-setup/pull/90) | [Koncopd](https://github.com/Koncopd) | 2022-10-30 |
-:bug: Add entry in user_instance table | [89](https://github.com/laminlabs/lndb-setup/pull/89) | [fredericenard](https://github.com/fredericenard) | 2022-10-27 | 0.13.2
-:bug: Fix instance exists check | [88](https://github.com/laminlabs/lndb-setup/pull/88) | [fredericenard](https://github.com/fredericenard) | 2022-10-26 | 0.13.1
-Remove lndb hub depency | [86](https://github.com/laminlabs/lndb-setup/pull/86) | [fredericenard](https://github.com/fredericenard) | 2022-10-26 | 0.13.0
-:art: Remove lndb_hub dependency | [85](https://github.com/laminlabs/lndb-setup/pull/85) | [fredericenard](https://github.com/fredericenard) | 2022-10-26 |
-:sparkles: Enable dev settings | [84](https://github.com/laminlabs/lndb-setup/pull/84) | [fredericenard](https://github.com/fredericenard) | 2022-10-26 |
-:sparkles: Push instance during setup | [81](https://github.com/laminlabs/lndb-setup/pull/81) | [fredericenard](https://github.com/fredericenard) | 2022-10-22 |
+🩹 Hide hub error in a thread on Windows | [90](https://github.com/laminlabs/lndb-setup/pull/90) | [Koncopd](https://github.com/Koncopd) | 2022-10-30 |
+🐛 Add entry in user_instance table | [89](https://github.com/laminlabs/lndb-setup/pull/89) | [fredericenard](https://github.com/fredericenard) | 2022-10-27 | 0.13.2
+🐛 Fix instance exists check | [88](https://github.com/laminlabs/lndb-setup/pull/88) | [fredericenard](https://github.com/fredericenard) | 2022-10-26 | 0.13.1
+🔥 Remove lndb hub depency | [86](https://github.com/laminlabs/lndb-setup/pull/86) | [fredericenard](https://github.com/fredericenard) | 2022-10-26 | 0.13.0
+🎨 Remove lndb_hub dependency | [85](https://github.com/laminlabs/lndb-setup/pull/85) | [fredericenard](https://github.com/fredericenard) | 2022-10-26 |
+✨ Enable dev settings | [84](https://github.com/laminlabs/lndb-setup/pull/84) | [fredericenard](https://github.com/fredericenard) | 2022-10-26 |
+✨ Push instance during setup | [81](https://github.com/laminlabs/lndb-setup/pull/81) | [fredericenard](https://github.com/fredericenard) | 2022-10-22 |
 🐛 Skip migration if None | [80](https://github.com/laminlabs/lndb-setup/pull/80) | [falexwolf](https://github.com/falexwolf) | 2022-10-20 | 0.12.2
 🩹 Fix password error message at login | [79](https://github.com/laminlabs/lndb-setup/pull/79) | [bpenteado](https://github.com/bpenteado) | 2022-10-20 |
 ✨ Enable to bypass instance settings file | [72](https://github.com/laminlabs/lndb-setup/pull/72) | [fredericenard](https://github.com/fredericenard) | 2022-10-18 |

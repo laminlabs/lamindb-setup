@@ -37,7 +37,7 @@ Dev API
    Storage
 """
 
-__version__ = "0.13.2"
+__version__ = "0.14.0"
 from os import name as _os_name
 
 from ._schema import schema  # noqa
