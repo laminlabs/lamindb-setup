@@ -13,7 +13,10 @@ class upsert:
         settings = load_or_create_instance_settings()
         engine = settings.db_engine()
         with sqm.Session(engine) as session:
-            user = session.get(schema_core.user, user_id)
+            user_table = (
+                schema_core.User if hasattr(schema_core, "User") else schema_core.user
+            )  # noqa
+            user = session.get(user_table, user_id)
         if user is None:
             user_id = insert.user(email, user_id, handle, name)  # type: ignore
             # do not update sqlite on the cloud as this happens within
@@ -58,8 +61,13 @@ class insert_if_not_exists:
         settings = load_or_create_instance_settings()
         engine = settings.db_engine()
         with sqm.Session(engine) as session:
+            storage_table = (
+                schema_core.Storage
+                if hasattr(schema_core, "Storage")
+                else schema_core.storage
+            )  # noqa
             storage = session.exec(
-                sqm.select(schema_core.storage).where(schema_core.storage.root == root)
+                sqm.select(storage_table).where(storage_table.root == root)
             ).first()
         if storage is None:
             storage = insert.storage(root, region)  # type: ignore
@@ -89,15 +97,16 @@ class insert:
         engine = settings.db_engine()
 
         schema_id, version, migration = (
-            schema_module._schema_id
-            if hasattr(schema_module, "_schema_id")
-            else schema_module._schema,  # backward compat
+            schema_module._schema_id,
             schema_module.__version__,
             schema_module._migration,
         )
 
         with sqm.Session(engine) as session:
-            version_table = getattr(schema_module, f"version_{schema_id}")
+            table_loc = (
+                schema_module.dev if hasattr(schema_module, "dev") else schema_module
+            )
+            version_table = getattr(table_loc, f"version_{schema_id}")
             session.add(version_table(v=version, migration=migration, user_id=user_id))
             session.commit()
 
@@ -111,7 +120,10 @@ class insert:
         engine = settings.db_engine()
 
         with sqm.Session(engine) as session:
-            user = schema_core.user(id=user_id, email=email, handle=handle, name=name)
+            user_table = (
+                schema_core.User if hasattr(schema_core, "User") else schema_core.user
+            )  # noqa
+            user = user_table(id=user_id, email=email, handle=handle, name=name)
             session.add(user)
             session.commit()
             session.refresh(user)
@@ -127,7 +139,12 @@ class insert:
         engine = settings.db_engine()
 
         with sqm.Session(engine) as session:
-            storage = schema_core.storage(
+            storage_table = (
+                schema_core.Storage
+                if hasattr(schema_core, "Storage")
+                else schema_core.storage
+            )  # noqa
+            storage = storage_table(
                 root=root, region=region, type=settings.storage.type
             )
             session.add(storage)

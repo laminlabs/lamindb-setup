@@ -19,7 +19,7 @@ def signup(email: str) -> Union[str, None]:
     if response == "handle-exists":  # handle already exists
         logger.error("The handle already exists. Please choose a different one.")
         return "handle-exists"
-    if response is None:  # user already exists
+    if response == "user-exists":  # user already exists
         logger.error("User already exists! Please login instead: `lndb login`.")
         return "user-exists"
     user_settings.password = response

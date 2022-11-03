@@ -77,7 +77,7 @@ def instance_exists(isettings: InstanceSettings):
                         information_schema.tables
                     WHERE
                         table_schema LIKE 'public' AND
-                        table_name = 'user'
+                        table_name = 'version_yvzi'
                 );
             """
                 )
