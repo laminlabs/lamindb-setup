@@ -10,7 +10,7 @@ from lamin_logger import logger
 from ._db import insert
 from ._settings_instance import InstanceSettings
 from ._settings_user import UserSettings
-from ._setup_schema import get_schema_module_name
+from ._setup_schema import create_schema_if_not_exists, get_schema_module_name
 
 
 def check_migrate(
@@ -26,6 +26,7 @@ def check_migrate(
         schema_names = []
 
     for schema_name in ["core"] + schema_names:
+        create_schema_if_not_exists(schema_name, isettings)
         schema_module = importlib.import_module(get_schema_module_name(schema_name))
         if schema_module._migration is None:
             status.append("migrate-unnecessary")

@@ -19,6 +19,15 @@ known_schema_names = [
 ]
 
 
+def create_schema_if_not_exists(schema_name: str, isettings: InstanceSettings):
+    # create the schema module in case it doesn't exist
+    if isettings._dbconfig != "sqlite":
+        with isettings.db_engine().connect() as conn:
+            if not conn.dialect.has_schema(conn, schema_name):
+                conn.execute(sa.schema.CreateSchema(schema_name))
+            conn.commit()
+
+
 def get_schema_module_name(schema_name):
     if schema_name == "bfx":
         return "lnbfx.schema"
@@ -35,12 +44,7 @@ def setup_schema(isettings: InstanceSettings, usettings: UserSettings):
     msg = "Loading schema modules: "
 
     for schema_name in ["core"] + schema_names:
-        # create the schema module in case it doesn't exist
-        if isettings._dbconfig != "sqlite":
-            with isettings.db_engine().connect() as conn:
-                if not conn.dialect.has_schema(conn, schema_name):
-                    conn.execute(sa.schema.CreateSchema(schema_name))
-                conn.commit()
+        create_schema_if_not_exists(schema_name, isettings)
         schema_module = importlib.import_module(get_schema_module_name(schema_name))
         msg += f"{schema_name}=={schema_module.__version__} "
     logger.info(f"{msg}")
