@@ -3,7 +3,7 @@
 <!-- prettier-ignore -->
 Name | PR | Developer | Date | Version
 --- | --- | --- | --- | ---
-🚸 Fixed warning | [94](https://github.com/laminlabs/lndb-setup/pull/94) | [falexwolf](https://github.com/falexwolf) | 2022-11-03 |
+🚸 Fixed warning | [94](https://github.com/laminlabs/lndb-setup/pull/94) | [falexwolf](https://github.com/falexwolf) | 2022-11-03 | 0.14.1
 💚 Fix static lnschema_core import | [93](https://github.com/laminlabs/lndb-setup/pull/93) | [falexwolf](https://github.com/falexwolf) | 2022-11-03 | 0.14.0
 ✨ Modularize SQL schema & camel-case Python table classes | [92](https://github.com/laminlabs/lndb-setup/pull/92) | [falexwolf](https://github.com/falexwolf) | 2022-11-03 |
 🩹 Hide hub error in a thread on Windows | [90](https://github.com/laminlabs/lndb-setup/pull/90) | [Koncopd](https://github.com/Koncopd) | 2022-10-30 |
