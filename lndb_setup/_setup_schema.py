@@ -54,6 +54,9 @@ def setup_schema(isettings: InstanceSettings, usettings: UserSettings):
         "pk": "pk_%(table_name)s",
     }
 
+    for k, v in sqm.SQLModel.metadata.tables.items():
+        print(k, v)
+
     sqm.SQLModel.metadata.create_all(isettings.db_engine())
 
     # we could try to also retrieve the user name here at some point

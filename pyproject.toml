@@ -8,7 +8,7 @@ authors = [{name = "Lamin Labs", email = "laminlabs@gmail.com"}]
 readme = "README.md"
 dynamic = ["version", "description"]
 dependencies = [
-    "lnschema_core>=0.15.0",
+    "lnschema_core>=0.15.1",
     "lamin_logger",
     "boto3",
     "cloudpathlib",
@@ -34,7 +34,7 @@ test = [
     "pytest>=6.0",
     "pytest-cov",
     "bionty>=0.5.0",
-    "lnschema_bionty>=0.4.4",
+    "lnschema_bionty>=0.5.1",
     "lnschema_wetlab>=0.5.0",
     "lnbfx>=0.4.1",
     "cloudpathlib[gs]",
