@@ -13,7 +13,7 @@ class upsert:
         settings = load_or_create_instance_settings()
         engine = settings.db_engine()
         with sqm.Session(engine) as session:
-            user = session.get(schema_core.user, user_id)
+            user = session.get(schema_core.User, user_id)
         if user is None:
             user_id = insert.user(email, user_id, handle, name)  # type: ignore
             # do not update sqlite on the cloud as this happens within
@@ -59,7 +59,7 @@ class insert_if_not_exists:
         engine = settings.db_engine()
         with sqm.Session(engine) as session:
             storage = session.exec(
-                sqm.select(schema_core.storage).where(schema_core.storage.root == root)
+                sqm.select(schema_core.Storage).where(schema_core.Storage.root == root)
             ).first()
         if storage is None:
             storage = insert.storage(root, region)  # type: ignore
@@ -112,7 +112,7 @@ class insert:
         engine = settings.db_engine()
 
         with sqm.Session(engine) as session:
-            user = schema_core.user(id=user_id, email=email, handle=handle, name=name)
+            user = schema_core.User(id=user_id, email=email, handle=handle, name=name)
             session.add(user)
             session.commit()
             session.refresh(user)
@@ -128,7 +128,7 @@ class insert:
         engine = settings.db_engine()
 
         with sqm.Session(engine) as session:
-            storage = schema_core.storage(
+            storage = schema_core.Storage(
                 root=root, region=region, type=settings.storage.type
             )
             session.add(storage)
