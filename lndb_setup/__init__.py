@@ -40,7 +40,6 @@ Dev API
 __version__ = "0.13.2"
 from os import name as _os_name
 
-from . import _check_versions  # noqa
 from ._schema import schema  # noqa
 from ._settings import settings  # noqa
 from ._settings_instance import InstanceSettings, Storage  # noqa
