@@ -118,7 +118,7 @@ def login(
                 # hence, simply end log in here
                 return None
             # if the file exists but does not have a user table, raise a warning
-            if "user" not in schema.list_entities():
+            if "core.user" not in schema.list_entities():
                 logger.warning(
                     f"An SQLite file {settings.instance._sqlite_file} exists but does not have a user table. "  # noqa
                 )
