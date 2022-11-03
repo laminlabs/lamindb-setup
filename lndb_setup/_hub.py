@@ -3,7 +3,6 @@ import uuid
 from urllib.request import urlretrieve
 
 from lamin_logger import logger
-from lnschema_core import id, storage
 from supabase import create_client
 
 from lndb_setup import settings
@@ -37,8 +36,10 @@ def connect_hub_with_auth():
 
 
 def sign_up_hub(email) -> str:
+    from lnschema_core import id
+
     hub = connect_hub()
-    password = id.id_secret()  # generate new password
+    password = id.secret()  # generate new password
     user = hub.auth.sign_up(
         email=email, password=password, redirect_to="https://lamin.ai/signup"
     )
@@ -95,7 +96,9 @@ def sign_in_hub(email, password, handle=None):
     return user_id, user_handle, user_name, session.access_token
 
 
-def push_instance_if_not_exists(storage: storage):
+# can currently not type-annotate with lnschema_core.Storage as we cannot
+# import it statically at time of lndb_setup import
+def push_instance_if_not_exists(storage):
     hub = connect_hub_with_auth()
 
     response = hub.table("storage").select("*").eq("id", storage.id).execute()

@@ -1,6 +1,8 @@
+# We see a lot of import statements for lnschema_core below
+# This is currently needed as we can only import the schema module
+# once settings have been adjusted
 from typing import Any
 
-import lnschema_core as schema_core
 import sqlmodel as sqm
 from lamin_logger import logger
 
@@ -10,6 +12,8 @@ from ._settings_load import load_or_create_instance_settings
 class upsert:
     @classmethod
     def user(cls, email: str, user_id: str, handle: str, name: str = None):
+        import lnschema_core as schema_core
+
         settings = load_or_create_instance_settings()
         engine = settings.db_engine()
         with sqm.Session(engine) as session:
@@ -57,6 +61,8 @@ class insert_if_not_exists:
 
     @classmethod
     def storage(cls, root, region):
+        import lnschema_core as schema_core
+
         root = str(root)
         settings = load_or_create_instance_settings()
         engine = settings.db_engine()
@@ -116,6 +122,8 @@ class insert:
     @classmethod
     def user(cls, email, user_id, handle, name):
         """User."""
+        import lnschema_core as schema_core
+
         settings = load_or_create_instance_settings()
         engine = settings.db_engine()
 
@@ -135,6 +143,8 @@ class insert:
     @classmethod
     def storage(cls, root, region):
         """Storage."""
+        import lnschema_core as schema_core
+
         settings = load_or_create_instance_settings()
         engine = settings.db_engine()
 
