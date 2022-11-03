@@ -3,6 +3,7 @@
 <!-- prettier-ignore -->
 Name | PR | Developer | Date | Version
 --- | --- | --- | --- | ---
+:green_heart: Fix static lnschema_core import | [93](https://github.com/laminlabs/lndb-setup/pull/93) | [falexwolf](https://github.com/falexwolf) | 2022-11-03 |
 ✨ Modularize SQL schema & camel-case Python table classes | [92](https://github.com/laminlabs/lndb-setup/pull/92) | [falexwolf](https://github.com/falexwolf) | 2022-11-03 |
 :adhesive_bandage: Hide supabase error in a thread on Windows | [90](https://github.com/laminlabs/lndb-setup/pull/90) | [Koncopd](https://github.com/Koncopd) | 2022-10-30 |
 :bug: Add entry in user_instance table | [89](https://github.com/laminlabs/lndb-setup/pull/89) | [fredericenard](https://github.com/fredericenard) | 2022-10-27 | 0.13.2
