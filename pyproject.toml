@@ -23,6 +23,9 @@ dependencies = [
     "natsort",
     "pandas",
     "pytest_alembic==0.9.1",  # let's pin this as we use internals
+    "fsspec",
+    "s3fs",
+    "gcsfs",
 ]
 
 [project.urls]
