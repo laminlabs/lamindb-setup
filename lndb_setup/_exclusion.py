@@ -22,6 +22,9 @@ class Lock:
 
             if user not in self.users:
                 self.priority = len(self.users)
+                # potential problem here if 2 users join at the same time
+                # can be avoided by using separate files for each user
+                # and giving priority by timestamp
                 with self.fs.open(priorities_path, mode="ab") as f:
                     f.write(f"*{user}".encode())
                 self.users += user
