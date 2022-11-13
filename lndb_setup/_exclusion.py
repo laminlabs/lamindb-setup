@@ -1,6 +1,10 @@
+from datetime import datetime
+
 import fsspec
 
 from ._settings import settings
+
+EXPIRATION_TIME = 1800  # 30 min
 
 
 class Lock:
@@ -37,6 +41,19 @@ class Lock:
 
         self.mapper[f"numbers/{user}"] = b"0"
         self.mapper[f"entering/{user}"] = b"0"
+
+        # clean up failures
+        for user in self.users:
+            for endpoint in ("numbers", "entering"):
+                user_endpoint = f"{endpoint}/{user}"
+                user_path = str(exclusion_path / user_endpoint)
+                if not self.fs.exits(user_path):
+                    continue
+                if self.mapper[user_endpoint] == b"0":
+                    continue
+                period = (datetime.now() - self.fs.modified(user_path)).total_seconds()
+                if period > EXPIRATION_TIME:
+                    self.mapper[user_endpoint] = b"0"
 
     def lock(self):
         if len(self.users) < 2:
