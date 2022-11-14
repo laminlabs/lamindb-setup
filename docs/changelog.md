@@ -3,7 +3,7 @@
 <!-- prettier-ignore -->
 Name | PR | Developer | Date | Version
 --- | --- | --- | --- | ---
-:fire: Do not enforce foreign key integrity on sqlite | [96](https://github.com/laminlabs/lndb-setup/pull/96) | [falexwolf](https://github.com/falexwolf) | 2022-11-14 |
+🔥 Do not enforce foreign key integrity on sqlite | [96](https://github.com/laminlabs/lndb-setup/pull/96) | [falexwolf](https://github.com/falexwolf) | 2022-11-14 | 0.15.0
 🚸 Fixed warning | [94](https://github.com/laminlabs/lndb-setup/pull/94) | [falexwolf](https://github.com/falexwolf) | 2022-11-03 | 0.14.1
 💚 Fix static lnschema_core import | [93](https://github.com/laminlabs/lndb-setup/pull/93) | [falexwolf](https://github.com/falexwolf) | 2022-11-03 | 0.14.0
 ✨ Modularize SQL schema & camel-case Python table classes | [92](https://github.com/laminlabs/lndb-setup/pull/92) | [falexwolf](https://github.com/falexwolf) | 2022-11-03 |
