@@ -1,6 +1,5 @@
 from dataclasses import dataclass
 from pathlib import Path
-from sqlite3 import Connection as SQLite3Connection
 from typing import Optional, Union
 
 import sqlmodel as sqm
@@ -8,18 +7,20 @@ from appdirs import AppDirs
 from cloudpathlib import CloudPath, GSClient, S3Client
 from cloudpathlib.exceptions import OverwriteNewerLocalError
 from lamin_logger import logger
-from sqlalchemy import event
-from sqlalchemy.engine import Engine
 
-
+# leave commented out until we understand more how to deal with
+# migrations in redun
 # https://stackoverflow.com/questions/2614984/sqlite-sqlalchemy-how-to-enforce-foreign-keys
 # foreign key constraints for sqlite3
-@event.listens_for(Engine, "connect")
-def _set_sqlite_pragma(dbapi_connection, connection_record):
-    if isinstance(dbapi_connection, SQLite3Connection):
-        cursor = dbapi_connection.cursor()
-        cursor.execute("PRAGMA foreign_keys=ON;")
-        cursor.close()
+# from sqlite3 import Connection as SQLite3Connection
+# from sqlalchemy import event
+# from sqlalchemy.engine import Engine
+# @event.listens_for(Engine, "connect")
+# def _set_sqlite_pragma(dbapi_connection, connection_record):
+#     if isinstance(dbapi_connection, SQLite3Connection):
+#         cursor = dbapi_connection.cursor()
+#         cursor.execute("PRAGMA foreign_keys=ON;")
+#         cursor.close()
 
 
 DIRS = AppDirs("lamindb", "laminlabs")
