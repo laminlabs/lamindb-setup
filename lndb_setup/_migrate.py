@@ -18,7 +18,7 @@ def check_migrate(
     usettings: UserSettings,
     isettings: InstanceSettings,
 ):
-    if "LAMIN_SKIP_MIGRATION" not in os.environ:
+    if "LAMIN_SKIP_MIGRATION" in os.environ:
         if os.environ["LAMIN_SKIP_MIGRATION"] == "true":
             return "migrate-failed"
 
