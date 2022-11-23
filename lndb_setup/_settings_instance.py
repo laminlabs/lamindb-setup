@@ -1,3 +1,4 @@
+import os
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Optional, Union
@@ -123,6 +124,7 @@ class InstanceSettings:
     """Either "sqlite" or "instance_name, postgres_url"."""
     schema_modules: Optional[str] = None  # type: ignore
     """Comma-separated string of schema modules. None if not set."""
+    _session: Optional[sqm.Session] = None
 
     @property
     def cloud_storage(self) -> bool:
@@ -185,6 +187,18 @@ class InstanceSettings:
     def db_engine(self, future=True):
         """Database engine."""
         return sqm.create_engine(self.db, future=future)
+
+    def session(self) -> sqm.Session:
+        """Database session."""
+        if "LAMIN_SKIP_MIGRATION" not in os.environ:
+            if self._session is None:
+                self._session = sqm.Session(self.db_engine(), expire_on_commit=False)
+            # should probably add a different check whether the session is still active
+            if not self._session.is_active:
+                self._session = sqm.Session(self.db_engine(), expire_on_commit=False)
+            return self._session
+        else:
+            return sqm.Session(self.db_engine(), expire_on_commit=False)
 
     @property
     def storage(self) -> Storage:
