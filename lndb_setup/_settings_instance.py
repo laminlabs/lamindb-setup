@@ -193,7 +193,9 @@ class InstanceSettings:
         if "LAMIN_SKIP_MIGRATION" not in os.environ:
             if self._session is None:
                 self._session = sqm.Session(self.db_engine(), expire_on_commit=False)
-            assert self._session
+            # should probably add a different check whether the session is still active
+            if not self._session.is_active:
+                self._session = sqm.Session(self.db_engine(), expire_on_commit=False)
             return self._session
         else:
             return sqm.Session(self.db_engine(), expire_on_commit=False)
