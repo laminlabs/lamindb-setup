@@ -20,7 +20,7 @@ class schema:
             show_datatypes=False,
             show_indexes=False,  # ditto for indexes
             rankdir="TB",
-            concentrate=True,  # Don't try to join the relation lines together
+            concentrate=False,  # Don't try to join the relation lines together
         )
         if view:
             erdiagram.view(graph)
