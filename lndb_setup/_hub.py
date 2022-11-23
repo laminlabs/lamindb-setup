@@ -12,9 +12,13 @@ from ._settings_store import Connector, settings_dir
 
 
 def get_connectore_file_url():
-    if "LAMIN_DEV" in os.environ:
-        if os.environ["LAMIN_DEV"] == "true":
+    if "LAMIN_ENV" in os.environ:
+        if os.environ["LAMIN_ENV"] == "dev":
             return "https://lamin-site-assets.s3.amazonaws.com/connector_dev.env"
+        elif os.environ["LAMIN_ENV"] == "test":
+            return "https://lamin-site-assets.s3.amazonaws.com/connector_test.env"
+        elif os.environ["LAMIN_ENV"] == "staging":
+            return "https://lamin-site-assets.s3.amazonaws.com/connector_staging.env"
     return "https://lamin-site-assets.s3.amazonaws.com/connector.env"
 
 
