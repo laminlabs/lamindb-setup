@@ -3,6 +3,7 @@
 <!-- prettier-ignore -->
 Name | PR | Developer | Date | Version
 --- | --- | --- | --- | ---
+✨ Add `session()` to `InstanceSettings` | [99](https://github.com/laminlabs/lndb-setup/pull/99) | [falexwolf](https://github.com/falexwolf) | 2022-11-23 |
 :sparkles: Multi environments setup | [98](https://github.com/laminlabs/lndb-setup/pull/98) | [fredericenard](https://github.com/fredericenard) | 2022-11-23 | 0.17.0
 ✨ Enable to skip migration | [97](https://github.com/laminlabs/lndb-setup/pull/97) | [fredericenard](https://github.com/fredericenard) | 2022-11-19 | 0.16.0
 🔥 Do not enforce foreign key integrity on sqlite | [96](https://github.com/laminlabs/lndb-setup/pull/96) | [falexwolf](https://github.com/falexwolf) | 2022-11-14 | 0.15.0
