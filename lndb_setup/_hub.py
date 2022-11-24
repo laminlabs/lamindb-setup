@@ -116,10 +116,12 @@ def push_instance_if_not_exists(storage):
         data = hub.table("storage").insert(storage_fields).execute().data
         assert len(data) == 1
 
-    # Warning: instance name is not unique
-    # we have to find another to check if an instance exists
     response = (
-        hub.table("instance").select("*").eq("name", settings.instance.name).execute()
+        hub.table("instance")
+        .select("*")
+        .eq("name", settings.instance.name)
+        .eq("owner_id", hub.auth.session().user.id.hex)
+        .execute()
     )
     if len(response.data) == 0:
         instance_fields = {
