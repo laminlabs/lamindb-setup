@@ -141,7 +141,7 @@ def push_instance_if_not_exists(storage):
         instance_id = response.data[0]["id"]
 
     response = (
-        hub.table("user_instance")
+        hub.table("userinstance")
         .select("*")
         .eq("user_id", hub.auth.session().user.id.hex)
         .eq("instance_id", instance_id)
@@ -152,7 +152,7 @@ def push_instance_if_not_exists(storage):
             "user_id": hub.auth.session().user.id.hex,
             "instance_id": instance_id,
         }
-        data = hub.table("user_instance").insert(user_instance_fields).execute().data
+        data = hub.table("userinstance").insert(user_instance_fields).execute().data
         assert len(data) == 1
 
     hub.auth.sign_out()
