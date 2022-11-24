@@ -22,6 +22,17 @@ def get_connectore_file_url():
     return "https://lamin-site-assets.s3.amazonaws.com/connector.env"
 
 
+def get_lamin_site_base_url():
+    if "LAMIN_ENV" in os.environ:
+        if os.environ["LAMIN_ENV"] == "dev":
+            return "http://localhost:3000"
+        elif os.environ["LAMIN_ENV"] == "test":
+            return "https://test.lamin.ai"
+        elif os.environ["LAMIN_ENV"] == "staging":
+            return "https://staging.lamin.ai"
+    return "https://lamin.ai"
+
+
 def connect_hub():
     file_url = get_connectore_file_url()
     connector_file, _ = urlretrieve(file_url)
@@ -45,7 +56,9 @@ def sign_up_hub(email) -> str:
     hub = connect_hub()
     password = id.secret()  # generate new password
     user = hub.auth.sign_up(
-        email=email, password=password, redirect_to="https://lamin.ai/signup"
+        email=email,
+        password=password,
+        redirect_to=f"{get_lamin_site_base_url()}/signup",
     )
     # if user already exists a fake user object without identity is returned
     if user.identities:
@@ -116,8 +129,6 @@ def push_instance_if_not_exists(storage):
         data = hub.table("storage").insert(storage_fields).execute().data
         assert len(data) == 1
 
-    # Warning: instance name is not unique
-    # we have to find another to check if an instance exists
     response = (
         hub.table("instance").select("*").eq("name", settings.instance.name).execute()
     )
@@ -141,7 +152,7 @@ def push_instance_if_not_exists(storage):
         instance_id = response.data[0]["id"]
 
     response = (
-        hub.table("user_instance")
+        hub.table("userinstance")
         .select("*")
         .eq("user_id", hub.auth.session().user.id.hex)
         .eq("instance_id", instance_id)
@@ -152,7 +163,7 @@ def push_instance_if_not_exists(storage):
             "user_id": hub.auth.session().user.id.hex,
             "instance_id": instance_id,
         }
-        data = hub.table("user_instance").insert(user_instance_fields).execute().data
+        data = hub.table("userinstance").insert(user_instance_fields).execute().data
         assert len(data) == 1
 
     hub.auth.sign_out()
