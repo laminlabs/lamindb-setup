@@ -130,7 +130,11 @@ def push_instance_if_not_exists(storage):
         assert len(data) == 1
 
     response = (
-        hub.table("instance").select("*").eq("name", settings.instance.name).execute()
+        hub.table("instance")
+        .select("*")
+        .eq("name", settings.instance.name)
+        .eq("owner_id", hub.auth.session().user.id.hex)
+        .execute()
     )
     if len(response.data) == 0:
         instance_fields = {
