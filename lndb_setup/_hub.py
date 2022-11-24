@@ -22,6 +22,17 @@ def get_connectore_file_url():
     return "https://lamin-site-assets.s3.amazonaws.com/connector.env"
 
 
+def get_lamin_site_base_url():
+    if "LAMIN_ENV" in os.environ:
+        if os.environ["LAMIN_ENV"] == "dev":
+            return "http://localhost:3000"
+        elif os.environ["LAMIN_ENV"] == "test":
+            return "https://test.lamin.ai"
+        elif os.environ["LAMIN_ENV"] == "staging":
+            return "https://staging.lamin.ai"
+    return "https://lamin.ai"
+
+
 def connect_hub():
     file_url = get_connectore_file_url()
     connector_file, _ = urlretrieve(file_url)
@@ -45,7 +56,9 @@ def sign_up_hub(email) -> str:
     hub = connect_hub()
     password = id.secret()  # generate new password
     user = hub.auth.sign_up(
-        email=email, password=password, redirect_to="https://lamin.ai/signup"
+        email=email,
+        password=password,
+        redirect_to=f"{get_lamin_site_base_url()}/signup",
     )
     # if user already exists a fake user object without identity is returned
     if user.identities:
