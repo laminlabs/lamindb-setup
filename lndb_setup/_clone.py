@@ -21,7 +21,7 @@ def clone_to_test_instance(depth: int = 10):
         if tgt_sqlite_file.exists():
             tgt_sqlite_file.unlink()
         tgt_db = f"sqlite:///{tgt_sqlite_file}"
-        print("Target db is: {tgt_db}")
+        print(f"Target db is: {tgt_db}")
     else:
         raise NotImplementedError
 
