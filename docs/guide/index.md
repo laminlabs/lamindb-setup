@@ -9,4 +9,5 @@ schema-modules
 edge-cases
 migrate
 migrate-postgres
+clone
 ```
