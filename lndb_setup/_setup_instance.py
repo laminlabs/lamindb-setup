@@ -1,5 +1,5 @@
 from pathlib import Path
-from typing import Union
+from typing import Optional, Union
 
 from cloudpathlib import CloudPath
 from lamin_logger import logger
@@ -87,8 +87,11 @@ def instance_exists(isettings: InstanceSettings):
         return False
 
 
-def load(instance_name: str):
-    """Load existing instance."""
+def load(instance_name: str) -> Optional[str]:
+    """Load existing instance.
+
+    Returns `None` if succeeds, otherwise a string error code.
+    """
     usettings = load_or_create_user_settings()
     isettings = load_instance_settings(settings_dir / f"instance-{instance_name}.env")
     assert isettings.name is not None
