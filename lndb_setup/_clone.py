@@ -3,6 +3,18 @@
 from sqlalchemy import MetaData, create_engine
 
 from ._settings import settings
+from ._settings_instance import InstanceSettings
+
+
+def get_local_test_sqlite_file(src_settings: InstanceSettings):
+    path = src_settings._sqlite_file_local
+    new_stem = path.stem + "_test"
+    tgt_sqlite_file = path.parent.parent / new_stem / f"{new_stem}{path.suffix}"
+    tgt_sqlite_file.parent.mkdir(exist_ok=True)
+    if tgt_sqlite_file.exists():
+        tgt_sqlite_file.unlink()
+    tgt_db = f"sqlite:///{tgt_sqlite_file}"
+    return tgt_db
 
 
 def clone_to_test_instance(depth: int = 10):
@@ -14,13 +26,7 @@ def clone_to_test_instance(depth: int = 10):
     src_metadata = MetaData(bind=src_engine)
 
     if src_settings._dbconfig == "sqlite":
-        path = src_settings._sqlite_file_local
-        new_stem = path.stem + "_test"
-        tgt_sqlite_file = path.parent.parent / new_stem / f"{new_stem}{path.suffix}"
-        tgt_sqlite_file.parent.mkdir(exist_ok=True)
-        if tgt_sqlite_file.exists():
-            tgt_sqlite_file.unlink()
-        tgt_db = f"sqlite:///{tgt_sqlite_file}"
+        tgt_db = get_local_test_sqlite_file(src_settings)
         print(f"Target db is: {tgt_db}")
     else:
         raise NotImplementedError
