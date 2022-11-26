@@ -6,6 +6,7 @@ from typing import Any
 
 import sqlmodel as sqm
 from lamin_logger import logger
+from natsort import natsorted
 
 from ._db import insert
 from ._settings_instance import InstanceSettings
@@ -44,6 +45,7 @@ def check_migrate(
             )
             version_table = getattr(table_loc, f"version_{schema_id}")
             versions = session.exec(sqm.select(version_table.v)).all()
+            versions = natsorted(versions)
 
         current_version = schema_module.__version__
 
