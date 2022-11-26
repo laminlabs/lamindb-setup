@@ -3,6 +3,7 @@
 <!-- prettier-ignore -->
 Name | PR | Developer | Date | Version
 --- | --- | --- | --- | ---
+🍱 Clone postgres to test DB | [104](https://github.com/laminlabs/lndb-setup/pull/104) | [falexwolf](https://github.com/falexwolf) | 2022-11-26 |
 Update docstring | [105](https://github.com/laminlabs/lndb-setup/pull/105) | [fredericenard](https://github.com/fredericenard) | 2022-11-26 |
 ✨ Add clone capability for testing migrations | [103](https://github.com/laminlabs/lndb-setup/pull/103) | [falexwolf](https://github.com/falexwolf) | 2022-11-25 |
 ✨ Enable dynamic connector file | [100](https://github.com/laminlabs/lndb-setup/pull/100) | [fredericenard](https://github.com/fredericenard) | 2022-11-24 |
