@@ -9,5 +9,6 @@ schema-modules
 edge-cases
 migrate
 migrate-postgres
-clone
+clone-sqlite
+clone-postgres
 ```
