@@ -5,6 +5,7 @@ from typing import Any
 
 import sqlmodel as sqm
 from lamin_logger import logger
+from sqlalchemy.exc import ProgrammingError
 
 from ._settings_load import load_or_create_instance_settings
 
@@ -20,7 +21,14 @@ class upsert:
             user_table = (
                 schema_core.User if hasattr(schema_core, "User") else schema_core.user
             )  # noqa
-            user = session.get(user_table, user_id)
+            try:
+                user = session.get(user_table, user_id)
+            except ProgrammingError as e:
+                logger.error(
+                    "Cannot find user table.\nLikely, you try to run SQLite and"
+                    " Postgres from the same process.\n\n->Abort and restart with only"
+                    f" one SQL dialect in one process.\n\n{e}"
+                )
         if user is None:
             user_id = insert.user(email, user_id, handle, name)  # type: ignore
             # do not update sqlite on the cloud as this happens within

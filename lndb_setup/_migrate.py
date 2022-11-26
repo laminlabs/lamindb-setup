@@ -6,6 +6,7 @@ from typing import Any
 
 import sqlmodel as sqm
 from lamin_logger import logger
+from natsort import natsorted
 
 from ._db import insert
 from ._settings_instance import InstanceSettings
@@ -31,7 +32,8 @@ def check_migrate(
 
     for schema_name in ["core"] + schema_names:
         create_schema_if_not_exists(schema_name, isettings)
-        schema_module = importlib.import_module(get_schema_module_name(schema_name))
+        schema_module_name = get_schema_module_name(schema_name)
+        schema_module = importlib.import_module(schema_module_name)
         if schema_module._migration is None:
             status.append("migrate-unnecessary")
             continue
@@ -44,6 +46,7 @@ def check_migrate(
             )
             version_table = getattr(table_loc, f"version_{schema_id}")
             versions = session.exec(sqm.select(version_table.v)).all()
+            versions = natsorted(versions)
 
         current_version = schema_module.__version__
 
@@ -61,8 +64,10 @@ def check_migrate(
 
                 if response != "y":
                     logger.warning(
-                        f"Your db does not match the latest versio of schema {schema_name}."  # noqa
-                        "Either install a previous API version or migrate the database."
+                        f"Your db does not match the latest version of schema {schema_name}.\n"  # noqa
+                        "For production use, either install"
+                        f" {schema_module_name} {versions[-1]} "
+                        f"or migrate the database to {current_version}."
                     )
                     return None
             else:
