@@ -27,8 +27,9 @@ class upsert:
                 logger.error(
                     "Cannot find user table.\nLikely, you try to run SQLite and"
                     " Postgres from the same process.\n\n->Abort and restart with only"
-                    f" one SQL dialect in one process.\n\n{e}"
+                    " one SQL dialect in one process.\n\n"
                 )
+                raise e
         if user is None:
             user_id = insert.user(email, user_id, handle, name)  # type: ignore
             # do not update sqlite on the cloud as this happens within

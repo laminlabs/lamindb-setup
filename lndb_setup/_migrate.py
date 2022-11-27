@@ -2,7 +2,7 @@ import importlib
 import os
 from pathlib import Path
 from subprocess import run
-from typing import Any
+from typing import Any, Optional
 
 import sqlmodel as sqm
 from lamin_logger import logger
@@ -18,6 +18,7 @@ def check_migrate(
     *,
     usettings: UserSettings,
     isettings: InstanceSettings,
+    migrate_confirmed: Optional[bool] = None,
 ):
     if "LAMIN_SKIP_MIGRATION" in os.environ:
         if os.environ["LAMIN_SKIP_MIGRATION"] == "true":
@@ -51,8 +52,15 @@ def check_migrate(
         current_version = schema_module.__version__
 
         if current_version not in versions and len(versions) > 0:
+            logger.info(
+                f"Schema {schema_name} v{versions[-1]} is not up to date"
+                f" with {current_version}."
+            )
+            # if migration is confirmed, continue
+            if migrate_confirmed:
+                pass
             # run a confirmation dialogue outside a pytest run
-            if "PYTEST_CURRENT_TEST" not in os.environ:
+            elif "PYTEST_CURRENT_TEST" not in os.environ:
                 logger.warning(
                     "Run the command in the shell to respond to the following dialogue."
                 )
@@ -71,9 +79,11 @@ def check_migrate(
                     )
                     return None
             else:
-                logger.info(
-                    f"Migrating {schema_name} from {versions[-1]} to {current_version}."
+                logger.warning(
+                    f"Migrate instance {isettings.name} outside a test (CI) run. "
+                    "Unexpected errors might happen."
                 )
+                return "migrate-failed"
 
             status.append(
                 migrate(

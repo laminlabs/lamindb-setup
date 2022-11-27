@@ -2,6 +2,7 @@
 # This starts out with https://stackoverflow.com/questions/70392123
 from pathlib import Path
 from subprocess import run
+from typing import Optional
 
 import sqlalchemy as sa
 from lamin_logger import logger
@@ -11,10 +12,15 @@ from ._settings import settings
 from ._settings_instance import InstanceSettings
 
 
-def setup_local_test_sqlite_file(src_settings: InstanceSettings):
+def setup_local_test_sqlite_file(
+    src_settings: InstanceSettings, return_dir: bool = False
+):
     path = src_settings._sqlite_file_local
     new_stem = path.stem + "_test"
-    tgt_sqlite_file = Path.cwd() / new_stem / f"{new_stem}{path.suffix}"
+    tgt_sqlite_dir = Path.cwd() / new_stem
+    if return_dir:
+        return tgt_sqlite_dir
+    tgt_sqlite_file = tgt_sqlite_dir / f"{new_stem}{path.suffix}"
     tgt_sqlite_file.parent.mkdir(exist_ok=True)
     if tgt_sqlite_file.exists():
         tgt_sqlite_file.unlink()
@@ -33,7 +39,7 @@ def setup_local_test_postgres():
             "Created Postgres test instance. It runs in docker container 'pgtest'."
         )
     else:
-        logger.info("Failed to set up postgres test instance.")
+        raise RuntimeError("Failed to set up postgres test instance.")
 
     return "postgresql://postgres:pwd@0.0.0.0:5432/pgtest"
 
@@ -76,9 +82,10 @@ def clone_schema(
             tgt_conn.commit()
 
 
-def clone_test(depth: int = 10):
+def clone_test(src_settings: Optional[InstanceSettings] = None, depth: int = 10):
     """Clone from current instance to a test instance."""
-    src_settings = settings.instance
+    if src_settings is None:
+        src_settings = settings.instance
     if src_settings.storage_root is None:
         raise RuntimeError("Please run `lndb init` to configure an instance.")
     src_engine = create_engine(src_settings.db)
@@ -103,6 +110,10 @@ def clone_test(depth: int = 10):
         if schemaname not in tgt_conn.dialect.get_schema_names(tgt_conn):
             tgt_conn.execute(sa.schema.CreateSchema(schemaname))
         tgt_conn.commit()
+
+    # only relevant for postgres
+    if "information_schema" in src_schemas:
+        src_schemas.remove("information_schema")
 
     for schema in src_schemas:
         src_metadata.reflect(bind=src_engine, schema=schema)
