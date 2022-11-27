@@ -34,7 +34,7 @@ def update_db(isettings, usettings):
     push_instance_if_not_exists(storage)
 
 
-def setup_instance_db():
+def setup_instance_db(migrate: Optional[bool] = None):
     """Setup database.
 
     Contains:
@@ -47,9 +47,12 @@ def setup_instance_db():
         logger.warning("Instance is not configured. Call `lndb init` or `lndb load`.")
         return None
 
+    message = None
     if instance_exists(isettings):
         logger.info(f"Loading instance: {isettings.name}")
-        check_migrate(usettings=usettings, isettings=isettings)
+        message = check_migrate(
+            usettings=usettings, isettings=isettings, migrate_confirmed=migrate
+        )
     else:
         if isettings.cloud_storage and isettings._sqlite_file_local.exists():
             logger.error(
@@ -62,6 +65,8 @@ def setup_instance_db():
         setup_schema(isettings, usettings)
 
     update_db(isettings, usettings)
+
+    return message
 
 
 def instance_exists(isettings: InstanceSettings):
@@ -118,6 +123,7 @@ def init(
     storage: Union[str, Path, CloudPath],
     dbconfig: str = "sqlite",
     schema: Union[str, None] = None,
+    migrate: Optional[bool] = None,
 ) -> Union[None, str]:
     """Setup LaminDB.
 
@@ -125,6 +131,7 @@ def init(
         storage: {}
         dbconfig: {}
         schema: {}
+        migrate: Whether to auto-migrate or not.
     """
     usettings = load_or_create_user_settings()
     if usettings.id is None:
@@ -161,9 +168,9 @@ def init(
 
     save_instance_settings(instance_settings)
 
-    setup_instance_db()
+    message = setup_instance_db(migrate=migrate)
 
     from ._settings import settings
 
     settings._instance_settings = None
-    return None
+    return message

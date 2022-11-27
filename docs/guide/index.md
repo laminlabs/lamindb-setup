@@ -7,8 +7,6 @@ setup-user
 setup-instance
 schema-modules
 edge-cases
-migrate
+migrate-sqlite
 migrate-postgres
-clone-sqlite
-clone-postgres
 ```
