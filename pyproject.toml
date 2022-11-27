@@ -19,7 +19,8 @@ dependencies = [
     "erdiagram",
     "alembic",
     "psycopg2-binary",
-    "pyjwt"
+    "pyjwt",
+    "natsort",
 ]
 
 [project.urls]
