@@ -21,6 +21,7 @@ dependencies = [
     "psycopg2-binary",
     "pyjwt",
     "natsort",
+    "pandas",
 ]
 
 [project.urls]
