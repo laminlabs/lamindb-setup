@@ -3,7 +3,7 @@
 <!-- prettier-ignore -->
 Name | PR | Developer | Date | Version
 --- | --- | --- | --- | ---
-Update lnschema core | [106](https://github.com/laminlabs/lndb-setup/pull/106) | [fredericenard](https://github.com/fredericenard) | 2022-11-27 |
+Update lnschema core | [106](https://github.com/laminlabs/lndb-setup/pull/106) | [fredericenard](https://github.com/fredericenard) | 2022-11-27 | 0.19.0
 🍱 Clone postgres to test DB | [104](https://github.com/laminlabs/lndb-setup/pull/104) | [falexwolf](https://github.com/falexwolf) | 2022-11-26 |
 Update docstring | [105](https://github.com/laminlabs/lndb-setup/pull/105) | [fredericenard](https://github.com/fredericenard) | 2022-11-26 |
 ✨ Add clone capability for testing migrations | [103](https://github.com/laminlabs/lndb-setup/pull/103) | [falexwolf](https://github.com/falexwolf) | 2022-11-25 |
