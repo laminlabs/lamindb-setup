@@ -1,7 +1,6 @@
 from pathlib import Path
-from typing import Any, Dict, Union, get_type_hints
+from typing import Any, Dict, get_type_hints
 
-from ._settings_instance import InstanceSettings
 from ._settings_store import UserSettingsStore, current_user_settings_file, settings_dir
 from ._settings_user import UserSettings
 
@@ -18,7 +17,7 @@ def save_user_settings(settings: UserSettings):
 
 
 def save_settings(
-    settings: Union[InstanceSettings, UserSettings],
+    settings: Any,
     settings_file: Path,
     type_hints: Dict[str, Any],
 ):
