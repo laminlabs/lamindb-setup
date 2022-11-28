@@ -57,7 +57,7 @@ class settings:
     @classproperty
     def _instance_exists(cls):
         try:
-            cls.instance()
+            cls.instance
             return True
         except RuntimeError:
             return False
