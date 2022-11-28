@@ -70,9 +70,12 @@ def setup_instance_db(migrate: Optional[bool] = None):
 
 
 def instance_exists(isettings: InstanceSettings):
-    if isettings._sqlite_file.exists():
-        return True
-    elif isettings._dbconfig != "sqlite":
+    if isettings._dbconfig == "sqlite":
+        if isettings._sqlite_file.exists():
+            return True
+        else:
+            return False
+    else:  # postgres
         with isettings.db_engine().connect() as conn:
             results = conn.execute(
                 text(
@@ -86,10 +89,8 @@ def instance_exists(isettings: InstanceSettings):
                 );
             """
                 )
-            ).first()
+            ).first()  # returns tuple of boolean
             return results[0]
-    else:
-        return False
 
 
 def load(instance_name: str) -> Optional[str]:
