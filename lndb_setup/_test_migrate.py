@@ -14,7 +14,7 @@ from ._test_instances import test_instances
 
 # we currently need to run this in to separate processes for sqlite and for postgres
 # because of schemas being different at import time
-def test_migrate(
+def migrate_test(
     schema_package: str, n_instances: Optional[int] = None, dialect_name="sqlite"
 ):
     # auto-bump version to simulate state after release
