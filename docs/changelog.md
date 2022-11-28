@@ -3,7 +3,7 @@
 <!-- prettier-ignore -->
 Name | PR | Developer | Date | Version
 --- | --- | --- | --- | ---
-:bug: Propagate migrate | [111](https://github.com/laminlabs/lndb-setup/pull/111) | [falexwolf](https://github.com/falexwolf) | 2022-11-28 |
+🐛 Propagate migrate | [111](https://github.com/laminlabs/lndb-setup/pull/111) | [falexwolf](https://github.com/falexwolf) | 2022-11-28 | 0.20.3
 🚸 Reload schemas when switching between sqlite & postgres | [110](https://github.com/laminlabs/lndb-setup/pull/110) | [falexwolf](https://github.com/falexwolf) | 2022-11-28 | 0.20.2
 ♻️ Refactor `init`, `load`, and `InstanceSettings` | [109](https://github.com/laminlabs/lndb-setup/pull/109) | [falexwolf](https://github.com/falexwolf) | 2022-11-28 |
 🎨 Improve migration testing framework | [108](https://github.com/laminlabs/lndb-setup/pull/108) | [falexwolf](https://github.com/falexwolf) | 2022-11-28 | 0.20.1
