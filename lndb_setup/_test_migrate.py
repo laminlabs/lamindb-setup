@@ -1,12 +1,13 @@
 import importlib
 from subprocess import run
+from time import sleep
 from typing import Optional
 
 from cloudpathlib import CloudPath
 from lamin_logger import logger
 from packaging import version
 
-from ._clone import clone_test, setup_local_test_sqlite_file
+from ._clone import clone_test, setup_local_test_postgres, setup_local_test_sqlite_file
 from ._settings_instance import InstanceSettings
 from ._setup_instance import init
 from ._test_instances import test_instances
@@ -14,9 +15,17 @@ from ._test_instances import test_instances
 
 # we currently need to run this in to separate processes for sqlite and for postgres
 # because of schemas being different at import time
-def test_migrate(
+def migrate_test(
     schema_package: str, n_instances: Optional[int] = None, dialect_name="sqlite"
 ):
+    # this is super hacky, we shouldn't need to set up these test instances here
+    if dialect_name == "sqlite":
+        init(storage="testdb")
+    elif dialect_name == "postgresql":
+        connection_string = setup_local_test_postgres()
+        sleep(2)
+        init(storage="testdb", dbconfig=connection_string)
+        run("docker stop pgtest && docker rm pgtest", shell=True)
     # auto-bump version to simulate state after release
     schema_module = importlib.import_module(schema_package)
     v = version.parse(schema_module.__version__)
@@ -31,7 +40,8 @@ def test_migrate(
         run_instances = instances.loc[instances.str.startswith(dialect_name)]
     else:
         raise ValueError("Pass either 'sqlite' or 'postgresql'.")
-    logger.info(f"These instances need to be tested: {run_instances.tolist()}")
+    display_list = [inst.split("/")[-1] for inst in run_instances.tolist()]
+    logger.info(f"These instances need to be tested: {display_list}")
     results = []
     for instance in run_instances.iloc[:n_instances]:
         logger.info(f"Testing: {instance}")
@@ -53,6 +63,6 @@ def test_migrate(
             result = init(dbconfig=connection_string, storage=storage, migrate=True)
         logger.info(result)
         if dialect_name == "postgresql":
-            run("docker stop pgtest && docker rm pgtest")
+            run("docker stop pgtest && docker rm pgtest", shell=True)
         results.append(result)
     return results
