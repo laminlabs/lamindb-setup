@@ -81,9 +81,9 @@ def load(instance_name: str) -> Optional[str]:
     return message
 
 
-ERROR_SQLITE_CACHE = f"""
+ERROR_SQLITE_CACHE = """
 Your cached local SQLite file still exists, while your cloud SQLite file was deleted.
-Please delete {settings.instance._sqlite_file_local} or add it to the cloud location.
+Please delete {} or add it to the cloud location.
 """
 
 
@@ -121,7 +121,7 @@ def init(
         logger.info("Instance exists already!")
         return load(isettings.name)
     if isettings.cloud_storage and isettings._sqlite_file_local.exists():
-        logger.error(ERROR_SQLITE_CACHE)
+        logger.error(ERROR_SQLITE_CACHE.format(settings.instance._sqlite_file_local))
         return None
     setup_schema(isettings, settings.user)
     register(isettings, settings.user)
