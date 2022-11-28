@@ -35,18 +35,23 @@ def get_schema_module_name(schema_name):
         return f"lnschema_{schema_name.replace('-', '_')}"
 
 
-def setup_schema(isettings: InstanceSettings, usettings: UserSettings):
+def load_schema(isettings: InstanceSettings, reload: bool = False):
+    schema_names = ["core"]
     if isettings.schema_modules is not None:
-        schema_names = isettings.schema_modules.split(", ")
-    else:
-        schema_names = []
+        schema_names += isettings.schema_modules.split(", ")
 
     msg = "Loading schema modules: "
-
-    for schema_name in ["core"] + schema_names:
+    for schema_name in schema_names:
         create_schema_if_not_exists(schema_name, isettings)
         schema_module = importlib.import_module(get_schema_module_name(schema_name))
+        if reload:
+            importlib.reload(schema_module)
         msg += f"{schema_name}=={schema_module.__version__} "
+    return msg
+
+
+def setup_schema(isettings: InstanceSettings, usettings: UserSettings):
+    msg, schema_names = load_schema(isettings)
     logger.info(f"{msg}")
 
     # add naming convention for alembic
@@ -68,7 +73,7 @@ def setup_schema(isettings: InstanceSettings, usettings: UserSettings):
         name=usettings.name,
     )
 
-    for schema_name in ["core"] + schema_names:
+    for schema_name in schema_names:
         schema_module = importlib.import_module(get_schema_module_name(schema_name))
         insert.version(
             schema_module=schema_module,
