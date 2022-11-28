@@ -41,6 +41,13 @@ aa("instance", type=str, metavar="s", default=None, help=instance.name)
 args = parser.parse_args()
 
 
+def process_result(result):
+    if result in ["migrate-unnecessary", "migrate-success", None]:
+        return None  # is interpreted as success (exit code 0) by shell
+    else:
+        return result
+
+
 def main():
     if args.command == "signup":
         return _setup_user.signup(email=args.email)
@@ -50,15 +57,17 @@ def main():
             password=args.password,
         )
     elif args.command == "init":
-        return _setup_instance.init(
+        result = _setup_instance.init(
             storage=args.storage,
             dbconfig=args.db,
             schema=args.schema,
         )
+        return process_result(result)
     elif args.command == "load":
-        return _setup_instance.load(
+        result = _setup_instance.load(
             instance_name=args.instance,
         )
+        return process_result(result)
     else:
         logger.error("Invalid command. Try `lndb -h`.")
         return 1
