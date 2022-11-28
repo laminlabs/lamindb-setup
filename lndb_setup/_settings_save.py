@@ -1,24 +1,8 @@
 from pathlib import Path
-from typing import Any, Dict, Union, get_type_hints
+from typing import Any, Dict, get_type_hints
 
-from ._settings_instance import InstanceSettings
-from ._settings_store import (
-    InstanceSettingsStore,
-    UserSettingsStore,
-    current_instance_settings_file,
-    current_user_settings_file,
-    settings_dir,
-)
+from ._settings_store import UserSettingsStore, current_user_settings_file, settings_dir
 from ._settings_user import UserSettings
-
-
-def save_instance_settings(settings: InstanceSettings):
-    assert settings.name is not None
-    type_hints = get_type_hints(InstanceSettingsStore)
-    save_settings(settings, current_instance_settings_file, type_hints)
-    save_settings(
-        settings, settings_dir / f"instance-{settings.name}.env", type_hints
-    )  # noqa
 
 
 def save_user_settings(settings: UserSettings):
@@ -33,7 +17,7 @@ def save_user_settings(settings: UserSettings):
 
 
 def save_settings(
-    settings: Union[InstanceSettings, UserSettings],
+    settings: Any,
     settings_file: Path,
     type_hints: Dict[str, Any],
 ):
