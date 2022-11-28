@@ -1,6 +1,6 @@
 import sqlalchemy as sql
 
-from ._settings_load import load_or_create_instance_settings
+from ._settings import settings
 
 
 class schema:
@@ -11,8 +11,7 @@ class schema:
         """Make a diagram of entity relationships."""
         import erdiagram
 
-        settings = load_or_create_instance_settings()
-        engine = settings.db_engine()
+        engine = settings.instance.db_engine()
         metadata = sql.MetaData(bind=engine)
         metadata.reflect()
         graph = erdiagram.create_schema_graph(
@@ -31,8 +30,7 @@ class schema:
     def list_entities(cls):
         """Return all entities in the db."""
         metadata = sql.MetaData()
-        settings = load_or_create_instance_settings()
-        engine = settings.db_engine()
+        engine = settings.instance.db_engine()
         metadata.reflect(bind=engine)
         table_names = [table.name for table in metadata.sorted_tables]
         return table_names

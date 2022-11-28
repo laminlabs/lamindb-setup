@@ -19,6 +19,10 @@ current_instance_settings_file = settings_dir / "current_instance.env"
 current_user_settings_file = settings_dir / "current_user.env"
 
 
+def instance_settings_file(name: str):
+    return settings_dir / f"instance-{name}.env"
+
+
 class InstanceSettingsStore(BaseSettings):
     storage_root: str
     storage_region: str

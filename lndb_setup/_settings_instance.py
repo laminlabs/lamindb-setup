@@ -1,13 +1,21 @@
 import os
+import shutil
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Optional, Union
+from typing import Optional, Union, get_type_hints
 
 import sqlmodel as sqm
 from appdirs import AppDirs
 from cloudpathlib import CloudPath, GSClient, S3Client
 from cloudpathlib.exceptions import OverwriteNewerLocalError
 from lamin_logger import logger
+
+from ._settings_save import save_settings
+from ._settings_store import (
+    InstanceSettingsStore,
+    current_instance_settings_file,
+    instance_settings_file,
+)
 
 # leave commented out until we understand more how to deal with
 # migrations in redun
@@ -165,10 +173,13 @@ class InstanceSettings:
             sqlite_file.upload_from(cache_file, force_overwrite_to_cloud=True)  # type: ignore  # noqa
 
     @property
-    def name(self) -> Union[str, None]:
-        """Name of LaminDB instance, which corresponds to exactly one database."""
-        if self.storage_root is None:  # not yet initialized
-            return None
+    def name(self) -> str:
+        """Name of LaminDB instance.
+
+        Every LaminDB instance corresponds to exactly one database.
+
+        The name is unique per instance owner.
+        """
         if self._dbconfig == "sqlite":
             return instance_from_storage(self.storage_root)
         else:
@@ -204,3 +215,16 @@ class InstanceSettings:
     def storage(self) -> Storage:
         """Low-level access to storage location."""
         return Storage(self)
+
+    def _persist(self) -> None:
+        assert self.name is not None
+        type_hints = get_type_hints(InstanceSettingsStore)
+        filepath = instance_settings_file(self.name)
+        # persist under filepath for later reference
+        save_settings(self, filepath, type_hints)
+        # persist under current file for auto load
+        shutil.copy2(filepath, current_instance_settings_file)
+        # persist under settings class for same session reference
+        from ._settings import settings
+
+        settings._instance_settings = self

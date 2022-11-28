@@ -1,13 +1,13 @@
 # We see a lot of import statements for lnschema_core below
 # This is currently needed as we can only import the schema module
-# once settings have been adjusted
+# once isettings have been adjusted
 from typing import Any
 
 import sqlmodel as sqm
 from lamin_logger import logger
 from sqlalchemy.exc import ProgrammingError
 
-from ._settings_load import load_or_create_instance_settings
+from ._settings import settings
 
 
 class upsert:
@@ -15,9 +15,7 @@ class upsert:
     def user(cls, email: str, user_id: str, handle: str, name: str = None):
         import lnschema_core as schema_core
 
-        settings = load_or_create_instance_settings()
-        engine = settings.db_engine()
-        with sqm.Session(engine) as session:
+        with sqm.Session(settings.instance.db_engine()) as session:
             user_table = (
                 schema_core.User if hasattr(schema_core, "User") else schema_core.user
             )  # noqa
@@ -42,7 +40,7 @@ class upsert:
             update_name = name != user.name and name is not None
 
             if any((update_email, update_handle, update_name)):
-                with sqm.Session(engine) as session:
+                with sqm.Session(settings.instance.db_engine()) as session:
                     msg = "Updating: "
                     if update_email:
                         msg += f"{user.email} -> {email} "
@@ -57,7 +55,7 @@ class upsert:
                     session.add(user)
                     session.commit()
 
-                settings._update_cloud_sqlite_file()
+                settings.instance._update_cloud_sqlite_file()
 
         return user_id
 
@@ -73,9 +71,7 @@ class insert_if_not_exists:
         import lnschema_core as schema_core
 
         root = str(root)
-        settings = load_or_create_instance_settings()
-        engine = settings.db_engine()
-        with sqm.Session(engine) as session:
+        with sqm.Session(settings.instance.db_engine()) as session:
             storage_table = (
                 schema_core.Storage
                 if hasattr(schema_core, "Storage")
@@ -108,16 +104,13 @@ class insert:
             user_id: User ID.
             cloud_sqlite: Update cloud SQLite file or not.
         """
-        settings = load_or_create_instance_settings()
-        engine = settings.db_engine()
-
         schema_id, version, migration = (
             schema_module._schema_id,
             schema_module.__version__,
             schema_module._migration,
         )
 
-        with sqm.Session(engine) as session:
+        with sqm.Session(settings.instance.db_engine()) as session:
             table_loc = (
                 schema_module.dev if hasattr(schema_module, "dev") else schema_module
             )
@@ -126,17 +119,14 @@ class insert:
             session.commit()
 
         if cloud_sqlite:
-            settings._update_cloud_sqlite_file()
+            settings.instance._update_cloud_sqlite_file()
 
     @classmethod
     def user(cls, email, user_id, handle, name):
         """User."""
         import lnschema_core as schema_core
 
-        settings = load_or_create_instance_settings()
-        engine = settings.db_engine()
-
-        with sqm.Session(engine) as session:
+        with sqm.Session(settings.instance.db_engine()) as session:
             user_table = (
                 schema_core.User if hasattr(schema_core, "User") else schema_core.user
             )  # noqa
@@ -145,7 +135,7 @@ class insert:
             session.commit()
             session.refresh(user)
 
-        settings._update_cloud_sqlite_file()
+        settings.instance._update_cloud_sqlite_file()
 
         return user.id
 
@@ -154,22 +144,19 @@ class insert:
         """Storage."""
         import lnschema_core as schema_core
 
-        settings = load_or_create_instance_settings()
-        engine = settings.db_engine()
-
-        with sqm.Session(engine) as session:
+        with sqm.Session(settings.instance.db_engine()) as session:
             storage_table = (
                 schema_core.Storage
                 if hasattr(schema_core, "Storage")
                 else schema_core.storage
             )  # noqa
             storage = storage_table(
-                root=root, region=region, type=settings.storage.type
+                root=root, region=region, type=settings.instance.storage.type
             )
             session.add(storage)
             session.commit()
             session.refresh(storage)
 
-        settings._update_cloud_sqlite_file()
+        settings.instance._update_cloud_sqlite_file()
 
         return storage

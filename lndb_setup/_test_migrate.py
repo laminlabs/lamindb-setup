@@ -13,8 +13,6 @@ from ._setup_instance import init
 from ._test_instances import test_instances
 
 
-# we currently need to run this in to separate processes for sqlite and for postgres
-# because of schemas being different at import time
 def migrate_test(
     schema_package: str, n_instances: Optional[int] = None, dialect_name="sqlite"
 ):

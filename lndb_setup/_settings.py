@@ -2,8 +2,8 @@ from typing import Union
 
 from ._settings_instance import InstanceSettings
 from ._settings_load import (
+    load_instance_settings,
     load_instance_settings_from_store,
-    load_or_create_instance_settings,
     load_or_create_user_settings,
 )
 from ._settings_store import InstanceSettingsStore
@@ -35,13 +35,15 @@ class settings:
         """User-related settings."""
         if cls._user_settings is None:
             cls._user_settings = load_or_create_user_settings()
+            if cls._user_settings.id is None:
+                raise RuntimeError("Need to login, first: lndb login <email>.")
         return cls._user_settings  # type: ignore
 
     @classproperty
     def instance(cls) -> InstanceSettings:
         """Instance-related settings."""
         if cls._instance_settings is None:
-            cls._instance_settings = load_or_create_instance_settings()
+            cls._instance_settings = load_instance_settings()
         return cls._instance_settings  # type: ignore
 
     @staticmethod

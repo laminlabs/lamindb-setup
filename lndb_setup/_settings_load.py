@@ -1,5 +1,5 @@
 from pathlib import Path
-from typing import Union
+from typing import Optional, Union
 
 from cloudpathlib import CloudPath
 from pydantic.error_wrappers import ValidationError
@@ -14,17 +14,11 @@ from ._settings_store import (
 from ._settings_user import UserSettings
 
 
-def load_or_create_instance_settings():
-    """Return current user settings."""
-    if not current_instance_settings_file.exists():
-        global InstanceSettings
-        return InstanceSettings()
-    else:
-        settings = load_instance_settings(current_instance_settings_file)
-        return settings
-
-
-def load_instance_settings(instance_settings_file: Path):
+def load_instance_settings(instance_settings_file: Optional[Path] = None):
+    if instance_settings_file is None:
+        instance_settings_file = current_instance_settings_file
+    if not instance_settings_file.exists():
+        raise RuntimeError("Instance is not setup. Please call `lndb init`.")
     try:
         settings_store = InstanceSettingsStore(_env_file=instance_settings_file)
     except ValidationError:
@@ -32,13 +26,13 @@ def load_instance_settings(instance_settings_file: Path):
             "Your instance settings file is invalid, please delete"
             f" {instance_settings_file} and init the instance again."
         )
-    settings = setup_instance_from_store(settings_store)
-    return settings
+    isettings = setup_instance_from_store(settings_store)
+    return isettings
 
 
 def load_instance_settings_from_store(settings_store: InstanceSettingsStore):
-    settings = setup_instance_from_store(settings_store)
-    return settings
+    isettings = setup_instance_from_store(settings_store)
+    return isettings
 
 
 def load_or_create_user_settings():
