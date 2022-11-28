@@ -3,7 +3,7 @@
 <!-- prettier-ignore -->
 Name | PR | Developer | Date | Version
 --- | --- | --- | --- | ---
-🎨 Improve migration testing framework | [108](https://github.com/laminlabs/lndb-setup/pull/108) | [falexwolf](https://github.com/falexwolf) | 2022-11-28 |
+🎨 Improve migration testing framework | [108](https://github.com/laminlabs/lndb-setup/pull/108) | [falexwolf](https://github.com/falexwolf) | 2022-11-28 | 0.20.1
 ✨ Migrations testing framework | [107](https://github.com/laminlabs/lndb-setup/pull/107) | [falexwolf](https://github.com/falexwolf) | 2022-11-27 | 0.20.0
 ⬆️ Upgrade `lnschema_core` | [106](https://github.com/laminlabs/lndb-setup/pull/106) | [fredericenard](https://github.com/fredericenard) | 2022-11-27 | 0.19.0
 🍱 Clone postgres to test DB | [104](https://github.com/laminlabs/lndb-setup/pull/104) | [falexwolf](https://github.com/falexwolf) | 2022-11-26 |
