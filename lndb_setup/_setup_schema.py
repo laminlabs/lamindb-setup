@@ -47,7 +47,7 @@ def load_schema(isettings: InstanceSettings, reload: bool = False):
         if reload:
             importlib.reload(schema_module)
         msg += f"{schema_name}=={schema_module.__version__} "
-    return msg
+    return msg, schema_names
 
 
 def setup_schema(isettings: InstanceSettings, usettings: UserSettings):
