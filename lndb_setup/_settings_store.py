@@ -1,5 +1,6 @@
 import os
 from pathlib import Path
+from typing import Optional
 
 from pydantic import BaseSettings
 
@@ -25,7 +26,7 @@ def instance_settings_file(name: str):
 
 class InstanceSettingsStore(BaseSettings):
     storage_root: str
-    storage_region: str
+    storage_region: Optional[str]
     dbconfig: str
     schema_modules: str
 
