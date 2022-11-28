@@ -14,7 +14,7 @@ from ._settings_instance import InstanceSettings
 from ._settings_instance import instance_description as description
 from ._settings_load import load_instance_settings, setup_storage_root
 from ._settings_store import instance_settings_file
-from ._setup_schema import known_schema_names, setup_schema
+from ._setup_schema import known_schema_names, load_schema, setup_schema
 from ._setup_storage import get_storage_region
 
 
@@ -66,13 +66,27 @@ def validate_schema_arg(schema: Optional[str] = None) -> Optional[str]:
     return ", ".join(validated_schema)
 
 
+def persist_check_reload_schema(isettings: InstanceSettings):
+    # check whether we're switching from sqlite to postgres or vice versa
+    # if we do, we need to re-import the schema modules to account for differences
+    check = False
+    if settings._instance_exists:
+        if settings.instance._dbconfig == "sqlite" and isettings._dbconfig != "sqlite":
+            check = True
+        if settings.instance._dbconfig != "sqlite" and isettings._dbconfig == "sqlite":
+            check = True
+    isettings._persist()
+    if check:
+        load_schema(isettings, reload=True)
+
+
 def load(instance_name: str) -> Optional[str]:
     """Load existing instance.
 
     Returns `None` if succeeds, otherwise a string error code.
     """
     isettings = load_instance_settings(instance_settings_file(instance_name))
-    isettings._persist()
+    persist_check_reload_schema(isettings)
     logger.info(f"Loading instance: {isettings.name}")
     message = check_migrate(usettings=settings.user, isettings=isettings)
     if message == "migrate-failed":
@@ -116,9 +130,8 @@ def init(
         _dbconfig=dbconfig,
         schema_modules=validate_schema_arg(schema),
     )
-    isettings._persist()
+    persist_check_reload_schema(isettings)
     if instance_exists(isettings):
-        logger.info("Instance exists already!")
         return load(isettings.name)
     if isettings.cloud_storage and isettings._sqlite_file_local.exists():
         logger.error(ERROR_SQLITE_CACHE.format(settings.instance._sqlite_file_local))

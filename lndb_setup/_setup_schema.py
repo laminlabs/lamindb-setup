@@ -35,18 +35,48 @@ def get_schema_module_name(schema_name):
         return f"lnschema_{schema_name.replace('-', '_')}"
 
 
-def setup_schema(isettings: InstanceSettings, usettings: UserSettings):
+def reload_orms(schema_name, module, isettings):
+    orms = [cls for cls in module.__dict__.values() if hasattr(cls, "__table__")]
+    if isettings._dbconfig == "sqlite":
+        # only those orms that are actually in a schema
+        orms = [
+            orm
+            for orm in orms
+            if hasattr(orm.__table__, "schema") and orm.__table__.schema is not None
+        ]
+        for orm in orms:
+            orm.__table__.schema = None
+            # I don't know why the following is needed... it shouldn't
+            if not orm.__table__.name.startswith(f"{schema_name}."):
+                orm.__table__.name = f"{schema_name}.{orm.__table__.name}"
+    else:  # postgres
+        orms = [
+            orm
+            for orm in orms
+            if hasattr(orm.__table__, "schema") and orm.__table__.schema is None
+        ]
+        for orm in orms:
+            orm.__table__.schema = schema_name
+            orm.__table__.name = orm.__table__.name.replace(f"{schema_name}.", "")
+
+
+def load_schema(isettings: InstanceSettings, reload: bool = False):
+    schema_names = ["core"]
     if isettings.schema_modules is not None:
-        schema_names = isettings.schema_modules.split(", ")
-    else:
-        schema_names = []
+        schema_names += isettings.schema_modules.split(", ")
 
     msg = "Loading schema modules: "
-
-    for schema_name in ["core"] + schema_names:
+    for schema_name in schema_names:
         create_schema_if_not_exists(schema_name, isettings)
-        schema_module = importlib.import_module(get_schema_module_name(schema_name))
-        msg += f"{schema_name}=={schema_module.__version__} "
+        module = importlib.import_module(get_schema_module_name(schema_name))
+        if reload:  # importlib.reload doesn't do the job! hence, manual below
+            reload_orms(schema_name, module, isettings)
+        msg += f"{schema_name}=={module.__version__} "
+    return msg, schema_names
+
+
+def setup_schema(isettings: InstanceSettings, usettings: UserSettings):
+    msg, schema_names = load_schema(isettings)
     logger.info(f"{msg}")
 
     # add naming convention for alembic
@@ -68,7 +98,7 @@ def setup_schema(isettings: InstanceSettings, usettings: UserSettings):
         name=usettings.name,
     )
 
-    for schema_name in ["core"] + schema_names:
+    for schema_name in schema_names:
         schema_module = importlib.import_module(get_schema_module_name(schema_name))
         insert.version(
             schema_module=schema_module,
