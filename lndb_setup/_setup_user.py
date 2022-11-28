@@ -5,6 +5,7 @@ from lamin_logger import logger
 from ._db import upsert
 from ._hub import sign_in_hub, sign_up_hub
 from ._schema import schema
+from ._settings import settings
 from ._settings_load import load_or_create_user_settings, load_user_settings
 from ._settings_save import save_user_settings
 from ._settings_store import settings_dir
@@ -97,13 +98,11 @@ def login(
     user_settings.access_token = access_token
     save_user_settings(user_settings)
 
-    from ._settings import settings
-
     settings._user_settings = None
 
-    # log in user into instance db
+    # register login of user in instance db
     # (upsert local user record with cloud data)
-    if settings.instance.name is not None:
+    if settings._instance_exists:
         # the above if condition is not safe enough
         # users might delete a database but still keeping the
         # current_instance.env settings file around

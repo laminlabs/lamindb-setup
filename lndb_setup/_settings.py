@@ -53,3 +53,11 @@ class settings:
             instance_settings = load_instance_settings_from_store(settings_store)
             return instance_settings
         return settings.instance
+
+    @classproperty
+    def _instance_exists(cls):
+        try:
+            cls.instance()
+            return True
+        except RuntimeError:
+            return False
