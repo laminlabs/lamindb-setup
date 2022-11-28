@@ -35,6 +35,31 @@ def get_schema_module_name(schema_name):
         return f"lnschema_{schema_name.replace('-', '_')}"
 
 
+def reload_orms(schema_name, module, isettings):
+    orms = [cls for cls in module.__dict__.values() if hasattr(cls, "__table__")]
+    if isettings._dbconfig == "sqlite":
+        # only those orms that are actually in a schema
+        orms = [
+            orm
+            for orm in orms
+            if hasattr(orm.__table__, "schema") and orm.__table__.schema is not None
+        ]
+        for orm in orms:
+            orm.__table__.schema = None
+            # I don't know why the following is needed... it shouldn't
+            if not orm.__table__.name.startswith(f"{schema_name}."):
+                orm.__table__.name = f"{schema_name}.{orm.__table__.name}"
+    else:  # postgres
+        orms = [
+            orm
+            for orm in orms
+            if hasattr(orm.__table__, "schema") and orm.__table__.schema is None
+        ]
+        for orm in orms:
+            orm.__table__.schema = schema_name
+            orm.__table__.name = orm.__table__.name.replace(f"{schema_name}.", "")
+
+
 def load_schema(isettings: InstanceSettings, reload: bool = False):
     schema_names = ["core"]
     if isettings.schema_modules is not None:
@@ -43,10 +68,10 @@ def load_schema(isettings: InstanceSettings, reload: bool = False):
     msg = "Loading schema modules: "
     for schema_name in schema_names:
         create_schema_if_not_exists(schema_name, isettings)
-        schema_module = importlib.import_module(get_schema_module_name(schema_name))
-        if reload:
-            importlib.reload(schema_module)
-        msg += f"{schema_name}=={schema_module.__version__} "
+        module = importlib.import_module(get_schema_module_name(schema_name))
+        if reload:  # importlib.reload doesn't do the job! hence, manual below
+            reload_orms(schema_name, module, isettings)
+        msg += f"{schema_name}=={module.__version__} "
     return msg, schema_names
 
 

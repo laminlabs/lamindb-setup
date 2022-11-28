@@ -132,7 +132,6 @@ def init(
     )
     persist_check_reload_schema(isettings)
     if instance_exists(isettings):
-        logger.info("Instance exists already!")
         return load(isettings.name)
     if isettings.cloud_storage and isettings._sqlite_file_local.exists():
         logger.error(ERROR_SQLITE_CACHE.format(settings.instance._sqlite_file_local))
