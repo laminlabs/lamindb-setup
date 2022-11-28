@@ -3,6 +3,7 @@
 <!-- prettier-ignore -->
 Name | PR | Developer | Date | Version
 --- | --- | --- | --- | ---
+♻️ Refactor `init`, `load`, and `InstanceSettings` | [109](https://github.com/laminlabs/lndb-setup/pull/109) | [falexwolf](https://github.com/falexwolf) | 2022-11-28 |
 🎨 Improve migration testing framework | [108](https://github.com/laminlabs/lndb-setup/pull/108) | [falexwolf](https://github.com/falexwolf) | 2022-11-28 | 0.20.1
 ✨ Migrations testing framework | [107](https://github.com/laminlabs/lndb-setup/pull/107) | [falexwolf](https://github.com/falexwolf) | 2022-11-27 | 0.20.0
 ⬆️ Upgrade `lnschema_core` | [106](https://github.com/laminlabs/lndb-setup/pull/106) | [fredericenard](https://github.com/fredericenard) | 2022-11-27 | 0.19.0
