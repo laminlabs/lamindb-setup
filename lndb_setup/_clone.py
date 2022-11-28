@@ -29,7 +29,6 @@ def setup_local_test_sqlite_file(
 
 
 def setup_local_test_postgres():
-    run("docker stop pgtest && docker rm pgtest", shell=True)
     process = run(
         "docker run --name pgtest -e POSTGRES_PASSWORD=pwd -e POSTGRES_DB=pgtest -d -p"
         " 5432:5432 postgres",  # noqa
