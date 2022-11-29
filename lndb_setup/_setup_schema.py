@@ -4,6 +4,7 @@ import sqlalchemy as sa
 import sqlmodel as sqm
 from lamin_logger import logger
 
+from ._assets._schemas import get_schema_module_name
 from ._db import insert
 from ._settings_instance import InstanceSettings
 from ._settings_user import UserSettings
@@ -16,13 +17,6 @@ def create_schema_if_not_exists(schema_name: str, isettings: InstanceSettings):
             if not conn.dialect.has_schema(conn, schema_name):
                 conn.execute(sa.schema.CreateSchema(schema_name))
             conn.commit()
-
-
-def get_schema_module_name(schema_name):
-    if schema_name == "bfx":
-        return "lnbfx.schema"
-    else:
-        return f"lnschema_{schema_name.replace('-', '_')}"
 
 
 def reload_orms(schema_name, module, isettings):
