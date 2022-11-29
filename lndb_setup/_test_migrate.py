@@ -6,10 +6,10 @@ from cloudpathlib import CloudPath
 from lamin_logger import logger
 from packaging import version
 
+from ._assets import instances as test_instances
 from ._clone import clone_test, setup_local_test_sqlite_file
 from ._settings_instance import InstanceSettings
 from ._setup_instance import init
-from ._test_instances import test_instances
 
 
 def migrate_test(
