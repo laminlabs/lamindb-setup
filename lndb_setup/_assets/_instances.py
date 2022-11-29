@@ -14,6 +14,7 @@ retro_test = "postgresql://batman:robin@35.222.187.204:5432/retro"
 _instances = [
     (lamin_site_assets, "lnschema_core"),
     (harmonic_test, "lnschema_core"),
+    (bionty_assets, "lnschema_core"),
     (retro_test, "lnschema_core"),
     (retro_test, "lnschema_bionty"),
     (retro_test, "lnschema_wetlab"),
