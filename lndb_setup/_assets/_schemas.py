@@ -1,6 +1,10 @@
 # schemas
 
 
+# the below is the actual *python package name*
+# that is, fully qualified and hopefully unique
+# within the python package namespace of every user
+# should be if starting with lnschema_...
 def get_schema_module_name(schema_name):
     if schema_name == "bfx":
         return "lnbfx.schema"
