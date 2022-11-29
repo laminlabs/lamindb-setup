@@ -3,6 +3,7 @@
 <!-- prettier-ignore -->
 Name | PR | Developer | Date | Version
 --- | --- | --- | --- | ---
+♻️ Refactor assets | [114](https://github.com/laminlabs/lndb-setup/pull/114) | [falexwolf](https://github.com/falexwolf) | 2022-11-29 |
 🐛 Fix return codes CLI | [113](https://github.com/laminlabs/lndb-setup/pull/113) | [falexwolf](https://github.com/falexwolf) | 2022-11-28 |
 ⬆️ Upgrade `lnschema_core` | [112](https://github.com/laminlabs/lndb-setup/pull/112) | [falexwolf](https://github.com/falexwolf) | 2022-11-28 | 0.20.4
 🐛 Propagate migrate | [111](https://github.com/laminlabs/lndb-setup/pull/111) | [falexwolf](https://github.com/falexwolf) | 2022-11-28 | 0.20.3
