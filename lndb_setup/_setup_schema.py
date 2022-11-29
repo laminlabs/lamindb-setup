@@ -8,16 +8,6 @@ from ._db import insert
 from ._settings_instance import InstanceSettings
 from ._settings_user import UserSettings
 
-known_schema_names = [
-    "bionty",
-    "wetlab",
-    "drylab",
-    "bfx",
-    "retro",
-    "swarm",
-    "harmonic-docking",
-]
-
 
 def create_schema_if_not_exists(schema_name: str, isettings: InstanceSettings):
     # create the schema module in case it doesn't exist

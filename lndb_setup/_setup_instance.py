@@ -5,6 +5,7 @@ from cloudpathlib import CloudPath
 from lamin_logger import logger
 from sqlalchemy import text
 
+from ._assets import schemas as known_schema_names
 from ._db import insert_if_not_exists, upsert
 from ._docs import doc_args
 from ._hub import push_instance_if_not_exists
@@ -14,7 +15,7 @@ from ._settings_instance import InstanceSettings
 from ._settings_instance import instance_description as description
 from ._settings_load import load_instance_settings, setup_storage_root
 from ._settings_store import instance_settings_file
-from ._setup_schema import known_schema_names, load_schema, setup_schema
+from ._setup_schema import load_schema, setup_schema
 from ._setup_storage import get_storage_region
 
 
