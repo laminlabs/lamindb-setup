@@ -27,7 +27,7 @@ def get_lamin_site_base_url():
         if os.environ["LAMIN_ENV"] == "dev":
             return "http://localhost:3000"
         elif os.environ["LAMIN_ENV"] == "test":
-            return "https://test.lamin.ai"
+            return "http://localhost:3000"
         elif os.environ["LAMIN_ENV"] == "staging":
             return "https://staging.lamin.ai"
     return "https://lamin.ai"
