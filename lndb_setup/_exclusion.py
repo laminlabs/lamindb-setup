@@ -1,6 +1,7 @@
 from datetime import datetime
 
 import fsspec
+from dateutil.parser import isoparse  # type: ignore
 
 from ._settings import settings
 
@@ -51,9 +52,20 @@ class Lock:
                     continue
                 if self.mapper[user_endpoint] == b"0":
                     continue
-                period = (datetime.now() - self.fs.modified(user_path)).total_seconds()
+                period = (datetime.now() - self.modified(user_path)).total_seconds()
                 if period > EXPIRATION_TIME:
                     self.mapper[user_endpoint] = b"0"
+
+    def modified(self, path):
+        try:
+            mtime = self.fs.modified(path)
+        except NotImplementedError:
+            # todo: check more protocols
+            # here only for gs
+            mtime = self.fs.stat(path)["updated"]
+            mtime = isoparse(mtime)
+        #        mtime = datetime.timestamp(mtime)
+        return mtime
 
     def lock(self):
         if len(self.users) < 2:
