@@ -29,12 +29,13 @@ class Lock:
 
             if user not in self.users:
                 self.priority = len(self.users)
+                self.users.append(user)
                 # potential problem here if 2 users join at the same time
                 # can be avoided by using separate files for each user
                 # and giving priority by timestamp
-                with self.fs.open(priorities_path, mode="ab") as f:
-                    f.write(f"*{user}".encode())
-                self.users += user
+                # here writing the whole list back because gcs
+                # does not support the append mode
+                self.mapper["priorities"] = "*".join(self.users).encode()
             else:
                 self.priority = self.users.index(user)
         else:
