@@ -48,7 +48,7 @@ class Lock:
             for endpoint in ("numbers", "entering"):
                 user_endpoint = f"{endpoint}/{user}"
                 user_path = str(exclusion_path / user_endpoint)
-                if not self.fs.exits(user_path):
+                if not self.fs.exists(user_path):
                     continue
                 if self.mapper[user_endpoint] == b"0":
                     continue
@@ -64,8 +64,8 @@ class Lock:
             # here only for gs
             mtime = self.fs.stat(path)["updated"]
             mtime = isoparse(mtime)
-        #        mtime = datetime.timestamp(mtime)
-        return mtime
+        # always convert to the local timezone before returning
+        return mtime.astimezone().replace(tzinfo=None)
 
     def lock(self):
         if len(self.users) < 2:
