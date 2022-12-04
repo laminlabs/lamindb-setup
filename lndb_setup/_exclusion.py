@@ -1,4 +1,5 @@
 from datetime import datetime
+from typing import Optional
 
 import fsspec
 from dateutil.parser import isoparse  # type: ignore
@@ -9,8 +10,9 @@ EXPIRATION_TIME = 1800  # 30 min
 
 
 class Lock:
-    def __init__(self):
-        user = settings.user.id
+    def __init__(self, user: Optional[str] = None):
+        if user is None:
+            user = settings.user.id
         self.user = user
 
         root = settings.instance.storage_root
