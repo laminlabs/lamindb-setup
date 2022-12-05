@@ -2,7 +2,7 @@ import os
 import shutil
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Optional, Union, get_type_hints
+from typing import Optional, Set, Union, get_type_hints
 
 import sqlmodel as sqm
 from appdirs import AppDirs
@@ -113,7 +113,7 @@ class instance_description:
     storage_region = """Cloud storage region for s3 and Google Cloud."""
     _dbconfig = """Either "sqlite" or postgres connection string."""
     name = """Instance name."""
-    schema_modules = """Comma-separated string of schema modules. None if not set."""
+    _schema = """Comma-separated string of schema modules. None if not set."""
 
 
 def instance_from_storage(storage):
@@ -130,9 +130,14 @@ class InstanceSettings:
     """Cloud storage region for s3 and Google Cloud."""
     _dbconfig: str = "sqlite"
     """Either "sqlite" or postgres connection string."""
-    schema_modules: Optional[str] = None  # type: ignore
-    """Comma-separated string of schema modules. None if not set."""
+    _schema: str = ""
+    """Comma-separated string of schema modules. Empty string if only core schema."""
     _session: Optional[sqm.Session] = None
+
+    @property
+    def schema(self) -> Set[str]:
+        """Schema modules in addition to core schema."""
+        return {schema for schema in self._schema.split(",")}
 
     @property
     def cloud_storage(self) -> bool:

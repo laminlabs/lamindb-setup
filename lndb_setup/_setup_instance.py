@@ -55,16 +55,16 @@ def register(isettings, usettings):
     push_instance_if_not_exists(storage)
 
 
-def validate_schema_arg(schema: Optional[str] = None) -> Optional[str]:
+def validate_schema_arg(schema: Optional[str] = None) -> str:
     if schema is None:
-        return None
+        return ""
     validated_schema = []
     for module in known_schema_names:
         if module in schema:
             validated_schema.append(module)
     if len(validated_schema) == 0:
         raise RuntimeError(f"Unknown schema modules. Only know {known_schema_names}.")
-    return ", ".join(validated_schema)
+    return ",".join(validated_schema)
 
 
 def persist_check_reload_schema(isettings: InstanceSettings):
@@ -111,7 +111,7 @@ Please delete {} or add it to the cloud location.
 @doc_args(
     description.storage_root,
     description._dbconfig,
-    description.schema_modules,
+    description._schema,
 )
 def init(
     *,
@@ -135,7 +135,7 @@ def init(
         storage_root=storage_root,
         storage_region=get_storage_region(storage_root),
         _dbconfig=dbconfig,
-        schema_modules=validate_schema_arg(schema),
+        _schema=validate_schema_arg(schema),
     )
     persist_check_reload_schema(isettings)
     if instance_exists(isettings):

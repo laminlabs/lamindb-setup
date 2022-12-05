@@ -26,8 +26,8 @@ def check_migrate(
 
     status = []
 
-    if isettings.schema_modules is not None:
-        schema_names = isettings.schema_modules.split(", ")
+    if isettings._schema is not None:
+        schema_names = isettings._schema.split(", ")
     else:
         schema_names = []
 

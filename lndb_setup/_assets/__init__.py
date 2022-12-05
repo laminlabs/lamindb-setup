@@ -1,2 +1,2 @@
 from ._instances import instances
-from ._schemas import schemas
+from ._schema import schemas
