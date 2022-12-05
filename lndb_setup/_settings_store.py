@@ -27,7 +27,7 @@ class InstanceSettingsStore(BaseSettings):
     storage_root: str
     storage_region: str  # should not be Optional, as we use types for instantiating
     dbconfig: str
-    _schema: str
+    schema_str: str
 
     class Config:
         env_file = ".env"

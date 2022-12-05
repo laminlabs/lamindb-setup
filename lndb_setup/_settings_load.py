@@ -75,7 +75,7 @@ def setup_instance_from_store(store: InstanceSettingsStore) -> InstanceSettings:
     settings = InstanceSettings()
     settings.storage_root = setup_storage_root(store.storage_root)
     settings._dbconfig = store.dbconfig
-    settings._schema = store._schema
+    settings._schema = store.schema_str
     settings.storage_region = store.storage_region
     return settings
 
