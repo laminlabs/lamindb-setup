@@ -14,7 +14,7 @@ from ._settings import settings
 from ._settings_instance import InstanceSettings
 from ._settings_instance import instance_description as description
 from ._settings_load import load_instance_settings, setup_storage_root
-from ._settings_store import instance_settings_file
+from ._settings_store import current_instance_settings_file, instance_settings_file
 from ._setup_schema import load_schema, setup_schema
 from ._setup_storage import get_storage_region
 
@@ -100,6 +100,14 @@ def load(instance_name: str, migrate: Optional[bool] = None) -> Optional[str]:
         return message
     register(isettings, settings.user)
     return message
+
+
+def close() -> None:
+    """Close existing instance.
+
+    Returns `None` if succeeds, otherwise a string error code.
+    """
+    current_instance_settings_file.unlink()
 
 
 ERROR_SQLITE_CACHE = """
