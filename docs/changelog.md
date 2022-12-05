@@ -3,6 +3,7 @@
 <!-- prettier-ignore -->
 Name | PR | Developer | Date | Version
 --- | --- | --- | --- | ---
+🎨 Refactor `InstanceSettings.schema` | [118](https://github.com/laminlabs/lndb-setup/pull/118) | [falexwolf](https://github.com/falexwolf) | 2022-12-05 |
 :bug: Update site base url for test env | [117](https://github.com/laminlabs/lndb-setup/pull/117) | [fredericenard](https://github.com/fredericenard) | 2022-12-03 | 0.21.0
 🎨 More clarity around schema names | [116](https://github.com/laminlabs/lndb-setup/pull/116) | [falexwolf](https://github.com/falexwolf) | 2022-11-29 |
 ♻️ Refactor assets | [114](https://github.com/laminlabs/lndb-setup/pull/114) | [falexwolf](https://github.com/falexwolf) | 2022-11-29 |
