@@ -26,6 +26,13 @@ Setup instance (`lndb init`, `lndb load`):
    init
    load
 
+Close a loaded instance context:
+
+.. autosummary::
+   :toctree:
+
+   close
+
 Dev API
 -------
 
@@ -44,7 +51,7 @@ from ._schema import schema  # noqa
 from ._settings import settings  # noqa
 from ._settings_instance import InstanceSettings, Storage  # noqa
 from ._settings_user import UserSettings  # noqa
-from ._setup_instance import init, load  # noqa
+from ._setup_instance import close, init, load  # noqa
 from ._setup_user import login, signup  # noqa
 
 # hide the supabase error in a thread on windows
