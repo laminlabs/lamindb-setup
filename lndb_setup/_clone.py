@@ -105,17 +105,17 @@ def clone_test(src_settings: Optional[InstanceSettings] = None, depth: int = 10)
     tgt_conn = tgt_engine.connect()
 
     # create all schemas in target database
-    src_schema = src_conn.dialect.get_schema_names(src_conn)
-    for schemaname in src_schema:
+    src_schemas = src_conn.dialect.get_schema_names(src_conn)
+    for schemaname in src_schemas:
         if schemaname not in tgt_conn.dialect.get_schema_names(tgt_conn):
             tgt_conn.execute(sa.schema.CreateSchema(schemaname))
         tgt_conn.commit()
 
     # only relevant for postgres
-    if "information_schema" in src_schema:
-        src_schema.remove("information_schema")
+    if "information_schema" in src_schemas:
+        src_schemas.remove("information_schema")
 
-    for schema in src_schema:
+    for schema in src_schemas:
         src_metadata.reflect(bind=src_engine, schema=schema)
         tgt_metadata.reflect(bind=tgt_engine, schema=schema)
         if src_engine.dialect.name != "sqlite":

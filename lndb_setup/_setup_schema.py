@@ -4,7 +4,7 @@ import sqlalchemy as sa
 import sqlmodel as sqm
 from lamin_logger import logger
 
-from ._assets._schema import get_schema_module_name
+from ._assets._schemas import get_schema_module_name
 from ._db import insert
 from ._settings_instance import InstanceSettings
 from ._settings_user import UserSettings
@@ -45,10 +45,7 @@ def reload_orms(schema_name, module, isettings):
 
 
 def load_schema(isettings: InstanceSettings, reload: bool = False):
-    schema_names = ["core"]
-    if isettings._schema is not None:
-        schema_names += isettings._schema.split(", ")
-
+    schema_names = ["core"] + list(isettings.schema)
     msg = "Loading schema modules: "
     for schema_name in schema_names:
         create_schema_if_not_exists(schema_name, isettings)
