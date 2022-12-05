@@ -16,7 +16,7 @@ class Lock:
         self.user = user
 
         root = settings.instance.storage_root
-        protocol = root.cloud_prefix.replace("://", "")
+        protocol = fsspec.utils.get_protocol(str(root))
 
         self.fs = fsspec.filesystem(protocol)
 
