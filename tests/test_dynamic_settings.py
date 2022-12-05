@@ -8,8 +8,8 @@ def test_dynamic_settings():
     settings_store_mydata_2 = InstanceSettingsStore(
         storage_root=str(settings.instance.storage_root),
         storage_region=str(settings.instance.storage_region),
-        schema_modules=settings.instance.schema_modules,
-        dbconfig=settings.instance._dbconfig,
+        schema_=settings.instance._schema,
+        dbconfig_=settings.instance._dbconfig,
     )
 
     init(storage="mydata_3", dbconfig="sqlite")

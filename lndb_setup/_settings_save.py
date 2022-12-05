@@ -22,12 +22,15 @@ def save_settings(
     type_hints: Dict[str, Any],
 ):
     with open(settings_file, "w") as f:
-        for key, type in type_hints.items():
-            if "__" not in key:
-                settings_key = f"_{key}" if key == "dbconfig" else key
+        for store_key, type in type_hints.items():
+            if "__" not in store_key:
+                if store_key in {"dbconfig_", "schema_"}:
+                    settings_key = f"_{store_key.rstrip('_')}"
+                else:
+                    settings_key = store_key
                 value = getattr(settings, settings_key)
                 if value is None:
                     value = "null"
                 else:
                     value = type(value)
-                f.write(f"{key}={value}\n")
+                f.write(f"{store_key}={value}\n")

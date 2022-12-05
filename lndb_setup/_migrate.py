@@ -25,13 +25,9 @@ def check_migrate(
             return "migrate-failed"
 
     status = []
+    schema_names = ["core"] + list(isettings.schema)
 
-    if isettings.schema_modules is not None:
-        schema_names = isettings.schema_modules.split(", ")
-    else:
-        schema_names = []
-
-    for schema_name in ["core"] + schema_names:
+    for schema_name in schema_names:
         create_schema_if_not_exists(schema_name, isettings)
         schema_module_name = get_schema_module_name(schema_name)
         schema_module = importlib.import_module(schema_module_name)

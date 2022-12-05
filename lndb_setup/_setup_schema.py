@@ -45,10 +45,7 @@ def reload_orms(schema_name, module, isettings):
 
 
 def load_schema(isettings: InstanceSettings, reload: bool = False):
-    schema_names = ["core"]
-    if isettings.schema_modules is not None:
-        schema_names += isettings.schema_modules.split(", ")
-
+    schema_names = ["core"] + list(isettings.schema)
     msg = "Loading schema modules: "
     for schema_name in schema_names:
         create_schema_if_not_exists(schema_name, isettings)
