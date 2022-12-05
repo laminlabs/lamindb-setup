@@ -24,10 +24,8 @@ def save_settings(
     with open(settings_file, "w") as f:
         for store_key, type in type_hints.items():
             if "__" not in store_key:
-                if store_key == "dbconfig":
-                    settings_key = f"_{store_key}"
-                elif store_key == "_schema":
-                    settings_key = "schema_str"
+                if store_key in {"dbconfig_", "schema_"}:
+                    settings_key = f"_{store_key.rstrip('_')}"
                 else:
                     settings_key = store_key
                 value = getattr(settings, settings_key)

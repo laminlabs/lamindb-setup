@@ -137,7 +137,7 @@ class InstanceSettings:
     @property
     def schema(self) -> Set[str]:
         """Schema modules in addition to core schema."""
-        return {schema for schema in self._schema.split(",")}
+        return {schema for schema in self._schema.split(",") if schema != ""}
 
     @property
     def cloud_storage(self) -> bool:

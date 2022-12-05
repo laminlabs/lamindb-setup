@@ -26,8 +26,8 @@ def instance_settings_file(name: str):
 class InstanceSettingsStore(BaseSettings):
     storage_root: str
     storage_region: str  # should not be Optional, as we use types for instantiating
-    dbconfig: str
-    schema_str: str
+    dbconfig_: str  # no private attributes here! instead suffix with _
+    schema_: str  # no private attributes here! instead suffix with _
 
     class Config:
         env_file = ".env"
