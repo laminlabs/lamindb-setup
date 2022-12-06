@@ -19,8 +19,27 @@ current_instance_settings_file = settings_dir / "current_instance.env"
 current_user_settings_file = settings_dir / "current_user.env"
 
 
+def get_settings_file_name_prefix():
+    if "LAMIN_ENV" in os.environ:
+        if os.environ["LAMIN_ENV"] == "dev":
+            return "dev-"
+        elif os.environ["LAMIN_ENV"] == "test":
+            return "test-"
+        elif os.environ["LAMIN_ENV"] == "staging":
+            return "staging-"
+    return ""
+
+
 def instance_settings_file(name: str):
-    return settings_dir / f"instance-{name}.env"
+    return settings_dir / get_settings_file_name_prefix() / f"instance-{name}.env"
+
+
+def user_settings_file_email(email: str):
+    return settings_dir / get_settings_file_name_prefix() / f"user-{email}.env"
+
+
+def user_settings_file_handle(handle: str):
+    return settings_dir / get_settings_file_name_prefix() / f"handle-{handle}.env"
 
 
 class InstanceSettingsStore(BaseSettings):
