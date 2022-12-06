@@ -39,7 +39,7 @@ def user_settings_file_email(email: str):
 
 
 def user_settings_file_handle(handle: str):
-    return settings_dir / get_settings_file_name_prefix() / f"handle-{handle}.env"
+    return settings_dir / get_settings_file_name_prefix() / f"user-{handle}.env"
 
 
 class InstanceSettingsStore(BaseSettings):
