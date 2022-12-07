@@ -1,4 +1,5 @@
 import os
+from time import sleep
 
 from nox import Session
 
@@ -16,6 +17,7 @@ def setup_test_instances_from_main_branch(session: Session):
     session.run(*"lndb init --storage testdb".split(" "), external=True)
     # postgres test instance
     url = setup_local_test_postgres()
+    sleep(2)
     session.run(*f"lndb init --storage pgtest --db {url}".split(" "), external=True)
     # go back to the PR branch
     if "GITHUB_HEAD_REF" in os.environ and os.environ["GITHUB_HEAD_REF"] != "":
