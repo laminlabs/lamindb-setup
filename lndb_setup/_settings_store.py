@@ -15,8 +15,8 @@ def get_settings_dir():
 # hence, let's take home/.lndb
 settings_dir = get_settings_dir()
 settings_dir.mkdir(parents=True, exist_ok=True)
-current_instance_settings_file = settings_dir / "current_instance.env"
-current_user_settings_file = settings_dir / "current_user.env"
+# current_instance_settings_file = settings_dir / "current_instance.env"
+# current_user_settings_file = settings_dir / "current_user.env"
 
 
 def get_settings_file_name_prefix():
@@ -28,6 +28,14 @@ def get_settings_file_name_prefix():
         elif os.environ["LAMIN_ENV"] == "staging":
             return "staging-"
     return ""
+
+
+def current_instance_settings_file():
+    return settings_dir / get_settings_file_name_prefix() / "current_instance.env"
+
+
+def current_user_settings_file():
+    return settings_dir / get_settings_file_name_prefix() / "current_user.env"
 
 
 def instance_settings_file(name: str):

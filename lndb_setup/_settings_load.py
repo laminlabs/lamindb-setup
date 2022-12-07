@@ -16,7 +16,7 @@ from ._settings_user import UserSettings
 
 def load_instance_settings(instance_settings_file: Optional[Path] = None):
     if instance_settings_file is None:
-        instance_settings_file = current_instance_settings_file
+        instance_settings_file = current_instance_settings_file()
     if not instance_settings_file.exists():
         raise RuntimeError("Instance is not setup. Please call `lndb init`.")
     try:
@@ -40,11 +40,11 @@ def load_instance_settings_from_store(settings_store: InstanceSettingsStore):
 
 def load_or_create_user_settings():
     """Return current user settings."""
-    if not current_user_settings_file.exists():
+    if not current_user_settings_file().exists():
         global UserSettings
         return UserSettings()
     else:
-        settings = load_user_settings(current_user_settings_file)
+        settings = load_user_settings(current_user_settings_file())
         return settings
 
 

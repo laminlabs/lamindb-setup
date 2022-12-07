@@ -13,7 +13,7 @@ from ._settings_user import UserSettings
 def save_user_settings(settings: UserSettings):
     assert settings.email is not None
     type_hints = get_type_hints(UserSettingsStore)
-    save_settings(settings, current_user_settings_file, type_hints)
+    save_settings(settings, current_user_settings_file(), type_hints)
     save_settings(settings, user_settings_file_email(settings.email), type_hints)
     if settings.handle is not None:
         save_settings(
