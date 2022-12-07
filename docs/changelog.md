@@ -3,6 +3,7 @@
 <!-- prettier-ignore -->
 Name | PR | Developer | Date | Version
 --- | --- | --- | --- | ---
+✨ Expand `model_definitions_match_ddl` for postgres & add nox tools | [123](https://github.com/laminlabs/lndb-setup/pull/123) | [falexwolf](https://github.com/falexwolf) | 2022-12-07 |
 💚 Fix migration & additional testing primitive | [122](https://github.com/laminlabs/lndb-setup/pull/122) | [falexwolf](https://github.com/falexwolf) | 2022-12-07 | 0.22.1
 ✨ Add a close command | [119](https://github.com/laminlabs/lndb-setup/pull/119) | [falexwolf](https://github.com/falexwolf) | 2022-12-05 | 0.22.0
 🎨 Refactor `InstanceSettings.schema` | [118](https://github.com/laminlabs/lndb-setup/pull/118) | [falexwolf](https://github.com/falexwolf) | 2022-12-05 |
