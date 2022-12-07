@@ -3,7 +3,7 @@
 <!-- prettier-ignore -->
 Name | PR | Developer | Date | Version
 --- | --- | --- | --- | ---
-💚 Fix migration & additional testing primitive | [122](https://github.com/laminlabs/lndb-setup/pull/122) | [falexwolf](https://github.com/falexwolf) | 2022-12-07 |
+💚 Fix migration & additional testing primitive | [122](https://github.com/laminlabs/lndb-setup/pull/122) | [falexwolf](https://github.com/falexwolf) | 2022-12-07 | 0.22.1
 ✨ Add a close command | [119](https://github.com/laminlabs/lndb-setup/pull/119) | [falexwolf](https://github.com/falexwolf) | 2022-12-05 | 0.22.0
 🎨 Refactor `InstanceSettings.schema` | [118](https://github.com/laminlabs/lndb-setup/pull/118) | [falexwolf](https://github.com/falexwolf) | 2022-12-05 |
 :bug: Update site base url for test env | [117](https://github.com/laminlabs/lndb-setup/pull/117) | [fredericenard](https://github.com/fredericenard) | 2022-12-03 | 0.21.0
