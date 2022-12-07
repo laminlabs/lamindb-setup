@@ -13,8 +13,7 @@ def setup_test_instances_from_main_branch(session: Session):
         session.run("git", "checkout", os.environ["GITHUB_BASE_REF"], external=True)
     # install the current package from main
     session.install(".")
-    # sqlite test instance - currently not needed, because we only test postgres here
-    # session.run(*"lndb init --storage testdb".split(" "))
+    session.run(*"lndb init --storage testdb".split(" "))
     # postgres test instance
     session.run(
         *f"lndb init --storage pgtest --db {setup_local_test_postgres()}".split(" ")

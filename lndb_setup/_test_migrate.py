@@ -97,8 +97,8 @@ def model_definitions_match_ddl(schema_package, url=None, dialect_name="sqlite")
             "Only sqlite and postgres test databases are implemented."
         )
     # the below is for debugging purposes, something with indexes doesn't work 100%
-    e = sa.create_engine(url)
-    print(sa.inspect(e).get_indexes("core.dobject"))
+    # e = sa.create_engine(url)
+    # print(sa.inspect(e).get_indexes("core.dobject"))
     include_schemas = True if dialect_name == "postgres" else False
     migration_context = get_migration_context(
         schema_package, url, include_schemas=include_schemas
