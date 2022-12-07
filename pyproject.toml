@@ -22,6 +22,7 @@ dependencies = [
     "pyjwt",
     "natsort",
     "pandas",
+    "pytest_alembic",
 ]
 
 [project.urls]
