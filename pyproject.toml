@@ -22,7 +22,7 @@ dependencies = [
     "pyjwt",
     "natsort",
     "pandas",
-    "pytest_alembic",
+    "pytest_alembic==0.9.1",  # let's pin this as we use internals
 ]
 
 [project.urls]
