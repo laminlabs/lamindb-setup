@@ -60,15 +60,6 @@ def setup_schema(isettings: InstanceSettings, usettings: UserSettings):
     msg, schema_names = load_schema(isettings)
     logger.info(f"{msg}")
 
-    # add naming convention for alembic
-    sqm.SQLModel.metadata.naming_convention = {
-        "ix": "ix_%(column_0_label)s",
-        "uq": "uq_%(table_name)s_%(column_0_name)s",
-        "ck": "ck_%(table_name)s_`%(constraint_name)s`",
-        "fk": "fk_%(table_name)s_%(column_0_name)s_%(referred_table_name)s",
-        "pk": "pk_%(table_name)s",
-    }
-
     sqm.SQLModel.metadata.create_all(isettings.db_engine())
 
     # we could try to also retrieve the user name here at some point
