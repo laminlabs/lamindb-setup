@@ -12,6 +12,7 @@ from pytest_alembic.config import Config
 from pytest_alembic.executor import CommandExecutor, ConnectionExecutor
 from pytest_alembic.plugin.error import AlembicTestFailure
 from pytest_alembic.runner import MigrationContext
+from sqlmodel import SQLModel
 
 from ._assets import instances as test_instances
 from ._clone import clone_test, setup_local_test_sqlite_file
@@ -64,14 +65,16 @@ def migrate_test(
     return results
 
 
-def get_migration_context(schema_package, url):
+def get_migration_context(schema_package, url, include_schemas=None):
     engine = sa.create_engine(url)
-    config = Config.from_raw_config(
-        dict(
-            config_file_name=f"{schema_package}/alembic.ini",
-            script_location=f"{schema_package}/migrations",
-        )
+    raw_config = dict(
+        config_file_name=f"{schema_package}/alembic.ini",
+        script_location=f"{schema_package}/migrations",
+        target_metadata=SQLModel.metadata,
     )
+    if include_schemas is not None:
+        raw_config["include_schemas"] = include_schemas
+    config = Config.from_raw_config(raw_config)
     command_executor = CommandExecutor.from_config(config)
     migration_context = MigrationContext.from_config(
         config, command_executor, ConnectionExecutor(), engine
@@ -83,13 +86,23 @@ def get_migration_context(schema_package, url):
 def model_definitions_match_ddl(schema_package, url=None, dialect_name="sqlite"):
     if url is None and dialect_name == "sqlite":
         url = "sqlite:///testdb/testdb.lndb"
+        # need to call init to reload schema
+        init(dbconfig="sqlite", storage="testdb", migrate=False)
     elif url is None and dialect_name == "postgres":
         url = "postgresql://postgres:pwd@0.0.0.0:5432/pgtest"
+        # need to call init to reload schema
+        init(dbconfig=url, storage="pgtest", migrate=False)
     elif url is None:
         raise NotImplementedError(
             "Only sqlite and postgres test databases are implemented."
         )
-    migration_context = get_migration_context(schema_package, url)
+    # the below is for debugging purposes, something with indexes doesn't work 100%
+    e = sa.create_engine(url)
+    print(sa.inspect(e).get_indexes("core.dobject"))
+    include_schemas = True if dialect_name == "postgres" else False
+    migration_context = get_migration_context(
+        schema_package, url, include_schemas=include_schemas
+    )
     execute_model_definitions_match_ddl(migration_context)
 
 
