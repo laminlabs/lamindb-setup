@@ -27,6 +27,12 @@ def setup_test_instances_from_main_branch(session: Session):
         session.run("git", "checkout", os.environ["GITHUB_HEAD_REF"], external=True)
 
 
+def run_pre_commit(session: Session):
+    session.install("pre-commit")
+    session.run("pre-commit", "install")
+    session.run("pre-commit", "run", "--all-files")
+
+
 def install_and_run_pytest(session: Session):
     package_name = get_package_name()
     session.install(".[dev,test]")
