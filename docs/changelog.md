@@ -3,6 +3,7 @@
 <!-- prettier-ignore -->
 Name | PR | Developer | Date | Version
 --- | --- | --- | --- | ---
+:sparkles: Enable settings to be specific for an environment | [120](https://github.com/laminlabs/lndb-setup/pull/120) | [fredericenard](https://github.com/fredericenard) | 2022-12-08 |
 :art: Drop dynamic settings logic | [124](https://github.com/laminlabs/lndb-setup/pull/124) | [fredericenard](https://github.com/fredericenard) | 2022-12-08 |
 ✨ Expand `model_definitions_match_ddl` for postgres & add nox tools | [123](https://github.com/laminlabs/lndb-setup/pull/123) | [falexwolf](https://github.com/falexwolf) | 2022-12-07 | 0.22.2
 💚 Fix migration & additional testing primitive | [122](https://github.com/laminlabs/lndb-setup/pull/122) | [falexwolf](https://github.com/falexwolf) | 2022-12-07 | 0.22.1
