@@ -3,6 +3,7 @@
 <!-- prettier-ignore -->
 Name | PR | Developer | Date | Version
 --- | --- | --- | --- | ---
+🐛 Fix typo | [128](https://github.com/laminlabs/lndb-setup/pull/128) | [falexwolf](https://github.com/falexwolf) | 2022-12-08 |
 👷 Configure test instance with schemas | [127](https://github.com/laminlabs/lndb-setup/pull/127) | [falexwolf](https://github.com/falexwolf) | 2022-12-08 | 0.24.1
 ✨ Added bionty versioning | [121](https://github.com/laminlabs/lndb-setup/pull/121) | [sunnyosun](https://github.com/sunnyosun) | 2022-12-08 | 0.24.0
 🎨 Add more nox utilities | [126](https://github.com/laminlabs/lndb-setup/pull/126) | [falexwolf](https://github.com/falexwolf) | 2022-12-08 |
