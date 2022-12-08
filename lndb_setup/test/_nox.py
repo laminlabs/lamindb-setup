@@ -33,7 +33,7 @@ def setup_test_instances_from_main_branch(session: Session):
     init_instance = f"lndb init --storage pgtest --db {pgurl}"
     schema_handle = get_schema_handle()
     if schema_handle not in {None, "core"}:
-        init_instance += f"--schema {schema_handle}"
+        init_instance += f" --schema {schema_handle}"
     session.run(*init_instance.split(" "), external=True)
     # go back to the PR branch
     if "GITHUB_HEAD_REF" in os.environ and os.environ["GITHUB_HEAD_REF"] != "":
