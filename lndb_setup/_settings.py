@@ -39,7 +39,7 @@ class settings:
         """User-related settings."""
         if (
             cls._user_settings is None
-            or cls._user_settings_env != os.environ["LAMIN_ENV"]  # noqa
+            or cls._user_settings_env != get_env_name()  # noqa
         ):
             cls._user_settings = load_or_create_user_settings()
             cls._user_settings_env = get_env_name()
@@ -52,7 +52,7 @@ class settings:
         """Instance-related settings."""
         if (
             cls._instance_settings is None
-            or cls._instance_settings_env != os.environ["LAMIN_ENV"]  # noqa
+            or cls._instance_settings_env != get_env_name()  # noqa
         ):
             cls._instance_settings = load_instance_settings()
             cls._instance_settings_env = get_env_name()
@@ -76,7 +76,7 @@ class settings:
 
 
 def get_env_name():
-    if "LAMIN_ENV" in os.environ["LAMIN_ENV"]:
+    if "LAMIN_ENV" in os.environ:
         return os.environ["LAMIN_ENV"]
     else:
         return "prod"
