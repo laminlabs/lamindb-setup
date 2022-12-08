@@ -162,14 +162,17 @@ class insert:
         return storage
 
     @classmethod
-    def bionty_versions(cls, rows: List[dict]):
+    def bionty_versions(cls, records: List[sqm.SQLModel]):
         """Bionty versions."""
         from lnschema_bionty import dev
 
         with sqm.Session(settings.instance.db_engine()) as session:
-            for row in rows:
-                record = dev.bionty_versions(**row)
+            for record in records:
                 session.add(record)
+                current_record = dev.CurrentBiontyVersions(
+                    id=record.id, entity=record.entity
+                )
+                session.add(current_record)
             session.commit()
 
         settings.instance._update_cloud_sqlite_file()
