@@ -42,7 +42,7 @@ class settings:
             or cls._user_settings_env != os.environ["LAMIN_ENV"]  # noqa
         ):
             cls._user_settings = load_or_create_user_settings()
-            cls._user_settings_env = os.environ["LAMIN_ENV"]
+            cls._user_settings_env = get_env_name()
             if cls._user_settings and cls._user_settings.id is None:
                 raise RuntimeError("Need to login, first: lndb login <email>.")
         return cls._user_settings  # type: ignore
@@ -55,7 +55,7 @@ class settings:
             or cls._instance_settings_env != os.environ["LAMIN_ENV"]  # noqa
         ):
             cls._instance_settings = load_instance_settings()
-            cls._instance_settings_env = os.environ["LAMIN_ENV"]
+            cls._instance_settings_env = get_env_name()
         return cls._instance_settings  # type: ignore
 
     @staticmethod
@@ -73,3 +73,10 @@ class settings:
             return True
         except RuntimeError:
             return False
+
+
+def get_env_name():
+    if "LAMIN_ENV" in os.environ["LAMIN_ENV"]:
+        return os.environ["LAMIN_ENV"]
+    else:
+        return "prod"
