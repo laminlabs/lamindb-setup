@@ -3,7 +3,7 @@
 <!-- prettier-ignore -->
 Name | PR | Developer | Date | Version
 --- | --- | --- | --- | ---
-:children_crossing: Better error logging login | [129](https://github.com/laminlabs/lndb-setup/pull/129) | [falexwolf](https://github.com/falexwolf) | 2022-12-08 |
+🚸 Better error logging login | [129](https://github.com/laminlabs/lndb-setup/pull/129) | [falexwolf](https://github.com/falexwolf) | 2022-12-08 | 0.24.3
 🐛 Fix typo | [128](https://github.com/laminlabs/lndb-setup/pull/128) | [falexwolf](https://github.com/falexwolf) | 2022-12-08 | 0.24.2
 👷 Configure test instance with schemas | [127](https://github.com/laminlabs/lndb-setup/pull/127) | [falexwolf](https://github.com/falexwolf) | 2022-12-08 | 0.24.1
 ✨ Added bionty versioning | [121](https://github.com/laminlabs/lndb-setup/pull/121) | [sunnyosun](https://github.com/sunnyosun) | 2022-12-08 | 0.24.0
