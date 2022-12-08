@@ -33,11 +33,6 @@ def load_instance_settings(instance_settings_file: Optional[Path] = None):
 load_or_create_instance_settings = load_instance_settings  # backward compat
 
 
-def load_instance_settings_from_store(settings_store: InstanceSettingsStore):
-    isettings = setup_instance_from_store(settings_store)
-    return isettings
-
-
 def load_or_create_user_settings():
     """Return current user settings."""
     if not current_user_settings_file.exists():
