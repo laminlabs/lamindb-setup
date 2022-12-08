@@ -28,7 +28,7 @@ def setup_test_instances_from_main_branch(session: Session):
     # switch to the main branch
     if "GITHUB_BASE_REF" in os.environ and os.environ["GITHUB_BASE_REF"] != "":
         session.run("git", "checkout", os.environ["GITHUB_BASE_REF"], external=True)
-    session.install(".")  # install current package from main branch
+    session.install(".[test]")  # install current package from main branch
     # init a postgres instance
     init_instance = f"lndb init --storage pgtest --db {pgurl}"
     schema_handle = get_schema_handle()
