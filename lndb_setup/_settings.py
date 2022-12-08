@@ -1,3 +1,4 @@
+import os
 from typing import Union
 
 from ._settings_instance import InstanceSettings
@@ -30,20 +31,31 @@ class settings:
     _user_settings: Union[UserSettings, None] = None
     _instance_settings: Union[InstanceSettings, None] = None
 
+    _user_settings_env: Union[str, None] = None
+    _instance_settings_env: Union[str, None] = None
+
     @classproperty
     def user(cls) -> UserSettings:
         """User-related settings."""
-        if cls._user_settings is None:
+        if (
+            cls._user_settings is None
+            or cls._user_settings_env != os.environ["LAMIN_ENV"]  # noqa
+        ):
             cls._user_settings = load_or_create_user_settings()
-            if cls._user_settings.id is None:
+            cls._user_settings_env = os.environ["LAMIN_ENV"]
+            if cls._user_settings and cls._user_settings.id is None:
                 raise RuntimeError("Need to login, first: lndb login <email>.")
         return cls._user_settings  # type: ignore
 
     @classproperty
     def instance(cls) -> InstanceSettings:
         """Instance-related settings."""
-        if cls._instance_settings is None:
+        if (
+            cls._instance_settings is None
+            or cls._instance_settings_env != os.environ["LAMIN_ENV"]  # noqa
+        ):
             cls._instance_settings = load_instance_settings()
+            cls._instance_settings_env = os.environ["LAMIN_ENV"]
         return cls._instance_settings  # type: ignore
 
     @staticmethod
