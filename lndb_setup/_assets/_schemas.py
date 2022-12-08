@@ -26,7 +26,7 @@ def get_schema_lookup_name(schema_name):
 # we might loosen the uniqueness requirement
 # currently, these handles are usually called "name"
 # this is confusing as there are also module names and lookup names
-schemas = [
+schema_handles = [
     "bionty",
     "wetlab",
     "drylab",
@@ -35,3 +35,4 @@ schemas = [
     "swarm",
     "harmonic-docking",
 ]
+schemas = schema_handles
