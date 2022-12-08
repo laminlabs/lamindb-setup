@@ -12,7 +12,7 @@ from lndb_setup._settings_instance import InstanceSettings
 from lndb_setup._setup_instance import init
 
 
-def migrate_test_e2e(
+def migrate_clones(
     schema_package: str, n_instances: Optional[int] = None, dialect_name="sqlite"
 ):
     # auto-bump version to simulate state after release
