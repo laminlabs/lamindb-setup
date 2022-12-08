@@ -1,12 +1,7 @@
 from typing import Union
 
 from ._settings_instance import InstanceSettings
-from ._settings_load import (
-    load_instance_settings,
-    load_instance_settings_from_store,
-    load_or_create_user_settings,
-)
-from ._settings_store import InstanceSettingsStore
+from ._settings_load import load_instance_settings, load_or_create_user_settings
 from ._settings_user import UserSettings
 
 
@@ -45,14 +40,6 @@ class settings:
         if cls._instance_settings is None:
             cls._instance_settings = load_instance_settings()
         return cls._instance_settings  # type: ignore
-
-    @staticmethod
-    def _instance(settings_store: InstanceSettingsStore = None) -> InstanceSettings:
-        """Instance-related settings optionally based on parameter."""
-        if settings_store:
-            instance_settings = load_instance_settings_from_store(settings_store)
-            return instance_settings
-        return settings.instance
 
     @classproperty
     def _instance_exists(cls):
