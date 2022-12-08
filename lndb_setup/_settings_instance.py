@@ -228,7 +228,7 @@ class InstanceSettings:
         # persist under filepath for later reference
         save_settings(self, filepath, type_hints)
         # persist under current file for auto load
-        shutil.copy2(filepath, current_instance_settings_file)
+        shutil.copy2(filepath, current_instance_settings_file())
         # persist under settings class for same session reference
         # need to import here to avoid circular import
         from ._settings import settings

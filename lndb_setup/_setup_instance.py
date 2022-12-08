@@ -109,7 +109,7 @@ def close() -> None:
 
     Returns `None` if succeeds, otherwise a string error code.
     """
-    current_instance_settings_file.unlink()
+    current_instance_settings_file().unlink()
 
 
 ERROR_SQLITE_CACHE = """
