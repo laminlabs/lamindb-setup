@@ -49,7 +49,8 @@ def load_bionty_versions(isettings: InstanceSettings):
         basedir = Path(bt.__file__).parent / "versions"
 
         df = pd.read_sql(
-            sqm.select(dev.CurrentBiontyVersions), isettings.db_engine(future=False)
+            sqm.select(dev.BiontyVersions).join(dev.CurrentBiontyVersions),
+            isettings.db_engine(future=False),
         )
         # avoid breaking change
         # if no versions were written in the db, write versions from bionty
