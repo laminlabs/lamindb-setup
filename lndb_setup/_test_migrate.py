@@ -89,6 +89,7 @@ def model_definitions_match_ddl(schema_package, url=None, dialect_name="sqlite")
         # need to call init to reload schema
         init(dbconfig="sqlite", storage="testdb", migrate=False)
     elif url is None and dialect_name == "postgres":
+        # requires postgres has been set up through _nox_tools
         url = "postgresql://postgres:pwd@0.0.0.0:5432/pgtest"
         # need to call init to reload schema
         init(dbconfig=url, storage="pgtest", migrate=False)
@@ -104,6 +105,8 @@ def model_definitions_match_ddl(schema_package, url=None, dialect_name="sqlite")
         schema_package, url, include_schemas=include_schemas
     )
     execute_model_definitions_match_ddl(migration_context)
+    if dialect_name == "postgresql":
+        run("docker stop pgtest && docker rm pgtest", shell=True)
 
 
 def execute_model_definitions_match_ddl(alembic_runner):
