@@ -3,6 +3,7 @@
 <!-- prettier-ignore -->
 Name | PR | Developer | Date | Version
 --- | --- | --- | --- | ---
+:art: Drop dynamic settings logic | [124](https://github.com/laminlabs/lndb-setup/pull/124) | [fredericenard](https://github.com/fredericenard) | 2022-12-08 |
 ✨ Expand `model_definitions_match_ddl` for postgres & add nox tools | [123](https://github.com/laminlabs/lndb-setup/pull/123) | [falexwolf](https://github.com/falexwolf) | 2022-12-07 | 0.22.2
 💚 Fix migration & additional testing primitive | [122](https://github.com/laminlabs/lndb-setup/pull/122) | [falexwolf](https://github.com/falexwolf) | 2022-12-07 | 0.22.1
 ✨ Add a close command | [119](https://github.com/laminlabs/lndb-setup/pull/119) | [falexwolf](https://github.com/falexwolf) | 2022-12-05 | 0.22.0
