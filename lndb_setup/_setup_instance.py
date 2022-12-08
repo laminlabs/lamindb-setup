@@ -15,6 +15,7 @@ from ._settings_instance import InstanceSettings
 from ._settings_instance import instance_description as description
 from ._settings_load import load_instance_settings, setup_storage_root
 from ._settings_store import current_instance_settings_file, instance_settings_file
+from ._setup_knowledge import load_bionty_versions, write_bionty_versions
 from ._setup_schema import load_schema, setup_schema
 from ._setup_storage import get_storage_region
 
@@ -99,6 +100,7 @@ def load(instance_name: str, migrate: Optional[bool] = None) -> Optional[str]:
     if message == "migrate-failed":
         return message
     register(isettings, settings.user)
+    load_bionty_versions(isettings)
     return message
 
 
@@ -153,4 +155,5 @@ def init(
         return None
     setup_schema(isettings, settings.user)
     register(isettings, settings.user)
+    write_bionty_versions(isettings)
     return None

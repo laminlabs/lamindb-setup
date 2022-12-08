@@ -1,7 +1,7 @@
 # We see a lot of import statements for lnschema_core below
 # This is currently needed as we can only import the schema module
 # once isettings have been adjusted
-from typing import Any
+from typing import Any, List
 
 import sqlmodel as sqm
 from lamin_logger import logger
@@ -160,3 +160,19 @@ class insert:
         settings.instance._update_cloud_sqlite_file()
 
         return storage
+
+    @classmethod
+    def bionty_versions(cls, records: List[sqm.SQLModel]):
+        """Bionty versions."""
+        from lnschema_bionty import dev
+
+        with sqm.Session(settings.instance.db_engine()) as session:
+            for record in records:
+                session.add(record)
+                current_record = dev.CurrentBiontyVersions(
+                    id=record.id, entity=record.entity
+                )
+                session.add(current_record)
+            session.commit()
+
+        settings.instance._update_cloud_sqlite_file()
