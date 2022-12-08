@@ -1,11 +1,20 @@
 import os
 from pathlib import Path
+from typing import Optional
 
 from nox import Session
 
 from lndb_setup._clone import setup_local_test_postgres
 
 from ._env import get_package_name
+
+
+def get_schema_handle() -> Optional[str]:
+    package_name = get_package_name()
+    if package_name.startswith("lnschema_"):
+        return package_name.replace("lnschema_", "")
+    else:
+        return None
 
 
 def login_testuser1(session: Session):
@@ -21,7 +30,11 @@ def setup_test_instances_from_main_branch(session: Session):
         session.run("git", "checkout", os.environ["GITHUB_BASE_REF"], external=True)
     session.install(".")  # install current package from main branch
     # init a postgres instance
-    session.run(*f"lndb init --storage pgtest --db {pgurl}".split(" "), external=True)
+    init_instance = f"lndb init --storage pgtest --db {pgurl}"
+    schema_handle = get_schema_handle()
+    if schema_handle not in {None, "core"}:
+        init_instance += f"--schema {schema_handle}"
+    session.run(*init_instance.split(" "), external=True)
     # go back to the PR branch
     if "GITHUB_HEAD_REF" in os.environ and os.environ["GITHUB_HEAD_REF"] != "":
         session.run("git", "checkout", os.environ["GITHUB_HEAD_REF"], external=True)

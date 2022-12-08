@@ -31,10 +31,10 @@ def get_migration_context(schema_package, url, include_schemas=None):
     engine = sa.create_engine(url)
     config = get_migration_config(schema_package, include_schemas)
     command_executor = CommandExecutor.from_config(config)
+    command_executor.configure(connection=engine)
     migration_context = MigrationContext.from_config(
         config, command_executor, ConnectionExecutor(), engine
     )
-    command_executor.configure(connection=engine)
     return migration_context
 
 
