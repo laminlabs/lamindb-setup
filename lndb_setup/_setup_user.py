@@ -1,6 +1,7 @@
 from typing import Union
 
 from lamin_logger import logger
+from sqlalchemy import create_engine
 
 from ._db import upsert
 from ._hub import sign_in_hub, sign_up_hub
@@ -122,6 +123,18 @@ def login(
                     f"An SQLite file {settings.instance._sqlite_file} exists but does not have a user table. "  # noqa
                 )
                 return None
+        else:  # let's check whether we can connect to the instance DB
+            url = settings.instance._dbconfig
+            engine = create_engine(url)
+            try:
+                engine.connect()
+            except Exception:
+                logger.warning(
+                    f"Connection {url} of current instance not reachable. "
+                    "Consider closing it: lndb close."
+                )
+                return None
+
         upsert.user(
             settings.user.email,
             settings.user.id,
