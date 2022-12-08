@@ -3,6 +3,7 @@
 <!-- prettier-ignore -->
 Name | PR | Developer | Date | Version
 --- | --- | --- | --- | ---
+🎨 Add more nox utilities | [126](https://github.com/laminlabs/lndb-setup/pull/126) | [falexwolf](https://github.com/falexwolf) | 2022-12-08 |
 ♻️ Clean up migration testing framework | [125](https://github.com/laminlabs/lndb-setup/pull/125) | [falexwolf](https://github.com/falexwolf) | 2022-12-08 | 0.23.1
 ✨ Enable settings to be specific for an environment | [120](https://github.com/laminlabs/lndb-setup/pull/120) | [fredericenard](https://github.com/fredericenard) | 2022-12-08 | 0.23.0
 🎨 Drop dynamic settings logic | [124](https://github.com/laminlabs/lndb-setup/pull/124) | [fredericenard](https://github.com/fredericenard) | 2022-12-08 |
