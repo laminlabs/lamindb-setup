@@ -3,14 +3,14 @@
 <!-- prettier-ignore -->
 Name | PR | Developer | Date | Version
 --- | --- | --- | --- | ---
-♻️ Clean up migration testing framework | [125](https://github.com/laminlabs/lndb-setup/pull/125) | [falexwolf](https://github.com/falexwolf) | 2022-12-08 |
-:sparkles: Enable settings to be specific for an environment | [120](https://github.com/laminlabs/lndb-setup/pull/120) | [fredericenard](https://github.com/fredericenard) | 2022-12-08 | 0.23.0
-:art: Drop dynamic settings logic | [124](https://github.com/laminlabs/lndb-setup/pull/124) | [fredericenard](https://github.com/fredericenard) | 2022-12-08 |
+♻️ Clean up migration testing framework | [125](https://github.com/laminlabs/lndb-setup/pull/125) | [falexwolf](https://github.com/falexwolf) | 2022-12-08 | 0.23.1
+✨ Enable settings to be specific for an environment | [120](https://github.com/laminlabs/lndb-setup/pull/120) | [fredericenard](https://github.com/fredericenard) | 2022-12-08 | 0.23.0
+🎨 Drop dynamic settings logic | [124](https://github.com/laminlabs/lndb-setup/pull/124) | [fredericenard](https://github.com/fredericenard) | 2022-12-08 |
 ✨ Expand `model_definitions_match_ddl` for postgres & add nox tools | [123](https://github.com/laminlabs/lndb-setup/pull/123) | [falexwolf](https://github.com/falexwolf) | 2022-12-07 | 0.22.2
 💚 Fix migration & additional testing primitive | [122](https://github.com/laminlabs/lndb-setup/pull/122) | [falexwolf](https://github.com/falexwolf) | 2022-12-07 | 0.22.1
 ✨ Add a close command | [119](https://github.com/laminlabs/lndb-setup/pull/119) | [falexwolf](https://github.com/falexwolf) | 2022-12-05 | 0.22.0
 🎨 Refactor `InstanceSettings.schema` | [118](https://github.com/laminlabs/lndb-setup/pull/118) | [falexwolf](https://github.com/falexwolf) | 2022-12-05 |
-:bug: Update site base url for test env | [117](https://github.com/laminlabs/lndb-setup/pull/117) | [fredericenard](https://github.com/fredericenard) | 2022-12-03 | 0.21.0
+🐛 Update site base url for test env | [117](https://github.com/laminlabs/lndb-setup/pull/117) | [fredericenard](https://github.com/fredericenard) | 2022-12-03 | 0.21.0
 🎨 More clarity around schema names | [116](https://github.com/laminlabs/lndb-setup/pull/116) | [falexwolf](https://github.com/falexwolf) | 2022-11-29 |
 ♻️ Refactor assets | [114](https://github.com/laminlabs/lndb-setup/pull/114) | [falexwolf](https://github.com/falexwolf) | 2022-11-29 |
 🐛 Fix return codes CLI | [113](https://github.com/laminlabs/lndb-setup/pull/113) | [falexwolf](https://github.com/falexwolf) | 2022-11-28 |
