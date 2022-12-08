@@ -20,7 +20,13 @@ def create_schema_if_not_exists(schema_name: str, isettings: InstanceSettings):
 
 
 def reload_orms(schema_name, module, isettings):
+    # root-level ORMs
     orms = [cls for cls in module.__dict__.values() if hasattr(cls, "__table__")]
+    # link tables
+    if hasattr(module, "link"):
+        orms += [
+            cls for cls in module.link.__dict__.values() if hasattr(cls, "__table__")
+        ]
     if isettings._dbconfig == "sqlite":
         # only those orms that are actually in a schema
         orms = [
@@ -37,7 +43,11 @@ def reload_orms(schema_name, module, isettings):
         orms = [
             orm
             for orm in orms
-            if hasattr(orm.__table__, "schema") and orm.__table__.schema is None
+            if (
+                hasattr(orm.__table__, "schema")
+                and orm.__table__.schema is None
+                and orm.__table__.name != "storage"
+            )
         ]
         for orm in orms:
             orm.__table__.schema = schema_name
@@ -59,15 +69,6 @@ def load_schema(isettings: InstanceSettings, reload: bool = False):
 def setup_schema(isettings: InstanceSettings, usettings: UserSettings):
     msg, schema_names = load_schema(isettings)
     logger.info(f"{msg}")
-
-    # add naming convention for alembic
-    sqm.SQLModel.metadata.naming_convention = {
-        "ix": "ix_%(column_0_label)s",
-        "uq": "uq_%(table_name)s_%(column_0_name)s",
-        "ck": "ck_%(table_name)s_`%(constraint_name)s`",
-        "fk": "fk_%(table_name)s_%(column_0_name)s_%(referred_table_name)s",
-        "pk": "pk_%(table_name)s",
-    }
 
     sqm.SQLModel.metadata.create_all(isettings.db_engine())
 
