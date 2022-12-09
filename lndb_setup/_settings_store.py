@@ -30,23 +30,23 @@ def get_settings_file_name_prefix():
     return ""
 
 
-def current_instance_settings_file():
+def get_current_instance_settings_file():
     return settings_dir / f"{get_settings_file_name_prefix()}current_instance.env"
 
 
-def current_user_settings_file():
+def get_current_user_settings_file():
     return settings_dir / f"{get_settings_file_name_prefix()}current_user.env"
 
 
-def instance_settings_file(name: str):
+def get_instance_settings_file(name: str):
     return settings_dir / f"{get_settings_file_name_prefix()}instance-{name}.env"
 
 
-def user_settings_file_email(email: str):
+def get_user_settings_file_from_email(email: str):
     return settings_dir / f"{get_settings_file_name_prefix()}user-{email}.env"
 
 
-def user_settings_file_handle(handle: str):
+def get_user_settings_file_from_handle(handle: str):
     return settings_dir / f"{get_settings_file_name_prefix()}user-{handle}.env"
 
 

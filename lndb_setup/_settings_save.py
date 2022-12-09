@@ -3,9 +3,9 @@ from typing import Any, Dict, get_type_hints
 
 from ._settings_store import (
     UserSettingsStore,
-    current_user_settings_file,
-    user_settings_file_email,
-    user_settings_file_handle,
+    get_current_user_settings_file,
+    get_user_settings_file_from_email,
+    get_user_settings_file_from_handle,
 )
 from ._settings_user import UserSettings
 
@@ -13,11 +13,13 @@ from ._settings_user import UserSettings
 def save_user_settings(settings: UserSettings):
     assert settings.email is not None
     type_hints = get_type_hints(UserSettingsStore)
-    save_settings(settings, current_user_settings_file(), type_hints)
-    save_settings(settings, user_settings_file_email(settings.email), type_hints)
+    save_settings(settings, get_current_user_settings_file(), type_hints)
+    save_settings(
+        settings, get_user_settings_file_from_email(settings.email), type_hints
+    )
     if settings.handle is not None:
         save_settings(
-            settings, user_settings_file_handle(settings.handle), type_hints
+            settings, get_user_settings_file_from_handle(settings.handle), type_hints
         )  # noqa
 
 

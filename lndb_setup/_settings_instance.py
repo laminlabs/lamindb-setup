@@ -13,8 +13,8 @@ from lamin_logger import logger
 from ._settings_save import save_settings
 from ._settings_store import (
     InstanceSettingsStore,
-    current_instance_settings_file,
-    instance_settings_file,
+    get_current_instance_settings_file,
+    get_instance_settings_file,
 )
 
 # leave commented out until we understand more how to deal with
@@ -224,11 +224,11 @@ class InstanceSettings:
     def _persist(self) -> None:
         assert self.name is not None
         type_hints = get_type_hints(InstanceSettingsStore)
-        filepath = instance_settings_file(self.name)
+        filepath = get_instance_settings_file(self.name)
         # persist under filepath for later reference
         save_settings(self, filepath, type_hints)
         # persist under current file for auto load
-        shutil.copy2(filepath, current_instance_settings_file())
+        shutil.copy2(filepath, get_current_instance_settings_file())
         # persist under settings class for same session reference
         # need to import here to avoid circular import
         from ._settings import settings

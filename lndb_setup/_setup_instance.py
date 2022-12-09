@@ -14,7 +14,10 @@ from ._settings import settings
 from ._settings_instance import InstanceSettings
 from ._settings_instance import instance_description as description
 from ._settings_load import load_instance_settings, setup_storage_root
-from ._settings_store import current_instance_settings_file, instance_settings_file
+from ._settings_store import (
+    get_current_instance_settings_file,
+    get_instance_settings_file,
+)
 from ._setup_knowledge import load_bionty_versions, write_bionty_versions
 from ._setup_schema import load_schema, setup_schema
 from ._setup_storage import get_storage_region
@@ -91,7 +94,7 @@ def load(instance_name: str, migrate: Optional[bool] = None) -> Optional[str]:
         instance_name: Instance name.
         migrate: Whether to auto-migrate or not.
     """
-    isettings = load_instance_settings(instance_settings_file(instance_name))
+    isettings = load_instance_settings(get_instance_settings_file(instance_name))
     persist_check_reload_schema(isettings)
     logger.info(f"Loading instance: {isettings.name}")
     message = check_migrate(
@@ -109,7 +112,7 @@ def close() -> None:
 
     Returns `None` if succeeds, otherwise a string error code.
     """
-    current_instance_settings_file().unlink()
+    get_current_instance_settings_file().unlink()
 
 
 ERROR_SQLITE_CACHE = """

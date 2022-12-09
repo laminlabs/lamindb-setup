@@ -9,7 +9,10 @@ from ._schema import schema
 from ._settings import settings
 from ._settings_load import load_or_create_user_settings, load_user_settings
 from ._settings_save import save_user_settings
-from ._settings_store import user_settings_file_email, user_settings_file_handle
+from ._settings_store import (
+    get_user_settings_file_from_email,
+    get_user_settings_file_from_handle,
+)
 
 
 def signup(email: str) -> Union[str, None]:
@@ -31,9 +34,9 @@ def signup(email: str) -> Union[str, None]:
 
 def load_user(email: str = None, handle: str = None) -> Union[str, None]:
     if email is not None:
-        settings_file = user_settings_file_email(email)
+        settings_file = get_user_settings_file_from_email(email)
     if handle is not None:
-        settings_file = user_settings_file_handle(handle)
+        settings_file = get_user_settings_file_from_handle(handle)
     if settings_file.exists():
         user_settings = load_user_settings(settings_file)
         save_user_settings(user_settings)  # needed to save to current_user.env
