@@ -132,6 +132,8 @@ class InstanceSettings:
     """Either "sqlite" or postgres connection string."""
     _schema: str = ""
     """Comma-separated string of schema modules. Empty string if only core schema."""
+    _name: Optional[str] = None
+    """Instance name."""
     _session: Optional[sqm.Session] = None
 
     @property
@@ -185,6 +187,8 @@ class InstanceSettings:
 
         The name is unique per instance owner.
         """
+        if self._name:
+            return self._name
         if self._dbconfig == "sqlite":
             return instance_from_storage(self.storage_root)
         else:
