@@ -122,6 +122,7 @@ Please delete {} or add it to the cloud location.
     description.storage_root,
     description._dbconfig,
     description._schema,
+    description.name,
 )
 def init(
     *,
