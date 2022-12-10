@@ -219,19 +219,24 @@ class InstanceSettings:
             elif self.cloud_storage and self._dbconfig == "sqlite":
                 # doing semi-manually for easier replacemnet of cloudpathib
                 # in the future
-                cloud_db = self._sqlite_file
-                local_db = self.storage.cloud_to_local_no_update(cloud_db)
+                sqlite_file = self._sqlite_file
+                # saving mtime here assuming lock at the beginning of the session
+                cloud_mtime = sqlite_file.stat().st_mtime  # type: ignore
+                cache_file = self.storage.cloud_to_local_no_update(sqlite_file)
 
-                if not local_db.exists():
-                    cloud_db._refresh_cache()  # type: ignore
-                elif cloud_db.stat().st_mtime > local_db.stat().st_mtime:  # type: ignore  # noqa
+                if not cache_file.exists():
+                    cache_file.parent.mkdir(parents=True, exist_ok=True)
+                    sqlite_file.download_to(cache_file)  # type: ignore
+                    os.utime(cache_file, times=(cloud_mtime, cloud_mtime))
+                elif cloud_mtime > cache_file.stat().st_mtime:  # type: ignore  # noqa
                     # no need to recreate session
                     # just need to close current connections
                     # in order to replace the sqlite db file
                     # connections seem to be recreated for every transaction
                     self._session.invalidate()
-                    # this also sets the local mtime to the cloud mtime
-                    cloud_db._refresh_cache()  # type: ignore
+
+                    sqlite_file.download_to(cache_file)  # type: ignore
+                    os.utime(cache_file, times=(cloud_mtime, cloud_mtime))
 
             # should probably add a different check whether the session is still active
             if not self._session.is_active:
