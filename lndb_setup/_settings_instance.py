@@ -162,7 +162,7 @@ class InstanceSettings:
     def _sqlite_file(self) -> Union[Path, CloudPath]:
         """SQLite file.
 
-        Is a CloudPath if on S3, otherwise a Path.
+        Is a CloudPath if on S3 or GS, otherwise a Path.
         """
         filename = instance_from_storage(self.storage_root)  # type: ignore
         return self.storage.key_to_filepath(f"{filename}.lndb")
@@ -178,7 +178,7 @@ class InstanceSettings:
             sqlite_file = self._sqlite_file
             cache_file = self.storage.cloud_to_local_no_update(sqlite_file)
             sqlite_file.upload_from(cache_file, force_overwrite_to_cloud=True)  # type: ignore  # noqa
-            # doing semi-manual for to easily replace cloudpahlib in the future
+            # doing semi-manually to replace cloudpahlib easily in the future
             cloud_mtime = sqlite_file.stat().st_mtime  # type: ignore
             os.utime(cache_file, times=(cloud_mtime, cloud_mtime))
 
@@ -216,6 +216,23 @@ class InstanceSettings:
         if "LAMIN_SKIP_MIGRATION" not in os.environ:
             if self._session is None:
                 self._session = sqm.Session(self.db_engine(), expire_on_commit=False)
+            elif self.cloud_storage and self._dbconfig == "sqlite":
+                # doing semi-manually for easier replacemnet of cloudpathib
+                # in the future
+                cloud_db = self._sqlite_file
+                local_db = self.storage.cloud_to_local_no_update(cloud_db)
+
+                if not local_db.exists():
+                    cloud_db._refresh_cache()  # type: ignore
+                elif cloud_db.stat().st_mtime > local_db.stat().st_mtime:  # type: ignore  # noqa
+                    # no need to recreate session
+                    # just need to close current connections
+                    # in order to replace the sqlite db file
+                    # connections seem to be recreated for every transaction
+                    self._session.invalidate()
+                    # this also sets the local mtime to the cloud mtime
+                    cloud_db._refresh_cache()  # type: ignore
+
             # should probably add a different check whether the session is still active
             if not self._session.is_active:
                 self._session = sqm.Session(self.db_engine(), expire_on_commit=False)
