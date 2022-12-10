@@ -59,6 +59,8 @@ class Lock:
                 if period > EXPIRATION_TIME:
                     self.mapper[user_endpoint] = b"0"
 
+        self._lock = False
+
     def modified(self, path):
         try:
             mtime = self.fs.modified(path)
@@ -71,6 +73,9 @@ class Lock:
         return mtime.astimezone().replace(tzinfo=None)
 
     def lock(self):
+        if self._lock:
+            return None
+
         if len(self.users) < 2:
             return None
 
@@ -98,7 +103,11 @@ class Lock:
                 if number == c_number and self.priority < i:
                     break
 
+        self._lock = True
+
     def unlock(self):
         if len(self.users) < 2:
             return None
         self.mapper[f"numbers/{self.user}"] = b"0"
+
+        self._lock = False
