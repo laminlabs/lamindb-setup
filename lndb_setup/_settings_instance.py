@@ -178,6 +178,9 @@ class InstanceSettings:
             sqlite_file = self._sqlite_file
             cache_file = self.storage.cloud_to_local_no_update(sqlite_file)
             sqlite_file.upload_from(cache_file, force_overwrite_to_cloud=True)  # type: ignore  # noqa
+            # doing semi-manual for to easily replace cloudpahlib in the future
+            cloud_mtime = sqlite_file.stat().st_mtime  # type: ignore
+            os.utime(cache_file, times=(cloud_mtime, cloud_mtime))
 
     @property
     def name(self) -> str:
