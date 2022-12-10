@@ -3,6 +3,7 @@
 <!-- prettier-ignore -->
 Name | PR | Developer | Date | Version
 --- | --- | --- | --- | ---
+🎨 Simplify nox tools | [132](https://github.com/laminlabs/lndb-setup/pull/132) | [falexwolf](https://github.com/falexwolf) | 2022-12-09 | 0.24.4
 🚸 Better error logging login | [129](https://github.com/laminlabs/lndb-setup/pull/129) | [falexwolf](https://github.com/falexwolf) | 2022-12-08 | 0.24.3
 🐛 Fix typo | [128](https://github.com/laminlabs/lndb-setup/pull/128) | [falexwolf](https://github.com/falexwolf) | 2022-12-08 | 0.24.2
 👷 Configure test instance with schemas | [127](https://github.com/laminlabs/lndb-setup/pull/127) | [falexwolf](https://github.com/falexwolf) | 2022-12-08 | 0.24.1

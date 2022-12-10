@@ -46,9 +46,8 @@ def run_pre_commit(session: Session):
     session.run("pre-commit", "run", "--all-files")
 
 
-def install_and_run_pytest(session: Session):
+def run_pytest(session: Session):
     package_name = get_package_name()
-    session.install(".[dev,test]")
     session.run(
         "pytest",
         "-s",
