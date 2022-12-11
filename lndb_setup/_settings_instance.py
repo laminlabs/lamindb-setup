@@ -162,7 +162,7 @@ class InstanceSettings:
     def _sqlite_file(self) -> Union[Path, CloudPath]:
         """SQLite file.
 
-        Is a CloudPath if on S3, otherwise a Path.
+        Is a CloudPath if on S3 or GS, otherwise a Path.
         """
         filename = instance_from_storage(self.storage_root)  # type: ignore
         return self.storage.key_to_filepath(f"{filename}.lndb")
@@ -178,6 +178,10 @@ class InstanceSettings:
             sqlite_file = self._sqlite_file
             cache_file = self.storage.cloud_to_local_no_update(sqlite_file)
             sqlite_file.upload_from(cache_file, force_overwrite_to_cloud=True)  # type: ignore  # noqa
+            # doing semi-manually to replace cloudpahlib easily in the future
+            cloud_mtime = sqlite_file.stat().st_mtime  # type: ignore
+            # this seems to work even if there is an open connection to the cache file
+            os.utime(cache_file, times=(cloud_mtime, cloud_mtime))
 
     @property
     def name(self) -> str:
@@ -213,6 +217,29 @@ class InstanceSettings:
         if "LAMIN_SKIP_MIGRATION" not in os.environ:
             if self._session is None:
                 self._session = sqm.Session(self.db_engine(), expire_on_commit=False)
+            elif self.cloud_storage and self._dbconfig == "sqlite":
+                # doing semi-manually for easier replacemnet of cloudpathib
+                # in the future
+                sqlite_file = self._sqlite_file
+                # saving mtime here assuming lock at the beginning of the session
+                cloud_mtime = sqlite_file.stat().st_mtime  # type: ignore
+                cache_file = self.storage.cloud_to_local_no_update(sqlite_file)
+
+                if not cache_file.exists():
+                    cache_file.parent.mkdir(parents=True, exist_ok=True)
+                    sqlite_file.download_to(cache_file)  # type: ignore
+                    os.utime(cache_file, times=(cloud_mtime, cloud_mtime))
+                elif cloud_mtime > cache_file.stat().st_mtime:  # type: ignore  # noqa
+                    # no need to recreate session
+                    # just need to close current connections
+                    # in order to replace the sqlite db file
+                    # connections seem to be recreated for every transaction
+                    # invalidate because we need to close the connections immediately
+                    self._session.invalidate()
+
+                    sqlite_file.download_to(cache_file)  # type: ignore
+                    os.utime(cache_file, times=(cloud_mtime, cloud_mtime))
+
             # should probably add a different check whether the session is still active
             if not self._session.is_active:
                 self._session = sqm.Session(self.db_engine(), expire_on_commit=False)
