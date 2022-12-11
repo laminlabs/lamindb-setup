@@ -203,7 +203,7 @@ class InstanceSettings:
         return self.storage.cloud_to_local_no_update(self._sqlite_file)
 
     def _update_cloud_sqlite_file(self) -> None:
-        """Unlocker, if on cloud storage, update remote file."""
+        """Unlock; if on cloud storage, update remote file."""
         if self._dbconfig == "sqlite":
             if self.cloud_storage:
                 sqlite_file = self._sqlite_file
@@ -268,7 +268,7 @@ class InstanceSettings:
                 # doing semi-manually for easier replacemnet of cloudpathib
                 # in the future
                 sqlite_file = self._sqlite_file
-                # saving mtime here assuming locker at the beginning of the session
+                # save mtime here assuming locking at the beginning of the session
                 cloud_mtime = sqlite_file.stat().st_mtime  # type: ignore
                 cache_file = self.storage.cloud_to_local_no_update(sqlite_file)
 
