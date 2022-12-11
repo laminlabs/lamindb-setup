@@ -69,9 +69,10 @@ def setup_storage_root(storage: Union[str, Path, CloudPath]) -> Union[Path, Clou
 def setup_instance_from_store(store: InstanceSettingsStore) -> InstanceSettings:
     settings = InstanceSettings()
     settings.storage_root = setup_storage_root(store.storage_root)
-    settings._dbconfig = store.dbconfig_
+    settings.url = store.url
     settings._schema = store.schema_
     settings.storage_region = store.storage_region
+    settings._name = store.name_
     return settings
 
 

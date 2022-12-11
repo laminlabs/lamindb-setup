@@ -111,7 +111,7 @@ class Storage:
 class instance_description:
     storage_root = """Storage root. Either local dir, ``s3://bucket_name`` or ``gs://bucket_name``."""  # noqa
     storage_region = """Cloud storage region for s3 and Google Cloud."""
-    _dbconfig = """Either "sqlite" or postgres connection string."""
+    url = """Either sqlite or postgres connection string."""
     name = """Instance name."""
     _schema = """Comma-separated string of schema modules. None if not set."""
 
@@ -128,8 +128,8 @@ class InstanceSettings:
     """Storage root. Either local dir, ``s3://bucket_name`` or ``gs://bucket_name``."""
     storage_region: Optional[str] = None
     """Cloud storage region for s3 and Google Cloud."""
-    _dbconfig: str = "sqlite"
-    """Either "sqlite" or postgres connection string."""
+    url: Optional[str] = None
+    """Either sqlite or postgres connection string."""
     _schema: str = ""
     """Comma-separated string of schema modules. Empty string if only core schema."""
     _name: Optional[str] = None
@@ -174,7 +174,7 @@ class InstanceSettings:
 
     def _update_cloud_sqlite_file(self) -> None:
         """If on cloud storage, update remote file."""
-        if self.cloud_storage and self._dbconfig == "sqlite":
+        if self.cloud_storage and self.url == "sqlite":
             sqlite_file = self._sqlite_file
             cache_file = self.storage.cloud_to_local_no_update(sqlite_file)
             sqlite_file.upload_from(cache_file, force_overwrite_to_cloud=True)  # type: ignore  # noqa
@@ -189,20 +189,32 @@ class InstanceSettings:
         """
         if self._name:
             return self._name
-        if self._dbconfig == "sqlite":
+        if self.db_type == "sqlite":
             return instance_from_storage(self.storage_root)
         else:
-            return self._dbconfig.split("/")[-1]
+            return self.db.split("/")[-1]
 
     @property
     def db(self) -> str:
         """Database URL."""
         # the great thing about cloudpathlib is that it downloads the
         # remote file to cache as soon as the time stamp is out of date
-        if self._dbconfig == "sqlite":
+        if self.url is None:
             return f"sqlite:///{self.storage.cloud_to_local(self._sqlite_file)}"
         else:
-            return self._dbconfig
+            return self.url
+
+    @property
+    def db_type(self) -> str:
+        """Database type."""
+        if "sqlite" in self.db:
+            return "sqlite"
+        elif "postgres" in self.db:
+            return "postgres"
+        else:
+            raise RuntimeError(
+                "Currently, only SQLite and Postgres are supported for database."
+            )
 
     def db_engine(self, future=True):
         """Database engine."""

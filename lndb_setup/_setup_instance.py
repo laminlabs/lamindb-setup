@@ -21,7 +21,7 @@ from ._setup_storage import get_storage_region
 
 
 def instance_exists(isettings: InstanceSettings):
-    if isettings._dbconfig == "sqlite":
+    if isettings.db_type == "sqlite":
         if isettings._sqlite_file.exists():
             return True
         else:
@@ -73,9 +73,9 @@ def persist_check_reload_schema(isettings: InstanceSettings):
     # if we do, we need to re-import the schema modules to account for differences
     check = False
     if settings._instance_exists:
-        if settings.instance._dbconfig == "sqlite" and isettings._dbconfig != "sqlite":
+        if settings.instance.db_type == "sqlite" and isettings.db_type != "sqlite":
             check = True
-        if settings.instance._dbconfig != "sqlite" and isettings._dbconfig == "sqlite":
+        if settings.instance.db_type != "sqlite" and isettings.db_type == "sqlite":
             check = True
     isettings._persist()
     if check:
@@ -120,14 +120,14 @@ Please delete {} or add it to the cloud location.
 
 @doc_args(
     description.storage_root,
-    description._dbconfig,
+    description.url,
     description._schema,
     description.name,
 )
 def init(
     *,
     storage: Union[str, Path, CloudPath],
-    dbconfig: str = "sqlite",
+    url: Optional[str] = None,
     schema: Optional[str] = None,
     migrate: Optional[bool] = None,
     name: Optional[str] = None,
@@ -136,7 +136,7 @@ def init(
 
     Args:
         storage: {}
-        dbconfig: {}
+        url: {}
         schema: {}
         name: {}
         migrate: Whether to auto-migrate or not.
@@ -147,7 +147,7 @@ def init(
     isettings = InstanceSettings(
         storage_root=storage_root,
         storage_region=get_storage_region(storage_root),
-        _dbconfig=dbconfig,
+        url=url,
         _schema=validate_schema_arg(schema),
         _name=name,
     )
