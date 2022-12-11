@@ -1,21 +1,20 @@
 from datetime import datetime, timezone
-from typing import Optional
+from pathlib import Path
+from typing import Union
 
 import fsspec
+from cloudpathlib import CloudPath
 from dateutil.parser import isoparse  # type: ignore
-
-from ._settings import settings
 
 EXPIRATION_TIME = 1800  # 30 min
 
 
-class Lock:
-    def __init__(self, user: Optional[str] = None):
-        if user is None:
-            user = settings.user.id
-        self.user = user
+class Locker:
+    def __init__(self, user_id: str, storage_root: Union[CloudPath, Path]):
+        print("init locker", user_id, storage_root)
+        self.user = user_id
 
-        root = settings.instance.storage_root
+        root = storage_root
         protocol = fsspec.utils.get_protocol(str(root))
 
         self.fs = fsspec.filesystem(protocol)
@@ -27,9 +26,9 @@ class Lock:
         if self.fs.exists(priorities_path):
             self.users = self.mapper["priorities"].decode().split("*")
 
-            if user not in self.users:
+            if self.user not in self.users:
                 self.priority = len(self.users)
-                self.users.append(user)
+                self.users.append(self.user)
                 # potential problem here if 2 users join at the same time
                 # can be avoided by using separate files for each user
                 # and giving priority by timestamp
@@ -37,14 +36,14 @@ class Lock:
                 # does not support the append mode
                 self.mapper["priorities"] = "*".join(self.users).encode()
             else:
-                self.priority = self.users.index(user)
+                self.priority = self.users.index(self.user)
         else:
-            self.mapper["priorities"] = user.encode()
-            self.users = [user]
+            self.mapper["priorities"] = self.user.encode()
+            self.users = [self.user]
             self.priority = 0
 
-        self.mapper[f"numbers/{user}"] = b"0"
-        self.mapper[f"entering/{user}"] = b"0"
+        self.mapper[f"numbers/{self.user}"] = b"0"
+        self.mapper[f"entering/{self.user}"] = b"0"
 
         # clean up failures
         for user in self.users:
@@ -59,7 +58,7 @@ class Lock:
                 if period > EXPIRATION_TIME:
                     self.mapper[user_endpoint] = b"0"
 
-        self._lock = False
+        self._locked = False
 
     def modified(self, path):
         try:
@@ -76,7 +75,7 @@ class Lock:
         return mtime.astimezone().replace(tzinfo=None)
 
     def lock(self):
-        if self._lock:
+        if self._locked:
             return None
 
         self.users = self.mapper["priorities"].decode().split("*")
@@ -104,9 +103,15 @@ class Lock:
                 if number == c_number and self.priority < i:
                     break
 
-        self._lock = True
+        self._locked = True
 
     def unlock(self):
         self.mapper[f"numbers/{self.user}"] = b"0"
 
-        self._lock = False
+        self._locked = False
+
+
+def setup_locker() -> Locker:
+    from ._settings import settings
+
+    return Locker(settings.user.id, settings.instance.storage_root)

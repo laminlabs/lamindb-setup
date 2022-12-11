@@ -10,6 +10,7 @@ from cloudpathlib import CloudPath, GSClient, S3Client
 from cloudpathlib.exceptions import OverwriteNewerLocalError
 from lamin_logger import logger
 
+from ._exclusion import Locker, setup_locker
 from ._settings_save import save_settings
 from ._settings_store import (
     InstanceSettingsStore,
@@ -164,6 +165,7 @@ class InstanceSettings:
     _schema: str = ""
     """Comma-separated string of schema modules. Empty string if only core schema."""
     _session: Optional[sqm.Session] = None
+    _locker: Optional[Locker] = None
 
     @property
     def schema(self) -> Set[str]:
@@ -201,15 +203,20 @@ class InstanceSettings:
         return self.storage.cloud_to_local_no_update(self._sqlite_file)
 
     def _update_cloud_sqlite_file(self) -> None:
-        """If on cloud storage, update remote file."""
-        if self.cloud_storage and self._dbconfig == "sqlite":
-            sqlite_file = self._sqlite_file
-            cache_file = self.storage.cloud_to_local_no_update(sqlite_file)
-            sqlite_file.upload_from(cache_file, force_overwrite_to_cloud=True)  # type: ignore  # noqa
-            # doing semi-manually to replace cloudpahlib easily in the future
-            cloud_mtime = sqlite_file.stat().st_mtime  # type: ignore
-            # this seems to work even if there is an open connection to the cache file
-            os.utime(cache_file, times=(cloud_mtime, cloud_mtime))
+        """Unlocker, if on cloud storage, update remote file."""
+        if self._dbconfig == "sqlite":
+            if self.cloud_storage:
+                sqlite_file = self._sqlite_file
+                cache_file = self.storage.cloud_to_local_no_update(sqlite_file)
+                sqlite_file.upload_from(cache_file, force_overwrite_to_cloud=True)  # type: ignore  # noqa
+                # doing semi-manually to replace cloudpahlib easily in the future
+                cloud_mtime = sqlite_file.stat().st_mtime  # type: ignore
+                # this seems to work even if there is an open connection
+                # to the cache file
+                os.utime(cache_file, times=(cloud_mtime, cloud_mtime))
+            locker = self._locker
+            if locker is not None:
+                locker.unlock()
 
     @property
     def db(self) -> str:
@@ -240,8 +247,20 @@ class InstanceSettings:
         """Database engine."""
         return sqm.create_engine(self.db, future=future)
 
-    def session(self) -> sqm.Session:
+    def session(self, lock: bool = False) -> sqm.Session:
         """Database session."""
+        if lock:
+            if self._dbconfig == "sqlite" and self._locker is None:
+                self._locker = setup_locker()
+
+            locker = self._locker
+            if locker is not None:
+                try:
+                    locker.lock()
+                except BaseException as e:
+                    locker.unlock()
+                    raise e
+
         if "LAMIN_SKIP_MIGRATION" not in os.environ:
             if self._session is None:
                 self._session = sqm.Session(self.db_engine(), expire_on_commit=False)
@@ -249,7 +268,7 @@ class InstanceSettings:
                 # doing semi-manually for easier replacemnet of cloudpathib
                 # in the future
                 sqlite_file = self._sqlite_file
-                # saving mtime here assuming lock at the beginning of the session
+                # saving mtime here assuming locker at the beginning of the session
                 cloud_mtime = sqlite_file.stat().st_mtime  # type: ignore
                 cache_file = self.storage.cloud_to_local_no_update(sqlite_file)
 
