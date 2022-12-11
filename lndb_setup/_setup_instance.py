@@ -122,6 +122,7 @@ Please delete {} or add it to the cloud location.
     description.storage_root,
     description._dbconfig,
     description._schema,
+    description.name,
 )
 def init(
     *,
@@ -129,6 +130,7 @@ def init(
     dbconfig: str = "sqlite",
     schema: Optional[str] = None,
     migrate: Optional[bool] = None,
+    name: Optional[str] = None,
 ) -> Optional[str]:
     """Setup LaminDB.
 
@@ -136,6 +138,7 @@ def init(
         storage: {}
         dbconfig: {}
         schema: {}
+        name: {}
         migrate: Whether to auto-migrate or not.
     """
     assert settings.user.id  # check user is logged in
@@ -146,6 +149,7 @@ def init(
         storage_region=get_storage_region(storage_root),
         _dbconfig=dbconfig,
         _schema=validate_schema_arg(schema),
+        _name=name,
     )
     persist_check_reload_schema(isettings)
     if instance_exists(isettings):
