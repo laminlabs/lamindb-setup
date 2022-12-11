@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import Optional
 
 import fsspec
@@ -70,14 +70,16 @@ class Lock:
             mtime = self.fs.stat(path)["updated"]
             mtime = isoparse(mtime)
         # always convert to the local timezone before returning
+        # assume in utc if the time zone is not specified
+        if mtime.tzinfo is None:
+            mtime = mtime.replace(tzinfo=timezone.utc)
         return mtime.astimezone().replace(tzinfo=None)
 
     def lock(self):
         if self._lock:
             return None
 
-        if len(self.users) < 2:
-            return None
+        self.users = self.mapper["priorities"].decode().split("*")
 
         self.mapper[f"entering/{self.user}"] = b"1"
 
@@ -93,7 +95,6 @@ class Lock:
 
             while int(self.mapper[f"entering/{user}"]):
                 pass
-
             while True:
                 c_number = int(self.mapper[f"numbers/{user}"])
                 if c_number == 0:
@@ -106,8 +107,6 @@ class Lock:
         self._lock = True
 
     def unlock(self):
-        if len(self.users) < 2:
-            return None
         self.mapper[f"numbers/{self.user}"] = b"0"
 
         self._lock = False
