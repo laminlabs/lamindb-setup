@@ -27,7 +27,7 @@ def reload_orms(schema_name, module, isettings):
         orms += [
             cls for cls in module.link.__dict__.values() if hasattr(cls, "__table__")
         ]
-    if isettings.db_type == "sqlite":
+    if isettings.dialect == "sqlite":
         # only those orms that are actually in a schema
         orms = [
             orm

@@ -73,9 +73,9 @@ def persist_check_reload_schema(isettings: InstanceSettings):
     # if we do, we need to re-import the schema modules to account for differences
     check = False
     if settings._instance_exists:
-        if settings.instance.db_type == "sqlite" and isettings.dialect != "sqlite":
+        if settings.instance.dialect == "sqlite" and isettings.dialect != "sqlite":
             check = True
-        if settings.instance.db_type != "sqlite" and isettings.dialect == "sqlite":
+        if settings.instance.dialect != "sqlite" and isettings.dialect == "sqlite":
             check = True
     isettings._persist()
     if check:
