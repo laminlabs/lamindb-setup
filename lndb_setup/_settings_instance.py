@@ -211,7 +211,9 @@ class InstanceSettings:
     @property
     def _dbconfig(self):
         logger.warning("_dbconfig is deprecated and will be removed soon")
-        return "sqlite" if self.url.startswith("sqlite://") else self.url
+        if self.url is None or self.url.startswith("sqlite://"):
+            return "sqlite"
+        return self.url
 
     def db_engine(self, future=True):
         """Database engine."""
