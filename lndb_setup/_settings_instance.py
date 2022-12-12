@@ -211,7 +211,7 @@ class InstanceSettings:
     @property
     def _dbconfig(self):
         logger.warning("_dbconfig is deprecated and will be removed soon")
-        if self.url is None or self.url.startswith("sqlite://"):
+        if self.url is None or self.url == "null" or self.url.startswith("sqlite://"):
             return "sqlite"
         return self.url
 
