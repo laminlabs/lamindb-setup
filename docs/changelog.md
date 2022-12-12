@@ -3,6 +3,7 @@
 <!-- prettier-ignore -->
 Name | PR | Developer | Date | Version
 --- | --- | --- | --- | ---
+👷 Check whether scripts dir exists | [137](https://github.com/laminlabs/lndb-setup/pull/137) | [falexwolf](https://github.com/falexwolf) | 2022-12-12 |
 👷 Extend nox | [136](https://github.com/laminlabs/lndb-setup/pull/136) | [falexwolf](https://github.com/falexwolf) | 2022-12-12 | 0.25.0
 🐛 Restore synchronization of the sqlite db file | [133](https://github.com/laminlabs/lndb-setup/pull/133) | [Koncopd](https://github.com/Koncopd) | 2022-12-11 |
 ✅ Test for custom instance name | [134](https://github.com/laminlabs/lndb-setup/pull/134) | [fredericenard](https://github.com/fredericenard) | 2022-12-11 |
