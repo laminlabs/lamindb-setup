@@ -45,6 +45,7 @@ Dev API
 """
 
 __version__ = "0.24.4"
+import atexit
 from os import name as _os_name
 
 from ._schema import schema  # noqa
@@ -53,6 +54,15 @@ from ._settings_instance import InstanceSettings, Storage  # noqa
 from ._settings_user import UserSettings  # noqa
 from ._setup_instance import close, init, load  # noqa
 from ._setup_user import login, signup  # noqa
+
+
+# close the database session
+@atexit.register
+def cleanup_session():
+    instance = settings._instance_settings
+    if instance is not None and instance._session is not None:
+        instance._session.close()
+
 
 # hide the supabase error in a thread on windows
 if _os_name == "nt":

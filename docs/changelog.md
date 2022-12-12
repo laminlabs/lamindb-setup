@@ -3,6 +3,7 @@
 <!-- prettier-ignore -->
 Name | PR | Developer | Date | Version
 --- | --- | --- | --- | ---
+:bug: Restore synchronization of the sqlite db file | [133](https://github.com/laminlabs/lndb-setup/pull/133) | [Koncopd](https://github.com/Koncopd) | 2022-12-11 |
 :white_check_mark: Test for custom instance name | [134](https://github.com/laminlabs/lndb-setup/pull/134) | [fredericenard](https://github.com/fredericenard) | 2022-12-11 |
 :sparkles: Enable to specify name during instance initialization | [131](https://github.com/laminlabs/lndb-setup/pull/131) | [fredericenard](https://github.com/fredericenard) | 2022-12-10 |
 🎨 Simplify nox tools | [132](https://github.com/laminlabs/lndb-setup/pull/132) | [falexwolf](https://github.com/falexwolf) | 2022-12-09 | 0.24.4
