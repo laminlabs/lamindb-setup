@@ -55,7 +55,7 @@ class InstanceSettingsStore(BaseSettings):
     storage_region: str  # should not be Optional, as we use types for instantiating
     url: str
     schema_: str  # no private attributes here! instead suffix with _
-    name_: str  # no private attributes here! instead suffix with _
+    name: str
 
     class Config:
         env_file = ".env"
