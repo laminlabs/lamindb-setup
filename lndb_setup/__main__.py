@@ -35,7 +35,7 @@ aa("--password", type=str, metavar="s", default=None, help=user.password)
 init = subparsers.add_parser("init", help=init_help)
 aa = init.add_argument
 aa("--storage", type=str, metavar="s", help=instance.storage_root)
-aa("--db", type=str, metavar="s", default="sqlite", help=instance._dbconfig)
+aa("--url", type=str, metavar="s", default=None, help=instance.url)
 aa("--schema", type=str, metavar="s", default=None, help=instance._schema)
 aa("--name", type=str, metavar="s", default=None, help=instance.name)
 # load instance
@@ -65,7 +65,7 @@ def main():
         )
     elif args.command == "init":
         result = _setup_instance.init(
-            storage=args.storage, dbconfig=args.db, schema=args.schema, name=args.name
+            storage=args.storage, url=args.url, schema=args.schema, name=args.name
         )
         return process_result(result)
     elif args.command == "load":
