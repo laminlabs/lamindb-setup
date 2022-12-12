@@ -22,7 +22,7 @@ def login_testuser1(session: Session):
     session.run(*(login_user_1.split(" ")), external=True)
 
 
-def setup_test_instances_from_main_branch(session: Session):
+def setup_test_instances_from_main_branch(session: Session, schema: str = None):
     # spin up a postgres test instance
     pgurl = setup_local_test_postgres()
     # switch to the main branch
@@ -32,8 +32,10 @@ def setup_test_instances_from_main_branch(session: Session):
     # init a postgres instance
     init_instance = f"lndb init --storage pgtest --db {pgurl}"
     schema_handle = get_schema_handle()
-    if schema_handle not in {None, "core"}:
+    if schema is None and schema_handle not in {None, "core"}:
         init_instance += f" --schema {schema_handle}"
+    elif schema is not None:
+        init_instance += f" --schema {schema}"
     session.run(*init_instance.split(" "), external=True)
     # go back to the PR branch
     if "GITHUB_HEAD_REF" in os.environ and os.environ["GITHUB_HEAD_REF"] != "":

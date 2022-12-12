@@ -46,7 +46,11 @@ def migration_id_is_consistent(schema_package):
     command.heads(config.make_alembic_config(stdout=output_buffer))
     output = output_buffer.getvalue()
     migration_id = output.split(" ")[0]
-    return package._migration == migration_id
+    if package._migration is None:
+        manual_migration_id = ""
+    else:
+        manual_migration_id = package._migration
+    return manual_migration_id == migration_id
 
 
 def model_definitions_match_ddl(schema_package, url=None, dialect_name="sqlite"):
