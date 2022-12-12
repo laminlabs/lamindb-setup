@@ -111,7 +111,7 @@ class Storage:
 class instance_description:
     storage_root = """Storage root. Either local dir, ``s3://bucket_name`` or ``gs://bucket_name``."""  # noqa
     storage_region = """Cloud storage region for s3 and Google Cloud."""
-    _dbconfig = """Either "sqlite" or postgres connection string."""
+    url = """Either sqlite or postgres connection string."""
     name = """Instance name."""
     _schema = """Comma-separated string of schema modules. None if not set."""
 
@@ -128,7 +128,7 @@ class InstanceSettings:
     """Storage root. Either local dir, ``s3://bucket_name`` or ``gs://bucket_name``."""
     storage_region: Optional[str] = None
     """Cloud storage region for s3 and Google Cloud."""
-    _dbconfig: str = "sqlite"
+    url: Optional[str] = None
     """Either "sqlite" or postgres connection string."""
     _schema: str = ""
     """Comma-separated string of schema modules. Empty string if only core schema."""
@@ -203,10 +203,15 @@ class InstanceSettings:
         """Database URL."""
         # the great thing about cloudpathlib is that it downloads the
         # remote file to cache as soon as the time stamp is out of date
-        if self._dbconfig == "sqlite":
+        if self.url is None:
             return f"sqlite:///{self.storage.cloud_to_local(self._sqlite_file)}"
         else:
-            return self._dbconfig
+            return self.url
+
+    @property
+    def _dbconfig(self):
+        logger.warning("_dbconfig is deprecated and will be removed soon")
+        return "sqlite" if self.url.startswith("sqlite://") else self.url
 
     def db_engine(self, future=True):
         """Database engine."""
