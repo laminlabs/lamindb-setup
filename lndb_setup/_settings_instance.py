@@ -209,8 +209,10 @@ class InstanceSettings:
             return self.url
 
     @property
-    def db_type(self) -> str:
+    def db_type(self) -> Optional[str]:
         """Database type."""
+        if self.db == "null":
+            return None
         if "sqlite" in self.db:
             return "sqlite"
         elif "postgres" in self.db:
