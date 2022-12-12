@@ -229,7 +229,7 @@ class InstanceSettings:
         if "LAMIN_SKIP_MIGRATION" not in os.environ:
             if self._session is None:
                 self._session = sqm.Session(self.db_engine(), expire_on_commit=False)
-            elif self.cloud_storage and self._dbconfig == "sqlite":
+            elif self.cloud_storage and self.db_type == "sqlite":
                 # doing semi-manually for easier replacemnet of cloudpathib
                 # in the future
                 sqlite_file = self._sqlite_file
