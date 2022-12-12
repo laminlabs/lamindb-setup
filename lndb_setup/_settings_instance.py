@@ -220,6 +220,11 @@ class InstanceSettings:
                 "Currently, only SQLite and Postgres are supported for database."
             )
 
+    @property
+    def _dbconfig(self):
+        logger.warning("_dbconfig is deprecated and will be removed soon")
+        return "sqlite" if self.url.startswith("sqlite://") else self.url
+
     def db_engine(self, future=True):
         """Database engine."""
         return sqm.create_engine(self.db, future=future)
