@@ -12,7 +12,7 @@ from ._settings_user import UserSettings
 
 def create_schema_if_not_exists(schema_name: str, isettings: InstanceSettings):
     # create the schema module in case it doesn't exist
-    if isettings.db_type != "sqlite":
+    if isettings.dialect != "sqlite":
         with isettings.db_engine().connect() as conn:
             if not conn.dialect.has_schema(conn, schema_name):
                 conn.execute(sa.schema.CreateSchema(schema_name))

@@ -91,7 +91,7 @@ def clone_test(src_settings: Optional[InstanceSettings] = None, depth: int = 10)
     src_engine = create_engine(src_settings.db)
     src_metadata = MetaData()
 
-    if src_settings.db_type == "sqlite":
+    if src_settings.dialect == "sqlite":
         tgt_db = setup_local_test_sqlite_file(src_settings)
     else:
         tgt_db = setup_local_test_postgres()
