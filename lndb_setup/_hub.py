@@ -142,6 +142,7 @@ def push_instance_if_not_exists(storage):
             "name": settings.instance.name,
             "owner_id": hub.auth.session().user.id.hex,
             "storage_id": storage.id,
+            "dbconfig": settings.instance._dbconfig,
             "cache_dir": str(settings.instance.cache_dir),
             "sqlite_file": str(settings.instance._sqlite_file),
             "sqlite_file_local": str(settings.instance._sqlite_file_local),
