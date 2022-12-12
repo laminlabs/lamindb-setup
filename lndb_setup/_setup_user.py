@@ -124,7 +124,7 @@ def login(
                 )
                 return None
         else:  # let's check whether we can connect to the instance DB
-            url = settings.instance.dialect
+            url = settings.instance.url
             engine = create_engine(url)
             try:
                 engine.connect()
