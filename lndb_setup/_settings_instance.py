@@ -129,7 +129,7 @@ class InstanceSettings:
     storage_region: Optional[str] = None
     """Cloud storage region for s3 and Google Cloud."""
     url: Optional[str] = None
-    """Either "sqlite" or postgres connection string."""
+    """Either sqlite or postgres connection string."""
     _schema: str = ""
     """Comma-separated string of schema modules. Empty string if only core schema."""
     _name: Optional[str] = None
