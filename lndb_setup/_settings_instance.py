@@ -193,10 +193,9 @@ class InstanceSettings:
         """
         if self._name:
             return self._name
-        if self._dbconfig == "sqlite":
+        elif self.dialect == "sqlite":
             return instance_from_storage(self.storage_root)
-        else:
-            return self._dbconfig.split("/")[-1]
+        return self.db.split("/")[-1]
 
     @property
     def db(self) -> str:
@@ -209,9 +208,17 @@ class InstanceSettings:
             return self.url
 
     @property
+    def dialect(self):
+        if self.db.startswith("sqlite://"):
+            return "sqlite"
+        elif self.db.startswith("postgresql://"):
+            return "postgresql"
+        return None
+
+    @property
     def _dbconfig(self):
         logger.warning("_dbconfig is deprecated and will be removed soon")
-        if self.db.startswith("sqlite://"):
+        if self.dialect == "sqlite":
             return "sqlite"
         return self.url
 
