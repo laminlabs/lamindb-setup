@@ -171,3 +171,28 @@ def push_instance_if_not_exists(storage):
         assert len(data) == 1
 
     hub.auth.sign_out()
+
+
+def get_main_storage():
+    hub = connect_hub_with_auth()
+
+    response = (
+        hub.table("instance")
+        .select("*")
+        .eq("name", settings.instance.name)
+        .eq("owner_id", hub.auth.session().user.id.hex)
+        .execute()
+    )
+    if len(response.data) == 0:
+        raise RuntimeError("Instance {settings.instance.name} not found in the hub.")
+
+    storage_id = response.data[0]["storage_id"]
+
+    response = hub.table("storage").select("*").eq("id", storage_id).execute()
+
+    if len(response.data) == 0:
+        raise RuntimeError("Storage {storage_id} not found in the hub.")
+
+    hub.auth.sign_out()
+
+    return response.data[0]

@@ -1,3 +1,4 @@
+import copy
 import os
 import shutil
 from dataclasses import dataclass
@@ -9,6 +10,8 @@ from appdirs import AppDirs
 from cloudpathlib import CloudPath, GSClient, S3Client
 from cloudpathlib.exceptions import OverwriteNewerLocalError
 from lamin_logger import logger
+
+from lndb_setup._hub import get_main_storage
 
 from ._settings_save import save_settings
 from ._settings_store import (
@@ -250,6 +253,15 @@ class InstanceSettings:
     def storage(self) -> Storage:
         """Low-level access to storage location."""
         return Storage(self)
+
+    @property
+    def main_storage(self) -> Storage:
+        """Low-level access to main storage location."""
+        settings = copy.copy(self)
+        main_storage = get_main_storage()
+        settings.storage_root = main_storage["root"]
+        settings.storage_region = main_storage["region"]
+        return Storage(settings)
 
     def _persist(self) -> None:
         assert self.name is not None
