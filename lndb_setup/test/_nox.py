@@ -30,7 +30,7 @@ def setup_test_instances_from_main_branch(session: Session, schema: str = None):
         session.run("git", "checkout", os.environ["GITHUB_BASE_REF"], external=True)
     session.install(".[test]")  # install current package from main branch
     # init a postgres instance
-    init_instance = f"lndb init --storage pgtest --db {pgurl}"
+    init_instance = f"lndb init --storage pgtest --url {pgurl}"
     schema_handle = get_schema_handle()
     if schema is None and schema_handle not in {None, "core"}:
         init_instance += f" --schema {schema_handle}"
