@@ -1,5 +1,6 @@
 import importlib
 import io
+from pathlib import Path
 from subprocess import run
 
 import sqlalchemy as sa
@@ -43,9 +44,12 @@ def migration_id_is_consistent(schema_package):
     package = importlib.import_module(schema_package)
     output_buffer = io.StringIO()
     # get the id of the latest migration script
-    command.heads(config.make_alembic_config(stdout=output_buffer))
-    output = output_buffer.getvalue()
-    migration_id = output.split(" ")[0]
+    if Path(f"./{schema_package}/migrations/versions").exists():
+        command.heads(config.make_alembic_config(stdout=output_buffer))
+        output = output_buffer.getvalue()
+        migration_id = output.split(" ")[0]
+    else:  # there is no scripts directory
+        migration_id = ""
     if package._migration is None:
         manual_migration_id = ""
     else:

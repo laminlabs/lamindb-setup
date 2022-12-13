@@ -120,14 +120,14 @@ Please delete {} or add it to the cloud location.
 
 @doc_args(
     description.storage_root,
-    description._dbconfig,
+    description.url,
     description._schema,
     description.name,
 )
 def init(
     *,
     storage: Union[str, Path, CloudPath],
-    dbconfig: str = "sqlite",
+    url: Optional[str] = None,
     schema: Optional[str] = None,
     migrate: Optional[bool] = None,
     name: Optional[str] = None,
@@ -136,7 +136,7 @@ def init(
 
     Args:
         storage: {}
-        dbconfig: {}
+        url: {}
         schema: {}
         name: {}
         migrate: Whether to auto-migrate or not.
@@ -147,9 +147,9 @@ def init(
     isettings = InstanceSettings(
         storage_root=storage_root,
         storage_region=get_storage_region(storage_root),
-        _dbconfig=dbconfig,
+        url=url,
         _schema=validate_schema_arg(schema),
-        _name=name,
+        _name=get_instance_name(storage_root, url, name),
     )
     persist_check_reload_schema(isettings)
     if instance_exists(isettings):
@@ -161,3 +161,16 @@ def init(
     register(isettings, settings.user)
     write_bionty_versions(isettings)
     return None
+
+
+def get_instance_name(
+    storage_root: Union[Path, CloudPath],
+    url: Optional[str] = None,
+    name: Optional[str] = None,
+):
+    if name:
+        return name
+    elif url:
+        url.split("/")[-1]
+    else:
+        return str(storage_root.stem).lower()
