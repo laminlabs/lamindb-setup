@@ -11,8 +11,9 @@ from cloudpathlib import CloudPath, GSClient, S3Client
 from cloudpathlib.exceptions import OverwriteNewerLocalError
 from lamin_logger import logger
 
-from lndb_setup._hub import get_main_storage
+from lndb_setup import settings
 
+from ._hub import connect_hub_with_auth
 from ._settings_save import save_settings
 from ._settings_store import (
     InstanceSettingsStore,
@@ -276,3 +277,28 @@ class InstanceSettings:
         from ._settings import settings
 
         settings._instance_settings = self
+
+
+def get_main_storage():
+    hub = connect_hub_with_auth()
+
+    response = (
+        hub.table("instance")
+        .select("*")
+        .eq("name", settings.instance.name)
+        .eq("owner_id", hub.auth.session().user.id.hex)
+        .execute()
+    )
+    if len(response.data) == 0:
+        raise RuntimeError("Instance {settings.instance.name} not found in the hub.")
+
+    storage_id = response.data[0]["storage_id"]
+
+    response = hub.table("storage").select("*").eq("id", storage_id).execute()
+
+    if len(response.data) == 0:
+        raise RuntimeError("Storage {storage_id} not found in the hub.")
+
+    hub.auth.sign_out()
+
+    return response.data[0]
