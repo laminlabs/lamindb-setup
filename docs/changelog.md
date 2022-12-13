@@ -3,6 +3,7 @@
 <!-- prettier-ignore -->
 Name | PR | Developer | Date | Version
 --- | --- | --- | --- | ---
+:white_check_mark: Test google cloud bucket | [145](https://github.com/laminlabs/lndb-setup/pull/145) | [falexwolf](https://github.com/falexwolf) | 2022-12-13 |
 Persist instance name during init | [142](https://github.com/laminlabs/lndb-setup/pull/142) | [fredericenard](https://github.com/fredericenard) | 2022-12-13 |
 :white_check_mark: Add a new test for custom instance name | [140](https://github.com/laminlabs/lndb-setup/pull/140) | [fredericenard](https://github.com/fredericenard) | 2022-12-12 |
 :art: Instance initialization with url argument | [138](https://github.com/laminlabs/lndb-setup/pull/138) | [fredericenard](https://github.com/fredericenard) | 2022-12-12 |
