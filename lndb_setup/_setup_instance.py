@@ -163,6 +163,19 @@ def init(
     return None
 
 
+def set_storage(storage: Union[str, Path, CloudPath], instance_name: Optional[str]):
+    settings_file = (
+        instance_settings_file(instance_name)
+        if instance_name
+        else current_instance_settings_file()
+    )
+    isettings = load_instance_settings(settings_file)
+    storage_root = setup_storage_root(storage)
+    storage_region = get_storage_region(storage_root)
+    isettings.storage_root = storage_root
+    isettings.storage_region = storage_region
+
+
 def get_instance_name(
     storage_root: Union[Path, CloudPath],
     url: Optional[str] = None,

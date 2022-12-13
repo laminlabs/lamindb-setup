@@ -75,6 +75,8 @@ def main():
         return process_result(result)
     elif args.command == "close":
         return _setup_instance.close()
+    elif args.command == "set":
+        return _setup_instance.set_storage(storage=args.storage)
     else:
         logger.error("Invalid command. Try `lndb -h`.")
         return 1
