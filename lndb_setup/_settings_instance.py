@@ -167,18 +167,18 @@ class InstanceSettings:
 
         Is a CloudPath if on S3 or GS, otherwise a Path.
         """
-        return self.storage.key_to_filepath(f"{self.name}.lndb")
+        return self.main_storage.key_to_filepath(f"{self.name}.lndb")
 
     @property
     def _sqlite_file_local(self) -> Path:
         """Cached local sqlite file."""
-        return self.storage.cloud_to_local_no_update(self._sqlite_file)
+        return self.main_storage.cloud_to_local_no_update(self._sqlite_file)
 
     def _update_cloud_sqlite_file(self) -> None:
         """If on cloud storage, update remote file."""
-        if self.cloud_storage and self._dbconfig == "sqlite":
+        if self.main_storage.settings.cloud_storage and self._dbconfig == "sqlite":
             sqlite_file = self._sqlite_file
-            cache_file = self.storage.cloud_to_local_no_update(sqlite_file)
+            cache_file = self.main_storage.cloud_to_local_no_update(sqlite_file)
             sqlite_file.upload_from(cache_file, force_overwrite_to_cloud=True)  # type: ignore  # noqa
             # doing semi-manually to replace cloudpahlib easily in the future
             cloud_mtime = sqlite_file.stat().st_mtime  # type: ignore
@@ -191,7 +191,7 @@ class InstanceSettings:
         # the great thing about cloudpathlib is that it downloads the
         # remote file to cache as soon as the time stamp is out of date
         if self.url is None:
-            return f"sqlite:///{self.storage.cloud_to_local(self._sqlite_file)}"
+            return f"sqlite:///{self.main_storage.cloud_to_local(self._sqlite_file)}"
         else:
             return self.url
 
