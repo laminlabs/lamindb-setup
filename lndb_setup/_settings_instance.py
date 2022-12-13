@@ -164,7 +164,7 @@ class InstanceSettings:
 
         Is a CloudPath if on S3 or GS, otherwise a Path.
         """
-        filename = instance_from_storage(self.storage_root)  # type: ignore
+        filename = instance_from_storage(self.name)  # type: ignore
         return self.storage.key_to_filepath(f"{filename}.lndb")
 
     @property
