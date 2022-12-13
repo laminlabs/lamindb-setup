@@ -124,6 +124,8 @@ def instance_from_storage(storage):
 class InstanceSettings:
     """Instance settings written during setup."""
 
+    _name: str
+    """Instance name."""
     storage_root: Union[CloudPath, Path] = None  # None is just for init, can't be None
     """Storage root. Either local dir, ``s3://bucket_name`` or ``gs://bucket_name``."""
     storage_region: Optional[str] = None
@@ -132,8 +134,6 @@ class InstanceSettings:
     """Either sqlite or postgres connection string."""
     _schema: str = ""
     """Comma-separated string of schema modules. Empty string if only core schema."""
-    _name: Optional[str] = None
-    """Instance name."""
     _session: Optional[sqm.Session] = None
 
     @property
@@ -191,33 +191,29 @@ class InstanceSettings:
 
         The name is unique per instance owner.
         """
-        if self._name:
-            return self._name
-        elif self.dialect == "sqlite":
-            return instance_from_storage(self.storage_root)
-        return self.db.split("/")[-1]
+        return self._name
 
     @property
     def db(self) -> str:
         """Database URL."""
         # the great thing about cloudpathlib is that it downloads the
         # remote file to cache as soon as the time stamp is out of date
-        if self.url is None or self.url == "null":
+        if self.url is None:
             return f"sqlite:///{self.storage.cloud_to_local(self._sqlite_file)}"
         else:
             return self.url
 
     @property
     def dialect(self):
-        if self.db.startswith("sqlite://"):
+        if self.url is None or self.url.startswith("sqlite://"):
             return "sqlite"
-        elif self.db.startswith("postgresql://"):
+        elif self.url.startswith("postgresql://"):
             return "postgresql"
         return None
 
     @property
     def _dbconfig(self):
-        logger.warning("_dbconfig is deprecated and will be removed soon")
+        # logger.warning("_dbconfig is deprecated and will be removed soon")
         if self.dialect == "sqlite":
             return "sqlite"
         return self.url

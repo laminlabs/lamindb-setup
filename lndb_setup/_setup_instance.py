@@ -149,7 +149,7 @@ def init(
         storage_region=get_storage_region(storage_root),
         url=url,
         _schema=validate_schema_arg(schema),
-        _name=name,
+        _name=get_instance_name(storage_root, url, name),
     )
     persist_check_reload_schema(isettings)
     if instance_exists(isettings):
@@ -161,3 +161,16 @@ def init(
     register(isettings, settings.user)
     write_bionty_versions(isettings)
     return None
+
+
+def get_instance_name(
+    storage_root: Union[Path, CloudPath],
+    url: Optional[str] = None,
+    name: Optional[str] = None,
+):
+    if name:
+        return name
+    elif url:
+        url.split("/")[-1]
+    else:
+        return str(storage_root.stem).lower()
