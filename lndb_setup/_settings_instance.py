@@ -115,7 +115,7 @@ class Storage:
 class instance_description:
     storage_root = """Storage root. Either local dir, ``s3://bucket_name`` or ``gs://bucket_name``."""  # noqa
     storage_region = """Cloud storage region for s3 and Google Cloud."""
-    url = """Either sqlite or postgres connection string."""
+    url = """Database connection url, do not pass (None) for SQLite."""
     name = """Instance name."""
     _schema = """Comma-separated string of schema modules. None if not set."""
 
@@ -135,7 +135,7 @@ class InstanceSettings:
     storage_region: Optional[str] = None
     """Cloud storage region for s3 and Google Cloud."""
     url: Optional[str] = None
-    """Either sqlite or postgres connection string."""
+    """Database connection url, do not pass (None) for SQLite."""
     _schema: str = ""
     """Comma-separated string of schema modules. Empty string if only core schema."""
     _session: Optional[sqm.Session] = None

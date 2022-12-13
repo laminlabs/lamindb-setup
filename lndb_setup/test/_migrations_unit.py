@@ -61,12 +61,12 @@ def model_definitions_match_ddl(schema_package, url=None, dialect_name="sqlite")
     if url is None and dialect_name == "sqlite":
         url = "sqlite:///testdb/testdb.lndb"
         # need to call init to reload schema
-        init(dbconfig="sqlite", storage="testdb", migrate=False)
+        init(storage="testdb", migrate=False)
     elif url is None and dialect_name == "postgresql":
         # requires postgres has been set up through _nox_tools
         url = "postgresql://postgres:pwd@0.0.0.0:5432/pgtest"
         # need to call init to reload schema
-        init(dbconfig=url, storage="pgtest", migrate=False)
+        init(url=url, storage="pgtest", migrate=False)
     elif url is None:
         raise NotImplementedError(
             "Only sqlite and postgres test databases are implemented."
