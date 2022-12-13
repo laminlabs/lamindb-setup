@@ -171,6 +171,6 @@ def get_instance_name(
     if name:
         return name
     elif url:
-        url.split("/")[-1]
+        return url.split("/")[-1]
     else:
         return str(storage_root.stem).lower()
