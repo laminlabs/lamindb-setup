@@ -47,9 +47,9 @@ def migrate_clones(
         connection_string = clone_test(src_settings=src_settings)
         if dbconfig == "sqlite":
             storage_test = setup_local_test_sqlite_file(src_settings, return_dir=True)
-            result = init(dbconfig=dbconfig, storage=storage_test, migrate=True)
+            result = init(storage=storage_test, migrate=True)
         else:
-            result = init(dbconfig=connection_string, storage=storage, migrate=True)
+            result = init(url=connection_string, storage=storage, migrate=True)
         logger.info(result)
         if dialect_name == "postgresql":
             run("docker stop pgtest && docker rm pgtest", shell=True)
