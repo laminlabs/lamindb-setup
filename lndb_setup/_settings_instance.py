@@ -198,16 +198,16 @@ class InstanceSettings:
         """Database URL."""
         # the great thing about cloudpathlib is that it downloads the
         # remote file to cache as soon as the time stamp is out of date
-        if self.url is None or self.url == "null":
+        if self.url is None:
             return f"sqlite:///{self.storage.cloud_to_local(self._sqlite_file)}"
         else:
             return self.url
 
     @property
     def dialect(self):
-        if self.db.startswith("sqlite://"):
+        if self.url is None or self.url.startswith("sqlite://"):
             return "sqlite"
-        elif self.db.startswith("postgresql://"):
+        elif self.url.startswith("postgresql://"):
             return "postgresql"
         return None
 
