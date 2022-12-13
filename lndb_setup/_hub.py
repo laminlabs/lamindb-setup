@@ -5,8 +5,6 @@ from urllib.request import urlretrieve
 from lamin_logger import logger
 from supabase import create_client
 
-from lndb_setup import settings
-
 from ._settings_load import load_or_create_user_settings
 from ._settings_store import Connector, settings_dir
 
@@ -117,6 +115,8 @@ def sign_in_hub(email, password, handle=None):
 # import it statically at time of lndb_setup import
 def push_instance_if_not_exists(storage):
     hub = connect_hub_with_auth()
+
+    from lndb_setup import settings
 
     response = hub.table("storage").select("*").eq("id", storage.id).execute()
     if len(response.data) == 0:

@@ -4,7 +4,6 @@ from typing import Optional, Union
 from cloudpathlib import CloudPath
 from pydantic.error_wrappers import ValidationError
 
-from ._settings_instance import InstanceSettings
 from ._settings_store import (
     InstanceSettingsStore,
     UserSettingsStore,
@@ -66,7 +65,9 @@ def setup_storage_root(storage: Union[str, Path, CloudPath]) -> Union[Path, Clou
     return storage_root
 
 
-def setup_instance_from_store(store: InstanceSettingsStore) -> InstanceSettings:
+def setup_instance_from_store(store: InstanceSettingsStore):
+    from ._settings_instance import InstanceSettings
+
     settings = InstanceSettings(store.name)
     settings.storage_root = setup_storage_root(store.storage_root)
     settings.url = store.url if store.url != "null" else None
