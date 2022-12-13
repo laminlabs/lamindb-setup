@@ -39,3 +39,4 @@ def set_storage(
     storage_region = get_storage_region(storage_root)
     isettings.storage_root = storage_root
     isettings.storage_region = storage_region
+    isettings._persist()
