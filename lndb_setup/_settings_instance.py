@@ -124,6 +124,8 @@ def instance_from_storage(storage):
 class InstanceSettings:
     """Instance settings written during setup."""
 
+    _name: str
+    """Instance name."""
     storage_root: Union[CloudPath, Path] = None  # None is just for init, can't be None
     """Storage root. Either local dir, ``s3://bucket_name`` or ``gs://bucket_name``."""
     storage_region: Optional[str] = None
@@ -132,8 +134,6 @@ class InstanceSettings:
     """Either sqlite or postgres connection string."""
     _schema: str = ""
     """Comma-separated string of schema modules. Empty string if only core schema."""
-    _name: Optional[str] = None
-    """Instance name."""
     _session: Optional[sqm.Session] = None
 
     @property
@@ -191,11 +191,7 @@ class InstanceSettings:
 
         The name is unique per instance owner.
         """
-        if self._name:
-            return self._name
-        elif self.dialect == "sqlite":
-            return instance_from_storage(self.storage_root)
-        return self.db.split("/")[-1]
+        return self._name
 
     @property
     def db(self) -> str:
