@@ -108,16 +108,20 @@ class Storage:
         return self.cloud_to_local(self.key_to_filepath(filekey))
 
 
-class instance_description:
-    storage_root = """Storage root. Either local dir, ``s3://bucket_name`` or ``gs://bucket_name``."""  # noqa
-    storage_region = """Cloud storage region for s3 and Google Cloud."""
-    url = """Database connection url, do not pass (None) for SQLite."""
-    name = """Instance name."""
-    _schema = """Comma-separated string of schema modules. None if not set."""
-
-
 def instance_from_storage(storage):
     return str(storage.stem).lower()
+
+
+# This provides the doc strings for the init function on the
+# CLI and the API
+# It is located here as it *mostly* parallels the InstanceSettings docstrings.
+# Small differences are on purpose, due to the different scope!
+class init_instance_arg_doc:
+    storage_root = """Storage root. Either local dir, ``s3://bucket_name`` or ``gs://bucket_name``."""  # noqa
+    storage_region = """Cloud storage region for s3 and Google Cloud."""
+    url = """Database connection url, do not pass for SQLite."""
+    name = """Instance name."""
+    _schema = """Comma-separated string of schema modules. None if not set."""
 
 
 @dataclass
@@ -131,7 +135,7 @@ class InstanceSettings:
     storage_region: Optional[str] = None
     """Cloud storage region for s3 and Google Cloud."""
     url: Optional[str] = None
-    """Database connection url, do not pass (None) for SQLite."""
+    """Database connection url, None for SQLite."""
     _schema: str = ""
     """Comma-separated string of schema modules. Empty string if only core schema."""
     _session: Optional[sqm.Session] = None

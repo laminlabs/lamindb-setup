@@ -12,7 +12,7 @@ from ._hub import push_instance_if_not_exists
 from ._migrate import check_migrate
 from ._settings import settings
 from ._settings_instance import InstanceSettings
-from ._settings_instance import instance_description as description
+from ._settings_instance import init_instance_arg_doc as description
 from ._settings_load import load_instance_settings, setup_storage_root
 from ._settings_store import current_instance_settings_file, instance_settings_file
 from ._setup_knowledge import load_bionty_versions, write_bionty_versions

@@ -3,7 +3,7 @@ import argparse
 from lamin_logger import logger
 
 from . import _setup_instance, _setup_user
-from ._settings_instance import instance_description as instance
+from ._settings_instance import init_instance_arg_doc as instance
 from ._settings_user import user_description as user
 
 signup_help = "First time sign up."
