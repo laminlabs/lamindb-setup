@@ -3,6 +3,7 @@
 <!-- prettier-ignore -->
 Name | PR | Developer | Date | Version
 --- | --- | --- | --- | ---
+:bug: Fix missing return | [148](https://github.com/laminlabs/lndb-setup/pull/148) | [fredericenard](https://github.com/fredericenard) | 2022-12-13 |
 :art: Infer db file name from instance name | [144](https://github.com/laminlabs/lndb-setup/pull/144) | [fredericenard](https://github.com/fredericenard) | 2022-12-13 |
 :art: Drop name property | [143](https://github.com/laminlabs/lndb-setup/pull/143) | [fredericenard](https://github.com/fredericenard) | 2022-12-13 |
 :white_check_mark: Test google cloud bucket | [145](https://github.com/laminlabs/lndb-setup/pull/145) | [falexwolf](https://github.com/falexwolf) | 2022-12-13 |
