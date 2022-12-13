@@ -11,9 +11,8 @@ from cloudpathlib import CloudPath, GSClient, S3Client
 from cloudpathlib.exceptions import OverwriteNewerLocalError
 from lamin_logger import logger
 
-from lndb_setup import settings
-
 from ._hub import connect_hub_with_auth
+from ._settings import settings
 from ._settings_save import save_settings
 from ._settings_store import (
     InstanceSettingsStore,
