@@ -26,7 +26,9 @@ def get_storage_region(storage_root):
     return storage_region
 
 
-def set_storage(storage: Union[str, Path, CloudPath], instance_name: Optional[str]):
+def set_storage(
+    storage: Union[str, Path, CloudPath], instance_name: Optional[str] = None
+):
     settings_file = (
         instance_settings_file(instance_name)
         if instance_name
