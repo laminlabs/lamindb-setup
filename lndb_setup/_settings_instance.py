@@ -12,7 +12,6 @@ from cloudpathlib.exceptions import OverwriteNewerLocalError
 from lamin_logger import logger
 
 from ._hub import connect_hub_with_auth
-from ._settings import settings
 from ._settings_save import save_settings
 from ._settings_store import (
     InstanceSettingsStore,
@@ -280,6 +279,8 @@ class InstanceSettings:
 
 def get_main_storage():
     hub = connect_hub_with_auth()
+
+    from ._settings import settings
 
     response = (
         hub.table("instance")
