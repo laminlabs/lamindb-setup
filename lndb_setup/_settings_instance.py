@@ -213,7 +213,7 @@ class InstanceSettings:
 
     @property
     def _dbconfig(self):
-        logger.warning("_dbconfig is deprecated and will be removed soon")
+        # logger.warning("_dbconfig is deprecated and will be removed soon")
         if self.dialect == "sqlite":
             return "sqlite"
         return self.url
