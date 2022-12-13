@@ -3,8 +3,10 @@ from typing import Optional, Union
 
 from cloudpathlib import CloudPath
 
+from ._settings import settings
 from ._settings_load import load_instance_settings, setup_storage_root
 from ._settings_store import current_instance_settings_file, instance_settings_file
+from ._setup_instance import register
 
 
 def get_storage_region(storage_root):
@@ -40,3 +42,4 @@ def set_storage(
     isettings.storage_root = storage_root
     isettings.storage_region = storage_region
     isettings._persist()
+    register(isettings, settings.user)
