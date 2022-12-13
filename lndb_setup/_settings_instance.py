@@ -124,7 +124,7 @@ def instance_from_storage(storage):
 class InstanceSettings:
     """Instance settings written during setup."""
 
-    _name: str
+    name: str
     """Instance name."""
     storage_root: Union[CloudPath, Path] = None  # None is just for init, can't be None
     """Storage root. Either local dir, ``s3://bucket_name`` or ``gs://bucket_name``."""
@@ -164,8 +164,7 @@ class InstanceSettings:
 
         Is a CloudPath if on S3 or GS, otherwise a Path.
         """
-        filename = instance_from_storage(self.storage_root)  # type: ignore
-        return self.storage.key_to_filepath(f"{filename}.lndb")
+        return self.storage.key_to_filepath(f"{self.name}.lndb")
 
     @property
     def _sqlite_file_local(self) -> Path:
@@ -182,16 +181,6 @@ class InstanceSettings:
             cloud_mtime = sqlite_file.stat().st_mtime  # type: ignore
             # this seems to work even if there is an open connection to the cache file
             os.utime(cache_file, times=(cloud_mtime, cloud_mtime))
-
-    @property
-    def name(self) -> str:
-        """Name of LaminDB instance.
-
-        Every LaminDB instance corresponds to exactly one database.
-
-        The name is unique per instance owner.
-        """
-        return self._name
 
     @property
     def db(self) -> str:
