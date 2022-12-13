@@ -149,7 +149,7 @@ def init(
         storage_region=get_storage_region(storage_root),
         url=url,
         _schema=validate_schema_arg(schema),
-        _name=get_instance_name(name),
+        _name=get_instance_name(storage_root, url, name),
     )
     persist_check_reload_schema(isettings)
     if instance_exists(isettings):
