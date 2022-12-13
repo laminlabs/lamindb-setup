@@ -164,8 +164,7 @@ class InstanceSettings:
 
         Is a CloudPath if on S3 or GS, otherwise a Path.
         """
-        filename = instance_from_storage(self.name)  # type: ignore
-        return self.storage.key_to_filepath(f"{filename}.lndb")
+        return self.storage.key_to_filepath(f"{self.name}.lndb")
 
     @property
     def _sqlite_file_local(self) -> Path:
