@@ -13,6 +13,5 @@ These docs provide the reference for the API that underlies the CLI: `lndb_setup
 guide/index
 api
 notes/index
-faq/index
 changelog
 ```
