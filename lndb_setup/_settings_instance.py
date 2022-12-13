@@ -12,6 +12,7 @@ from cloudpathlib.exceptions import OverwriteNewerLocalError
 from lamin_logger import logger
 
 from ._hub import connect_hub_with_auth
+from ._settings_load import setup_storage_root
 from ._settings_save import save_settings
 from ._settings_store import (
     InstanceSettingsStore,
@@ -258,7 +259,7 @@ class InstanceSettings:
         """Low-level access to main storage location."""
         settings = copy.copy(self)
         main_storage = get_main_storage()
-        settings.storage_root = main_storage["root"]
+        settings.storage_root = setup_storage_root(main_storage["root"])
         settings.storage_region = main_storage["region"]
         return Storage(settings)
 
