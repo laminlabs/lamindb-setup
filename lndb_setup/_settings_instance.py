@@ -152,6 +152,8 @@ class InstanceSettings:
     """Database connection url, None for SQLite."""
     _schema: str = ""
     """Comma-separated string of schema modules. Empty string if only core schema."""
+    _main_storage_root: Optional[str] = None
+    """Root ot the main storage of the instance."""
     _session: Optional[sqm.Session] = None
 
     @property
@@ -273,17 +275,19 @@ class InstanceSettings:
     def main_storage(self) -> Storage:
         """Low-level access to main storage location."""
         settings = copy.copy(self)
-        main_storage = get_main_storage()
-        try:
-            storage_root = main_storage["root"]
-            settings.storage_root = setup_storage_root(storage_root)
-        except PermissionError:
-            dir_name = main_storage["root"].split("/")[-1]
-            storage_root = f"{os.getcwd()}/{dir_name}"
-            settings.storage_root = setup_storage_root(storage_root)
-        finally:
-            settings.storage_region = get_storage_region(settings.storage_root)
-            return Storage(settings)
+        if not self._main_storage_root:
+            self._main_storage_root = get_main_storage()["root"]
+            return self.main_storage
+        else:
+            try:
+                settings.storage_root = setup_storage_root(self._main_storage_root)
+            except PermissionError:
+                dir_name = self._main_storage_root.split("/")[-1]
+                storage_root = f"{os.getcwd()}/{dir_name}"
+                settings.storage_root = setup_storage_root(storage_root)
+            finally:
+                settings.storage_region = get_storage_region(settings.storage_root)
+                return Storage(settings)
 
     def _persist(self) -> None:
         assert self.name is not None
