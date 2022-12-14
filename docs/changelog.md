@@ -3,6 +3,7 @@
 <!-- prettier-ignore -->
 Name | PR | Developer | Date | Version
 --- | --- | --- | --- | ---
+🐛 Fix migrations e2e testing | [154](https://github.com/laminlabs/lndb-setup/pull/154) | [falexwolf](https://github.com/falexwolf) | 2022-12-14 |
 :adhesive_bandage: Fix sync warnings on instance creation | [152](https://github.com/laminlabs/lndb-setup/pull/152) | [Koncopd](https://github.com/Koncopd) | 2022-12-13 |
 :memo: Improve CLI init docs | [151](https://github.com/laminlabs/lndb-setup/pull/151) | [falexwolf](https://github.com/falexwolf) | 2022-12-13 |
 🐛 Fix dbconfig | [150](https://github.com/laminlabs/lndb-setup/pull/150) | [falexwolf](https://github.com/falexwolf) | 2022-12-13 | 0.25.2
