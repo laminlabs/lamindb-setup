@@ -6,7 +6,7 @@ from lamin_logger import logger
 
 from ._assets._schemas import get_schema_module_name
 from ._db import insert
-from ._settings_instance import InstanceSettings
+from ._settings_instance import InstanceSettings, _set_mute_sync_warnings
 from ._settings_user import UserSettings
 
 
@@ -80,6 +80,7 @@ def setup_schema(isettings: InstanceSettings, usettings: UserSettings):
         name=usettings.name,
     )
 
+    _set_mute_sync_warnings(True)
     for schema_name in schema_names:
         schema_module = importlib.import_module(get_schema_module_name(schema_name))
         insert.version(
@@ -99,5 +100,6 @@ def setup_schema(isettings: InstanceSettings, usettings: UserSettings):
                 session.add(migration_table(version_num=migration))
                 session.commit()
     isettings._update_cloud_sqlite_file()
+    _set_mute_sync_warnings(False)
 
     logger.info(f"Created instance {isettings.name}.")

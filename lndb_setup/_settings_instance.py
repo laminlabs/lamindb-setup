@@ -36,6 +36,15 @@ from ._setup_storage import get_storage_region
 #         cursor.close()
 
 
+_MUTE_SYNC_WARNINGS = False
+
+
+def _set_mute_sync_warnings(value: bool):
+    global _MUTE_SYNC_WARNINGS
+
+    _MUTE_SYNC_WARNINGS = value
+
+
 DIRS = AppDirs("lamindb", "laminlabs")
 
 
@@ -86,12 +95,13 @@ class Storage:
                 local_filepath = Path(filepath)
         except OverwriteNewerLocalError:
             local_filepath = self.cloud_to_local_no_update(filepath)  # type: ignore
-            logger.warning(
-                f"Local file ({local_filepath}) for cloud path ({filepath}) is newer on disk than in cloud.\n"  # noqa
-                "It seems you manually updated the database locally and didn't push changes to the cloud.\n"  # noqa
-                "This can lead to data loss if somebody else modified the cloud file in"
-                " the meantime."
-            )
+            if not _MUTE_SYNC_WARNINGS:
+                logger.warning(
+                    f"Local file ({local_filepath}) for cloud path ({filepath}) is newer on disk than in cloud.\n"  # noqa
+                    "It seems you manually updated the database locally and didn't push changes to the cloud.\n"  # noqa
+                    "This can lead to data loss if somebody else modified the cloud file in"  # noqa
+                    " the meantime."
+                )
         Path(local_filepath).parent.mkdir(
             parents=True, exist_ok=True
         )  # this should not happen here but is currently needed
@@ -112,16 +122,20 @@ class Storage:
         return self.cloud_to_local(self.key_to_filepath(filekey))
 
 
-class instance_description:
-    storage_root = """Storage root. Either local dir, ``s3://bucket_name`` or ``gs://bucket_name``."""  # noqa
-    storage_region = """Cloud storage region for s3 and Google Cloud."""
-    url = """Database connection url, do not pass (None) for SQLite."""
-    name = """Instance name."""
-    _schema = """Comma-separated string of schema modules. None if not set."""
-
-
 def instance_from_storage(storage):
     return str(storage.stem).lower()
+
+
+# This provides the doc strings for the init function on the
+# CLI and the API
+# It is located here as it *mostly* parallels the InstanceSettings docstrings.
+# Small differences are on purpose, due to the different scope!
+class init_instance_arg_doc:
+    storage_root = """Storage root. Either local dir, ``s3://bucket_name`` or ``gs://bucket_name``."""  # noqa
+    storage_region = """Cloud storage region for s3 and Google Cloud."""
+    url = """Database connection url, do not pass for SQLite."""
+    name = """Instance name."""
+    _schema = """Comma-separated string of schema modules. None if not set."""
 
 
 @dataclass
@@ -135,7 +149,7 @@ class InstanceSettings:
     storage_region: Optional[str] = None
     """Cloud storage region for s3 and Google Cloud."""
     url: Optional[str] = None
-    """Database connection url, do not pass (None) for SQLite."""
+    """Database connection url, None for SQLite."""
     _schema: str = ""
     """Comma-separated string of schema modules. Empty string if only core schema."""
     _session: Optional[sqm.Session] = None
