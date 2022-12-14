@@ -34,18 +34,18 @@ def migrate_clones(
     results = []
     for instance in run_instances.iloc[:n_instances]:
         logger.info(f"Testing: {instance}")
-        dbconfig, storage = None, None
+        url, storage = None, None
         for prefix in ["s3://", "gc://"]:
             if instance.startswith(prefix):
-                dbconfig = "sqlite"
+                url = None
                 storage = CloudPath(prefix + instance.replace(prefix, "").split("/")[0])
-        if dbconfig is None and instance.startswith("postgresql"):
-            dbconfig = instance
+        if instance.startswith("postgresql"):
+            url = instance
             storage = "pgtest"
         # init test instance
-        src_settings = InstanceSettings(storage_root=storage, _dbconfig=dbconfig)  # type: ignore  # noqa
+        src_settings = InstanceSettings(storage_root=storage, url=url)  # type: ignore  # noqa
         connection_string = clone_test(src_settings=src_settings)
-        if dbconfig == "sqlite":
+        if url is None:
             storage_test = setup_local_test_sqlite_file(src_settings, return_dir=True)
             result = init(storage=storage_test, migrate=True)
         else:
