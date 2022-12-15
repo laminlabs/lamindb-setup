@@ -4,6 +4,7 @@ from urllib.request import urlretrieve
 
 from lamin_logger import logger
 from supabase import create_client
+from supabase.client import Client
 
 from lndb_setup import settings
 
@@ -129,14 +130,10 @@ def push_instance_if_not_exists(storage):
         data = hub.table("storage").insert(storage_fields).execute().data
         assert len(data) == 1
 
-    response = (
-        hub.table("instance")
-        .select("*")
-        .eq("name", settings.instance.name)
-        .eq("owner_id", hub.auth.session().user.id.hex)
-        .execute()
+    instance_info = get_instance_info(
+        hub, settings.instance.name, hub.auth.session().user.id.hex
     )
-    if len(response.data) == 0:
+    if instance_info is None:
         instance_fields = {
             "id": str(uuid.uuid4()),
             "name": settings.instance.name,
@@ -152,8 +149,7 @@ def push_instance_if_not_exists(storage):
         assert len(data) == 1
         instance_id = data[0]["id"]
     else:
-        assert len(response.data) == 1
-        instance_id = response.data[0]["id"]
+        instance_id = instance_info["id"]
 
     response = (
         hub.table("user_instance")
@@ -171,3 +167,35 @@ def push_instance_if_not_exists(storage):
         assert len(data) == 1
 
     hub.auth.sign_out()
+
+
+def get_instance_info(hub: Client, name: str, owner_id: str):
+    response = (
+        hub.table("instance")
+        .select("*")
+        .eq("name", name)
+        .eq("owner_id", owner_id)
+        .execute()
+    )
+
+    if len(response.data) == 0:
+        return None
+    else:
+        assert len(response.data) == 1
+
+    instance = response.data[0]
+
+    return instance
+
+
+def get_user_info_by_id(hub: Client, user_id: str):
+    response = hub.table("usermeta").select("*").eq("id", user_id).execute()
+
+    if len(response.data) == 0:
+        return None
+    else:
+        assert len(response.data) == 1
+
+    usermeta = response.data[0]
+
+    return usermeta
