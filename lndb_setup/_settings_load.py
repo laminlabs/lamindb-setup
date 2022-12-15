@@ -73,12 +73,14 @@ def setup_storage_root(storage: Union[str, Path, CloudPath]) -> Union[Path, Clou
 
 
 def setup_instance_from_store(store: InstanceSettingsStore) -> InstanceSettings:
-    settings = InstanceSettings(store.name)
-    settings.storage_root = setup_storage_root(store.storage_root)
-    settings.url = store.url if store.url != "null" else None
-    settings._schema = store.schema_
-    settings.storage_region = store.storage_region
-    return settings
+    return InstanceSettings(
+        owner=store.owner,
+        name=store.name,
+        storage_root=setup_storage_root(store.storage_root),
+        url=store.url if store.url != "null" else None,
+        _schema=store.schema_,
+        storage_region=store.storage_region,
+    )
 
 
 def setup_user_from_store(store: UserSettingsStore) -> UserSettings:

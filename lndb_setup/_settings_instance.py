@@ -138,6 +138,8 @@ class init_instance_arg_doc:
 class InstanceSettings:
     """Instance settings written during setup."""
 
+    owner: str
+    """Instance owner."""
     name: str
     """Instance name."""
     storage_root: Union[CloudPath, Path] = None  # None is just for init, can't be None
