@@ -186,3 +186,16 @@ def get_instance_info(hub: Client, name: str, owner_id: str):
     instance = response.data[0]
 
     return instance
+
+
+def get_user_info_by_id(hub: Client, user_id: str):
+    response = hub.table("usermeta").select("*").eq("id", user_id).execute()
+
+    if len(response.data) == 0:
+        return None
+    else:
+        assert len(response.data) == 1
+
+    usermeta = response.data[0]
+
+    return usermeta
