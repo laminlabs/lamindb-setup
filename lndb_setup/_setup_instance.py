@@ -177,3 +177,26 @@ def get_instance_name(
         return url.split("/")[-1]
     else:
         return str(storage_root.stem).lower()
+
+
+def set_storage(
+    storage: Union[str, Path, CloudPath], instance_name: Optional[str] = None
+):
+    settings_file = (
+        instance_settings_file(instance_name)
+        if instance_name
+        else current_instance_settings_file()
+    )
+    isettings = load_instance_settings(settings_file)
+
+    if isettings.dialect == "sqlite":
+        logger.error("Can't set storage for sqlite instance.")
+        return "set-storage-failed"
+
+    storage_root = setup_storage_root(storage)
+    storage_region = get_storage_region(storage_root)
+    isettings.storage_root = storage_root
+    isettings.storage_region = storage_region
+    isettings._persist()
+    register(isettings, settings.user)
+    logger.info(f"Set storage {storage_root} for instance {isettings.name}")
