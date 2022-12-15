@@ -14,6 +14,9 @@ def set_storage(
     storage: Union[str, Path, CloudPath], instance_name: Optional[str] = None
 ):
     """Set storage."""
+    if settings.instance.owner != settings.user.handle:
+        logger.error("Can only set storage if current user is instance owner.")
+        return "only-owner-can-set-storage"
     settings_file = (
         instance_settings_file(instance_name)
         if instance_name
@@ -31,4 +34,6 @@ def set_storage(
     isettings.storage_region = storage_region
     isettings._persist()
     register(isettings, settings.user)
-    logger.info(f"Set storage {storage_root} for instance {isettings.name}")
+    logger.info(
+        f"Set storage {storage_root} for instance {isettings.owner}/{isettings.name}"
+    )

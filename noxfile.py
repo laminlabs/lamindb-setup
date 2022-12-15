@@ -17,6 +17,8 @@ def build(session):
     session.install(".[dev,test]")
     login_user_1 = "lndb login testuser1@lamin.ai --password cEvcwMJFX4OwbsYVaMt2Os6GxxGgDUlBGILs2RyS"  # noqa
     session.run(*(login_user_1.split(" ")))
+    login_user_2 = "lndb login testuser2@lamin.ai --password goeoNJKE61ygbz1vhaCVynGERaRrlviPBVQsjkhz"  # noqa
+    session.run(*(login_user_2.split(" ")), external=True)
     session.run(
         "pytest",
         "-s",
