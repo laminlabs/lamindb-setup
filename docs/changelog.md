@@ -3,6 +3,7 @@
 <!-- prettier-ignore -->
 Name | PR | Developer | Date | Version
 --- | --- | --- | --- | ---
+🎨 Alleviate inconsistency in `set_storage` | [163](https://github.com/laminlabs/lndb-setup/pull/163) | [falexwolf](https://github.com/falexwolf) | 2022-12-15 |
 🎨 Cache owner | [162](https://github.com/laminlabs/lndb-setup/pull/162) | [falexwolf](https://github.com/falexwolf) | 2022-12-15 |
 ♻️ Refactor set & show | [160](https://github.com/laminlabs/lndb-setup/pull/160) | [falexwolf](https://github.com/falexwolf) | 2022-12-15 | 0.26.1
 🚸 Enable to work with gcloud login | [157](https://github.com/laminlabs/lndb-setup/pull/157) | [falexwolf](https://github.com/falexwolf) | 2022-12-15 | 0.26.0
