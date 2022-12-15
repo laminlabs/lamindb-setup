@@ -1,5 +1,6 @@
 import importlib
 import io
+from pathlib import Path
 from subprocess import run
 
 import sqlalchemy as sa
@@ -43,22 +44,29 @@ def migration_id_is_consistent(schema_package):
     package = importlib.import_module(schema_package)
     output_buffer = io.StringIO()
     # get the id of the latest migration script
-    command.heads(config.make_alembic_config(stdout=output_buffer))
-    output = output_buffer.getvalue()
-    migration_id = output.split(" ")[0]
-    return package._migration == migration_id
+    if Path(f"./{schema_package}/migrations/versions").exists():
+        command.heads(config.make_alembic_config(stdout=output_buffer))
+        output = output_buffer.getvalue()
+        migration_id = output.split(" ")[0]
+    else:  # there is no scripts directory
+        migration_id = ""
+    if package._migration is None:
+        manual_migration_id = ""
+    else:
+        manual_migration_id = package._migration
+    return manual_migration_id == migration_id
 
 
 def model_definitions_match_ddl(schema_package, url=None, dialect_name="sqlite"):
     if url is None and dialect_name == "sqlite":
         url = "sqlite:///testdb/testdb.lndb"
         # need to call init to reload schema
-        init(dbconfig="sqlite", storage="testdb", migrate=False)
+        init(storage="testdb", migrate=False)
     elif url is None and dialect_name == "postgresql":
         # requires postgres has been set up through _nox_tools
         url = "postgresql://postgres:pwd@0.0.0.0:5432/pgtest"
         # need to call init to reload schema
-        init(dbconfig=url, storage="pgtest", migrate=False)
+        init(url=url, storage="pgtest", migrate=False)
     elif url is None:
         raise NotImplementedError(
             "Only sqlite and postgres test databases are implemented."

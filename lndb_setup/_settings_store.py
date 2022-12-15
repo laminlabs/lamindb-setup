@@ -53,8 +53,9 @@ def get_user_settings_file_from_handle(handle: str):
 class InstanceSettingsStore(BaseSettings):
     storage_root: str
     storage_region: str  # should not be Optional, as we use types for instantiating
-    dbconfig_: str  # no private attributes here! instead suffix with _
+    url: str
     schema_: str  # no private attributes here! instead suffix with _
+    name: str
 
     class Config:
         env_file = ".env"

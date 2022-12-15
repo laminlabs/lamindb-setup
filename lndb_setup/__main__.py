@@ -3,7 +3,7 @@ import argparse
 from lamin_logger import logger
 
 from . import _setup_instance, _setup_user
-from ._settings_instance import instance_description as instance
+from ._settings_instance import init_instance_arg_doc as instance
 from ._settings_user import user_description as user
 
 signup_help = "First time sign up."
@@ -35,8 +35,9 @@ aa("--password", type=str, metavar="s", default=None, help=user.password)
 init = subparsers.add_parser("init", help=init_help)
 aa = init.add_argument
 aa("--storage", type=str, metavar="s", help=instance.storage_root)
-aa("--db", type=str, metavar="s", default="sqlite", help=instance._dbconfig)
+aa("--url", type=str, metavar="s", default=None, help=instance.url)
 aa("--schema", type=str, metavar="s", default=None, help=instance._schema)
+aa("--name", type=str, metavar="s", default=None, help=instance.name)
 # load instance
 load = subparsers.add_parser("load", help=load_help)
 aa = load.add_argument
@@ -64,9 +65,7 @@ def main():
         )
     elif args.command == "init":
         result = _setup_instance.init(
-            storage=args.storage,
-            dbconfig=args.db,
-            schema=args.schema,
+            storage=args.storage, url=args.url, schema=args.schema, name=args.name
         )
         return process_result(result)
     elif args.command == "load":

@@ -12,7 +12,7 @@ from ._hub import push_instance_if_not_exists
 from ._migrate import check_migrate
 from ._settings import settings
 from ._settings_instance import InstanceSettings
-from ._settings_instance import instance_description as description
+from ._settings_instance import init_instance_arg_doc as description
 from ._settings_load import load_instance_settings, setup_storage_root
 from ._settings_store import (
     get_current_instance_settings_file,
@@ -123,22 +123,25 @@ Please delete {} or add it to the cloud location.
 
 @doc_args(
     description.storage_root,
-    description._dbconfig,
+    description.url,
     description._schema,
+    description.name,
 )
 def init(
     *,
     storage: Union[str, Path, CloudPath],
-    dbconfig: str = "sqlite",
+    url: Optional[str] = None,
     schema: Optional[str] = None,
     migrate: Optional[bool] = None,
+    name: Optional[str] = None,
 ) -> Optional[str]:
     """Setup LaminDB.
 
     Args:
         storage: {}
-        dbconfig: {}
+        url: {}
         schema: {}
+        name: {}
         migrate: Whether to auto-migrate or not.
     """
     assert settings.user.id  # check user is logged in
@@ -147,8 +150,9 @@ def init(
     isettings = InstanceSettings(
         storage_root=storage_root,
         storage_region=get_storage_region(storage_root),
-        _dbconfig=dbconfig,
+        url=url,
         _schema=validate_schema_arg(schema),
+        name=get_instance_name(storage_root, url, name),
     )
     persist_check_reload_schema(isettings)
     if instance_exists(isettings):
@@ -160,3 +164,16 @@ def init(
     register(isettings, settings.user)
     write_bionty_versions(isettings)
     return None
+
+
+def get_instance_name(
+    storage_root: Union[Path, CloudPath],
+    url: Optional[str] = None,
+    name: Optional[str] = None,
+):
+    if name:
+        return name
+    elif url:
+        return url.split("/")[-1]
+    else:
+        return str(storage_root.stem).lower()
