@@ -28,20 +28,20 @@ def setup_local_test_sqlite_file(
     return tgt_db
 
 
-def setup_local_test_postgres():
+def setup_local_test_postgres(name: str):
     process = run(
-        "docker run --name pgtest -e POSTGRES_PASSWORD=pwd"
-        " -e POSTGRES_DB=pgtest -d -p 5432:5432 postgres",  # noqa
+        "docker run --name {name} -e POSTGRES_PASSWORD=pwd"
+        " -e POSTGRES_DB={name} -d -p 5432:5432 postgres",  # noqa
         shell=True,
     )
     if process.returncode == 0:
         logger.info(
-            "Created Postgres test instance. It runs in docker container 'pgtest'."
+            "Created Postgres test instance. It runs in docker container '{name}'."
         )
     else:
         raise RuntimeError("Failed to set up postgres test instance.")
 
-    return "postgresql://postgres:pwd@0.0.0.0:5432/pgtest"
+    return "postgresql://postgres:pwd@0.0.0.0:5432/{name}"
 
 
 def clone_schema(
@@ -94,7 +94,7 @@ def clone_test(src_settings: Optional[InstanceSettings] = None, depth: int = 10)
     if src_settings._dbconfig == "sqlite":
         tgt_db = setup_local_test_sqlite_file(src_settings)
     else:
-        tgt_db = setup_local_test_postgres()
+        tgt_db = setup_local_test_postgres("pgtest")
 
     assert tgt_db != src_settings.db
 
