@@ -187,7 +187,8 @@ def set_storage(
     isettings = load_instance_settings(settings_file)
 
     if isettings.dialect == "sqlite":
-        raise RuntimeError("Can't set storage for sqlite instance.")
+        logger.error("Can't set storage for sqlite instance.")
+        return "set-storage-failed"
 
     storage_root = setup_storage_root(storage)
     storage_region = get_storage_region(storage_root)
