@@ -6,6 +6,7 @@ from lamin_logger import logger
 
 from ._assets._schemas import get_schema_module_name
 from ._db import insert
+from ._settings import settings
 from ._settings_instance import InstanceSettings, _set_mute_sync_warnings
 from ._settings_user import UserSettings
 
@@ -102,4 +103,4 @@ def setup_schema(isettings: InstanceSettings, usettings: UserSettings):
     isettings._update_cloud_sqlite_file()
     _set_mute_sync_warnings(False)
 
-    logger.info(f"Created instance {isettings.name}.")
+    logger.info(f"Created instance {settings.user.handle}/{isettings.name}.")
