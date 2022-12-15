@@ -1,5 +1,6 @@
 """Clone a database to a test database, with built in fetch-depth."""
 # This starts out with https://stackoverflow.com/questions/70392123
+import time
 from pathlib import Path
 from subprocess import run
 from typing import Optional
@@ -40,7 +41,7 @@ def setup_local_test_postgres():
         )
     else:
         raise RuntimeError("Failed to set up postgres test instance.")
-
+    time.sleep(2)
     return "postgresql://postgres:pwd@0.0.0.0:5432/pgtest"
 
 

@@ -42,6 +42,10 @@ aa("--name", type=str, metavar="s", default=None, help=instance.name)
 load = subparsers.add_parser("load", help=load_help)
 aa = load.add_argument
 aa("instance", type=str, metavar="s", default=None, help=instance.name)
+# set storage
+load = subparsers.add_parser("set", help=load_help)
+aa = load.add_argument
+aa("--storage", type=str, metavar="s", help=instance.storage_root)
 # close instance
 close = subparsers.add_parser("close", help=close_help)
 # parse args
@@ -75,6 +79,8 @@ def main():
         return process_result(result)
     elif args.command == "close":
         return _setup_instance.close()
+    elif args.command == "set":
+        return _setup_instance.set_storage(storage=args.storage)
     else:
         logger.error("Invalid command. Try `lndb -h`.")
         return 1
