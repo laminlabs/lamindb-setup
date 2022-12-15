@@ -195,3 +195,4 @@ def set_storage(
     isettings.storage_region = storage_region
     isettings._persist()
     register(isettings, settings.user)
+    logger.info(f"Set storage {storage_root} for instance {isettings.name}")
