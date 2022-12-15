@@ -198,3 +198,16 @@ def get_user_info_by_id(hub: Client, user_id: str):
     usermeta = response.data[0]
 
     return usermeta
+
+
+def get_user_info_by_handle(hub: Client, handle: str):
+    response = hub.table("usermeta").select("*").eq("handle", handle).execute()
+
+    if len(response.data) == 0:
+        return None
+    else:
+        assert len(response.data) == 1
+
+    usermeta = response.data[0]
+
+    return usermeta
