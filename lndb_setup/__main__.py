@@ -10,6 +10,7 @@ signup_help = "First time sign up."
 login_help = "Log in an already-signed-up user."
 init_help = "Init & config instance with db & storage."
 load_help = "Load instance by name."
+set_storage_help = "Set storage used by an instance."
 close_help = "Close instance."
 
 description_cli = "Configure LaminDB and perform simple actions."
@@ -43,8 +44,8 @@ load = subparsers.add_parser("load", help=load_help)
 aa = load.add_argument
 aa("instance", type=str, metavar="s", default=None, help=instance.name)
 # set storage
-load = subparsers.add_parser("set", help=load_help)
-aa = load.add_argument
+set_storage = subparsers.add_parser("set", help=load_help)
+aa = set_storage.add_argument
 aa("--storage", type=str, metavar="s", help=instance.storage_root)
 # close instance
 close = subparsers.add_parser("close", help=close_help)
