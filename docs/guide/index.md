@@ -8,6 +8,5 @@ setup-instance
 schema-modules
 edge-cases
 migrate
-switch-environment
 set-storage
 ```
