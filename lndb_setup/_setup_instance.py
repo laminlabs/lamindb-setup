@@ -8,7 +8,12 @@ from sqlalchemy import text
 from ._assets import schemas as known_schema_names
 from ._db import insert_if_not_exists, upsert
 from ._docs import doc_args
-from ._hub import get_instance_info, get_user_info_by_id, push_instance_if_not_exists
+from ._hub import (
+    connect_hub_with_auth,
+    get_instance_info,
+    get_user_info_by_id,
+    push_instance_if_not_exists,
+)
 from ._migrate import check_migrate
 from ._settings import settings
 from ._settings_instance import InstanceSettings
@@ -200,7 +205,11 @@ def set_storage(
 
 
 def instance_info():
-    instance_info = get_instance_info()
+    hub = connect_hub_with_auth()
+    instance_info = get_instance_info(
+        hub, settings.instance.name, hub.auth.session().user.id.hex
+    )
     user_info = get_user_info_by_id(instance_info["owner_id"])
     handle = user_info["handle"]
     logger.info(f"Current instance {handle}/{settings.instance.name}.")
+    hub.auth.sign_out()
