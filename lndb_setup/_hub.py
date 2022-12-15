@@ -129,14 +129,8 @@ def push_instance_if_not_exists(storage):
         data = hub.table("storage").insert(storage_fields).execute().data
         assert len(data) == 1
 
-    response = (
-        hub.table("instance")
-        .select("*")
-        .eq("name", settings.instance.name)
-        .eq("owner_id", hub.auth.session().user.id.hex)
-        .execute()
-    )
-    if len(response.data) == 0:
+    instance_info = get_instance_info()
+    if instance_info is None:
         instance_fields = {
             "id": str(uuid.uuid4()),
             "name": settings.instance.name,
@@ -152,8 +146,7 @@ def push_instance_if_not_exists(storage):
         assert len(data) == 1
         instance_id = data[0]["id"]
     else:
-        assert len(response.data) == 1
-        instance_id = response.data[0]["id"]
+        instance_id = instance_info["id"]
 
     response = (
         hub.table("user_instance")
@@ -171,3 +164,26 @@ def push_instance_if_not_exists(storage):
         assert len(data) == 1
 
     hub.auth.sign_out()
+
+
+def get_instance_info():
+    hub = connect_hub_with_auth()
+
+    response = (
+        hub.table("instance")
+        .select("*")
+        .eq("name", settings.instance.name)
+        .eq("owner_id", hub.auth.session().user.id.hex)
+        .execute()
+    )
+
+    if len(response.data) == 0:
+        return None
+    else:
+        assert len(response.data) == 1
+
+    instance = response.data[0]
+
+    hub.auth.sign_out()
+
+    return instance
