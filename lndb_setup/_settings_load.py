@@ -56,8 +56,14 @@ def load_user_settings(user_settings_file: Path):
 
 
 def setup_storage_root(storage: Union[str, Path, CloudPath]) -> Union[Path, CloudPath]:
-    if str(storage).startswith(("s3://", "gs://")):
+    if str(storage).startswith("s3://"):
         storage_root = CloudPath(storage)
+    elif str(storage).startswith("gs://"):
+        from cloudpathlib import GSClient
+        from google.cloud import storage as gstorage
+
+        client = GSClient(storage_client=gstorage.Client())
+        storage_root = CloudPath(storage, client)
     elif str(storage) == "null":
         return None
     else:
