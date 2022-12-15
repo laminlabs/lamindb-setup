@@ -3,6 +3,7 @@
 <!-- prettier-ignore -->
 Name | PR | Developer | Date | Version
 --- | --- | --- | --- | ---
+✨ Add info command to CLI | [159](https://github.com/laminlabs/lndb-setup/pull/159) | [fredericenard](https://github.com/fredericenard) | 2022-12-15 |
 :children_crossing: Improve logging for instance initialization | [158](https://github.com/laminlabs/lndb-setup/pull/158) | [fredericenard](https://github.com/fredericenard) | 2022-12-15 |
 :memo: Create FAQ | [147](https://github.com/laminlabs/lndb-setup/pull/147) | [fredericenard](https://github.com/fredericenard) | 2022-12-15 |
 :sparkles: Enable to switch storage for postgres | [155](https://github.com/laminlabs/lndb-setup/pull/155) | [fredericenard](https://github.com/fredericenard) | 2022-12-15 |
