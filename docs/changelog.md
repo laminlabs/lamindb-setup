@@ -3,6 +3,7 @@
 <!-- prettier-ignore -->
 Name | PR | Developer | Date | Version
 --- | --- | --- | --- | ---
+:children_crossing: Enable to work with gcloud login | [157](https://github.com/laminlabs/lndb-setup/pull/157) | [falexwolf](https://github.com/falexwolf) | 2022-12-15 |
 ✨ Add info command to CLI | [159](https://github.com/laminlabs/lndb-setup/pull/159) | [fredericenard](https://github.com/fredericenard) | 2022-12-15 |
 :children_crossing: Improve logging for instance initialization | [158](https://github.com/laminlabs/lndb-setup/pull/158) | [fredericenard](https://github.com/fredericenard) | 2022-12-15 |
 :memo: Create FAQ | [147](https://github.com/laminlabs/lndb-setup/pull/147) | [fredericenard](https://github.com/fredericenard) | 2022-12-15 |
