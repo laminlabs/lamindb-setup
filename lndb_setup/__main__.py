@@ -45,7 +45,7 @@ aa("instance", type=str, metavar="s", default=None, help=instance.name)
 # set storage
 load = subparsers.add_parser("set", help=load_help)
 aa = load.add_argument
-aa("storage", type=str, metavar="s", help=instance.storage_root)
+aa("--storage", type=str, metavar="s", help=instance.storage_root)
 # close instance
 close = subparsers.add_parser("close", help=close_help)
 # parse args
