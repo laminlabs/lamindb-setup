@@ -3,12 +3,11 @@ from pathlib import Path
 import nox
 
 nox.options.reuse_existing_virtualenvs = True
-nox.options.error_on_external_run = False
 
 
 @nox.session
 def lint(session: nox.Session) -> None:
-    session.install("pre-commit")
+    session.run("pip", "install", "pre-commit", external=True)
     session.run("pre-commit", "install")
     session.run("pre-commit", "run", "--all-files")
 
