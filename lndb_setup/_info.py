@@ -12,5 +12,5 @@ def info():
     )
     user_info = get_user_info_by_id(hub, instance_info["owner_id"])
     handle = user_info["handle"]
-    logger.info(f"Current instance {handle}/{settings.instance.name}.")
+    logger.info(f"Instance: {handle}/{settings.instance.name}")
     hub.auth.sign_out()
