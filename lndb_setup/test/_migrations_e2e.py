@@ -46,7 +46,7 @@ def migrate_clones(
             name = "pgtest"
         # init test instance
         src_settings = InstanceSettings(
-            storage_root=storage, url=url, name=name  # type: ignore  # noqa
+            storage_root=storage, dbconfig=url, name=name  # type: ignore  # noqa
         )
         connection_string = clone_test(src_settings=src_settings)
         if url is None:
