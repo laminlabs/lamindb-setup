@@ -150,6 +150,7 @@ def init(
         url=url,
         _schema=validate_schema_arg(schema),
         name=get_instance_name(storage_root, url, name),
+        owner=settings.user.handle,
     )
     persist_check_reload_schema(isettings)
     if instance_exists(isettings):

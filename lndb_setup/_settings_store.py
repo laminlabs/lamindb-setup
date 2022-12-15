@@ -51,11 +51,12 @@ def user_settings_file_handle(handle: str):
 
 
 class InstanceSettingsStore(BaseSettings):
+    owner: str
+    name: str
     storage_root: str
     storage_region: str  # should not be Optional, as we use types for instantiating
     url: str
     schema_: str  # no private attributes here! instead suffix with _
-    name: str
 
     class Config:
         env_file = ".env"
