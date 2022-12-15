@@ -3,22 +3,22 @@
 <!-- prettier-ignore -->
 Name | PR | Developer | Date | Version
 --- | --- | --- | --- | ---
-:children_crossing: Enable to work with gcloud login | [157](https://github.com/laminlabs/lndb-setup/pull/157) | [falexwolf](https://github.com/falexwolf) | 2022-12-15 |
+🚸 Enable to work with gcloud login | [157](https://github.com/laminlabs/lndb-setup/pull/157) | [falexwolf](https://github.com/falexwolf) | 2022-12-15 | 0.26.0
 ✨ Add info command to CLI | [159](https://github.com/laminlabs/lndb-setup/pull/159) | [fredericenard](https://github.com/fredericenard) | 2022-12-15 |
-:children_crossing: Improve logging for instance initialization | [158](https://github.com/laminlabs/lndb-setup/pull/158) | [fredericenard](https://github.com/fredericenard) | 2022-12-15 |
-:memo: Create FAQ | [147](https://github.com/laminlabs/lndb-setup/pull/147) | [fredericenard](https://github.com/fredericenard) | 2022-12-15 |
-:sparkles: Enable to switch storage for postgres | [155](https://github.com/laminlabs/lndb-setup/pull/155) | [fredericenard](https://github.com/fredericenard) | 2022-12-15 |
+🚸 Improve logging for instance initialization | [158](https://github.com/laminlabs/lndb-setup/pull/158) | [fredericenard](https://github.com/fredericenard) | 2022-12-15 |
+📝 Create FAQ | [147](https://github.com/laminlabs/lndb-setup/pull/147) | [fredericenard](https://github.com/fredericenard) | 2022-12-15 |
+✨ Enable to switch storage for postgres | [155](https://github.com/laminlabs/lndb-setup/pull/155) | [fredericenard](https://github.com/fredericenard) | 2022-12-15 |
 👷 Remove `%time` command to allow tests to fail | [156](https://github.com/laminlabs/lndb-setup/pull/156) | [falexwolf](https://github.com/falexwolf) | 2022-12-15 |
 🐛 Fix migrations e2e testing | [154](https://github.com/laminlabs/lndb-setup/pull/154) | [falexwolf](https://github.com/falexwolf) | 2022-12-14 | 0.25.3
-:adhesive_bandage: Fix sync warnings on instance creation | [152](https://github.com/laminlabs/lndb-setup/pull/152) | [Koncopd](https://github.com/Koncopd) | 2022-12-13 |
-:memo: Improve CLI init docs | [151](https://github.com/laminlabs/lndb-setup/pull/151) | [falexwolf](https://github.com/falexwolf) | 2022-12-13 |
+🩹 Fix sync warnings on instance creation | [152](https://github.com/laminlabs/lndb-setup/pull/152) | [Koncopd](https://github.com/Koncopd) | 2022-12-13 |
+📝 Improve CLI init docs | [151](https://github.com/laminlabs/lndb-setup/pull/151) | [falexwolf](https://github.com/falexwolf) | 2022-12-13 |
 🐛 Fix dbconfig | [150](https://github.com/laminlabs/lndb-setup/pull/150) | [falexwolf](https://github.com/falexwolf) | 2022-12-13 | 0.25.2
 ✅ Add test for postgres | [149](https://github.com/laminlabs/lndb-setup/pull/149) | [falexwolf](https://github.com/falexwolf) | 2022-12-13 |
 🐛 Fix missing return | [148](https://github.com/laminlabs/lndb-setup/pull/148) | [fredericenard](https://github.com/fredericenard) | 2022-12-13 | 0.25.1
 🎨 Infer db file name from instance name | [144](https://github.com/laminlabs/lndb-setup/pull/144) | [fredericenard](https://github.com/fredericenard) | 2022-12-13 |
 🎨 Drop name property | [143](https://github.com/laminlabs/lndb-setup/pull/143) | [fredericenard](https://github.com/fredericenard) | 2022-12-13 |
 ✅ Test google cloud bucket | [145](https://github.com/laminlabs/lndb-setup/pull/145) | [falexwolf](https://github.com/falexwolf) | 2022-12-13 |
-Persist instance name during init | [142](https://github.com/laminlabs/lndb-setup/pull/142) | [fredericenard](https://github.com/fredericenard) | 2022-12-13 |
+🚸 Persist instance name during init | [142](https://github.com/laminlabs/lndb-setup/pull/142) | [fredericenard](https://github.com/fredericenard) | 2022-12-13 |
 ✅ Add a new test for custom instance name | [140](https://github.com/laminlabs/lndb-setup/pull/140) | [fredericenard](https://github.com/fredericenard) | 2022-12-12 |
 🎨 Instance initialization with url argument | [138](https://github.com/laminlabs/lndb-setup/pull/138) | [fredericenard](https://github.com/fredericenard) | 2022-12-12 |
 👷 Check whether scripts dir exists | [137](https://github.com/laminlabs/lndb-setup/pull/137) | [falexwolf](https://github.com/falexwolf) | 2022-12-12 |
