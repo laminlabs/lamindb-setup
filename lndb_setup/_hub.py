@@ -6,8 +6,7 @@ from lamin_logger import logger
 from supabase import create_client
 from supabase.client import Client
 
-from lndb_setup import settings
-
+from ._settings import settings
 from ._settings_load import load_or_create_user_settings
 from ._settings_store import Connector, settings_dir
 
