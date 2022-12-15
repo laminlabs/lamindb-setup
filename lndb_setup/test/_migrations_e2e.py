@@ -34,22 +34,26 @@ def migrate_clones(
     results = []
     for instance in run_instances.iloc[:n_instances]:
         logger.info(f"Testing: {instance}")
-        dbconfig, storage = None, None
+        url, storage, name = None, None, None
         for prefix in ["s3://", "gc://"]:
             if instance.startswith(prefix):
-                dbconfig = "sqlite"
-                storage = CloudPath(prefix + instance.replace(prefix, "").split("/")[0])
-        if dbconfig is None and instance.startswith("postgresql"):
-            dbconfig = instance
+                url = None
+                name = instance.replace(prefix, "").split("/")[0]
+                storage = CloudPath(prefix + name)
+        if instance.startswith("postgresql"):
+            url = instance
             storage = "pgtest"
+            name = "pgtest"
         # init test instance
-        src_settings = InstanceSettings(storage_root=storage, _dbconfig=dbconfig)  # type: ignore  # noqa
+        src_settings = InstanceSettings(
+            storage_root=storage, url=url, name=name  # type: ignore  # noqa
+        )
         connection_string = clone_test(src_settings=src_settings)
-        if dbconfig == "sqlite":
+        if url is None:
             storage_test = setup_local_test_sqlite_file(src_settings, return_dir=True)
-            result = init(dbconfig=dbconfig, storage=storage_test, migrate=True)
+            result = init(storage=storage_test, migrate=True)
         else:
-            result = init(dbconfig=connection_string, storage=storage, migrate=True)
+            result = init(url=connection_string, storage=storage, migrate=True)
         logger.info(result)
         if dialect_name == "postgresql":
             run("docker stop pgtest && docker rm pgtest", shell=True)

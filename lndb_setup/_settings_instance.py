@@ -32,6 +32,15 @@ from ._settings_store import (
 #         cursor.close()
 
 
+_MUTE_SYNC_WARNINGS = False
+
+
+def _set_mute_sync_warnings(value: bool):
+    global _MUTE_SYNC_WARNINGS
+
+    _MUTE_SYNC_WARNINGS = value
+
+
 DIRS = AppDirs("lamindb", "laminlabs")
 
 
@@ -82,12 +91,13 @@ class Storage:
                 local_filepath = Path(filepath)
         except OverwriteNewerLocalError:
             local_filepath = self.cloud_to_local_no_update(filepath)  # type: ignore
-            logger.warning(
-                f"Local file ({local_filepath}) for cloud path ({filepath}) is newer on disk than in cloud.\n"  # noqa
-                "It seems you manually updated the database locally and didn't push changes to the cloud.\n"  # noqa
-                "This can lead to data loss if somebody else modified the cloud file in"
-                " the meantime."
-            )
+            if not _MUTE_SYNC_WARNINGS:
+                logger.warning(
+                    f"Local file ({local_filepath}) for cloud path ({filepath}) is newer on disk than in cloud.\n"  # noqa
+                    "It seems you manually updated the database locally and didn't push changes to the cloud.\n"  # noqa
+                    "This can lead to data loss if somebody else modified the cloud file in"  # noqa
+                    " the meantime."
+                )
         Path(local_filepath).parent.mkdir(
             parents=True, exist_ok=True
         )  # this should not happen here but is currently needed
@@ -108,30 +118,34 @@ class Storage:
         return self.cloud_to_local(self.key_to_filepath(filekey))
 
 
-class instance_description:
-    storage_root = """Storage root. Either local dir, ``s3://bucket_name`` or ``gs://bucket_name``."""  # noqa
-    storage_region = """Cloud storage region for s3 and Google Cloud."""
-    url = """Either sqlite or postgres connection string."""
-    name = """Instance name."""
-    _schema = """Comma-separated string of schema modules. None if not set."""
-
-
 def instance_from_storage(storage):
     return str(storage.stem).lower()
+
+
+# This provides the doc strings for the init function on the
+# CLI and the API
+# It is located here as it *mostly* parallels the InstanceSettings docstrings.
+# Small differences are on purpose, due to the different scope!
+class init_instance_arg_doc:
+    storage_root = """Storage root. Either local dir, ``s3://bucket_name`` or ``gs://bucket_name``."""  # noqa
+    storage_region = """Cloud storage region for s3 and Google Cloud."""
+    url = """Database connection url, do not pass for SQLite."""
+    name = """Instance name."""
+    _schema = """Comma-separated string of schema modules. None if not set."""
 
 
 @dataclass
 class InstanceSettings:
     """Instance settings written during setup."""
 
-    _name: str
+    name: str
     """Instance name."""
     storage_root: Union[CloudPath, Path] = None  # None is just for init, can't be None
     """Storage root. Either local dir, ``s3://bucket_name`` or ``gs://bucket_name``."""
     storage_region: Optional[str] = None
     """Cloud storage region for s3 and Google Cloud."""
     url: Optional[str] = None
-    """Either sqlite or postgres connection string."""
+    """Database connection url, None for SQLite."""
     _schema: str = ""
     """Comma-separated string of schema modules. Empty string if only core schema."""
     _session: Optional[sqm.Session] = None
@@ -164,8 +178,7 @@ class InstanceSettings:
 
         Is a CloudPath if on S3 or GS, otherwise a Path.
         """
-        filename = instance_from_storage(self.storage_root)  # type: ignore
-        return self.storage.key_to_filepath(f"{filename}.lndb")
+        return self.storage.key_to_filepath(f"{self.name}.lndb")
 
     @property
     def _sqlite_file_local(self) -> Path:
@@ -182,16 +195,6 @@ class InstanceSettings:
             cloud_mtime = sqlite_file.stat().st_mtime  # type: ignore
             # this seems to work even if there is an open connection to the cache file
             os.utime(cache_file, times=(cloud_mtime, cloud_mtime))
-
-    @property
-    def name(self) -> str:
-        """Name of LaminDB instance.
-
-        Every LaminDB instance corresponds to exactly one database.
-
-        The name is unique per instance owner.
-        """
-        return self._name
 
     @property
     def db(self) -> str:

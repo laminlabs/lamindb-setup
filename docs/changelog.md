@@ -3,9 +3,19 @@
 <!-- prettier-ignore -->
 Name | PR | Developer | Date | Version
 --- | --- | --- | --- | ---
+👷 Remove `%time` command to allow tests to fail | [156](https://github.com/laminlabs/lndb-setup/pull/156) | [falexwolf](https://github.com/falexwolf) | 2022-12-15 |
+🐛 Fix migrations e2e testing | [154](https://github.com/laminlabs/lndb-setup/pull/154) | [falexwolf](https://github.com/falexwolf) | 2022-12-14 | 0.25.3
+:adhesive_bandage: Fix sync warnings on instance creation | [152](https://github.com/laminlabs/lndb-setup/pull/152) | [Koncopd](https://github.com/Koncopd) | 2022-12-13 |
+:memo: Improve CLI init docs | [151](https://github.com/laminlabs/lndb-setup/pull/151) | [falexwolf](https://github.com/falexwolf) | 2022-12-13 |
+🐛 Fix dbconfig | [150](https://github.com/laminlabs/lndb-setup/pull/150) | [falexwolf](https://github.com/falexwolf) | 2022-12-13 | 0.25.2
+✅ Add test for postgres | [149](https://github.com/laminlabs/lndb-setup/pull/149) | [falexwolf](https://github.com/falexwolf) | 2022-12-13 |
+🐛 Fix missing return | [148](https://github.com/laminlabs/lndb-setup/pull/148) | [fredericenard](https://github.com/fredericenard) | 2022-12-13 | 0.25.1
+🎨 Infer db file name from instance name | [144](https://github.com/laminlabs/lndb-setup/pull/144) | [fredericenard](https://github.com/fredericenard) | 2022-12-13 |
+🎨 Drop name property | [143](https://github.com/laminlabs/lndb-setup/pull/143) | [fredericenard](https://github.com/fredericenard) | 2022-12-13 |
+✅ Test google cloud bucket | [145](https://github.com/laminlabs/lndb-setup/pull/145) | [falexwolf](https://github.com/falexwolf) | 2022-12-13 |
 Persist instance name during init | [142](https://github.com/laminlabs/lndb-setup/pull/142) | [fredericenard](https://github.com/fredericenard) | 2022-12-13 |
-:white_check_mark: Add a new test for custom instance name | [140](https://github.com/laminlabs/lndb-setup/pull/140) | [fredericenard](https://github.com/fredericenard) | 2022-12-12 |
-:art: Instance initialization with url argument | [138](https://github.com/laminlabs/lndb-setup/pull/138) | [fredericenard](https://github.com/fredericenard) | 2022-12-12 |
+✅ Add a new test for custom instance name | [140](https://github.com/laminlabs/lndb-setup/pull/140) | [fredericenard](https://github.com/fredericenard) | 2022-12-12 |
+🎨 Instance initialization with url argument | [138](https://github.com/laminlabs/lndb-setup/pull/138) | [fredericenard](https://github.com/fredericenard) | 2022-12-12 |
 👷 Check whether scripts dir exists | [137](https://github.com/laminlabs/lndb-setup/pull/137) | [falexwolf](https://github.com/falexwolf) | 2022-12-12 |
 👷 Extend nox | [136](https://github.com/laminlabs/lndb-setup/pull/136) | [falexwolf](https://github.com/falexwolf) | 2022-12-12 | 0.25.0
 🐛 Restore synchronization of the sqlite db file | [133](https://github.com/laminlabs/lndb-setup/pull/133) | [Koncopd](https://github.com/Koncopd) | 2022-12-11 |
