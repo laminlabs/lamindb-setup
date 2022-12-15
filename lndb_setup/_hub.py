@@ -4,6 +4,7 @@ from urllib.request import urlretrieve
 
 from lamin_logger import logger
 from supabase import create_client
+from supabase.client import Client
 
 from lndb_setup import settings
 
@@ -129,7 +130,9 @@ def push_instance_if_not_exists(storage):
         data = hub.table("storage").insert(storage_fields).execute().data
         assert len(data) == 1
 
-    instance_info = get_instance_info()
+    instance_info = get_instance_info(
+        hub, settings.instance.name, hub.auth.session().user.id.hex
+    )
     if instance_info is None:
         instance_fields = {
             "id": str(uuid.uuid4()),
@@ -166,14 +169,12 @@ def push_instance_if_not_exists(storage):
     hub.auth.sign_out()
 
 
-def get_instance_info():
-    hub = connect_hub_with_auth()
-
+def get_instance_info(hub: Client, name: str, owner_id: str):
     response = (
         hub.table("instance")
         .select("*")
-        .eq("name", settings.instance.name)
-        .eq("owner_id", hub.auth.session().user.id.hex)
+        .eq("name", name)
+        .eq("owner_id", owner_id)
         .execute()
     )
 
@@ -183,7 +184,5 @@ def get_instance_info():
         assert len(response.data) == 1
 
     instance = response.data[0]
-
-    hub.auth.sign_out()
 
     return instance
