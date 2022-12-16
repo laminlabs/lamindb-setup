@@ -56,17 +56,18 @@ def load_user_settings(user_settings_file: Path):
 
 
 def setup_storage_root(storage: Union[str, Path, CloudPath]) -> Union[Path, CloudPath]:
-    if str(storage).startswith("s3://"):
+    if str(storage).startswith("s3://"):  # AWS
         storage_root = CloudPath(storage)
-    elif str(storage).startswith("gs://"):
+    elif str(storage).startswith("gs://"):  # GCP
+        # the below seems needed as cloudpathlib on its
+        # own fails to initialize when using gcloud auth login
+        # and not JSON credentials
         from cloudpathlib import GSClient
         from google.cloud import storage as gstorage
 
         client = GSClient(storage_client=gstorage.Client())
         storage_root = CloudPath(storage, client)
-    elif str(storage) == "null":
-        return None
-    else:
+    else:  # local path
         storage_root = Path(storage).absolute()
         storage_root.mkdir(parents=True, exist_ok=True)
     return storage_root

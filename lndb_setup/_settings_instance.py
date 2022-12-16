@@ -54,7 +54,8 @@ class Storage:
             return S3Client(local_cache_dir=self.settings.cache_dir)
         elif self.type == "gs":
             # the below seems needed as cloudpathlib on its
-            # own sometimes fails to initialize
+            # own fails to initialize when using gcloud auth login
+            # and not JSON credentials
             from google.cloud import storage as gstorage
 
             return GSClient(
