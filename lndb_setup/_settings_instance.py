@@ -49,6 +49,27 @@ class Storage:
         self.settings = settings
 
     @property
+    def client(self) -> Union[S3Client, GSClient]:
+        if self.type == "s3":
+            return S3Client(local_cache_dir=self.settings.cache_dir)
+        elif self.type == "gs":
+            # the below seems needed as cloudpathlib on its
+            # own sometimes fails to initialize
+            from google.cloud import storage as gstorage
+
+            return GSClient(
+                local_cache_dir=self.settings.cache_dir,
+                storage_client=gstorage.Client(),
+            )
+        elif self.type == "local":
+            raise RuntimeError("You shouldn't need a client for local storage.")
+        else:
+            raise RuntimeError(
+                "Currently, only AWS S3 and Google cloud are supported for cloud"
+                " storage."
+            )
+
+    @property
     def type(self) -> str:
         """AWS S3 vs. Google Cloud vs. local.
 
@@ -67,16 +88,7 @@ class Storage:
     ) -> Union[Path, CloudPath]:
         """Cloud or local filepath from filekey."""
         if self.settings.cloud_storage:
-            if self.type == "s3":
-                client = S3Client(local_cache_dir=self.settings.cache_dir)
-            elif self.type == "gs":
-                client = GSClient(local_cache_dir=self.settings.cache_dir)
-            else:
-                raise RuntimeError(
-                    "Currently, only AWS S3 and Google cloud are supported for cloud"
-                    " storage."
-                )
-            return client.CloudPath(self.settings.storage_root / filekey)
+            return self.client.CloudPath(self.settings.storage_root / filekey)
         else:
             return self.settings.storage_root / filekey
 
@@ -86,7 +98,7 @@ class Storage:
             # the following will auto-update the local cache if the cloud file is newer
             # if both have the same age, it will keep it as is
             if self.settings.cloud_storage:
-                local_filepath = CloudPath(filepath).fspath
+                local_filepath = self.client.CloudPath(filepath).fspath
             else:
                 local_filepath = Path(filepath)
         except OverwriteNewerLocalError:
