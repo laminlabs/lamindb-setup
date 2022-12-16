@@ -2,7 +2,6 @@ import importlib
 from subprocess import run
 from typing import Optional
 
-from cloudpathlib import CloudPath
 from lamin_logger import logger
 from packaging import version
 
@@ -10,6 +9,7 @@ from lndb_setup._assets import instances as test_instances
 from lndb_setup._clone import clone_test, setup_local_test_sqlite_file
 from lndb_setup._settings import settings
 from lndb_setup._settings_instance import InstanceSettings
+from lndb_setup._settings_load import setup_storage_root
 from lndb_setup._setup_instance import init
 
 
@@ -35,19 +35,19 @@ def migrate_clones(
     results = []
     for instance in run_instances.iloc[:n_instances]:
         logger.info(f"Testing: {instance}")
-        url, storage, name = None, None, None
-        for prefix in ["s3://", "gc://"]:
+        url, storage_root, name = None, None, None
+        for prefix in {"s3://", "gc://"}:
             if instance.startswith(prefix):
                 url = None
                 name = instance.replace(prefix, "").split("/")[0]
-                storage = CloudPath(prefix + name)
+                storage_root = setup_storage_root(prefix + name)
         if instance.startswith("postgresql"):
             url = instance
-            storage = "pgtest"
+            storage_root = "pgtest"
             name = "pgtest"
         # init test instance
         src_settings = InstanceSettings(
-            storage_root=storage,
+            storage_root=storage_root,
             url=url,
             name=name,  # type: ignore  # noqa
             owner=settings.user.handle,
@@ -57,7 +57,7 @@ def migrate_clones(
             storage_test = setup_local_test_sqlite_file(src_settings, return_dir=True)
             result = init(storage=storage_test, migrate=True)
         else:
-            result = init(url=connection_string, storage=storage, migrate=True)
+            result = init(url=connection_string, storage=storage_root, migrate=True)
         logger.info(result)
         if dialect_name == "postgresql":
             run("docker stop pgtest && docker rm pgtest", shell=True)
