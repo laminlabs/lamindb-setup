@@ -18,7 +18,7 @@ def set_storage(
         logger.error("Can only set storage if current user is instance owner.")
         return "only-owner-can-set-storage"
     settings_file = (
-        instance_settings_file(instance_name)
+        instance_settings_file(instance_name, settings.instance.owner)
         if instance_name
         else current_instance_settings_file()
     )
