@@ -83,17 +83,18 @@ def persist_check_reload_schema(isettings: InstanceSettings):
 
 
 def load(
-    owner: str, instance_name: str, migrate: Optional[bool] = None
+    instance_name: str, owner: Optional[str] = None, migrate: Optional[bool] = None
 ) -> Optional[str]:
     """Load existing instance.
 
     Returns `None` if succeeds, otherwise a string error code.
 
     Args:
-        owner: Owner handle.
         instance_name: Instance name.
+        owner: Owner handle.
         migrate: Whether to auto-migrate or not.
     """
+    owner = owner if owner else settings.user.handle
     isettings = load_instance_settings(instance_settings_file(instance_name, owner))
     persist_check_reload_schema(isettings)
     logger.info(f"Loading instance: {isettings.name}")
@@ -157,7 +158,7 @@ def init(
     )
     persist_check_reload_schema(isettings)
     if instance_exists(isettings):
-        return load(isettings.owner, isettings.name, migrate=migrate)
+        return load(isettings.name, isettings.owner, migrate=migrate)
     if isettings.cloud_storage and isettings._sqlite_file_local.exists():
         logger.error(ERROR_SQLITE_CACHE.format(settings.instance._sqlite_file_local))
         return None
