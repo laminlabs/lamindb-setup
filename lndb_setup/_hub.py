@@ -129,10 +129,8 @@ def push_instance_if_not_exists(storage):
         data = hub.table("storage").insert(storage_fields).execute().data
         assert len(data) == 1
 
-    instance_info = get_instance_info(
-        hub, settings.instance.name, hub.auth.session().user.id.hex
-    )
-    if instance_info is None:
+    instance = get_instance(hub, settings.instance.name, hub.auth.session().user.id.hex)
+    if instance is None:
         instance_fields = {
             "id": str(uuid.uuid4()),
             "name": settings.instance.name,
@@ -148,7 +146,7 @@ def push_instance_if_not_exists(storage):
         assert len(data) == 1
         instance_id = data[0]["id"]
     else:
-        instance_id = instance_info["id"]
+        instance_id = instance["id"]
 
     response = (
         hub.table("user_instance")
@@ -168,7 +166,7 @@ def push_instance_if_not_exists(storage):
     hub.auth.sign_out()
 
 
-def get_instance_info(hub: Client, name: str, owner_id: str):
+def get_instance(hub: Client, name: str, owner_id: str):
     response = (
         hub.table("instance")
         .select("*")
@@ -187,7 +185,7 @@ def get_instance_info(hub: Client, name: str, owner_id: str):
     return instance
 
 
-def get_user_info_by_id(hub: Client, user_id: str):
+def get_user_by_id(hub: Client, user_id: str):
     response = hub.table("usermeta").select("*").eq("id", user_id).execute()
 
     if len(response.data) == 0:
@@ -200,7 +198,7 @@ def get_user_info_by_id(hub: Client, user_id: str):
     return usermeta
 
 
-def get_user_info_by_handle(hub: Client, handle: str):
+def get_user_by_handle(hub: Client, handle: str):
     response = hub.table("usermeta").select("*").eq("handle", handle).execute()
 
     if len(response.data) == 0:
