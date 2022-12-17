@@ -118,6 +118,8 @@ def sign_in_hub(email, password, handle=None):
 def push_instance_if_not_exists(isettings: InstanceSettings, storage_db_entry):
     hub = connect_hub_with_auth()
 
+    owner = get_user_by_handle(hub, isettings.owner)
+
     response = hub.table("storage").select("*").eq("id", storage_db_entry.id).execute()
     if len(response.data) == 0:
         storage_fields = {
@@ -129,12 +131,12 @@ def push_instance_if_not_exists(isettings: InstanceSettings, storage_db_entry):
         data = hub.table("storage").insert(storage_fields).execute().data
         assert len(data) == 1
 
-    instance = get_instance(hub, isettings.name, hub.auth.session().user.id.hex)
+    instance = get_instance(hub, isettings.name, owner["id"])
     if instance is None:
         instance_fields = {
             "id": str(uuid.uuid4()),
             "name": isettings.name,
-            "owner_id": hub.auth.session().user.id.hex,
+            "owner_id": owner["id"],
             "storage_id": storage_db_entry.id,
             "dbconfig": isettings._dbconfig,
             "cache_dir": str(isettings.cache_dir),
@@ -151,13 +153,13 @@ def push_instance_if_not_exists(isettings: InstanceSettings, storage_db_entry):
     response = (
         hub.table("user_instance")
         .select("*")
-        .eq("user_id", hub.auth.session().user.id.hex)
+        .eq("user_id", owner["id"])
         .eq("instance_id", instance_id)
         .execute()
     )
     if len(response.data) == 0:
         user_instance_fields = {
-            "user_id": hub.auth.session().user.id.hex,
+            "user_id": owner["id"],
             "instance_id": instance_id,
         }
         data = hub.table("user_instance").insert(user_instance_fields).execute().data
