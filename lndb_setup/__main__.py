@@ -44,6 +44,13 @@ aa("--name", type=str, metavar="s", default=None, help=instance.name)
 load = subparsers.add_parser("load", help=load_help)
 aa = load.add_argument
 aa("instance", type=str, metavar="s", default=None, help=instance.name)
+aa(
+    "--owner",
+    type=str,
+    metavar="s",
+    default=None,
+    help="Owner handle, default value is current user.",
+)  # noqa
 # show instance info
 info = subparsers.add_parser("info", help=info_help)
 # set storage
@@ -79,6 +86,7 @@ def main():
     elif args.command == "load":
         result = _setup_instance.load(
             instance_name=args.instance,
+            owner=args.owner,
         )
         return process_result(result)
     elif args.command == "close":

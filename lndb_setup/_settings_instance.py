@@ -283,7 +283,7 @@ class InstanceSettings:
     def _persist(self) -> None:
         assert self.name is not None
         type_hints = get_type_hints(InstanceSettingsStore)
-        filepath = instance_settings_file(self.name)
+        filepath = instance_settings_file(self.name, self.owner)
         # persist under filepath for later reference
         save_settings(self, filepath, type_hints)
         # persist under current file for auto load

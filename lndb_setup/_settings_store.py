@@ -38,8 +38,10 @@ def current_user_settings_file():
     return settings_dir / f"{get_settings_file_name_prefix()}current_user.env"
 
 
-def instance_settings_file(name: str):
-    return settings_dir / f"{get_settings_file_name_prefix()}instance-{name}.env"
+def instance_settings_file(name: str, owner: str):
+    return (
+        settings_dir / f"{get_settings_file_name_prefix()}{owner}-instance-{name}.env"
+    )
 
 
 def user_settings_file_email(email: str):

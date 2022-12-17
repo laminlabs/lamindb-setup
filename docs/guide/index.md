@@ -10,4 +10,5 @@ edge-cases
 migrate
 set-storage
 info
+load
 ```
