@@ -50,10 +50,10 @@ def register(isettings, usettings):
     # (passing user.name from cloud to the upsert as is done in setup_user.py)
     upsert.user(usettings.email, usettings.id, usettings.handle, usettings.name)
 
-    storage = insert_if_not_exists.storage(
+    storage_db_entry = insert_if_not_exists.storage(
         isettings.storage_root, isettings.storage_region
     )
-    push_instance_if_not_exists(storage)
+    push_instance_if_not_exists(isettings, storage_db_entry)
 
 
 def validate_schema_arg(schema: Optional[str] = None) -> str:
