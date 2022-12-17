@@ -3,6 +3,7 @@
 <!-- prettier-ignore -->
 Name | PR | Developer | Date | Version
 --- | --- | --- | --- | ---
+:art: Add owner handle in instance settings file name | [167](https://github.com/laminlabs/lndb-setup/pull/167) | [fredericenard](https://github.com/fredericenard) | 2022-12-17 |
 🐛 Catch all cloudpath & client occurences for gs | [166](https://github.com/laminlabs/lndb-setup/pull/166) | [falexwolf](https://github.com/falexwolf) | 2022-12-16 | 0.26.3
 🎨 Alleviate inconsistency in `set_storage` | [163](https://github.com/laminlabs/lndb-setup/pull/163) | [falexwolf](https://github.com/falexwolf) | 2022-12-15 | 0.26.2
 🎨 Cache owner | [162](https://github.com/laminlabs/lndb-setup/pull/162) | [falexwolf](https://github.com/falexwolf) | 2022-12-15 |
