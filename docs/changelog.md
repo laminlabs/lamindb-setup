@@ -3,6 +3,7 @@
 <!-- prettier-ignore -->
 Name | PR | Developer | Date | Version
 --- | --- | --- | --- | ---
+🐛 Fix CLI `info` and `set` | [169](https://github.com/laminlabs/lndb-setup/pull/169) | [falexwolf](https://github.com/falexwolf) | 2022-12-19 |
 :art: Refactor push instance function | [168](https://github.com/laminlabs/lndb-setup/pull/168) | [fredericenard](https://github.com/fredericenard) | 2022-12-17 |
 :art: Add owner handle in instance settings file name | [167](https://github.com/laminlabs/lndb-setup/pull/167) | [fredericenard](https://github.com/fredericenard) | 2022-12-17 |
 🐛 Catch all cloudpath & client occurences for gs | [166](https://github.com/laminlabs/lndb-setup/pull/166) | [falexwolf](https://github.com/falexwolf) | 2022-12-16 | 0.26.3
