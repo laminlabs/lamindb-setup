@@ -50,9 +50,9 @@ __version__ = "0.26.3"
 import atexit
 from os import name as _os_name
 
-from ._info import info
+from ._info import info  # noqa
 from ._schema import schema  # noqa
-from ._set import set_storage
+from ._set import set_storage  # noqa
 from ._settings import settings  # noqa
 from ._settings_instance import InstanceSettings, Storage  # noqa
 from ._settings_user import UserSettings  # noqa

@@ -2,7 +2,7 @@ import argparse
 
 from lamin_logger import logger
 
-from . import _setup_instance, _setup_user
+from . import _setup_instance, _setup_user, info, set_storage
 from ._settings_instance import init_instance_arg_doc as instance
 from ._settings_user import user_description as user
 
@@ -52,10 +52,10 @@ aa(
     help="Owner handle, default value is current user.",
 )  # noqa
 # show instance info
-info = subparsers.add_parser("info", help=info_help)
+info_parser = subparsers.add_parser("info", help=info_help)
 # set storage
-set_storage = subparsers.add_parser("set", help=set_storage_help)
-aa = set_storage.add_argument
+set_storage_parser = subparsers.add_parser("set", help=set_storage_help)
+aa = set_storage_parser.add_argument
 aa("--storage", type=str, metavar="s", help=instance.storage_root)
 # close instance
 close = subparsers.add_parser("close", help=close_help)
@@ -92,9 +92,9 @@ def main():
     elif args.command == "close":
         return _setup_instance.close()
     elif args.command == "info":
-        return _setup_instance.instance_info()
+        return info()
     elif args.command == "set":
-        return _setup_instance.set_storage(storage=args.storage)
+        return set_storage(storage=args.storage)
     else:
         logger.error("Invalid command. Try `lndb -h`.")
         return 1
