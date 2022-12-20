@@ -158,8 +158,8 @@ def init(
 
     # check if this instance already exists
     hub = connect_hub_with_auth()
-    owner = get_user_by_handle(hub, settings.user.owner)
-    instance = get_instance(hub, _name, owner["id"])
+    user = get_user_by_handle(hub, settings.user.handle)
+    instance = get_instance(hub, _name, user["id"])
     hub.auth.sign_out()
     assert (
         instance is None
