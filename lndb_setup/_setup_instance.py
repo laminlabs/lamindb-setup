@@ -94,7 +94,7 @@ def load(
         owner: Owner handle.
         migrate: Whether to auto-migrate or not.
     """
-    owner = owner if owner else settings.user.handle
+    owner = owner if owner is not None else settings.user.handle
     isettings = load_instance_settings(instance_settings_file(instance_name, owner))
     persist_check_reload_schema(isettings)
     logger.info(f"Loading instance: {isettings.name}")
