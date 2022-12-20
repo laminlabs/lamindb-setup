@@ -8,7 +8,13 @@ from sqlalchemy import text
 from ._assets import schemas as known_schema_names
 from ._db import insert_if_not_exists, upsert
 from ._docs import doc_args
-from ._hub import push_instance_if_not_exists
+from ._hub import (
+    connect_hub_with_auth,
+    get_instance,
+    get_user_by_handle,
+    push_instance_if_not_exists,
+)
+from ._info import info
 from ._migrate import check_migrate
 from ._settings import settings
 from ._settings_instance import InstanceSettings
@@ -148,12 +154,23 @@ def init(
     assert settings.user.id  # check user is logged in
 
     storage_root = setup_storage_root(storage)
+    _name = get_instance_name(storage_root, url, name)
+
+    # check if this instance already exists
+    hub = connect_hub_with_auth()
+    owner = get_user_by_handle(hub, settings.user.owner)
+    instance = get_instance(hub, _name, owner["id"])
+    hub.auth.sign_out()
+    assert (
+        instance is None
+    ), f"{info()} already exists! Please use load command or choose another name."
+
     isettings = InstanceSettings(
         storage_root=storage_root,
         storage_region=get_storage_region(storage_root),
         url=url,
         _schema=validate_schema_arg(schema),
-        name=get_instance_name(storage_root, url, name),
+        name=_name,
         owner=settings.user.handle,
     )
     persist_check_reload_schema(isettings)
