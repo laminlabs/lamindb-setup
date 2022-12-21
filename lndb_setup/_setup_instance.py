@@ -161,9 +161,11 @@ def init(
     user = get_user_by_handle(hub, settings.user.handle)
     instance = get_instance(hub, _name, user["id"])
     hub.auth.sign_out()
-    assert (
-        instance is None
-    ), f"{info()} already exists! Please use load command or choose another name."
+    if instance is None:
+        logger.error(
+            f"{info()} already exists! Please use load command or choose another name."
+        )
+        return "init-failed"
 
     isettings = InstanceSettings(
         storage_root=storage_root,
