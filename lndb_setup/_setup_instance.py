@@ -161,7 +161,7 @@ def init(
     user = get_user_by_handle(hub, settings.user.handle)
     instance = get_instance(hub, _name, user["id"])
     hub.auth.sign_out()
-    if instance is None:
+    if instance is not None:
         logger.error(
             f"{info()} already exists! Please use load command or choose another name."
         )
