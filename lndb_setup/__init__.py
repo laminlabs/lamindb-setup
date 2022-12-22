@@ -1,5 +1,9 @@
 """LaminDB setup.
 
+Import the package::
+
+   import lndb_setup as lndb
+
 User API
 --------
 
