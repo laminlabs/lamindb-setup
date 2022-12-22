@@ -3,7 +3,7 @@
 <!-- prettier-ignore -->
 Name | PR | Developer | Date | Version
 --- | --- | --- | --- | ---
-:art: Remove implicit casting to boolean | [171](https://github.com/laminlabs/lndb-setup/pull/171) | [fredericenard](https://github.com/fredericenard) | 2022-12-20 |
+🎨 Remove implicit casting to boolean | [171](https://github.com/laminlabs/lndb-setup/pull/171) | [fredericenard](https://github.com/fredericenard) | 2022-12-20 | 0.27.0
 🐛 Fix CLI `info` and `set` | [169](https://github.com/laminlabs/lndb-setup/pull/169) | [falexwolf](https://github.com/falexwolf) | 2022-12-19 |
 🎨 Refactor push instance function | [168](https://github.com/laminlabs/lndb-setup/pull/168) | [fredericenard](https://github.com/fredericenard) | 2022-12-17 |
 🎨 Add owner handle in instance settings file name | [167](https://github.com/laminlabs/lndb-setup/pull/167) | [fredericenard](https://github.com/fredericenard) | 2022-12-17 |
