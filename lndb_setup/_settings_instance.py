@@ -268,22 +268,26 @@ class InstanceSettings:
                 # doing semi-manually for easier replacemnet of cloudpathib
                 # in the future
                 sqlite_file = self._sqlite_file
-                # save mtime here assuming locking at the beginning of the session
-                cloud_mtime = sqlite_file.stat().st_mtime  # type: ignore
                 cache_file = self.storage.cloud_to_local_no_update(sqlite_file)
-
+                # checking cloud mtime several times here because of potential changes
+                # during the synchronizization process. Maybe better
+                # to make these checks dependent on lock,
+                # i.e. if locked check cloud mtime only once.
                 if not cache_file.exists():
                     cache_file.parent.mkdir(parents=True, exist_ok=True)
+                    cloud_mtime = sqlite_file.stat().st_mtime  # type: ignore
                     sqlite_file.download_to(cache_file)  # type: ignore
                     os.utime(cache_file, times=(cloud_mtime, cloud_mtime))
-                elif cloud_mtime > cache_file.stat().st_mtime:  # type: ignore  # noqa
+                elif sqlite_file.stat().st_mtime > cache_file.stat().st_mtime:  # type: ignore  # noqa
                     # no need to recreate session
                     # just need to close current connections
                     # in order to replace the sqlite db file
                     # connections seem to be recreated for every transaction
                     # invalidate because we need to close the connections immediately
                     self._session.invalidate()
-
+                    # checking the time again because
+                    # it could be changed in the meantime
+                    cloud_mtime = sqlite_file.stat().st_mtime  # type: ignore
                     sqlite_file.download_to(cache_file)  # type: ignore
                     os.utime(cache_file, times=(cloud_mtime, cloud_mtime))
 
