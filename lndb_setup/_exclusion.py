@@ -1,6 +1,6 @@
 from datetime import datetime, timezone
 from pathlib import Path
-from typing import Union
+from typing import Optional, Union
 
 import fsspec
 from cloudpathlib import CloudPath
@@ -111,7 +111,15 @@ class Locker:
         self._locked = False
 
 
-def setup_locker() -> Locker:
+_locker: Optional[Locker] = None
+
+
+def get_locker() -> Locker:
     from ._settings import settings
 
-    return Locker(settings.user.id, settings.instance.storage_root)
+    global _locker
+
+    if _locker is None:
+        _locker = Locker(settings.user.id, settings.instance.storage_root)
+
+    return _locker

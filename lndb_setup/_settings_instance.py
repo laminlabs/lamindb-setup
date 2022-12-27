@@ -10,7 +10,7 @@ from cloudpathlib import CloudPath, GSClient, S3Client
 from cloudpathlib.exceptions import OverwriteNewerLocalError
 from lamin_logger import logger
 
-from ._exclusion import Locker, setup_locker
+from ._exclusion import Locker, get_locker
 from ._settings_save import save_settings
 from ._settings_store import (
     InstanceSettingsStore,
@@ -251,7 +251,7 @@ class InstanceSettings:
         """Database session."""
         if lock:
             if self._dbconfig == "sqlite" and self._locker is None:
-                self._locker = setup_locker()
+                self._locker = get_locker()
 
             locker = self._locker
             if locker is not None:
