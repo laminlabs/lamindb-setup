@@ -204,7 +204,7 @@ class InstanceSettings:
 
     def _update_cloud_sqlite_file(self) -> None:
         """Unlock; if on cloud storage, update remote file."""
-        if self._dbconfig == "sqlite":
+        if self.dialect == "sqlite":
             if self.cloud_storage:
                 sqlite_file = self._sqlite_file
                 cache_file = self.storage.cloud_to_local_no_update(sqlite_file)
@@ -264,7 +264,7 @@ class InstanceSettings:
         if "LAMIN_SKIP_MIGRATION" not in os.environ:
             if self._session is None:
                 self._session = sqm.Session(self.db_engine(), expire_on_commit=False)
-            elif self.cloud_storage and self._dbconfig == "sqlite":
+            elif self.cloud_storage and self.dialect == "sqlite":
                 # doing semi-manually for easier replacemnet of cloudpathib
                 # in the future
                 sqlite_file = self._sqlite_file
