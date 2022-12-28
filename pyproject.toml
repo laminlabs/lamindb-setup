@@ -24,6 +24,7 @@ dependencies = [
     "pandas",
     "pytest_alembic==0.9.1",  # let's pin this as we use internals
     "fsspec",
+    "universal_pathlib",
     "s3fs",
     "gcsfs",
     "python-dateutil",
