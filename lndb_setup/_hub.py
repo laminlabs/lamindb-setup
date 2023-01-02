@@ -211,3 +211,16 @@ def get_user_by_handle(hub: Client, handle: str):
     usermeta = response.data[0]
 
     return usermeta
+
+
+def get_storage_by_id(hub: Client, id: str):
+    response = hub.table("storage").select("*").eq("id", id).execute()
+
+    if len(response.data) == 0:
+        return None
+    else:
+        assert len(response.data) == 1
+
+    storage = response.data[0]
+
+    return storage
