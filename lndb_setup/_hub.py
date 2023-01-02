@@ -187,6 +187,23 @@ def get_instance(hub: Client, name: str, owner_id: str):
     return instance
 
 
+def get_isettings(instance_name: str, owner_handle: str):
+    hub = connect_hub_with_auth()
+    user = get_user_by_handle(hub, owner_handle)
+    instance = get_instance(hub, instance_name, user["id"])
+    storage = get_storage_by_id(hub, instance["storage_id"])
+    hub.auth.sign_out()
+    isettings = InstanceSettings(
+        storage_root=storage["root"],
+        storage_region=storage["root"],
+        url=storage["db"],
+        _schema="",
+        name=instance["name"],
+        owner=owner_handle,
+    )
+    return isettings
+
+
 def get_user_by_id(hub: Client, user_id: str):
     response = hub.table("usermeta").select("*").eq("id", user_id).execute()
 
