@@ -97,7 +97,7 @@ def load(
     owner = owner if owner is not None else settings.user.handle
     settings_file = instance_settings_file(instance_name, owner)
     if settings_file.exists():
-        isettings = load_instance_settings()
+        isettings = load_instance_settings(settings_file)
     else:
         isettings = get_isettings(instance_name, owner)
     persist_check_reload_schema(isettings)
