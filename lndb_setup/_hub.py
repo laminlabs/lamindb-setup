@@ -186,10 +186,6 @@ def get_instance(hub: Client, name: str, owner_id: str):
 
     instance = response.data[0]
 
-    logger.debug("\n*** Fetched instance (get_instance) ***")
-    for key, value in instance.items():
-        logger.debug(f"{key}: {value}")
-
     return instance
 
 

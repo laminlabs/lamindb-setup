@@ -161,11 +161,6 @@ def init(
         owner=settings.user.handle,
     )
 
-    logger.debug("\n*** Instance settings (init) ***")
-    logger.debug(f"storage_root: {storage_root}")
-    logger.debug(f"url: {url}")
-    logger.debug(f"owner: {settings.user.handle}")
-
     persist_check_reload_schema(isettings)
     if instance_exists(isettings):
         return load(isettings.name, isettings.owner, migrate=migrate)
