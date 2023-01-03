@@ -36,6 +36,7 @@ More instance operations:
    :toctree:
 
    close
+   delete
    info
    set_storage
 
@@ -54,6 +55,7 @@ __version__ = "0.27.0"
 import atexit
 from os import name as _os_name
 
+from ._delete import delete  # noqa
 from ._info import info  # noqa
 from ._schema import schema  # noqa
 from ._set import set_storage  # noqa
