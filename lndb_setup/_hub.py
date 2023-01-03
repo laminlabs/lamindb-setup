@@ -194,7 +194,7 @@ def get_isettings(instance_name: str, owner_handle: str):
     user = get_user_by_handle(hub, owner_handle)
     instance = get_instance(hub, instance_name, user["id"])
     storage = get_storage_by_id(hub, instance["storage_id"])
-    schema_modules = get_instance_schema_modules(storage["db"])
+    schema_modules = get_instance_schema_modules(instance["db"])
     hub.auth.sign_out()
     isettings = InstanceSettings(
         storage_root=storage["root"],
