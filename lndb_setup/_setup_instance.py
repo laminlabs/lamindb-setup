@@ -14,7 +14,6 @@ from ._hub import (
     get_user_by_handle,
     push_instance_if_not_exists,
 )
-from ._info import info
 from ._migrate import check_migrate
 from ._settings import settings
 from ._settings_instance import InstanceSettings
@@ -162,10 +161,7 @@ def init(
     instance = get_instance(hub, _name, user["id"])
     hub.auth.sign_out()
     if instance is not None:
-        logger.error(
-            f"{info()} already exists! Please use load command or choose another name."
-        )
-        return "init-failed"
+        load(_name, settings.user.handle, migrate)
 
     isettings = InstanceSettings(
         storage_root=storage_root,
