@@ -2,9 +2,13 @@ import os
 import uuid
 from urllib.request import urlretrieve
 
+import sqlmodel as sqm
 from lamin_logger import logger
+from sqlalchemy import text
 from supabase import create_client
 from supabase.client import Client
+
+from lndb_setup._setup_instance import validate_schema_arg
 
 from ._settings_instance import InstanceSettings
 from ._settings_load import load_or_create_user_settings
@@ -192,16 +196,34 @@ def get_isettings(instance_name: str, owner_handle: str):
     user = get_user_by_handle(hub, owner_handle)
     instance = get_instance(hub, instance_name, user["id"])
     storage = get_storage_by_id(hub, instance["storage_id"])
+    schema_modules = get_instance_schema_modules(storage["db"])
     hub.auth.sign_out()
     isettings = InstanceSettings(
         storage_root=storage["root"],
         storage_region=storage["root"],
         url=storage["db"],
-        _schema="",
+        _schema=schema_modules,
         name=instance["name"],
         owner=owner_handle,
     )
     return isettings
+
+
+def get_instance_schema_modules(url):
+    with sqm.create_engine(url) as conn:
+        results = conn.execute(
+            text(
+                """
+            SELECT schema_name
+            FROM information_schema.schemata;
+        """
+            )
+        ).all()
+
+    schema_string = ",".join([schema[0] for schema in results])
+    schema_string_validated = validate_schema_arg(schema_string)
+
+    return schema_string_validated
 
 
 def get_user_by_id(hub: Client, user_id: str):
