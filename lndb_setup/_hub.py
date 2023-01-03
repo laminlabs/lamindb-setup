@@ -8,8 +8,6 @@ from sqlalchemy import text
 from supabase import create_client
 from supabase.client import Client
 
-from lndb_setup._setup_instance import validate_schema_arg
-
 from ._settings_instance import InstanceSettings
 from ._settings_load import load_or_create_user_settings
 from ._settings_store import Connector, settings_dir
@@ -210,6 +208,8 @@ def get_isettings(instance_name: str, owner_handle: str):
 
 
 def get_instance_schema_modules(url):
+    from lndb_setup._setup_instance import validate_schema_arg
+
     with sqm.create_engine(url) as conn:
         results = conn.execute(
             text(
