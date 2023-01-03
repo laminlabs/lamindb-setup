@@ -193,7 +193,7 @@ def get_isettings(instance_name: str, owner_handle: str):
     hub = connect_hub_with_auth()
     user = get_user_by_handle(hub, owner_handle)
     instance = get_instance(hub, instance_name, user["id"])
-    if instance["db_config"] == "sqlite":
+    if instance["dbconfig"] == "sqlite":
         hub.auth.sign_out()
         raise RuntimeError("Can't use db of non local sqlite instance.")
     storage = get_storage_by_id(hub, instance["storage_id"])
