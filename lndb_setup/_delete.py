@@ -1,3 +1,5 @@
+import shutil
+
 from lamin_logger import logger
 
 from ._settings_load import load_instance_settings
@@ -9,7 +11,7 @@ def delete(instance_name: str, owner_handle: str, delete_in_hub=True):
     settings_file = instance_settings_file(instance_name, owner_handle)
     isettings = load_instance_settings(settings_file)
 
-    isettings.storage_root.rmdir()
+    shutil.rmtree(isettings.storage_root)
     logger.info("Instance root directory deleted.")
 
     if delete_in_hub:
