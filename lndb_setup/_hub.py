@@ -210,7 +210,7 @@ def get_isettings(instance_name: str, owner_handle: str):
 def get_instance_schema_modules(url):
     from lndb_setup._setup_instance import validate_schema_arg
 
-    with sqm.create_engine(url) as conn:
+    with sqm.create_engine(url).connect() as conn:
         results = conn.execute(
             text(
                 """
