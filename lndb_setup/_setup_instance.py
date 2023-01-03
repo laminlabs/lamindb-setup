@@ -13,8 +13,8 @@ from ._migrate import check_migrate
 from ._settings import settings
 from ._settings_instance import InstanceSettings
 from ._settings_instance import init_instance_arg_doc as description
-from ._settings_load import setup_storage_root
-from ._settings_store import current_instance_settings_file
+from ._settings_load import load_instance_settings, setup_storage_root
+from ._settings_store import current_instance_settings_file, instance_settings_file
 from ._setup_knowledge import load_bionty_versions, write_bionty_versions
 from ._setup_schema import load_schema, setup_schema
 from ._setup_storage import get_storage_region
@@ -95,7 +95,11 @@ def load(
         migrate: Whether to auto-migrate or not.
     """
     owner = owner if owner is not None else settings.user.handle
-    isettings = get_isettings(instance_name, owner)
+    settings_file = instance_settings_file(instance_name, owner)
+    if settings_file.exists():
+        isettings = load_instance_settings()
+    else:
+        isettings = get_isettings(instance_name, owner)
     persist_check_reload_schema(isettings)
     logger.info(f"Loading instance: {isettings.name}")
     message = check_migrate(
