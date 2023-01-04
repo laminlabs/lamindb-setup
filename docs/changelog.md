@@ -3,6 +3,7 @@
 <!-- prettier-ignore -->
 Name | PR | Developer | Date | Version
 --- | --- | --- | --- | ---
+🍱 Add hub schema | [178](https://github.com/laminlabs/lndb-setup/pull/178) | [falexwolf](https://github.com/falexwolf) | 2023-01-04 |
 :sparkles: Enable to specify name when setup a local test postgres | [177](https://github.com/laminlabs/lndb-setup/pull/177) | [fredericenard](https://github.com/fredericenard) | 2023-01-04 |
 ✨ Mutual exclusion for a sqlite db file | [95](https://github.com/laminlabs/lndb-setup/pull/95) | [Koncopd](https://github.com/Koncopd) | 2022-12-27 |
 📝 Move `set_storage` guide to the front | [172](https://github.com/laminlabs/lndb-setup/pull/172) | [falexwolf](https://github.com/falexwolf) | 2022-12-22 |
