@@ -8,6 +8,8 @@
 def get_schema_module_name(schema_name):
     if schema_name == "bfx":
         return "lnbfx.schema"
+    elif schema_name == "hub":
+        return "lnhub_rest.schema"
     else:
         return f"lnschema_{schema_name.replace('-', '_')}"
 
@@ -27,6 +29,7 @@ def get_schema_lookup_name(schema_name):
 # currently, these handles are usually called "name"
 # this is confusing as there are also module names and lookup names
 schema_handles = [
+    "hub",
     "bionty",
     "wetlab",
     "drylab",
