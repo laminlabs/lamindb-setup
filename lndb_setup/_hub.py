@@ -202,7 +202,7 @@ def get_isettings(instance_name: str, owner_handle: str):
     isettings = InstanceSettings(
         storage_root=storage["root"],
         storage_region=storage["root"],
-        url=storage["db"],
+        url=instance["db"],
         _schema=schema_modules,
         name=instance["name"],
         owner=owner_handle,
