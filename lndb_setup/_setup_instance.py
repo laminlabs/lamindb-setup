@@ -118,7 +118,7 @@ def close() -> None:
 
 ERROR_SQLITE_CACHE = """
 Your cached local SQLite file still exists, while your cloud SQLite file was deleted.
-Please delete {} or add it to the cloud location.
+Please add {} back to the cloud location.
 """
 
 
