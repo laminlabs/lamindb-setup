@@ -197,6 +197,9 @@ def get_isettings(instance_name: str, owner_handle: str):
         hub.auth.sign_out()
         raise RuntimeError("Can't use db of non local sqlite instance.")
     storage = get_storage_by_id(hub, instance["storage_id"])
+    if storage["type"] == "local":
+        hub.auth.sign_out()
+        raise RuntimeError("Can't use db of non local sqlite instance.")
     schema_modules = get_instance_schema_modules(instance["db"])
     hub.auth.sign_out()
     isettings = InstanceSettings(
