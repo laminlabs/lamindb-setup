@@ -3,6 +3,7 @@
 <!-- prettier-ignore -->
 Name | PR | Developer | Date | Version
 --- | --- | --- | --- | ---
+📝 Add a clone guide | [179](https://github.com/laminlabs/lndb-setup/pull/179) | [falexwolf](https://github.com/falexwolf) | 2023-01-04 |
 🚸 Less dangerous error message for deleted remote sqlite file | [180](https://github.com/laminlabs/lndb-setup/pull/180) | [falexwolf](https://github.com/falexwolf) | 2023-01-04 |
 🍱 Add hub schema | [178](https://github.com/laminlabs/lndb-setup/pull/178) | [falexwolf](https://github.com/falexwolf) | 2023-01-04 |
 :sparkles: Enable to specify name when setup a local test postgres | [177](https://github.com/laminlabs/lndb-setup/pull/177) | [fredericenard](https://github.com/fredericenard) | 2023-01-04 |
