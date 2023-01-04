@@ -72,7 +72,7 @@ def persist_check_reload_schema(isettings: InstanceSettings):
     # check whether we're switching from sqlite to postgres or vice versa
     # if we do, we need to re-import the schema modules to account for differences
     check = False
-    if instance_exists(isettings):
+    if settings._instance_exists:
         if isettings._dbconfig == "sqlite" and isettings._dbconfig != "sqlite":
             check = True
         if isettings._dbconfig != "sqlite" and isettings._dbconfig == "sqlite":
