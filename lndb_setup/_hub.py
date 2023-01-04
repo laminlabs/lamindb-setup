@@ -224,9 +224,12 @@ def get_instance_schema_modules(url):
         ).all()
 
     schema_string = ",".join([schema[0] for schema in results])
-    schema_string_validated = validate_schema_arg(schema_string)
-
-    return schema_string_validated
+    try:
+        schema_string_validated = validate_schema_arg(schema_string)
+        return schema_string_validated
+    except RuntimeError:
+        logger.info("No schema modules to load.")
+        return ""
 
 
 def get_user_by_id(hub: Client, user_id: str):
