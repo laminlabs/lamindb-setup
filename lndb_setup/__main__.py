@@ -64,7 +64,7 @@ close = subparsers.add_parser("close", help=close_help)
 # migrate
 migr = subparsers.add_parser("migrate", help=migr_help)
 aa = migr.add_argument
-aa("action", choices=["gen"], help="Generate migration.")
+aa("action", choices=["generate"], help="Generate migration.")
 
 # parse args
 args = parser.parse_args()
@@ -105,7 +105,7 @@ def main():
     elif args.command == "migrate":
         from . import migrate
 
-        if args.action == "gen":
+        if args.action == "generate":
             return migrate.generate()
     else:
         logger.error("Invalid command. Try `lndb -h`.")

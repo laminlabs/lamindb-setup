@@ -1,4 +1,7 @@
+import importlib
+from pathlib import Path
 from subprocess import run
+from typing import Optional
 
 from lamin_logger import logger
 
@@ -9,23 +12,31 @@ class migrate:
     """Manage migrations."""
 
     @staticmethod
-    def generate():
+    def generate(version: str = "vX.X.X", schema_root: Optional[Path] = None):
         """Generate migration for current schema module.
 
         Needs to be executed at the root level of the python package that contains
         the schema module.
+
+        Args:
+            version: Version string to label migration with.
+            schema_root: Optional. Root directory of schema module.
         """
-        package_name = get_package_name()
-        if not hasattr(package_name, "schema_id"):
+        package_name = get_package_name(schema_root)
+        package = importlib.import_module(package_name)
+        if not hasattr(package, "_schema_id"):
             package_name = f"{package_name}.schema"
-        schema_id = getattr(package_name, "schema_id")
+            package = importlib.import_module(package_name)
+        schema_id = getattr(package, "_schema_id")
         command = (
             f"alembic --config {package_name}/alembic.ini --name {schema_id} revision"
-            " --autogenerate -m 'vX.X.X'"
+            f" --autogenerate -m '{version}'"
         )
-        process = run(command, shell=True)
+        process = run(command, shell=True, cwd=f"{schema_root}")
 
         if process.returncode == 0:
-            logger.success("Successfully generated migration vX.X.X.")
+            logger.success(f"Successfully generated migration {version}.")
+            return None
         else:
-            logger.error("Automatic migration failed.")
+            logger.error("Generating migration failed.")
+            return "migrate-gen-failed"
