@@ -1,3 +1,5 @@
+"""Check and auto-deploy migrations."""
+
 import importlib
 import os
 from pathlib import Path
