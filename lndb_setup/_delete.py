@@ -20,13 +20,14 @@ def delete(instance_name: str, owner_handle: str, delete_in_hub=True):
 
     settings_file = instance_settings_file(instance_name, owner_handle)
     isettings = load_instance_settings(settings_file)
+    owner = get_user_by_handle(hub, isettings.owner)
 
     # 1. Storage
 
     # Delete default storage if it's a local one
 
     instance_default_storage = get_instance_default_storage(
-        hub, isettings.name, isettings.owner
+        hub, isettings.name, owner["id"]
     )
     if instance_default_storage["type"] == "local":
         if Path(instance_default_storage).exists():
@@ -48,7 +49,6 @@ def delete(instance_name: str, owner_handle: str, delete_in_hub=True):
 
     # 3. Hub
 
-    owner = get_user_by_handle(hub, isettings.owner)
     instance = get_instance(hub, isettings.name, owner["id"])
 
     # Delete all instance metadata
