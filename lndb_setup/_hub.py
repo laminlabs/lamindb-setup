@@ -226,8 +226,7 @@ def get_storage_by_id(hub: Client, id: str):
     return storage
 
 
-def get_instance_default_storage(hub: Client, name: str, owner_handle: str):
-    owner_id = get_user_by_handle(hub, owner_handle)
+def get_instance_default_storage(hub: Client, name: str, owner_id: str):
     instance = get_instance(hub, name, owner_id)
     storage = get_storage_by_id(hub, instance["storage_id"])
     return storage
