@@ -7,7 +7,6 @@ from ._hub import (
     connect_hub_with_auth,
     get_instance,
     get_instance_default_storage,
-    get_instances_related_to_storage_by_id,
     get_user_by_handle,
 )
 from ._settings import settings
@@ -63,13 +62,7 @@ def delete(instance_name: str):
     hub.table("user_instance").delete().eq("instance_id", instance["id"]).execute()
     hub.table("usage").delete().eq("instance_id", instance["id"]).execute()
     hub.table("instance").delete().eq("id", instance["id"]).execute()
-
-    # Delete storage metadata unless it's a shared storage
-    instances = get_instances_related_to_storage_by_id(
-        hub, instance_default_storage["id"]
-    )
-    if instances is None:
-        hub.table("storage").delete().eq("id", instance_default_storage["id"]).execute()
+    hub.table("storage").delete().eq("id", instance_default_storage["id"]).execute()
 
     logger.info("Instance metadata deleted.")
 
