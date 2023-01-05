@@ -189,37 +189,6 @@ def get_instance(hub: Client, name: str, owner_id: str):
     return instance
 
 
-def get_isettings(instance_name: str, owner_handle: str):
-    hub = connect_hub_with_auth()
-    user = get_user_by_handle(hub, owner_handle)
-    instance = get_instance(hub, instance_name, user["id"])
-    if instance["dbconfig"] == "sqlite":
-        hub.auth.sign_out()
-        logger.error(
-            "This instance can't be load from the hub because its using an SQLite db."
-        )
-        return None, "remote-loading-failed"
-    storage = get_storage_by_id(hub, instance["storage_id"])
-    if storage["type"] == "local":
-        hub.auth.sign_out()
-        logger.error(
-            "This instance can't be load from the hub because its using a local"
-            " storage."
-        )
-        return None, "remote-loading-failed"
-    schema_modules = get_instance_schema_modules(instance["db"])
-    hub.auth.sign_out()
-    isettings = InstanceSettings(
-        storage_root=storage["root"],
-        storage_region=storage["root"],
-        url=instance["db"],
-        _schema=schema_modules,
-        name=instance["name"],
-        owner=owner_handle,
-    )
-    return isettings, None
-
-
 def get_instance_schema_modules(url):
     from lndb_setup._setup_instance import validate_schema_arg
 

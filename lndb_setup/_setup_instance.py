@@ -8,7 +8,7 @@ from sqlalchemy import text
 from ._assets import schemas as known_schema_names
 from ._db import insert_if_not_exists, upsert
 from ._docs import doc_args
-from ._hub import get_isettings, push_instance_if_not_exists
+from ._hub import push_instance_if_not_exists
 from ._migrate import check_migrate
 from ._settings import settings
 from ._settings_instance import InstanceSettings
@@ -99,7 +99,7 @@ def load(
     if settings_file.exists():
         isettings = load_instance_settings(settings_file)
     else:
-        isettings, message = get_isettings(instance_name, owner)
+        isettings, message = load_isettings(instance_name, owner)
         if message is not None:
             return message
     persist_check_reload_schema(isettings)
@@ -112,6 +112,45 @@ def load(
     register(isettings, settings.user)
     load_bionty_versions(isettings)
     return message
+
+
+def load_isettings(instance_name: str, owner_handle: str):
+    from ._hub import (
+        connect_hub_with_auth,
+        get_instance,
+        get_instance_schema_modules,
+        get_storage_by_id,
+        get_user_by_handle,
+    )
+
+    hub = connect_hub_with_auth()
+    user = get_user_by_handle(hub, owner_handle)
+    instance = get_instance(hub, instance_name, user["id"])
+    if instance["dbconfig"] == "sqlite":
+        hub.auth.sign_out()
+        logger.error(
+            "This instance can't be load from the hub because its using an SQLite db."
+        )
+        return None, "remote-loading-failed"
+    storage = get_storage_by_id(hub, instance["storage_id"])
+    if storage["type"] == "local":
+        hub.auth.sign_out()
+        logger.error(
+            "This instance can't be load from the hub because its using a local"
+            " storage."
+        )
+        return None, "remote-loading-failed"
+    schema_modules = get_instance_schema_modules(instance["db"])
+    hub.auth.sign_out()
+    isettings = InstanceSettings(
+        storage_root=storage["root"],
+        storage_region=storage["root"],
+        url=instance["db"],
+        _schema=schema_modules,
+        name=instance["name"],
+        owner=owner_handle,
+    )
+    return isettings, None
 
 
 def close() -> None:
