@@ -211,3 +211,34 @@ def get_user_by_handle(hub: Client, handle: str):
     usermeta = response.data[0]
 
     return usermeta
+
+
+def get_storage_by_id(hub: Client, id: str):
+    response = hub.table("storage").select("*").eq("id", id).execute()
+
+    if len(response.data) == 0:
+        return None
+    else:
+        assert len(response.data) == 1
+
+    storage = response.data[0]
+
+    return storage
+
+
+def get_instance_default_storage(hub: Client, name: str, owner_handle: str):
+    owner_id = get_user_by_handle(hub, owner_handle)
+    instance = get_instance(hub, name, owner_id)
+    storage = get_storage_by_id(hub, instance["storage_id"])
+    return storage
+
+
+def get_instances_related_to_storage_by_id(hub: Client, id: str):
+    response = hub.table("instance").select("*").eq("storage_id", id).execute()
+
+    if len(response.data) == 0:
+        return None
+
+    instances = response.data
+
+    return instances
