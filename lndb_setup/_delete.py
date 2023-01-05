@@ -14,7 +14,7 @@ from ._settings_load import load_instance_settings
 from ._settings_store import instance_settings_file
 
 
-def delete(instance_name: str, owner_handle: str, delete_in_hub=True):
+def delete(instance_name: str, owner_handle: str):
     """Delete an instance."""
     hub = connect_hub_with_auth()
 
