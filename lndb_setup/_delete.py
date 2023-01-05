@@ -2,6 +2,7 @@ import shutil
 from pathlib import Path
 
 from lamin_logger import logger
+from supabase.client import Client
 
 from ._hub import (
     connect_hub_with_auth,
@@ -17,7 +18,14 @@ from ._settings_store import instance_settings_file
 def delete(instance_name: str):
     """Delete an instance."""
     hub = connect_hub_with_auth()
+    try:
+        message = delete_helper(hub, instance_name)
+        return message
+    finally:
+        hub.auth.sign_out()
 
+
+def delete_helper(hub: Client, instance_name: str):
     settings_file = instance_settings_file(instance_name, settings.user.handle)
 
     if not settings_file.exists():
@@ -73,5 +81,3 @@ def delete(instance_name: str):
 
     settings_file.unlink()
     logger.info("Instance settings deleted.")
-
-    hub.auth.sign_out()
