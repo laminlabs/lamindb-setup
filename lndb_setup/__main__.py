@@ -2,7 +2,7 @@ import argparse
 
 from lamin_logger import logger
 
-from . import _setup_instance, _setup_user, info, set_storage
+from . import _setup_instance, _setup_user, delete, info, set_storage
 from ._settings_instance import init_instance_arg_doc as instance
 from ._settings_user import user_description as user
 
@@ -14,6 +14,7 @@ set_storage_help = "Set storage used by an instance."
 info_help = "Show current instance information."
 close_help = "Close instance."
 migr_help = "Manage migrations."
+delete_help = "Delete an instance."
 
 description_cli = "Configure LaminDB and perform simple actions."
 parser = argparse.ArgumentParser(
@@ -44,6 +45,17 @@ aa("--name", type=str, metavar="s", default=None, help=instance.name)
 # load instance
 load = subparsers.add_parser("load", help=load_help)
 aa = load.add_argument
+aa("instance", type=str, metavar="s", default=None, help=instance.name)
+aa(
+    "--owner",
+    type=str,
+    metavar="s",
+    default=None,
+    help="Owner handle, default value is current user.",
+)  # noqa
+# delete instance
+delete_parser = subparsers.add_parser("delete", help=delete_help)
+aa = delete_parser.add_argument
 aa("instance", type=str, metavar="s", default=None, help=instance.name)
 aa(
     "--owner",
@@ -98,6 +110,11 @@ def main():
         return process_result(result)
     elif args.command == "close":
         return _setup_instance.close()
+    elif args.command == "delete":
+        return delete(
+            instance_name=args.instance,
+            owner_handle=args.owner,
+        )
     elif args.command == "info":
         return info()
     elif args.command == "set":
