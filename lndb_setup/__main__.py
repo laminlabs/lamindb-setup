@@ -13,6 +13,7 @@ load_help = "Load instance by name."
 set_storage_help = "Set storage used by an instance."
 info_help = "Show current instance information."
 close_help = "Close instance."
+migr_help = "Manage migrations."
 delete_help = "Delete an instance."
 
 description_cli = "Configure LaminDB and perform simple actions."
@@ -71,12 +72,18 @@ aa = set_storage_parser.add_argument
 aa("--storage", type=str, metavar="s", help=instance.storage_root)
 # close instance
 close = subparsers.add_parser("close", help=close_help)
+
+# migrate
+migr = subparsers.add_parser("migrate", help=migr_help)
+aa = migr.add_argument
+aa("action", choices=["generate"], help="Generate migration.")
+
 # parse args
 args = parser.parse_args()
 
 
 def process_result(result):
-    if result in ["migrate-unnecessary", "migrate-success", None]:
+    if result in ["migrate-unnecessary", "migrate-success", "migrate-skipped", None]:
         return None  # is interpreted as success (exit code 0) by shell
     else:
         return result
@@ -112,6 +119,11 @@ def main():
         return info()
     elif args.command == "set":
         return set_storage(storage=args.storage)
+    elif args.command == "migrate":
+        from . import migrate
+
+        if args.action == "generate":
+            return migrate.generate()
     else:
         logger.error("Invalid command. Try `lndb -h`.")
         return 1

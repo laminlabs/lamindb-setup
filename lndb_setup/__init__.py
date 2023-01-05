@@ -40,6 +40,14 @@ More instance operations:
    info
    set_storage
 
+Manage creating and testing migrations (deployment is automatic):
+
+.. autosummary::
+   :toctree:
+
+   migrate
+
+
 Dev API
 -------
 
@@ -51,12 +59,13 @@ Dev API
    Storage
 """
 
-__version__ = "0.27.0"
+__version__ = "0.28.0"
 import atexit
 from os import name as _os_name
 
 from ._delete import delete  # noqa
 from ._info import info  # noqa
+from ._migrations import migrate
 from ._schema import schema  # noqa
 from ._set import set_storage  # noqa
 from ._settings import settings  # noqa

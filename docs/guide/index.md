@@ -11,5 +11,6 @@ edge-cases
 migrate
 info
 load
+clone
 delete
 ```

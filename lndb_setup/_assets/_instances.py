@@ -5,6 +5,7 @@ import pandas as pd
 lamin_site_assets = "s3://lamin-site-assets/lamin-site-assets.lndb"
 bionty_assets = "s3://bionty-assets/bionty-assets.lndb"
 harmonic_test = "s3://ln-harmonic-docking/ln-harmonic-docking.lndb"
+swarm_test = "s3://ln-swarm/ln-swarm.lndb"
 
 # postgres
 lamindata = "postgresql://postgres:lamin-data-admin-0@lamindata.ciwirckhwtkd.eu-central-1.rds.amazonaws.com:5432/lamindata"  # noqa
@@ -18,6 +19,8 @@ _instances = [
     (retro_test, "lnschema_core"),
     (retro_test, "lnschema_bionty"),
     (retro_test, "lnschema_wetlab"),
+    (swarm_test, "lnschema_core"),
+    (swarm_test, "lnschema_bionty"),
     (lamindata, "lnschema_core"),
     (lamindata, "lnschema_bionty"),
     (lamindata, "lnschema_wetlab"),
