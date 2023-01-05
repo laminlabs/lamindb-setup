@@ -99,7 +99,9 @@ def load(
     if settings_file.exists():
         isettings = load_instance_settings(settings_file)
     else:
-        isettings = get_isettings(instance_name, owner)
+        isettings, message = get_isettings(instance_name, owner)
+        if message is not None:
+            return message
     persist_check_reload_schema(isettings)
     logger.info(f"Loading instance: {isettings.name}")
     message = check_migrate(

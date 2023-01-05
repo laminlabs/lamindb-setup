@@ -195,11 +195,18 @@ def get_isettings(instance_name: str, owner_handle: str):
     instance = get_instance(hub, instance_name, user["id"])
     if instance["dbconfig"] == "sqlite":
         hub.auth.sign_out()
-        raise RuntimeError("Can't use db of non local sqlite instance.")
+        logger.error(
+            "This instance can't be load from the hub because its using an SQLite db."
+        )
+        return None, "remote-loading-failed"
     storage = get_storage_by_id(hub, instance["storage_id"])
     if storage["type"] == "local":
         hub.auth.sign_out()
-        raise RuntimeError("Can't use db of non local sqlite instance.")
+        logger.error(
+            "This instance can't be load from the hub because its using a local"
+            " storage."
+        )
+        return None, "remote-loading-failed"
     schema_modules = get_instance_schema_modules(instance["db"])
     hub.auth.sign_out()
     isettings = InstanceSettings(
@@ -210,7 +217,7 @@ def get_isettings(instance_name: str, owner_handle: str):
         name=instance["name"],
         owner=owner_handle,
     )
-    return isettings
+    return isettings, None
 
 
 def get_instance_schema_modules(url):
