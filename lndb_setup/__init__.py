@@ -50,7 +50,7 @@ Dev API
    Storage
 """
 
-__version__ = "0.27.0"
+__version__ = "0.28.0"
 import atexit
 from os import name as _os_name
 
