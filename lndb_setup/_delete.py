@@ -37,8 +37,8 @@ def delete(instance_name: str):
         hub, isettings.name, owner["id"]
     )
     if instance_default_storage["type"] == "local":
-        if Path(instance_default_storage).exists():
-            shutil.rmtree(instance_default_storage)
+        if Path(instance_default_storage["root"]).exists():
+            shutil.rmtree(instance_default_storage["root"])
             logger.info("Instance default storage root deleted.")
     else:
         logger.info(
