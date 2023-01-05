@@ -3,15 +3,15 @@
 <!-- prettier-ignore -->
 Name | PR | Developer | Date | Version
 --- | --- | --- | --- | ---
-🍱 Clean up & complete test instances | [186](https://github.com/laminlabs/lndb-setup/pull/186) | [falexwolf](https://github.com/falexwolf) | 2023-01-05 |
+🍱 Clean up & complete test instances | [186](https://github.com/laminlabs/lndb-setup/pull/186) | [falexwolf](https://github.com/falexwolf) | 2023-01-05 | 0.28.1
 ✨ Output information about current user in `lndb info` | [185](https://github.com/laminlabs/lndb-setup/pull/185) | [falexwolf](https://github.com/falexwolf) | 2023-01-05 |
-:sparkles: Add command for generating migrations | [184](https://github.com/laminlabs/lndb-setup/pull/184) | [falexwolf](https://github.com/falexwolf) | 2023-01-05 |
+✨ Add command for generating migrations | [184](https://github.com/laminlabs/lndb-setup/pull/184) | [falexwolf](https://github.com/falexwolf) | 2023-01-05 |
 📝 Added swarm_test instance | [183](https://github.com/laminlabs/lndb-setup/pull/183) | [sunnyosun](https://github.com/sunnyosun) | 2023-01-05 |
 🐛 Migration skipped return None | [181](https://github.com/laminlabs/lndb-setup/pull/181) | [fredericenard](https://github.com/fredericenard) | 2023-01-05 | 0.28.0
 📝 Add a clone guide | [179](https://github.com/laminlabs/lndb-setup/pull/179) | [falexwolf](https://github.com/falexwolf) | 2023-01-04 |
 🚸 Less dangerous error message for deleted remote sqlite file | [180](https://github.com/laminlabs/lndb-setup/pull/180) | [falexwolf](https://github.com/falexwolf) | 2023-01-04 |
 🍱 Add hub schema | [178](https://github.com/laminlabs/lndb-setup/pull/178) | [falexwolf](https://github.com/falexwolf) | 2023-01-04 |
-:sparkles: Enable to specify name when setup a local test postgres | [177](https://github.com/laminlabs/lndb-setup/pull/177) | [fredericenard](https://github.com/fredericenard) | 2023-01-04 |
+✨ Enable to specify name when setup a local test postgres | [177](https://github.com/laminlabs/lndb-setup/pull/177) | [fredericenard](https://github.com/fredericenard) | 2023-01-04 |
 ✨ Mutual exclusion for a sqlite db file | [95](https://github.com/laminlabs/lndb-setup/pull/95) | [Koncopd](https://github.com/Koncopd) | 2022-12-27 |
 📝 Move `set_storage` guide to the front | [172](https://github.com/laminlabs/lndb-setup/pull/172) | [falexwolf](https://github.com/falexwolf) | 2022-12-22 |
 🎨 Remove implicit casting to boolean | [171](https://github.com/laminlabs/lndb-setup/pull/171) | [fredericenard](https://github.com/fredericenard) | 2022-12-20 | 0.27.0
