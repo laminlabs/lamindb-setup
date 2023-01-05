@@ -20,6 +20,12 @@ def delete(instance_name: str):
     hub = connect_hub_with_auth()
 
     settings_file = instance_settings_file(instance_name, settings.user.handle)
+
+    if not settings_file.exists():
+        # TODO: trying to load settings from the hub
+        logger.error("Cannot find instance settings locally.")
+        return "instance-settings-not-found"
+
     isettings = load_instance_settings(settings_file)
     owner = get_user_by_handle(hub, isettings.owner)
 
