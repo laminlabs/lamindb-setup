@@ -22,7 +22,7 @@ def delete(instance_name: str, owner_handle: str, delete_in_hub=True):
     isettings = load_instance_settings(settings_file)
     owner = get_user_by_handle(hub, isettings.owner)
 
-    # 1. Storage
+    # 1. Delete storage
 
     # Delete default storage if it's a local one
 
@@ -40,14 +40,14 @@ def delete(instance_name: str, owner_handle: str, delete_in_hub=True):
 
     # Other attached storage are not deleted
 
-    # 2. Cache
+    # 2. Delete cache
 
     if isettings.cache_dir:
         if isettings.cache_dir.exists():
             shutil.rmtree(isettings.cache_dir)
             logger.info("Instance cache deleted.")
 
-    # 3. Hub
+    # 3. Delete hub records
 
     instance = get_instance(hub, isettings.name, owner["id"])
 
@@ -71,7 +71,7 @@ def delete(instance_name: str, owner_handle: str, delete_in_hub=True):
     # All tables related to instance data will soon be removed
     # Writing any logic to delete associated records would be useless
 
-    # 4. Settings
+    # 4. Delete settings file
 
     settings_file.unlink()
     logger.info("Instance settings deleted.")
