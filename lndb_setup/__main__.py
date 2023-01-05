@@ -64,7 +64,7 @@ args = parser.parse_args()
 
 
 def process_result(result):
-    if result in ["migrate-unnecessary", "migrate-success", None]:
+    if result in ["migrate-unnecessary", "migrate-success", "migrate-skipped", None]:
         return None  # is interpreted as success (exit code 0) by shell
     else:
         return result
