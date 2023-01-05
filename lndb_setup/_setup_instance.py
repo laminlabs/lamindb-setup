@@ -133,14 +133,14 @@ def load_isettings(instance_name: str, owner_handle: str):
     if instance["dbconfig"] == "sqlite":
         hub.auth.sign_out()
         logger.error(
-            "This instance can't be load from the hub because its using an SQLite db."
+            "This instance can't be load from the hub because it's using an SQLite db."
         )
         return None, "remote-loading-failed"
     storage = get_storage_by_id(hub, instance["storage_id"])
     if storage["type"] == "local":
         hub.auth.sign_out()
         logger.error(
-            "This instance can't be load from the hub because its using a local"
+            "This instance can't be load from the hub because it's using a local"
             " storage."
         )
         return None, "remote-loading-failed"
