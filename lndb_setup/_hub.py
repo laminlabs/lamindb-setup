@@ -228,6 +228,8 @@ def get_storage_by_id(hub: Client, id: str):
 
 def get_instance_default_storage(hub: Client, name: str, owner_id: str):
     instance = get_instance(hub, name, owner_id)
+    if instance is None:
+        return None
     storage = get_storage_by_id(hub, instance["storage_id"])
     return storage
 
