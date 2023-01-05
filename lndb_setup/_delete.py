@@ -10,15 +10,16 @@ from ._hub import (
     get_instances_related_to_storage_by_id,
     get_user_by_handle,
 )
+from ._settings import settings
 from ._settings_load import load_instance_settings
 from ._settings_store import instance_settings_file
 
 
-def delete(instance_name: str, owner_handle: str):
+def delete(instance_name: str):
     """Delete an instance."""
     hub = connect_hub_with_auth()
 
-    settings_file = instance_settings_file(instance_name, owner_handle)
+    settings_file = instance_settings_file(instance_name, settings.user.handle)
     isettings = load_instance_settings(settings_file)
     owner = get_user_by_handle(hub, isettings.owner)
 
