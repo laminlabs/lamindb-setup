@@ -126,6 +126,10 @@ def load_isettings(instance_name: str, owner_handle: str):
     hub = connect_hub_with_auth()
     user = get_user_by_handle(hub, owner_handle)
     instance = get_instance(hub, instance_name, user["id"])
+    if instance is None:
+        hub.auth.sign_out()
+        logger.error("This instance does not exists.")
+        return None, "remote-loading-failed"
     if instance["dbconfig"] == "sqlite":
         hub.auth.sign_out()
         logger.error(
