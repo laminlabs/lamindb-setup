@@ -38,7 +38,7 @@ def delete(instance_name: str):
     )
     if instance_default_storage["type"] == "local":
         if Path(instance_default_storage).exists():
-            shutil.rmtree(isettings.storage_root)
+            shutil.rmtree(instance_default_storage)
             logger.info("Instance default storage root deleted.")
     else:
         logger.info(
