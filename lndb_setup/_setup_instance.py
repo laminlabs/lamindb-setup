@@ -135,7 +135,7 @@ def load_isettings(instance_name: str, owner_handle: str):
         hub.auth.sign_out()
         logger.error(
             "This instance can't be load from the hub because it's using a local"
-            " storage."
+            " default storage."
         )
         return None, "remote-loading-failed"
     schema_modules = get_instance_schema_modules(instance["db"])
