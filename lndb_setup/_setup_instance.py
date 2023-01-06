@@ -151,13 +151,11 @@ def load_isettings(instance_name: str, owner_handle: str):
 
     hub.auth.sign_out()
 
-    url = (
-        instance["sqlite_file"] if instance["dbconfig"] == "sqlite" else instance["db"]
-    )
+    url = None if instance["dbconfig"] == "sqlite" else instance["db"]
 
     isettings = InstanceSettings(
-        storage_root=storage["root"],
-        storage_region=storage["root"],
+        storage_root=setup_storage_root(storage["root"]),
+        storage_region=storage["region"],
         url=url,
         _schema=instance["schema"],
         name=instance["name"],
