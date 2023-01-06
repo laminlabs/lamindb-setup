@@ -130,6 +130,12 @@ def load_isettings(instance_name: str, owner_handle: str):
         hub.auth.sign_out()
         logger.error("This instance does not exists.")
         return None, "remote-loading-failed"
+    if is_local_db(instance["db"]):
+        hub.auth.sign_out()
+        logger.error(
+            "This instance can't be load from the hub because it's using a local db."
+        )
+        return None, "remote-loading-failed"
     storage = get_storage_by_id(hub, instance["storage_id"])
     if storage["type"] == "local":
         hub.auth.sign_out()
@@ -149,6 +155,15 @@ def load_isettings(instance_name: str, owner_handle: str):
         owner=owner_handle,
     )
     return isettings, None
+
+
+def is_local_db(url: str):
+    if "@localhost:" in url:
+        return True
+    if "@0.0.0.0:" in url:
+        return True
+    if "@127.0.0.1" in url:
+        return True
 
 
 def close() -> None:
