@@ -118,7 +118,6 @@ def load_isettings(instance_name: str, owner_handle: str):
     from ._hub import (
         connect_hub_with_auth,
         get_instance,
-        get_instance_schema_modules,
         get_storage_by_id,
         get_user_by_handle,
     )
@@ -146,13 +145,12 @@ def load_isettings(instance_name: str, owner_handle: str):
         return None, "remote-loading-failed"
     if instance["dbconfig"] == "sqlite":
         pass
-    schema_modules = get_instance_schema_modules(instance["db"])
     hub.auth.sign_out()
     isettings = InstanceSettings(
         storage_root=storage["root"],
         storage_region=storage["root"],
         url=instance["db"],
-        _schema=schema_modules,
+        _schema=instance["schema"],
         name=instance["name"],
         owner=owner_handle,
     )
