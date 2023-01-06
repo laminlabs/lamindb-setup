@@ -34,50 +34,57 @@ def delete_helper(hub: Client, instance_name: str):
         return "instance-settings-not-found"
 
     isettings = load_instance_settings(settings_file)
+
     owner = get_user_by_handle(hub, isettings.owner)
-
-    # 1. Delete storage
-
-    # Delete default storage if it's a local one
-
-    instance_default_storage = get_instance_default_storage(
+    instance_metadata = get_instance(hub, isettings.name, owner["id"])
+    instance_default_storage_metadata = get_instance_default_storage(
         hub, isettings.name, owner["id"]
     )
-    if instance_default_storage["type"] == "local":
-        if Path(instance_default_storage["root"]).exists():
-            shutil.rmtree(instance_default_storage["root"])
-            logger.info("Instance default storage root deleted.")
+
+    # 1. Delete default storage or cache
+
+    if instance_default_storage_metadata["type"] == "local":
+        delete_storage(Path(instance_default_storage_metadata["root"]))
     else:
+        delete_cache(isettings.cache_dir)
         logger.info(
             "Instance default storage won't be deleted as it is a cloud storage."
         )
 
-    # Other attached storage are not deleted
+    # 2. Delete metadata
 
-    # 2. Delete cache
+    if instance_metadata:
+        delete_metadata(
+            hub, instance_metadata["id"], instance_default_storage_metadata["id"]
+        )
 
-    if isettings.cache_dir:
-        if isettings.cache_dir.exists():
-            shutil.rmtree(isettings.cache_dir)
+    # 3. Delete settings
+
+    delete_settings(settings_file)
+
+
+def delete_storage(storage_root: Path):
+    if storage_root.exists():
+        shutil.rmtree(storage_root)
+        logger.info("Instance default storage root deleted.")
+
+
+def delete_cache(cache_dir: Path):
+    if cache_dir:
+        if cache_dir.exists():
+            shutil.rmtree(cache_dir)
             logger.info("Instance cache deleted.")
 
-    # 3. Delete hub records
 
-    instance = get_instance(hub, isettings.name, owner["id"])
-
-    # Delete all instance metadata
-
-    hub.table("user_instance").delete().eq("instance_id", instance["id"]).execute()
-    hub.table("usage").delete().eq("instance_id", instance["id"]).execute()
-    hub.table("instance").delete().eq("id", instance["id"]).execute()
-    hub.table("storage").delete().eq("id", instance_default_storage["id"]).execute()
+def delete_metadata(hub: Client, instance_id: str, instance_default_storage_id: str):
+    hub.table("user_instance").delete().eq("instance_id", instance_id).execute()
+    hub.table("usage").delete().eq("instance_id", instance_id).execute()
+    hub.table("instance").delete().eq("id", instance_id).execute()
+    hub.table("storage").delete().eq("id", instance_default_storage_id).execute()
 
     logger.info("Instance metadata deleted.")
 
-    # All tables related to instance data will soon be removed
-    # Writing any logic to delete associated records would be useless
 
-    # 4. Delete settings file
-
+def delete_settings(settings_file: Path):
     settings_file.unlink()
     logger.info("Instance settings deleted.")
