@@ -53,9 +53,10 @@ def delete_helper(hub: Client, instance_name: str):
 
     # 2. Delete metadata
 
-    delete_metadata(
-        hub, instance_metadata["id"], instance_default_storage_metadata["id"]
-    )
+    if instance_metadata:
+        delete_metadata(
+            hub, instance_metadata["id"], instance_default_storage_metadata["id"]
+        )
 
     # 3. Delete settings
 
