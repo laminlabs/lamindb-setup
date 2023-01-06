@@ -12,4 +12,5 @@ migrate
 info
 load
 clone
+delete
 ```

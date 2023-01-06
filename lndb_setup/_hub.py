@@ -250,3 +250,22 @@ def get_storage_by_id(hub: Client, id: str):
     storage = response.data[0]
 
     return storage
+
+
+def get_instance_default_storage(hub: Client, name: str, owner_id: str):
+    instance = get_instance(hub, name, owner_id)
+    if instance is None:
+        return None
+    storage = get_storage_by_id(hub, instance["storage_id"])
+    return storage
+
+
+def get_instances_related_to_storage_by_id(hub: Client, id: str):
+    response = hub.table("instance").select("*").eq("storage_id", id).execute()
+
+    if len(response.data) == 0:
+        return None
+
+    instances = response.data
+
+    return instances
