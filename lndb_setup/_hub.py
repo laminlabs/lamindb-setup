@@ -2,9 +2,7 @@ import os
 import uuid
 from urllib.request import urlretrieve
 
-import sqlmodel as sqm
 from lamin_logger import logger
-from sqlalchemy import text
 from supabase import create_client
 from supabase.client import Client
 
@@ -188,30 +186,6 @@ def get_instance(hub: Client, name: str, owner_id: str):
     instance = response.data[0]
 
     return instance
-
-
-def get_instance_schema_modules(url):
-    from lndb_setup._setup_instance import validate_schema_arg
-
-    # TODO: Add logic to infer schema modules for sqlite
-
-    with sqm.create_engine(url).connect() as conn:
-        results = conn.execute(
-            text(
-                """
-            SELECT schema_name
-            FROM information_schema.schemata;
-        """
-            )
-        ).all()
-
-    schema_string = ",".join([schema[0] for schema in results])
-    try:
-        schema_string_validated = validate_schema_arg(schema_string)
-        return schema_string_validated
-    except RuntimeError:
-        logger.info("No schema modules to load.")
-        return ""
 
 
 def get_user_by_id(hub: Client, user_id: str):
