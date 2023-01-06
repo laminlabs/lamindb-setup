@@ -145,6 +145,7 @@ def push_instance_if_not_exists(isettings: InstanceSettings, storage_db_entry):
             "sqlite_file": str(isettings._sqlite_file),
             "sqlite_file_local": str(isettings._sqlite_file_local),
             "db": isettings.db,
+            "schema": isettings._schema,
         }
         data = hub.table("instance").insert(instance_fields).execute().data
         assert len(data) == 1
