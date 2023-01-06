@@ -192,6 +192,8 @@ def get_instance(hub: Client, name: str, owner_id: str):
 def get_instance_schema_modules(url):
     from lndb_setup._setup_instance import validate_schema_arg
 
+    # TODO: Add logic to infer schema modules for sqlite
+
     with sqm.create_engine(url).connect() as conn:
         results = conn.execute(
             text(

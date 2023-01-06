@@ -144,6 +144,8 @@ def load_isettings(instance_name: str, owner_handle: str):
             " default storage."
         )
         return None, "remote-loading-failed"
+    if instance["dbconfig"] == "sqlite":
+        pass
     schema_modules = get_instance_schema_modules(instance["db"])
     hub.auth.sign_out()
     isettings = InstanceSettings(
