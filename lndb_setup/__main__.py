@@ -57,13 +57,6 @@ aa(
 delete_parser = subparsers.add_parser("delete", help=delete_help)
 aa = delete_parser.add_argument
 aa("instance", type=str, metavar="s", default=None, help=instance.name)
-aa(
-    "--owner",
-    type=str,
-    metavar="s",
-    default=None,
-    help="Owner handle, default value is current user.",
-)  # noqa
 # show instance info
 info_parser = subparsers.add_parser("info", help=info_help)
 # set storage
@@ -111,10 +104,7 @@ def main():
     elif args.command == "close":
         return _setup_instance.close()
     elif args.command == "delete":
-        return delete(
-            instance_name=args.instance,
-            owner_handle=args.owner,
-        )
+        return delete(instance_name=args.instance)
     elif args.command == "info":
         return info()
     elif args.command == "set":
