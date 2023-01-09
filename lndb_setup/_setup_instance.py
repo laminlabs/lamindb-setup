@@ -99,7 +99,7 @@ def load(
     if settings_file.exists():
         isettings = load_instance_settings(settings_file)
     else:
-        isettings, message = load_isettings(instance_name, owner)
+        isettings, message = load_isettings_from_hub(instance_name, owner)
         if message is not None:
             return message
     persist_check_reload_schema(isettings)
@@ -114,7 +114,7 @@ def load(
     return message
 
 
-def load_isettings(instance_name: str, owner_handle: str):
+def load_isettings_from_hub(instance_name: str, owner_handle: str):
     from ._hub import (
         connect_hub_with_auth,
         get_instance,
@@ -124,32 +124,27 @@ def load_isettings(instance_name: str, owner_handle: str):
 
     hub = connect_hub_with_auth()
 
-    user = get_user_by_handle(hub, owner_handle)
-    instance = get_instance(hub, instance_name, user["id"])
-
-    if instance is None:
+    try:
+        user = get_user_by_handle(hub, owner_handle)
+        instance = get_instance(hub, instance_name, user["id"])
+        if instance is None:
+            logger.error("This instance does not exists.")
+            return None, "remote-loading-failed"
+        if is_local_db(instance["db"]):
+            logger.error(
+                "This instance can't be load from the hub because it's using a"
+                " local db."
+            )
+            return None, "remote-loading-failed"
+        storage = get_storage_by_id(hub, instance["storage_id"])
+        if storage["type"] == "local":
+            logger.error(
+                "This instance can't be load from the hub because it's using a local"
+                " default storage."
+            )
+            return None, "remote-loading-failed"
+    finally:
         hub.auth.sign_out()
-        logger.error("This instance does not exists.")
-        return None, "remote-loading-failed"
-
-    if is_local_db(instance["db"]):
-        hub.auth.sign_out()
-        logger.error(
-            "This instance can't be load from the hub because it's using a local db."
-        )
-        return None, "remote-loading-failed"
-
-    storage = get_storage_by_id(hub, instance["storage_id"])
-
-    if storage["type"] == "local":
-        hub.auth.sign_out()
-        logger.error(
-            "This instance can't be load from the hub because it's using a local"
-            " default storage."
-        )
-        return None, "remote-loading-failed"
-
-    hub.auth.sign_out()
 
     url = None if instance["dbconfig"] == "sqlite" else instance["db"]
 
