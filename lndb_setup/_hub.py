@@ -143,6 +143,7 @@ def push_instance_if_not_exists(isettings: InstanceSettings, storage_db_entry):
             "sqlite_file": str(isettings._sqlite_file),
             "sqlite_file_local": str(isettings._sqlite_file_local),
             "db": isettings.db,
+            "schema": isettings._schema,
         }
         data = hub.table("instance").insert(instance_fields).execute().data
         assert len(data) == 1
@@ -211,3 +212,35 @@ def get_user_by_handle(hub: Client, handle: str):
     usermeta = response.data[0]
 
     return usermeta
+
+
+def get_storage_by_id(hub: Client, id: str):
+    response = hub.table("storage").select("*").eq("id", id).execute()
+
+    if len(response.data) == 0:
+        return None
+    else:
+        assert len(response.data) == 1
+
+    storage = response.data[0]
+
+    return storage
+
+
+def get_instance_default_storage(hub: Client, name: str, owner_id: str):
+    instance = get_instance(hub, name, owner_id)
+    if instance is None:
+        return None
+    storage = get_storage_by_id(hub, instance["storage_id"])
+    return storage
+
+
+def get_instances_related_to_storage_by_id(hub: Client, id: str):
+    response = hub.table("instance").select("*").eq("storage_id", id).execute()
+
+    if len(response.data) == 0:
+        return None
+
+    instances = response.data
+
+    return instances

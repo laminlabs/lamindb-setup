@@ -3,9 +3,26 @@
 <!-- prettier-ignore -->
 Name | PR | Developer | Date | Version
 --- | --- | --- | --- | ---
+✨ Load remote instance | [174](https://github.com/laminlabs/lndb-setup/pull/174) | [fredericenard](https://github.com/fredericenard) | 2023-01-09 |
+♻️ Refactor delete function | [191](https://github.com/laminlabs/lndb-setup/pull/191) | [fredericenard](https://github.com/fredericenard) | 2023-01-06 |
+🐛 Add schema field to instance metadata | [189](https://github.com/laminlabs/lndb-setup/pull/189) | [fredericenard](https://github.com/fredericenard) | 2023-01-06 |
+🐛 Make delete command compatible with delete function | [188](https://github.com/laminlabs/lndb-setup/pull/188) | [fredericenard](https://github.com/fredericenard) | 2023-01-06 |
+:sparkles: Command delete for the CLI | [175](https://github.com/laminlabs/lndb-setup/pull/175) | [fredericenard](https://github.com/fredericenard) | 2023-01-05 |
+🍱 Clean up & complete test instances | [186](https://github.com/laminlabs/lndb-setup/pull/186) | [falexwolf](https://github.com/falexwolf) | 2023-01-05 | 0.28.1
+✨ Output information about current user in `lndb info` | [185](https://github.com/laminlabs/lndb-setup/pull/185) | [falexwolf](https://github.com/falexwolf) | 2023-01-05 |
+✨ Add command for generating migrations | [184](https://github.com/laminlabs/lndb-setup/pull/184) | [falexwolf](https://github.com/falexwolf) | 2023-01-05 |
+📝 Added swarm_test instance | [183](https://github.com/laminlabs/lndb-setup/pull/183) | [sunnyosun](https://github.com/sunnyosun) | 2023-01-05 |
+🐛 Migration skipped return None | [181](https://github.com/laminlabs/lndb-setup/pull/181) | [fredericenard](https://github.com/fredericenard) | 2023-01-05 | 0.28.0
+📝 Add a clone guide | [179](https://github.com/laminlabs/lndb-setup/pull/179) | [falexwolf](https://github.com/falexwolf) | 2023-01-04 |
+🚸 Less dangerous error message for deleted remote sqlite file | [180](https://github.com/laminlabs/lndb-setup/pull/180) | [falexwolf](https://github.com/falexwolf) | 2023-01-04 |
+🍱 Add hub schema | [178](https://github.com/laminlabs/lndb-setup/pull/178) | [falexwolf](https://github.com/falexwolf) | 2023-01-04 |
+✨ Enable to specify name when setup a local test postgres | [177](https://github.com/laminlabs/lndb-setup/pull/177) | [fredericenard](https://github.com/fredericenard) | 2023-01-04 |
+✨ Mutual exclusion for a sqlite db file | [95](https://github.com/laminlabs/lndb-setup/pull/95) | [Koncopd](https://github.com/Koncopd) | 2022-12-27 |
+📝 Move `set_storage` guide to the front | [172](https://github.com/laminlabs/lndb-setup/pull/172) | [falexwolf](https://github.com/falexwolf) | 2022-12-22 |
+🎨 Remove implicit casting to boolean | [171](https://github.com/laminlabs/lndb-setup/pull/171) | [fredericenard](https://github.com/fredericenard) | 2022-12-20 | 0.27.0
 🐛 Fix CLI `info` and `set` | [169](https://github.com/laminlabs/lndb-setup/pull/169) | [falexwolf](https://github.com/falexwolf) | 2022-12-19 |
-:art: Refactor push instance function | [168](https://github.com/laminlabs/lndb-setup/pull/168) | [fredericenard](https://github.com/fredericenard) | 2022-12-17 |
-:art: Add owner handle in instance settings file name | [167](https://github.com/laminlabs/lndb-setup/pull/167) | [fredericenard](https://github.com/fredericenard) | 2022-12-17 |
+🎨 Refactor push instance function | [168](https://github.com/laminlabs/lndb-setup/pull/168) | [fredericenard](https://github.com/fredericenard) | 2022-12-17 |
+🎨 Add owner handle in instance settings file name | [167](https://github.com/laminlabs/lndb-setup/pull/167) | [fredericenard](https://github.com/fredericenard) | 2022-12-17 |
 🐛 Catch all cloudpath & client occurences for gs | [166](https://github.com/laminlabs/lndb-setup/pull/166) | [falexwolf](https://github.com/falexwolf) | 2022-12-16 | 0.26.3
 🎨 Alleviate inconsistency in `set_storage` | [163](https://github.com/laminlabs/lndb-setup/pull/163) | [falexwolf](https://github.com/falexwolf) | 2022-12-15 | 0.26.2
 🎨 Cache owner | [162](https://github.com/laminlabs/lndb-setup/pull/162) | [falexwolf](https://github.com/falexwolf) | 2022-12-15 |

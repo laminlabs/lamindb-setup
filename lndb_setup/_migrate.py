@@ -1,3 +1,5 @@
+"""Check and auto-deploy migrations."""
+
 import importlib
 import os
 from pathlib import Path
@@ -22,7 +24,7 @@ def check_migrate(
 ):
     if "LAMIN_SKIP_MIGRATION" in os.environ:
         if os.environ["LAMIN_SKIP_MIGRATION"] == "true":
-            return "migrate-failed"
+            return "migrate-skipped"
 
     status = []
     schema_names = ["core"] + list(isettings.schema)

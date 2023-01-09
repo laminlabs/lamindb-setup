@@ -5,10 +5,12 @@
 
 setup-user
 setup-instance
+set-storage
 schema-modules
 edge-cases
 migrate
-set-storage
 info
 load
+clone
+delete
 ```

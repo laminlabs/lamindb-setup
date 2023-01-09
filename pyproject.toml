@@ -8,7 +8,7 @@ authors = [{name = "Lamin Labs", email = "laminlabs@gmail.com"}]
 readme = "README.md"
 dynamic = ["version", "description"]
 dependencies = [
-    "lnschema_core>=0.21.2",
+    "lnschema_core>=0.23.2",
     "lamin_logger",
     "boto3",
     "cloudpathlib",
@@ -23,6 +23,10 @@ dependencies = [
     "natsort",
     "pandas",
     "pytest_alembic==0.9.1",  # let's pin this as we use internals
+    "fsspec",
+    "s3fs",
+    "gcsfs",
+    "python-dateutil",
 ]
 
 [project.urls]
