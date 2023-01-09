@@ -3,6 +3,7 @@
 <!-- prettier-ignore -->
 Name | PR | Developer | Date | Version
 --- | --- | --- | --- | ---
+🐛 Load settings for delete an instance if settings file cannot be found locally | [192](https://github.com/laminlabs/lndb-setup/pull/192) | [fredericenard](https://github.com/fredericenard) | 2023-01-09 |
 ✨ Load remote instance | [174](https://github.com/laminlabs/lndb-setup/pull/174) | [fredericenard](https://github.com/fredericenard) | 2023-01-09 |
 ♻️ Refactor delete function | [191](https://github.com/laminlabs/lndb-setup/pull/191) | [fredericenard](https://github.com/fredericenard) | 2023-01-06 |
 🐛 Add schema field to instance metadata | [189](https://github.com/laminlabs/lndb-setup/pull/189) | [fredericenard](https://github.com/fredericenard) | 2023-01-06 |
