@@ -8,7 +8,11 @@ from sqlalchemy import text
 from ._assets import schemas as known_schema_names
 from ._db import insert_if_not_exists, upsert
 from ._docs import doc_args
-from ._hub import instance_exists_in_hub, push_instance_if_not_exists
+from ._hub import (
+    is_local_db,
+    is_remote_instance_existing_in_hub,
+    push_instance_if_not_exists,
+)
 from ._migrate import check_migrate
 from ._settings import settings
 from ._settings_instance import InstanceSettings
@@ -160,15 +164,6 @@ def load_isettings_from_hub(instance_name: str, owner_handle: str):
     return isettings, None
 
 
-def is_local_db(url: str):
-    if "@localhost:" in url:
-        return True
-    if "@0.0.0.0:" in url:
-        return True
-    if "@127.0.0.1" in url:
-        return True
-
-
 def close() -> None:
     """Close existing instance.
 
@@ -211,7 +206,7 @@ def init(
     storage_root = setup_storage_root(storage)
     _name = get_instance_name(storage_root, url, name)
 
-    if instance_exists_in_hub(_name, settings.instance.owner):
+    if is_remote_instance_existing_in_hub(_name, settings.instance.owner):
         return load(_name, settings.user.handle, migrate)
 
     isettings = InstanceSettings(

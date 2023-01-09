@@ -246,13 +246,24 @@ def get_instances_related_to_storage_by_id(hub: Client, id: str):
     return instances
 
 
-def instance_exists_in_hub(name: str, owner_handle: str):
+def is_remote_instance_existing_in_hub(name: str, owner_handle: str):
     hub = connect_hub_with_auth()
     try:
         user = get_user_by_handle(hub, owner_handle)
         instance = get_instance(hub, name, user["id"])
+        if instance is not None:
+            storage = get_storage_by_id(hub, instance["storage_id"])
+            if storage["type"] == "local" and is_local_db(instance["db"]):
+                return True
     finally:
         hub.auth.sign_out()
-    if instance is not None:
+    return False
+
+
+def is_local_db(url: str):
+    if "@localhost:" in url:
         return True
-    return
+    if "@0.0.0.0:" in url:
+        return True
+    if "@127.0.0.1" in url:
+        return True
