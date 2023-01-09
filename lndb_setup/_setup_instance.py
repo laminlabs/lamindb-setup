@@ -8,12 +8,7 @@ from sqlalchemy import text
 from ._assets import schemas as known_schema_names
 from ._db import insert_if_not_exists, upsert
 from ._docs import doc_args
-from ._hub import (
-    connect_hub_with_auth,
-    get_instance,
-    get_user_by_handle,
-    push_instance_if_not_exists,
-)
+from ._hub import instance_exists_in_hub, push_instance_if_not_exists
 from ._migrate import check_migrate
 from ._settings import settings
 from ._settings_instance import InstanceSettings
@@ -25,7 +20,7 @@ from ._setup_schema import load_schema, setup_schema
 from ._setup_storage import get_storage_region
 
 
-def instance_exists(isettings: InstanceSettings):
+def is_instance_db_setup(isettings: InstanceSettings):
     if isettings._dbconfig == "sqlite":
         if isettings._sqlite_file.exists():
             return True
@@ -216,13 +211,8 @@ def init(
     storage_root = setup_storage_root(storage)
     _name = get_instance_name(storage_root, url, name)
 
-    # check if this instance already exists
-    hub = connect_hub_with_auth()
-    user = get_user_by_handle(hub, settings.user.handle)
-    instance = get_instance(hub, _name, user["id"])
-    hub.auth.sign_out()
-    if instance is not None:
-        load(_name, settings.user.handle, migrate)
+    if instance_exists_in_hub(_name, settings.instance.owner):
+        return load(_name, settings.user.handle, migrate)
 
     isettings = InstanceSettings(
         storage_root=storage_root,
@@ -234,8 +224,6 @@ def init(
     )
 
     persist_check_reload_schema(isettings)
-    if instance_exists(isettings):
-        return load(isettings.name, isettings.owner, migrate=migrate)
     if isettings.cloud_storage and isettings._sqlite_file_local.exists():
         logger.error(ERROR_SQLITE_CACHE.format(settings.instance._sqlite_file_local))
         return None

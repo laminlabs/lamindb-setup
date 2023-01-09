@@ -244,3 +244,15 @@ def get_instances_related_to_storage_by_id(hub: Client, id: str):
     instances = response.data
 
     return instances
+
+
+def instance_exists_in_hub(name: str, owner_handle: str):
+    hub = connect_hub_with_auth()
+    try:
+        user = get_user_by_handle(hub, owner_handle)
+        instance = get_instance(hub, name, user["id"])
+    finally:
+        hub.auth.sign_out()
+    if instance is not None:
+        return True
+    return
