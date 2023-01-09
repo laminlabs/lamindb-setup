@@ -13,6 +13,7 @@ from ._hub import (
 from ._settings import settings
 from ._settings_load import load_instance_settings
 from ._settings_store import instance_settings_file
+from ._setup_instance import load_isettings_from_hub, persist_check_reload_schema
 
 
 def delete(instance_name: str):
@@ -29,9 +30,13 @@ def delete_helper(hub: Client, instance_name: str):
     settings_file = instance_settings_file(instance_name, settings.user.handle)
 
     if not settings_file.exists():
-        # TODO: trying to load settings from the hub
-        logger.error("Cannot find instance settings locally.")
-        return "instance-settings-not-found"
+        isettings, message = load_isettings_from_hub(
+            instance_name, settings.user.handle
+        )
+        if message is not None:
+            return message
+        persist_check_reload_schema(isettings)
+        settings_file = instance_settings_file(instance_name, settings.user.handle)
 
     isettings = load_instance_settings(settings_file)
 
