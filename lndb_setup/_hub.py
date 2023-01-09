@@ -253,7 +253,7 @@ def is_remote_instance_existing_in_hub(name: str, owner_handle: str):
         instance = get_instance(hub, name, user["id"])
         if instance is not None:
             storage = get_storage_by_id(hub, instance["storage_id"])
-            if storage["type"] == "local" and is_local_db(instance["db"]):
+            if storage["type"] != "local" and not is_local_db(instance["db"]):
                 return True
     finally:
         hub.auth.sign_out()
