@@ -24,7 +24,7 @@ from ._setup_schema import load_schema, setup_schema
 from ._setup_storage import get_storage_region
 
 
-def is_instance_db_setup(isettings: InstanceSettings):
+def is_instance_db_existing_locally(isettings: InstanceSettings):
     if isettings._dbconfig == "sqlite":
         if isettings._sqlite_file.exists():
             return True
@@ -218,6 +218,8 @@ def init(
         owner=settings.user.handle,
     )
 
+    if is_instance_db_existing_locally(isettings):
+        return load(isettings.name, isettings.owner, migrate=migrate)
     persist_check_reload_schema(isettings)
     if isettings.cloud_storage and isettings._sqlite_file_local.exists():
         logger.error(ERROR_SQLITE_CACHE.format(settings.instance._sqlite_file_local))
