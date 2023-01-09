@@ -152,7 +152,7 @@ def load_isettings_from_hub(instance_name: str, owner_handle: str):
         storage_root=setup_storage_root(storage["root"]),
         storage_region=storage["region"],
         url=url,
-        _schema=instance["schema"],
+        _schema=validate_schema_arg(instance["schema"]),
         name=instance["name"],
         owner=owner_handle,
     )
@@ -218,12 +218,12 @@ def init(
         owner=settings.user.handle,
     )
 
-    persist_check_reload_schema(isettings)
     if instance_exists(isettings):
         return load(isettings.name, isettings.owner, migrate=migrate)
     if isettings.cloud_storage and isettings._sqlite_file_local.exists():
         logger.error(ERROR_SQLITE_CACHE.format(settings.instance._sqlite_file_local))
         return None
+    persist_check_reload_schema(isettings)
     setup_schema(isettings, settings.user)
     register(isettings, settings.user)
     write_bionty_versions(isettings)
