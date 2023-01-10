@@ -20,12 +20,9 @@ def load(
         owner: Owner handle (default: current user).
         migrate: Whether to auto-migrate or not.
     """
-    from ._setup_instance import (
-        check_migrate,
-        load_bionty_versions,
-        persist_check_reload_schema,
-        register,
-    )
+    from ._migrate import check_migrate
+    from ._setup_instance import persist_check_reload_schema, register
+    from ._setup_knowledge import load_bionty_versions
 
     owner_handle = owner if owner is not None else settings.user.handle
     isettings, message = load_isettings(instance_name, owner_handle)
