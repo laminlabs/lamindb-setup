@@ -26,6 +26,10 @@ def load(
 
     owner_handle = owner if owner is not None else settings.user.handle
     isettings, message = load_isettings(instance_name, owner_handle)
+
+    if message is not None:
+        return message
+
     persist_check_reload_schema(isettings)
     logger.info(f"Loading instance: {owner}/{isettings.name}")
     message = check_migrate(
