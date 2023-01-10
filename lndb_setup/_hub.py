@@ -51,10 +51,10 @@ def connect_hub_with_auth():
 
 
 def sign_up_hub(email) -> str:
-    from lnschema_core import id
+    from lnschema_core.dev import _id
 
     hub = connect_hub()
-    password = id.secret()  # generate new password
+    password = _id.secret()  # generate new password
     user = hub.auth.sign_up(
         email=email,
         password=password,
