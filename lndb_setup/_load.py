@@ -66,7 +66,7 @@ def load_isettings(instance_name: str, owner_handle: str):
         owner=owner_handle,
     )
 
-    return isettings
+    return isettings, None
 
 
 def get_instance_metadata_required_for_loading(instance_name: str, owner_handle: str):
