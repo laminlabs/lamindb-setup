@@ -91,7 +91,7 @@ def load(
 
     Args:
         instance_name: Instance name.
-        owner: Owner handle.
+        owner: Owner handle (default: current user).
         migrate: Whether to auto-migrate or not.
     """
     owner = owner if owner is not None else settings.user.handle
@@ -103,7 +103,7 @@ def load(
         if message is not None:
             return message
     persist_check_reload_schema(isettings)
-    logger.info(f"Loading instance: {isettings.name}")
+    logger.info(f"Loading instance: {owner}/{isettings.name}")
     message = check_migrate(
         usettings=settings.user, isettings=isettings, migrate_confirmed=migrate
     )
