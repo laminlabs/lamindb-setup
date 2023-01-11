@@ -10,10 +10,9 @@ from ._hub import (
     get_instance_default_storage,
     get_user_by_handle,
 )
+from ._load import load_isettings
 from ._settings import settings
-from ._settings_load import load_instance_settings
 from ._settings_store import instance_settings_file
-from ._setup_instance import load_isettings_from_hub, persist_check_reload_schema
 
 
 def delete(instance_name: str):
@@ -28,28 +27,14 @@ def delete(instance_name: str):
 
 def delete_helper(hub: Client, instance_name: str):
     settings_file = instance_settings_file(instance_name, settings.user.handle)
-
-    if not settings_file.exists():
-        isettings, message = load_isettings_from_hub(
-            instance_name, settings.user.handle
-        )
-        if message is not None:
-            return message
-        persist_check_reload_schema(isettings)
-        settings_file = instance_settings_file(instance_name, settings.user.handle)
-
-    isettings = load_instance_settings(settings_file)
-
-    owner = get_user_by_handle(hub, isettings.owner)
-    instance_metadata = get_instance(hub, isettings.name, owner["id"])
-    instance_default_storage_metadata = get_instance_default_storage(
-        hub, isettings.name, owner["id"]
-    )
+    message, isettings = load_isettings(instance_name, settings.user.handle)
+    if message is not None:
+        return message
 
     # 1. Delete default storage or cache
 
-    if instance_default_storage_metadata["type"] == "local":
-        delete_storage(Path(instance_default_storage_metadata["root"]))
+    if isettings.storage.type == "local":
+        delete_storage(isettings.storage_root)
     else:
         delete_cache(isettings.cache_dir)
         logger.info(
@@ -58,7 +43,12 @@ def delete_helper(hub: Client, instance_name: str):
 
     # 2. Delete metadata
 
-    if instance_metadata:
+    if isettings.is_remote:
+        owner = get_user_by_handle(hub, isettings.owner)
+        instance_metadata = get_instance(hub, isettings.name, owner["id"])
+        instance_default_storage_metadata = get_instance_default_storage(
+            hub, isettings.name, owner["id"]
+        )
         delete_metadata(
             hub, instance_metadata["id"], instance_default_storage_metadata["id"]
         )
