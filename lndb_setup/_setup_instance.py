@@ -122,19 +122,27 @@ def init(
     """
     assert settings.user.id  # check user is logged in
 
+    instance_name = get_instance_name(Path(storage).absolute(), url, name)
+    message = load(instance_name, settings.user.handle, migrate=migrate)
+
+    if message == "instance-does-not-exists":
+        return create_instance(instance_name, storage, url, schema)
+    else:
+        return message
+
+
+def create_instance(instance_name, storage, url, schema):
     storage_root = setup_storage_root(storage)
     isettings = InstanceSettings(
         storage_root=storage_root,
         storage_region=get_storage_region(storage_root),
         url=url,
         _schema=validate_schema_arg(schema),
-        name=get_instance_name(storage_root, url, name),
+        name=instance_name,
         owner=settings.user.handle,
     )
 
     persist_check_reload_schema(isettings)
-    if instance_exists(isettings):
-        return load(isettings.name, isettings.owner, migrate=migrate)
     if isettings.cloud_storage and isettings._sqlite_file_local.exists():
         logger.error(ERROR_SQLITE_CACHE.format(settings.instance._sqlite_file_local))
         return None
