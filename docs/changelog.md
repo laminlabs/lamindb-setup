@@ -3,6 +3,7 @@
 <!-- prettier-ignore -->
 Name | PR | Developer | Date | Version
 --- | --- | --- | --- | ---
+:art: Simplify loading | [204](https://github.com/laminlabs/lndb-setup/pull/204) | [fredericenard](https://github.com/fredericenard) | 2023-01-11 |
 🗃️ Stop tracking non remote instance in hub | [205](https://github.com/laminlabs/lndb-setup/pull/205) | [fredericenard](https://github.com/fredericenard) | 2023-01-11 |
 ⬆️ Upgrade lnschema core | [198](https://github.com/laminlabs/lndb-setup/pull/198) | [fredericenard](https://github.com/fredericenard) | 2023-01-10 | 0.29.0
 ✅ Ensure each deleted instance name are specific to a CI run | [200](https://github.com/laminlabs/lndb-setup/pull/200) | [fredericenard](https://github.com/fredericenard) | 2023-01-10 |
