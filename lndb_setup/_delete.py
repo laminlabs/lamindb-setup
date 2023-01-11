@@ -41,16 +41,10 @@ def delete_helper(hub: Client, instance_name: str):
 
     isettings = load_instance_settings(settings_file)
 
-    owner = get_user_by_handle(hub, isettings.owner)
-    instance_metadata = get_instance(hub, isettings.name, owner["id"])
-    instance_default_storage_metadata = get_instance_default_storage(
-        hub, isettings.name, owner["id"]
-    )
-
     # 1. Delete default storage or cache
 
-    if instance_default_storage_metadata["type"] == "local":
-        delete_storage(Path(instance_default_storage_metadata["root"]))
+    if isettings.storage.type == "local":
+        delete_storage(isettings.storage_root)
     else:
         delete_cache(isettings.cache_dir)
         logger.info(
@@ -59,7 +53,12 @@ def delete_helper(hub: Client, instance_name: str):
 
     # 2. Delete metadata
 
-    if instance_metadata:
+    if isettings.is_remote:
+        owner = get_user_by_handle(hub, isettings.owner)
+        instance_metadata = get_instance(hub, isettings.name, owner["id"])
+        instance_default_storage_metadata = get_instance_default_storage(
+            hub, isettings.name, owner["id"]
+        )
         delete_metadata(
             hub, instance_metadata["id"], instance_default_storage_metadata["id"]
         )

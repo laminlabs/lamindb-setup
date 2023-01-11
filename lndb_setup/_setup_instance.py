@@ -44,7 +44,7 @@ def instance_exists(isettings: InstanceSettings):
             return results[0]
 
 
-def register(isettings, usettings):
+def register(isettings: InstanceSettings, usettings):
     """Register user & storage in DB. Register instance in hub."""
     # we should also think about updating the user name here at some point!
     # (passing user.name from cloud to the upsert as is done in setup_user.py)
@@ -53,7 +53,8 @@ def register(isettings, usettings):
     storage_db_entry = insert_if_not_exists.storage(
         isettings.storage_root, isettings.storage_region
     )
-    push_instance_if_not_exists(isettings, storage_db_entry)
+    if isettings.is_remote:
+        push_instance_if_not_exists(isettings, storage_db_entry)
 
 
 def validate_schema_arg(schema: Optional[str] = None) -> str:
