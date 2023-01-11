@@ -64,7 +64,7 @@ def load_isettings(
             return message, None
 
     else:
-        if isettings.storage.type == "local":
+        if not isettings.is_remote:
             logger.info("Use settings from local file")
             return None, isettings
         else:
