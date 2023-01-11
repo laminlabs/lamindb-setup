@@ -8,7 +8,10 @@ from ._settings_store import instance_settings_file
 
 
 def load(
-    instance_name: str, owner: Optional[str] = None, migrate: Optional[bool] = None
+    instance_name: str,
+    owner: Optional[str] = None,
+    migrate: Optional[bool] = None,
+    _log_error_message: bool = True,
 ) -> Optional[str]:
     """Load existing instance.
 
@@ -25,7 +28,7 @@ def load(
 
     owner_handle = owner if owner is not None else settings.user.handle
 
-    message, isettings = load_isettings(instance_name, owner_handle)
+    message, isettings = load_isettings(instance_name, owner_handle, _log_error_message)
     if message is not None:
         return message
 
