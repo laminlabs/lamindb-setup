@@ -30,7 +30,7 @@ def load(
         return message
 
     persist_check_reload_schema(isettings)
-    logger.info(f"Loading instance: {owner}/{isettings.name}")
+    logger.info(f"Loading instance: {owner_handle}/{isettings.name}")
     message = check_migrate(
         usettings=settings.user, isettings=isettings, migrate_confirmed=migrate
     )
