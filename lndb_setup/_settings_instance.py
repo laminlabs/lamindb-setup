@@ -303,6 +303,15 @@ class InstanceSettings:
         """Low-level access to storage location."""
         return Storage(self)
 
+    @property
+    def is_remote(self) -> bool:
+        """Boolean indicating if an instance have no local component."""
+        if self.storage.type == "local":
+            return False
+        if self.url is not None and is_local_db(self.url):
+            return False
+        return True
+
     def _persist(self) -> None:
         assert self.name is not None
         type_hints = get_type_hints(InstanceSettingsStore)
@@ -316,3 +325,13 @@ class InstanceSettings:
         from ._settings import settings
 
         settings._instance_settings = self
+
+
+def is_local_db(url: str):
+    if "@localhost:" in url:
+        return True
+    if "@0.0.0.0:" in url:
+        return True
+    if "@127.0.0.1" in url:
+        return True
+    return False
