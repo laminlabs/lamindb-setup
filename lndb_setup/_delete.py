@@ -10,11 +10,9 @@ from ._hub import (
     get_instance_default_storage,
     get_user_by_handle,
 )
-from ._load import load_isettings_from_hub
+from ._load import load_isettings
 from ._settings import settings
-from ._settings_load import load_instance_settings
 from ._settings_store import instance_settings_file
-from ._setup_instance import persist_check_reload_schema
 
 
 def delete(instance_name: str):
@@ -29,17 +27,11 @@ def delete(instance_name: str):
 
 def delete_helper(hub: Client, instance_name: str):
     settings_file = instance_settings_file(instance_name, settings.user.handle)
-
-    if not settings_file.exists():
-        message, isettings = load_isettings_from_hub(
-            instance_name, settings.user.handle
-        )
-        if message is not None:
-            return message
-        persist_check_reload_schema(isettings)
-        settings_file = instance_settings_file(instance_name, settings.user.handle)
-
-    isettings = load_instance_settings(settings_file)
+    message, isettings = load_isettings(
+        instance_name, settings.user.handle, log_error_message=False
+    )
+    if message is not None:
+        return message
 
     # 1. Delete default storage or cache
 
