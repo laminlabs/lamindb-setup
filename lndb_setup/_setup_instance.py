@@ -9,13 +9,13 @@ from ._assets import schemas as known_schema_names
 from ._db import insert_if_not_exists, upsert
 from ._docs import doc_args
 from ._hub import push_instance_if_not_exists
-from ._migrate import check_migrate
+from ._load import load
 from ._settings import settings
 from ._settings_instance import InstanceSettings
 from ._settings_instance import init_instance_arg_doc as description
-from ._settings_load import load_instance_settings, setup_storage_root
-from ._settings_store import current_instance_settings_file, instance_settings_file
-from ._setup_knowledge import load_bionty_versions, write_bionty_versions
+from ._settings_load import setup_storage_root
+from ._settings_store import current_instance_settings_file
+from ._setup_knowledge import write_bionty_versions
 from ._setup_schema import load_schema, setup_schema
 from ._setup_storage import get_storage_region
 
@@ -80,93 +80,6 @@ def persist_check_reload_schema(isettings: InstanceSettings):
     isettings._persist()
     if check:
         load_schema(isettings, reload=True)
-
-
-def load(
-    instance_name: str, owner: Optional[str] = None, migrate: Optional[bool] = None
-) -> Optional[str]:
-    """Load existing instance.
-
-    Returns `None` if succeeds, otherwise a string error code.
-
-    Args:
-        instance_name: Instance name.
-        owner: Owner handle (default: current user).
-        migrate: Whether to auto-migrate or not.
-    """
-    owner = owner if owner is not None else settings.user.handle
-    settings_file = instance_settings_file(instance_name, owner)
-    if settings_file.exists():
-        isettings = load_instance_settings(settings_file)
-    else:
-        isettings, message = load_isettings_from_hub(instance_name, owner)
-        if message is not None:
-            return message
-    persist_check_reload_schema(isettings)
-    logger.info(f"Loading instance: {owner}/{isettings.name}")
-    message = check_migrate(
-        usettings=settings.user, isettings=isettings, migrate_confirmed=migrate
-    )
-    if message == "migrate-failed":
-        return message
-    register(isettings, settings.user)
-    load_bionty_versions(isettings)
-    return message
-
-
-def load_isettings_from_hub(instance_name: str, owner_handle: str):
-    from ._hub import (
-        connect_hub_with_auth,
-        get_instance,
-        get_storage_by_id,
-        get_user_by_handle,
-    )
-
-    hub = connect_hub_with_auth()
-
-    try:
-        user = get_user_by_handle(hub, owner_handle)
-        instance = get_instance(hub, instance_name, user["id"])
-        if instance is None:
-            logger.error("This instance does not exists.")
-            return None, "remote-loading-failed"
-        if is_local_db(instance["db"]):
-            logger.error(
-                "This instance can't be load from the hub because it's using a"
-                " local db."
-            )
-            return None, "remote-loading-failed"
-        storage = get_storage_by_id(hub, instance["storage_id"])
-        if storage["type"] == "local":
-            logger.error(
-                "This instance can't be load from the hub because it's using a local"
-                " default storage."
-            )
-            return None, "remote-loading-failed"
-    finally:
-        hub.auth.sign_out()
-
-    url = None if instance["dbconfig"] == "sqlite" else instance["db"]
-
-    isettings = InstanceSettings(
-        storage_root=setup_storage_root(storage["root"]),
-        storage_region=storage["region"],
-        url=url,
-        _schema=instance["schema"],
-        name=instance["name"],
-        owner=owner_handle,
-    )
-
-    return isettings, None
-
-
-def is_local_db(url: str):
-    if "@localhost:" in url:
-        return True
-    if "@0.0.0.0:" in url:
-        return True
-    if "@127.0.0.1" in url:
-        return True
 
 
 def close() -> None:
