@@ -41,7 +41,9 @@ def load(
     return message
 
 
-def load_isettings(instance_name: str, owner_handle: str):
+def load_isettings(
+    instance_name: str, owner_handle: str, log_error_message: bool = True
+):
     isettings = load_isettings_from_file(instance_name, owner_handle)
 
     if isettings is None:
@@ -49,7 +51,7 @@ def load_isettings(instance_name: str, owner_handle: str):
         if isettings:
             logger.info("Use settings from hub")
             return None, isettings
-        else:
+        elif log_error_message:
             if message == "user-does-not-exists":
                 logger.error(f"User {owner_handle} does not exists.")
                 return message, None
@@ -58,6 +60,9 @@ def load_isettings(instance_name: str, owner_handle: str):
                     f"Instance {owner_handle}/{instance_name} does not exists."
                 )
                 return message, None
+        else:
+            return message, None
+
     else:
         if isettings.storage.type == "local":
             logger.info("Use settings from local file")
@@ -67,7 +72,7 @@ def load_isettings(instance_name: str, owner_handle: str):
             if isettings:
                 logger.info("Use settings from hub")
                 return None, isettings
-            else:
+            elif log_error_message:
                 if message == "user-does-not-exists":
                     logger.error(
                         "Local settings file refer to a user that not exists in the"
@@ -81,6 +86,8 @@ def load_isettings(instance_name: str, owner_handle: str):
                         " environment."
                     )
                     return message, None
+            else:
+                return message, None
 
 
 def load_isettings_from_file(instance_name: str, owner_handle: str):
