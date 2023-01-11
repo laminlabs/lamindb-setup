@@ -3,6 +3,7 @@
 <!-- prettier-ignore -->
 Name | PR | Developer | Date | Version
 --- | --- | --- | --- | ---
+🗃️ Stop tracking non remote instance in hub | [205](https://github.com/laminlabs/lndb-setup/pull/205) | [fredericenard](https://github.com/fredericenard) | 2023-01-11 |
 ⬆️ Upgrade lnschema core | [198](https://github.com/laminlabs/lndb-setup/pull/198) | [fredericenard](https://github.com/fredericenard) | 2023-01-10 | 0.29.0
 ✅ Ensure each deleted instance name are specific to a CI run | [200](https://github.com/laminlabs/lndb-setup/pull/200) | [fredericenard](https://github.com/fredericenard) | 2023-01-10 |
 ✅  Ensure instances deleted during tests are not used anywhere else | [195](https://github.com/laminlabs/lndb-setup/pull/195) | [fredericenard](https://github.com/fredericenard) | 2023-01-10 |
