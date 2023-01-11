@@ -22,18 +22,26 @@ def load(
         owner: Owner handle (default: current user).
         migrate: Whether to auto-migrate or not.
     """
-    from ._migrate import check_migrate
-    from ._setup_instance import persist_check_reload_schema, register
-    from ._setup_knowledge import load_bionty_versions
-
     owner_handle = owner if owner is not None else settings.user.handle
 
     message, isettings = load_isettings(instance_name, owner_handle, _log_error_message)
     if message is not None:
         return message
 
+    message = load_from_isettings(isettings, migrate)
+    return message
+
+
+def load_from_isettings(
+    isettings: InstanceSettings,
+    migrate: Optional[bool] = None,
+):
+    from ._migrate import check_migrate
+    from ._setup_instance import persist_check_reload_schema, register
+    from ._setup_knowledge import load_bionty_versions
+
     persist_check_reload_schema(isettings)
-    logger.info(f"Loading instance: {owner_handle}/{isettings.name}")
+    logger.info(f"Loading instance: {isettings.owner}/{isettings.name}")
     message = check_migrate(
         usettings=settings.user, isettings=isettings, migrate_confirmed=migrate
     )
