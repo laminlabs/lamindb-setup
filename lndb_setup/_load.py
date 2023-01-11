@@ -2,9 +2,9 @@ from typing import Optional
 
 from lamin_logger import logger
 
-from ._settings import settings
-from ._settings_load import load_instance_settings, setup_instance_from_store
-from ._settings_store import InstanceSettingsStore, instance_settings_file
+from ._settings import InstanceSettings, settings
+from ._settings_load import load_instance_settings, setup_storage_root
+from ._settings_store import instance_settings_file
 
 
 def load(
@@ -100,15 +100,15 @@ def load_isettings_from_hub(instance_name: str, owner_handle: str):
         return message, None
 
     url = None if instance["dbconfig"] == "sqlite" else instance["db"]
-    settings_store = InstanceSettingsStore(
-        storage_root=storage["root"],
+
+    isettings = InstanceSettings(
+        storage_root=setup_storage_root(storage["root"]),
         storage_region=storage["region"],
         url=url,
         _schema=instance["schema"],
         name=instance["name"],
         owner=owner_handle,
     )
-    isettings = setup_instance_from_store(settings_store)
 
     return None, isettings
 
