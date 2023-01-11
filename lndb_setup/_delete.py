@@ -26,8 +26,8 @@ def delete(instance_name: str):
 
 
 def delete_helper(hub: Client, instance_name: str):
-    settings_file = instance_settings_file(instance_name, settings.user.handle)
     message, isettings = load_isettings(instance_name, settings.user.handle)
+    settings_file = instance_settings_file(instance_name, settings.user.handle)
     if message is not None:
         return message
 
