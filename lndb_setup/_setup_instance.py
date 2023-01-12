@@ -129,10 +129,6 @@ def init(
 
     storage_root = setup_storage_root(storage)
 
-    message = is_db_already_used(storage_root, url)
-    if message is not None:
-        return message
-
     isettings = InstanceSettings(
         storage_root=storage_root,
         storage_region=get_storage_region(storage_root),
@@ -143,11 +139,18 @@ def init(
     )
 
     persist_check_reload_schema(isettings)
+
     if instance_exists(isettings):
         return load(isettings.name, isettings.owner, migrate=migrate)
+
+    message = is_db_already_used(storage_root, url)
+    if message is not None:
+        return message
+
     if isettings.cloud_storage and isettings._sqlite_file_local.exists():
         logger.error(ERROR_SQLITE_CACHE.format(settings.instance._sqlite_file_local))
         return None
+
     setup_schema(isettings, settings.user)
     register(isettings, settings.user)
     write_bionty_versions(isettings)
