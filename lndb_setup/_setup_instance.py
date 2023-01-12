@@ -125,19 +125,11 @@ def init(
 
     storage_root = setup_storage_root(storage)
     instance_name = get_instance_name(storage_root, url, name)
-    storage_type = get_storage_type(storage)
 
-    if is_instance_remote(storage_type, url):
-        if is_instance_registered_in_hub(instance_name, settings.user.handle):
-            message = load(instance_name, settings.user.handle, migrate=migrate)
-            if message not in ["db-is-not-setup"]:
-                return message
-    else:
-        settings_file = instance_settings_file(instance_name, settings.user.handle)
-        if settings_file.exists():
-            message = load(instance_name, settings.user.handle, migrate=migrate)
-            if message not in ["db-is-not-setup"]:
-                return message
+    if instance_exists(instance_name, storage, url):
+        message = load(instance_name, settings.user.handle, migrate=migrate)
+        if message not in ["db-is-not-setup"]:
+            return message
 
     isettings = InstanceSettings(
         storage_root=storage_root,
@@ -171,3 +163,17 @@ def get_instance_name(
         return url.split("/")[-1]
     else:
         return str(storage_root.stem).lower()
+
+
+def instance_exists(
+    instance_name: str, storage: Union[str, Path, CloudPath], url: Optional[str]
+):
+    storage_type = get_storage_type(storage)
+    if is_instance_remote(storage_type, url):
+        if is_instance_registered_in_hub(instance_name, settings.user.handle):
+            return True
+    else:
+        settings_file = instance_settings_file(instance_name, settings.user.handle)
+        if settings_file.exists():
+            return True
+    return False
