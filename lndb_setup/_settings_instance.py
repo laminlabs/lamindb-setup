@@ -230,11 +230,7 @@ class InstanceSettings:
 
     @property
     def dialect(self):
-        if self.url is None or self.url.startswith("sqlite://"):
-            return "sqlite"
-        elif self.url.startswith("postgresql://"):
-            return "postgresql"
-        return None
+        return get_db_dialect(self.url)
 
     @property
     def _dbconfig(self):
@@ -339,3 +335,11 @@ def is_instance_remote(storage_type: str, url: Optional[str]):
     if url is not None and is_local_db(url):
         return False
     return True
+
+
+def get_db_dialect(url: Optional[str]):
+    if url is None or url.startswith("sqlite://"):
+        return "sqlite"
+    elif url.startswith("postgresql://"):
+        return "postgresql"
+    return None
