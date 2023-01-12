@@ -1,3 +1,4 @@
+import warnings
 from typing import Optional
 
 from lamin_logger import logger
@@ -119,14 +120,27 @@ def load_isettings_from_hub(instance_name: str, owner_handle: str):
 
     url = None if instance["dbconfig"] == "sqlite" else instance["db"]
 
+    schema = instance["schema"]
+    if schema is None:
+        schema = ""
+
     isettings = InstanceSettings(
         storage_root=setup_storage_root(storage["root"]),
         storage_region=storage["region"],
         url=url,
-        _schema=instance["schema"],
+        _schema=schema,
         name=instance["name"],
         owner=owner_handle,
     )
+
+    if not isettings.is_remote:
+        warnings.warn(
+            "Trying to load a non remote instance from the hub."
+            f"\nStorage: {isettings.storage_root}"
+            f"\nDatabase: {isettings.url}"
+            "\nIgnoring settings from hub."
+        )
+        return "non-remote-instance-from-hub", None
 
     return None, isettings
 
