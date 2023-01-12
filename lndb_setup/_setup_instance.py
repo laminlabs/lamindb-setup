@@ -130,9 +130,7 @@ def init(
     if is_instance_remote(storage_type, url):
         if is_instance_registered_in_hub(instance_name, settings.user.handle):
             message = load(instance_name, settings.user.handle, migrate=migrate)
-            if message in ["db-is-not-setup"]:
-                logger.warning("Instance is not setup")
-            else:
+            if message not in ["db-is-not-setup"]:
                 return message
 
     isettings = InstanceSettings(
