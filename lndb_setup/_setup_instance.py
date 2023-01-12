@@ -8,11 +8,12 @@ from sqlalchemy import text
 from ._assets import schemas as known_schema_names
 from ._db import insert_if_not_exists, upsert
 from ._docs import doc_args
-from ._hub import push_instance_if_not_exists
+from ._hub import is_instance_registered_in_hub, push_instance_if_not_exists
 from ._load import load
 from ._settings import settings
-from ._settings_instance import InstanceSettings
+from ._settings_instance import InstanceSettings, get_storage_type
 from ._settings_instance import init_instance_arg_doc as description
+from ._settings_instance import is_instance_remote
 from ._settings_load import setup_storage_root
 from ._settings_store import current_instance_settings_file
 from ._setup_knowledge import write_bionty_versions
@@ -123,12 +124,19 @@ def init(
     assert settings.user.id  # check user is logged in
 
     storage_root = setup_storage_root(storage)
+    instance_name = get_instance_name(storage_root, url, name)
+    storage_type = get_storage_type(storage)
+
+    if is_instance_remote(storage_type, url):
+        if is_instance_registered_in_hub(instance_name, settings.user.handle):
+            return load(instance_name, settings.user.handle, migrate=migrate)
+
     isettings = InstanceSettings(
         storage_root=storage_root,
         storage_region=get_storage_region(storage_root),
         url=url,
         _schema=validate_schema_arg(schema),
-        name=get_instance_name(storage_root, url, name),
+        name=instance_name,
         owner=settings.user.handle,
     )
 
