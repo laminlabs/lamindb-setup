@@ -24,11 +24,16 @@ def load(
         owner: Owner handle (default: current user).
         migrate: Whether to auto-migrate or not.
     """
+    from ._setup_instance import is_instance_db_setup
+
     owner_handle = owner if owner is not None else settings.user.handle
 
     message, isettings = load_isettings(instance_name, owner_handle, _log_error_message)
     if message is not None:
         return message
+
+    if not is_instance_db_setup(isettings):
+        return "db-is-not-setup"
 
     message = load_from_isettings(isettings, migrate)
     return message

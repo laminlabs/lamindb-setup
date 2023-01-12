@@ -21,7 +21,7 @@ from ._setup_schema import load_schema, setup_schema
 from ._setup_storage import get_storage_region
 
 
-def instance_exists(isettings: InstanceSettings):
+def is_instance_db_setup(isettings: InstanceSettings):
     if isettings._dbconfig == "sqlite":
         if isettings._sqlite_file.exists():
             return True
@@ -129,7 +129,11 @@ def init(
 
     if is_instance_remote(storage_type, url):
         if is_instance_registered_in_hub(instance_name, settings.user.handle):
-            return load(instance_name, settings.user.handle, migrate=migrate)
+            message = load(instance_name, settings.user.handle, migrate=migrate)
+            if message in ["db-is-not-setup"]:
+                logger.warning("Instance is not setup")
+            else:
+                return message
 
     isettings = InstanceSettings(
         storage_root=storage_root,
@@ -141,7 +145,7 @@ def init(
     )
 
     persist_check_reload_schema(isettings)
-    if instance_exists(isettings):
+    if is_instance_db_setup(isettings):
         return load(isettings.name, isettings.owner, migrate=migrate)
     if isettings.cloud_storage and isettings._sqlite_file_local.exists():
         logger.error(ERROR_SQLITE_CACHE.format(settings.instance._sqlite_file_local))
