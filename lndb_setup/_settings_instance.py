@@ -333,7 +333,7 @@ def is_instance_remote(storage_type: str, url: Optional[str]):
     dialect = get_db_dialect(url)
     if storage_type == "local":
         return False
-    if dialect == "postgres":
+    if dialect == "postgresql":
         assert url is not None, "Postgres db url is none"
         if is_local_postgres(url):
             return False
