@@ -5,6 +5,7 @@ from lamin_logger import logger
 from sqlalchemy import text
 
 from ._settings import InstanceSettings, settings
+from ._settings_instance import is_instance_remote
 from ._settings_load import load_instance_settings, setup_storage_root
 from ._settings_store import instance_settings_file
 
@@ -128,6 +129,15 @@ def load_isettings_from_hub(instance_name: str, owner_handle: str):
 
     url = None if instance["dbconfig"] == "sqlite" else instance["db"]
 
+    if not is_instance_remote(storage["type"], url):
+        warnings.warn(
+            "Trying to load a non remote instance from the hub."
+            f"\nInstance: {instance}"
+            f"\nStorage: {storage}"
+            "\nIgnoring settings from hub."
+        )
+        return "non-remote-instance-from-hub", None
+
     schema = instance["schema"]
     if schema is None:
         schema = ""
@@ -140,15 +150,6 @@ def load_isettings_from_hub(instance_name: str, owner_handle: str):
         name=instance["name"],
         owner=owner_handle,
     )
-
-    if not isettings.is_remote:
-        warnings.warn(
-            "Trying to load a non remote instance from the hub."
-            f"\nStorage: {isettings.storage_root}"
-            f"\nDatabase: {isettings.url}"
-            "\nIgnoring settings from hub."
-        )
-        return "non-remote-instance-from-hub", None
 
     return None, isettings
 
