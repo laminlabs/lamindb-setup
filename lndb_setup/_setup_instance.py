@@ -141,8 +141,6 @@ def init(
     )
 
     persist_check_reload_schema(isettings)
-    if is_instance_db_setup(isettings):
-        return load(isettings.name, isettings.owner, migrate=migrate)
     if isettings.cloud_storage and isettings._sqlite_file_local.exists():
         logger.error(ERROR_SQLITE_CACHE.format(settings.instance._sqlite_file_local))
         return None
