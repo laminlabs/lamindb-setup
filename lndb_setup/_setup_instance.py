@@ -8,11 +8,16 @@ from sqlalchemy import text
 from ._assets import schemas as known_schema_names
 from ._db import insert_if_not_exists, upsert
 from ._docs import doc_args
-from ._hub import push_instance_if_not_exists
+from ._hub import (
+    get_instance_from_field,
+    get_storage_from_field,
+    push_instance_if_not_exists,
+)
 from ._load import load
 from ._settings import settings
-from ._settings_instance import InstanceSettings
+from ._settings_instance import InstanceSettings, get_db_dialect, get_storage_type
 from ._settings_instance import init_instance_arg_doc as description
+from ._settings_instance import is_instance_remote
 from ._settings_load import setup_storage_root
 from ._settings_store import current_instance_settings_file
 from ._setup_knowledge import write_bionty_versions
@@ -123,6 +128,11 @@ def init(
     assert settings.user.id  # check user is logged in
 
     storage_root = setup_storage_root(storage)
+
+    message = is_db_already_used(storage_root, url)
+    if message is not None:
+        return message
+
     isettings = InstanceSettings(
         storage_root=storage_root,
         storage_region=get_storage_region(storage_root),
@@ -155,3 +165,27 @@ def get_instance_name(
         return url.split("/")[-1]
     else:
         return str(storage_root.stem).lower()
+
+
+def is_db_already_used(storage_root: Union[Path, CloudPath], url: Optional[str]):
+    storage_type = get_storage_type(storage_root)
+    db_dialect = get_db_dialect(url)
+
+    if is_instance_remote(storage_type, url):
+        if db_dialect == "sqlite":
+            storage = get_storage_from_field("root", storage_root)
+            if storage is not None:
+                logger.error(
+                    "This storage location is already used by another SQLite remote"
+                    " instance."
+                )
+                return "remote-sqlite-storage-already-used"
+
+        else:
+            instance = get_instance_from_field("db", url)
+            if instance is not None:
+                logger.error("This database is already used by another instance.")
+                return "remote-postgres-db-already-used"
+
+    else:
+        return None
