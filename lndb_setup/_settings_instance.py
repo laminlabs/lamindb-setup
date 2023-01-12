@@ -306,11 +306,7 @@ class InstanceSettings:
     @property
     def is_remote(self) -> bool:
         """Boolean indicating if an instance have no local component."""
-        if self.storage.type == "local":
-            return False
-        if self.url is not None and is_local_db(self.url):
-            return False
-        return True
+        return is_instance_remote(self.storage.type, self.url)
 
     def _persist(self) -> None:
         assert self.name is not None
@@ -335,3 +331,11 @@ def is_local_db(url: str):
     if "@127.0.0.1" in url:
         return True
     return False
+
+
+def is_instance_remote(storage_type: str, url: Optional[str]):
+    if storage_type == "local":
+        return False
+    if url is not None and is_local_db(url):
+        return False
+    return True
