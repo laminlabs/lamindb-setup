@@ -72,6 +72,8 @@ def load_isettings(
                     f"Instance {owner_handle}/{instance_name} does not exists."
                 )
                 return message, None
+            else:
+                return message, None
         else:
             return message, None
 
@@ -97,6 +99,8 @@ def load_isettings(
                         " the hub.\nPlease use delete command to clean up your"
                         " environment."
                     )
+                    return message, None
+                else:
                     return message, None
             else:
                 return message, None
