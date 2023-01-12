@@ -319,7 +319,7 @@ class InstanceSettings:
         settings._instance_settings = self
 
 
-def is_local_db(url: str):
+def is_local_postgres(url: str):
     if "@localhost:" in url:
         return True
     if "@0.0.0.0:" in url:
@@ -330,10 +330,13 @@ def is_local_db(url: str):
 
 
 def is_instance_remote(storage_type: str, url: Optional[str]):
+    dialect = get_db_dialect(url)
     if storage_type == "local":
         return False
-    if url is not None and is_local_db(url):
-        return False
+    if dialect == "postgres":
+        assert url is not None, "Postgres db url is none"
+        if is_local_postgres(url):
+            return False
     return True
 
 
