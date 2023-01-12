@@ -139,11 +139,10 @@ def init(
     )
 
     persist_check_reload_schema(isettings)
-
     if instance_exists(isettings):
         return load(isettings.name, isettings.owner, migrate=migrate)
 
-    message = is_db_already_used(storage_root, url)
+    message = check_db_not_registered_in_hub(storage_root, url)
     if message is not None:
         return message
 
@@ -170,7 +169,9 @@ def get_instance_name(
         return str(storage_root.stem).lower()
 
 
-def is_db_already_used(storage_root: Union[Path, CloudPath], url: Optional[str]):
+def check_db_not_registered_in_hub(
+    storage_root: Union[Path, CloudPath], url: Optional[str]
+):
     storage_type = get_storage_type(storage_root)
     db_dialect = get_db_dialect(url)
 
