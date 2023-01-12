@@ -13,7 +13,7 @@ from ._load import load
 from ._settings import settings
 from ._settings_instance import InstanceSettings, get_storage_type
 from ._settings_instance import init_instance_arg_doc as description
-from ._settings_instance import is_instance_remote
+from ._settings_instance import instance_settings_file, is_instance_remote
 from ._settings_load import setup_storage_root
 from ._settings_store import current_instance_settings_file
 from ._setup_knowledge import write_bionty_versions
@@ -129,6 +129,12 @@ def init(
 
     if is_instance_remote(storage_type, url):
         if is_instance_registered_in_hub(instance_name, settings.user.handle):
+            message = load(instance_name, settings.user.handle, migrate=migrate)
+            if message not in ["db-is-not-setup"]:
+                return message
+    else:
+        settings_file = instance_settings_file(instance_name, settings.user.handle)
+        if settings_file.exists():
             message = load(instance_name, settings.user.handle, migrate=migrate)
             if message not in ["db-is-not-setup"]:
                 return message
