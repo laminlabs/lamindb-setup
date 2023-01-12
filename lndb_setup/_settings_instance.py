@@ -77,13 +77,7 @@ class Storage:
 
         Returns "s3" or "gs" or "local".
         """
-        if str(self.settings.storage_root).startswith("s3://"):
-            storage_type = "s3"
-        elif str(self.settings.storage_root).startswith("gs://"):
-            storage_type = "gs"
-        else:
-            storage_type = "local"
-        return storage_type
+        return get_storage_type(self.settings.storage_root)
 
     def key_to_filepath(
         self, filekey: Union[Path, CloudPath, str]
@@ -346,3 +340,12 @@ def get_db_dialect(url: Optional[str]):
     elif url.startswith("postgresql://"):
         return "postgresql"
     return None
+
+
+def get_storage_type(storage_root):
+    if str(storage_root).startswith("s3://"):
+        return "s3"
+    elif str(storage_root).startswith("gs://"):
+        return "gs"
+    else:
+        return "local"
