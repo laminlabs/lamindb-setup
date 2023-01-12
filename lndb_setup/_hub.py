@@ -246,7 +246,7 @@ def get_instances_related_to_storage_by_id(hub: Client, id: str):
     return instances
 
 
-def get_instance_from_field(field_name: str, field_value):
+def get_instances_from_field(field_name: str, field_value):
     hub = connect_hub()
     try:
         response = (
@@ -255,17 +255,13 @@ def get_instance_from_field(field_name: str, field_value):
 
         if len(response.data) == 0:
             return None
-        else:
-            assert len(response.data) == 1
 
-        instance = response.data[0]
-
-        return instance
+        return response.data
     finally:
         hub.auth.sign_out()
 
 
-def get_storage_from_field(field_name: str, field_value):
+def get_storages_from_field(field_name: str, field_value):
     hub = connect_hub()
     try:
         response = (
@@ -274,11 +270,7 @@ def get_storage_from_field(field_name: str, field_value):
 
         if len(response.data) == 0:
             return None
-        else:
-            assert len(response.data) == 1
 
-        instance = response.data[0]
-
-        return instance
+        return response.data
     finally:
         hub.auth.sign_out()

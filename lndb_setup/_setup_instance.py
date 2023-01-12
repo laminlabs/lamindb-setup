@@ -9,8 +9,8 @@ from ._assets import schemas as known_schema_names
 from ._db import insert_if_not_exists, upsert
 from ._docs import doc_args
 from ._hub import (
-    get_instance_from_field,
-    get_storage_from_field,
+    get_instances_from_field,
+    get_storages_from_field,
     push_instance_if_not_exists,
 )
 from ._load import load
@@ -173,7 +173,7 @@ def is_db_already_used(storage_root: Union[Path, CloudPath], url: Optional[str])
 
     if is_instance_remote(storage_type, url):
         if db_dialect == "sqlite":
-            storage = get_storage_from_field("root", storage_root)
+            storage = get_storages_from_field("root", storage_root)
             if storage is not None:
                 logger.error(
                     "This storage location is already used by another SQLite remote"
@@ -182,7 +182,7 @@ def is_db_already_used(storage_root: Union[Path, CloudPath], url: Optional[str])
                 return "remote-sqlite-storage-already-used"
 
         else:
-            instance = get_instance_from_field("db", url)
+            instance = get_instances_from_field("db", url)
             if instance is not None:
                 logger.error("This database is already used by another instance.")
                 return "remote-postgres-db-already-used"
