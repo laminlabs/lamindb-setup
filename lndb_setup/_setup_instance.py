@@ -102,8 +102,11 @@ def init(
 
     if message == "instance-does-not-exists":
         return create_instance(instance_name, storage, url, schema)
+    if message == "non-remote-instance-from-hub":
+        return create_instance(instance_name, storage, url, schema)
     if message == "db-not-setup":
         return create_instance(instance_name, storage, url, schema)
+
     else:
         return message
 
