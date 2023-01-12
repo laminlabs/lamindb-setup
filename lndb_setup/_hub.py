@@ -244,13 +244,3 @@ def get_instances_related_to_storage_by_id(hub: Client, id: str):
     instances = response.data
 
     return instances
-
-
-def get_instance_db_url(hub: Client, name: str, owner_id: str):
-    instance = get_instance(hub, name, owner_id)
-    if instance is None:
-        return None
-    url = (
-        instance["sqlite_file"] if instance["dbconfig"] == "sqlite" else instance["db"]
-    )
-    return url
