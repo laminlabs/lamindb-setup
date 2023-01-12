@@ -33,7 +33,7 @@ def load(
         return message
 
     if not is_instance_db_setup(isettings):
-        logger.warning("Instance is not setup")
+        logger.warning("Instance db is not setup")
         return "db-is-not-setup"
 
     message = load_from_isettings(isettings, migrate)
