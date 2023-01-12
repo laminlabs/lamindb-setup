@@ -144,7 +144,7 @@ def load_isettings_from_hub(instance_name: str, owner_handle: str):
             f"\nDatabase: {isettings.url}"
             "\nIgnoring settings from hub."
         )
-        return "non-remote-instance-from-hub", None
+        return "instance-does-not-exists", None
 
     return None, isettings
 
