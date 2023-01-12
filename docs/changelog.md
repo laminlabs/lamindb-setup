@@ -3,6 +3,7 @@
 <!-- prettier-ignore -->
 Name | PR | Developer | Date | Version
 --- | --- | --- | --- | ---
+:bug: Prevent loading non remote instance from hub | [208](https://github.com/laminlabs/lndb-setup/pull/208) | [fredericenard](https://github.com/fredericenard) | 2023-01-12 |
 :bug: Fix `schema=None` | [207](https://github.com/laminlabs/lndb-setup/pull/207) | [Koncopd](https://github.com/Koncopd) | 2023-01-11 |
 :art: Simplify loading | [204](https://github.com/laminlabs/lndb-setup/pull/204) | [fredericenard](https://github.com/fredericenard) | 2023-01-11 |
 🗃️ Stop tracking non remote instance in hub | [205](https://github.com/laminlabs/lndb-setup/pull/205) | [fredericenard](https://github.com/fredericenard) | 2023-01-11 |
