@@ -296,7 +296,7 @@ class InstanceSettings:
     @property
     def is_remote(self) -> bool:
         """Boolean indicating if an instance have no local component."""
-        return is_instance_remote(self.storage.type, self.url)
+        return is_instance_remote(self.storage.settings.storage_root, self.url)
 
     def _persist(self) -> None:
         assert self.name is not None
@@ -323,8 +323,9 @@ def is_local_postgres(url: str):
     return False
 
 
-def is_instance_remote(storage_type: str, url: Optional[str]):
+def is_instance_remote(storage_root: Union[CloudPath, Path], url: Optional[str]):
     dialect = get_db_dialect(url)
+    storage_type = get_storage_type(storage_root)
     if storage_type == "local":
         return False
     if dialect == "postgresql":

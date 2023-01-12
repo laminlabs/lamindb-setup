@@ -11,7 +11,7 @@ from ._docs import doc_args
 from ._hub import is_instance_registered_in_hub, push_instance_if_not_exists
 from ._load import load
 from ._settings import settings
-from ._settings_instance import InstanceSettings, get_storage_type
+from ._settings_instance import InstanceSettings
 from ._settings_instance import init_instance_arg_doc as description
 from ._settings_instance import instance_settings_file, is_instance_remote
 from ._settings_load import setup_storage_root
@@ -166,8 +166,7 @@ def get_instance_name(
 def instance_exists(
     instance_name: str, storage: Union[str, Path, CloudPath], url: Optional[str]
 ):
-    storage_type = get_storage_type(storage)
-    if is_instance_remote(storage_type, url):
+    if is_instance_remote(storage, url):
         if is_instance_registered_in_hub(instance_name, settings.user.handle):
             return True
     else:

@@ -135,7 +135,7 @@ def load_isettings_from_hub(instance_name: str, owner_handle: str):
     if schema is None:
         schema = ""
 
-    if not is_instance_remote(storage["type"], url):
+    if not is_instance_remote(storage["root"], url):
         warnings.warn(
             "Trying to load a non remote instance from the hub."
             "\nIgnoring settings from hub."
