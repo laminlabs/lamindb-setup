@@ -2,6 +2,7 @@ import warnings
 from typing import Optional
 
 from lamin_logger import logger
+from sqlalchemy import text
 
 from ._settings import InstanceSettings, settings
 from ._settings_load import load_instance_settings, setup_storage_root
@@ -28,6 +29,9 @@ def load(
     message, isettings = load_isettings(instance_name, owner_handle, _log_error_message)
     if message is not None:
         return message
+
+    if not is_db_setup(isettings):
+        return "db-not-setup"
 
     message = load_from_isettings(isettings, migrate)
     return message
@@ -173,3 +177,27 @@ def get_instance_metadata_required_for_loading(instance_name: str, owner_handle:
         return None, instance, storage
     finally:
         hub.auth.sign_out()
+
+
+def is_db_setup(isettings: InstanceSettings):
+    if isettings._dbconfig == "sqlite":
+        if isettings._sqlite_file.exists():
+            return True
+        else:
+            return False
+    else:  # postgres
+        with isettings.db_engine().connect() as conn:
+            results = conn.execute(
+                text(
+                    """
+                SELECT EXISTS (
+                    SELECT FROM
+                        information_schema.tables
+                    WHERE
+                        table_schema LIKE 'public' AND
+                        table_name = 'version_yvzi'
+                );
+            """
+                )
+            ).first()  # returns tuple of boolean
+            return results[0]

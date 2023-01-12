@@ -3,7 +3,6 @@ from typing import Optional, Union
 
 from cloudpathlib import CloudPath
 from lamin_logger import logger
-from sqlalchemy import text
 
 from ._assets import schemas as known_schema_names
 from ._db import insert_if_not_exists, upsert
@@ -18,30 +17,6 @@ from ._settings_store import current_instance_settings_file
 from ._setup_knowledge import write_bionty_versions
 from ._setup_schema import load_schema, setup_schema
 from ._setup_storage import get_storage_region
-
-
-def instance_exists(isettings: InstanceSettings):
-    if isettings._dbconfig == "sqlite":
-        if isettings._sqlite_file.exists():
-            return True
-        else:
-            return False
-    else:  # postgres
-        with isettings.db_engine().connect() as conn:
-            results = conn.execute(
-                text(
-                    """
-                SELECT EXISTS (
-                    SELECT FROM
-                        information_schema.tables
-                    WHERE
-                        table_schema LIKE 'public' AND
-                        table_name = 'version_yvzi'
-                );
-            """
-                )
-            ).first()  # returns tuple of boolean
-            return results[0]
 
 
 def register(isettings: InstanceSettings, usettings):
