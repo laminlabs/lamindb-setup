@@ -3,6 +3,7 @@
 <!-- prettier-ignore -->
 Name | PR | Developer | Date | Version
 --- | --- | --- | --- | ---
+🎨 Refactor dialect property | [212](https://github.com/laminlabs/lndb-setup/pull/212) | [fredericenard](https://github.com/fredericenard) | 2023-01-12 |
 🐛 Fix checking for non remote instance loaded from hub | [211](https://github.com/laminlabs/lndb-setup/pull/211) | [fredericenard](https://github.com/fredericenard) | 2023-01-12 |
 🐛 Prevent loading non remote instance from hub | [209](https://github.com/laminlabs/lndb-setup/pull/209) | [fredericenard](https://github.com/fredericenard) | 2023-01-12 |
 :bug: Prevent loading non remote instance from hub | [208](https://github.com/laminlabs/lndb-setup/pull/208) | [fredericenard](https://github.com/fredericenard) | 2023-01-12 |
