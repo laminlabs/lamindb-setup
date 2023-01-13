@@ -3,6 +3,7 @@
 <!-- prettier-ignore -->
 Name | PR | Developer | Date | Version
 --- | --- | --- | --- | ---
+🐛 Prevent initializing an instance with a db already used  | [214](https://github.com/laminlabs/lndb-setup/pull/214) | [fredericenard](https://github.com/fredericenard) | 2023-01-13 |
 🥅 Properly check if an instance exists during init  | [215](https://github.com/laminlabs/lndb-setup/pull/215) | [fredericenard](https://github.com/fredericenard) | 2023-01-13 |
 ♻️ Refactor storage property | [213](https://github.com/laminlabs/lndb-setup/pull/213) | [fredericenard](https://github.com/fredericenard) | 2023-01-12 |
 🎨 Refactor dialect property | [212](https://github.com/laminlabs/lndb-setup/pull/212) | [fredericenard](https://github.com/fredericenard) | 2023-01-12 |
