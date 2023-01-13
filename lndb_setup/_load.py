@@ -24,11 +24,17 @@ def load(
         owner: Owner handle (default: current user).
         migrate: Whether to auto-migrate or not.
     """
+    from ._setup_instance import is_instance_db_setup
+
     owner_handle = owner if owner is not None else settings.user.handle
 
     message, isettings = load_isettings(instance_name, owner_handle, _log_error_message)
     if message is not None:
         return message
+
+    if not is_instance_db_setup(isettings):
+        logger.warning("Instance db is not setup")
+        return "db-is-not-setup"
 
     message = load_from_isettings(isettings, migrate)
     return message
@@ -129,7 +135,7 @@ def load_isettings_from_hub(instance_name: str, owner_handle: str):
     if schema is None:
         schema = ""
 
-    if not is_instance_remote(storage["type"], url):
+    if not is_instance_remote(storage["root"], url):
         warnings.warn(
             "Trying to load a non remote instance from the hub."
             "\nIgnoring settings from hub."

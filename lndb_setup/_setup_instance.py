@@ -8,11 +8,12 @@ from sqlalchemy import text
 from ._assets import schemas as known_schema_names
 from ._db import insert_if_not_exists, upsert
 from ._docs import doc_args
-from ._hub import push_instance_if_not_exists
+from ._hub import is_instance_registered_in_hub, push_instance_if_not_exists
 from ._load import load
 from ._settings import settings
 from ._settings_instance import InstanceSettings
 from ._settings_instance import init_instance_arg_doc as description
+from ._settings_instance import instance_settings_file, is_instance_remote
 from ._settings_load import setup_storage_root
 from ._settings_store import current_instance_settings_file
 from ._setup_knowledge import write_bionty_versions
@@ -20,7 +21,7 @@ from ._setup_schema import load_schema, setup_schema
 from ._setup_storage import get_storage_region
 
 
-def instance_exists(isettings: InstanceSettings):
+def is_instance_db_setup(isettings: InstanceSettings):
     if isettings._dbconfig == "sqlite":
         if isettings._sqlite_file.exists():
             return True
@@ -123,18 +124,34 @@ def init(
     assert settings.user.id  # check user is logged in
 
     storage_root = setup_storage_root(storage)
+    instance_name = get_instance_name(storage_root, url, name)
+
+    if instance_exists(instance_name, storage, url):
+        message = load(instance_name, settings.user.handle, migrate=migrate)
+        if message not in ["db-is-not-setup"]:
+            return message
+
     isettings = InstanceSettings(
         storage_root=storage_root,
         storage_region=get_storage_region(storage_root),
         url=url,
         _schema=validate_schema_arg(schema),
-        name=get_instance_name(storage_root, url, name),
+        name=instance_name,
         owner=settings.user.handle,
     )
 
-    persist_check_reload_schema(isettings)
-    if instance_exists(isettings):
+    if is_instance_db_setup(isettings):
+        if is_instance_remote(storage, url):
+            logger.warning(
+                "Instance not found in hub, loading instance using an unkown db"
+            )
+        else:
+            logger.warning(
+                "Instance local settings not found, loading instance using an unkown db"
+            )
         return load(isettings.name, isettings.owner, migrate=migrate)
+
+    persist_check_reload_schema(isettings)
     if isettings.cloud_storage and isettings._sqlite_file_local.exists():
         logger.error(ERROR_SQLITE_CACHE.format(settings.instance._sqlite_file_local))
         return None
@@ -155,3 +172,16 @@ def get_instance_name(
         return url.split("/")[-1]
     else:
         return str(storage_root.stem).lower()
+
+
+def instance_exists(
+    instance_name: str, storage: Union[str, Path, CloudPath], url: Optional[str]
+):
+    if is_instance_remote(storage, url):
+        if is_instance_registered_in_hub(instance_name, settings.user.handle):
+            return True
+    else:
+        settings_file = instance_settings_file(instance_name, settings.user.handle)
+        if settings_file.exists():
+            return True
+    return False
