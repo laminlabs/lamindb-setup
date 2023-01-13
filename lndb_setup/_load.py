@@ -131,7 +131,7 @@ def load_isettings_from_hub(instance_name: str, owner_handle: str):
 
     url = None if instance["dbconfig"] == "sqlite" else instance["db"]
 
-    schema = instance["schema"]
+    schema = instance["schema_str"]
     if schema is None:
         schema = ""
 
