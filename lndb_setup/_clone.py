@@ -112,9 +112,18 @@ def clone_test(src_settings: Optional[InstanceSettings] = None, depth: int = 10)
             tgt_conn.execute(sa.schema.CreateSchema(schemaname))
         tgt_conn.commit()
 
-    # only relevant for postgres
-    if "information_schema" in src_schemas:
-        src_schemas.remove("information_schema")
+    # only relevant for postgres, clean out some default schemas
+    for schema in [
+        "information_schema",
+        "auth",
+        "graphql",
+        "graphql_public",
+        "realtime",
+        "extensions",
+        "storage",
+    ]:
+        if schema in src_schemas:
+            src_schemas.remove(schema)
 
     for schema in src_schemas:
         src_metadata.reflect(bind=src_engine, schema=schema)
