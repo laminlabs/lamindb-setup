@@ -147,24 +147,22 @@ def push_instance_if_not_exists(isettings: InstanceSettings, storage_db_entry):
         }
         data = hub.table("instance").insert(instance_fields).execute().data
         assert len(data) == 1
-        instance_id = data[0]["id"]
-    else:
-        instance_id = instance["id"]
 
-    response = (
-        hub.table("user_instance")
-        .select("*")
-        .eq("user_id", owner["id"])
-        .eq("instance_id", instance_id)
-        .execute()
-    )
-    if len(response.data) == 0:
-        user_instance_fields = {
-            "user_id": owner["id"],
-            "instance_id": instance_id,
-        }
-        data = hub.table("user_instance").insert(user_instance_fields).execute().data
-        assert len(data) == 1
+    # there is no need for this link table
+    # response = (
+    #     hub.table("user_instance")
+    #     .select("*")
+    #     .eq("user_id", owner["id"])
+    #     .eq("instance_id", instance_id)
+    #     .execute()
+    # )
+    # if len(response.data) == 0:
+    #     user_instance_fields = {
+    #         "user_id": owner["id"],
+    #         "instance_id": instance_id,
+    #     }
+    #     data = hub.table("user_instance").insert(user_instance_fields).execute().data
+    #     assert len(data) == 1
 
     hub.auth.sign_out()
 
