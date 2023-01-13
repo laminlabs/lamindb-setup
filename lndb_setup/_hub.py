@@ -272,6 +272,8 @@ def get_storages_from_field(field_name: str, field_value):
             return None
 
         return response.data
+    finally:
+        hub.auth.sign_out()
 
 
 def is_instance_registered_in_hub(instance_name: str, owner_handle: str):
