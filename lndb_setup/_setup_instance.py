@@ -8,10 +8,15 @@ from sqlalchemy import text
 from ._assets import schemas as known_schema_names
 from ._db import insert_if_not_exists, upsert
 from ._docs import doc_args
-from ._hub import is_instance_registered_in_hub, push_instance_if_not_exists
+from ._hub import (
+    get_instances_from_field,
+    get_storages_from_field,
+    is_instance_registered_in_hub,
+    push_instance_if_not_exists,
+)
 from ._load import load
 from ._settings import settings
-from ._settings_instance import InstanceSettings
+from ._settings_instance import InstanceSettings, get_db_dialect, get_storage_type
 from ._settings_instance import init_instance_arg_doc as description
 from ._settings_instance import instance_settings_file, is_instance_remote
 from ._settings_load import setup_storage_root
@@ -151,10 +156,14 @@ def init(
             )
         return load(isettings.name, isettings.owner, migrate=migrate)
 
+    message = check_db_not_registered_in_hub(storage_root, url)
+    if message is not None:
+        return message
     persist_check_reload_schema(isettings)
     if isettings.cloud_storage and isettings._sqlite_file_local.exists():
         logger.error(ERROR_SQLITE_CACHE.format(settings.instance._sqlite_file_local))
         return None
+
     setup_schema(isettings, settings.user)
     register(isettings, settings.user)
     write_bionty_versions(isettings)
@@ -172,6 +181,32 @@ def get_instance_name(
         return url.split("/")[-1]
     else:
         return str(storage_root.stem).lower()
+
+
+def check_db_not_registered_in_hub(
+    storage_root: Union[Path, CloudPath], url: Optional[str]
+):
+    storage_type = get_storage_type(storage_root)
+    db_dialect = get_db_dialect(url)
+
+    if is_instance_remote(storage_type, url):
+        if db_dialect == "sqlite":
+            storage = get_storages_from_field("root", storage_root)
+            if storage is not None:
+                logger.error(
+                    "This storage location is already used by another SQLite remote"
+                    " instance."
+                )
+                return "remote-sqlite-storage-already-used"
+
+        else:
+            instance = get_instances_from_field("db", url)
+            if instance is not None:
+                logger.error("This database is already used by another instance.")
+                return "remote-postgres-db-already-used"
+
+    else:
+        return None
 
 
 def instance_exists(

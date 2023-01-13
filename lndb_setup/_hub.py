@@ -246,6 +246,36 @@ def get_instances_related_to_storage_by_id(hub: Client, id: str):
     return instances
 
 
+def get_instances_from_field(field_name: str, field_value):
+    hub = connect_hub()
+    try:
+        response = (
+            hub.table("instance").select("*").eq(field_name, field_value).execute()
+        )
+
+        if len(response.data) == 0:
+            return None
+
+        return response.data
+    finally:
+        hub.auth.sign_out()
+
+
+def get_storages_from_field(field_name: str, field_value):
+    hub = connect_hub()
+    try:
+        response = (
+            hub.table("storage").select("*").eq(field_name, field_value).execute()
+        )
+
+        if len(response.data) == 0:
+            return None
+
+        return response.data
+    finally:
+        hub.auth.sign_out()
+
+
 def is_instance_registered_in_hub(instance_name: str, owner_handle: str):
     hub = connect_hub_with_auth()
     try:
