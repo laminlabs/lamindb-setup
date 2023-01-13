@@ -59,7 +59,7 @@ Dev API
    Storage
 """
 
-__version__ = "0.29.0"
+__version__ = "0.30a1"  # denote a pre-release for 0.1.0 with 0.1a1
 import atexit
 from os import name as _os_name
 
