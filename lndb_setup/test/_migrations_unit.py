@@ -17,10 +17,18 @@ from lndb_setup._init_instance import init
 
 
 def get_migration_config(schema_package, include_schemas=None):
+    target_metadata = SQLModel.metadata
+    target_metadata.naming_convention = {
+        "ix": "ix_%(column_0_label)s",
+        "uq": "uq_%(table_name)s_%(column_0_name)s",
+        "ck": "ck_%(table_name)s_`%(constraint_name)s`",
+        "fk": "fk_%(table_name)s_%(column_0_name)s_%(referred_table_name)s",
+        "pk": "pk_%(table_name)s",
+    }
     raw_config = dict(
         config_file_name=f"{schema_package}/alembic.ini",
         script_location=f"{schema_package}/migrations",
-        target_metadata=SQLModel.metadata,
+        target_metadata=target_metadata,
     )
     if include_schemas is not None:
         raw_config["include_schemas"] = include_schemas
