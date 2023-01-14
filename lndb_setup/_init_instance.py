@@ -3,9 +3,9 @@ from typing import Optional, Union
 
 from cloudpathlib import CloudPath
 from lamin_logger import logger
+from lnhub_rest._init_instance import validate_schema_arg
 from sqlalchemy import text
 
-from ._assets import schemas as known_schema_names
 from ._db import insert_if_not_exists, upsert
 from ._docs import doc_args
 from ._hub import (
@@ -61,18 +61,6 @@ def register(isettings: InstanceSettings, usettings):
     )
     if isettings.is_remote:
         push_instance_if_not_exists(isettings, storage_db_entry)
-
-
-def validate_schema_arg(schema: Optional[str] = None) -> str:
-    if schema is None:
-        return ""
-    validated_schema = []
-    for module in known_schema_names:
-        if module in schema:
-            validated_schema.append(module)
-    if len(validated_schema) == 0:
-        raise RuntimeError(f"Unknown schema modules. Only know {known_schema_names}.")
-    return ",".join(validated_schema)
 
 
 def persist_check_reload_schema(isettings: InstanceSettings):
