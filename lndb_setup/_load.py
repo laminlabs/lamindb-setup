@@ -24,7 +24,7 @@ def load(
         owner: Owner handle (default: current user).
         migrate: Whether to auto-migrate or not.
     """
-    from ._setup_instance import is_instance_db_setup
+    from ._init_instance import is_instance_db_setup
 
     owner_handle = owner if owner is not None else settings.user.handle
 
@@ -44,8 +44,8 @@ def load_from_isettings(
     isettings: InstanceSettings,
     migrate: Optional[bool] = None,
 ):
+    from ._init_instance import persist_check_reload_schema, register
     from ._migrate import check_migrate
-    from ._setup_instance import persist_check_reload_schema, register
     from ._setup_knowledge import load_bionty_versions
 
     persist_check_reload_schema(isettings)

@@ -13,7 +13,7 @@ from pytest_alembic.plugin.error import AlembicTestFailure
 from pytest_alembic.runner import MigrationContext
 from sqlmodel import SQLModel
 
-from lndb_setup._setup_instance import init
+from lndb_setup._init_instance import init
 
 
 def get_migration_config(schema_package, include_schemas=None):

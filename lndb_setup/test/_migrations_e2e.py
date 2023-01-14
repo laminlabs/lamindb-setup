@@ -7,10 +7,10 @@ from packaging import version
 
 from lndb_setup._assets import instances as test_instances
 from lndb_setup._clone import clone_test, setup_local_test_sqlite_file
+from lndb_setup._init_instance import init
 from lndb_setup._settings import settings
 from lndb_setup._settings_instance import InstanceSettings
 from lndb_setup._settings_load import setup_storage_root
-from lndb_setup._setup_instance import init
 
 
 def migrate_clones(
