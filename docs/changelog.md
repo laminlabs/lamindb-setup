@@ -3,6 +3,7 @@
 <!-- prettier-ignore -->
 Name | PR | Developer | Date | Version
 --- | --- | --- | --- | ---
+🐛 Fix hub interaction | [218](https://github.com/laminlabs/lndb-setup/pull/218) | [falexwolf](https://github.com/falexwolf) | 2023-01-14 |
 🩹 Patch cloning | [217](https://github.com/laminlabs/lndb-setup/pull/217) | [falexwolf](https://github.com/falexwolf) | 2023-01-13 | 0.30a1
 🐛 Prevent initializing an instance with a db already used  | [214](https://github.com/laminlabs/lndb-setup/pull/214) | [fredericenard](https://github.com/fredericenard) | 2023-01-13 |
 🥅 Properly check if an instance exists during init  | [215](https://github.com/laminlabs/lndb-setup/pull/215) | [fredericenard](https://github.com/fredericenard) | 2023-01-13 |
