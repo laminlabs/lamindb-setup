@@ -2,7 +2,7 @@ import argparse
 
 from lamin_logger import logger
 
-from . import _setup_instance, _setup_user, delete, info, set_storage
+from . import _init_instance, _setup_user, delete, info, set_storage
 from ._settings_instance import init_instance_arg_doc as instance
 from ._settings_user import user_description as user
 
@@ -91,18 +91,18 @@ def main():
             password=args.password,
         )
     elif args.command == "init":
-        result = _setup_instance.init(
+        result = _init_instance.init(
             storage=args.storage, url=args.url, schema=args.schema, name=args.name
         )
         return process_result(result)
     elif args.command == "load":
-        result = _setup_instance.load(
+        result = _init_instance.load(
             instance_name=args.instance,
             owner=args.owner,
         )
         return process_result(result)
     elif args.command == "close":
-        return _setup_instance.close()
+        return _init_instance.close()
     elif args.command == "delete":
         return delete(
             instance_name=args.instance,

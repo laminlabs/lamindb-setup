@@ -4,10 +4,10 @@ from typing import Optional, Union
 from cloudpathlib import CloudPath
 from lamin_logger import logger
 
+from ._init_instance import get_storage_region, register, setup_storage_root
 from ._settings import settings
 from ._settings_load import load_instance_settings
 from ._settings_store import current_instance_settings_file, instance_settings_file
-from ._setup_instance import get_storage_region, register, setup_storage_root
 
 
 def set_storage(
