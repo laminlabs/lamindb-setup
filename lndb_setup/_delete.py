@@ -72,8 +72,6 @@ def delete_cache(cache_dir: Path):
 
 
 def delete_metadata(hub: Client, instance_id: str, instance_default_storage_id: str):
-    hub.table("user_instance").delete().eq("instance_id", instance_id).execute()
-    hub.table("usage").delete().eq("instance_id", instance_id).execute()
     hub.table("instance").delete().eq("id", instance_id).execute()
     hub.table("storage").delete().eq("id", instance_default_storage_id).execute()
 
