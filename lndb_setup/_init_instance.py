@@ -102,7 +102,6 @@ def init(
     storage: Union[str, Path, CloudPath],
     url: Optional[str] = None,
     schema: Optional[str] = None,
-    migrate: Optional[bool] = None,
     name: Optional[str] = None,
 ) -> Optional[str]:
     """Setup LaminDB.
@@ -112,7 +111,6 @@ def init(
         url: {}
         schema: {}
         name: {}
-        migrate: Whether to auto-migrate or not.
     """
     assert settings.user.id  # check user is logged in
 
@@ -120,7 +118,7 @@ def init(
     instance_name = get_instance_name(storage_root, url, name)
 
     if instance_exists(instance_name, storage, url):
-        message = load(instance_name, settings.user.handle, migrate=migrate)
+        message = load(instance_name, settings.user.handle)
         if message not in ["db-is-not-setup"]:
             return message
 
@@ -142,7 +140,7 @@ def init(
             logger.warning(
                 "Instance local settings not found, loading instance using an unkown db"
             )
-        return load(isettings.name, isettings.owner, migrate=migrate)
+        return load(isettings.name, isettings.owner)
 
     message = check_db_not_registered_in_hub(storage_root, url)
     if message is not None:
