@@ -208,7 +208,7 @@ class InstanceSettings:
                 # this seems to work even if there is an open connection
                 # to the cache file
                 os.utime(cache_file, times=(cloud_mtime, cloud_mtime))
-            locker = self._locker
+            locker = self.locker
             if locker is not None:
                 locker.unlock()
 
@@ -233,6 +233,13 @@ class InstanceSettings:
             return "sqlite"
         return self.url
 
+    @property
+    def locker(self):
+        if self.dialect == "sqlite" and self._locker is None:
+            self._locker = get_locker()
+
+        return self._locker
+
     def db_engine(self, future=True):
         """Database engine."""
         return sqm.create_engine(self.db, future=future)
@@ -240,10 +247,7 @@ class InstanceSettings:
     def session(self, lock: bool = False) -> sqm.Session:
         """Database session."""
         if lock:
-            if self._dbconfig == "sqlite" and self._locker is None:
-                self._locker = get_locker()
-
-            locker = self._locker
+            locker = self.locker
             if locker is not None:
                 try:
                     locker.lock()
