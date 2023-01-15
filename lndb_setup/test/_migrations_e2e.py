@@ -10,7 +10,6 @@ from lndb_setup._clone import clone_test, setup_local_test_sqlite_file
 from lndb_setup._init_instance import init
 from lndb_setup._settings import settings
 from lndb_setup._settings_instance import InstanceSettings
-from lndb_setup._settings_load import setup_storage_root
 
 
 def migrate_clones(
@@ -35,29 +34,29 @@ def migrate_clones(
     results = []
     for instance in run_instances.iloc[:n_instances]:
         logger.info(f"Testing: {instance}")
-        url, storage_root, name = None, None, None
+        db, storage_root, name = None, None, None
         for prefix in {"s3://", "gc://"}:
             if instance.startswith(prefix):
-                url = None
+                db = None
                 name = instance.replace(prefix, "").split("/")[0]
-                storage_root = setup_storage_root(prefix + name)
+                storage_root = prefix + name
         if instance.startswith("postgresql"):
-            url = instance
+            db = instance
             storage_root = "pgtest"
             name = "pgtest"
         # init test instance
         src_settings = InstanceSettings(
             storage_root=storage_root,
-            url=url,
+            db=db,
             name=name,  # type: ignore  # noqa
             owner=settings.user.handle,
         )
         connection_string = clone_test(src_settings=src_settings)
-        if url is None:
+        if db is None:
             storage_test = setup_local_test_sqlite_file(src_settings, return_dir=True)
             result = init(storage=storage_test, migrate=True)
         else:
-            result = init(url=connection_string, storage=storage_root, migrate=True)
+            result = init(db=connection_string, storage=storage_root, migrate=True)
         logger.info(result)
         if dialect_name == "postgresql":
             run("docker stop pgtest && docker rm pgtest", shell=True)

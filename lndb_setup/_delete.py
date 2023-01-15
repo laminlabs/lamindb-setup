@@ -3,17 +3,15 @@ from pathlib import Path
 
 from lamin_logger import logger
 
-from ._load_instance import load_isettings
 from ._settings import settings
+from ._settings_load import load_instance_settings
 from ._settings_store import instance_settings_file
 
 
 def delete(instance_name: str):
     """Delete an instance."""
     settings_file = instance_settings_file(instance_name, settings.user.handle)
-    message, isettings = load_isettings(instance_name, settings.user.handle)
-    if message is not None:
-        return message
+    isettings = load_instance_settings(settings_file)
 
     if isettings.is_remote:
         logger.info("Please delete your remote instance on lamin.ai.")

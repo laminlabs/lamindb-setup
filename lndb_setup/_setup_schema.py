@@ -7,14 +7,15 @@ from lnhub_rest._assets._schemas import get_schema_module_name
 
 from ._db import insert
 from ._settings import settings
-from ._settings_instance import InstanceSettings, _set_mute_sync_warnings
+from ._settings_instance import InstanceSettings
 from ._settings_user import UserSettings
+from ._storage import _set_mute_sync_warnings
 
 
 def create_schema_if_not_exists(schema_name: str, isettings: InstanceSettings):
     # create the schema module in case it doesn't exist
-    if isettings._dbconfig != "sqlite":
-        with isettings.db_engine().connect() as conn:
+    if isettings.dialect != "sqlite":
+        with isettings.engine.connect() as conn:
             if not conn.dialect.has_schema(conn, schema_name):
                 conn.execute(sa.schema.CreateSchema(schema_name))
             conn.commit()
@@ -28,7 +29,7 @@ def reload_orms(schema_name, module, isettings):
         orms += [
             cls for cls in module.link.__dict__.values() if hasattr(cls, "__table__")
         ]
-    if isettings._dbconfig == "sqlite":
+    if isettings.dialect == "sqlite":
         # only those orms that are actually in a schema
         orms = [
             orm
@@ -71,7 +72,7 @@ def setup_schema(isettings: InstanceSettings, usettings: UserSettings):
     msg, schema_names = load_schema(isettings)
     logger.info(f"{msg}")
 
-    sqm.SQLModel.metadata.create_all(isettings.db_engine())
+    sqm.SQLModel.metadata.create_all(isettings.engine)
 
     # we could try to also retrieve the user name here at some point
     insert.user(

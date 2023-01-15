@@ -1,14 +1,15 @@
 import os
 import shutil
-from dataclasses import dataclass
 from pathlib import Path
-from typing import Optional, Set, Union, get_type_hints
+from typing import Literal, Optional, Set, Union, get_type_hints
 
+import sqlalchemy as sa
 import sqlmodel as sqm
-from appdirs import AppDirs
-from cloudpathlib import CloudPath, GSClient, S3Client
-from cloudpathlib.exceptions import OverwriteNewerLocalError
-from lamin_logger import logger
+from cloudpathlib import CloudPath
+from pydantic import PostgresDsn
+from sqlalchemy import Engine
+
+from lndb_setup._storage import Storage
 
 from ._exclusion import Locker, get_locker
 from ._settings_save import save_settings
@@ -33,155 +34,51 @@ from ._settings_store import (
 #         cursor.close()
 
 
-_MUTE_SYNC_WARNINGS = False
-
-
-def _set_mute_sync_warnings(value: bool):
-    global _MUTE_SYNC_WARNINGS
-
-    _MUTE_SYNC_WARNINGS = value
-
-
-DIRS = AppDirs("lamindb", "laminlabs")
-
-
-class Storage:
-    def __init__(self, settings: "InstanceSettings"):
-        self.settings = settings
-
-    @property
-    def client(self) -> Union[S3Client, GSClient]:
-        if self.type == "s3":
-            return S3Client(local_cache_dir=self.settings.cache_dir)
-        elif self.type == "gs":
-            # the below seems needed as cloudpathlib on its
-            # own fails to initialize when using gcloud auth login
-            # and not JSON credentials
-            from google.cloud import storage as gstorage
-
-            return GSClient(
-                local_cache_dir=self.settings.cache_dir,
-                storage_client=gstorage.Client(),
-            )
-        elif self.type == "local":
-            raise RuntimeError("You shouldn't need a client for local storage.")
-        else:
-            raise RuntimeError(
-                "Currently, only AWS S3 and Google cloud are supported for cloud"
-                " storage."
-            )
-
-    @property
-    def type(self) -> str:
-        """AWS S3 vs. Google Cloud vs. local.
-
-        Returns "s3" or "gs" or "local".
-        """
-        return get_storage_type(self.settings.storage_root)
-
-    def key_to_filepath(
-        self, filekey: Union[Path, CloudPath, str]
-    ) -> Union[Path, CloudPath]:
-        """Cloud or local filepath from filekey."""
-        if self.settings.cloud_storage:
-            return self.client.CloudPath(self.settings.storage_root / filekey)
-        else:
-            return self.settings.storage_root / filekey
-
-    def cloud_to_local(self, filepath: Union[Path, CloudPath]) -> Path:
-        """Local (cache) filepath from filepath."""
-        try:
-            # the following will auto-update the local cache if the cloud file is newer
-            # if both have the same age, it will keep it as is
-            if self.settings.cloud_storage:
-                local_filepath = self.client.CloudPath(filepath).fspath
-            else:
-                local_filepath = Path(filepath)
-        except OverwriteNewerLocalError:
-            local_filepath = self.cloud_to_local_no_update(filepath)  # type: ignore
-            if not _MUTE_SYNC_WARNINGS:
-                logger.warning(
-                    f"Local file ({local_filepath}) for cloud path ({filepath}) is newer on disk than in cloud.\n"  # noqa
-                    "It seems you manually updated the database locally and didn't push changes to the cloud.\n"  # noqa
-                    "This can lead to data loss if somebody else modified the cloud file in"  # noqa
-                    " the meantime."
-                )
-        Path(local_filepath).parent.mkdir(
-            parents=True, exist_ok=True
-        )  # this should not happen here but is currently needed
-        return local_filepath
-
-    # conversion to Path via cloud_to_local() would trigger download
-    # of remote file to cache if there already is one
-    # in pure write operations that update the cloud, we don't want this
-    # hence, we manually construct the local file path
-    # using the `.parts` attribute in the following line
-    def cloud_to_local_no_update(self, filepath: Union[Path, CloudPath]) -> Path:
-        if self.settings.cloud_storage:
-            return self.settings.cache_dir.joinpath(*filepath.parts[1:])  # type: ignore
-        return filepath
-
-    def local_filepath(self, filekey: Union[Path, CloudPath, str]) -> Path:
-        """Local (cache) filepath from filekey: `local(filepath(...))`."""
-        return self.cloud_to_local(self.key_to_filepath(filekey))
-
-
-def instance_from_storage(storage):
-    return str(storage.stem).lower()
-
-
-# This provides the doc strings for the init function on the
-# CLI and the API
-# It is located here as it *mostly* parallels the InstanceSettings docstrings.
-# Small differences are on purpose, due to the different scope!
-class init_instance_arg_doc:
-    storage_root = """Storage root. Either local dir, ``s3://bucket_name`` or ``gs://bucket_name``."""  # noqa
-    storage_region = """Cloud storage region for s3 and Google Cloud."""
-    url = """Database connection url, do not pass for SQLite."""
-    name = """Instance name."""
-    _schema = """Comma-separated string of schema modules. None if not set."""
-
-
-@dataclass
 class InstanceSettings:
-    """Instance settings written during setup."""
+    """Instance settings."""
 
-    owner: str
-    """Instance owner."""
-    name: str
-    """Instance name."""
-    storage_root: Union[CloudPath, Path] = None  # None is just for init, can't be None
-    """Storage root. Either local dir, ``s3://bucket_name`` or ``gs://bucket_name``."""
-    storage_region: Optional[str] = None
-    """Cloud storage region for s3 and Google Cloud."""
-    url: Optional[str] = None
-    """Database connection url, None for SQLite."""
-    _schema: str = ""
-    """Comma-separated string of schema modules. Empty string if only core schema."""
-    _session: Optional[sqm.Session] = None
-    _locker: Optional[Locker] = None
+    def __init__(
+        self,
+        owner: str,  # owner handle
+        name: str,  # instance name
+        storage_root: Union[str, Path, CloudPath],  # storage location on cloud
+        storage_region: Optional[str] = None,
+        db: Optional[PostgresDsn] = None,  # DB URI
+        schema: Optional[str] = None,  # comma-separated string of schema names
+    ):
+        self._owner: str = owner
+        self._name: str = name
+        self._storage: Storage = Storage(storage_root, region=storage_region)
+        self._db: Optional[str] = None
+        self._schema_str: Optional[str] = schema
+        self._locker: Optional[Locker] = None
+        self._engine: Engine = sqm.create_engine(self.db)
+
+    @property
+    def owner(self) -> str:
+        """Instance owner. A user or organization account handle."""
+        return self._owner
+
+    @property
+    def name(self) -> str:
+        """Instance name."""
+        return self._name
+
+    @property
+    def identifier(self) -> str:
+        """Unique identifier.
+
+        See remote instances at https://lamin.ai/owner/name.
+        """
+        return f"{self.owner}/{self.name}"
 
     @property
     def schema(self) -> Set[str]:
         """Schema modules in addition to core schema."""
-        return {schema for schema in self._schema.split(",") if schema != ""}
-
-    @property
-    def cloud_storage(self) -> bool:
-        """`True` if `storage_root` is in cloud, `False` otherwise."""
-        return isinstance(self.storage_root, CloudPath)
-
-    @property
-    def cache_dir(
-        self,
-    ) -> Union[Path, None]:
-        """Cache root, a local directory to cache cloud files."""
-        if self.cloud_storage:
-            cache_dir = Path(DIRS.user_cache_dir)
-            cache_dir.mkdir(parents=True, exist_ok=True)
+        if self._schema_str is None:
+            return {}  # type: ignore
         else:
-            cache_dir = None
-        return cache_dir
+            return {schema for schema in self._schema_str.split(",")}
 
     @property
     def _sqlite_file(self) -> Union[Path, CloudPath]:
@@ -193,13 +90,13 @@ class InstanceSettings:
 
     @property
     def _sqlite_file_local(self) -> Path:
-        """Cached local sqlite file."""
+        """Local SQLite file."""
         return self.storage.cloud_to_local_no_update(self._sqlite_file)
 
     def _update_cloud_sqlite_file(self) -> None:
         """Unlock; if on cloud storage, update remote file."""
         if self.dialect == "sqlite":
-            if self.cloud_storage:
+            if self.storage.is_cloud:
                 sqlite_file = self._sqlite_file
                 cache_file = self.storage.cloud_to_local_no_update(sqlite_file)
                 sqlite_file.upload_from(cache_file, force_overwrite_to_cloud=True)  # type: ignore  # noqa
@@ -215,32 +112,31 @@ class InstanceSettings:
     @property
     def db(self) -> str:
         """Database URL."""
-        # the great thing about cloudpathlib is that it downloads the
-        # remote file to cache as soon as the time stamp is out of date
-        if self.url is None:
+        if self._db is None:
+            # here, we want the updated sqlite file
+            # hence, we don't use self._sqlite_file_local()
             return f"sqlite:///{self.storage.cloud_to_local(self._sqlite_file)}"
         else:
-            return self.url
+            return self._db
 
     @property
-    def dialect(self):
-        return get_db_dialect(self.url)
-
-    @property
-    def _dbconfig(self):
-        # logger.warning("_dbconfig is deprecated and will be removed soon")
-        if self.dialect == "sqlite":
+    def dialect(self) -> Literal["sqlite", "postgresql"]:
+        """SQL dialect."""
+        if self._db is None or self._db.startswith("sqlite://"):
             return "sqlite"
-        return self.url
+        else:
+            assert self._db.startswith("postgresql://")
+            return "postgresql"
 
-    def db_engine(self, future=True):
+    @property
+    def engine(self) -> Engine:
         """Database engine."""
-        return sqm.create_engine(self.db, future=future)
+        return self._engine
 
     def session(self, lock: bool = False) -> sqm.Session:
         """Database session."""
         if lock:
-            if self._dbconfig == "sqlite" and self._locker is None:
+            if self.dialect == "sqlite" and self._locker is None:
                 self._locker = get_locker()
 
             locker = self._locker
@@ -251,52 +147,34 @@ class InstanceSettings:
                     locker.unlock()
                     raise e
 
-        if "LAMIN_SKIP_MIGRATION" not in os.environ:
-            if self._session is None:
-                self._session = sqm.Session(self.db_engine(), expire_on_commit=False)
-            elif self.cloud_storage and self.dialect == "sqlite":
-                # doing semi-manually for easier replacemnet of cloudpathib
-                # in the future
-                sqlite_file = self._sqlite_file
-                cache_file = self.storage.cloud_to_local_no_update(sqlite_file)
-                # checking cloud mtime several times here because of potential changes
-                # during the synchronizization process. Maybe better
-                # to make these checks dependent on lock,
-                # i.e. if locked check cloud mtime only once.
-                if not cache_file.exists():
-                    cache_file.parent.mkdir(parents=True, exist_ok=True)
-                    cloud_mtime = sqlite_file.stat().st_mtime  # type: ignore
-                    sqlite_file.download_to(cache_file)  # type: ignore
-                    os.utime(cache_file, times=(cloud_mtime, cloud_mtime))
-                elif sqlite_file.stat().st_mtime > cache_file.stat().st_mtime:  # type: ignore  # noqa
-                    # no need to recreate session
-                    # just need to close current connections
-                    # in order to replace the sqlite db file
-                    # connections seem to be recreated for every transaction
-                    # invalidate because we need to close the connections immediately
-                    self._session.invalidate()
-                    # checking the time again because
-                    # it could be changed in the meantime
-                    cloud_mtime = sqlite_file.stat().st_mtime  # type: ignore
-                    sqlite_file.download_to(cache_file)  # type: ignore
-                    os.utime(cache_file, times=(cloud_mtime, cloud_mtime))
-
-            # should probably add a different check whether the session is still active
-            if not self._session.is_active:
-                self._session = sqm.Session(self.db_engine(), expire_on_commit=False)
-            return self._session
-        else:
-            return sqm.Session(self.db_engine(), expire_on_commit=False)
+        return sqm.Session(self.engine, expire_on_commit=False)
 
     @property
     def storage(self) -> Storage:
         """Low-level access to storage location."""
-        return Storage(self)
+        return self._storage
 
     @property
     def is_remote(self) -> bool:
-        """Boolean indicating if an instance have no local component."""
-        return is_instance_remote(self.storage.settings.storage_root, self.url)
+        """Boolean indicating if an instance has no local component."""
+        if not self.storage.is_cloud:
+            return False
+
+        def is_local_uri(uri: str):
+            if "@localhost:" in uri:
+                return True
+            if "@0.0.0.0:" in uri:
+                return True
+            if "@127.0.0.1" in uri:
+                return True
+            return False
+
+        if self.dialect == "postgresql":
+            if is_local_uri(self.db):
+                return False
+        # returns True for remote SQLite
+        # and remote postgres
+        return True
 
     def _persist(self) -> None:
         assert self.name is not None
@@ -312,41 +190,28 @@ class InstanceSettings:
 
         settings._instance_settings = self
 
-
-def is_local_postgres(url: str):
-    if "@localhost:" in url:
-        return True
-    if "@0.0.0.0:" in url:
-        return True
-    if "@127.0.0.1" in url:
-        return True
-    return False
-
-
-def is_instance_remote(storage_root: Union[CloudPath, Path], url: Optional[str]):
-    dialect = get_db_dialect(url)
-    storage_type = get_storage_type(storage_root)
-    if storage_type == "local":
-        return False
-    if dialect == "postgresql":
-        assert url is not None, "Postgres db url is none"
-        if is_local_postgres(url):
-            return False
-    return True
-
-
-def get_db_dialect(url: Optional[str]):
-    if url is None or url.startswith("sqlite://"):
-        return "sqlite"
-    elif url.startswith("postgresql://"):
-        return "postgresql"
-    return None
-
-
-def get_storage_type(storage_root):
-    if str(storage_root).startswith("s3://"):
-        return "s3"
-    elif str(storage_root).startswith("gs://"):
-        return "gs"
-    else:
-        return "local"
+    def _check_db_setup(self):
+        """Is the database available and initialized as LaminDB?"""
+        check = False
+        if self.dialect == "sqlite":
+            if not self._sqlite_file.exists():
+                raise RuntimeError("SQLite file does not exist")
+        else:  # postgres
+            assert self.dialect == "postgresql"
+            with self.engine.connect() as conn:
+                results = conn.execute(
+                    sa.text(
+                        """
+                    SELECT EXISTS (
+                        SELECT FROM
+                            information_schema.tables
+                        WHERE
+                            table_schema LIKE 'public' AND
+                            table_name = 'version_yvzi'
+                    );
+                """
+                    )
+                ).first()  # returns tuple of boolean
+                check = results[0]
+                if not check:
+                    raise RuntimeError("Postgres does not seem initialized.")

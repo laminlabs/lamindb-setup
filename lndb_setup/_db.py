@@ -15,7 +15,7 @@ class upsert:
     def user(cls, email: str, user_id: str, handle: str, name: str = None):
         import lnschema_core as schema_core
 
-        with sqm.Session(settings.instance.db_engine()) as session:
+        with sqm.Session(settings.instance.engine) as session:
             user_table = (
                 schema_core.User if hasattr(schema_core, "User") else schema_core.user
             )  # noqa
@@ -40,7 +40,7 @@ class upsert:
             update_name = name != user.name and name is not None
 
             if any((update_email, update_handle, update_name)):
-                with sqm.Session(settings.instance.db_engine()) as session:
+                with sqm.Session(settings.instance.engine) as session:
                     msg = "Updating: "
                     if update_email:
                         msg += f"{user.email} -> {email} "
@@ -71,7 +71,7 @@ class insert_if_not_exists:
         import lnschema_core as schema_core
 
         root = str(root)
-        with sqm.Session(settings.instance.db_engine()) as session:
+        with sqm.Session(settings.instance.engine) as session:
             storage_table = (
                 schema_core.Storage
                 if hasattr(schema_core, "Storage")
@@ -110,7 +110,7 @@ class insert:
             schema_module._migration,
         )
 
-        with sqm.Session(settings.instance.db_engine()) as session:
+        with sqm.Session(settings.instance.engine) as session:
             table_loc = (
                 schema_module.dev if hasattr(schema_module, "dev") else schema_module
             )
@@ -126,7 +126,7 @@ class insert:
         """User."""
         import lnschema_core as schema_core
 
-        with sqm.Session(settings.instance.db_engine()) as session:
+        with sqm.Session(settings.instance.engine) as session:
             user_table = (
                 schema_core.User if hasattr(schema_core, "User") else schema_core.user
             )  # noqa
@@ -144,7 +144,7 @@ class insert:
         """Storage."""
         import lnschema_core as schema_core
 
-        with sqm.Session(settings.instance.db_engine()) as session:
+        with sqm.Session(settings.instance.engine) as session:
             storage_table = (
                 schema_core.Storage
                 if hasattr(schema_core, "Storage")
@@ -166,7 +166,7 @@ class insert:
         """Bionty versions."""
         from lnschema_bionty import dev
 
-        with sqm.Session(settings.instance.db_engine()) as session:
+        with sqm.Session(settings.instance.engine) as session:
             for record in records:
                 session.add(record)
                 current_record = dev.CurrentBiontyVersions(

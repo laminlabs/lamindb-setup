@@ -11,7 +11,7 @@ class schema:
         """Make a diagram of entity relationships."""
         import erdiagram
 
-        engine = settings.instance.db_engine()
+        engine = settings.instance.engine
         metadata = sql.MetaData(bind=engine)
         metadata.reflect()
         graph = erdiagram.create_schema_graph(
@@ -30,7 +30,7 @@ class schema:
     def list_entities(cls):
         """Return all entities in the db."""
         metadata = sql.MetaData()
-        engine = settings.instance.db_engine()
+        engine = settings.instance.engine
         metadata.reflect(bind=engine)
         table_names = [table.name for table in metadata.sorted_tables]
         return table_names

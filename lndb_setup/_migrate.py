@@ -39,7 +39,7 @@ def check_migrate(
 
         schema_id = schema_module._schema_id
 
-        with sqm.Session(isettings.db_engine()) as session:
+        with sqm.Session(isettings.engine) as session:
             table_loc = (
                 schema_module.dev if hasattr(schema_module, "dev") else schema_module
             )
@@ -113,7 +113,7 @@ def modify_alembic_ini(
     sl_from, sl_to = schema_module_path, "migrations"
     url_from = "sqlite:///testdb/testdb.lndb"
     url_to_sqlite = f"sqlite:///{isettings._sqlite_file_local}"
-    url_to = url_to_sqlite if isettings._dbconfig == "sqlite" else isettings._dbconfig
+    url_to = url_to_sqlite if isettings.dialect == "sqlite" else isettings.db
 
     if revert:
         sl_from, sl_to = sl_to, sl_from

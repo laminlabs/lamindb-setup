@@ -87,12 +87,10 @@ def clone_test(src_settings: Optional[InstanceSettings] = None, depth: int = 10)
     """Clone from current instance to a test instance."""
     if src_settings is None:
         src_settings = settings.instance
-    if src_settings.storage_root is None:
-        raise RuntimeError("Please run `lndb init` to configure an instance.")
     src_engine = create_engine(src_settings.db)
     src_metadata = MetaData()
 
-    if src_settings._dbconfig == "sqlite":
+    if src_settings.dialect == "sqlite":
         tgt_db = setup_local_test_sqlite_file(src_settings)
     else:
         tgt_db = setup_local_test_postgres()
