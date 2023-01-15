@@ -6,9 +6,6 @@ from typing import Optional, Set, Union, get_type_hints
 
 import sqlmodel as sqm
 from appdirs import AppDirs
-from cloudpathlib import CloudPath, GSClient, S3Client
-from cloudpathlib.exceptions import OverwriteNewerLocalError
-from lamin_logger import logger
 
 from ._exclusion import Locker, get_locker
 from ._settings_save import save_settings
@@ -17,6 +14,7 @@ from ._settings_store import (
     current_instance_settings_file,
     instance_settings_file,
 )
+from ._upath_ext import UPath
 
 # leave commented out until we understand more how to deal with
 # migrations in redun
@@ -50,28 +48,6 @@ class Storage:
         self.settings = settings
 
     @property
-    def client(self) -> Union[S3Client, GSClient]:
-        if self.type == "s3":
-            return S3Client(local_cache_dir=self.settings.cache_dir)
-        elif self.type == "gs":
-            # the below seems needed as cloudpathlib on its
-            # own fails to initialize when using gcloud auth login
-            # and not JSON credentials
-            from google.cloud import storage as gstorage
-
-            return GSClient(
-                local_cache_dir=self.settings.cache_dir,
-                storage_client=gstorage.Client(),
-            )
-        elif self.type == "local":
-            raise RuntimeError("You shouldn't need a client for local storage.")
-        else:
-            raise RuntimeError(
-                "Currently, only AWS S3 and Google cloud are supported for cloud"
-                " storage."
-            )
-
-    @property
     def type(self) -> str:
         """AWS S3 vs. Google Cloud vs. local.
 
@@ -79,36 +55,19 @@ class Storage:
         """
         return get_storage_type(self.settings.storage_root)
 
-    def key_to_filepath(
-        self, filekey: Union[Path, CloudPath, str]
-    ) -> Union[Path, CloudPath]:
+    def key_to_filepath(self, filekey: Union[Path, UPath, str]) -> Union[Path, UPath]:
         """Cloud or local filepath from filekey."""
         if self.settings.cloud_storage:
-            return self.client.CloudPath(self.settings.storage_root / filekey)
+            return UPath(self.settings.storage_root / filekey)
         else:
             return self.settings.storage_root / filekey
 
-    def cloud_to_local(self, filepath: Union[Path, CloudPath]) -> Path:
+    def cloud_to_local(self, filepath: Union[Path, UPath]) -> Path:
         """Local (cache) filepath from filepath."""
-        try:
-            # the following will auto-update the local cache if the cloud file is newer
-            # if both have the same age, it will keep it as is
-            if self.settings.cloud_storage:
-                local_filepath = self.client.CloudPath(filepath).fspath
-            else:
-                local_filepath = Path(filepath)
-        except OverwriteNewerLocalError:
-            local_filepath = self.cloud_to_local_no_update(filepath)  # type: ignore
-            if not _MUTE_SYNC_WARNINGS:
-                logger.warning(
-                    f"Local file ({local_filepath}) for cloud path ({filepath}) is newer on disk than in cloud.\n"  # noqa
-                    "It seems you manually updated the database locally and didn't push changes to the cloud.\n"  # noqa
-                    "This can lead to data loss if somebody else modified the cloud file in"  # noqa
-                    " the meantime."
-                )
-        Path(local_filepath).parent.mkdir(
-            parents=True, exist_ok=True
-        )  # this should not happen here but is currently needed
+        local_filepath = self.cloud_to_local_no_update(filepath)  # type: ignore
+        if isinstance(filepath, UPath):
+            filepath.synchronize(local_filepath, sync_warn=not _MUTE_SYNC_WARNINGS)
+
         return local_filepath
 
     # conversion to Path via cloud_to_local() would trigger download
@@ -116,12 +75,12 @@ class Storage:
     # in pure write operations that update the cloud, we don't want this
     # hence, we manually construct the local file path
     # using the `.parts` attribute in the following line
-    def cloud_to_local_no_update(self, filepath: Union[Path, CloudPath]) -> Path:
+    def cloud_to_local_no_update(self, filepath: Union[Path, UPath]) -> Path:
         if self.settings.cloud_storage:
             return self.settings.cache_dir.joinpath(*filepath.parts[1:])  # type: ignore
         return filepath
 
-    def local_filepath(self, filekey: Union[Path, CloudPath, str]) -> Path:
+    def local_filepath(self, filekey: Union[Path, UPath, str]) -> Path:
         """Local (cache) filepath from filekey: `local(filepath(...))`."""
         return self.cloud_to_local(self.key_to_filepath(filekey))
 
@@ -150,7 +109,7 @@ class InstanceSettings:
     """Instance owner."""
     name: str
     """Instance name."""
-    storage_root: Union[CloudPath, Path] = None  # None is just for init, can't be None
+    storage_root: Union[UPath, Path] = None  # None is just for init, can't be None
     """Storage root. Either local dir, ``s3://bucket_name`` or ``gs://bucket_name``."""
     storage_region: Optional[str] = None
     """Cloud storage region for s3 and Google Cloud."""
@@ -169,7 +128,7 @@ class InstanceSettings:
     @property
     def cloud_storage(self) -> bool:
         """`True` if `storage_root` is in cloud, `False` otherwise."""
-        return isinstance(self.storage_root, CloudPath)
+        return isinstance(self.storage_root, UPath)
 
     @property
     def cache_dir(
@@ -184,7 +143,7 @@ class InstanceSettings:
         return cache_dir
 
     @property
-    def _sqlite_file(self) -> Union[Path, CloudPath]:
+    def _sqlite_file(self) -> Union[Path, UPath]:
         """SQLite file.
 
         Is a CloudPath if on S3 or GS, otherwise a Path.
@@ -202,9 +161,9 @@ class InstanceSettings:
             if self.cloud_storage:
                 sqlite_file = self._sqlite_file
                 cache_file = self.storage.cloud_to_local_no_update(sqlite_file)
-                sqlite_file.upload_from(cache_file, force_overwrite_to_cloud=True)  # type: ignore  # noqa
+                sqlite_file.upload_from(cache_file)  # type: ignore  # noqa
                 # doing semi-manually to replace cloudpahlib easily in the future
-                cloud_mtime = sqlite_file.stat().st_mtime  # type: ignore
+                cloud_mtime = sqlite_file.modified.timestamp()  # type: ignore
                 # this seems to work even if there is an open connection
                 # to the cache file
                 os.utime(cache_file, times=(cloud_mtime, cloud_mtime))
@@ -263,24 +222,11 @@ class InstanceSettings:
                 # during the synchronizization process. Maybe better
                 # to make these checks dependent on lock,
                 # i.e. if locked check cloud mtime only once.
-                if not cache_file.exists():
-                    cache_file.parent.mkdir(parents=True, exist_ok=True)
-                    cloud_mtime = sqlite_file.stat().st_mtime  # type: ignore
-                    sqlite_file.download_to(cache_file)  # type: ignore
-                    os.utime(cache_file, times=(cloud_mtime, cloud_mtime))
-                elif sqlite_file.stat().st_mtime > cache_file.stat().st_mtime:  # type: ignore  # noqa
-                    # no need to recreate session
-                    # just need to close current connections
-                    # in order to replace the sqlite db file
-                    # connections seem to be recreated for every transaction
-                    # invalidate because we need to close the connections immediately
-                    self._session.invalidate()
-                    # checking the time again because
-                    # it could be changed in the meantime
-                    cloud_mtime = sqlite_file.stat().st_mtime  # type: ignore
-                    sqlite_file.download_to(cache_file)  # type: ignore
-                    os.utime(cache_file, times=(cloud_mtime, cloud_mtime))
 
+                def _invalidate_session():
+                    self._session.invalidate()
+
+                sqlite_file.synchronize(cache_file, callback=_invalidate_session)  # type: ignore # noqa
             # should probably add a different check whether the session is still active
             if not self._session.is_active:
                 self._session = sqm.Session(self.db_engine(), expire_on_commit=False)
@@ -323,7 +269,7 @@ def is_local_postgres(url: str):
     return False
 
 
-def is_instance_remote(storage_root: Union[CloudPath, Path], url: Optional[str]):
+def is_instance_remote(storage_root: Union[UPath, Path], url: Optional[str]):
     dialect = get_db_dialect(url)
     storage_type = get_storage_type(storage_root)
     if storage_type == "local":
