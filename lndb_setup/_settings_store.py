@@ -74,8 +74,3 @@ class UserSettingsStore(BaseSettings):
 
     class Config:
         env_file = ".env"
-
-
-class Connector(BaseSettings):
-    url: str
-    key: str
