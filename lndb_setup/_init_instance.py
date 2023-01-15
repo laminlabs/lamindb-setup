@@ -3,22 +3,18 @@ from typing import Optional, Union
 
 from cloudpathlib import CloudPath
 from lamin_logger import logger
+
+# from lnhub_rest._init_instance import init_instance as init_instance_hub
 from lnhub_rest._init_instance import validate_schema_arg
 from sqlalchemy import text
 
 from ._db import insert_if_not_exists, upsert
 from ._docs import doc_args
-from ._hub import (
-    get_instances_from_field,
-    get_storages_from_field,
-    is_instance_registered_in_hub,
-    push_instance_if_not_exists,
-)
 from ._load import load
 from ._settings import settings
-from ._settings_instance import InstanceSettings, get_db_dialect, get_storage_type
+from ._settings_instance import InstanceSettings
 from ._settings_instance import init_instance_arg_doc as description
-from ._settings_instance import instance_settings_file, is_instance_remote
+from ._settings_instance import is_instance_remote
 from ._settings_load import setup_storage_root
 from ._settings_store import current_instance_settings_file
 from ._setup_knowledge import write_bionty_versions
@@ -56,11 +52,7 @@ def register(isettings: InstanceSettings, usettings):
     # (passing user.name from cloud to the upsert as is done in setup_user.py)
     upsert.user(usettings.email, usettings.id, usettings.handle, usettings.name)
 
-    storage_db_entry = insert_if_not_exists.storage(
-        isettings.storage_root, isettings.storage_region
-    )
-    if isettings.is_remote:
-        push_instance_if_not_exists(isettings, storage_db_entry)
+    insert_if_not_exists.storage(isettings.storage_root, isettings.storage_region)
 
 
 def persist_check_reload_schema(isettings: InstanceSettings):
@@ -113,14 +105,14 @@ def init(
         name: {}
     """
     assert settings.user.id  # check user is logged in
-
+    owner = settings.user.handle
     storage_root = setup_storage_root(storage)
     instance_name = get_instance_name(storage_root, url, name)
 
-    if instance_exists(instance_name, storage, url):
-        message = load(instance_name, settings.user.handle)
-        if message not in ["db-is-not-setup"]:
-            return message
+    # test whether instance exists by trying to load it
+    message = load(owner=owner, instance_name=instance_name)
+    if message is None:
+        return None
 
     isettings = InstanceSettings(
         storage_root=storage_root,
@@ -142,7 +134,6 @@ def init(
             )
         return load(isettings.name, isettings.owner)
 
-    message = check_db_not_registered_in_hub(storage_root, url)
     if message is not None:
         return message
     persist_check_reload_schema(isettings)
@@ -167,42 +158,3 @@ def get_instance_name(
         return url.split("/")[-1]
     else:
         return str(storage_root.stem).lower()
-
-
-def check_db_not_registered_in_hub(
-    storage_root: Union[Path, CloudPath], url: Optional[str]
-):
-    storage_type = get_storage_type(storage_root)
-    db_dialect = get_db_dialect(url)
-
-    if is_instance_remote(storage_type, url):
-        if db_dialect == "sqlite":
-            storage = get_storages_from_field("root", storage_root)
-            if storage is not None:
-                logger.error(
-                    "This storage location is already used by another SQLite remote"
-                    " instance."
-                )
-                return "remote-sqlite-storage-already-used"
-
-        else:
-            instance = get_instances_from_field("db", url)
-            if instance is not None:
-                logger.error("This database is already used by another instance.")
-                return "remote-postgres-db-already-used"
-
-    else:
-        return None
-
-
-def instance_exists(
-    instance_name: str, storage: Union[str, Path, CloudPath], url: Optional[str]
-):
-    if is_instance_remote(storage, url):
-        if is_instance_registered_in_hub(instance_name, settings.user.handle):
-            return True
-    else:
-        settings_file = instance_settings_file(instance_name, settings.user.handle)
-        if settings_file.exists():
-            return True
-    return False

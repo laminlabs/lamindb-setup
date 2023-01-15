@@ -1,10 +1,10 @@
 from typing import Union
 
 from lamin_logger import logger
+from lnhub_rest._sign_upin import sign_in_hub, sign_up_hub
 from sqlalchemy import create_engine
 
 from ._db import upsert
-from ._hub import sign_in_hub, sign_up_hub
 from ._schema import schema
 from ._settings import settings
 from ._settings_load import load_or_create_user_settings, load_user_settings
