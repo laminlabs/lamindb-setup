@@ -65,7 +65,8 @@ from os import name as _os_name
 
 from ._delete import delete  # noqa
 from ._info import info  # noqa
-from ._init_instance import close, init, load  # noqa
+from ._init_instance import close, init  # noqa
+from ._load_instance import load  # noqa
 from ._migrations import migrate
 from ._schema import schema  # noqa
 from ._set import set_storage  # noqa

@@ -3,7 +3,7 @@ from pathlib import Path
 
 from lamin_logger import logger
 
-from ._load import load_isettings
+from ._load_instance import load_isettings
 from ._settings import settings
 from ._settings_store import instance_settings_file
 

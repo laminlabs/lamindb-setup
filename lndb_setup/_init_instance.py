@@ -10,7 +10,7 @@ from sqlalchemy import text
 
 from ._db import insert_if_not_exists, upsert
 from ._docs import doc_args
-from ._load import load
+from ._load_instance import load
 from ._settings import settings
 from ._settings_instance import InstanceSettings
 from ._settings_instance import init_instance_arg_doc as description
