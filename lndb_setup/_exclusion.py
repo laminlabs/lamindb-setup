@@ -3,14 +3,15 @@ from pathlib import Path
 from typing import Optional, Union
 
 import fsspec
-from cloudpathlib import CloudPath
 from dateutil.parser import isoparse  # type: ignore
+
+from ._upath_ext import UPath
 
 EXPIRATION_TIME = 1800  # 30 min
 
 
 class Locker:
-    def __init__(self, user_id: str, storage_root: Union[CloudPath, Path]):
+    def __init__(self, user_id: str, storage_root: Union[UPath, Path]):
         print("init locker", user_id, storage_root)
         self.user = user_id
 

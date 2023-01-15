@@ -1,7 +1,6 @@
 from pathlib import Path
 from typing import Optional, Union
 
-from cloudpathlib import CloudPath
 from pydantic.error_wrappers import ValidationError
 
 from ._settings_instance import InstanceSettings
@@ -12,6 +11,7 @@ from ._settings_store import (
     current_user_settings_file,
 )
 from ._settings_user import UserSettings
+from ._upath_ext import UPath
 
 
 def load_instance_settings(instance_settings_file: Optional[Path] = None):
@@ -55,18 +55,10 @@ def load_user_settings(user_settings_file: Path):
     return settings
 
 
-def setup_storage_root(storage: Union[str, Path, CloudPath]) -> Union[Path, CloudPath]:
-    if str(storage).startswith("s3://"):  # AWS
-        storage_root = CloudPath(storage)
-    elif str(storage).startswith("gs://"):  # GCP
-        # the below seems needed as cloudpathlib on its
-        # own fails to initialize when using gcloud auth login
-        # and not JSON credentials
-        from cloudpathlib import GSClient
-        from google.cloud import storage as gstorage
-
-        client = GSClient(storage_client=gstorage.Client())
-        storage_root = CloudPath(storage, client)
+def setup_storage_root(storage: Union[str, Path, UPath]) -> Union[Path, UPath]:
+    storage_str = str(storage)
+    if storage_str.startswith("s3://") or storage_str.startswith("gs://"):
+        storage_root = UPath(storage)
     else:  # local path
         storage_root = Path(storage).absolute()
         storage_root.mkdir(parents=True, exist_ok=True)
