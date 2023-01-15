@@ -3,8 +3,8 @@ import importlib
 import sqlalchemy as sa
 import sqlmodel as sqm
 from lamin_logger import logger
+from lnhub_rest._assets._schemas import get_schema_module_name
 
-from ._assets._schemas import get_schema_module_name
 from ._db import insert
 from ._settings import settings
 from ._settings_instance import InstanceSettings, _set_mute_sync_warnings

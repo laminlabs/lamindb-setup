@@ -16,7 +16,7 @@ from sqlmodel import SQLModel
 from lndb_setup._init_instance import init
 
 
-def get_migration_config(schema_package, include_schemas=None):
+def get_migration_config(schema_package_loc, **kwargs):
     target_metadata = SQLModel.metadata
     target_metadata.naming_convention = {
         "ix": "ix_%(column_0_label)s",
@@ -26,12 +26,11 @@ def get_migration_config(schema_package, include_schemas=None):
         "pk": "pk_%(table_name)s",
     }
     raw_config = dict(
-        config_file_name=f"{schema_package}/alembic.ini",
-        script_location=f"{schema_package}/migrations",
+        config_file_name=f"{schema_package_loc}/alembic.ini",
+        script_location=f"{schema_package_loc}/migrations",
         target_metadata=target_metadata,
+        **kwargs,
     )
-    if include_schemas is not None:
-        raw_config["include_schemas"] = include_schemas
     config = Config.from_raw_config(raw_config)
     return config
 
@@ -47,9 +46,8 @@ def get_migration_context(schema_package, url, include_schemas=None):
     return migration_context
 
 
-def migration_id_is_consistent(schema_package):
+def get_migration_id_from_scripts(schema_package):
     config = get_migration_config(schema_package)
-    package = importlib.import_module(schema_package)
     output_buffer = io.StringIO()
     # get the id of the latest migration script
     if Path(f"./{schema_package}/migrations/versions").exists():
@@ -58,6 +56,12 @@ def migration_id_is_consistent(schema_package):
         migration_id = output.split(" ")[0]
     else:  # there is no scripts directory
         migration_id = ""
+    return migration_id
+
+
+def migration_id_is_consistent(schema_package):
+    migration_id = get_migration_id_from_scripts(schema_package)
+    package = importlib.import_module(schema_package)
     if package._migration is None:
         manual_migration_id = ""
     else:
