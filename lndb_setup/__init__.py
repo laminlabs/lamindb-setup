@@ -63,6 +63,7 @@ __version__ = "0.30.1"  # denote a pre-release for 0.1.0 with 0.1a1
 
 from os import name as _os_name
 
+from . import _check_versions  # noqa
 from ._close import close  # noqa
 from ._delete import delete  # noqa
 from ._info import info  # noqa
