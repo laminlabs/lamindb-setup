@@ -3,6 +3,7 @@
 <!-- prettier-ignore -->
 Name | PR | Developer | Date | Version
 --- | --- | --- | --- | ---
+Restore sqlite db synchronization on `instance.session()` call | [233](https://github.com/laminlabs/lndb-setup/pull/233) | [Koncopd](https://github.com/Koncopd) | 2023-01-16 |
 🐛 Fix migration config | [232](https://github.com/laminlabs/lndb-setup/pull/232) | [falexwolf](https://github.com/falexwolf) | 2023-01-16 | 0.30.6
 🎨 Document ontology versioning and remove legacy sql | [231](https://github.com/laminlabs/lndb-setup/pull/231) | [falexwolf](https://github.com/falexwolf) | 2023-01-16 | 0.30.5
 ✅ Test schema modules on postgres | [229](https://github.com/laminlabs/lndb-setup/pull/229) | [falexwolf](https://github.com/falexwolf) | 2023-01-16 |
