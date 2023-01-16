@@ -3,6 +3,7 @@
 <!-- prettier-ignore -->
 Name | PR | Developer | Date | Version
 --- | --- | --- | --- | ---
+🎨 Document ontology versioning and remove legacy sql | [231](https://github.com/laminlabs/lndb-setup/pull/231) | [falexwolf](https://github.com/falexwolf) | 2023-01-16 |
 ✅ Test schema modules on postgres | [229](https://github.com/laminlabs/lndb-setup/pull/229) | [falexwolf](https://github.com/falexwolf) | 2023-01-16 |
 🐛 Fix another occurence | [228](https://github.com/laminlabs/lndb-setup/pull/228) | [falexwolf](https://github.com/falexwolf) | 2023-01-16 | 0.30.4
 🔧 Fix nox for testing migrations | [227](https://github.com/laminlabs/lndb-setup/pull/227) | [falexwolf](https://github.com/falexwolf) | 2023-01-16 | 0.30.3
