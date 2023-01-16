@@ -48,14 +48,15 @@ def load_bionty_versions(isettings: InstanceSettings):
 
         basedir = Path(bt.__file__).parent / "versions"
 
-        df = pd.read_sql(
-            sqm.select(dev.BiontyVersions).join(dev.CurrentBiontyVersions),
-            isettings.engine,
-        )
+        stmt = sqm.select(dev.BiontyVersions).join(dev.CurrentBiontyVersions)
+        with isettings.session() as ss:
+            results = ss.exec(stmt).all()
         # avoid breaking change
         # if no versions were written in the db, write versions from bionty
-        if df.shape[0] == 0:
+        if len(results) == 0:
             write_bionty_versions(isettings)
+        records = [row.dict() for row in results]
+        df = pd.DataFrame.from_records(records)
         df_lndb = df.set_index("entity")[["database", "database_v"]]
         lndb_dict: Dict = {}
         for entity, db in df_lndb.iterrows():
