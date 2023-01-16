@@ -16,7 +16,9 @@ from sqlmodel import SQLModel
 from lndb_setup._init_instance import init
 
 
-def get_migration_config(schema_package_loc, target_metadata, **kwargs):
+def get_migration_config(schema_package_loc, target_metadata=None, **kwargs):
+    if target_metadata is None:
+        target_metadata = SQLModel.metadata
     target_metadata.naming_convention = {
         "ix": "ix_%(column_0_label)s",
         "uq": "uq_%(table_name)s_%(column_0_name)s",
@@ -36,8 +38,7 @@ def get_migration_config(schema_package_loc, target_metadata, **kwargs):
 
 def get_migration_context(schema_package, url, include_schemas=None):
     engine = sa.create_engine(url)
-    target_metadata = SQLModel.metadata
-    config = get_migration_config(schema_package, target_metadata, include_schemas)
+    config = get_migration_config(schema_package, include_schemas)
     command_executor = CommandExecutor.from_config(config)
     command_executor.configure(connection=engine)
     migration_context = MigrationContext.from_config(
