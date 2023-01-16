@@ -3,7 +3,7 @@
 <!-- prettier-ignore -->
 Name | PR | Developer | Date | Version
 --- | --- | --- | --- | ---
-:arrow_up: Upgrade lnhub-rest | [225](https://github.com/laminlabs/lndb-setup/pull/225) | [falexwolf](https://github.com/falexwolf) | 2023-01-16 | 0.30.2
+⬆️ Upgrade lnhub-rest | [225](https://github.com/laminlabs/lndb-setup/pull/225) | [falexwolf](https://github.com/falexwolf) | 2023-01-16 | 0.30.2
 🔥 Remove atexit | [224](https://github.com/laminlabs/lndb-setup/pull/224) | [falexwolf](https://github.com/falexwolf) | 2023-01-16 |
 ⬆️ Upgrade lnhub_rest | [223](https://github.com/laminlabs/lndb-setup/pull/223) | [falexwolf](https://github.com/falexwolf) | 2023-01-16 | 0.30.1
 🏗️ Separate hub components out to turn lndb-setup into pure client | [220](https://github.com/laminlabs/lndb-setup/pull/220) | [falexwolf](https://github.com/falexwolf) | 2023-01-16 | 0.30.0
@@ -23,7 +23,7 @@ Name | PR | Developer | Date | Version
 ⬆️ Upgrade lnschema core | [198](https://github.com/laminlabs/lndb-setup/pull/198) | [fredericenard](https://github.com/fredericenard) | 2023-01-10 | 0.29.0
 ✅ Ensure each deleted instance name are specific to a CI run | [200](https://github.com/laminlabs/lndb-setup/pull/200) | [fredericenard](https://github.com/fredericenard) | 2023-01-10 |
 ✅  Ensure instances deleted during tests are not used anywhere else | [195](https://github.com/laminlabs/lndb-setup/pull/195) | [fredericenard](https://github.com/fredericenard) | 2023-01-10 |
-:arrow_down: Downgrade lnschema-core | [197](https://github.com/laminlabs/lndb-setup/pull/197) | [fredericenard](https://github.com/fredericenard) | 2023-01-10 |
+⬇️ Downgrade lnschema-core | [197](https://github.com/laminlabs/lndb-setup/pull/197) | [fredericenard](https://github.com/fredericenard) | 2023-01-10 |
 🐛 Load settings for delete an instance if settings file cannot be found locally | [192](https://github.com/laminlabs/lndb-setup/pull/192) | [fredericenard](https://github.com/fredericenard) | 2023-01-09 |
 ✨ Load remote instance | [174](https://github.com/laminlabs/lndb-setup/pull/174) | [fredericenard](https://github.com/fredericenard) | 2023-01-09 |
 ♻️ Refactor delete function | [191](https://github.com/laminlabs/lndb-setup/pull/191) | [fredericenard](https://github.com/fredericenard) | 2023-01-06 |
