@@ -1,10 +1,10 @@
 from typing import Union
 
 from lamin_logger import logger
+from lnhub_rest._sign_upin_sbclient import sign_in_hub, sign_up_hub
 from sqlalchemy import create_engine
 
 from ._db import upsert
-from ._hub import sign_in_hub, sign_up_hub
 from ._schema import schema
 from ._settings import settings
 from ._settings_load import load_or_create_user_settings, load_user_settings
@@ -110,7 +110,7 @@ def login(
         # hence, the if condition will pass despite the database
         # having actually been deleted
         # so, let's do another check
-        if settings.instance._dbconfig == "sqlite":
+        if settings.instance.dialect == "sqlite":
             # let's check whether the sqlite file is actually available
             if not settings.instance._sqlite_file.exists():
                 # if the file doesn't exist, there is no need to
@@ -124,13 +124,13 @@ def login(
                 )
                 return None
         else:  # let's check whether we can connect to the instance DB
-            url = settings.instance._dbconfig
-            engine = create_engine(url)
+            db = settings.instance.db
+            engine = create_engine(db)
             try:
                 engine.connect()
             except Exception:
                 logger.warning(
-                    f"Connection {url} of current instance not reachable. "
+                    f"Connection {db} of current instance not reachable. "
                     "Consider closing it: lndb close."
                 )
                 return None

@@ -3,9 +3,11 @@ from typing import Optional, Union
 
 from cloudpathlib import CloudPath
 from lamin_logger import logger
+from lnhub_rest._add_storage_sbclient import add_storage as add_storage_hub
 
-from ._init_instance import get_storage_region, register, setup_storage_root
+from ._init_instance import register
 from ._settings import settings
+from ._settings_instance import InstanceSettings
 from ._settings_load import load_instance_settings
 from ._settings_store import current_instance_settings_file, instance_settings_file
 
@@ -28,12 +30,18 @@ def set_storage(
         logger.error("Can't set storage for sqlite instance.")
         return "set-storage-failed"
 
-    storage_root = setup_storage_root(storage)
-    storage_region = get_storage_region(storage_root)
-    isettings.storage_root = storage_root
-    isettings.storage_region = storage_region
-    isettings._persist()
-    register(isettings, settings.user)
-    logger.info(
-        f"Set storage {storage_root} for instance {isettings.owner}/{isettings.name}"
+    new_isettings = InstanceSettings(
+        owner=isettings.owner,
+        name=isettings.name,
+        storage_root=storage,
+        db=isettings.db,
+        schema=isettings._schema_str,
     )
+
+    new_isettings._persist()
+    register(new_isettings, settings.user)
+    logger.info(
+        f"Set storage {storage} for instance {isettings.owner}/{isettings.name}"
+    )
+    if isettings.is_remote:
+        add_storage_hub(storage, account_handle=isettings.owner)

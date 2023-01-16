@@ -50,7 +50,7 @@ def load_bionty_versions(isettings: InstanceSettings):
 
         df = pd.read_sql(
             sqm.select(dev.BiontyVersions).join(dev.CurrentBiontyVersions),
-            isettings.db_engine(future=False),
+            isettings.engine,
         )
         # avoid breaking change
         # if no versions were written in the db, write versions from bionty

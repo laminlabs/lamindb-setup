@@ -1,7 +1,6 @@
 from pathlib import Path
-from typing import Optional, Union
+from typing import Optional
 
-from cloudpathlib import CloudPath
 from pydantic.error_wrappers import ValidationError
 
 from ._settings_instance import InstanceSettings
@@ -18,7 +17,7 @@ def load_instance_settings(instance_settings_file: Optional[Path] = None):
     if instance_settings_file is None:
         instance_settings_file = current_instance_settings_file()
     if not instance_settings_file.exists():
-        raise RuntimeError("Instance is not setup. Please call `lndb init`.")
+        raise RuntimeError("Instance not available locally. Call `lndb init`.")
     try:
         settings_store = InstanceSettingsStore(_env_file=instance_settings_file)
     except ValidationError:
@@ -28,9 +27,6 @@ def load_instance_settings(instance_settings_file: Optional[Path] = None):
         )
     isettings = setup_instance_from_store(settings_store)
     return isettings
-
-
-load_or_create_instance_settings = load_instance_settings  # backward compat
 
 
 def load_or_create_user_settings():
@@ -55,32 +51,14 @@ def load_user_settings(user_settings_file: Path):
     return settings
 
 
-def setup_storage_root(storage: Union[str, Path, CloudPath]) -> Union[Path, CloudPath]:
-    if str(storage).startswith("s3://"):  # AWS
-        storage_root = CloudPath(storage)
-    elif str(storage).startswith("gs://"):  # GCP
-        # the below seems needed as cloudpathlib on its
-        # own fails to initialize when using gcloud auth login
-        # and not JSON credentials
-        from cloudpathlib import GSClient
-        from google.cloud import storage as gstorage
-
-        client = GSClient(storage_client=gstorage.Client())
-        storage_root = CloudPath(storage, client)
-    else:  # local path
-        storage_root = Path(storage).absolute()
-        storage_root.mkdir(parents=True, exist_ok=True)
-    return storage_root
-
-
 def setup_instance_from_store(store: InstanceSettingsStore) -> InstanceSettings:
     return InstanceSettings(
         owner=store.owner,
         name=store.name,
-        storage_root=setup_storage_root(store.storage_root),
-        url=store.url if store.url != "null" else None,
-        _schema=store.schema_,
-        storage_region=store.storage_region,
+        storage_root=store.storage_root,
+        storage_region=store.storage_region if store.storage_region != "null" else None,
+        db=store.db if store.db != "null" else None,  # type: ignore
+        schema=store.schema_str if store.schema_str != "null" else None,
     )
 
 

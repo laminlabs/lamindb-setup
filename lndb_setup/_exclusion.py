@@ -120,6 +120,6 @@ def get_locker() -> Locker:
     global _locker
 
     if _locker is None:
-        _locker = Locker(settings.user.id, settings.instance.storage_root)
+        _locker = Locker(settings.user.id, settings.instance.storage.root)
 
     return _locker

@@ -63,9 +63,11 @@ __version__ = "0.30a1"  # denote a pre-release for 0.1.0 with 0.1a1
 import atexit
 from os import name as _os_name
 
+from ._close import close  # noqa
 from ._delete import delete  # noqa
 from ._info import info  # noqa
-from ._init_instance import close, init, load  # noqa
+from ._init_instance import init  # noqa
+from ._load_instance import load  # noqa
 from ._migrations import migrate
 from ._schema import schema  # noqa
 from ._set import set_storage  # noqa
