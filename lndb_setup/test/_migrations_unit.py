@@ -13,6 +13,7 @@ from pytest_alembic.plugin.error import AlembicTestFailure
 from pytest_alembic.runner import MigrationContext
 from sqlmodel import SQLModel
 
+from lndb_setup._delete import delete
 from lndb_setup._init_instance import init
 
 
@@ -94,6 +95,9 @@ def model_definitions_match_ddl(schema_package, db=None, dialect_name="sqlite"):
     execute_model_definitions_match_ddl(migration_context)
     if dialect_name == "postgresql":
         run("docker stop pgtest && docker rm pgtest", shell=True)
+        delete("pgtest")
+    else:
+        delete("testdb")
 
 
 def execute_model_definitions_match_ddl(alembic_runner):
