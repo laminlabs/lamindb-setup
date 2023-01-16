@@ -3,6 +3,7 @@ from typing import Dict
 
 import pandas as pd
 import sqlmodel as sqm
+from IPython.display import display as ipython_display
 
 from ._db import insert
 from ._settings_instance import InstanceSettings
@@ -39,7 +40,7 @@ def write_bionty_versions(isettings: InstanceSettings):
         insert.bionty_versions(records)
 
 
-def load_bionty_versions(isettings: InstanceSettings):
+def load_bionty_versions(isettings: InstanceSettings, display: bool = False):
     """Write CurrentBiontyVersions to _lndb.yaml in bionty."""
     if "bionty" in isettings.schema:
         import bionty as bt
@@ -48,15 +49,18 @@ def load_bionty_versions(isettings: InstanceSettings):
 
         basedir = Path(bt.__file__).parent / "versions"
 
-        df = pd.read_sql(
-            sqm.select(dev.BiontyVersions).join(dev.CurrentBiontyVersions),
-            isettings.engine,
-        )
+        stmt = sqm.select(dev.BiontyVersions).join(dev.CurrentBiontyVersions)
+        with isettings.session() as ss:
+            results = ss.exec(stmt).all()
         # avoid breaking change
         # if no versions were written in the db, write versions from bionty
-        if df.shape[0] == 0:
+        if len(results) == 0:
             write_bionty_versions(isettings)
+        records = [row.dict() for row in results]
+        df = pd.DataFrame.from_records(records)
         df_lndb = df.set_index("entity")[["database", "database_v"]]
+        if display:
+            ipython_display(df_lndb)
         lndb_dict: Dict = {}
         for entity, db in df_lndb.iterrows():
             lndb_dict[entity] = {}
