@@ -147,6 +147,26 @@ class InstanceSettings:
                     locker.unlock()
                     raise e
 
+        if self.dialect == "sqlite" and self.storage.is_cloud:
+            sqlite_file = self._sqlite_file
+            cache_file = self.storage.cloud_to_local_no_update(sqlite_file)
+            # checking cloud mtime several times here because of potential changes
+            # during the synchronizization process. Maybe better
+            # to make these checks dependent on lock,
+            # i.e. if locked check cloud mtime only once.
+            if not cache_file.exists():
+                cache_file.parent.mkdir(parents=True, exist_ok=True)
+                cloud_mtime = sqlite_file.stat().st_mtime  # type: ignore
+                sqlite_file.download_to(cache_file)  # type: ignore
+                os.utime(cache_file, times=(cloud_mtime, cloud_mtime))
+            elif sqlite_file.stat().st_mtime > cache_file.stat().st_mtime:  # type: ignore  # noqa
+                # checking the time again because
+                # it could be changed in the meantime
+                # maybe remove this checks when locked
+                cloud_mtime = sqlite_file.stat().st_mtime  # type: ignore
+                sqlite_file.download_to(cache_file)  # type: ignore
+                os.utime(cache_file, times=(cloud_mtime, cloud_mtime))
+
         return sqm.Session(self.engine, expire_on_commit=False)
 
     @property
