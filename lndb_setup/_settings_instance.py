@@ -1,23 +1,19 @@
 import os
 import shutil
 from pathlib import Path
-from typing import Literal, Optional, Set, Union, get_type_hints
+from typing import Literal, Optional, Set, Tuple, Union
 
 import sqlalchemy as sa
 import sqlmodel as sqm
 from cloudpathlib import CloudPath
 from pydantic import PostgresDsn
-from sqlalchemy import Engine
+from sqlalchemy.future import Engine
 
 from lndb_setup._storage import Storage
 
 from ._exclusion import Locker, get_locker
-from ._settings_save import save_settings
-from ._settings_store import (
-    InstanceSettingsStore,
-    current_instance_settings_file,
-    instance_settings_file,
-)
+from ._settings_save import save_instance_settings
+from ._settings_store import current_instance_settings_file, instance_settings_file
 
 # leave commented out until we understand more how to deal with
 # migrations in redun
@@ -49,7 +45,7 @@ class InstanceSettings:
         self._owner: str = owner
         self._name: str = name
         self._storage: Storage = Storage(storage_root, region=storage_region)
-        self._db: Optional[str] = None
+        self._db: Optional[str] = db
         self._schema_str: Optional[str] = schema
         self._locker: Optional[Locker] = None
         self._engine: Engine = sqm.create_engine(self.db)
@@ -78,7 +74,7 @@ class InstanceSettings:
         if self._schema_str is None:
             return {}  # type: ignore
         else:
-            return {schema for schema in self._schema_str.split(",")}
+            return {schema for schema in self._schema_str.split(",") if schema != ""}
 
     @property
     def _sqlite_file(self) -> Union[Path, CloudPath]:
@@ -178,10 +174,9 @@ class InstanceSettings:
 
     def _persist(self) -> None:
         assert self.name is not None
-        type_hints = get_type_hints(InstanceSettingsStore)
         filepath = instance_settings_file(self.name, self.owner)
         # persist under filepath for later reference
-        save_settings(self, filepath, type_hints)
+        save_instance_settings(self, filepath)
         # persist under current file for auto load
         shutil.copy2(filepath, current_instance_settings_file())
         # persist under settings class for same session reference
@@ -190,12 +185,13 @@ class InstanceSettings:
 
         settings._instance_settings = self
 
-    def _check_db_setup(self):
+    def _is_db_setup(self) -> Tuple[bool, str]:
         """Is the database available and initialized as LaminDB?"""
-        check = False
         if self.dialect == "sqlite":
             if not self._sqlite_file.exists():
-                raise RuntimeError("SQLite file does not exist")
+                return False, "SQLite file does not exist"
+            else:
+                return True, ""
         else:  # postgres
             assert self.dialect == "postgresql"
             with self.engine.connect() as conn:
@@ -214,4 +210,6 @@ class InstanceSettings:
                 ).first()  # returns tuple of boolean
                 check = results[0]
                 if not check:
-                    raise RuntimeError("Postgres does not seem initialized.")
+                    return False, "Postgres does not seem initialized."
+                else:
+                    return True, ""

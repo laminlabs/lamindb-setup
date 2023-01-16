@@ -24,6 +24,8 @@ class Storage:
     def __init__(self, root: Union[str, Path, CloudPath], region: Optional[str] = None):
         if isinstance(root, str):
             root_path = Storage._str_to_path(root)
+        else:
+            root_path = root
         self._root = root_path
         self._region = region
 
@@ -146,7 +148,7 @@ class Storage:
     # using the `.parts` attribute in the following line
     def cloud_to_local_no_update(self, filepath: Union[Path, CloudPath]) -> Path:
         if self.is_cloud:
-            return self.settings.cache_dir.joinpath(*filepath.parts[1:])  # type: ignore
+            return self.cache_dir.joinpath(*filepath.parts[1:])  # type: ignore
         return filepath
 
     def local_filepath(self, filekey: Union[Path, CloudPath, str]) -> Path:

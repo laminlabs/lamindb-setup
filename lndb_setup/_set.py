@@ -3,7 +3,7 @@ from typing import Optional, Union
 
 from cloudpathlib import CloudPath
 from lamin_logger import logger
-from lnhub_rest._add_storage_sbclient import add_storage
+from lnhub_rest._add_storage_sbclient import add_storage as add_storage_hub
 
 from ._init_instance import register
 from ._settings import settings
@@ -43,4 +43,5 @@ def set_storage(
     logger.info(
         f"Set storage {storage} for instance {isettings.owner}/{isettings.name}"
     )
-    add_storage(storage, account_handle=isettings.owner)
+    if isettings.is_remote:
+        add_storage_hub(storage, account_handle=isettings.owner)

@@ -104,4 +104,4 @@ def setup_schema(isettings: InstanceSettings, usettings: UserSettings):
     isettings._update_cloud_sqlite_file()
     _set_mute_sync_warnings(False)
 
-    logger.info(f"Created instance {settings.user.handle}/{isettings.name}.")
+    logger.info(f"Created instance {settings.user.handle}/{isettings.name}")

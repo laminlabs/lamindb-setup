@@ -3,6 +3,7 @@ import argparse
 from lamin_logger import logger
 
 from . import _init_instance, _setup_user, delete, info, set_storage
+from ._close import close as close_instance
 from ._init_instance import description as instance
 from ._settings_user import user_description as user
 
@@ -21,10 +22,12 @@ parser = argparse.ArgumentParser(
     description=description_cli, formatter_class=argparse.RawTextHelpFormatter
 )
 subparsers = parser.add_subparsers(dest="command")
+
 # signup user
 signup = subparsers.add_parser("signup", help=signup_help)
 aa = signup.add_argument
 aa("email", type=str, metavar="email", help=user.email)
+
 # login user
 login = subparsers.add_parser("login", help=login_help)
 aa = login.add_argument
@@ -35,6 +38,7 @@ aa(
     help="Email or user handle. Email is needed at first login.",
 )  # noqa
 aa("--password", type=str, metavar="s", default=None, help=user.password)
+
 # init instance
 init = subparsers.add_parser("init", help=init_help)
 aa = init.add_argument
@@ -42,27 +46,28 @@ aa("--storage", type=str, metavar="s", help=instance.storage_root)
 aa("--db", type=str, metavar="s", default=None, help=instance.db)
 aa("--schema", type=str, metavar="s", default=None, help=instance.schema)
 aa("--name", type=str, metavar="s", default=None, help=instance.name)
+
 # load instance
 load = subparsers.add_parser("load", help=load_help)
 aa = load.add_argument
-aa("instance", type=str, metavar="s", default=None, help=instance.name)
-aa(
-    "--owner",
-    type=str,
-    metavar="s",
-    default=None,
-    help="Owner handle, default value is current user.",
-)  # noqa
+instance_help = """
+The instance identifier can the instance name (owner is
+current user), handle/name, or the URL: https://lamin.ai/handle/name."""
+aa("instance", type=str, metavar="s", default=None, help=instance_help)
+
 # delete instance
 delete_parser = subparsers.add_parser("delete", help=delete_help)
 aa = delete_parser.add_argument
 aa("instance", type=str, metavar="s", default=None, help=instance.name)
+
 # show instance info
 info_parser = subparsers.add_parser("info", help=info_help)
+
 # set storage
 set_storage_parser = subparsers.add_parser("set", help=set_storage_help)
 aa = set_storage_parser.add_argument
 aa("--storage", type=str, metavar="s", help=instance.storage_root)
+
 # close instance
 close = subparsers.add_parser("close", help=close_help)
 
@@ -97,12 +102,11 @@ def main():
         return process_result(result)
     elif args.command == "load":
         result = _init_instance.load(
-            instance_name=args.instance,
-            owner=args.owner,
+            identifier=args.instance,
         )
         return process_result(result)
     elif args.command == "close":
-        return _init_instance.close()
+        return close_instance()
     elif args.command == "delete":
         return delete(
             instance_name=args.instance,

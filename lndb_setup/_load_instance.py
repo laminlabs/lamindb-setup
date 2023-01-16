@@ -1,6 +1,7 @@
 from typing import Optional
 
 from lamin_logger import logger
+from lnhub_rest._init_instance_sbclient import init_instance as init_instance_hub
 from lnhub_rest._load_instance_sbclient import load_instance as load_instance_from_hub
 
 from ._settings import InstanceSettings, settings
@@ -25,9 +26,9 @@ def load(
     """
     owner, name = get_owner_name_from_identifier(identifier)
 
-    result = load_instance_from_hub(owner=owner, name=name)
-    if not isinstance(result, str):
-        instance, storage = result
+    hub_result = load_instance_from_hub(owner=owner, name=name)
+    if not isinstance(hub_result, str):
+        instance, storage = hub_result
         isettings = InstanceSettings(
             owner=owner,
             name=name,
@@ -41,10 +42,31 @@ def load(
         if settings_file.exists():
             isettings = load_instance_settings(settings_file)
         else:
-            logger.error("Instance neither exists on hub nor locally.")
+            if _log_error_message:
+                logger.error("Instance neither exists on hub nor locally.")
             return "instance-not-exists"
 
-    isettings._check_db_setup()
+    check, msg = isettings._is_db_setup()
+    if not check:
+        if _log_error_message:
+            raise RuntimeError(msg)
+        else:
+            logger.warning(
+                "Instance metadata exists, but DB might have been corrupted or deleted."
+                " Re-initializing the DB."
+            )
+            return "instance-not-exists"
+
+    # register legacy instances on hub if they aren't yet!
+    if isettings.is_remote and isinstance(hub_result, str):
+        logger.info("Registering instance on hub.")
+        init_instance_hub(
+            owner=isettings.owner,
+            name=isettings.name,
+            storage=str(isettings.storage.root),
+            db=isettings._db,
+            schema=isettings._schema_str,
+        )
 
     message = load_from_isettings(isettings, migrate)
     return message
@@ -75,8 +97,8 @@ def load_from_isettings(
     from ._migrate import check_migrate
     from ._setup_knowledge import load_bionty_versions
 
-    persist_check_reload_schema(isettings)
     logger.info(f"Loading instance: {isettings.owner}/{isettings.name}")
+    persist_check_reload_schema(isettings)
     message = check_migrate(
         usettings=settings.user, isettings=isettings, migrate_confirmed=migrate
     )

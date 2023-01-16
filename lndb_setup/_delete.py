@@ -17,7 +17,7 @@ def delete(instance_name: str):
         logger.info("Please delete your remote instance on lamin.ai.")
     else:
         if isettings.storage.type == "local":
-            delete_storage(isettings.storage_root)
+            delete_storage(isettings.storage.root)
         else:
             delete_cache(isettings.cache_dir)
             logger.info("Storage won't be deleted as it is a cloud storage.")

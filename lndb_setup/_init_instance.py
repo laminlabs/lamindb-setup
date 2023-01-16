@@ -3,12 +3,13 @@ from typing import Optional, Union
 
 from cloudpathlib import CloudPath
 from lamin_logger import logger
+from lnhub_rest._add_storage import get_storage_region
 from lnhub_rest._init_instance_sbclient import init_instance as init_instance_hub
 from pydantic import PostgresDsn
 
 from ._db import insert_if_not_exists, upsert
 from ._docs import doc_args
-from ._load_instance import load
+from ._load_instance import load, load_from_isettings
 from ._settings import settings
 from ._settings_instance import InstanceSettings
 from ._setup_knowledge import write_bionty_versions
@@ -65,6 +66,7 @@ def init(
     name: Optional[str] = None,
     db: Optional[PostgresDsn] = None,
     schema: Optional[str] = None,
+    _migrate: bool = False,  # not user-facing
 ) -> Optional[str]:
     """Setup LaminDB.
 
@@ -80,14 +82,15 @@ def init(
     name_str = infer_instance_name(storage=storage, name=name, db=db)
 
     # test whether instance exists by trying to load it
-    message = load(f"{owner}/{name}")
-    if message is None:
-        return None
+    message = load(f"{owner}/{name_str}", _log_error_message=False, migrate=_migrate)
+    if message != "instance-not-exists":
+        return message
 
     isettings = InstanceSettings(
         owner=owner,
         name=name_str,
         storage_root=storage,
+        storage_region=get_storage_region(storage),
         db=db,
         schema=schema,
     )
@@ -102,14 +105,21 @@ def init(
             )
             return "remote-sqlite-deleted"
 
-    setup_schema(isettings, settings.user)
-    register(isettings, settings.user)
-    write_bionty_versions(isettings)
+    # some legacy instances not yet registered in hub may actually exist
+    # despite being not loadable above
+    message = None
+    if not isettings._is_db_setup()[0]:
+        setup_schema(isettings, settings.user)
+        register(isettings, settings.user)
+        write_bionty_versions(isettings)
+    else:
+        message = load_from_isettings(isettings, migrate=_migrate)
+        logger.info("Loaded from existing DB, now storing metadata")
 
     if isettings.is_remote:
         result = init_instance_hub(
             owner=owner,
-            name=name,
+            name=name_str,
             storage=str(storage),
             db=db,
             schema=schema,
@@ -117,7 +127,7 @@ def init(
         if result == "instance-exists-already-on-hub":
             logger.info(result)
 
-    return None
+    return message
 
 
 def infer_instance_name(
