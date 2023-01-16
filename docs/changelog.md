@@ -3,6 +3,7 @@
 <!-- prettier-ignore -->
 Name | PR | Developer | Date | Version
 --- | --- | --- | --- | ---
+:arrow_up: Upgrade lnhub-rest | [225](https://github.com/laminlabs/lndb-setup/pull/225) | [falexwolf](https://github.com/falexwolf) | 2023-01-16 |
 🔥 Remove atexit | [224](https://github.com/laminlabs/lndb-setup/pull/224) | [falexwolf](https://github.com/falexwolf) | 2023-01-16 |
 ⬆️ Upgrade lnhub_rest | [223](https://github.com/laminlabs/lndb-setup/pull/223) | [falexwolf](https://github.com/falexwolf) | 2023-01-16 | 0.30.1
 🏗️ Separate hub components out to turn lndb-setup into pure client | [220](https://github.com/laminlabs/lndb-setup/pull/220) | [falexwolf](https://github.com/falexwolf) | 2023-01-16 | 0.30.0
