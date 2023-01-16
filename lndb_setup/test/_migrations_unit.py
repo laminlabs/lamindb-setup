@@ -74,12 +74,12 @@ def model_definitions_match_ddl(schema_package, db=None, dialect_name="sqlite"):
     if db is None and dialect_name == "sqlite":
         db = "sqlite:///testdb/testdb.lndb"
         # need to call init to reload schema
-        init(storage="testdb", migrate=False)
+        init(storage="testdb", _migrate=False)
     elif db is None and dialect_name == "postgresql":
         # requires postgres has been set up through _nox_tools
         db = "postgresql://postgres:pwd@0.0.0.0:5432/pgtest"
         # need to call init to reload schema
-        init(db=db, storage="pgtest", migrate=False)
+        init(db=db, storage="pgtest", _migrate=False)
     elif db is None:
         raise NotImplementedError(
             "Only sqlite and postgres test databases are implemented."
