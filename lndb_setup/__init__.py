@@ -60,7 +60,7 @@ Dev API
 """
 
 __version__ = "0.30.1"  # denote a pre-release for 0.1.0 with 0.1a1
-import atexit
+
 from os import name as _os_name
 
 from ._close import close  # noqa
@@ -75,15 +75,6 @@ from ._settings import settings  # noqa
 from ._settings_instance import InstanceSettings, Storage  # noqa
 from ._settings_user import UserSettings  # noqa
 from ._setup_user import login, signup  # noqa
-
-
-# close the database session
-@atexit.register
-def cleanup_session():
-    instance = settings._instance_settings
-    if instance is not None and instance._session is not None:
-        instance._session.close()
-
 
 # hide the supabase error in a thread on windows
 if _os_name == "nt":
