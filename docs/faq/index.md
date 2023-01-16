@@ -5,4 +5,5 @@
 
 switch-environment
 migrate-manage
+check-synchronization
 ```
