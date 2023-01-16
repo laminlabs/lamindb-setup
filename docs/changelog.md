@@ -3,6 +3,7 @@
 <!-- prettier-ignore -->
 Name | PR | Developer | Date | Version
 --- | --- | --- | --- | ---
+:arrow_up: Upgrade lnhub_rest | [223](https://github.com/laminlabs/lndb-setup/pull/223) | [falexwolf](https://github.com/falexwolf) | 2023-01-16 |
 🏗️ Separate hub components out to turn lndb-setup into pure client | [220](https://github.com/laminlabs/lndb-setup/pull/220) | [falexwolf](https://github.com/falexwolf) | 2023-01-16 | 0.30.0
 🚚 Rename `_setup_instance` to `_init_instance` | [219](https://github.com/laminlabs/lndb-setup/pull/219) | [falexwolf](https://github.com/falexwolf) | 2023-01-14 |
 🐛 Fix hub interaction | [218](https://github.com/laminlabs/lndb-setup/pull/218) | [falexwolf](https://github.com/falexwolf) | 2023-01-14 |
