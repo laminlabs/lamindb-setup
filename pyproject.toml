@@ -8,8 +8,10 @@ authors = [{name = "Lamin Labs", email = "laminlabs@gmail.com"}]
 readme = "README.md"
 dynamic = ["version", "description"]
 dependencies = [
+    # only this can be pinned
+    "lnhub_rest==0.1.2",
+    # no other packages should be pinned
     "lnschema_core>=0.24.1",
-    "lnhub_rest>=0.1.2",
     "lamin_logger",
     "boto3",
     "cloudpathlib",
