@@ -3,7 +3,7 @@
 <!-- prettier-ignore -->
 Name | PR | Developer | Date | Version
 --- | --- | --- | --- | ---
-:arrow_up: Upgrade lnhub_rest | [223](https://github.com/laminlabs/lndb-setup/pull/223) | [falexwolf](https://github.com/falexwolf) | 2023-01-16 |
+⬆️ Upgrade lnhub_rest | [223](https://github.com/laminlabs/lndb-setup/pull/223) | [falexwolf](https://github.com/falexwolf) | 2023-01-16 | 0.30.1
 🏗️ Separate hub components out to turn lndb-setup into pure client | [220](https://github.com/laminlabs/lndb-setup/pull/220) | [falexwolf](https://github.com/falexwolf) | 2023-01-16 | 0.30.0
 🚚 Rename `_setup_instance` to `_init_instance` | [219](https://github.com/laminlabs/lndb-setup/pull/219) | [falexwolf](https://github.com/falexwolf) | 2023-01-14 |
 🐛 Fix hub interaction | [218](https://github.com/laminlabs/lndb-setup/pull/218) | [falexwolf](https://github.com/falexwolf) | 2023-01-14 |
@@ -14,9 +14,9 @@ Name | PR | Developer | Date | Version
 🎨 Refactor dialect property | [212](https://github.com/laminlabs/lndb-setup/pull/212) | [fredericenard](https://github.com/fredericenard) | 2023-01-12 |
 🐛 Fix checking for non remote instance loaded from hub | [211](https://github.com/laminlabs/lndb-setup/pull/211) | [fredericenard](https://github.com/fredericenard) | 2023-01-12 |
 🐛 Prevent loading non remote instance from hub | [209](https://github.com/laminlabs/lndb-setup/pull/209) | [fredericenard](https://github.com/fredericenard) | 2023-01-12 |
-:bug: Prevent loading non remote instance from hub | [208](https://github.com/laminlabs/lndb-setup/pull/208) | [fredericenard](https://github.com/fredericenard) | 2023-01-12 |
-:bug: Fix `schema=None` | [207](https://github.com/laminlabs/lndb-setup/pull/207) | [Koncopd](https://github.com/Koncopd) | 2023-01-11 |
-:art: Simplify loading | [204](https://github.com/laminlabs/lndb-setup/pull/204) | [fredericenard](https://github.com/fredericenard) | 2023-01-11 |
+🐛 Prevent loading non remote instance from hub | [208](https://github.com/laminlabs/lndb-setup/pull/208) | [fredericenard](https://github.com/fredericenard) | 2023-01-12 |
+🐛 Fix `schema=None` | [207](https://github.com/laminlabs/lndb-setup/pull/207) | [Koncopd](https://github.com/Koncopd) | 2023-01-11 |
+🎨 Simplify loading | [204](https://github.com/laminlabs/lndb-setup/pull/204) | [fredericenard](https://github.com/fredericenard) | 2023-01-11 |
 🗃️ Stop tracking non remote instance in hub | [205](https://github.com/laminlabs/lndb-setup/pull/205) | [fredericenard](https://github.com/fredericenard) | 2023-01-11 |
 ⬆️ Upgrade lnschema core | [198](https://github.com/laminlabs/lndb-setup/pull/198) | [fredericenard](https://github.com/fredericenard) | 2023-01-10 | 0.29.0
 ✅ Ensure each deleted instance name are specific to a CI run | [200](https://github.com/laminlabs/lndb-setup/pull/200) | [fredericenard](https://github.com/fredericenard) | 2023-01-10 |
@@ -27,7 +27,7 @@ Name | PR | Developer | Date | Version
 ♻️ Refactor delete function | [191](https://github.com/laminlabs/lndb-setup/pull/191) | [fredericenard](https://github.com/fredericenard) | 2023-01-06 |
 🐛 Add schema field to instance metadata | [189](https://github.com/laminlabs/lndb-setup/pull/189) | [fredericenard](https://github.com/fredericenard) | 2023-01-06 |
 🐛 Make delete command compatible with delete function | [188](https://github.com/laminlabs/lndb-setup/pull/188) | [fredericenard](https://github.com/fredericenard) | 2023-01-06 |
-:sparkles: Command delete for the CLI | [175](https://github.com/laminlabs/lndb-setup/pull/175) | [fredericenard](https://github.com/fredericenard) | 2023-01-05 |
+✨ Command delete for the CLI | [175](https://github.com/laminlabs/lndb-setup/pull/175) | [fredericenard](https://github.com/fredericenard) | 2023-01-05 |
 🍱 Clean up & complete test instances | [186](https://github.com/laminlabs/lndb-setup/pull/186) | [falexwolf](https://github.com/falexwolf) | 2023-01-05 | 0.28.1
 ✨ Output information about current user in `lndb info` | [185](https://github.com/laminlabs/lndb-setup/pull/185) | [falexwolf](https://github.com/falexwolf) | 2023-01-05 |
 ✨ Add command for generating migrations | [184](https://github.com/laminlabs/lndb-setup/pull/184) | [falexwolf](https://github.com/falexwolf) | 2023-01-05 |
