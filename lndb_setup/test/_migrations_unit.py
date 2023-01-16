@@ -17,7 +17,7 @@ from lndb_setup._delete import delete
 from lndb_setup._init_instance import init
 
 
-def get_migration_config(schema_package_loc, target_metadata=None, **kwargs):
+def get_migration_config(schema_package_loc, *, target_metadata=None, **kwargs):
     if target_metadata is None:
         target_metadata = SQLModel.metadata
     target_metadata.naming_convention = {
@@ -39,7 +39,7 @@ def get_migration_config(schema_package_loc, target_metadata=None, **kwargs):
 
 def get_migration_context(schema_package, db, include_schemas=None):
     engine = sa.create_engine(db)
-    config = get_migration_config(schema_package, include_schemas)
+    config = get_migration_config(schema_package, include_schemas=include_schemas)
     command_executor = CommandExecutor.from_config(config)
     command_executor.configure(connection=engine)
     migration_context = MigrationContext.from_config(
