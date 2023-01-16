@@ -3,7 +3,7 @@
 <!-- prettier-ignore -->
 Name | PR | Developer | Date | Version
 --- | --- | --- | --- | ---
-🔧 Fix nox for testing migrations | [227](https://github.com/laminlabs/lndb-setup/pull/227) | [falexwolf](https://github.com/falexwolf) | 2023-01-16 |
+🔧 Fix nox for testing migrations | [227](https://github.com/laminlabs/lndb-setup/pull/227) | [falexwolf](https://github.com/falexwolf) | 2023-01-16 | 0.30.3
 ⬆️ Upgrade lnhub-rest | [225](https://github.com/laminlabs/lndb-setup/pull/225) | [falexwolf](https://github.com/falexwolf) | 2023-01-16 | 0.30.2
 🔥 Remove atexit | [224](https://github.com/laminlabs/lndb-setup/pull/224) | [falexwolf](https://github.com/falexwolf) | 2023-01-16 |
 ⬆️ Upgrade lnhub_rest | [223](https://github.com/laminlabs/lndb-setup/pull/223) | [falexwolf](https://github.com/falexwolf) | 2023-01-16 | 0.30.1
