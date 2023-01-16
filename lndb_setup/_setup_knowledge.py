@@ -3,6 +3,7 @@ from typing import Dict
 
 import pandas as pd
 import sqlmodel as sqm
+from IPython.display import display as ipython_display
 
 from ._db import insert
 from ._settings_instance import InstanceSettings
@@ -39,7 +40,7 @@ def write_bionty_versions(isettings: InstanceSettings):
         insert.bionty_versions(records)
 
 
-def load_bionty_versions(isettings: InstanceSettings):
+def load_bionty_versions(isettings: InstanceSettings, display: bool = False):
     """Write CurrentBiontyVersions to _lndb.yaml in bionty."""
     if "bionty" in isettings.schema:
         import bionty as bt
@@ -58,6 +59,8 @@ def load_bionty_versions(isettings: InstanceSettings):
         records = [row.dict() for row in results]
         df = pd.DataFrame.from_records(records)
         df_lndb = df.set_index("entity")[["database", "database_v"]]
+        if display:
+            ipython_display(df_lndb)
         lndb_dict: Dict = {}
         for entity, db in df_lndb.iterrows():
             lndb_dict[entity] = {}
