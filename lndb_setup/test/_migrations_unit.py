@@ -36,8 +36,8 @@ def get_migration_config(schema_package_loc, target_metadata=None, **kwargs):
     return config
 
 
-def get_migration_context(schema_package, url, include_schemas=None):
-    engine = sa.create_engine(url)
+def get_migration_context(schema_package, db, include_schemas=None):
+    engine = sa.create_engine(db)
     config = get_migration_config(schema_package, include_schemas)
     command_executor = CommandExecutor.from_config(config)
     command_executor.configure(connection=engine)
@@ -70,26 +70,26 @@ def migration_id_is_consistent(schema_package):
     return manual_migration_id == migration_id
 
 
-def model_definitions_match_ddl(schema_package, url=None, dialect_name="sqlite"):
-    if url is None and dialect_name == "sqlite":
-        url = "sqlite:///testdb/testdb.lndb"
+def model_definitions_match_ddl(schema_package, db=None, dialect_name="sqlite"):
+    if db is None and dialect_name == "sqlite":
+        db = "sqlite:///testdb/testdb.lndb"
         # need to call init to reload schema
         init(storage="testdb", migrate=False)
-    elif url is None and dialect_name == "postgresql":
+    elif db is None and dialect_name == "postgresql":
         # requires postgres has been set up through _nox_tools
-        url = "postgresql://postgres:pwd@0.0.0.0:5432/pgtest"
+        db = "postgresql://postgres:pwd@0.0.0.0:5432/pgtest"
         # need to call init to reload schema
-        init(url=url, storage="pgtest", migrate=False)
-    elif url is None:
+        init(db=db, storage="pgtest", migrate=False)
+    elif db is None:
         raise NotImplementedError(
             "Only sqlite and postgres test databases are implemented."
         )
     # the below is for debugging purposes, something with indexes doesn't work 100%
-    # e = sa.create_engine(url)
+    # e = sa.create_engine(db)
     # print(sa.inspect(e).get_indexes("core.dobject"))
     include_schemas = True if dialect_name == "postgresql" else False
     migration_context = get_migration_context(
-        schema_package, url, include_schemas=include_schemas
+        schema_package, db, include_schemas=include_schemas
     )
     execute_model_definitions_match_ddl(migration_context)
     if dialect_name == "postgresql":
