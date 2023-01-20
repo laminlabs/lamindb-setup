@@ -4,13 +4,12 @@
 :maxdepth: 1
 
 setup-user
-setup-instance
+init-instance
+load-instance
 set-storage
 schema-modules
-edge-cases
 migrate
 info
-load
 clone
 delete
 ```
