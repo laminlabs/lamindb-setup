@@ -3,6 +3,7 @@
 <!-- prettier-ignore -->
 Name | PR | Developer | Date | Version
 --- | --- | --- | --- | ---
+🚸 Fix messing with cached user settings upon failed signup | [238](https://github.com/laminlabs/lndb-setup/pull/238) | [falexwolf](https://github.com/falexwolf) | 2023-01-20 |
 🩹 Fix creation of storage dir upon re-init | [236](https://github.com/laminlabs/lndb-setup/pull/236) | [falexwolf](https://github.com/falexwolf) | 2023-01-20 |
 :memo: Move load guide to the front | [235](https://github.com/laminlabs/lndb-setup/pull/235) | [falexwolf](https://github.com/falexwolf) | 2023-01-20 |
 Restore sqlite db synchronization on `instance.session()` call | [233](https://github.com/laminlabs/lndb-setup/pull/233) | [Koncopd](https://github.com/Koncopd) | 2023-01-16 |
