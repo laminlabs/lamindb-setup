@@ -14,9 +14,6 @@ from ._settings_store import user_settings_file_email, user_settings_file_handle
 
 def signup(email: str) -> Union[str, None]:
     """Sign up user."""
-    user_settings = load_or_create_user_settings()
-    user_settings.email = email
-    save_user_settings(user_settings)
     response = sign_up_hub(email)
     if response == "handle-exists":  # handle already exists
         logger.error("The handle already exists. Please choose a different one.")
@@ -24,6 +21,9 @@ def signup(email: str) -> Union[str, None]:
     if response == "user-exists":  # user already exists
         logger.error("User already exists! Please login instead: `lndb login`.")
         return "user-exists"
+    user_settings = load_or_create_user_settings()
+    user_settings.email = email
+    save_user_settings(user_settings)
     user_settings.password = response
     save_user_settings(user_settings)
     return None  # user needs to confirm email now
