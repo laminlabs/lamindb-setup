@@ -44,7 +44,6 @@ class Storage:
             storage_root = CloudPath(storage, client)
         else:  # local path
             storage_root = Path(storage).absolute()
-            storage_root.mkdir(parents=True, exist_ok=True)
         return storage_root
 
     @property

@@ -198,6 +198,9 @@ class InstanceSettings:
 
     def _persist(self) -> None:
         assert self.name is not None
+        if self.storage.type == "local":
+            self.storage.root.mkdir(parents=True, exist_ok=True)
+
         filepath = instance_settings_file(self.name, self.owner)
         # persist under filepath for later reference
         save_instance_settings(self, filepath)
