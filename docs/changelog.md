@@ -3,6 +3,7 @@
 <!-- prettier-ignore -->
 Name | PR | Developer | Date | Version
 --- | --- | --- | --- | ---
+:memo: Move load guide to the front | [235](https://github.com/laminlabs/lndb-setup/pull/235) | [falexwolf](https://github.com/falexwolf) | 2023-01-20 |
 Restore sqlite db synchronization on `instance.session()` call | [233](https://github.com/laminlabs/lndb-setup/pull/233) | [Koncopd](https://github.com/Koncopd) | 2023-01-16 |
 🐛 Fix migration config | [232](https://github.com/laminlabs/lndb-setup/pull/232) | [falexwolf](https://github.com/falexwolf) | 2023-01-16 | 0.30.6
 🎨 Document ontology versioning and remove legacy sql | [231](https://github.com/laminlabs/lndb-setup/pull/231) | [falexwolf](https://github.com/falexwolf) | 2023-01-16 | 0.30.5
