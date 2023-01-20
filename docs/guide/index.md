@@ -8,7 +8,6 @@ init-instance
 load-instance
 set-storage
 schema-modules
-edge-cases
 migrate
 info
 clone
