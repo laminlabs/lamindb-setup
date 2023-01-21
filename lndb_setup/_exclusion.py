@@ -5,13 +5,15 @@ from typing import Optional, Union
 import fsspec
 from cloudpathlib import CloudPath
 from dateutil.parser import isoparse  # type: ignore
+from lamin_logger import logger
 
 EXPIRATION_TIME = 1800  # 30 min
 
 
 class Locker:
     def __init__(self, user_id: str, storage_root: Union[CloudPath, Path]):
-        print("init locker", user_id, storage_root)
+        logger.info(f"Init cloud sqlite locker: {user_id}, {storage_root}.")
+
         self.user = user_id
 
         root = storage_root
@@ -74,7 +76,7 @@ class Locker:
             mtime = mtime.replace(tzinfo=timezone.utc)
         return mtime.astimezone().replace(tzinfo=None)
 
-    def lock(self):
+    def _lock_unsafe(self):
         if self._locked:
             return None
 
@@ -104,6 +106,13 @@ class Locker:
                     break
 
         self._locked = True
+
+    def lock(self):
+        try:
+            self._lock_unsafe()
+        except BaseException as e:
+            self.unlock()
+            raise e
 
     def unlock(self):
         self.mapper[f"numbers/{self.user}"] = b"0"
