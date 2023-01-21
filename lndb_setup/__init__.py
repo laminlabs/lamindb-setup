@@ -61,6 +61,7 @@ Dev API
 
 __version__ = "0.30.7"  # denote a pre-release for 0.1.0 with 0.1a1
 
+import sys
 from os import name as _os_name
 
 from . import _check_versions  # noqa
@@ -77,11 +78,24 @@ from ._settings_instance import InstanceSettings, Storage  # noqa
 from ._settings_user import UserSettings  # noqa
 from ._setup_user import login, signup  # noqa
 
+
+# unlock even if an uncaught exception happens
+def _unlock_on_exception(typ, value, traceback):
+    from ._exclusion import _locker
+
+    if _locker is not None:
+        try:
+            _locker.unlock()
+        except:
+            pass
+    sys.__excepthook__(typ, value, traceback)
+
+
+sys.excepthook = _unlock_on_exception
+
 # hide the supabase error in a thread on windows
 if _os_name == "nt":
-    from sys import version_info as _python_version
-
-    if _python_version.minor > 7:
+    if sys.version_info.minor > 7:
         import threading
 
         _original_excepthook = threading.excepthook
