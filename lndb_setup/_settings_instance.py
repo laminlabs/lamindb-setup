@@ -11,7 +11,7 @@ from sqlalchemy.future import Engine
 
 from lndb_setup._storage import Storage
 
-from ._exclusion import get_locker
+from ._exclusion import empty_locker, get_locker
 from ._settings_save import save_instance_settings
 from ._settings_store import current_instance_settings_file, instance_settings_file
 
@@ -125,7 +125,7 @@ class InstanceSettings:
         return self._engine
 
     @property
-    def is_cloud_sqlite(self):
+    def is_cloud_sqlite(self) -> bool:
         """Is this a cloud instance with sqlite db."""
         return self.dialect == "sqlite" and self.storage.is_cloud
 
@@ -134,7 +134,7 @@ class InstanceSettings:
         if self.is_cloud_sqlite:
             return get_locker()
         else:
-            return None
+            return empty_locker
 
     def session(self, lock: bool = False) -> sqm.Session:
         """Database session."""

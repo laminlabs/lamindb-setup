@@ -10,6 +10,16 @@ from lamin_logger import logger
 EXPIRATION_TIME = 1800  # 30 min
 
 
+class empty_locker:
+    @classmethod
+    def lock(cls):
+        pass
+
+    @classmethod
+    def unlock(cls):
+        pass
+
+
 class Locker:
     def __init__(self, user_id: str, storage_root: Union[CloudPath, Path]):
         logger.info(f"Init cloud sqlite locker: {user_id}, {storage_root}.")
