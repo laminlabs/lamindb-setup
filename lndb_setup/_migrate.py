@@ -144,6 +144,10 @@ def migrate(
     schema_module: Any,
 ):
     """Migrate database to latest version."""
+    # lock the whole migration
+    locker = isettings._cloud_sqlite_locker
+    locker.lock()
+
     schema_root = Path(schema_module.__file__).parent
     filepath = schema_root / "alembic.ini"
 
@@ -164,6 +168,8 @@ def migrate(
         )
     else:
         logger.error("Automatic migration failed.")
+
+    locker.unlock()
 
     modify_alembic_ini(filepath, isettings, schema_name, revert=True)
 
