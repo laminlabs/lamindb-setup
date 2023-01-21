@@ -9,6 +9,8 @@ from lamin_logger import logger
 
 EXPIRATION_TIME = 1800  # 30 min
 
+MAX_MSG_COUNTER = 1000  # print the msg after this number of iterations
+
 
 class empty_locker:
     @classmethod
@@ -23,6 +25,8 @@ class empty_locker:
 class Locker:
     def __init__(self, user_id: str, storage_root: Union[CloudPath, Path]):
         logger.info(f"Init cloud sqlite locker: {user_id}, {storage_root}.")
+
+        self._counter = 0
 
         self.user = user_id
 
@@ -86,6 +90,16 @@ class Locker:
             mtime = mtime.replace(tzinfo=timezone.utc)
         return mtime.astimezone().replace(tzinfo=None)
 
+    def _msg_on_counter(self):
+        if self._counter == MAX_MSG_COUNTER:
+            logger.info(
+                "Another user is doing a write operation to the database, "
+                "please wait or stop the code execution."
+            )
+
+        if self._counter <= MAX_MSG_COUNTER:
+            self._counter += 1
+
     def _lock_unsafe(self):
         if self._locked:
             return None
@@ -105,7 +119,7 @@ class Locker:
                 continue
 
             while int(self.mapper[f"entering/{user}"]):
-                pass
+                self._msg_on_counter()
             while True:
                 c_number = int(self.mapper[f"numbers/{user}"])
                 if c_number == 0:
@@ -114,6 +128,7 @@ class Locker:
                     break
                 if number == c_number and self.priority < i:
                     break
+                self._msg_on_counter()
 
         self._locked = True
 
@@ -128,6 +143,7 @@ class Locker:
         self.mapper[f"numbers/{self.user}"] = b"0"
 
         self._locked = False
+        self._counter = 0
 
 
 _locker: Optional[Locker] = None
