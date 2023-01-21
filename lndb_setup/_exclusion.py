@@ -5,13 +5,29 @@ from typing import Optional, Union
 import fsspec
 from cloudpathlib import CloudPath
 from dateutil.parser import isoparse  # type: ignore
+from lamin_logger import logger
 
 EXPIRATION_TIME = 1800  # 30 min
+
+MAX_MSG_COUNTER = 1000  # print the msg after this number of iterations
+
+
+class empty_locker:
+    @classmethod
+    def lock(cls):
+        pass
+
+    @classmethod
+    def unlock(cls):
+        pass
 
 
 class Locker:
     def __init__(self, user_id: str, storage_root: Union[CloudPath, Path]):
-        print("init locker", user_id, storage_root)
+        logger.info(f"Init cloud sqlite locker: {user_id}, {storage_root}.")
+
+        self._counter = 0
+
         self.user = user_id
 
         root = storage_root
@@ -74,7 +90,17 @@ class Locker:
             mtime = mtime.replace(tzinfo=timezone.utc)
         return mtime.astimezone().replace(tzinfo=None)
 
-    def lock(self):
+    def _msg_on_counter(self):
+        if self._counter == MAX_MSG_COUNTER:
+            logger.info(
+                "Another user is doing a write operation to the database, "
+                "please wait or stop the code execution."
+            )
+
+        if self._counter <= MAX_MSG_COUNTER:
+            self._counter += 1
+
+    def _lock_unsafe(self):
         if self._locked:
             return None
 
@@ -93,7 +119,7 @@ class Locker:
                 continue
 
             while int(self.mapper[f"entering/{user}"]):
-                pass
+                self._msg_on_counter()
             while True:
                 c_number = int(self.mapper[f"numbers/{user}"])
                 if c_number == 0:
@@ -102,13 +128,22 @@ class Locker:
                     break
                 if number == c_number and self.priority < i:
                     break
+                self._msg_on_counter()
 
         self._locked = True
+
+    def lock(self):
+        try:
+            self._lock_unsafe()
+        except BaseException as e:
+            self.unlock()
+            raise e
 
     def unlock(self):
         self.mapper[f"numbers/{self.user}"] = b"0"
 
         self._locked = False
+        self._counter = 0
 
 
 _locker: Optional[Locker] = None

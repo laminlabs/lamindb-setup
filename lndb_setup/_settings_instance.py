@@ -11,7 +11,7 @@ from sqlalchemy.future import Engine
 
 from lndb_setup._storage import Storage
 
-from ._exclusion import Locker, get_locker
+from ._exclusion import empty_locker, get_locker
 from ._settings_save import save_instance_settings
 from ._settings_store import current_instance_settings_file, instance_settings_file
 
@@ -47,7 +47,6 @@ class InstanceSettings:
         self._storage: Storage = Storage(storage_root, region=storage_region)
         self._db: Optional[str] = db
         self._schema_str: Optional[str] = schema
-        self._locker: Optional[Locker] = None
         self._engine: Engine = sqm.create_engine(self.db)
 
     @property
@@ -90,20 +89,38 @@ class InstanceSettings:
         return self.storage.cloud_to_local_no_update(self._sqlite_file)
 
     def _update_cloud_sqlite_file(self) -> None:
-        """Unlock; if on cloud storage, update remote file."""
-        if self.dialect == "sqlite":
-            if self.storage.is_cloud:
-                sqlite_file = self._sqlite_file
-                cache_file = self.storage.cloud_to_local_no_update(sqlite_file)
-                sqlite_file.upload_from(cache_file, force_overwrite_to_cloud=True)  # type: ignore  # noqa
-                # doing semi-manually to replace cloudpahlib easily in the future
+        """Upload the local sqlite file to the cloud file."""
+        if self.is_cloud_sqlite:
+            sqlite_file = self._sqlite_file
+            cache_file = self.storage.cloud_to_local_no_update(sqlite_file)
+            sqlite_file.upload_from(cache_file, force_overwrite_to_cloud=True)  # type: ignore  # noqa
+            # doing semi-manually to replace cloudpahlib easily in the future
+            cloud_mtime = sqlite_file.stat().st_mtime  # type: ignore
+            # this seems to work even if there is an open connection
+            # to the cache file
+            os.utime(cache_file, times=(cloud_mtime, cloud_mtime))
+
+    def _update_local_sqlite_file(self) -> None:
+        """Download the cloud sqlite file if it is newer than local."""
+        if self.is_cloud_sqlite:
+            sqlite_file = self._sqlite_file
+            cache_file = self.storage.cloud_to_local_no_update(sqlite_file)
+            # checking cloud mtime several times here because of potential changes
+            # during the synchronizization process. Maybe better
+            # to make these checks dependent on lock,
+            # i.e. if locked check cloud mtime only once.
+            if not cache_file.exists():
+                cache_file.parent.mkdir(parents=True, exist_ok=True)
                 cloud_mtime = sqlite_file.stat().st_mtime  # type: ignore
-                # this seems to work even if there is an open connection
-                # to the cache file
+                sqlite_file.download_to(cache_file)  # type: ignore
                 os.utime(cache_file, times=(cloud_mtime, cloud_mtime))
-            locker = self.locker
-            if locker is not None:
-                locker.unlock()
+            elif sqlite_file.stat().st_mtime > cache_file.stat().st_mtime:  # type: ignore  # noqa
+                # checking the time again because
+                # it could be changed in the meantime
+                # maybe remove this checks when locked
+                cloud_mtime = sqlite_file.stat().st_mtime  # type: ignore
+                sqlite_file.download_to(cache_file)  # type: ignore
+                os.utime(cache_file, times=(cloud_mtime, cloud_mtime))
 
     @property
     def db(self) -> str:
@@ -130,42 +147,20 @@ class InstanceSettings:
         return self._engine
 
     @property
-    def locker(self):
-        if self.dialect == "sqlite" and self._locker is None:
-            self._locker = get_locker()
+    def is_cloud_sqlite(self) -> bool:
+        """Is this a cloud instance with sqlite db."""
+        return self.dialect == "sqlite" and self.storage.is_cloud
 
-        return self._locker
+    @property
+    def _cloud_sqlite_locker(self):
+        if self.is_cloud_sqlite:
+            return get_locker()
+        else:
+            return empty_locker
 
-    def session(self, lock: bool = False) -> sqm.Session:
+    def session(self) -> sqm.Session:
         """Database session."""
-        if lock:
-            locker = self.locker
-            if locker is not None:
-                try:
-                    locker.lock()
-                except BaseException as e:
-                    locker.unlock()
-                    raise e
-
-        if self.dialect == "sqlite" and self.storage.is_cloud:
-            sqlite_file = self._sqlite_file
-            cache_file = self.storage.cloud_to_local_no_update(sqlite_file)
-            # checking cloud mtime several times here because of potential changes
-            # during the synchronizization process. Maybe better
-            # to make these checks dependent on lock,
-            # i.e. if locked check cloud mtime only once.
-            if not cache_file.exists():
-                cache_file.parent.mkdir(parents=True, exist_ok=True)
-                cloud_mtime = sqlite_file.stat().st_mtime  # type: ignore
-                sqlite_file.download_to(cache_file)  # type: ignore
-                os.utime(cache_file, times=(cloud_mtime, cloud_mtime))
-            elif sqlite_file.stat().st_mtime > cache_file.stat().st_mtime:  # type: ignore  # noqa
-                # checking the time again because
-                # it could be changed in the meantime
-                # maybe remove this checks when locked
-                cloud_mtime = sqlite_file.stat().st_mtime  # type: ignore
-                sqlite_file.download_to(cache_file)  # type: ignore
-                os.utime(cache_file, times=(cloud_mtime, cloud_mtime))
+        self._update_local_sqlite_file()
 
         return sqm.Session(self.engine, expire_on_commit=False)
 

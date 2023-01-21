@@ -26,6 +26,12 @@ def check_migrate(
         if os.environ["LAMIN_SKIP_MIGRATION"] == "true":
             return "migrate-skipped"
 
+    # lock the whole migration
+    locker = isettings._cloud_sqlite_locker
+    locker.lock()
+    # synchronize the sqlite file before proceeding
+    isettings._update_local_sqlite_file()
+
     status = []
     schema_names = ["core"] + list(isettings.schema)
 
@@ -95,6 +101,8 @@ def check_migrate(
             )
         else:
             status.append("migrate-unnecessary")
+
+    locker.unlock()
 
     if "migrate-failed" in status:
         return "migrate-failed"
