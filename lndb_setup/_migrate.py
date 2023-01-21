@@ -29,6 +29,8 @@ def check_migrate(
     # lock the whole migration
     locker = isettings._cloud_sqlite_locker
     locker.lock()
+    # synchronize the sqlite file before proceeding
+    isettings._update_local_sqlite_file()
 
     status = []
     schema_names = ["core"] + list(isettings.schema)
