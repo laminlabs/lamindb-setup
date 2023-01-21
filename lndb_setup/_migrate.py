@@ -26,6 +26,10 @@ def check_migrate(
         if os.environ["LAMIN_SKIP_MIGRATION"] == "true":
             return "migrate-skipped"
 
+    # lock the whole migration
+    locker = isettings._cloud_sqlite_locker
+    locker.lock()
+
     status = []
     schema_names = ["core"] + list(isettings.schema)
 
@@ -96,6 +100,8 @@ def check_migrate(
         else:
             status.append("migrate-unnecessary")
 
+    locker.unlock()
+
     if "migrate-failed" in status:
         return "migrate-failed"
     elif "migrate-success" in status:
@@ -144,10 +150,6 @@ def migrate(
     schema_module: Any,
 ):
     """Migrate database to latest version."""
-    # lock the whole migration
-    locker = isettings._cloud_sqlite_locker
-    locker.lock()
-
     schema_root = Path(schema_module.__file__).parent
     filepath = schema_root / "alembic.ini"
 
@@ -168,8 +170,6 @@ def migrate(
         )
     else:
         logger.error("Automatic migration failed.")
-
-    locker.unlock()
 
     modify_alembic_ini(filepath, isettings, schema_name, revert=True)
 
