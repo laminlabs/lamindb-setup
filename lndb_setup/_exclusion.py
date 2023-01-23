@@ -24,7 +24,7 @@ class empty_locker:
 
 class Locker:
     def __init__(self, user_id: str, storage_root: Union[CloudPath, Path]):
-        logger.info(f"Init cloud sqlite locker: {user_id}, {storage_root}.")
+        logger.debug(f"Init cloud sqlite locker: {user_id}, {storage_root}.")
 
         self._counter = 0
 
