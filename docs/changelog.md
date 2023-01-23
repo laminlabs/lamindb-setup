@@ -3,7 +3,7 @@
 <!-- prettier-ignore -->
 Name | PR | Developer | Date | Version
 --- | --- | --- | --- | ---
-🐛 Pin s3fs version | [242](https://github.com/laminlabs/lndb-setup/pull/242) | [fredericenard](https://github.com/fredericenard) | 2023-01-23 |
+🐛 Pin s3fs version | [242](https://github.com/laminlabs/lndb-setup/pull/242) | [fredericenard](https://github.com/fredericenard) | 2023-01-23 | 0.30.8
 ♻️ Refactor locker and change locking logic to explicit locks | [241](https://github.com/laminlabs/lndb-setup/pull/241) | [Koncopd](https://github.com/Koncopd) | 2023-01-21 |
 ✅ Delete instances created during failed tests | [240](https://github.com/laminlabs/lndb-setup/pull/240) | [fredericenard](https://github.com/fredericenard) | 2023-01-21 |
 🚸 Fix messing with cached user settings upon failed signup | [238](https://github.com/laminlabs/lndb-setup/pull/238) | [falexwolf](https://github.com/falexwolf) | 2023-01-20 | 0.30.7
