@@ -3,6 +3,7 @@
 <!-- prettier-ignore -->
 Name | PR | Developer | Date | Version
 --- | --- | --- | --- | ---
+🐛 Use `schema_lookup_name` for SQL level | [250](https://github.com/laminlabs/lndb-setup/pull/250) | [falexwolf](https://github.com/falexwolf) | 2023-01-24 |
 🦺 Additional safety measures for locker | [249](https://github.com/laminlabs/lndb-setup/pull/249) | [Koncopd](https://github.com/Koncopd) | 2023-01-24 |
 🐛 Pin s3fs version | [242](https://github.com/laminlabs/lndb-setup/pull/242) | [fredericenard](https://github.com/fredericenard) | 2023-01-23 | 0.30.8
 ♻️ Refactor locker and change locking logic to explicit locks | [241](https://github.com/laminlabs/lndb-setup/pull/241) | [Koncopd](https://github.com/Koncopd) | 2023-01-21 |
