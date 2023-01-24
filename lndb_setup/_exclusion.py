@@ -145,6 +145,10 @@ class Locker:
         self._locked = False
         self._counter = 0
 
+    def _clear(self):
+        self.unlock()
+        self.mapper[f"entering/{self.user}"] = b"0"
+
 
 _locker: Optional[Locker] = None
 

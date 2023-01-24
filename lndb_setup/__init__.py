@@ -79,19 +79,19 @@ from ._settings_user import UserSettings  # noqa
 from ._setup_user import login, signup  # noqa
 
 
-# unlock even if an uncaught exception happens
-def _unlock_on_exception(typ, value, traceback):
+# unlock and clear even if an uncaught exception happens
+def _clear_on_exception(typ, value, traceback):
     from ._exclusion import _locker
 
     if _locker is not None:
         try:
-            _locker.unlock()
+            _locker._clear()
         except:
             pass
     sys.__excepthook__(typ, value, traceback)
 
 
-sys.excepthook = _unlock_on_exception
+sys.excepthook = _clear_on_exception
 
 # hide the supabase error in a thread on windows
 if _os_name == "nt":
