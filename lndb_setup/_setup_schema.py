@@ -3,7 +3,7 @@ import importlib
 import sqlalchemy as sa
 import sqlmodel as sqm
 from lamin_logger import logger
-from lnhub_rest._assets._schemas import get_schema_module_name
+from lnhub_rest._assets._schemas import get_schema_lookup_name, get_schema_module_name
 
 from ._db import insert
 from ._settings import settings
@@ -13,11 +13,12 @@ from ._storage import _set_mute_sync_warnings
 
 
 def create_schema_if_not_exists(schema_name: str, isettings: InstanceSettings):
-    # create the schema module in case it doesn't exist
+    # create the SQL-level schema module in case it doesn't exist
+    schema_lookup_name = get_schema_lookup_name(schema_name)
     if isettings.dialect != "sqlite":
         with isettings.engine.connect() as conn:
-            if not conn.dialect.has_schema(conn, schema_name):
-                conn.execute(sa.schema.CreateSchema(schema_name))
+            if not conn.dialect.has_schema(conn, schema_lookup_name):
+                conn.execute(sa.schema.CreateSchema(schema_lookup_name))
             conn.commit()
 
 
