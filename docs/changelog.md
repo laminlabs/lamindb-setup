@@ -3,6 +3,7 @@
 <!-- prettier-ignore -->
 Name | PR | Developer | Date | Version
 --- | --- | --- | --- | ---
+⬆️ Cleaned up dependencies | [253](https://github.com/laminlabs/lndb-setup/pull/253) | [sunnyosun](https://github.com/sunnyosun) | 2023-01-27 |
 📌 Pin s3fs and gcsfs to the latest versions | [commit](https://github.com/laminlabs/lndb-setup/commit/2aaec804492fd5339c80bfb5b6f8d79ba8117e6e) | [Koncopd](https://github.com/Koncopd) | 2023-01-25 | 0.30.10
 🐛 Use `schema_lookup_name` for SQL level | [250](https://github.com/laminlabs/lndb-setup/pull/250) | [falexwolf](https://github.com/falexwolf) | 2023-01-24 | 0.30.9
 🦺 Additional safety measures for locker | [249](https://github.com/laminlabs/lndb-setup/pull/249) | [Koncopd](https://github.com/Koncopd) | 2023-01-24 |
