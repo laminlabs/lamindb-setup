@@ -50,6 +50,7 @@ class InstanceSettings:
         self._engine: Engine = sqm.create_engine(self.db)
 
     def __repr__(self):
+        """Rich string representation."""
         representation = f"Current instance: {self.identifier}"
         attrs = ["owner", "name", "storage", "db", "schema"]
         for attr in attrs:
