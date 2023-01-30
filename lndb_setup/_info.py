@@ -6,4 +6,4 @@ def info():
     # Accessing cached settings is faster than accessing the hub
     usettings = settings.user
     print(f"User: handle={usettings.handle} email={usettings.email} id={usettings.id}")
-    print(f"Instance: {settings.instance.owner}/{settings.instance.name}")
+    print(settings.instance)
