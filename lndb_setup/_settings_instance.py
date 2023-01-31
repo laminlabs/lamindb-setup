@@ -49,6 +49,19 @@ class InstanceSettings:
         self._schema_str: Optional[str] = schema
         self._engine: Engine = sqm.create_engine(self.db)
 
+    def __repr__(self):
+        """Rich string representation."""
+        representation = f"Current instance: {self.identifier}"
+        attrs = ["owner", "name", "storage", "db", "schema"]
+        for attr in attrs:
+            value = getattr(self, attr)
+            if attr == "storage":
+                representation += f"\n- storage root: {value.root}"
+                representation += f"\n- storage region: {value.region}"
+            else:
+                representation += f"\n- {attr}: {value}"
+        return representation
+
     @property
     def owner(self) -> str:
         """Instance owner. A user or organization account handle."""
