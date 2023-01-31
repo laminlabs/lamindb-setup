@@ -3,6 +3,7 @@
 <!-- prettier-ignore -->
 Name | PR | Developer | Date | Version
 --- | --- | --- | --- | ---
+✨ Add rich string representation for UserSettings class | [255](https://github.com/laminlabs/lndb-setup/pull/255) | [bpenteado](https://github.com/bpenteado) | 2023-01-31 |
 📌 Pin deps for aiobotocore to fix resolution | [commit](https://github.com/laminlabs/lndb-setup/commit/439898124d09f7cab323a1ef275e72eba072a4d7) | [Koncopd](https://github.com/Koncopd) | 2023-01-27 | 0.30.11
 ⬆️ Upgrade lnhub-rest to 0.1.4 | [252](https://github.com/laminlabs/lndb-setup/pull/252) | [fredericenard](https://github.com/fredericenard) | 2023-01-27 |
 ⬆️ Cleaned up dependencies | [253](https://github.com/laminlabs/lndb-setup/pull/253) | [sunnyosun](https://github.com/sunnyosun) | 2023-01-27 |
