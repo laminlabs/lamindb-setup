@@ -26,3 +26,12 @@ class UserSettings:
     "Unique handle."
     name: Union[str, None] = None
     "Full name."
+
+    def __repr__(self):
+        """Rich string representation."""
+        representation = f"Current user: {self.handle}"
+        attrs = ["handle", "email", "id"]
+        for attr in attrs:
+            value = getattr(self, attr)
+            representation += f"\n- {attr}: {value}"
+        return representation
