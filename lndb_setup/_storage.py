@@ -8,15 +8,6 @@ from ._upath_ext import UPath
 DIRS = AppDirs("lamindb", "laminlabs")
 
 
-_MUTE_SYNC_WARNINGS = False
-
-
-def _set_mute_sync_warnings(value: bool):
-    global _MUTE_SYNC_WARNINGS
-
-    _MUTE_SYNC_WARNINGS = value
-
-
 class Storage:
     """Manage cloud or local storage."""
 
@@ -84,7 +75,8 @@ class Storage:
         """Local (cache) filepath from filepath."""
         local_filepath = self.cloud_to_local_no_update(filepath)  # type: ignore
         if isinstance(filepath, UPath):
-            filepath.synchronize(local_filepath, sync_warn=not _MUTE_SYNC_WARNINGS)
+            local_filepath.parent.mkdir(parents=True, exist_ok=True)
+            filepath.synchronize(local_filepath)
         return local_filepath
 
     # conversion to Path via cloud_to_local() would trigger download

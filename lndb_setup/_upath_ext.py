@@ -6,6 +6,14 @@ from dateutil.parser import isoparse  # type: ignore
 from lamin_logger import logger
 from upath import UPath
 
+_MUTE_SYNC_WARNINGS = False
+
+
+def _set_mute_sync_warnings(value: bool):
+    global _MUTE_SYNC_WARNINGS
+
+    _MUTE_SYNC_WARNINGS = value
+
 
 def download_to(self, path, **kwargs):
     self.fs.download(str(self), str(path), **kwargs)
@@ -15,7 +23,7 @@ def upload_from(self, path, **kwargs):
     self.fs.upload(str(path), str(self), **kwargs)
 
 
-def synchronize(self, filepath: Path, sync_warn=True):
+def synchronize(self, filepath: Path):
     if not self.exists():
         return None
 
@@ -32,7 +40,7 @@ def synchronize(self, filepath: Path, sync_warn=True):
         mts = self.modified.timestamp()
         self.download_to(filepath)
         os.utime(filepath, times=(mts, mts))
-    elif cloud_mts < local_mts and sync_warn:
+    elif cloud_mts < local_mts and not _MUTE_SYNC_WARNINGS:
         logger.warning(
             f"Local file ({filepath}) for cloud path ({self}) is newer on disk than in cloud.\n"  # noqa
             "It seems you manually updated the database locally and didn't push changes to the cloud.\n"  # noqa

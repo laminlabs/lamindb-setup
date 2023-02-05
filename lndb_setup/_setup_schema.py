@@ -9,7 +9,7 @@ from ._db import insert
 from ._settings import settings
 from ._settings_instance import InstanceSettings
 from ._settings_user import UserSettings
-from ._storage import _set_mute_sync_warnings
+from ._upath_ext import _set_mute_sync_warnings
 
 
 def create_schema_if_not_exists(schema_name: str, isettings: InstanceSettings):
