@@ -77,13 +77,15 @@ class Locker:
         self._locked = False
 
     def modified(self, path):
-        try:
+        if "gcs" not in self.fs.protocol:
             mtime = self.fs.modified(path)
-        except NotImplementedError:
-            # todo: check more protocols
-            # here only for gs
-            mtime = self.fs.stat(path)["updated"]
-            mtime = isoparse(mtime)
+        else:
+            stat = self.fs.stat(path)
+            if "updated" in stat:
+                mtime = stat["updated"]
+                mtime = isoparse(mtime)
+            else:
+                return None
         # always convert to the local timezone before returning
         # assume in utc if the time zone is not specified
         if mtime.tzinfo is None:
