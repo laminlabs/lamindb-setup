@@ -94,7 +94,7 @@ class Storage:
     # using the `.parts` attribute in the following line
     def cloud_to_local_no_update(self, filepath: Union[Path, UPath]) -> Path:
         if self.is_cloud:
-            return self.cache_dir.joinpath(*filepath.parts[1:])  # type: ignore
+            return self.cache_dir.joinpath(filepath._url.netloc, *filepath.parts[1:])  # type: ignore # noqa
         return filepath
 
     def local_filepath(self, filekey: Union[Path, UPath, str]) -> Path:
