@@ -8,11 +8,11 @@ from upath import UPath
 
 
 def download_to(self, path, **kwargs):
-    self.fs.download(str(self), path, **kwargs)
+    self.fs.download(str(self), str(path), **kwargs)
 
 
 def upload_from(self, path, **kwargs):
-    self.fs.upload(path, str(self), **kwargs)
+    self.fs.upload(str(path), str(self), **kwargs)
 
 
 def synchronize(self, filepath: Path, sync_warn=True):
