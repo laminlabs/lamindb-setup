@@ -1,6 +1,5 @@
 from pathlib import Path
 from typing import Optional, Union
-from urllib.parse import urlparse
 
 from lamin_logger import logger
 from lnhub_rest._add_storage import get_storage_region
@@ -14,6 +13,7 @@ from ._settings import settings
 from ._settings_instance import InstanceSettings
 from ._setup_knowledge import write_bionty_versions
 from ._setup_schema import load_schema, setup_schema
+from ._storage import Storage
 from ._upath_ext import UPath
 
 
@@ -142,5 +142,15 @@ def infer_instance_name(
         # better way of accessing the database name?
         return str(db).split("/")[-1]
 
-    # replace .stem as for UPath it dosn't work like for Path
-    return urlparse(str(storage)).netloc.lower()
+    if isinstance(storage, str):
+        storage_path = Storage._str_to_path(storage)
+    else:
+        storage_path = storage
+
+    if isinstance(storage_path, UPath):
+        name = storage_path._url.netloc
+    else:
+        name = str(storage_path.stem)
+    name = name.lower()
+
+    return name
