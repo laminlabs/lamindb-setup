@@ -1,7 +1,6 @@
 from pathlib import Path
 from typing import Optional, Union
 
-from cloudpathlib import CloudPath
 from lamin_logger import logger
 from lnhub_rest._add_storage import get_storage_region
 from lnhub_rest._init_instance_sbclient import init_instance as init_instance_hub
@@ -15,6 +14,7 @@ from ._settings_instance import InstanceSettings
 from ._setup_knowledge import write_bionty_versions
 from ._setup_schema import load_schema, setup_schema
 from ._storage import Storage
+from ._upath_ext import UPath
 
 
 def register(isettings: InstanceSettings, usettings):
@@ -62,7 +62,7 @@ class description:
 )
 def init(
     *,
-    storage: Union[str, Path, CloudPath],
+    storage: Union[str, Path, UPath],
     name: Optional[str] = None,
     db: Optional[PostgresDsn] = None,
     schema: Optional[str] = None,
@@ -132,7 +132,7 @@ def init(
 
 def infer_instance_name(
     *,
-    storage: Union[str, Path, CloudPath],
+    storage: Union[str, Path, UPath],
     name: Optional[str] = None,
     db: Optional[PostgresDsn] = None,
 ):
