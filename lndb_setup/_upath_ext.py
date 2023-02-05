@@ -16,6 +16,9 @@ def upload_from(self, path, **kwargs):
 
 
 def synchronize(self, filepath: Path, sync_warn=True):
+    if not self.exists():
+        return None
+
     if not filepath.exists():
         filepath.parent.mkdir(parents=True, exist_ok=True)
         mts = self.modified.timestamp()
