@@ -30,6 +30,7 @@ dependencies = [
     "fsspec==2023.1.0",
     "s3fs",
     "gcsfs",
+    "universal_pathlib",
     "python-dateutil",
 ]
 

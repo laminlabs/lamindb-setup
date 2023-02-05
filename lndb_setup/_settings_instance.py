@@ -5,7 +5,6 @@ from typing import Literal, Optional, Set, Tuple, Union
 
 import sqlalchemy as sa
 import sqlmodel as sqm
-from cloudpathlib import CloudPath
 from pydantic import PostgresDsn
 from sqlalchemy.future import Engine
 
@@ -14,6 +13,7 @@ from lndb_setup._storage import Storage
 from ._exclusion import empty_locker, get_locker
 from ._settings_save import save_instance_settings
 from ._settings_store import current_instance_settings_file, instance_settings_file
+from ._upath_ext import UPath
 
 # leave commented out until we understand more how to deal with
 # migrations in redun
@@ -37,7 +37,7 @@ class InstanceSettings:
         self,
         owner: str,  # owner handle
         name: str,  # instance name
-        storage_root: Union[str, Path, CloudPath],  # storage location on cloud
+        storage_root: Union[str, Path, UPath],  # storage location on cloud
         storage_region: Optional[str] = None,
         db: Optional[PostgresDsn] = None,  # DB URI
         schema: Optional[str] = None,  # comma-separated string of schema names
@@ -89,10 +89,10 @@ class InstanceSettings:
             return {schema for schema in self._schema_str.split(",") if schema != ""}
 
     @property
-    def _sqlite_file(self) -> Union[Path, CloudPath]:
+    def _sqlite_file(self) -> Union[Path, UPath]:
         """SQLite file.
 
-        Is a CloudPath if on S3 or GS, otherwise a Path.
+        Is a UPath if on S3 or GS, otherwise a Path.
         """
         return self.storage.key_to_filepath(f"{self.name}.lndb")
 
@@ -106,9 +106,8 @@ class InstanceSettings:
         if self.is_cloud_sqlite:
             sqlite_file = self._sqlite_file
             cache_file = self.storage.cloud_to_local_no_update(sqlite_file)
-            sqlite_file.upload_from(cache_file, force_overwrite_to_cloud=True)  # type: ignore  # noqa
-            # doing semi-manually to replace cloudpahlib easily in the future
-            cloud_mtime = sqlite_file.stat().st_mtime  # type: ignore
+            sqlite_file.upload_from(cache_file)  # type: ignore
+            cloud_mtime = sqlite_file.modified.timestamp()  # type: ignore
             # this seems to work even if there is an open connection
             # to the cache file
             os.utime(cache_file, times=(cloud_mtime, cloud_mtime))
@@ -118,22 +117,7 @@ class InstanceSettings:
         if self.is_cloud_sqlite:
             sqlite_file = self._sqlite_file
             cache_file = self.storage.cloud_to_local_no_update(sqlite_file)
-            # checking cloud mtime several times here because of potential changes
-            # during the synchronizization process. Maybe better
-            # to make these checks dependent on lock,
-            # i.e. if locked check cloud mtime only once.
-            if not cache_file.exists():
-                cache_file.parent.mkdir(parents=True, exist_ok=True)
-                cloud_mtime = sqlite_file.stat().st_mtime  # type: ignore
-                sqlite_file.download_to(cache_file)  # type: ignore
-                os.utime(cache_file, times=(cloud_mtime, cloud_mtime))
-            elif sqlite_file.stat().st_mtime > cache_file.stat().st_mtime:  # type: ignore  # noqa
-                # checking the time again because
-                # it could be changed in the meantime
-                # maybe remove this checks when locked
-                cloud_mtime = sqlite_file.stat().st_mtime  # type: ignore
-                sqlite_file.download_to(cache_file)  # type: ignore
-                os.utime(cache_file, times=(cloud_mtime, cloud_mtime))
+            sqlite_file.synchronize(cache_file)  # type: ignore
 
     @property
     def db(self) -> str:
