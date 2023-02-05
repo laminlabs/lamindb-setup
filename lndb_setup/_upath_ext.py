@@ -21,11 +21,15 @@ def synchronize(self, filepath: Path, sync_warn=True):
         mts = self.modified.timestamp()
         self.download_to(filepath)
         os.utime(filepath, times=(mts, mts))
-    elif self.modified.timestamp() > filepath.stat().st_mtime:
+        return None
+
+    cloud_mts = self.modified.timestamp()
+    local_mts = filepath.stat().st_mtime
+    if cloud_mts > local_mts:
         mts = self.modified.timestamp()
         self.download_to(filepath)
         os.utime(filepath, times=(mts, mts))
-    elif sync_warn:
+    elif cloud_mts < local_mts and sync_warn:
         logger.warning(
             f"Local file ({filepath}) for cloud path ({self}) is newer on disk than in cloud.\n"  # noqa
             "It seems you manually updated the database locally and didn't push changes to the cloud.\n"  # noqa
@@ -36,9 +40,9 @@ def synchronize(self, filepath: Path, sync_warn=True):
 
 def modified(self):
     path = str(self)
-    try:
+    if "gcs" not in self.fs.protocol:
         mtime = self.fs.modified(path)
-    except NotImplementedError:
+    else:
         stat = self.fs.stat(path)
         if "updated" in stat:
             mtime = stat["updated"]
