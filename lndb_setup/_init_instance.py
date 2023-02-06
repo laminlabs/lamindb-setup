@@ -4,7 +4,7 @@ from typing import Optional, Union
 from cloudpathlib import CloudPath
 from lamin_logger import logger
 from lnhub_rest._add_storage import get_storage_region
-from lnhub_rest._init_instance_sbclient import init_instance as init_instance_hub
+from lnhub_rest._init_instance import init_instance as init_instance_hub
 from pydantic import PostgresDsn
 
 from ._db import insert_if_not_exists, upsert

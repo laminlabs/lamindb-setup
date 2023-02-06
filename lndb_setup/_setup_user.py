@@ -1,7 +1,7 @@
 from typing import Union
 
 from lamin_logger import logger
-from lnhub_rest._sign_upin_sbclient import sign_in_hub, sign_up_hub
+from lnhub_rest._signup_signin import sign_in_hub, sign_up_hub
 from sqlalchemy import create_engine
 
 from ._db import upsert
