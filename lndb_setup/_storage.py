@@ -23,7 +23,7 @@ class Storage:
     def _str_to_path(storage: str) -> Union[Path, UPath]:
         if storage.startswith("s3://"):
             # for new buckets there could be problems if the region is not specified
-            storage_root = UPath(storage, cache_region=True)
+            storage_root = UPath(storage, cache_regions=True)
         elif storage.startswith("gs://"):
             storage_root = UPath(storage)
         else:  # local path
