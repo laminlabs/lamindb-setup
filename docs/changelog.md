@@ -3,6 +3,7 @@
 <!-- prettier-ignore -->
 Name | PR | Developer | Date | Version
 --- | --- | --- | --- | ---
+🚑 Fix login on new environments | [261](https://github.com/laminlabs/lndb-setup/pull/261) | [falexwolf](https://github.com/falexwolf) | 2023-02-06 |
 🐛 Fix modified for gcs for locker | [258](https://github.com/laminlabs/lndb-setup/pull/258) | [Koncopd](https://github.com/Koncopd) | 2023-02-05 |
 ✨ Add rich string representation for InstanceSettings class | [254](https://github.com/laminlabs/lndb-setup/pull/254) | [bpenteado](https://github.com/bpenteado) | 2023-01-31 | 0.30.12
 ✨ Add rich string representation for UserSettings class | [255](https://github.com/laminlabs/lndb-setup/pull/255) | [bpenteado](https://github.com/bpenteado) | 2023-01-31 |
