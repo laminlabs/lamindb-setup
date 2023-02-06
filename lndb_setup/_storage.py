@@ -63,9 +63,10 @@ class Storage:
 
         Returns "s3" or "gs" or "local".
         """
-        if str(self.root).startswith("s3://"):
+        root_str = str(self.root)
+        if root_str.startswith("s3://"):
             return "s3"
-        elif str(self.root).startswith("gs://"):
+        elif root_str.startswith("gs://"):
             return "gs"
         else:
             return "local"
