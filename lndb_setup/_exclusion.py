@@ -32,9 +32,12 @@ class Locker:
         self.user = user_id
 
         root = storage_root
-        protocol = fsspec.utils.get_protocol(str(root))
 
-        self.fs = fsspec.filesystem(protocol)
+        if isinstance(root, UPath):
+            self.fs = root.fs
+        else:
+            protocol = fsspec.utils.get_protocol(str(root))
+            self.fs = fsspec.filesystem(protocol)
 
         exclusion_path = root / "exclusion"
         self.mapper = fsspec.FSMap(str(exclusion_path), self.fs, create=True)
