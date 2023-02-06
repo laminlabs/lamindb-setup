@@ -21,6 +21,10 @@ def delete(instance_name: str):
     )
     if isettings.is_remote:
         logger.info("    please manually delete your remote instance on lamin.ai")
+    else:
+        if isettings.dialect == "sqlite":
+            shutil.rmtree(isettings._sqlite_file)
+            logger.info("    deleted sqlite file")
 
 
 def delete_cache(cache_dir: Path):
