@@ -15,7 +15,7 @@ def delete(instance_name: str):
     isettings = load_instance_settings(settings_file)
 
     delete_settings(settings_file)
-    delete_cache(isettings.cache_dir)
+    delete_cache(isettings.storage.cache_dir)
     logger.info(
         f"    consider deleting your stored data manually: {isettings.storage.root}"
     )
