@@ -47,7 +47,7 @@ def setup_local_test_postgres(name: str = "pgtest"):
 
 def setup_local_test_supabase(name: str = "postgres"):
     process = run(
-        f"cd sb-docker && docker compose up",  # noqa
+        f"cd sb-docker && docker compose up </dev/null &>/dev/null &",  # noqa
         shell=True,
     )
     if process.returncode == 0:
