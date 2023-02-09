@@ -45,6 +45,22 @@ def setup_local_test_postgres(name: str = "pgtest"):
     return f"postgresql://postgres:pwd@0.0.0.0:5432/{name}"
 
 
+def setup_local_test_supabase(name: str = "postgres"):
+    process = run(
+        f"cd sb-docker && docker compose up",  # noqa
+        shell=True,
+    )
+    if process.returncode == 0:
+        logger.info(
+            f"Created Supabase test instance. It runs in docker container '{name}'."
+        )
+    else:
+        raise RuntimeError("Failed to set up Supabase test instance.")
+    time.sleep(2)
+    password = "your-super-secret-and-long-postgres-password"
+    return f"postgresql://postgres:{password}@0.0.0.0:5432/{name}"
+
+
 def clone_schema(
     schema, src_conn, src_metadata, tgt_conn, tgt_metadata, tgt_engine, depth: int
 ):
@@ -83,7 +99,9 @@ def clone_schema(
             tgt_conn.commit()
 
 
-def clone_test(src_settings: Optional[InstanceSettings] = None, depth: int = 10):
+def clone_test(
+    src_settings: Optional[InstanceSettings] = None, depth: int = 10, supabase=False
+):
     """Clone from current instance to a test instance."""
     if src_settings is None:
         src_settings = settings.instance
@@ -92,6 +110,8 @@ def clone_test(src_settings: Optional[InstanceSettings] = None, depth: int = 10)
 
     if src_settings.dialect == "sqlite":
         tgt_db = setup_local_test_sqlite_file(src_settings)
+    elif supabase:
+        tgt_db = setup_local_test_supabase()
     else:
         tgt_db = setup_local_test_postgres()
 
