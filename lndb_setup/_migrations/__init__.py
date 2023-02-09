@@ -23,7 +23,7 @@ def _get_package_info(
 
 
 def _generate_module_files(package_name: str, migrations_path: Path, schema_id: str):
-    _migrations_path = Path(__file__).parent / "_migrations"
+    _migrations_path = Path(__file__).parent
 
     # ensures migrations/versions folder exists
     (migrations_path / "versions").mkdir(exist_ok=True, parents=True)
