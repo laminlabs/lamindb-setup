@@ -102,7 +102,7 @@ def init(
         db=db,
         schema=schema,
     )
-    persist_check_reload_schema(isettings)
+
     if isettings.storage.is_cloud:
         if (
             not isettings._sqlite_file.exists()
@@ -113,6 +113,23 @@ def init(
             )
             return "remote-sqlite-deleted"
 
+    # for remote instance, a lot of validation happens in the next function
+    # if this errors, the whole function errors
+    if isettings.is_remote:
+        result = init_instance_hub(
+            owner=owner,
+            name=name_str,
+            storage=str(storage),
+            db=db,
+            schema=schema,
+        )
+        if result == "instance-exists-already":
+            pass  # everything is alright!
+        elif isinstance(result, str):
+            raise RuntimeError(f"Initializing instance on hub failed:\n{result}")
+
+    persist_check_reload_schema(isettings)
+
     # some legacy instances not yet registered in hub may actually exist
     # despite being not loadable above
     message = None
@@ -122,18 +139,6 @@ def init(
         write_bionty_versions(isettings)
     else:
         message = load_from_isettings(isettings, migrate=_migrate)
-        logger.info("Loaded from existing DB, now storing metadata")
-
-    if isettings.is_remote:
-        result = init_instance_hub(
-            owner=owner,
-            name=name_str,
-            storage=str(storage),
-            db=db,
-            schema=schema,
-        )
-        if result == "instance-exists-already-on-hub":
-            logger.info(result)
 
     return message
 
