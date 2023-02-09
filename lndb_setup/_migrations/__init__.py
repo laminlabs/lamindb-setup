@@ -139,5 +139,6 @@ class migrate:
                 logger.info(push_instruction)
             return None
         else:
+            print(process.stderr)
             logger.error("Generating migration failed.")
             return "migrate-gen-failed"
