@@ -62,10 +62,17 @@ def setup_local_test_supabase(name: str = "postgres"):
 
 
 def clone_schema(
-    schema, src_conn, src_metadata, tgt_conn, tgt_metadata, tgt_engine, depth: int
+    schema,
+    src_conn,
+    src_metadata,
+    tgt_conn,
+    tgt_metadata,
+    tgt_engine,
+    depth: int,
+    supabase,
 ):
     # switch off foreign key integrity
-    if src_conn.dialect.name == "postgresql":
+    if not supabase and src_conn.dialect.name == "postgresql":
         tgt_conn.execute(sa.sql.text("SET session_replication_role = replica;"))
 
     # create all tables in target database
@@ -91,7 +98,7 @@ def clone_schema(
                 ).scalar()
             )
         print(f"{table.name} ({n_rows})", end=", ")
-        offset = max(n_rows - depth, 0)
+        offset = 0 if supabase else max(n_rows - depth, 0)
         rows = src_conn.execute(src_table.select().offset(offset))
         values = [row._asdict() for index, row in enumerate(rows)]
         if len(values) > 0:
@@ -149,7 +156,14 @@ def clone_test(
         if src_engine.dialect.name != "sqlite":
             print(f"\nSchema: {schema}")
         clone_schema(
-            schema, src_conn, src_metadata, tgt_conn, tgt_metadata, tgt_engine, depth
+            schema,
+            src_conn,
+            src_metadata,
+            tgt_conn,
+            tgt_metadata,
+            tgt_engine,
+            depth,
+            supabase,
         )
 
     return tgt_db
