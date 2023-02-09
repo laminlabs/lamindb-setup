@@ -85,7 +85,7 @@ def init(
     owner = settings.user.handle
 
     schema = validate_schema_arg(schema)
-    validate_storage_arg(storage)  # needs improvement!
+    validate_storage_arg(str(storage))  # needs improvement!
     validate_db_arg(db)
 
     name_str = infer_instance_name(storage=storage, name=name, db=db)
