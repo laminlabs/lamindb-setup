@@ -33,7 +33,12 @@ class Locker:
         root = storage_root
         protocol = fsspec.utils.get_protocol(str(root))
 
-        self.fs = fsspec.filesystem(protocol)
+        if protocol == "s3":
+            fs_kwargs = {"cache_regions": True}
+        else:
+            fs_kwargs = {}
+
+        self.fs = fsspec.filesystem(protocol, **fs_kwargs)
 
         exclusion_path = root / "exclusion"
         self.mapper = fsspec.FSMap(str(exclusion_path), self.fs, create=True)
