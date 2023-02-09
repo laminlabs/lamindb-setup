@@ -99,15 +99,14 @@ class migrate:
             cwd = None
         process = run(command, shell=True, cwd=cwd)
 
-        if rm:
-            run(f"rm {db_path.as_posix()}", shell=True, cwd=cwd)
-            logger.info(
-                "Please commit and push your changes and add migration code from CI to"
-                " the script."
-            )
-
         if process.returncode == 0:
             logger.success(f"Successfully generated migration {version}.")
+            if rm:
+                run(f"rm {db_path.as_posix()}", shell=True, cwd=cwd)
+                logger.info(
+                    "Please commit and push your changes and add migration code from CI"
+                    " to the script."
+                )
             return None
         else:
             logger.error("Generating migration failed.")
