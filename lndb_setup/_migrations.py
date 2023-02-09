@@ -28,7 +28,13 @@ class migrate:
             package_name = f"{package_name}.schema"
             package = importlib.import_module(package_name)
         schema_id = getattr(package, "_schema_id")
-        logger.info("Generate migration with reference db: testdb/testdb.lndb")
+        db_path = Path(package.__file__).parent.parent / "testdb/testdb.lndb"  # type: ignore # noqa
+        if db_path.exists():
+            rm = False
+            logger.info("Generate migration with reference db: testdb/testdb.lndb")
+        else:
+            rm = True
+            logger.info("Generate empty migration script.")
         command = (
             f"alembic --config {package_name}/alembic.ini --name {schema_id} revision"
             f" --autogenerate -m '{version}'"
@@ -38,6 +44,9 @@ class migrate:
         else:
             cwd = None
         process = run(command, shell=True, cwd=cwd)
+
+        if rm:
+            run(f"rm {db_path.as_posix()}", shell=True, cwd=cwd)
 
         if process.returncode == 0:
             logger.success(f"Successfully generated migration {version}.")
