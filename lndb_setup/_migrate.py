@@ -60,8 +60,8 @@ def check_migrate(
             if vparse(current_version) < vparse(versions[-1]):  # type: ignore
                 raise RuntimeError(
                     f"You are trying to connect to a DB that runs v{versions[-1]} "
-                    "of schema module {schema_name}.\n"
-                    f"Please run pip install {schema_module_name}=={versions[-1]}, "
+                    f"of schema module {schema_name}.\n"
+                    f"Please run `pip install {schema_module_name}=={versions[-1]}`, "
                     "or install the latest version from GitHub."
                 )
             logger.info(
