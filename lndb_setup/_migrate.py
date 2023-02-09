@@ -9,6 +9,7 @@ from typing import Any, Optional
 import sqlmodel as sqm
 from lamin_logger import logger
 from natsort import natsorted
+from packaging.version import parse as vparse
 
 from ._db import insert
 from ._settings_instance import InstanceSettings
@@ -51,11 +52,18 @@ def check_migrate(
             )
             version_table = getattr(table_loc, f"version_{schema_id}")
             versions = session.exec(sqm.select(version_table.v)).all()
-            versions = natsorted(versions)
+            versions = natsorted(versions)  # latest version is last
 
         current_version = schema_module.__version__
 
         if current_version not in versions and len(versions) > 0:
+            if vparse(current_version) < vparse(versions[-1]):  # type: ignore
+                raise RuntimeError(
+                    f"You are trying to connect to a DB that runs v{versions[-1]} "
+                    f"of schema module {schema_name}.\n"
+                    f"Please run `pip install {schema_module_name}=={versions[-1]}`, "
+                    "or install the latest version from GitHub."
+                )
             logger.info(
                 f"Schema {schema_name} v{versions[-1]} is not up to date"
                 f" with {current_version}."
