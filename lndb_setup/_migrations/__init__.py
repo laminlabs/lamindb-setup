@@ -8,8 +8,9 @@ from lamin_logger import logger
 from lndb_setup.test import get_package_name
 
 
-def _get_package_info(schema_root: Optional[Path] = None):
-    package_name = get_package_name(schema_root)
+def _get_package_info(schema_root: Optional[Path] = None, package_name: str = None):
+    if package_name is None:
+        package_name = get_package_name(schema_root)
     package = importlib.import_module(package_name)
     if not hasattr(package, "_schema_id"):
         package_name = f"{package_name}.schema"
@@ -87,7 +88,11 @@ class migrate:
     """Manage migrations."""
 
     @staticmethod
-    def generate(version: str = "vX.X.X", schema_root: Optional[Path] = None):
+    def generate(
+        version: str = "vX.X.X",
+        schema_root: Optional[Path] = None,
+        package_name: str = None,
+    ):
         """Generate migration for current schema module.
 
         Needs to be executed at the root level of the python package that contains
@@ -96,12 +101,13 @@ class migrate:
         Args:
             version: Version string to label migration with.
             schema_root: Optional. Root directory of schema module.
+            package_name: Optional. Name of schema module package.
         """
         package_name, migrations_path, schema_id = _get_package_info(
-            schema_root=schema_root
+            schema_root=schema_root, package_name=package_name
         )
         _generate_module_files(
-            package_name=package_name,
+            package_name=package_name,  # type:ignore
             migrations_path=migrations_path,
             schema_id=schema_id,
         )
