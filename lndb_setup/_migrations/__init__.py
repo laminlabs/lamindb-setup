@@ -8,7 +8,9 @@ from lamin_logger import logger
 from lndb_setup.test import get_package_name
 
 
-def _get_package_info(schema_root: Optional[Path] = None, package_name: str = None):
+def _get_package_info(
+    schema_root: Optional[Path] = None, package_name: Optional[str] = None
+):
     if package_name is None:
         package_name = get_package_name(schema_root)
     package = importlib.import_module(package_name)
@@ -91,7 +93,7 @@ class migrate:
     def generate(
         version: str = "vX.X.X",
         schema_root: Optional[Path] = None,
-        package_name: str = None,
+        package_name: Optional[str] = None,
     ):
         """Generate migration for current schema module.
 
