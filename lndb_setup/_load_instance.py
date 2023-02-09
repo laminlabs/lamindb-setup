@@ -43,7 +43,7 @@ def load(
             isettings = load_instance_settings(settings_file)
         else:
             if _log_error_message:
-                logger.error("Instance neither exists on hub nor locally.")
+                logger.error("Instance neither exists on hub nor locally, call `init`.")
             return "instance-not-exists"
 
     check, msg = isettings._is_db_setup()
