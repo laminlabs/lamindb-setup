@@ -3,6 +3,7 @@
 <!-- prettier-ignore -->
 Name | PR | Developer | Date | Version
 --- | --- | --- | --- | ---
+🚸 Add error if client version schema package version is lower than deployed db schema module version | [267](https://github.com/laminlabs/lndb-setup/pull/267) | [falexwolf](https://github.com/falexwolf) | 2023-02-09 |
 :recycle: Remove _sbclient suffix | [263](https://github.com/laminlabs/lndb-setup/pull/263) | [falexwolf](https://github.com/falexwolf) | 2023-02-06 |
 🚸 Better UX `delete()` | [260](https://github.com/laminlabs/lndb-setup/pull/260) | [falexwolf](https://github.com/falexwolf) | 2023-02-06 |
 🐛 Fix check_versions | [262](https://github.com/laminlabs/lndb-setup/pull/262) | [falexwolf](https://github.com/falexwolf) | 2023-02-06 | 0.30.14
