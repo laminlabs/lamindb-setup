@@ -31,8 +31,8 @@ def _generate_module_files(package_name: str, package_path: Path, schema_id: str
     migrations_path = package_path / package_name / "migrations"
     _migrations_path = Path(__file__).parent / "_migrations"
 
-    # ensures versions folder exists
-    (migrations_path / "versions").mkdir(exist_ok=True)
+    # ensures migrations/versions folder exists
+    (migrations_path / "versions").mkdir(exist_ok=True, parents=True)
 
     if not (migrations_path / "env.py").exists():
         content = (
@@ -101,6 +101,10 @@ class migrate:
 
         if rm:
             run(f"rm {db_path.as_posix()}", shell=True, cwd=cwd)
+            logger.info(
+                "Please commit and push your changes and add migration code from CI to"
+                " the script."
+            )
 
         if process.returncode == 0:
             logger.success(f"Successfully generated migration {version}.")
