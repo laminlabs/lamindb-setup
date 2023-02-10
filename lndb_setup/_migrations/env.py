@@ -1,5 +1,4 @@
 from logging.config import fileConfig
-from pathlib import Path
 
 from alembic import context
 from sqlalchemy import engine_from_config, pool
@@ -25,9 +24,7 @@ _schema_id = None
 
 
 def _upg_dwg_token(db: str):
-    # get db path
-    db_path = Path(__file__).parent.parent.parent / db.replace("sqlite:///", "")
-    if not db_path.exists():
+    if db != "sqlite:///testdb/testdb.lndb":
         return {"upgrade_token": "", "downgrade_token": ""}
     else:
         return {}

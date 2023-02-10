@@ -3,6 +3,7 @@
 <!-- prettier-ignore -->
 Name | PR | Developer | Date | Version
 --- | --- | --- | --- | ---
+🎨 Generate alembic.ini before before check migrate | [269](https://github.com/laminlabs/lndb-setup/pull/269) | [sunnyosun](https://github.com/sunnyosun) | 2023-02-10 |
 ✨ Added migration module | [266](https://github.com/laminlabs/lndb-setup/pull/266) | [sunnyosun](https://github.com/sunnyosun) | 2023-02-10 |
 🐛 Fix access to newly created instances on s3 due to region | [268](https://github.com/laminlabs/lndb-setup/pull/268) | [Koncopd](https://github.com/Koncopd) | 2023-02-09 |
 🚸 Validate instances at `init` | [264](https://github.com/laminlabs/lndb-setup/pull/264) | [falexwolf](https://github.com/falexwolf) | 2023-02-09 |

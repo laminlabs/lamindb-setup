@@ -38,11 +38,18 @@ def generate_alembic_ini(package_name: str, migrations_path: Path, schema_id: st
 
 
 def modify_alembic_ini(
-    filepath: Path, isettings: InstanceSettings, schema_name: str, revert: bool = False
+    filepath: Path,
+    isettings: InstanceSettings,
+    schema_name: Optional[str] = None,
+    package_name: Optional[str] = None,
+    revert: bool = False,
+    move_sl: bool = True,
 ):
-    package_name = get_schema_module_name(schema_name)
+    if package_name is None:
+        package_name = get_schema_module_name(schema_name)
     schema_module_path = package_name.replace(".", "/") + "/migrations"
-    sl_from, sl_to = schema_module_path, "migrations"
+    sl_from = schema_module_path
+    sl_to = "migrations" if move_sl else schema_module_path
     url_from = "sqlite:///testdb/testdb.lndb"
     url_to_sqlite = f"sqlite:///{isettings._sqlite_file_local}"
     url_to = url_to_sqlite if isettings.dialect == "sqlite" else isettings.db
@@ -160,6 +167,14 @@ class migrate:
             logger.info("Generate migration with reference db: testdb/testdb.lndb")
         else:
             rm = True
+            from lndb_setup._settings import settings
+
+            modify_alembic_ini(
+                filepath=migrations_path.parent / "alembic.ini",
+                isettings=settings.instance,
+                package_name=package_name,
+                move_sl=False,
+            )
             set_alembic_logging_level(migrations_path, level="WARN")
             logger.info("Generate empty migration script.")
         command = (
@@ -175,7 +190,13 @@ class migrate:
         if process.returncode == 0:
             logger.success(f"Successfully generated migration {version}.")
             if rm:
-                run(f"rm {db_path.as_posix()}", shell=True, cwd=cwd)
+                modify_alembic_ini(
+                    filepath=migrations_path.parent / "alembic.ini",
+                    isettings=settings.instance,
+                    package_name=package_name,
+                    move_sl=False,
+                    revert=True,
+                )
                 logger.info(push_instruction)
             return None
         else:
