@@ -34,7 +34,7 @@ dependencies = [
 ]
 
 [project.urls]
-Home = "https://github.com/laminlabs/lndb-setup"
+Home = "https://github.com/laminlabs/lndb"
 
 [project.optional-dependencies]
 dev = [
