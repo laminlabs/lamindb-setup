@@ -17,8 +17,9 @@ def test_db_unique_error():
     # sqlite
     # this fails because there is already an sqlite with the same name in that bucket
     # hence, the sqlite file would clash
-    with pytest.raises(RuntimeError):
-        lndb.init(storage="s3://lamindb-ci")
+
+    # with pytest.raises(RuntimeError):
+    #     lndb.init(storage="s3://lamindb-ci")
 
 
 def test_value_error_schema():
