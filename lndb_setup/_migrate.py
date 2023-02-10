@@ -12,7 +12,7 @@ from natsort import natsorted
 from packaging.version import parse as vparse
 
 from ._db import insert
-from ._migrations import generate_alembic_ini
+from ._migrations import generate_alembic_ini, modify_alembic_ini
 from ._settings_instance import InstanceSettings
 from ._settings_user import UserSettings
 from ._setup_schema import create_schema_if_not_exists, get_schema_module_name
@@ -103,16 +103,15 @@ def check_migrate(
                 migrations_path=Path(schema_module.__file__).parent / "migrations",  # type: ignore  # noqa
                 schema_id=schema_id,
             )
-            status.append(
-                migrate(
-                    version=current_version,
-                    usettings=usettings,
-                    isettings=isettings,
-                    schema_name=schema_name,
-                    schema_id=schema_id,
-                    schema_module=schema_module,
-                )
+            migrate_status = migrate(
+                version=current_version,
+                usettings=usettings,
+                isettings=isettings,
+                schema_name=schema_name,
+                schema_id=schema_id,
+                schema_module=schema_module,
             )
+            status.append(migrate_status)
         else:
             status.append("migrate-unnecessary")
 
@@ -124,36 +123,6 @@ def check_migrate(
         return "migrate-success"
     else:
         return "migrate-unnecessary"
-
-
-def modify_alembic_ini(
-    filepath: Path, isettings: InstanceSettings, schema_name: str, revert: bool = False
-):
-    schema_module_path = (
-        get_schema_module_name(schema_name).replace(".", "/") + "/migrations"
-    )
-    sl_from, sl_to = schema_module_path, "migrations"
-    url_from = "sqlite:///testdb/testdb.lndb"
-    url_to_sqlite = f"sqlite:///{isettings._sqlite_file_local}"
-    url_to = url_to_sqlite if isettings.dialect == "sqlite" else isettings.db
-
-    if revert:
-        sl_from, sl_to = sl_to, sl_from
-        url_from, url_to = url_to, url_from
-
-    with open(filepath) as f:
-        content = f.read()
-
-    content = content.replace(
-        f"script_location = {sl_from}",
-        f"script_location = {sl_to}",
-    ).replace(
-        f"sqlalchemy.url = {url_from}",
-        f"sqlalchemy.url = {url_to}",
-    )
-
-    with open(filepath, "w") as f:
-        f.write(content)
 
 
 def migrate(

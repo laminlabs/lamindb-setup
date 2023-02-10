@@ -7,6 +7,9 @@ from lamin_logger import logger
 
 from lndb_setup.test import get_package_name
 
+from .._settings_instance import InstanceSettings
+from .._setup_schema import get_schema_module_name
+
 
 def get_package_info(
     schema_root: Optional[Path] = None, package_name: Optional[str] = None
@@ -32,6 +35,35 @@ def generate_alembic_ini(package_name: str, migrations_path: Path, schema_id: st
             .replace("{package_name}/migrations", f"{package_name}/migrations")
         )
         _writefile(migrations_path.parent / "alembic.ini", content)
+
+
+def modify_alembic_ini(
+    filepath: Path, isettings: InstanceSettings, schema_name: str, revert: bool = False
+):
+    package_name = get_schema_module_name(schema_name)
+    schema_module_path = package_name.replace(".", "/") + "/migrations"
+    sl_from, sl_to = schema_module_path, "migrations"
+    url_from = "sqlite:///testdb/testdb.lndb"
+    url_to_sqlite = f"sqlite:///{isettings._sqlite_file_local}"
+    url_to = url_to_sqlite if isettings.dialect == "sqlite" else isettings.db
+
+    if revert:
+        sl_from, sl_to = sl_to, sl_from
+        url_from, url_to = url_to, url_from
+
+    with open(filepath) as f:
+        content = f.read()
+
+    content = content.replace(
+        f"script_location = {sl_from}",
+        f"script_location = {sl_to}",
+    ).replace(
+        f"sqlalchemy.url = {url_from}",
+        f"sqlalchemy.url = {url_to}",
+    )
+
+    with open(filepath, "w") as f:
+        f.write(content)
 
 
 def generate_module_files(package_name: str, migrations_path: Path, schema_id: str):
