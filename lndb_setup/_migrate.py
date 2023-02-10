@@ -12,6 +12,7 @@ from natsort import natsorted
 from packaging.version import parse as vparse
 
 from ._db import insert
+from ._migrations import generate_alembic_ini
 from ._settings_instance import InstanceSettings
 from ._settings_user import UserSettings
 from ._setup_schema import create_schema_if_not_exists, get_schema_module_name
@@ -97,6 +98,11 @@ def check_migrate(
                 )
                 return "migrate-failed"
 
+            generate_alembic_ini(
+                package_name=schema_module_name,
+                migrations_path=Path(schema_module.__file__).parent / "migrations",  # type: ignore  # noqa
+                schema_id=schema_id,
+            )
             status.append(
                 migrate(
                     version=current_version,

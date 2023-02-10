@@ -8,7 +8,7 @@ from lamin_logger import logger
 from lndb_setup.test import get_package_name
 
 
-def _get_package_info(
+def get_package_info(
     schema_root: Optional[Path] = None, package_name: Optional[str] = None
 ):
     if package_name is None:
@@ -22,7 +22,19 @@ def _get_package_info(
     return package_name, migrations_path, schema_id
 
 
-def _generate_module_files(package_name: str, migrations_path: Path, schema_id: str):
+def generate_alembic_ini(package_name: str, migrations_path: Path, schema_id: str):
+    _migrations_path = Path(__file__).parent
+
+    if not (migrations_path.parent / "alembic.ini").exists():
+        content = (
+            _readfile(_migrations_path / "alembic.ini")
+            .replace("[{schema_id}]", f"[{schema_id}]")
+            .replace("{package_name}/migrations", f"{package_name}/migrations")
+        )
+        _writefile(migrations_path.parent / "alembic.ini", content)
+
+
+def generate_module_files(package_name: str, migrations_path: Path, schema_id: str):
     _migrations_path = Path(__file__).parent
 
     # ensures migrations/versions folder exists
@@ -47,16 +59,12 @@ def _generate_module_files(package_name: str, migrations_path: Path, schema_id: 
             _migrations_path / "script.py.mako", migrations_path / "script.py.mako"
         )
 
-    if not (migrations_path.parent / "alembic.ini").exists():
-        content = (
-            _readfile(_migrations_path / "alembic.ini")
-            .replace("[{schema_id}]", f"[{schema_id}]")
-            .replace("{package_name}/migrations", f"{package_name}/migrations")
-        )
-        _writefile(migrations_path.parent / "alembic.ini", content)
+    generate_alembic_ini(
+        package_name=package_name, migrations_path=migrations_path, schema_id=schema_id
+    )
 
 
-def _set_alembic_logging_level(migrations_path: Path, level="INFO"):
+def set_alembic_logging_level(migrations_path: Path, level="INFO"):
     alembic_ini_path = migrations_path.parent / "alembic.ini"
     text = _readfile(alembic_ini_path)
     current_level = text.split("[logger_alembic]\n")[1].split("\n")[0]
@@ -105,10 +113,10 @@ class migrate:
             schema_root: Optional. Root directory of schema module.
             package_name: Optional. Name of schema module package.
         """
-        package_name, migrations_path, schema_id = _get_package_info(
+        package_name, migrations_path, schema_id = get_package_info(
             schema_root=schema_root, package_name=package_name
         )
-        _generate_module_files(
+        generate_module_files(
             package_name=package_name,  # type:ignore
             migrations_path=migrations_path,
             schema_id=schema_id,
@@ -116,11 +124,11 @@ class migrate:
         db_path = migrations_path.parent.parent / "testdb/testdb.lndb"  # type: ignore # noqa
         if db_path.exists():
             rm = False
-            _set_alembic_logging_level(migrations_path, level="INFO")
+            set_alembic_logging_level(migrations_path, level="INFO")
             logger.info("Generate migration with reference db: testdb/testdb.lndb")
         else:
             rm = True
-            _set_alembic_logging_level(migrations_path, level="WARN")
+            set_alembic_logging_level(migrations_path, level="WARN")
             logger.info("Generate empty migration script.")
         command = (
             f"alembic --config {package_name}/alembic.ini --name {schema_id} revision"
