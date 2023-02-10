@@ -3,7 +3,7 @@ requires = ["flit_core >=3.2,<4"]
 build-backend = "flit_core.buildapi"
 
 [project]
-name = "lndb_setup"
+name = "lndb"
 authors = [{name = "Lamin Labs", email = "laminlabs@gmail.com"}]
 readme = "README.md"
 dynamic = ["version", "description"]
@@ -53,7 +53,7 @@ test = [
 ]
 
 [project.scripts]
-lndb = "lndb_setup.__main__:main"
+lndb = "lndb.__main__:main"
 
 [tool.black]
 preview = true
@@ -65,5 +65,5 @@ testpaths = [
 
 [tool.coverage.run]
 omit = [
-    "lndb_setup/*",
+    "lndb/*",
 ]

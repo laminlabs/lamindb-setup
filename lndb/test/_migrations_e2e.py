@@ -5,11 +5,11 @@ from typing import Optional
 from lamin_logger import logger
 from packaging import version
 
-from lndb_setup._assets import instances as test_instances
-from lndb_setup._clone import clone_test, setup_local_test_sqlite_file
-from lndb_setup._init_instance import init
-from lndb_setup._settings import settings
-from lndb_setup._settings_instance import InstanceSettings
+from lndb._assets import instances as test_instances
+from lndb._clone import clone_test, setup_local_test_sqlite_file
+from lndb._init_instance import init
+from lndb._settings import settings
+from lndb._settings_instance import InstanceSettings
 
 
 def migrate_clones(

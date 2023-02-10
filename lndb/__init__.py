@@ -2,7 +2,7 @@
 
 Import the package::
 
-   import lndb_setup as lndb
+   import lndb as lndb
 
 User API
 --------

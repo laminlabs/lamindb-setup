@@ -5,7 +5,7 @@ from typing import Optional
 
 from lamin_logger import logger
 
-from lndb_setup.test import get_package_name
+from lndb.test import get_package_name
 
 
 def _get_package_info(
