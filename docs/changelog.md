@@ -3,7 +3,7 @@
 <!-- prettier-ignore -->
 Name | PR | Developer | Date | Version
 --- | --- | --- | --- | ---
-🚚 Rename package from `lndb_setup` to `lndb` | [270](https://github.com/laminlabs/lndb/pull/270) | [falexwolf](https://github.com/falexwolf) | 2023-02-12 |
+🚚 Rename package from `lndb_setup` to `lndb` | [270](https://github.com/laminlabs/lndb/pull/270) | [falexwolf](https://github.com/falexwolf) | 2023-02-12 | 0.32.0
 🎨 Enable using the current instance for generating migration script | [271](https://github.com/laminlabs/lndb-setup/pull/271) | [sunnyosun](https://github.com/sunnyosun) | 2023-02-10 | 0.31.0
 🎨 Generate alembic.ini before before check migrate | [269](https://github.com/laminlabs/lndb-setup/pull/269) | [sunnyosun](https://github.com/sunnyosun) | 2023-02-10 |
 ✨ Added migration module | [266](https://github.com/laminlabs/lndb-setup/pull/266) | [sunnyosun](https://github.com/sunnyosun) | 2023-02-10 |
