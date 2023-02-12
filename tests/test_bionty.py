@@ -1,7 +1,7 @@
 import lnschema_bionty
 import sqlmodel as sqm
 
-from lndb_setup import init, login, settings
+from lndb import init, login, settings
 
 
 def test_init_bionty():

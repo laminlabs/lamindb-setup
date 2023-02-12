@@ -9,7 +9,7 @@ from cloudpathlib import CloudPath
 from pydantic import PostgresDsn
 from sqlalchemy.future import Engine
 
-from lndb_setup._storage import Storage
+from lndb._storage import Storage
 
 from ._exclusion import empty_locker, get_locker
 from ._settings_save import save_instance_settings

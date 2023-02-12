@@ -3,13 +3,13 @@ requires = ["flit_core >=3.2,<4"]
 build-backend = "flit_core.buildapi"
 
 [project]
-name = "lndb_setup"
+name = "lndb"
 authors = [{name = "Lamin Labs", email = "laminlabs@gmail.com"}]
 readme = "README.md"
 dynamic = ["version", "description"]
 dependencies = [
     # only this can be pinned
-    "lnhub_rest==0.3.0",
+    "lnhub_rest==0.3.1",
     # no other packages should be pinned
     "lnschema_core>=0.24.1",
     "lamin_logger>=0.2.3",
@@ -34,7 +34,7 @@ dependencies = [
 ]
 
 [project.urls]
-Home = "https://github.com/laminlabs/lndb-setup"
+Home = "https://github.com/laminlabs/lndb"
 
 [project.optional-dependencies]
 dev = [
@@ -53,7 +53,7 @@ test = [
 ]
 
 [project.scripts]
-lndb = "lndb_setup.__main__:main"
+lndb = "lndb.__main__:main"
 
 [tool.black]
 preview = true
@@ -65,5 +65,5 @@ testpaths = [
 
 [tool.coverage.run]
 omit = [
-    "lndb_setup/*",
+    "lndb/*",
 ]

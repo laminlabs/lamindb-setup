@@ -22,7 +22,7 @@ def build(session):
     session.run(
         "pytest",
         "-s",
-        "--cov=lndb_setup",
+        "--cov=lndb",
         "--cov-append",
         "--cov-report=term-missing",
     )

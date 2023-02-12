@@ -4,7 +4,7 @@ from typing import Optional
 
 from nox import Session
 
-from lndb_setup._clone import setup_local_test_postgres
+from lndb._clone import setup_local_test_postgres
 
 from ._env import get_package_name
 

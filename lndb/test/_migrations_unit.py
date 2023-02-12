@@ -13,8 +13,8 @@ from pytest_alembic.plugin.error import AlembicTestFailure
 from pytest_alembic.runner import MigrationContext
 from sqlmodel import SQLModel
 
-from lndb_setup._delete import delete
-from lndb_setup._init_instance import init
+from lndb._delete import delete
+from lndb._init_instance import init
 
 
 def get_migration_config(schema_package_loc, *, target_metadata=None, **kwargs):

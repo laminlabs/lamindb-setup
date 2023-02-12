@@ -1,6 +1,6 @@
 import pytest
 
-import lndb_setup as lndb
+import lndb as lndb
 
 
 def test_db_unique_error():
