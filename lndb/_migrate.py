@@ -60,10 +60,11 @@ def check_migrate(
         if current_version not in versions and len(versions) > 0:
             if vparse(current_version) < vparse(versions[-1]):  # type: ignore
                 raise RuntimeError(
-                    f"You are trying to connect to a DB that runs v{versions[-1]} "
-                    f"of schema module {schema_name}.\n"
-                    f"Please run `pip install {schema_module_name}=={versions[-1]}`, "
-                    "or install the latest version from GitHub."
+                    "You are trying to connect to a DB that already runs"
+                    f" v{versions[-1]} of {schema_module_name} but you only have"
+                    f" v{current_version} installed.\nPlease run `pip install"
+                    f" {schema_module_name}=={versions[-1]}`, or install the latest"
+                    " schema module version from GitHub."
                 )
             logger.info(
                 f"Schema {schema_name} v{versions[-1]} is not up to date"
