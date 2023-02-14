@@ -3,6 +3,7 @@
 <!-- prettier-ignore -->
 Name | PR | Developer | Date | Version
 --- | --- | --- | --- | ---
+💚 Fix test_migrate_clones_postgres | [275](https://github.com/laminlabs/lndb/pull/275) | [sunnyosun](https://github.com/sunnyosun) | 2023-02-14 |
 🚑 Generate all migrate files before migrate | [274](https://github.com/laminlabs/lndb/pull/274) | [sunnyosun](https://github.com/sunnyosun) | 2023-02-14 | 0.32.2
 🚑 Fix import and simplify params | [273](https://github.com/laminlabs/lndb/pull/273) | [sunnyosun](https://github.com/sunnyosun) | 2023-02-14 | 0.32.1
 ⬆️ Upgrade `lnhub_rest` to 0.3.2 | [272](https://github.com/laminlabs/lndb/pull/272) | [bpenteado](https://github.com/bpenteado) | 2023-02-13 |
