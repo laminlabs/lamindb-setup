@@ -15,8 +15,6 @@ def get_package_info(
     schema_root: Optional[Path] = None, package_name: Optional[str] = None
 ):
     if package_name is None:
-        if schema_root is None:
-            raise AssertionError("Must provide schema_root or package_name!")
         package_name = get_package_name(schema_root)
     package = importlib.import_module(package_name)
     if not hasattr(package, "_schema_id"):
