@@ -15,6 +15,8 @@ def get_package_info(
     schema_root: Optional[Path] = None, package_name: Optional[str] = None
 ):
     if package_name is None:
+        if schema_root is None:
+            raise AssertionError("Must provide schema_root or package_name!")
         package_name = get_package_name(schema_root)
     package = importlib.import_module(package_name)
     if not hasattr(package, "_schema_id"):
@@ -25,7 +27,13 @@ def get_package_info(
     return package_name, migrations_path, schema_id
 
 
-def generate_alembic_ini(package_name: str, migrations_path: Path, schema_id: str):
+def generate_alembic_ini(
+    package_name: str,
+    migrations_path: Optional[Path] = None,
+    schema_id: Optional[str] = None,
+):
+    if migrations_path is None:
+        _, migrations_path, schema_id = get_package_info(package_name=package_name)
     _migrations_path = Path(__file__).parent
 
     if not (migrations_path.parent / "alembic.ini").exists():
@@ -73,7 +81,13 @@ def modify_alembic_ini(
         f.write(content)
 
 
-def generate_module_files(package_name: str, migrations_path: Path, schema_id: str):
+def generate_module_files(
+    package_name: str,
+    migrations_path: Optional[Path] = None,
+    schema_id: Optional[str] = None,
+):
+    if migrations_path is None:
+        _, migrations_path, schema_id = get_package_info(package_name=package_name)
     _migrations_path = Path(__file__).parent
 
     # ensures migrations/versions folder exists
@@ -160,14 +174,16 @@ class migrate:
             migrations_path=migrations_path,
             schema_id=schema_id,
         )
-        db_path = migrations_path.parent.parent / "testdb/testdb.lndb"  # type: ignore # noqa
-        if db_path.exists():
+        testdb_path = migrations_path.parent.parent / "testdb/testdb.lndb"  # type: ignore # noqa
+        if testdb_path.exists():
+            # runs dev mode to write migration scripts
             rm = False
             set_alembic_logging_level(migrations_path, level="INFO")
             logger.info("Generate migration with reference db: testdb/testdb.lndb")
         else:
+            # runs CI-guided mode to generate empty migration scripts
             rm = True
-            from lndb_setup._settings import settings
+            from lndb._settings import settings
 
             modify_alembic_ini(
                 filepath=migrations_path.parent / "alembic.ini",
