@@ -44,7 +44,7 @@ def persist_check_reload_schema(isettings: InstanceSettings):
 
 ERROR_SQLITE_CACHE = """
 Your cached local SQLite file still exists, while your cloud SQLite file was deleted.
-Please add {} back to the cloud location.
+Either delete your cache ({}) or add it back to the cloud (if delete was accidental).
 """
 
 
