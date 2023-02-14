@@ -77,14 +77,13 @@ def run_migrations_online() -> None:
         )
 
     add_kwargs = {}
+    render_as_batch = False
     if "sqlalchemy.url" in config_section:
         if config_section["sqlalchemy.url"].startswith("sqlite:///"):
             render_as_batch = True
             # for users that rely on CI to generate migration script
             # we generate empty script here
             add_kwargs = _upg_dwg_token(config_section["sqlalchemy.url"])
-    else:
-        render_as_batch = False
 
     with connectable.connect() as connection:
         context.configure(
