@@ -99,6 +99,11 @@ def setup_schema(isettings: InstanceSettings, usettings: UserSettings):
                 schema_module.dev if hasattr(schema_module, "dev") else schema_module
             )
             migration_table = getattr(table_loc, f"migration_{schema_id}")
+            # we purposefully do not use isettings.session(), here, as we do *not*
+            # want to update the local sqlite file from the cloud while looping over
+            # schema modules
+            # in fact, a synchronization issue led to loss of version information,
+            # because the old cloud sqlite file overwrote the newer local file
             with sqm.Session(isettings.engine) as session:
                 session.add(migration_table(version_num=migration))
                 session.commit()
