@@ -99,7 +99,7 @@ def setup_schema(isettings: InstanceSettings, usettings: UserSettings):
                 schema_module.dev if hasattr(schema_module, "dev") else schema_module
             )
             migration_table = getattr(table_loc, f"migration_{schema_id}")
-            with isettings.session() as session:
+            with sqm.Session(isettings.engine) as session:
                 session.add(migration_table(version_num=migration))
                 session.commit()
     isettings._update_cloud_sqlite_file()
