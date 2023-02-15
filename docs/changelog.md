@@ -3,6 +3,7 @@
 <!-- prettier-ignore -->
 Name | PR | Developer | Date | Version
 --- | --- | --- | --- | ---
+🐛 Fix a synchronization issue during init of remote sqlite | [277](https://github.com/laminlabs/lndb/pull/277) | [falexwolf](https://github.com/falexwolf) | 2023-02-15 |
 🐛 Fix error raising for `get_package_info` | [276](https://github.com/laminlabs/lndb/pull/276) | [sunnyosun](https://github.com/sunnyosun) | 2023-02-14 | 0.32.4
 💚 Fix test_migrate_clones_postgres | [275](https://github.com/laminlabs/lndb/pull/275) | [sunnyosun](https://github.com/sunnyosun) | 2023-02-14 | 0.32.3
 🚑 Generate all migrate files before migrate | [274](https://github.com/laminlabs/lndb/pull/274) | [sunnyosun](https://github.com/sunnyosun) | 2023-02-14 | 0.32.2
