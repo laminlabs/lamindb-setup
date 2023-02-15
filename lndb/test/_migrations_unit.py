@@ -61,9 +61,17 @@ def get_migration_id_from_scripts(schema_package):
     return migration_id
 
 
-def migration_id_is_consistent(schema_package):
-    migration_id = get_migration_id_from_scripts(schema_package)
-    package = importlib.import_module(schema_package)
+def migration_id_is_consistent(package_name):
+    # package_name is either a simple module (if schema is at the root)
+    # or a relative path to the submodule that contains the schema,
+    # e.g. ./lnhub_rest/schema
+    migration_id = get_migration_id_from_scripts(package_name)
+    if package_name.startswith("./"):
+        _, root, relative = package_name.split("/")
+        assert relative == "schema"
+        package = importlib.import_module(f".{relative}", package=root.lstrip("./"))
+    else:
+        package = importlib.import_module(package_name)
     if package._migration is None:
         manual_migration_id = ""
     else:
