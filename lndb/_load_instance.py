@@ -1,3 +1,4 @@
+import os
 from typing import Optional
 
 from lamin_logger import logger
@@ -69,6 +70,10 @@ def load(
         )
 
     message = load_from_isettings(isettings, migrate)
+
+    if not message:
+        os.environ["LAMINDB_INSTANCE_LOADED"] = "1"
+
     return message
 
 
