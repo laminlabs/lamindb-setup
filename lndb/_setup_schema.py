@@ -24,6 +24,11 @@ def create_schema_if_not_exists(schema_name: str, isettings: InstanceSettings):
 def reload_orms(schema_name, module, isettings):
     # root-level ORMs
     orms = [cls for cls in module.__dict__.values() if hasattr(cls, "__table__")]
+    # dev-level ORMs
+    if hasattr(module, "dev"):
+        orms += [
+            cls for cls in module.dev.__dict__.values() if hasattr(cls, "__table__")
+        ]
     # link tables
     if hasattr(module, "link"):
         orms += [
