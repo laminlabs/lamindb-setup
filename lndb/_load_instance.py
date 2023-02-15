@@ -18,12 +18,15 @@ def load(
 ) -> Optional[str]:
     """Load existing instance.
 
-    Returns `None` if succeeds, otherwise a string error code.
-
     Args:
         identifier: The instance identifier can the instance name (owner is
             current user), handle/name, or the URL: https://lamin.ai/handle/name.
         migrate: Whether to auto-migrate or not.
+
+    Returns:
+        - migrate-failed if migration failed
+        - migrate-success if migration was successful
+        - migrate-unnecessary if migration was not required
     """
     owner, name = get_owner_name_from_identifier(identifier)
 
