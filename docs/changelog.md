@@ -3,6 +3,7 @@
 <!-- prettier-ignore -->
 Name | PR | Developer | Date | Version
 --- | --- | --- | --- | ---
+🐛 Also update dev-level ORMs | [279](https://github.com/laminlabs/lndb/pull/279) | [falexwolf](https://github.com/falexwolf) | 2023-02-15 |
 🔥 Remove synchronization warnings mute in setup_schema | [278](https://github.com/laminlabs/lndb/pull/278) | [Koncopd](https://github.com/Koncopd) | 2023-02-15 |
 🐛 Fix a synchronization issue during init of remote sqlite | [277](https://github.com/laminlabs/lndb/pull/277) | [falexwolf](https://github.com/falexwolf) | 2023-02-15 |
 🐛 Fix error raising for `get_package_info` | [276](https://github.com/laminlabs/lndb/pull/276) | [sunnyosun](https://github.com/sunnyosun) | 2023-02-14 | 0.32.4
