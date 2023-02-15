@@ -8,6 +8,8 @@ def close() -> None:
 
     Returns `None` if succeeds, otherwise an exception is raised.
     """
-    current_instance_settings_file().unlink()
-
-    os.environ["LAMINDB_INSTANCE_LOADED"] = "0"
+    try:
+        current_instance_settings_file().unlink()
+        os.environ["LAMINDB_INSTANCE_LOADED"] = "0"
+    except FileNotFoundError:
+        raise
