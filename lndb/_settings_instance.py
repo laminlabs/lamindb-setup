@@ -156,8 +156,20 @@ class InstanceSettings:
 
     @property
     def engine(self) -> Engine:
-        """Database engine."""
+        """Database engine.
+
+        In case of remote sqlite, does not update the local sqlite.
+        """
         return self._engine
+
+    def session(self) -> sqm.Session:
+        """Database session.
+
+        In case of remote sqlite, updates the local sqlite file first.
+        """
+        self._update_local_sqlite_file()
+
+        return sqm.Session(self.engine, expire_on_commit=False)
 
     @property
     def is_cloud_sqlite(self) -> bool:
@@ -170,12 +182,6 @@ class InstanceSettings:
             return get_locker()
         else:
             return empty_locker
-
-    def session(self) -> sqm.Session:
-        """Database session."""
-        self._update_local_sqlite_file()
-
-        return sqm.Session(self.engine, expire_on_commit=False)
 
     @property
     def storage(self) -> Storage:
