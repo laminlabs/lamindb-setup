@@ -59,7 +59,7 @@ Dev API
    Storage
 """
 
-__version__ = "0.32.5"  # denote a pre-release for 0.1.0 with 0.1rc1
+__version__ = "0.32.6"  # denote a pre-release for 0.1.0 with 0.1rc1
 
 import sys
 from os import name as _os_name
