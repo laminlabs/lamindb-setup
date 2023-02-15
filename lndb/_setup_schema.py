@@ -27,7 +27,11 @@ def reload_orms(schema_name, module, isettings):
     # dev-level ORMs
     if hasattr(module, "dev"):
         orms += [
-            cls for cls in module.dev.__dict__.values() if hasattr(cls, "__table__")
+            cls
+            for cls in module.dev.__dict__.values()
+            if hasattr(cls, "__table__")
+            and not cls.__table__.name.startswith("version_")
+            and not cls.__table__.name.startswith("migration_")
         ]
     # link tables
     if hasattr(module, "link"):
@@ -50,11 +54,7 @@ def reload_orms(schema_name, module, isettings):
         orms = [
             orm
             for orm in orms
-            if (
-                hasattr(orm.__table__, "schema")
-                and orm.__table__.schema is None
-                and orm.__table__.name != "storage"
-            )
+            if (hasattr(orm.__table__, "schema") and orm.__table__.schema is None)
         ]
         for orm in orms:
             orm.__table__.schema = schema_name
