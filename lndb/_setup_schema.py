@@ -24,6 +24,16 @@ def create_schema_if_not_exists(schema_name: str, isettings: InstanceSettings):
 def reload_orms(schema_name, module, isettings):
     # root-level ORMs
     orms = [cls for cls in module.__dict__.values() if hasattr(cls, "__table__")]
+    # dev-level ORMs
+    if hasattr(module, "dev"):
+        orms += [
+            cls
+            for cls in module.dev.__dict__.values()
+            if hasattr(cls, "__table__")
+            # exclude the version_* and migration_* tables in the root namespace
+            and not cls.__name__.startswith("version_")
+            and not cls.__name__.startswith("migration_")
+        ]
     # link tables
     if hasattr(module, "link"):
         orms += [
@@ -45,11 +55,7 @@ def reload_orms(schema_name, module, isettings):
         orms = [
             orm
             for orm in orms
-            if (
-                hasattr(orm.__table__, "schema")
-                and orm.__table__.schema is None
-                and orm.__table__.name != "storage"
-            )
+            if (hasattr(orm.__table__, "schema") and orm.__table__.schema is None)
         ]
         for orm in orms:
             orm.__table__.schema = schema_name
