@@ -71,7 +71,7 @@ def load(
 
     message = load_from_isettings(isettings, migrate)
 
-    if not message:
+    if not message == "migrate-failed":
         os.environ["LAMINDB_INSTANCE_LOADED"] = "1"
 
     return message
