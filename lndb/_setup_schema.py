@@ -30,8 +30,9 @@ def reload_orms(schema_name, module, isettings):
             cls
             for cls in module.dev.__dict__.values()
             if hasattr(cls, "__table__")
-            and not cls.__table__.name.startswith("version_")
-            and not cls.__table__.name.startswith("migration_")
+            # exclude the version_* and migration_* tables in the root namespace
+            and not cls.__name__.startswith("version_")
+            and not cls.__name__.startswith("migration_")
         ]
     # link tables
     if hasattr(module, "link"):
