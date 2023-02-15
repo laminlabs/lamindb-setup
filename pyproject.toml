@@ -9,7 +9,7 @@ readme = "README.md"
 dynamic = ["version", "description"]
 dependencies = [
     # only this can be pinned
-    "lnhub_rest==0.3.2",
+    "lnhub_rest==0.4.0",
     # no other packages should be pinned
     "lnschema_core>=0.24.1",
     "lamin_logger>=0.2.3",
