@@ -9,15 +9,6 @@ from lamin_logger import logger
 DIRS = AppDirs("lamindb", "laminlabs")
 
 
-_MUTE_SYNC_WARNINGS = False
-
-
-def _set_mute_sync_warnings(value: bool):
-    global _MUTE_SYNC_WARNINGS
-
-    _MUTE_SYNC_WARNINGS = value
-
-
 class Storage:
     """Manage cloud or local storage."""
 
@@ -128,13 +119,12 @@ class Storage:
                 local_filepath = Path(filepath)
         except OverwriteNewerLocalError:
             local_filepath = self.cloud_to_local_no_update(filepath)  # type: ignore
-            if not _MUTE_SYNC_WARNINGS:
-                logger.warning(
-                    f"Local file ({local_filepath}) for cloud path ({filepath}) is newer on disk than in cloud.\n"  # noqa
-                    "It seems you manually updated the database locally and didn't push changes to the cloud.\n"  # noqa
-                    "This can lead to data loss if somebody else modified the cloud file in"  # noqa
-                    " the meantime."
-                )
+            logger.warning(
+                f"Local file ({local_filepath}) for cloud path ({filepath}) is newer on disk than in cloud.\n"  # noqa
+                "It seems you manually updated the database locally and didn't push changes to the cloud.\n"  # noqa
+                "This can lead to data loss if somebody else modified the cloud file in"  # noqa
+                " the meantime."
+            )
         Path(local_filepath).parent.mkdir(
             parents=True, exist_ok=True
         )  # this should not happen here but is currently needed
