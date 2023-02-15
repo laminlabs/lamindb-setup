@@ -3,6 +3,7 @@
 <!-- prettier-ignore -->
 Name | PR | Developer | Date | Version
 --- | --- | --- | --- | ---
+Add LAMINDB_INSTANCE_LOADED env variable on load/close | [280](https://github.com/laminlabs/lndb/pull/280) | [Zethson](https://github.com/Zethson) | 2023-02-15 |
 ♻️ Adapt migration_id test for hub | [281](https://github.com/laminlabs/lndb/pull/281) | [falexwolf](https://github.com/falexwolf) | 2023-02-15 |
 🐛 Also update dev-level ORMs | [279](https://github.com/laminlabs/lndb/pull/279) | [falexwolf](https://github.com/falexwolf) | 2023-02-15 |
 🔥 Remove synchronization warnings mute in setup_schema | [278](https://github.com/laminlabs/lndb/pull/278) | [Koncopd](https://github.com/Koncopd) | 2023-02-15 |
