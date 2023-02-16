@@ -25,3 +25,6 @@ To generate robust migrations for your database based on [alembic](https://alemb
 5. Commit the changes and push the `migration` branch to remote.
 6. Create a Pull Request from the `migration` branch, and inspect the CI results.
 7. CI will fail and prints out the migration code to be added to the migration script file.
+8. Copy the migration script to the side the `update` function in `{date}-{revision_id}-vx_x_x.py` file.
+9. Commit & push changes.
+10. Now CI should pass and you have created a successful migration! 🎉
