@@ -12,4 +12,5 @@ migrate
 info
 clone
 delete
+migration.md
 ```
