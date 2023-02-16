@@ -75,7 +75,7 @@ def downgrade() -> None:
 4. Populate `_migration` with revision in the `{package_name}/__init__.py` file:
 
 ```{admonition} Example: updated _migration with revision
-`_migration = dd2b4a9499f2`.
+`_migration = "dd2b4a9499f2"`.
 ```
 
 5. Commit the changes and push the `migration` branch to remote.
