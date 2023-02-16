@@ -3,7 +3,7 @@
 <!-- prettier-ignore -->
 Name | PR | Developer | Date | Version
 --- | --- | --- | --- | ---
-:bug: Fix nox | [288](https://github.com/laminlabs/lndb/pull/288) | [falexwolf](https://github.com/falexwolf) | 2023-02-16 |
+🐛 Fix nox | [288](https://github.com/laminlabs/lndb/pull/288) | [falexwolf](https://github.com/falexwolf) | 2023-02-16 | 0.34.1
 🎨 Deprecate `set_storage` in favor of `set.storage` | [287](https://github.com/laminlabs/lndb/pull/287) | [falexwolf](https://github.com/falexwolf) | 2023-02-16 | 0.34.0
 🎨 Introduce `.dev` module | [286](https://github.com/laminlabs/lndb/pull/286) | [falexwolf](https://github.com/falexwolf) | 2023-02-16 |
 ✏️ Fix example | [285](https://github.com/laminlabs/lndb/pull/285) | [sunnyosun](https://github.com/sunnyosun) | 2023-02-16 |
