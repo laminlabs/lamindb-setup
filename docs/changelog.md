@@ -3,6 +3,7 @@
 <!-- prettier-ignore -->
 Name | PR | Developer | Date | Version
 --- | --- | --- | --- | ---
+📝 Migration guide | [283](https://github.com/laminlabs/lndb/pull/283) | [sunnyosun](https://github.com/sunnyosun) | 2023-02-16 |
 ⬆️ Upgrade hub to 0.4.0 | [282](https://github.com/laminlabs/lndb/pull/282) | [falexwolf](https://github.com/falexwolf) | 2023-02-15 | 0.32.6
 🔧 Add `LAMINDB_INSTANCE_LOADED` env variable on load/close | [280](https://github.com/laminlabs/lndb/pull/280) | [Zethson](https://github.com/Zethson) | 2023-02-15 | 0.32.5
 ♻️ Adapt migration_id test for hub | [281](https://github.com/laminlabs/lndb/pull/281) | [falexwolf](https://github.com/falexwolf) | 2023-02-15 |
