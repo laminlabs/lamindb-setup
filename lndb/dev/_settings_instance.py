@@ -106,7 +106,7 @@ class InstanceSettings:
             sqlite_file = self._sqlite_file
             cache_file = self.storage.cloud_to_local_no_update(sqlite_file)
             sqlite_file.upload_from(cache_file, force_overwrite_to_cloud=True)  # type: ignore  # noqa
-            # doing semi-manually to replace cloudpahlib easily in the future
+            # doing semi-manually to replace cloudpathlib easily in the future
             cloud_mtime = sqlite_file.stat().st_mtime  # type: ignore
             # this seems to work even if there is an open connection
             # to the cache file
@@ -118,7 +118,7 @@ class InstanceSettings:
             sqlite_file = self._sqlite_file
             cache_file = self.storage.cloud_to_local_no_update(sqlite_file)
             # checking cloud mtime several times here because of potential changes
-            # during the synchronizization process. Maybe better
+            # during the synchronization process. Maybe better
             # to make these checks dependent on lock,
             # i.e. if locked check cloud mtime only once.
             if not cache_file.exists():
@@ -172,6 +172,8 @@ class InstanceSettings:
 
     @property
     def is_cloud_sqlite(self) -> bool:
+        # can we make this a private property, Sergei?
+        # as it's not relevant to the user
         """Is this a cloud instance with sqlite db."""
         return self.dialect == "sqlite" and self.storage.is_cloud
 
