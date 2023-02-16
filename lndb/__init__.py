@@ -37,7 +37,7 @@ More instance operations:
    close
    delete
    info
-   set_storage
+   set
 
 Manage creating and testing migrations (deployment is automatic):
 
@@ -69,7 +69,7 @@ from ._init_instance import init  # noqa
 from ._load_instance import load  # noqa
 from ._migrate import migrate
 from ._schema import schema  # noqa
-from ._set import set_storage  # noqa
+from ._set import set, set_storage  # noqa
 from ._settings import settings  # noqa
 from ._setup_user import login, signup  # noqa
 
