@@ -8,8 +8,7 @@ init-instance
 load-instance
 set-storage
 schema-modules
-migrate
+migrate.md
 info
-clone
 delete
 ```
