@@ -9,11 +9,10 @@ from cloudpathlib import CloudPath
 from pydantic import PostgresDsn
 from sqlalchemy.future import Engine
 
-from lndb._storage import Storage
-
 from ._exclusion import empty_locker, get_locker
 from ._settings_save import save_instance_settings
 from ._settings_store import current_instance_settings_file, instance_settings_file
+from ._storage import Storage
 
 # leave commented out until we understand more how to deal with
 # migrations in redun
@@ -107,7 +106,7 @@ class InstanceSettings:
             sqlite_file = self._sqlite_file
             cache_file = self.storage.cloud_to_local_no_update(sqlite_file)
             sqlite_file.upload_from(cache_file, force_overwrite_to_cloud=True)  # type: ignore  # noqa
-            # doing semi-manually to replace cloudpahlib easily in the future
+            # doing semi-manually to replace cloudpathlib easily in the future
             cloud_mtime = sqlite_file.stat().st_mtime  # type: ignore
             # this seems to work even if there is an open connection
             # to the cache file
@@ -119,7 +118,7 @@ class InstanceSettings:
             sqlite_file = self._sqlite_file
             cache_file = self.storage.cloud_to_local_no_update(sqlite_file)
             # checking cloud mtime several times here because of potential changes
-            # during the synchronizization process. Maybe better
+            # during the synchronization process. Maybe better
             # to make these checks dependent on lock,
             # i.e. if locked check cloud mtime only once.
             if not cache_file.exists():
@@ -173,6 +172,8 @@ class InstanceSettings:
 
     @property
     def is_cloud_sqlite(self) -> bool:
+        # can we make this a private property, Sergei?
+        # as it's not relevant to the user
         """Is this a cloud instance with sqlite db."""
         return self.dialect == "sqlite" and self.storage.is_cloud
 
@@ -222,7 +223,7 @@ class InstanceSettings:
         shutil.copy2(filepath, current_instance_settings_file())
         # persist under settings class for same session reference
         # need to import here to avoid circular import
-        from ._settings import settings
+        from .._settings import settings
 
         settings._instance_settings = self
 

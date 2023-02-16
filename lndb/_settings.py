@@ -1,9 +1,9 @@
 import os
 from typing import Union
 
-from ._settings_instance import InstanceSettings
-from ._settings_load import load_instance_settings, load_or_create_user_settings
-from ._settings_user import UserSettings
+from .dev._settings_instance import InstanceSettings
+from .dev._settings_load import load_instance_settings, load_or_create_user_settings
+from .dev._settings_user import UserSettings
 
 
 # https://stackoverflow.com/questions/128573/using-property-on-classmethods/64738850#64738850
@@ -19,8 +19,8 @@ class classproperty(object):
 class settings:
     """Settings access.
 
-    - :class:`~lndb.InstanceSettings`
-    - :class:`~lndb.UserSettings`
+    - :class:`~lndb.dev.InstanceSettings`
+    - :class:`~lndb.dev.UserSettings`
     """
 
     _user_settings: Union[UserSettings, None] = None

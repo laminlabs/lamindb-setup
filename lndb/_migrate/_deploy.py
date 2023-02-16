@@ -11,14 +11,14 @@ from lamin_logger import logger
 from natsort import natsorted
 from packaging.version import parse as vparse
 
-from ._db import insert
-from ._migrations import generate_module_files, modify_alembic_ini
-from ._settings_instance import InstanceSettings
-from ._settings_user import UserSettings
-from ._setup_schema import create_schema_if_not_exists, get_schema_module_name
+from ..dev._db import insert
+from ..dev._settings_instance import InstanceSettings
+from ..dev._settings_user import UserSettings
+from ..dev._setup_schema import create_schema_if_not_exists, get_schema_module_name
+from ._utils import generate_module_files, modify_alembic_ini
 
 
-def check_migrate(
+def check_deploy_migration(
     *,
     usettings: UserSettings,
     isettings: InstanceSettings,
@@ -104,7 +104,7 @@ def check_migrate(
                 migrations_path=Path(schema_module.__file__).parent / "migrations",  # type: ignore  # noqa
                 schema_id=schema_id,
             )
-            migrate_status = migrate(
+            migrate_status = deploy(
                 version=current_version,
                 usettings=usettings,
                 isettings=isettings,
@@ -126,7 +126,7 @@ def check_migrate(
         return "migrate-unnecessary"
 
 
-def migrate(
+def deploy(
     *,
     version: str,
     usettings: UserSettings,

@@ -7,7 +7,7 @@ import sqlmodel as sqm
 from lamin_logger import logger
 from sqlalchemy.exc import ProgrammingError
 
-from ._settings import settings
+from .._settings import settings
 
 
 class upsert:

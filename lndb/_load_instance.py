@@ -6,8 +6,8 @@ from lnhub_rest._init_instance import init_instance as init_instance_hub
 from lnhub_rest._load_instance import load_instance as load_instance_from_hub
 
 from ._settings import InstanceSettings, settings
-from ._settings_load import load_instance_settings
-from ._settings_store import instance_settings_file
+from .dev._settings_load import load_instance_settings
+from .dev._settings_store import instance_settings_file
 
 
 def load(
@@ -102,12 +102,12 @@ def load_from_isettings(
     migrate: Optional[bool] = None,
 ):
     from ._init_instance import persist_check_reload_schema, register
-    from ._migrate import check_migrate
-    from ._setup_knowledge import load_bionty_versions
+    from ._migrate import check_deploy_migration
+    from .dev._setup_knowledge import load_bionty_versions
 
     logger.info(f"Loading instance: {isettings.owner}/{isettings.name}")
     persist_check_reload_schema(isettings)
-    message = check_migrate(
+    message = check_deploy_migration(
         usettings=settings.user, isettings=isettings, migrate_confirmed=migrate
     )
     if message == "migrate-failed":
