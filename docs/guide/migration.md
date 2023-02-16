@@ -31,15 +31,17 @@ The script will be named as `{date}-{revision}-vx_x_x.py`.
 
 Located:
 
-```{code-block} python
+```{code-block} yaml
 ---
 emphasize-lines: 5
 ---
-lnschema_core
---dev
---migrations
-----versions
-------2023-02-16-dd2b4a9499f2-vx_x_x.py
+-- lnschema_core
+   |-- dev
+   |-- migrations
+   |   |-- versions
+   |       |-- 2023-02-16-dd2b4a9499f2-vx_x_x.py
+   |-- __init__.py
+   |-- _core.py
 ````
 
 ````{admonition} Example: empty migration script
