@@ -49,7 +49,7 @@ You will notice that script or `upgrade` and `downgrade` are empty.
 
 ```{code-block} python
 ---
-emphasize-lines: 20
+emphasize-lines: 9
 ---
 """vX.X.X."""
 from alembic import op
