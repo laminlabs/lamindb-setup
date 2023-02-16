@@ -3,6 +3,7 @@
 <!-- prettier-ignore -->
 Name | PR | Developer | Date | Version
 --- | --- | --- | --- | ---
+✏️ Fix example | [285](https://github.com/laminlabs/lndb/pull/285) | [sunnyosun](https://github.com/sunnyosun) | 2023-02-16 |
 🚸 Proper client server check | [284](https://github.com/laminlabs/lndb/pull/284) | [falexwolf](https://github.com/falexwolf) | 2023-02-16 | 0.33.0
 📝 Migration guide | [283](https://github.com/laminlabs/lndb/pull/283) | [sunnyosun](https://github.com/sunnyosun) | 2023-02-16 |
 ⬆️ Upgrade hub to 0.4.0 | [282](https://github.com/laminlabs/lndb/pull/282) | [falexwolf](https://github.com/falexwolf) | 2023-02-15 | 0.32.6
