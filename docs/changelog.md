@@ -3,6 +3,7 @@
 <!-- prettier-ignore -->
 Name | PR | Developer | Date | Version
 --- | --- | --- | --- | ---
+🎨 Deprecate `set_storage` in favor of `set.storage` | [287](https://github.com/laminlabs/lndb/pull/287) | [falexwolf](https://github.com/falexwolf) | 2023-02-16 |
 🎨 Introduce `.dev` module | [286](https://github.com/laminlabs/lndb/pull/286) | [falexwolf](https://github.com/falexwolf) | 2023-02-16 |
 ✏️ Fix example | [285](https://github.com/laminlabs/lndb/pull/285) | [sunnyosun](https://github.com/sunnyosun) | 2023-02-16 |
 🚸 Proper client server check | [284](https://github.com/laminlabs/lndb/pull/284) | [falexwolf](https://github.com/falexwolf) | 2023-02-16 | 0.33.0
