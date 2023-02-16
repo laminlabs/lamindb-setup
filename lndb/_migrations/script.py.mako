@@ -3,7 +3,6 @@ from alembic import op
 import sqlalchemy as sa  # noqa
 import sqlmodel as sqm  # noqa
 ${imports if imports else ""}
-
 revision = ${repr(up_revision)}
 down_revision = ${repr(down_revision)}
 
