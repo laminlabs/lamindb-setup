@@ -1,11 +1,11 @@
 import shutil
 from pathlib import Path
 
-from dev._settings_load import load_instance_settings
-from dev._settings_store import instance_settings_file
 from lamin_logger import logger
 
 from ._settings import settings
+from .dev._settings_load import load_instance_settings
+from .dev._settings_store import instance_settings_file
 
 
 def delete(instance_name: str):

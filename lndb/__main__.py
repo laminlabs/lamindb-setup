@@ -1,11 +1,11 @@
 import argparse
 
-from dev._settings_user import user_description as user
 from lamin_logger import logger
 
 from . import _init_instance, _setup_user, delete, info, set_storage
 from ._close import close as close_instance
 from ._init_instance import description as instance
+from .dev._settings_user import user_description as user
 
 signup_help = "First time sign up."
 login_help = "Log in an already-signed-up user."

@@ -6,8 +6,8 @@ from lnhub_rest._init_instance import init_instance as init_instance_hub
 from lnhub_rest._load_instance import load_instance as load_instance_from_hub
 
 from ._settings import InstanceSettings, settings
-from ._settings_load import load_instance_settings
-from ._settings_store import instance_settings_file
+from .dev._settings_load import load_instance_settings
+from .dev._settings_store import instance_settings_file
 
 
 def load(

@@ -3,10 +3,10 @@
 from typing import Optional
 
 import sqlalchemy as sa
-from dev import InstanceSettings
 from sqlalchemy import MetaData, create_engine, func, select
 
 from .._settings import settings
+from ._settings_instance import InstanceSettings
 from ._testdb import setup_local_test_postgres, setup_local_test_sqlite_file
 
 

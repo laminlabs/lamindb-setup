@@ -12,14 +12,14 @@ from lnhub_rest._init_instance import (
 )
 from pydantic import PostgresDsn
 
-from ._db import insert_if_not_exists, upsert
-from ._docs import doc_args
 from ._load_instance import load, load_from_isettings
 from ._settings import settings
-from ._setup_knowledge import write_bionty_versions
-from ._setup_schema import load_schema, setup_schema
-from ._storage import Storage
 from .dev import InstanceSettings
+from .dev._db import insert_if_not_exists, upsert
+from .dev._docs import doc_args
+from .dev._setup_knowledge import write_bionty_versions
+from .dev._setup_schema import load_schema, setup_schema
+from .dev._storage import Storage
 
 
 def register(isettings: InstanceSettings, usettings):

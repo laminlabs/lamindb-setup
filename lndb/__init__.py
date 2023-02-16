@@ -76,7 +76,7 @@ from ._setup_user import login, signup  # noqa
 
 # unlock and clear even if an uncaught exception happens
 def _clear_on_exception(typ, value, traceback):
-    from ._exclusion import _locker
+    from .dev._exclusion import _locker
 
     if _locker is not None:
         try:

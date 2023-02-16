@@ -7,9 +7,9 @@ from lnhub_rest._add_storage import add_storage as add_storage_hub
 
 from ._init_instance import register
 from ._settings import settings
-from ._settings_instance import InstanceSettings
-from ._settings_load import load_instance_settings
-from ._settings_store import current_instance_settings_file, instance_settings_file
+from .dev._settings_instance import InstanceSettings
+from .dev._settings_load import load_instance_settings
+from .dev._settings_store import current_instance_settings_file, instance_settings_file
 
 
 def set_storage(
