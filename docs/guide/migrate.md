@@ -1,4 +1,4 @@
-# Generate migrations
+# Migrate an instance
 
 ```{warning}
 
@@ -49,7 +49,7 @@ You will notice that script or `upgrade` and `downgrade` are empty.
 
 ```{code-block} python
 ---
-emphasize-lines: 9
+emphasize-lines: 10
 ---
 """vX.X.X."""
 from alembic import op
