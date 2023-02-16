@@ -1,6 +1,6 @@
 import os
 
-from ._settings_store import current_instance_settings_file
+from dev._settings_store import current_instance_settings_file
 
 
 def close() -> None:

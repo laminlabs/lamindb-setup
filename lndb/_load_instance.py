@@ -101,13 +101,14 @@ def load_from_isettings(
     isettings: InstanceSettings,
     migrate: Optional[bool] = None,
 ):
+    from dev._setup_knowledge import load_bionty_versions
+
     from ._init_instance import persist_check_reload_schema, register
-    from ._migrate import check_migrate
-    from ._setup_knowledge import load_bionty_versions
+    from ._migrate import check_deploy_migration
 
     logger.info(f"Loading instance: {isettings.owner}/{isettings.name}")
     persist_check_reload_schema(isettings)
-    message = check_migrate(
+    message = check_deploy_migration(
         usettings=settings.user, isettings=isettings, migrate_confirmed=migrate
     )
     if message == "migrate-failed":

@@ -9,6 +9,7 @@ from lndb.test import get_package_name
 
 from .._settings_instance import InstanceSettings
 from .._setup_schema import get_schema_module_name
+from ._deploy import check_deploy_migration
 
 
 def get_package_info(

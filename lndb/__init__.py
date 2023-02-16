@@ -1,11 +1,10 @@
-"""LaminDB setup.
+"""LaminDB manager.
+
+The Python API here has a 1:1 correspondnce to the CLI tool `lndb`.
 
 Import the package::
 
-   import lndb as lndb
-
-User API
---------
+   import lndb
 
 Settings:
 
@@ -14,7 +13,7 @@ Settings:
 
    settings
 
-Setup user account (`lndb signup`, `lndb login`):
+Setup user account:
 
 .. autosummary::
    :toctree:
@@ -22,7 +21,7 @@ Setup user account (`lndb signup`, `lndb login`):
    signup
    login
 
-Setup instance (`lndb init`, `lndb load`):
+Setup instance:
 
 .. autosummary::
    :toctree:
@@ -48,15 +47,12 @@ Manage creating and testing migrations (deployment is automatic):
    migrate
 
 
-Dev API
--------
+Developer API.
 
 .. autosummary::
    :toctree:
 
-   UserSettings
-   InstanceSettings
-   Storage
+   dev
 """
 
 __version__ = "0.33.0"  # denote a pre-release for 0.1.0 with 0.1rc1
@@ -65,17 +61,16 @@ import sys
 from os import name as _os_name
 
 from . import _check_versions  # noqa
+from . import dev
 from ._close import close  # noqa
 from ._delete import delete  # noqa
 from ._info import info  # noqa
 from ._init_instance import init  # noqa
 from ._load_instance import load  # noqa
-from ._migrations import migrate
+from ._migrate import migrate
 from ._schema import schema  # noqa
 from ._set import set_storage  # noqa
 from ._settings import settings  # noqa
-from ._settings_instance import InstanceSettings, Storage  # noqa
-from ._settings_user import UserSettings  # noqa
 from ._setup_user import login, signup  # noqa
 
 
