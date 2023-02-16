@@ -9,11 +9,10 @@ from cloudpathlib import CloudPath
 from pydantic import PostgresDsn
 from sqlalchemy.future import Engine
 
-from lndb._storage import Storage
-
 from ._exclusion import empty_locker, get_locker
 from ._settings_save import save_instance_settings
 from ._settings_store import current_instance_settings_file, instance_settings_file
+from ._storage import Storage
 
 # leave commented out until we understand more how to deal with
 # migrations in redun
