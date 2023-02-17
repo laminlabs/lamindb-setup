@@ -22,6 +22,11 @@ def login_testuser1(session: Session):
     session.run(*(login_user_1.split(" ")), external=True)
 
 
+def login_testuser2(session: Session):
+    login_user_1 = "lndb login testuser2@lamin.ai --password goeoNJKE61ygbz1vhaCVynGERaRrlviPBVQsjkhz"  # noqa
+    session.run(*(login_user_1.split(" ")), external=True)
+
+
 def setup_test_instances_from_main_branch(session: Session, schema: str = None):
     # spin up a postgres test instance
     pgurl = setup_local_test_postgres()
