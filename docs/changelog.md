@@ -3,6 +3,7 @@
 <!-- prettier-ignore -->
 Name | PR | Developer | Date | Version
 --- | --- | --- | --- | ---
+💄 Fix styling of migrate guide | [290](https://github.com/laminlabs/lndb/pull/290) | [sunnyosun](https://github.com/sunnyosun) | 2023-02-17 |
 :memo: Polish migration guide | [289](https://github.com/laminlabs/lndb/pull/289) | [falexwolf](https://github.com/falexwolf) | 2023-02-17 |
 🐛 Fix nox | [288](https://github.com/laminlabs/lndb/pull/288) | [falexwolf](https://github.com/falexwolf) | 2023-02-16 | 0.34.1
 🎨 Deprecate `set_storage` in favor of `set.storage` | [287](https://github.com/laminlabs/lndb/pull/287) | [falexwolf](https://github.com/falexwolf) | 2023-02-16 | 0.34.0
