@@ -67,9 +67,11 @@ def downgrade() -> None:
 
 4. Populate `_migration` with the revision id in the `{package_name}/__init__.py` file:
 
-```{admonition} Example: Updated `\_migration`. `\_migration = "dd2b4a9499f2"`
+````{admonition} Example: Updated _migration.
 
-`````
+```{code-block} python
+_migration = "dd2b4a9499f2"
+````
 
 5. Create a pull request from the `migr` branch and inspect the output of the failing CI step `Build`.
 
@@ -77,7 +79,7 @@ def downgrade() -> None:
 
 ```{code-block} python
 op.alter_column("notebook", column_name="v", new_column_name="version", schema="core")
-`````
+````
 
 7. Copy the migration script inside the `update()` function in the `{date}-{revision}-vx_x_x.py` file.
 
