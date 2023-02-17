@@ -81,7 +81,7 @@ _migration = "dd2b4a9499f2"
 op.alter_column("notebook", column_name="v", new_column_name="version", schema="core")
 ````
 
-7. Copy the migration script inside the `update()` function in the `{date}-{revision}-vx_x_x.py` file.
+6. Copy the migration script inside the `update()` function in the `{date}-{revision}-vx_x_x.py` file.
 
 ````{admonition} Example: Modified migration script.
 
@@ -90,9 +90,9 @@ def upgrade() -> None:
     op.alter_column("notebook", column_name="v", new_column_name="version", schema="core")
 ````
 
-8. Commit & push changes: Now CI should pass and you have created a successful migration! 🎉
+7. Commit & push changes: Now CI should pass and you have created a successful migration! 🎉
 
-9. Merge PR and make a release with a new `__version__`.
+8. Merge PR and make a release with a new `__version__`.
 
 ```{admonition} Example: Make a new release, e.g., "1.0.0".
 
