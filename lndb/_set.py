@@ -1,13 +1,12 @@
 from pathlib import Path
 from typing import Union
 
-from cloudpathlib import CloudPath
 from lamin_logger import logger
 from lnhub_rest._add_storage import add_storage as add_storage_hub
 
 from ._init_instance import register
 from ._settings import settings
-from .dev import deprecated
+from .dev import UPath, deprecated
 from .dev._settings_instance import InstanceSettings
 
 
@@ -15,7 +14,7 @@ class set:
     """Set properties of current instance."""
 
     @staticmethod
-    def storage(root: Union[str, Path, CloudPath]):
+    def storage(root: Union[str, Path, UPath]):
         """Set storage."""
         if settings.instance.owner != settings.user.handle:
             logger.error("Can only set storage if current user is instance owner.")
@@ -42,6 +41,6 @@ class set:
 
 
 @deprecated("lndb.set.storage()")
-def set_storage(storage: Union[str, Path, CloudPath]):
+def set_storage(storage: Union[str, Path, UPath]):
     """Deprecated in favor of `set.storage`."""
     set.storage(storage)

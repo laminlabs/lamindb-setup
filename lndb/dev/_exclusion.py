@@ -3,9 +3,10 @@ from pathlib import Path
 from typing import Optional, Union
 
 import fsspec
-from cloudpathlib import CloudPath
 from dateutil.parser import isoparse  # type: ignore
 from lamin_logger import logger
+
+from ._upath_ext import UPath
 
 EXPIRATION_TIME = 1800  # 30 min
 
@@ -23,7 +24,7 @@ class empty_locker:
 
 
 class Locker:
-    def __init__(self, user_id: str, storage_root: Union[CloudPath, Path]):
+    def __init__(self, user_id: str, storage_root: Union[UPath, Path]):
         logger.debug(f"Init cloud sqlite locker: {user_id}, {storage_root}.")
 
         self._counter = 0
@@ -31,14 +32,15 @@ class Locker:
         self.user = user_id
 
         root = storage_root
-        protocol = fsspec.utils.get_protocol(str(root))
-
-        if protocol == "s3":
-            fs_kwargs = {"cache_regions": True}
+        if isinstance(root, UPath):
+            self.fs = root.fs
         else:
-            fs_kwargs = {}
-
-        self.fs = fsspec.filesystem(protocol, **fs_kwargs)
+            protocol = fsspec.utils.get_protocol(str(root))
+            if protocol == "s3":
+                fs_kwargs = {"cache_regions": True}
+            else:
+                fs_kwargs = {}
+            self.fs = fsspec.filesystem(protocol, **fs_kwargs)
 
         exclusion_path = root / "exclusion"
         self.mapper = fsspec.FSMap(str(exclusion_path), self.fs, create=True)

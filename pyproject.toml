@@ -15,7 +15,6 @@ dependencies = [
     # no other packages should be pinned
     "lnschema_core>=0.24.1",
     "lamin_logger>=0.2.3",
-    "cloudpathlib",
     "sqlmodel>=0.0.8",
     "appdirs",
     "supabase",
@@ -32,6 +31,7 @@ dependencies = [
     "fsspec==2023.1.0",
     "s3fs==2023.1.0",
     "gcsfs==2023.1.0",
+    "universal_pathlib",
     "python-dateutil",
 ]
 
@@ -50,7 +50,6 @@ test = [
     "lnschema_bionty>=0.6.2",
     "lnschema_wetlab>=0.11.5",
     "lnbfx>=0.7.1",
-    "cloudpathlib[gs]",
     "nbproject_test>=0.4.0",
 ]
 

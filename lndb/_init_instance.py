@@ -1,7 +1,6 @@
 from pathlib import Path
 from typing import Optional, Union
 
-from cloudpathlib import CloudPath
 from lamin_logger import logger
 from lnhub_rest._add_storage import get_storage_region
 from lnhub_rest._init_instance import init_instance as init_instance_hub
@@ -14,7 +13,7 @@ from pydantic import PostgresDsn
 
 from ._load_instance import load, load_from_isettings
 from ._settings import settings
-from .dev import InstanceSettings
+from .dev import InstanceSettings, UPath
 from .dev._db import insert_if_not_exists, upsert
 from .dev._docs import doc_args
 from .dev._setup_knowledge import write_bionty_versions
@@ -67,7 +66,7 @@ class description:
 )
 def init(
     *,
-    storage: Union[str, Path, CloudPath],
+    storage: Union[str, Path, UPath],
     name: Optional[str] = None,
     db: Optional[PostgresDsn] = None,
     schema: Optional[str] = None,
@@ -145,7 +144,7 @@ def init(
 
 def infer_instance_name(
     *,
-    storage: Union[str, Path, CloudPath],
+    storage: Union[str, Path, UPath],
     name: Optional[str] = None,
     db: Optional[PostgresDsn] = None,
 ):
@@ -159,4 +158,11 @@ def infer_instance_name(
         storage_path = Storage._str_to_path(storage)
     else:
         storage_path = storage
-    return str(storage_path.stem).lower()
+
+    if isinstance(storage_path, UPath):
+        name = storage_path._url.netloc
+    else:
+        name = str(storage_path.stem)
+    name = name.lower()
+
+    return name
