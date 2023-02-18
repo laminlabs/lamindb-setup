@@ -15,7 +15,6 @@ dependencies = [
     # no other packages should be pinned
     "lnschema_core>=0.24.1",
     "lamin_logger>=0.2.3",
-    "cloudpathlib",
     "sqlmodel>=0.0.8",
     "appdirs",
     "supabase",
