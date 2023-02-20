@@ -37,3 +37,16 @@ def setup_local_test_postgres(name: str = "pgtest"):
         raise RuntimeError("Failed to set up postgres test instance.")
     time.sleep(2)
     return f"postgresql://postgres:pwd@0.0.0.0:5432/{name}"
+
+
+def setup_local_test_postgres_supabase():
+    process = run(
+        f"supabase start",  # noqa
+        shell=True,
+    )
+    if process.returncode == 0:
+        logger.info("Created Supabase test instance.")
+    else:
+        raise RuntimeError("Failed to set up Supabase test instance.")
+    time.sleep(2)
+    return "postgresql://postgres:postgres@localhost:54322/postgres"
