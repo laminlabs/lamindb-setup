@@ -7,7 +7,11 @@ from sqlalchemy import MetaData, create_engine, func, select
 
 from .._settings import settings
 from ._settings_instance import InstanceSettings
-from ._testdb import setup_local_test_postgres, setup_local_test_sqlite_file, setup_local_test_postgres_supabase
+from ._testdb import (
+    setup_local_test_postgres,
+    setup_local_test_postgres_supabase,
+    setup_local_test_sqlite_file,
+)
 
 
 def clone_schema(
@@ -48,7 +52,11 @@ def clone_schema(
             tgt_conn.commit()
 
 
-def clone_test(src_settings: Optional[InstanceSettings] = None, depth: int = 10, supabase: bool = False):
+def clone_test(
+    src_settings: Optional[InstanceSettings] = None,
+    depth: int = 10,
+    supabase: bool = False,
+):
     """Clone from current instance to a test instance."""
     if src_settings is None:
         src_settings = settings.instance
