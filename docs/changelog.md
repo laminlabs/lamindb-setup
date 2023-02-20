@@ -3,6 +3,7 @@
 <!-- prettier-ignore -->
 Name | PR | Developer | Date | Version
 --- | --- | --- | --- | ---
+✨ Enable setup of local Supabase instance | [292](https://github.com/laminlabs/lndb/pull/292) | [fredericenard](https://github.com/fredericenard) | 2023-02-20 |
 ⚡️ Replace CloudPath with UPath | [291](https://github.com/laminlabs/lndb/pull/291) | [Koncopd](https://github.com/Koncopd) | 2023-02-18 |
 💄 Fix styling of migrate guide | [290](https://github.com/laminlabs/lndb/pull/290) | [sunnyosun](https://github.com/sunnyosun) | 2023-02-17 |
 :memo: Polish migration guide | [289](https://github.com/laminlabs/lndb/pull/289) | [falexwolf](https://github.com/falexwolf) | 2023-02-17 |
