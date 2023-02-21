@@ -3,6 +3,7 @@
 <!-- prettier-ignore -->
 Name | PR | Developer | Date | Version
 --- | --- | --- | --- | ---
+:art: Use resolve() instead of absolute() | [294](https://github.com/laminlabs/lndb/pull/294) | [falexwolf](https://github.com/falexwolf) | 2023-02-21 |
 🔧 Parse config for CI to retrieve anon key | [293](https://github.com/laminlabs/lndb/pull/293) | [fredericenard](https://github.com/fredericenard) | 2023-02-21 | 0.35.0
 ✨ Enable setup of local auth instance | [292](https://github.com/laminlabs/lndb/pull/292) | [fredericenard](https://github.com/fredericenard) | 2023-02-20 | 0.35rc2
 ⚡️ Replace `CloudPath` with `UPath` | [291](https://github.com/laminlabs/lndb/pull/291) | [Koncopd](https://github.com/Koncopd) | 2023-02-18 |
