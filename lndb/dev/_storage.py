@@ -27,7 +27,7 @@ class Storage:
         elif storage.startswith("gs://"):
             storage_root = UPath(storage)
         else:  # local path
-            storage_root = Path(storage).absolute()
+            storage_root = Path(storage).resolve()
         return storage_root
 
     @property
