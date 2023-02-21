@@ -1,6 +1,6 @@
 import time
 from pathlib import Path
-from subprocess import run
+from subprocess import PIPE, run
 
 from lamin_logger import logger
 
@@ -41,9 +41,12 @@ def setup_local_test_postgres(name: str = "pgtest"):
 
 def setup_local_test_postgres_supabase():
     process = run(
-        f"supabase start",  # noqa
+        f"""supabase start | grep 'anon key'|cut -f2 -d ":" | sed -e 's/^[[:space:]]*//'""",  # noqa
         shell=True,
+        stdout=PIPE,
     )
+    anon_key = process.stdout.decode("UTF-8").replace("\n", "")
+    open(".supabase_local_anon_key", "w").write(anon_key)
     if process.returncode == 0:
         logger.info("Created Supabase test instance.")
     else:
