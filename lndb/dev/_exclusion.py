@@ -32,6 +32,8 @@ class Locker:
         self.user = user_id
 
         root = storage_root
+        self.root = root
+
         if isinstance(root, UPath):
             self.fs = root.fs
         else:
@@ -99,10 +101,10 @@ class Locker:
             mtime = mtime.replace(tzinfo=timezone.utc)
         return mtime.astimezone().replace(tzinfo=None)
 
-    def _msg_on_counter(self):
+    def _msg_on_counter(self, user):
         if self._counter == MAX_MSG_COUNTER:
             logger.info(
-                "Another user is doing a write operation to the database, "
+                f"Another user ({user}) is doing a write operation to the database, "
                 "please wait or stop the code execution."
             )
 
@@ -128,7 +130,7 @@ class Locker:
                 continue
 
             while int(self.mapper[f"entering/{user}"]):
-                self._msg_on_counter()
+                self._msg_on_counter(user)
             while True:
                 c_number = int(self.mapper[f"numbers/{user}"])
                 if c_number == 0:
@@ -137,7 +139,7 @@ class Locker:
                     break
                 if number == c_number and self.priority < i:
                     break
-                self._msg_on_counter()
+                self._msg_on_counter(user)
 
         self._locked = True
 
@@ -165,9 +167,14 @@ _locker: Optional[Locker] = None
 def get_locker() -> Locker:
     from .._settings import settings
 
+    user_id = settings.user.id
+    storage_root = settings.instance.storage.root
+
     global _locker
 
     if _locker is None:
-        _locker = Locker(settings.user.id, settings.instance.storage.root)
+        _locker = Locker(user_id, storage_root)
+    elif user_id != _locker.user or storage_root is not _locker.root:
+        _locker = Locker(user_id, storage_root)
 
     return _locker
