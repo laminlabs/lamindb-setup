@@ -3,6 +3,7 @@
 <!-- prettier-ignore -->
 Name | PR | Developer | Date | Version
 --- | --- | --- | --- | ---
+:construction_worker: Upload docs artifacts | [300](https://github.com/laminlabs/lndb/pull/300) | [falexwolf](https://github.com/falexwolf) | 2023-02-22 |
 👷 Add CI helper for uploading docs | [299](https://github.com/laminlabs/lndb/pull/299) | [falexwolf](https://github.com/falexwolf) | 2023-02-22 | 0.35.2
 🐛 Fix trailing slash in storage table | [297](https://github.com/laminlabs/lndb/pull/297) | [falexwolf](https://github.com/falexwolf) | 2023-02-22 | 0.35.1
 🐛 Reinit Locker on user or storage change | [296](https://github.com/laminlabs/lndb/pull/296) | [Koncopd](https://github.com/Koncopd) | 2023-02-22 |
