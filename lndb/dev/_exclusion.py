@@ -32,6 +32,8 @@ class Locker:
         self.user = user_id
 
         root = storage_root
+        self.root = root
+
         if isinstance(root, UPath):
             self.fs = root.fs
         else:
@@ -165,9 +167,14 @@ _locker: Optional[Locker] = None
 def get_locker() -> Locker:
     from .._settings import settings
 
+    user_id = settings.user.id
+    storage_root = settings.instance.storage.root
+
     global _locker
 
     if _locker is None:
-        _locker = Locker(settings.user.id, settings.instance.storage.root)
+        _locker = Locker(user_id, storage_root)
+    elif user_id != _locker.user or storage_root is not _locker.root:
+        _locker = Locker(user_id, storage_root)
 
     return _locker
