@@ -11,9 +11,9 @@ dependencies = [
     # pinning lnhub_rest is problematic because of interdependency
     # instead pin it within lamindb!
     # here, only provide a LOWER bound
-    "lnhub_rest>=0.5.0",
+    "lnhub_rest>=0.5.1",
     # no other packages should be pinned
-    "lnschema_core>=0.24.1",
+    "lnschema_core>=0.28.0",
     "lamin_logger>=0.2.3",
     "sqlmodel>=0.0.8",
     "appdirs",
