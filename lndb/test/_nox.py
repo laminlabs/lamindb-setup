@@ -92,5 +92,5 @@ def upload_docs_dir():
         if dobject is None:
             dobject = ln.DObject(filename, source=run)
         else:
-            dobject.run = run
+            dobject.source = run
         ss.add(dobject)
