@@ -1,11 +1,14 @@
 # We see a lot of import statements for lnschema_core below
 # This is currently needed as we can only import the schema module
 # once isettings have been adjusted
-from typing import Any, List
+from pathlib import Path
+from typing import Any, List, Optional, Union
 
 import sqlmodel as sqm
 from lamin_logger import logger
 from sqlalchemy.exc import ProgrammingError
+
+from lndb.dev import UPath
 
 from .._settings import settings
 
@@ -67,21 +70,18 @@ class insert_if_not_exists:
     """
 
     @classmethod
-    def storage(cls, root, region):
-        import lnschema_core as schema_core
+    def storage(cls, root: Union[Path, UPath], region: Optional[str]):
+        from lnschema_core import Storage
 
-        root = str(root)
+        root_str = str(root)
+        if isinstance(root, UPath):
+            root_str = root_str.rstrip("/")
         with sqm.Session(settings.instance.engine) as session:
-            storage_table = (
-                schema_core.Storage
-                if hasattr(schema_core, "Storage")
-                else schema_core.storage
-            )  # noqa
             storage = session.exec(
-                sqm.select(storage_table).where(storage_table.root == root)
+                sqm.select(Storage).where(Storage.root == root_str)
             ).first()
         if storage is None:
-            storage = insert.storage(root, region)  # type: ignore
+            storage = insert.storage(root_str, region)
 
         return storage
 
