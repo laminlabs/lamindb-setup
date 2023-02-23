@@ -3,6 +3,7 @@
 <!-- prettier-ignore -->
 Name | PR | Developer | Date | Version
 --- | --- | --- | --- | ---
+🚚 Move code to laminci | [302](https://github.com/laminlabs/lndb/pull/302) | [falexwolf](https://github.com/falexwolf) | 2023-02-23 |
 🐛 Fix CI docs upload | [301](https://github.com/laminlabs/lndb/pull/301) | [falexwolf](https://github.com/falexwolf) | 2023-02-22 | 0.35.3
 👷 Upload docs artifacts | [300](https://github.com/laminlabs/lndb/pull/300) | [falexwolf](https://github.com/falexwolf) | 2023-02-22 |
 👷 Add CI helper for uploading docs | [299](https://github.com/laminlabs/lndb/pull/299) | [falexwolf](https://github.com/falexwolf) | 2023-02-22 | 0.35.2
