@@ -1,96 +1,11 @@
-import os
-import shutil
-from pathlib import Path
-from typing import Optional
+from laminci import get_package_name, get_schema_handle, upload_docs_dir  # noqa
+from laminci.nox import (  # noqa
+    build_docs,
+    login_testuser1,
+    login_testuser2,
+    run_pre_commit,
+    run_pytest,
+    setup_test_instances_from_main_branch,
+)
 
-from nox import Session
-
-from lndb.dev import setup_local_test_postgres
-
-from ._env import get_package_name
-
-
-def get_schema_handle() -> Optional[str]:
-    package_name = get_package_name()
-    if package_name.startswith("lnschema_"):
-        return package_name.replace("lnschema_", "")
-    else:
-        return None
-
-
-def login_testuser1(session: Session):
-    login_user_1 = "lndb login testuser1@lamin.ai --password cEvcwMJFX4OwbsYVaMt2Os6GxxGgDUlBGILs2RyS"  # noqa
-    session.run(*(login_user_1.split(" ")), external=True)
-
-
-def login_testuser2(session: Session):
-    login_user_1 = "lndb login testuser2@lamin.ai --password goeoNJKE61ygbz1vhaCVynGERaRrlviPBVQsjkhz"  # noqa
-    session.run(*(login_user_1.split(" ")), external=True)
-
-
-def setup_test_instances_from_main_branch(session: Session, schema: str = None):
-    # spin up a postgres test instance
-    pgurl = setup_local_test_postgres()
-    # switch to the main branch
-    if "GITHUB_BASE_REF" in os.environ and os.environ["GITHUB_BASE_REF"] != "":
-        session.run("git", "checkout", os.environ["GITHUB_BASE_REF"], external=True)
-    session.install(".[test]")  # install current package from main branch
-    # init a postgres instance
-    init_instance = f"lndb init --storage pgtest --db {pgurl}"
-    schema_handle = get_schema_handle()
-    if schema is None and schema_handle not in {None, "core"}:
-        init_instance += f" --schema {schema_handle}"
-    elif schema is not None:
-        init_instance += f" --schema {schema}"
-    session.run(*init_instance.split(" "), external=True)
-    # go back to the PR branch
-    if "GITHUB_HEAD_REF" in os.environ and os.environ["GITHUB_HEAD_REF"] != "":
-        session.run("git", "checkout", os.environ["GITHUB_HEAD_REF"], external=True)
-
-
-def run_pre_commit(session: Session):
-    session.install("pre-commit")
-    session.run("pre-commit", "install")
-    session.run("pre-commit", "run", "--all-files")
-
-
-def run_pytest(session: Session):
-    package_name = get_package_name()
-    session.run(
-        "pytest",
-        "-s",
-        f"--cov={package_name}",
-        "--cov-append",
-        "--cov-report=term-missing",
-    )
-    session.run("coverage", "xml")
-
-
-def build_docs(session: Session):
-    prefix = "." if Path("./lndocs").exists() else ".."
-    session.install(f"{prefix}/lndocs")
-    session.run("lndocs")
-
-
-def upload_docs_dir():
-    import lndb
-
-    if os.environ["GITHUB_EVENT_NAME"] != "push":
-        return
-    package_name = get_package_name()
-    filestem = f"{package_name}_docs"
-    filename = shutil.make_archive(filestem, "zip", "./docs")
-    lndb.load("testuser1/lamin-site-assets", migrate=True)
-
-    import lamindb as ln
-    import lamindb.schema as lns
-
-    with ln.Session() as ss:
-        dobject = ss.select(ln.DObject, name=filestem).one_or_none()
-        pipeline = ln.add(lns.Pipeline, name=f"CI {package_name}")
-        run = lns.Run(pipeline=pipeline)
-        if dobject is None:
-            dobject = ln.DObject(filename, source=run)
-        else:
-            dobject.source = run
-        ss.add(dobject)
+from lndb.dev import setup_local_test_postgres  # noqa
