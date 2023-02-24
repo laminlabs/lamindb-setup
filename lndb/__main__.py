@@ -1,4 +1,6 @@
 import argparse
+import os
+import sys
 
 from lamin_logger import logger
 
@@ -88,6 +90,8 @@ def process_result(result):
 
 
 def main():
+    if os.path.basename(sys.argv[0]) == "lndb":
+        logger.warning("CLI `lndb` is deprecated, use `lamin` instead.")
     if args.command == "signup":
         return _setup_user.signup(email=args.email)
     if args.command == "login":
@@ -121,5 +125,5 @@ def main():
         if args.action == "generate":
             return migrate.generate()
     else:
-        logger.error("Invalid command. Try `lndb -h`.")
+        logger.error("Invalid command. Try `lamin -h`.")
         return 1
