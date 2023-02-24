@@ -121,5 +121,5 @@ def main():
         if args.action == "generate":
             return migrate.generate()
     else:
-        logger.error("Invalid command. Try `lndb -h`.")
+        logger.error("Invalid command. Try `lamin -h`.")
         return 1
