@@ -36,7 +36,7 @@ class Storage:
         return self._root
 
     @property
-    def root_str(self) -> str:
+    def root_as_str(self) -> str:
         """Formatted root string."""
         root_str = self.root.as_posix()
         if root_str[-1] == "/":
