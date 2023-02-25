@@ -3,6 +3,7 @@
 <!-- prettier-ignore -->
 Name | PR | Developer | Date | Version
 --- | --- | --- | --- | ---
+✨ Add root_str property to Storage | [304](https://github.com/laminlabs/lndb/pull/304) | [Koncopd](https://github.com/Koncopd) | 2023-02-25 |
 🚚 Rename lndb CLI to lamin | [303](https://github.com/laminlabs/lndb/pull/303) | [falexwolf](https://github.com/falexwolf) | 2023-02-24 |
 🚚 Move code to laminci | [302](https://github.com/laminlabs/lndb/pull/302) | [falexwolf](https://github.com/falexwolf) | 2023-02-23 |
 🐛 Fix CI docs upload | [301](https://github.com/laminlabs/lndb/pull/301) | [falexwolf](https://github.com/falexwolf) | 2023-02-22 | 0.35.3
