@@ -36,6 +36,15 @@ class Storage:
         return self._root
 
     @property
+    def root_str(self) -> str:
+        """Formatted root string."""
+        root_str = self.root.as_posix()
+        if root_str[-1] == "/":
+            return root_str[:-1]
+        else:
+            return root_str
+
+    @property
     def cache_dir(
         self,
     ) -> Union[Path, None]:
