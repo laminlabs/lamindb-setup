@@ -1,5 +1,5 @@
 # API
 
 ```{eval-rst}
-.. automodule:: lndb
+.. automodule:: lamin
 ```

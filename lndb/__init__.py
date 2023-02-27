@@ -1,7 +1,5 @@
 """LaminDB manager.
 
-The Python API here has a 1:1 correspondnce to the CLI tool `lndb`.
-
 Import the package::
 
    import lndb

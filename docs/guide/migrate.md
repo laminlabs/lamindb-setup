@@ -24,7 +24,7 @@ to:
 version: str = Field(default="1", primary_key=True)
 ````
 
-3. On the command line (at the root of the repository), run `lndb migrate generate` to generate an empty script file under `{package_name}/migrations/versions/`.
+3. On the command line (at the root of the repository), run `lamin migrate generate` to generate an empty script file under `{package_name}/migrations/versions/`.
 
 ````{admonition} Example: Migration script location.
 The script will be named `{date}-{revision}-vx_x_x.py`.
@@ -105,5 +105,5 @@ def upgrade() -> None:
 
 ```{note}
 
-`lndb` leverages [alembic](https://alembic.sqlalchemy.org/en/latest/).
+`lamin` leverages [alembic](https://alembic.sqlalchemy.org/en/latest/).
 ```
