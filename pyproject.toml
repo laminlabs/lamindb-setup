@@ -47,6 +47,7 @@ dev = [
     "nox",
 ]
 test = [
+    "lamin",
     "pytest>=6.0",
     "pytest-cov",
     "bionty>=0.5.6",
