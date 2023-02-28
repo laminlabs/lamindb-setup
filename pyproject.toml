@@ -45,7 +45,7 @@ Home = "https://github.com/laminlabs/lndb"
 dev = [
     "pre-commit",
     "nox",
-    "laminci",
+    "laminci>=0.2.4",
 ]
 test = [
     "lamin",
