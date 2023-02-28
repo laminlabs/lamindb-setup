@@ -19,8 +19,8 @@ class classproperty(object):
 class settings:
     """Settings access.
 
-    - :class:`~lndb.dev.InstanceSettings`
-    - :class:`~lndb.dev.UserSettings`
+    - :class:`~lamin.dev.InstanceSettings`
+    - :class:`~lamin.dev.UserSettings`
     """
 
     _user_settings: Union[UserSettings, None] = None
