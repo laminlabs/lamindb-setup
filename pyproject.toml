@@ -12,8 +12,7 @@ dependencies = [
     # instead pin it within lamindb!
     # here, only provide a LOWER bound
     "lnhub_rest>=0.5.1",
-    # pin laminci for now until disentangled
-    "laminci==0.1.1",
+    "laminci",
     # no other packages should be pinned
     "lnschema_core>=0.28.0",
     "lamin_logger>=0.2.3",
