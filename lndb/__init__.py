@@ -1,6 +1,6 @@
-"""LaminDB manager.
+"""LaminDB setup.
 
-Import the package::
+Import the API::
 
    import lndb
 
