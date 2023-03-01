@@ -1,7 +1,10 @@
 from pathlib import Path
 
 import nox
-from laminci import upload_docs_dir
+from laminci import __version__, upload_docs_dir
+
+if __version__ < "0.2.4":
+    raise RuntimeError("Upgrade laminci version.")
 
 nox.options.reuse_existing_virtualenvs = True
 
