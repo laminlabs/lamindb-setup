@@ -3,6 +3,7 @@
 <!-- prettier-ignore -->
 Name | PR | Developer | Date | Version
 --- | --- | --- | --- | ---
+📝 Replace `lamin` API with `lamindb.setup` API | [313](https://github.com/laminlabs/lndb/pull/313) | [falexwolf](https://github.com/falexwolf) | 2023-03-01 |
 ✨ Reload `lamindb.schema` if `lamindb` is imported | [312](https://github.com/laminlabs/lndb/pull/312) | [falexwolf](https://github.com/falexwolf) | 2023-03-01 | 0.36.0
 👷 Check laminci versions | [310](https://github.com/laminlabs/lndb/pull/310) | [falexwolf](https://github.com/falexwolf) | 2023-03-01 |
 📝 Fix class ref in settings | [308](https://github.com/laminlabs/lndb/pull/308) | [sunnyosun](https://github.com/sunnyosun) | 2023-02-28 |
