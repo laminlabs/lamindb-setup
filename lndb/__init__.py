@@ -1,15 +1,6 @@
-"""LaminDB manager.
+"""LaminDB setup.
 
-Import the package::
-
-   import lndb
-
-Settings:
-
-.. autosummary::
-   :toctree:
-
-   settings
+Every function in the API below matches a command in the `lamin` CLI.
 
 Setup user account:
 
@@ -44,6 +35,12 @@ Manage creating and testing migrations (deployment is automatic):
 
    migrate
 
+Settings:
+
+.. autosummary::
+   :toctree:
+
+   settings
 
 Developer API.
 
