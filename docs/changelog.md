@@ -3,6 +3,7 @@
 <!-- prettier-ignore -->
 Name | PR | Developer | Date | Version
 --- | --- | --- | --- | ---
+👷 Check laminci versions | [310](https://github.com/laminlabs/lndb/pull/310) | [falexwolf](https://github.com/falexwolf) | 2023-03-01 |
 📝 Fix class ref in settings | [308](https://github.com/laminlabs/lndb/pull/308) | [sunnyosun](https://github.com/sunnyosun) | 2023-02-28 |
 🚚 Rename lndb to lamin in guide & faq | [307](https://github.com/laminlabs/lndb/pull/307) | [falexwolf](https://github.com/falexwolf) | 2023-02-27 |
 🎨 Rename root_str to root_as_str | [305](https://github.com/laminlabs/lndb/pull/305) | [Koncopd](https://github.com/Koncopd) | 2023-02-25 |
