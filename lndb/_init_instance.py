@@ -1,3 +1,4 @@
+import sys
 from pathlib import Path
 from typing import Optional, Union
 
@@ -25,6 +26,14 @@ def register(isettings: InstanceSettings, usettings):
     """Register user & storage in DB."""
     upsert.user(usettings.email, usettings.id, usettings.handle, usettings.name)
     insert_if_not_exists.storage(isettings.storage.root, isettings.storage.region)
+
+
+def import_schema_lamin_root_api():
+    # only touch lamindb if we're operating from lamindb
+    if "lamindb" in sys.modules:
+        import lamindb
+
+        lamindb.schema._import_schema()
 
 
 def persist_check_reload_schema(isettings: InstanceSettings):
@@ -139,6 +148,7 @@ def init(
     else:
         message = load_from_isettings(isettings, migrate=_migrate)
 
+    import_schema_lamin_root_api()
     return message
 
 
