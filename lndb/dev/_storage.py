@@ -15,12 +15,13 @@ class Storage:
     def __init__(self, root: Union[str, Path, UPath], region: Optional[str] = None):
         if isinstance(root, UPath):
             root_path = root
+        elif isinstance(root, Path):
+            root.mkdir(parents=True, exist_ok=True)  # resolve fails for nonexisting dir
+            root_path = root.resolve()
+        elif isinstance(root, str):
+            root_path = Storage._str_to_path(root)
         else:
-            os.makedirs(root, exist_ok=True)  # resolve fails for nonexisting dir
-            if isinstance(root, str):
-                root_path = Storage._str_to_path(root)
-            else:  # Path
-                root_path = root.resolve()
+            raise ValueError("root should be of type Union[str, Path, UPath].")
         self._root = root_path
         self._region = region
 
@@ -32,6 +33,7 @@ class Storage:
         elif storage.startswith("gs://"):
             storage_root = UPath(storage)
         else:  # local path
+            os.makedirs(storage, exist_ok=True)  # resolve fails for nonexisting dir
             storage_root = Path(storage).resolve()
         return storage_root
 
