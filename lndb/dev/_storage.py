@@ -1,3 +1,4 @@
+import os
 from pathlib import Path
 from typing import Literal, Optional, Union
 
@@ -12,10 +13,14 @@ class Storage:
     """Manage cloud or local storage."""
 
     def __init__(self, root: Union[str, Path, UPath], region: Optional[str] = None):
-        if isinstance(root, str):
-            root_path = Storage._str_to_path(root)
-        else:
+        if isinstance(root, UPath):
             root_path = root
+        else:
+            os.makedirs(root, exist_ok=True)  # resolve fails for nonexisting dir
+            if isinstance(root, str):
+                root_path = Storage._str_to_path(root)
+            else:  # Path
+                root_path = root.resolve()
         self._root = root_path
         self._region = region
 
