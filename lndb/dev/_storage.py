@@ -1,3 +1,4 @@
+import os
 from pathlib import Path
 from typing import Literal, Optional, Union
 
@@ -12,10 +13,15 @@ class Storage:
     """Manage cloud or local storage."""
 
     def __init__(self, root: Union[str, Path, UPath], region: Optional[str] = None):
-        if isinstance(root, str):
+        if isinstance(root, UPath):
+            root_path = root
+        elif isinstance(root, Path):
+            root.mkdir(parents=True, exist_ok=True)  # resolve fails for nonexisting dir
+            root_path = root.resolve()
+        elif isinstance(root, str):
             root_path = Storage._str_to_path(root)
         else:
-            root_path = root
+            raise ValueError("root should be of type Union[str, Path, UPath].")
         self._root = root_path
         self._region = region
 
@@ -27,6 +33,7 @@ class Storage:
         elif storage.startswith("gs://"):
             storage_root = UPath(storage)
         else:  # local path
+            os.makedirs(storage, exist_ok=True)  # resolve fails for nonexisting dir
             storage_root = Path(storage).resolve()
         return storage_root
 

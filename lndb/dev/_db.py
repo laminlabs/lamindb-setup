@@ -73,9 +73,10 @@ class insert_if_not_exists:
     def storage(cls, root: Union[Path, UPath], region: Optional[str]):
         from lnschema_core import Storage
 
-        root_str = str(root)
         if isinstance(root, UPath):
-            root_str = root_str.rstrip("/")
+            root_str = root.as_posix().rstrip("/")
+        else:
+            root_str = root.resolve().as_posix()
         with sqm.Session(settings.instance.engine) as session:
             storage = session.exec(
                 sqm.select(Storage).where(Storage.root == root_str)

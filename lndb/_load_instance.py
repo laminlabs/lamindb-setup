@@ -67,7 +67,7 @@ def load(
         init_instance_hub(
             owner=isettings.owner,
             name=isettings.name,
-            storage=str(isettings.storage.root),
+            storage=isettings.storage.root_as_str,
             db=isettings._db,
             schema=isettings._schema_str,
         )
