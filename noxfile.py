@@ -9,6 +9,7 @@ if __version__ < "0.2.4":
 
 nox.options.reuse_existing_virtualenvs = True
 
+lamin_env = "prod"
 if "GITHUB_REF_NAME" in os.environ:
     if os.environ["GITHUB_REF_NAME"] == "main":
         lamin_env = "prod"
@@ -16,8 +17,6 @@ if "GITHUB_REF_NAME" in os.environ:
         lamin_env = "staging"
 elif "LAMIN_ENV" in os.environ:
     lamin_env = os.environ["LAMIN_ENV"]
-else:
-    lamin_env = "prod"
 
 env = {"LAMIN_ENV": lamin_env}
 
