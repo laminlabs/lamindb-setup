@@ -3,6 +3,7 @@
 <!-- prettier-ignore -->
 Name | PR | Developer | Date | Version
 --- | --- | --- | --- | ---
+📌 Pin lnhub-rest | [319](https://github.com/laminlabs/lndb/pull/319) | [fredericenard](https://github.com/fredericenard) | 2023-03-07 |
 :memo: Reduce visual noise in migrate guide | [317](https://github.com/laminlabs/lndb/pull/317) | [falexwolf](https://github.com/falexwolf) | 2023-03-06 |
 📝 Fix docs build | [315](https://github.com/laminlabs/lndb/pull/315) | [Koncopd](https://github.com/Koncopd) | 2023-03-05 |
 🐛 Fix resolution of storage root paths for local instances | [314](https://github.com/laminlabs/lndb/pull/314) | [Koncopd](https://github.com/Koncopd) | 2023-03-05 |
