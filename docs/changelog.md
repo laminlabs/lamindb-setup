@@ -3,6 +3,7 @@
 <!-- prettier-ignore -->
 Name | PR | Developer | Date | Version
 --- | --- | --- | --- | ---
+👷 Enable testing using a specific environment | [323](https://github.com/laminlabs/lndb/pull/323) | [fredericenard](https://github.com/fredericenard) | 2023-03-07 |
 ⬆️ Upgrade lnhub-rest | [322](https://github.com/laminlabs/lndb/pull/322) | [fredericenard](https://github.com/fredericenard) | 2023-03-07 |
 ⬆️ Upgrade lamindb | [321](https://github.com/laminlabs/lndb/pull/321) | [fredericenard](https://github.com/fredericenard) | 2023-03-07 |
 ⬆️ Upgrade lamindb | [320](https://github.com/laminlabs/lndb/pull/320) | [fredericenard](https://github.com/fredericenard) | 2023-03-07 | 0.37.1
