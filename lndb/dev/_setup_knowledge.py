@@ -18,7 +18,7 @@ def write_bionty_versions(isettings: InstanceSettings):
 
         basedir = Path(bt.__file__).parent / "versions"
         _current = load_yaml(basedir / "_current.yaml")
-        _local = load_yaml(basedir / "_local.yaml")
+        local = load_yaml(Path.home() / ".lamin/bionty/local.yaml")
 
         # here we set integer ids from 0
         records = []
@@ -30,7 +30,7 @@ def write_bionty_versions(isettings: InstanceSettings):
                 entity=entity,
                 database=db_name,
                 database_v=str(db_version),
-                database_url=_local.get(entity)
+                database_url=local.get(entity)
                 .get(db_name)
                 .get("versions")
                 .get(db_version),
