@@ -46,7 +46,7 @@ dev = [
     "nox",
 ]
 test = [
-    "lamindb>=0.31rc1",
+    "lamindb>=0.31.0",
     "pytest>=6.0",
     "pytest-cov",
     "bionty>=0.5.6",
