@@ -49,9 +49,6 @@ test = [
     "lamindb>=0.30.0",
     "pytest>=6.0",
     "pytest-cov",
-    "lnschema_bionty>=0.7.1rc1",
-    "lnschema_wetlab>=0.11.5",
-    "lnbfx>=0.7.1",
     "nbproject_test>=0.4.0",
 ]
 
