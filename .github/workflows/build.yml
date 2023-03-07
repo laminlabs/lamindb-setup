@@ -79,6 +79,8 @@ jobs:
           nox -s build --python ${{ matrix.python-version }}
         env:
           GITHUB_EVENT_NAME: ${{ github.event_name }}
+          SUPABASE_STAGING_URL: ${{ secrets.SUPABASE_STAGING_URL }}
+          SUPABASE_STAGING_ANON_KEY: ${{ secrets.SUPABASE_STAGING_ANON_KEY }}
       - name: Codecov
         if: matrix.python-version == '3.9'
         uses: codecov/codecov-action@v2
