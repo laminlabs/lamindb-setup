@@ -10,7 +10,7 @@ def test_db_unique_error():
     with pytest.raises(RuntimeError):
         lndb.init(
             storage="s3://lndb-setup-ci",
-            schema="retro,bionty",
+            schema="bionty",
             db="postgresql://batman:robin@35.222.187.204:5432/retro",
         )
 
