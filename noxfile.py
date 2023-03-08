@@ -41,9 +41,10 @@ def build(session):
         "--cov=lndb",
         "--cov-append",
         "--cov-report=term-missing",
+        env=env,
     )
     session.run("coverage", "xml")
     prefix = "." if Path("./lndocs").exists() else ".."
     session.install(f"{prefix}/lndocs")
-    session.run("lndocs", env=env)
+    session.run("lndocs")
     upload_docs_dir()
