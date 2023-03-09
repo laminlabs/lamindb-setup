@@ -10,14 +10,14 @@ from ._settings_instance import InstanceSettings
 
 
 def write_bionty_versions(isettings: InstanceSettings):
-    """Write bionty _current.yaml to the CurrentBiontyVersions table."""
+    """Write bionty ._current.yaml to the CurrentBiontyVersions table."""
     if "bionty" in isettings.schema:
         import bionty as bt
         from bionty.dev._io import load_yaml
         from lnschema_bionty import dev
 
         basedir = Path(bt.__file__).parent / "versions"
-        _current = load_yaml(basedir / "_current.yaml")
+        _current = load_yaml(basedir / "._current.yaml")
         local = load_yaml(Path.home() / ".lamin/bionty/versions/local.yaml")
 
         # here we set integer ids from 0
@@ -41,7 +41,7 @@ def write_bionty_versions(isettings: InstanceSettings):
 
 
 def load_bionty_versions(isettings: InstanceSettings, display: bool = False):
-    """Write CurrentBiontyVersions to _lndb.yaml in bionty."""
+    """Write CurrentBiontyVersions to ._lndb.yaml in bionty."""
     if "bionty" in isettings.schema:
         import bionty as bt
         from bionty.dev._io import write_yaml
@@ -65,4 +65,4 @@ def load_bionty_versions(isettings: InstanceSettings, display: bool = False):
         for entity, db in df_lndb.iterrows():
             lndb_dict[entity] = {}
             lndb_dict[entity][db["database"]] = db["database_v"]
-        write_yaml(lndb_dict, basedir / "_lndb.yaml")
+        write_yaml(lndb_dict, basedir / "._lndb.yaml")
