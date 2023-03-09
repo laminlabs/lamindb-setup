@@ -21,11 +21,7 @@ settings_dir.mkdir(parents=True, exist_ok=True)
 
 def get_settings_file_name_prefix():
     if "LAMIN_ENV" in os.environ:
-        if os.environ["LAMIN_ENV"] == "dev":
-            return "dev-"
-        elif os.environ["LAMIN_ENV"] == "test":
-            return "test-"
-        elif os.environ["LAMIN_ENV"] == "staging":
+        if os.environ["LAMIN_ENV"] == "staging":
             return "staging-"
     return ""
 
