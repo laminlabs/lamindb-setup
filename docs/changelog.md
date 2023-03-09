@@ -3,7 +3,7 @@
 <!-- prettier-ignore -->
 Name | PR | Developer | Date | Version
 --- | --- | --- | --- | ---
-⬆️ Upgrade to lnhub_rest 0.6.1 | [325](https://github.com/laminlabs/lndb/pull/325) | [falexwolf](https://github.com/falexwolf) | 2023-03-09 |
+⬆️ Upgrade to lnhub_rest 0.6.1 | [325](https://github.com/laminlabs/lndb/pull/325) | [falexwolf](https://github.com/falexwolf) | 2023-03-09 | 0.37.3
 ⬆️ Upgrade lnschema-bionty | [318](https://github.com/laminlabs/lndb/pull/318) | [sunnyosun](https://github.com/sunnyosun) | 2023-03-09 | 0.37.2
 ✅ Test lndb in staging environment | [324](https://github.com/laminlabs/lndb/pull/324) | [fredericenard](https://github.com/fredericenard) | 2023-03-08 |
 👷 Enable testing using a specific environment | [323](https://github.com/laminlabs/lndb/pull/323) | [fredericenard](https://github.com/fredericenard) | 2023-03-07 |
