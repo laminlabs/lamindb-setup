@@ -8,12 +8,9 @@ authors = [{name = "Lamin Labs", email = "laminlabs@gmail.com"}]
 readme = "README.md"
 dynamic = ["version", "description"]
 dependencies = [
-    # pinning lnhub_rest is problematic because of interdependency
-    # instead pin it within lamindb!
-    # here, only provide a LOWER bound
-    "lnhub_rest==0.6.0",
-    "laminci>=0.2.4",
+    "lnhub_rest==0.6.1",
     # no other packages should be pinned
+    "laminci>=0.2.4",  # this here is problematic as it depends on lamindb
     "lnschema_core>=0.28.0",
     "lamin_logger>=0.2.3",
     "sqlmodel>=0.0.8",
