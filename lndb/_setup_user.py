@@ -92,7 +92,9 @@ def login(
     else:
         user_id, user_handle, user_name, access_token = response
     if handle is None:
-        logger.info(f"Your handle is {user_handle} and your id is {user_id}.")
+        logger.success(f"Logged in with handle {user_handle} and id {user_id}")
+    else:
+        logger.success(f"Logged in with email {user_settings.email} and id {user_id}")
     user_settings.id = user_id
     user_settings.handle = user_handle
     user_settings.name = user_name
