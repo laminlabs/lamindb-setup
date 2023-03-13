@@ -99,7 +99,7 @@ def init(
     name_str = infer_instance_name(storage=storage, name=name, db=db)
     # test whether instance exists by trying to load it
     message = load(f"{owner}/{name_str}", _log_error_message=False, migrate=_migrate)
-    if message != "instance-not-exists":
+    if message != "instance-not-reachable":
         return message
 
     isettings = InstanceSettings(
