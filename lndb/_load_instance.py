@@ -2,7 +2,6 @@ import os
 from typing import Optional
 
 from lamin_logger import logger
-from lnhub_rest._init_instance import init_instance as init_instance_hub
 from lnhub_rest._load_instance import load_instance as load_instance_from_hub
 
 from ._settings import InstanceSettings, settings
@@ -47,8 +46,11 @@ def load(
             isettings = load_instance_settings(settings_file)
         else:
             if _log_error_message:
-                logger.error("Instance neither exists on hub nor locally, call `init`.")
-            return "instance-not-exists"
+                logger.error(
+                    "Instance not reachable. Check your access permissions or whether"
+                    " the instance exists."
+                )
+            return "instance-not-reachable"
 
     check, msg = isettings._is_db_setup()
     if not check:
@@ -59,18 +61,7 @@ def load(
                 "Instance metadata exists, but DB might have been corrupted or deleted."
                 " Re-initializing the DB."
             )
-            return "instance-not-exists"
-
-    # register legacy instances on hub if they aren't yet!
-    if isettings.is_remote and isinstance(hub_result, str):
-        logger.info("Registering instance on hub.")
-        init_instance_hub(
-            owner=isettings.owner,
-            name=isettings.name,
-            storage=isettings.storage.root_as_str,
-            db=isettings._db,
-            schema=isettings._schema_str,
-        )
+            return "instance-not-reachable"
 
     message = load_from_isettings(isettings, migrate)
 
