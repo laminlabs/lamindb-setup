@@ -3,6 +3,7 @@
 <!-- prettier-ignore -->
 Name | PR | Developer | Date | Version
 --- | --- | --- | --- | ---
+⬆️ Migrate to bionty 0.9 | [328](https://github.com/laminlabs/lndb/pull/328) | [sunnyosun](https://github.com/sunnyosun) | 2023-03-20 | 0.37.5rc1
 🚸  Handle instance permissions during `load` | [327](https://github.com/laminlabs/lndb/pull/327) | [bpenteado](https://github.com/bpenteado) | 2023-03-14 |
 🐛 Fix `._current.yaml` | [326](https://github.com/laminlabs/lndb/pull/326) | [sunnyosun](https://github.com/sunnyosun) | 2023-03-09 | 0.37.4
 ⬆️ Upgrade to lnhub_rest 0.6.1 | [325](https://github.com/laminlabs/lndb/pull/325) | [falexwolf](https://github.com/falexwolf) | 2023-03-09 | 0.37.3

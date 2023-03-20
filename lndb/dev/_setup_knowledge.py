@@ -29,11 +29,11 @@ def write_bionty_versions(isettings: InstanceSettings):
                 id=i,
                 entity=entity,
                 database=db_name,
-                database_v=str(db_version),
+                database_v=db_version,
                 database_url=local.get(entity)
                 .get(db_name)
                 .get("versions")
-                .get(db_version),
+                .get(db_version)[0],
             )
             records.append(record)
 
