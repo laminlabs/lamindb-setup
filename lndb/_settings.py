@@ -39,7 +39,7 @@ class settings:
             cls._user_settings = load_or_create_user_settings()
             cls._user_settings_env = get_env_name()
             if cls._user_settings and cls._user_settings.id is None:
-                raise RuntimeError("Need to login, first: lndb login <email>.")
+                raise RuntimeError("Need to login, first: lamin login <email>")
         return cls._user_settings  # type: ignore
 
     @classproperty
