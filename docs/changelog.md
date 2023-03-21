@@ -3,7 +3,7 @@
 <!-- prettier-ignore -->
 Name | PR | Developer | Date | Version
 --- | --- | --- | --- | ---
-💚 Fix CI | [330](https://github.com/laminlabs/lndb/pull/330) | [sunnyosun](https://github.com/sunnyosun) | 2023-03-21 |
+💚 Fix CI | [330](https://github.com/laminlabs/lndb/pull/330) | [sunnyosun](https://github.com/sunnyosun) | 2023-03-21 | 0.37.5
 ⬆️ Migrate to bionty 0.9 | [328](https://github.com/laminlabs/lndb/pull/328) | [sunnyosun](https://github.com/sunnyosun) | 2023-03-20 | 0.37.5rc1
 🚸  Handle instance permissions during `load` | [327](https://github.com/laminlabs/lndb/pull/327) | [bpenteado](https://github.com/bpenteado) | 2023-03-14 |
 🐛 Fix `._current.yaml` | [326](https://github.com/laminlabs/lndb/pull/326) | [sunnyosun](https://github.com/sunnyosun) | 2023-03-09 | 0.37.4
