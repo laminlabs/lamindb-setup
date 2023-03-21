@@ -43,7 +43,7 @@ dev = [
     "nox",
 ]
 test = [
-    "lamindb>=0.32.0rc1",
+    "lamindb>=0.34.0",
     "pytest>=6.0",
     "pytest-cov",
     "nbproject_test>=0.4.0",
