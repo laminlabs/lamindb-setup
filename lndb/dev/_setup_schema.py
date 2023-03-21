@@ -5,7 +5,6 @@ import sqlmodel as sqm
 from lamin_logger import logger
 from lnhub_rest._assets._schemas import get_schema_lookup_name, get_schema_module_name
 
-from .._settings import settings
 from ._db import insert
 from ._settings_instance import InstanceSettings
 from ._settings_user import UserSettings
@@ -112,5 +111,3 @@ def setup_schema(isettings: InstanceSettings, usettings: UserSettings):
                 session.add(migration_table(version_num=migration))
                 session.commit()
     isettings._update_cloud_sqlite_file()
-
-    logger.info(f"Created instance {settings.user.handle}/{isettings.name}")

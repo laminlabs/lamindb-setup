@@ -81,7 +81,7 @@ def init(
     schema: Optional[str] = None,
     _migrate: bool = False,  # not user-facing
 ) -> Optional[str]:
-    """Setup LaminDB.
+    """Creating and loading a LaminDB instance.
 
     Args:
         storage: {}
@@ -134,7 +134,7 @@ def init(
         if result == "instance-exists-already":
             pass  # everything is alright!
         elif isinstance(result, str):
-            raise RuntimeError(f"Initializing instance on hub failed:\n{result}")
+            raise RuntimeError(f"Creating instance on hub failed:\n{result}")
 
     persist_check_reload_schema(isettings)
 
@@ -149,6 +149,7 @@ def init(
         message = load_from_isettings(isettings, migrate=_migrate)
 
     import_schema_lamin_root_api()
+    logger.success(f"Created & loaded {settings.user.handle}/{isettings.name}")
     return message
 
 
