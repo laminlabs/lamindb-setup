@@ -107,7 +107,6 @@ def load_from_isettings(
     )
     if message == "migrate-failed":
         return message
-    print(isettings)
     register(isettings, settings.user)
     load_bionty_versions(isettings)
     import_schema_lamin_root_api()
