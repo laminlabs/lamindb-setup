@@ -149,7 +149,9 @@ def init(
         message = load_from_isettings(isettings, migrate=_migrate)
 
     import_schema_lamin_root_api()
-    logger.success(f"Created & loaded {settings.user.handle}/{isettings.name}")
+    logger.success(
+        f"Created & loaded instance: {settings.user.handle}/{isettings.name}"
+    )
     return message
 
 
