@@ -23,7 +23,6 @@ dependencies = [
     "pyjwt",
     "natsort",
     "pandas",
-    "jupyter_client<8.1.0",
     "pytest_alembic==0.9.1",  # let's pin this as we use internals
     "boto3==1.24.59", # for aiobotocore inside s3fs, to fix deps resolution
     "botocore==1.27.59", # for aiobotocore inside s3fs, to fix deps resolution
