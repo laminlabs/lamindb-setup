@@ -48,6 +48,7 @@ test = [
     "lnschema_bionty",
     "pytest>=6.0",
     "pytest-cov",
+    "ipykernel",
     "nbproject_test>=0.4.0",
 ]
 
