@@ -51,7 +51,7 @@ def persist_check_reload_schema(isettings: InstanceSettings):
 
 
 ERROR_SQLITE_CACHE = """
-Your cached local SQLite file still exists, while your cloud SQLite file was deleted.
+Your cached local SQLite file exists, while your cloud SQLite file ({}) doesn't.
 Either delete your cache ({}) or add it back to the cloud (if delete was accidental).
 """
 
@@ -116,10 +116,11 @@ def init(
             not isettings._sqlite_file.exists()
             and isettings._sqlite_file_local.exists()
         ):
-            logger.error(
-                ERROR_SQLITE_CACHE.format(settings.instance._sqlite_file_local)
+            raise RuntimeError(
+                ERROR_SQLITE_CACHE.format(
+                    isettings._sqlite_file, isettings._sqlite_file_local
+                )
             )
-            return "remote-sqlite-deleted"
 
     # for remote instance, a lot of validation happens in the next function
     # if this errors, the whole function errors
