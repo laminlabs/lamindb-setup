@@ -5,12 +5,13 @@ from lamin_logger import logger
 
 from ._settings import settings
 from .dev._settings_load import load_instance_settings
-from .dev._settings_store import instance_settings_file
+from .dev._settings_store import current_instance_settings_file, instance_settings_file
 
 
 def delete(instance_name: str):
     """Delete an instance."""
-    logger.info(f"Deleting instance {settings.user.handle}/{instance_name}")
+    instance_identifier = f"{settings.user.handle}/{instance_name}"
+    logger.info(f"Deleting instance {instance_identifier}")
     settings_file = instance_settings_file(instance_name, settings.user.handle)
     if not settings_file.exists():
         raise RuntimeError(
@@ -20,6 +21,11 @@ def delete(instance_name: str):
     isettings = load_instance_settings(settings_file)
 
     delete_settings(settings_file)
+    if instance_identifier == settings.instance.identifier:
+        current_settings_file = current_instance_settings_file()
+        logger.info(f"    current instance settings {current_settings_file} deleted")
+        current_settings_file.unlink()
+        settings._instance_settings = None
     delete_cache(isettings.storage.cache_dir)
     logger.info(
         f"    consider deleting your stored data manually: {isettings.storage.root}"

@@ -17,7 +17,7 @@ def load_instance_settings(instance_settings_file: Optional[Path] = None):
     if instance_settings_file is None:
         instance_settings_file = current_instance_settings_file()
     if not instance_settings_file.exists():
-        raise RuntimeError("Instance not available locally. Call `lndb init`.")
+        raise RuntimeError("No instance is loaded! Call `lamin init` or `lamin load`")
     try:
         settings_store = InstanceSettingsStore(_env_file=instance_settings_file)
     except ValidationError:

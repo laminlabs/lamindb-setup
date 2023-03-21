@@ -40,18 +40,19 @@ def persist_check_reload_schema(isettings: InstanceSettings):
     # check whether we're switching from sqlite to postgres or vice versa
     # if we do, we need to re-import the schema modules to account for differences
     check = False
-    if settings._instance_exists:
-        if settings.instance.dialect == "sqlite" and isettings.dialect != "sqlite":
-            check = True
-        if settings.instance.dialect != "sqlite" and isettings.dialect == "sqlite":
-            check = True
+    from lnschema_core import User
+
+    if isettings.dialect != "sqlite" and User.__table__.schema is None:
+        check = True
+    if isettings.dialect == "sqlite" and User.__table__.schema is not None:
+        check = True
     isettings._persist()
     if check:
         load_schema(isettings, reload=True)
 
 
 ERROR_SQLITE_CACHE = """
-Your cached local SQLite file still exists, while your cloud SQLite file was deleted.
+Your cached local SQLite file exists, while your cloud SQLite file ({}) doesn't.
 Either delete your cache ({}) or add it back to the cloud (if delete was accidental).
 """
 
@@ -116,10 +117,11 @@ def init(
             not isettings._sqlite_file.exists()
             and isettings._sqlite_file_local.exists()
         ):
-            logger.error(
-                ERROR_SQLITE_CACHE.format(settings.instance._sqlite_file_local)
+            raise RuntimeError(
+                ERROR_SQLITE_CACHE.format(
+                    isettings._sqlite_file, isettings._sqlite_file_local
+                )
             )
-            return "remote-sqlite-deleted"
 
     # for remote instance, a lot of validation happens in the next function
     # if this errors, the whole function errors
