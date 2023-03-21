@@ -40,12 +40,11 @@ def persist_check_reload_schema(isettings: InstanceSettings):
     # check whether we're switching from sqlite to postgres or vice versa
     # if we do, we need to re-import the schema modules to account for differences
     check = False
-    from lnschema_core._core import SQLModel
-    from lnschema_core.dev import sqlmodel
+    from lnschema_core import User
 
-    if isettings.dialect != "sqlite" and SQLModel == sqlmodel.SQLModelPrefix:
+    if isettings.dialect != "sqlite" and User.__table__.schema is None:
         check = True
-    if isettings.dialect == "sqlite" and SQLModel == sqlmodel.SQLModelModule:
+    if isettings.dialect == "sqlite" and User.__table__.schema is not None:
         check = True
     isettings._persist()
     if check:
