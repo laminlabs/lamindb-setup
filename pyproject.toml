@@ -44,9 +44,11 @@ dev = [
 ]
 test = [
     "lamindb>=0.34.0",
+    "lnschema_bionty",
+    "lnschema_wetlab",
     "pytest>=6.0",
     "pytest-cov",
-    "nbproject_test>=0.4.0",
+    "nbproject-test>=0.4.3",
 ]
 
 [project.scripts]
