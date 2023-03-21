@@ -12,6 +12,11 @@ def delete(instance_name: str):
     """Delete an instance."""
     logger.info(f"Deleting instance {settings.user.handle}/{instance_name}")
     settings_file = instance_settings_file(instance_name, settings.user.handle)
+    if not settings_file.exists():
+        raise RuntimeError(
+            "Instance settings do not exist locally. Did you provide a wrong instance"
+            " name? Could you try loading it?"
+        )
     isettings = load_instance_settings(settings_file)
 
     delete_settings(settings_file)
