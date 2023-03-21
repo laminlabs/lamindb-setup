@@ -19,12 +19,14 @@ def delete(instance_name: str):
     logger.info(
         f"    consider deleting your stored data manually: {isettings.storage.root}"
     )
+    if isettings.dialect == "sqlite":
+        if isettings._sqlite_file.exists():
+            isettings._sqlite_file.unlink()
+            logger.info("    deleted '.lndb' sqlite file")
+        else:
+            logger.info("    '.lndb' sqlite file does not exist")
     if isettings.is_remote:
         logger.info("    please manually delete your remote instance on lamin.ai")
-    else:
-        if isettings.dialect == "sqlite":
-            isettings._sqlite_file.unlink()
-            logger.info("    deleted sqlite file")
 
 
 def delete_cache(cache_dir: Path):
@@ -34,5 +36,8 @@ def delete_cache(cache_dir: Path):
 
 
 def delete_settings(settings_file: Path):
-    settings_file.unlink()
-    logger.info("    instance settings deleted")
+    if settings_file.exists():
+        settings_file.unlink()
+        logger.info("    instance settings '.env' deleted")
+    else:
+        logger.info("    instance settings '.env' do not exist locally")
