@@ -69,12 +69,10 @@ def load_schema(isettings: InstanceSettings):
         module = importlib.import_module(get_schema_module_name(schema_name))
         if schema_name == "core":
             reload = False
-            if isettings.dialect != "sqlite" and module.User.__table__.schema is None:
+            user_table = module.User.__table__
+            if isettings.dialect != "sqlite" and user_table.schema is None:
                 reload = True
-            if (
-                isettings.dialect == "sqlite"
-                and module.User.__table__.schema is not None
-            ):
+            if isettings.dialect == "sqlite" and user_table.schema is not None:
                 reload = True
         if reload:  # importlib.reload doesn't do the job! hence, manual below
             reload_orms(schema_name, module, isettings)
