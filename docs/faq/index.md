@@ -5,8 +5,9 @@
 
 edge-cases-login-init
 switch-environment
-migrate
-migrate-manage
 clone
 check-synchronization
+test-migrations-unit
+test-migrations-e2e
+manage-migrations
 ```
