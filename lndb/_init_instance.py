@@ -46,8 +46,8 @@ def persist_check_reload_schema(isettings: InstanceSettings):
             check = True
         if settings.instance.dialect != "sqlite" and isettings.dialect == "sqlite":
             check = True
-    # the following leads to inconsistent behavior when testing migrations
-    # I (Alex) don't yet understand why
+    # the following is problematic as it requires importing lnschema_core at a point
+    # when settings has not yet been written to disk
     # if isettings.dialect != "sqlite" and User.__table__.schema is None:
     #     check = True
     # if isettings.dialect == "sqlite" and User.__table__.schema is not None:
