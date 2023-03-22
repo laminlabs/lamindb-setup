@@ -36,7 +36,7 @@ def import_schema_lamin_root_api():
         lamindb.schema._import_schema()
 
 
-def persist_check_reload_schema(isettings: InstanceSettings):
+def persist_settings_load_schema(isettings: InstanceSettings):
     isettings._persist()
     load_schema(isettings)
 
@@ -128,7 +128,7 @@ def init(
         elif isinstance(result, str):
             raise RuntimeError(f"Creating instance on hub failed:\n{result}")
 
-    persist_check_reload_schema(isettings)
+    persist_settings_load_schema(isettings)
 
     # some legacy instances not yet registered in hub may actually exist
     # despite being not loadable above
