@@ -61,12 +61,21 @@ def reload_orms(schema_name, module, isettings):
             orm.__table__.name = orm.__table__.name.replace(f"{schema_name}.", "")
 
 
-def load_schema(isettings: InstanceSettings, reload: bool = False):
+def load_schema(isettings: InstanceSettings):
+    reload = False  # see comments below
     schema_names = ["core"] + list(isettings.schema)
     msg = "Loading schema modules: "
     for schema_name in schema_names:
         create_schema_if_not_exists(schema_name, isettings)
         module = importlib.import_module(get_schema_module_name(schema_name))
+        if schema_name == "core":
+            # here, we determine whether we have to reload the ORMs
+            # it's necessary if switching from or to sqlite
+            user_table = module.User.__table__
+            if isettings.dialect != "sqlite" and user_table.schema is None:
+                reload = True
+            if isettings.dialect == "sqlite" and user_table.schema is not None:
+                reload = True
         if reload:  # importlib.reload doesn't do the job! hence, manual below
             reload_orms(schema_name, module, isettings)
         msg += f"{schema_name}=={module.__version__} "
