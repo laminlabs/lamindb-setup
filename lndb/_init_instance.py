@@ -37,6 +37,11 @@ def import_schema_lamin_root_api():
 
 
 def persist_settings_load_schema(isettings: InstanceSettings):
+    # The reason for why the following two calls should always come together
+    # is that the schema modules need information about what type of database
+    # (sqlite or not) is mounted at time of importing the module!
+    # hence, the schema modules look for the settings file that is generated
+    # by calling isettings._persist()
     isettings._persist()
     load_schema(isettings)
 
