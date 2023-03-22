@@ -3,7 +3,7 @@
 <!-- prettier-ignore -->
 Name | PR | Developer | Date | Version
 --- | --- | --- | --- | ---
-🚸 Also delete current instance settings | [329](https://github.com/laminlabs/lndb/pull/329) | [falexwolf](https://github.com/falexwolf) | 2023-03-21 |
+🚸 Also delete current instance settings | [329](https://github.com/laminlabs/lndb/pull/329) | [falexwolf](https://github.com/falexwolf) | 2023-03-21 | 0.37.6
 📝 Prettify init instance guide | [331](https://github.com/laminlabs/lndb/pull/331) | [falexwolf](https://github.com/falexwolf) | 2023-03-21 |
 💚 Fix CI | [330](https://github.com/laminlabs/lndb/pull/330) | [sunnyosun](https://github.com/sunnyosun) | 2023-03-21 | 0.37.5
 ⬆️ Migrate to bionty 0.9 | [328](https://github.com/laminlabs/lndb/pull/328) | [sunnyosun](https://github.com/sunnyosun) | 2023-03-20 | 0.37.5rc1
