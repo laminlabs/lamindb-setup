@@ -42,10 +42,16 @@ def persist_check_reload_schema(isettings: InstanceSettings):
     check = False
     from lnschema_core import User
 
-    if isettings.dialect != "sqlite" and User.__table__.schema is None:
-        check = True
-    if isettings.dialect == "sqlite" and User.__table__.schema is not None:
-        check = True
+    if settings._instance_exists:  # this is needed prior to import
+        if settings.instance.dialect == "sqlite" and isettings.dialect != "sqlite":
+            check = True
+        if settings.instance.dialect != "sqlite" and isettings.dialect == "sqlite":
+            check = True
+    else:  # this alone leads to inconsistent behavior when testing migrations
+        if isettings.dialect != "sqlite" and User.__table__.schema is None:
+            check = True
+        if isettings.dialect == "sqlite" and User.__table__.schema is not None:
+            check = True
     isettings._persist()
     if check:
         load_schema(isettings, reload=True)
