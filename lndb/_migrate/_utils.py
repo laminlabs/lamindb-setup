@@ -3,6 +3,7 @@ from pathlib import Path
 from typing import Optional
 
 from lndb.test import get_package_name
+from lndb.test._migrations_unit import get_migration_id_from_scripts
 
 from ..dev._settings_instance import InstanceSettings
 from ..dev._setup_schema import get_schema_module_name
@@ -38,6 +39,27 @@ def generate_alembic_ini(
             .replace("{package_name}/migrations", f"{package_name}/migrations")
         )
         _writefile(migrations_path.parent / "alembic.ini", content)
+
+
+def modify_migration_id_in__init__(package_name) -> None:
+    """Rewrite the migration_id in the __init__.py of the schema module."""
+    package = importlib.import_module(package_name)
+    filepath = str(package.__file__)
+
+    with open(filepath) as f:
+        content = f.read()
+
+    # get line with migration id
+    for line in content.split("\n"):
+        if line.startswith("_migration = "):
+            current_line = line
+            break
+
+    migration_id = get_migration_id_from_scripts(package_name)
+    content = content.replace(current_line, f'_migration = "{migration_id}"')
+
+    with open(filepath, "w") as f:
+        f.write(content)
 
 
 def modify_alembic_ini(

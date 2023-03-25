@@ -9,6 +9,7 @@ from ._utils import (
     generate_module_files,
     get_package_info,
     modify_alembic_ini,
+    modify_migration_id_in__init__,
     set_alembic_logging_level,
 )
 
@@ -74,6 +75,8 @@ class migrate:
         else:
             cwd = None
         process = run(command, shell=True, cwd=cwd)
+
+        modify_migration_id_in__init__(package_name)
 
         if process.returncode == 0:
             logger.success(f"Successfully generated migration {version}.")
