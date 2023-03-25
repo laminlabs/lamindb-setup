@@ -15,9 +15,12 @@ from ._testdb import (
 
 
 def clone_schema(
-    schema, src_conn, src_metadata, tgt_conn, tgt_metadata, tgt_engine, depth: int
+    schema, src_conn, src_metadata, tgt_conn, tgt_metadata, tgt_engine, n_rows: int
 ):
-    # switch off foreign key integrity
+    n_rows_test = n_rows
+    # !!! switch off foreign key integrity !!!
+    # this is needed because we haven't yet figured out a way to clone connected records
+    # might never be needed because we don't want to apply this to large databases
     if src_conn.dialect.name == "postgresql":
         tgt_conn.execute(sa.sql.text("SET session_replication_role = replica;"))
 
@@ -43,8 +46,8 @@ def clone_schema(
                     select([func.count(pk_col)]).select_from(src_table)
                 ).scalar()
             )
-        print(f"{table.name} ({n_rows})", end=", ")
-        offset = max(n_rows - depth, 0)
+        offset = max(n_rows - n_rows_test, 0)
+        print(f"{table.name} ({n_rows-offset}/{n_rows})", end=", ")
         rows = src_conn.execute(src_table.select().offset(offset))
         values = [row._asdict() for index, row in enumerate(rows)]
         if len(values) > 0:
@@ -54,7 +57,7 @@ def clone_schema(
 
 def clone_test(
     src_settings: Optional[InstanceSettings] = None,
-    depth: int = 10,
+    n_rows: int = 10000,
     supabase: bool = False,
 ):
     """Clone from current instance to a test instance."""
@@ -104,7 +107,7 @@ def clone_test(
         if src_engine.dialect.name != "sqlite":
             print(f"\nSchema: {schema}")
         clone_schema(
-            schema, src_conn, src_metadata, tgt_conn, tgt_metadata, tgt_engine, depth
+            schema, src_conn, src_metadata, tgt_conn, tgt_metadata, tgt_engine, n_rows
         )
 
     return tgt_db
