@@ -3,6 +3,7 @@
 <!-- prettier-ignore -->
 Name | PR | Developer | Date | Version
 --- | --- | --- | --- | ---
+🎨 Improve e2e migrations testing | [335](https://github.com/laminlabs/lndb/pull/335) | [falexwolf](https://github.com/falexwolf) | 2023-03-25 |
 🎨 Improve switching logic from and to sqlite | [334](https://github.com/laminlabs/lndb/pull/334) | [falexwolf](https://github.com/falexwolf) | 2023-03-22 | 0.37.9
 ✅ Add tests for migration unit tests | [333](https://github.com/laminlabs/lndb/pull/333) | [falexwolf](https://github.com/falexwolf) | 2023-03-22 | 0.37.8
 🚑 Restore previous criterion to test postgres vs sqlite | [332](https://github.com/laminlabs/lndb/pull/332) | [falexwolf](https://github.com/falexwolf) | 2023-03-22 | 0.37.7
