@@ -12,6 +12,8 @@ from lndb.dev import setup_local_test_sqlite_file
 from lndb.dev._clone import clone_test
 from lndb.dev._settings_instance import InstanceSettings
 
+# from ._migrations_unit import model_definitions_match_ddl
+
 
 def migrate_clones(
     schema_package: str, n_instances: Optional[int] = None, dialect_name="sqlite"
@@ -37,12 +39,12 @@ def migrate_clones(
     results = []
     for instance in run_instances.iloc[:n_instances]:
         logger.info(f"Testing: {instance}")
-        result = migrate_clone(instance)
+        result = migrate_clone(schema_package, instance)
         results.append(result)
     return results
 
 
-def migrate_clone(instance: str, n_rows: int = 10000):
+def migrate_clone(schema_package: str, instance: str, n_rows: int = 10000):
     """instance takes the weird format defined in lnhub_rest._instances."""
     db, storage_root, name = None, None, None
     for prefix in {"s3://", "gc://"}:
@@ -67,6 +69,7 @@ def migrate_clone(instance: str, n_rows: int = 10000):
         result = init(storage=storage_test, _migrate=True)
     else:
         result = init(db=connection_string, storage=storage_root, _migrate=True)
+        # model_definitions_match_ddl(schema_package, db=connection_string)
     logger.info(result)
     if instance.startswith("postgresql"):
         run("docker stop pgtest && docker rm pgtest", shell=True)
