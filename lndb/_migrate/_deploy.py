@@ -60,15 +60,15 @@ def check_deploy_migration(
         if current_version not in versions and len(versions) > 0:
             if vparse(current_version) < vparse(versions[-1]):  # type: ignore
                 raise RuntimeError(
-                    "You are trying to connect to a DB that already runs"
-                    f" v{versions[-1]} of {schema_module_name} but you only have"
+                    f"You are trying to connect to a DB ({isettings.identifier}) that"
+                    f" runs v{versions[-1]} of {schema_module_name} but you only have"
                     f" v{current_version} installed.\nPlease run `pip install"
                     f" {schema_module_name}=={versions[-1]}`, or install the latest"
                     " schema module version from GitHub."
                 )
-            logger.info(
+            logger.warning(
                 f"Schema {schema_name} v{versions[-1]} is not up to date"
-                f" with {current_version}."
+                f" with {current_version}"
             )
             # if migration is confirmed, continue
             if migrate_confirmed:
@@ -76,7 +76,7 @@ def check_deploy_migration(
             # run a confirmation dialogue outside a pytest run
             elif "PYTEST_CURRENT_TEST" not in os.environ:
                 logger.warning(
-                    "Run the command in the shell to respond to the following dialogue."
+                    "Run the command in the shell to respond to the following dialogue"
                 )
 
                 response = input(
@@ -86,7 +86,7 @@ def check_deploy_migration(
 
                 if response != "y":
                     logger.warning(
-                        f"Your db does not match the latest version of schema {schema_name}.\n"  # noqa
+                        f"Instance {isettings.identifier} does not match the latest version of schema {schema_name}.\n"  # noqa
                         "For production use, either install"
                         f" {schema_module_name} {versions[-1]} "
                         f"or migrate the database to {current_version}."
@@ -148,7 +148,7 @@ def deploy(
     )
 
     if process.returncode == 0:
-        logger.success(f"Successfully migrated schema {schema_name} to v{version}.")
+        logger.success(f"Migrated schema {schema_name} to v{version}")
         # The following call will also update the sqlite file in the cloud.
         insert.version(
             schema_module=schema_module,
