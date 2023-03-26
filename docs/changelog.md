@@ -3,8 +3,8 @@
 <!-- prettier-ignore -->
 Name | PR | Developer | Date | Version
 --- | --- | --- | --- | ---
-💚 Improve e2e migrations guide | [337](https://github.com/laminlabs/lndb/pull/337) | [falexwolf](https://github.com/falexwolf) | 2023-03-26 |
-🚸 Update `migration_id` in `__init__.py` of schema modules | [336](https://github.com/laminlabs/lndb/pull/336) | [falexwolf](https://github.com/falexwolf) | 2023-03-25 |
+💚 Improve e2e migrations guide | [337](https://github.com/laminlabs/lndb/pull/337) | [falexwolf](https://github.com/falexwolf) | 2023-03-26 | 0.38.0
+🚸 Update `_migration` in `__init__.py` of schema modules | [336](https://github.com/laminlabs/lndb/pull/336) | [falexwolf](https://github.com/falexwolf) | 2023-03-25 |
 🎨 Improve e2e migrations testing | [335](https://github.com/laminlabs/lndb/pull/335) | [falexwolf](https://github.com/falexwolf) | 2023-03-25 |
 🎨 Improve switching logic from and to sqlite | [334](https://github.com/laminlabs/lndb/pull/334) | [falexwolf](https://github.com/falexwolf) | 2023-03-22 | 0.37.9
 ✅ Add tests for migration unit tests | [333](https://github.com/laminlabs/lndb/pull/333) | [falexwolf](https://github.com/falexwolf) | 2023-03-22 | 0.37.8
