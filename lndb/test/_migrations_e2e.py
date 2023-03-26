@@ -51,7 +51,7 @@ def migrate_clones(
             if instance.startswith(prefix):
                 db = None
                 name = instance.split("/")[-1].replace(".lndb", "")
-                storage_root = "".join(instance.split("/")[:-1])
+                storage_root = prefix + name
         if instance.startswith("postgresql"):
             db, name, storage_root = instance, "pgtest", "pgtest"
         logger.info(f"Testing: {instance}")
