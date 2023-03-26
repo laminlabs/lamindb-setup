@@ -5,8 +5,7 @@ from typing import Optional, Union
 import fsspec
 from dateutil.parser import isoparse  # type: ignore
 from lamin_logger import logger
-
-from ._upath_ext import UPath
+from lndb_storage import UPath
 
 EXPIRATION_TIME = 1800  # 30 min
 
