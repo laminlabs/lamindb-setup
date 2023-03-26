@@ -13,7 +13,7 @@ dependencies = [
     "laminci>=0.3.0",  # disentangle over time
     "lnschema_core>=0.28.0",
     "lamin_logger>=0.2.3",
-    "lndb_storage>=0.1.2",
+    "lndb_storage==0.2rc1",
     "sqlmodel>=0.0.8",
     "appdirs",
     "supabase",
