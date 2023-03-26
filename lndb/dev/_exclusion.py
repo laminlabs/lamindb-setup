@@ -5,7 +5,7 @@ from typing import Optional, Union
 import fsspec
 from dateutil.parser import isoparse  # type: ignore
 from lamin_logger import logger
-from lndb_storage import UPath
+from lndb_storage import UPath, _infer_filesystem
 
 EXPIRATION_TIME = 1800  # 30 min
 
@@ -30,20 +30,10 @@ class Locker:
 
         self.user = user_id
 
-        root = storage_root
-        self.root = root
+        self.root = storage_root
+        self.fs, _ = _infer_filesystem(storage_root)
 
-        if isinstance(root, UPath):
-            self.fs = root.fs
-        else:
-            protocol = fsspec.utils.get_protocol(str(root))
-            if protocol == "s3":
-                fs_kwargs = {"cache_regions": True}
-            else:
-                fs_kwargs = {}
-            self.fs = fsspec.filesystem(protocol, **fs_kwargs)
-
-        exclusion_path = root / "exclusion"
+        exclusion_path = storage_root / "exclusion"
         self.mapper = fsspec.FSMap(str(exclusion_path), self.fs, create=True)
 
         priorities_path = str(exclusion_path / "priorities")
