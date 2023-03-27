@@ -1,3 +1,4 @@
-# lndb: Manage LaminDB instances
+# lndb: Setup LaminDB
 
-Read the [docs](https://lamin.ai/docs/lndb-setup).
+- Stable user docs: [lamin.ai/docs/setup/](https://lamin.ai/docs/setup/)
+- Latest developer docs: [netlify](https://lndb-htry.netlify.app/docs/lndb/)
