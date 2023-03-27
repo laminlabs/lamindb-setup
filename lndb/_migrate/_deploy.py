@@ -36,11 +36,16 @@ def check_deploy_migration(
 
     status = []
     schema_names = ["core"] + list(isettings.schema)
+    # enforce order (if bionty is part of schema_names, it needs to come 2nd)
+    if "bionty" in schema_names:
+        schema_names.remove("bionty")
+        schema_names.insert(1, "bionty")
 
     for schema_name in schema_names:
         create_schema_if_not_exists(schema_name, isettings)
         schema_module_name = get_schema_module_name(schema_name)
         schema_module = importlib.import_module(schema_module_name)
+        # if _migration is None, there hasn't yet been any
         if schema_module._migration is None:
             status.append("migrate-unnecessary")
             continue

@@ -109,5 +109,6 @@ def clone_test(
         clone_schema(
             schema, src_conn, src_metadata, tgt_conn, tgt_metadata, tgt_engine, n_rows
         )
-
+    # print a new line
+    print("")
     return tgt_db
