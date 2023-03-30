@@ -18,7 +18,7 @@ dependencies = [
     "supabase",
     "python-dotenv",
     "erdiagram",
-    "alembic",
+    "alembic<1.10.0",  # test whether this broke CI
     "psycopg2-binary",
     "pyjwt",
     "natsort",
