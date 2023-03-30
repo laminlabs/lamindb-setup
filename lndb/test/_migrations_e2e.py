@@ -1,4 +1,3 @@
-import importlib
 from subprocess import run
 from typing import Optional
 
@@ -9,7 +8,6 @@ from lnhub_rest._init_instance import (
     validate_schema_arg,
     validate_storage_arg,
 )
-from packaging import version
 
 from lndb._init_instance import infer_instance_name, init
 from lndb._settings import settings
@@ -23,10 +21,6 @@ from lndb.dev._settings_instance import InstanceSettings
 def migrate_clones(
     schema_package: str, n_instances: Optional[int] = None, dialect_name="sqlite"
 ):
-    # auto-bump version to simulate state after release
-    schema_module = importlib.import_module(schema_package)
-    v = version.parse(schema_module.__version__)
-    schema_module.__version__ = f"{v.major}.{v.minor+1}.0"  # type: ignore  # noqa
     # get test instances
     # format is:
     # - "s3://lamin-site-assets/lamin-site-assets.lndb" (sqlite)

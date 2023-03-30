@@ -88,7 +88,8 @@ def check_schema_version_and_import(schema_name) -> ModuleType:
                         warning = ""
                     raise RuntimeError(
                         f"lamindb v{lamindb_version} needs"
-                        f" lnschema_{schema_name}{req.specifier} {warning}"
+                        f" lnschema_{schema_name}{req.specifier}, you have"
+                        f" {module_version} {warning}"
                     )
 
     try:
