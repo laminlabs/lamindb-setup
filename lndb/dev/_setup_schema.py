@@ -70,12 +70,15 @@ def check_schema_version_and_import(schema_name) -> ModuleType:
 
         schema_module_name = get_schema_module_name(schema_name)
 
+        lamindb_version = get_pip_version("lamindb")
+
         for req in requires("lamindb"):
             req = Requirement(req)
             if schema_module_name == req.name:
                 if not req.specifier.contains(module_version):
                     raise RuntimeError(
-                        f"lamindb needs lnschema_{schema_name}{req.specifier}"
+                        f"lamindb v{lamindb_version} needs"
+                        f" lnschema_{schema_name}{req.specifier}"
                     )
 
     try:
@@ -88,7 +91,7 @@ def check_schema_version_and_import(schema_name) -> ModuleType:
         check_version(module_version)
         raise import_error
 
-    # check_version(module_version, schema_versions)
+    check_version(module_version)
     return module
 
 
