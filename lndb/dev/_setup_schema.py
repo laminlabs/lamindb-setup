@@ -69,9 +69,9 @@ def check_schema_version_and_import(
     schema_name, *, schema_versions: Optional[Mapping] = None
 ) -> ModuleType:
     if schema_versions is None:
-        from lamindb.schema import _schema_versions
+        from lamindb.schema import _check_v
 
-        schema_versions = _schema_versions
+        schema_versions = _check_v
 
     def check_version(module_version):
         if schema_name in schema_versions:
