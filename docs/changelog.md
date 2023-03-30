@@ -3,7 +3,7 @@
 <!-- prettier-ignore -->
 Name | PR | Developer | Date | Version
 --- | --- | --- | --- | ---
-🚸 Check schema version upon init | [340](https://github.com/laminlabs/lndb/pull/340) | [falexwolf](https://github.com/falexwolf) | 2023-03-30 |
+🚸 Check schema version upon init | [340](https://github.com/laminlabs/lndb/pull/340) | [falexwolf](https://github.com/falexwolf) | 2023-03-30 | 0.39.0
 🚸 Enforce order of schema modules for migration | [339](https://github.com/laminlabs/lndb/pull/339) | [falexwolf](https://github.com/falexwolf) | 2023-03-27 | 0.38.1
 💚 Improve e2e migrations guide | [337](https://github.com/laminlabs/lndb/pull/337) | [falexwolf](https://github.com/falexwolf) | 2023-03-26 | 0.38.0
 🚸 Update `_migration` in `__init__.py` of schema modules | [336](https://github.com/laminlabs/lndb/pull/336) | [falexwolf](https://github.com/falexwolf) | 2023-03-25 |
