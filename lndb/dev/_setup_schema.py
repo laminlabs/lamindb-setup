@@ -1,9 +1,13 @@
 import importlib
+from types import ModuleType
+from typing import Mapping, Optional
 
 import sqlalchemy as sa
 import sqlmodel as sqm
+from importlib_metadata import version as get_pip_version
 from lamin_logger import logger
 from lnhub_rest._assets._schemas import get_schema_lookup_name, get_schema_module_name
+from packaging import version
 
 from ._db import insert
 from ._settings_instance import InstanceSettings
@@ -61,13 +65,45 @@ def reload_orms(schema_name, module, isettings):
             orm.__table__.name = orm.__table__.name.replace(f"{schema_name}.", "")
 
 
+def check_schema_version_and_import(
+    schema_name, *, schema_versions: Optional[Mapping] = None
+) -> ModuleType:
+    if schema_versions is None:
+        from lamindb.schema import _schema_versions
+
+        schema_versions = _schema_versions
+
+    def check_version(module_version):
+        if schema_name in schema_versions:
+            if version.parse(module_version) != version.parse(
+                schema_versions[schema_name]
+            ):
+                raise RuntimeError(
+                    "lamindb needs"
+                    f" lnschema_{schema_name}=={schema_versions[schema_name]}"
+                )
+
+    try:
+        # use live version if we can import
+        module = importlib.import_module(get_schema_module_name(schema_name))
+        module_version = module.__version__
+    except Exception as import_error:
+        # use pypi version instead
+        module_version = get_pip_version(get_schema_module_name(schema_name))
+        check_version(module_version)
+        raise import_error
+
+    check_version(module_version)
+    return module
+
+
 def load_schema(isettings: InstanceSettings):
     reload = False  # see comments below
     schema_names = ["core"] + list(isettings.schema)
     msg = "Loading schema modules: "
     for schema_name in schema_names:
         create_schema_if_not_exists(schema_name, isettings)
-        module = importlib.import_module(get_schema_module_name(schema_name))
+        module = check_schema_version_and_import(schema_name)
         if schema_name == "core":
             # here, we determine whether we have to reload the ORMs
             # it's necessary if switching from or to sqlite
