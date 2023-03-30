@@ -1,9 +1,13 @@
 import importlib
+from types import ModuleType
 
 import sqlalchemy as sa
 import sqlmodel as sqm
+from importlib_metadata import requires as importlib_requires
+from importlib_metadata import version as get_pip_version
 from lamin_logger import logger
 from lnhub_rest._assets._schemas import get_schema_lookup_name, get_schema_module_name
+from packaging.requirements import Requirement
 
 from ._db import insert
 from ._settings_instance import InstanceSettings
@@ -61,13 +65,54 @@ def reload_orms(schema_name, module, isettings):
             orm.__table__.name = orm.__table__.name.replace(f"{schema_name}.", "")
 
 
+def check_schema_version_and_import(schema_name) -> ModuleType:
+    def check_version(module_version):
+        schema_module_name = get_schema_module_name(schema_name)
+        lamindb_version = get_pip_version("lamindb")
+        for req in importlib_requires("lamindb"):
+            req = Requirement(req)
+            if schema_module_name == req.name:
+                if not req.specifier.contains(module_version):
+                    # it's currently important that we only import lamindb in
+                    # case of an error being raised
+                    import lamindb
+
+                    if lamindb.__version__ != lamindb_version:
+                        warning = (
+                            "\nWARNING: importlib_metadata.version('lamindb') gives"
+                            f" v{lamindb_version}, whereas `import lamindb` gives"
+                            f" v{lamindb.__version__}"
+                            "\nConsider `pip install lamindb=={lamindb_version}`"
+                        )
+                    else:
+                        warning = ""
+                    raise RuntimeError(
+                        f"lamindb v{lamindb_version} needs"
+                        f" lnschema_{schema_name}{req.specifier}, you have"
+                        f" {module_version} {warning}"
+                    )
+
+    try:
+        # use live version if we can import
+        module = importlib.import_module(get_schema_module_name(schema_name))
+        module_version = module.__version__
+    except Exception as import_error:
+        # use pypi version instead
+        module_version = get_pip_version(get_schema_module_name(schema_name))
+        check_version(module_version)
+        raise import_error
+
+    check_version(module_version)
+    return module
+
+
 def load_schema(isettings: InstanceSettings):
     reload = False  # see comments below
     schema_names = ["core"] + list(isettings.schema)
     msg = "Loading schema modules: "
     for schema_name in schema_names:
         create_schema_if_not_exists(schema_name, isettings)
-        module = importlib.import_module(get_schema_module_name(schema_name))
+        module = check_schema_version_and_import(schema_name)
         if schema_name == "core":
             # here, we determine whether we have to reload the ORMs
             # it's necessary if switching from or to sqlite

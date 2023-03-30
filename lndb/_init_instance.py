@@ -135,14 +135,16 @@ def init(
 
     persist_settings_load_schema(isettings)
 
-    # some legacy instances not yet registered in hub may actually exist
-    # despite being not loadable above
     message = None
     if not isettings._is_db_setup()[0]:
         setup_schema(isettings, settings.user)
         register(isettings, settings.user)
         write_bionty_versions(isettings)
     else:
+        # we're currently using this for testing migrations
+        # passing connection strings of databases that need to be tested
+        # for migrations
+        logger.warning("Your instance seems already set up, attempt load:")
         message = load_from_isettings(isettings, migrate=_migrate)
 
     import_schema_lamin_root_api()

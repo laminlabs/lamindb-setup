@@ -103,7 +103,7 @@ def load_from_isettings(
     logger.info(f"Loading instance: {isettings.owner}/{isettings.name}")
     persist_settings_load_schema(isettings)
     message = check_deploy_migration(
-        usettings=settings.user, isettings=isettings, migrate_confirmed=migrate
+        usettings=settings.user, isettings=isettings, attempt_deploy=migrate
     )
     if message == "migrate-failed":
         return message

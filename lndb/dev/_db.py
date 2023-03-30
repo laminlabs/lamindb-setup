@@ -90,6 +90,7 @@ class insert_if_not_exists:
 class insert:
     """Insert data."""
 
+    # this here actually first checks for existence
     @classmethod
     def version(
         cls,
@@ -116,8 +117,16 @@ class insert:
                 schema_module.dev if hasattr(schema_module, "dev") else schema_module
             )
             version_table = getattr(table_loc, f"version_{schema_id}")
-            session.add(version_table(v=version, migration=migration, user_id=user_id))
-            session.commit()
+            version_result = session.exec(
+                sqm.select(version_table).where(version_table.v == version)
+            ).first()
+            if version_result is None:
+                session.add(
+                    version_table(v=version, migration=migration, user_id=user_id)
+                )
+                session.commit()
+            else:
+                logger.info(f"{version} is already live in DB")
 
         if cloud_sqlite:
             settings.instance._update_cloud_sqlite_file()

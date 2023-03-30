@@ -22,7 +22,7 @@ def check_deploy_migration(
     *,
     usettings: UserSettings,
     isettings: InstanceSettings,
-    migrate_confirmed: Optional[bool] = None,
+    attempt_deploy: Optional[bool] = None,
 ):
     if "LAMIN_SKIP_MIGRATION" in os.environ:
         if os.environ["LAMIN_SKIP_MIGRATION"] == "true":
@@ -62,7 +62,11 @@ def check_deploy_migration(
 
         current_version = schema_module.__version__
 
-        if current_version not in versions and len(versions) > 0:
+        # attempt deploy as we want to test migrating the database
+        if attempt_deploy:
+            deploy_migration = True
+        # check whether we need to deploy based on version comparison
+        elif current_version not in versions and len(versions) > 0:
             if vparse(current_version) < vparse(versions[-1]):  # type: ignore
                 raise RuntimeError(
                     f"You are trying to connect to a DB ({isettings.identifier}) that"
@@ -76,10 +80,7 @@ def check_deploy_migration(
                 f" with {current_version}"
             )
             # if migration is confirmed, continue
-            if migrate_confirmed:
-                pass
-            # run a confirmation dialogue outside a pytest run
-            elif "PYTEST_CURRENT_TEST" not in os.environ:
+            if "PYTEST_CURRENT_TEST" not in os.environ:
                 logger.warning(
                     "Run the command in the shell to respond to the following dialogue"
                 )
@@ -104,6 +105,13 @@ def check_deploy_migration(
                 )
                 return "migrate-failed"
 
+            deploy_migration = True
+
+        else:
+            deploy_migration = False
+            status.append("migrate-unnecessary")
+
+        if deploy_migration:
             generate_module_files(
                 package_name=schema_module_name,
                 migrations_path=Path(schema_module.__file__).parent / "migrations",  # type: ignore  # noqa
@@ -118,8 +126,6 @@ def check_deploy_migration(
                 schema_module=schema_module,
             )
             status.append(migrate_status)
-        else:
-            status.append("migrate-unnecessary")
 
     locker.unlock()
 
