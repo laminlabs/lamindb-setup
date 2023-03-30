@@ -12,7 +12,7 @@ from lnhub_rest._init_instance import (
 )
 from pydantic import PostgresDsn
 
-from ._load_instance import load, load_from_isettings
+from ._load_instance import load
 from ._settings import settings
 from .dev import InstanceSettings, UPath
 from .dev._db import insert_if_not_exists, upsert
@@ -135,21 +135,18 @@ def init(
 
     persist_settings_load_schema(isettings)
 
-    # some legacy instances not yet registered in hub may actually exist
-    # despite being not loadable above
-    message = None
     if not isettings._is_db_setup()[0]:
         setup_schema(isettings, settings.user)
         register(isettings, settings.user)
         write_bionty_versions(isettings)
     else:
-        message = load_from_isettings(isettings, migrate=_migrate)
+        logger.warning("Your instance seems already set up.")
 
     import_schema_lamin_root_api()
     logger.success(
         f"Created & loaded instance: {settings.user.handle}/{isettings.name}"
     )
-    return message
+    return None
 
 
 def infer_instance_name(

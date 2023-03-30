@@ -1,13 +1,11 @@
 import importlib
 from types import ModuleType
-from typing import Mapping, Optional
 
 import sqlalchemy as sa
 import sqlmodel as sqm
 from importlib_metadata import version as get_pip_version
 from lamin_logger import logger
 from lnhub_rest._assets._schemas import get_schema_lookup_name, get_schema_module_name
-from packaging import version
 
 from ._db import insert
 from ._settings_instance import InstanceSettings
@@ -65,23 +63,20 @@ def reload_orms(schema_name, module, isettings):
             orm.__table__.name = orm.__table__.name.replace(f"{schema_name}.", "")
 
 
-def check_schema_version_and_import(
-    schema_name, *, schema_versions: Optional[Mapping] = None
-) -> ModuleType:
-    if schema_versions is None:
-        from lamindb.schema import _check_v
-
-        schema_versions = _check_v
-
+def check_schema_version_and_import(schema_name) -> ModuleType:
     def check_version(module_version):
-        if schema_name in schema_versions:
-            if version.parse(module_version) != version.parse(
-                schema_versions[schema_name]
-            ):
-                raise RuntimeError(
-                    "lamindb needs"
-                    f" lnschema_{schema_name}=={schema_versions[schema_name]}"
-                )
+        from importlib_metadata import requires
+        from packaging.requirements import Requirement
+
+        schema_module_name = get_schema_module_name(schema_name)
+
+        for req in requires("lamindb"):
+            req = Requirement(req)
+            if schema_module_name == req.name:
+                if not req.specifier.contains(module_version):
+                    raise RuntimeError(
+                        f"lamindb needs lnschema_{schema_name}{req.specifier}"
+                    )
 
     try:
         # use live version if we can import
@@ -93,7 +88,7 @@ def check_schema_version_and_import(
         check_version(module_version)
         raise import_error
 
-    check_version(module_version)
+    # check_version(module_version, schema_versions)
     return module
 
 
