@@ -73,13 +73,16 @@ def check_schema_version_and_import(schema_name) -> ModuleType:
             req = Requirement(req)
             if schema_module_name == req.name:
                 if not req.specifier.contains(module_version):
+                    # it's currently important that we only import lamindb in
+                    # case of an error being raised
                     import lamindb
 
                     if lamindb.__version__ != lamindb_version:
                         warning = (
-                            "\nWarning: importlib_metadata gives lamindb"
-                            f" v{lamindb_version}, whereas a lamindb import gives"
+                            "\nWARNING: importlib_metadata.version('lamindb') gives"
+                            f" v{lamindb_version}, whereas `import lamindb` gives"
                             f" v{lamindb.__version__}"
+                            "\nConsider `pip install lamindb=={lamindb_version}`"
                         )
                     else:
                         warning = ""
