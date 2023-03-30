@@ -3,9 +3,11 @@ from types import ModuleType
 
 import sqlalchemy as sa
 import sqlmodel as sqm
+from importlib_metadata import requires as importlib_requires
 from importlib_metadata import version as get_pip_version
 from lamin_logger import logger
 from lnhub_rest._assets._schemas import get_schema_lookup_name, get_schema_module_name
+from packaging.requirements import Requirement
 
 from ._db import insert
 from ._settings_instance import InstanceSettings
@@ -65,14 +67,9 @@ def reload_orms(schema_name, module, isettings):
 
 def check_schema_version_and_import(schema_name) -> ModuleType:
     def check_version(module_version):
-        from importlib_metadata import requires
-        from packaging.requirements import Requirement
-
         schema_module_name = get_schema_module_name(schema_name)
-
         lamindb_version = get_pip_version("lamindb")
-
-        for req in requires("lamindb"):
+        for req in importlib_requires("lamindb"):
             req = Requirement(req)
             if schema_module_name == req.name:
                 if not req.specifier.contains(module_version):
