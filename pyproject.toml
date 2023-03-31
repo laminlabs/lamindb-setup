@@ -8,7 +8,7 @@ authors = [{name = "Lamin Labs", email = "laminlabs@gmail.com"}]
 readme = "README.md"
 dynamic = ["version", "description"]
 dependencies = [
-    "lnhub_rest==0.7.0",
+    "lnhub_rest==0.7.1",
     # no other packages should be pinned
     "laminci>=0.3.0",  # disentangle over time
     "lnschema_core>=0.28.0",
