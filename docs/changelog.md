@@ -3,7 +3,7 @@
 <!-- prettier-ignore -->
 Name | PR | Developer | Date | Version
 --- | --- | --- | --- | ---
-⬆️ Upgrade lnhub-rest to 0.7.2 | [341](https://github.com/laminlabs/lndb/pull/341) | [falexwolf](https://github.com/falexwolf) | 2023-03-31 |
+⬆️ Upgrade lnhub-rest to 0.7.2 | [341](https://github.com/laminlabs/lndb/pull/341) | [falexwolf](https://github.com/falexwolf) | 2023-03-31 | 0.39.1
 :green_heart: Try to fix CI | [342](https://github.com/laminlabs/lndb/pull/342) | [falexwolf](https://github.com/falexwolf) | 2023-03-30 |
 🚸 Check schema version upon init | [340](https://github.com/laminlabs/lndb/pull/340) | [falexwolf](https://github.com/falexwolf) | 2023-03-30 | 0.39.0
 🚸 Enforce order of schema modules for migration | [339](https://github.com/laminlabs/lndb/pull/339) | [falexwolf](https://github.com/falexwolf) | 2023-03-27 | 0.38.1
