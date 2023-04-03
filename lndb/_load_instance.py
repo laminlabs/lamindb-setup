@@ -14,6 +14,7 @@ def load(
     *,
     migrate: Optional[bool] = None,
     _log_error_message: bool = True,
+    _access_token: Optional[str] = None,
 ) -> Optional[str]:
     """Load existing instance.
 
@@ -29,7 +30,9 @@ def load(
     """
     owner, name = get_owner_name_from_identifier(identifier)
 
-    hub_result = load_instance_from_hub(owner=owner, name=name)
+    hub_result = load_instance_from_hub(
+        owner=owner, name=name, _access_token=_access_token
+    )
     if not isinstance(hub_result, str):
         instance, storage = hub_result
         isettings = InstanceSettings(
