@@ -7,6 +7,7 @@ import sqlalchemy as sa
 from alembic import command
 from alembic.autogenerate.api import AutogenContext
 from alembic.autogenerate.render import _render_cmd_body
+from lamin_logger import logger
 from pytest_alembic.config import Config
 from pytest_alembic.executor import CommandExecutor, ConnectionExecutor
 from pytest_alembic.plugin.error import AlembicTestFailure
@@ -17,7 +18,17 @@ from lndb._delete import delete
 from lndb._init_instance import init
 
 
-def get_migration_config(schema_package_loc, *, target_metadata=None, **kwargs):
+def get_schema_package_dir(schema_package: str) -> Path:
+    if not Path(schema_package).exists():
+        module = importlib.import_module(schema_package)
+        schema_package_dir = Path(module.__file__).parent  # type: ignore
+    else:
+        schema_package_dir = Path(schema_package)
+    return schema_package_dir
+
+
+def get_migration_config(schema_package: str, *, target_metadata=None, **kwargs):
+    schema_package_dir = str(get_schema_package_dir(schema_package))
     if target_metadata is None:
         target_metadata = SQLModel.metadata
     target_metadata.naming_convention = {
@@ -28,8 +39,8 @@ def get_migration_config(schema_package_loc, *, target_metadata=None, **kwargs):
         "pk": "pk_%(table_name)s",
     }
     raw_config = dict(
-        config_file_name=f"{schema_package_loc}/alembic.ini",
-        script_location=f"{schema_package_loc}/migrations",
+        config_file_name=f"{schema_package_dir}/alembic.ini",
+        script_location=f"{schema_package_dir}/migrations",
         target_metadata=target_metadata,
         **kwargs,
     )
@@ -37,7 +48,7 @@ def get_migration_config(schema_package_loc, *, target_metadata=None, **kwargs):
     return config
 
 
-def get_migration_context(schema_package, db, include_schemas=None):
+def get_migration_context(schema_package: str, db: str, include_schemas=None):
     engine = sa.create_engine(db)
     config = get_migration_config(schema_package, include_schemas=include_schemas)
     command_executor = CommandExecutor.from_config(config)
@@ -48,15 +59,17 @@ def get_migration_context(schema_package, db, include_schemas=None):
     return migration_context
 
 
-def get_migration_id_from_scripts(schema_package):
+def get_migration_id_from_scripts(schema_package: str):
     config = get_migration_config(schema_package)
     output_buffer = io.StringIO()
+    schema_package_dir = str(get_schema_package_dir(schema_package))
     # get the id of the latest migration script
-    if Path(f"./{schema_package}/migrations/versions").exists():
+    if Path(f"{schema_package_dir}/migrations/versions").exists():
         command.heads(config.make_alembic_config(stdout=output_buffer))
         output = output_buffer.getvalue()
         migration_id = output.split(" ")[0]
     else:  # there is no scripts directory
+        logger.warning(f"'{schema_package_dir}/migrations/versions' does not exist")
         migration_id = ""
     return migration_id
 
@@ -65,7 +78,7 @@ def migration_id_is_consistent(package_name):
     # package_name is either a simple module (if schema is at the root)
     # or a relative path to the submodule that contains the schema,
     # e.g. ./lnhub_rest/schema
-    migration_id = get_migration_id_from_scripts(package_name)
+    migration_id_from_scripts = get_migration_id_from_scripts(package_name)
     if package_name.startswith("./"):
         _, root, relative = package_name.split("/")
         assert relative == "schema"
@@ -73,10 +86,11 @@ def migration_id_is_consistent(package_name):
     else:
         package = importlib.import_module(package_name)
     if package._migration is None:
-        manual_migration_id = ""
+        migration_id_from_import = ""
     else:
-        manual_migration_id = package._migration
-    return manual_migration_id == migration_id
+        migration_id_from_import = package._migration
+    print("import", migration_id_from_import, "scripts", migration_id_from_scripts)
+    return migration_id_from_import == migration_id_from_scripts
 
 
 def model_definitions_match_ddl(schema_package, db=None, dialect_name="sqlite"):
