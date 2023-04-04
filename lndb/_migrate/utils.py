@@ -90,8 +90,6 @@ def generate_module_files(
     migrations_templates_dir = Path(__file__).parent
 
     # ensures migrations/versions folder exists
-    if not (migrations_dir / "versions").exists:
-        raise RuntimeError(f"{migrations_dir} does not exist")
     (migrations_dir / "versions").mkdir(exist_ok=True, parents=True)
 
     if not (migrations_dir / "env.py").exists():
@@ -112,11 +110,12 @@ def generate_module_files(
             migrations_dir / "script.py.mako",
         )
 
-    if not (migrations_dir.parent / "alembic.ini").exists():
+    # this is at the package_dir level, not at the migrations_dir level
+    if not (package_dir / "alembic.ini").exists():
         content = (
             _readfile(migrations_templates_dir / "alembic.ini")
             .replace("[{schema_id}]", f"[{schema_id}]")
-            .replace("{package_dir}/migrations", f"{str(package_dir)}/migrations")
+            .replace("{package_name}/migrations", f"{str(package_dir)}/migrations")
         )
         _writefile(migrations_dir.parent / "alembic.ini", content)
 
