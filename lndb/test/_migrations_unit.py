@@ -16,11 +16,11 @@ from sqlmodel import SQLModel
 
 from lndb._delete import delete
 from lndb._init_instance import init
-from lndb.dev.env import get_package_dir
+from lndb._migrate import generate_module_files, get_schema_package_info
 
 
-def get_migration_config(schema_package: str, *, target_metadata=None, **kwargs):
-    schema_package_dir = str(get_package_dir(schema_package))
+def get_migration_config(package_name: str, *, target_metadata=None, **kwargs):
+    schema_package_dir = str(get_schema_package_info(package_name)[0])
     if target_metadata is None:
         target_metadata = SQLModel.metadata
     target_metadata.naming_convention = {
@@ -40,9 +40,9 @@ def get_migration_config(schema_package: str, *, target_metadata=None, **kwargs)
     return config
 
 
-def get_migration_context(schema_package: str, db: str, include_schemas=None):
+def get_migration_context(package_name: str, db: str, include_schemas=None):
     engine = sa.create_engine(db)
-    config = get_migration_config(schema_package, include_schemas=include_schemas)
+    config = get_migration_config(package_name, include_schemas=include_schemas)
     command_executor = CommandExecutor.from_config(config)
     command_executor.configure(connection=engine)
     migration_context = MigrationContext.from_config(
@@ -51,10 +51,10 @@ def get_migration_context(schema_package: str, db: str, include_schemas=None):
     return migration_context
 
 
-def get_migration_id_from_scripts(schema_package: str):
-    config = get_migration_config(schema_package)
+def get_migration_id_from_scripts(package_name: str):
+    config = get_migration_config(package_name)
     output_buffer = io.StringIO()
-    schema_package_dir = str(get_package_dir(schema_package))
+    schema_package_dir = str(get_schema_package_info(package_name)[0])
     # get the id of the latest migration script
     if Path(f"{schema_package_dir}/migrations/versions").exists():
         command.heads(config.make_alembic_config(stdout=output_buffer))
@@ -84,7 +84,8 @@ def migration_id_is_consistent(package_name):
     return migration_id_from_import == migration_id_from_scripts
 
 
-def model_definitions_match_ddl(schema_package, db=None, dialect_name="sqlite"):
+def model_definitions_match_ddl(package_name, db=None, dialect_name="sqlite"):
+    generate_module_files(package_name)
     if db is None and dialect_name == "sqlite":
         db = "sqlite:///testdb/testdb.lndb"
         # need to call init to reload schema
@@ -103,7 +104,7 @@ def model_definitions_match_ddl(schema_package, db=None, dialect_name="sqlite"):
     # print(sa.inspect(e).get_indexes("core.dobject"))
     include_schemas = True if dialect_name == "postgresql" else False
     migration_context = get_migration_context(
-        schema_package, db, include_schemas=include_schemas
+        package_name, db, include_schemas=include_schemas
     )
     execute_model_definitions_match_ddl(migration_context)
     if dialect_name == "postgresql":
