@@ -16,19 +16,11 @@ from sqlmodel import SQLModel
 
 from lndb._delete import delete
 from lndb._init_instance import init
-
-
-def get_schema_package_dir(schema_package: str) -> Path:
-    if not Path(schema_package).exists():
-        module = importlib.import_module(schema_package)
-        schema_package_dir = Path(module.__file__).parent  # type: ignore
-    else:
-        schema_package_dir = Path(schema_package)
-    return schema_package_dir
+from lndb.dev.env import get_package_dir
 
 
 def get_migration_config(schema_package: str, *, target_metadata=None, **kwargs):
-    schema_package_dir = str(get_schema_package_dir(schema_package))
+    schema_package_dir = str(get_package_dir(schema_package))
     if target_metadata is None:
         target_metadata = SQLModel.metadata
     target_metadata.naming_convention = {
@@ -62,7 +54,7 @@ def get_migration_context(schema_package: str, db: str, include_schemas=None):
 def get_migration_id_from_scripts(schema_package: str):
     config = get_migration_config(schema_package)
     output_buffer = io.StringIO()
-    schema_package_dir = str(get_schema_package_dir(schema_package))
+    schema_package_dir = str(get_package_dir(schema_package))
     # get the id of the latest migration script
     if Path(f"{schema_package_dir}/migrations/versions").exists():
         command.heads(config.make_alembic_config(stdout=output_buffer))
@@ -89,7 +81,6 @@ def migration_id_is_consistent(package_name):
         migration_id_from_import = ""
     else:
         migration_id_from_import = package._migration
-    print("import", migration_id_from_import, "scripts", migration_id_from_scripts)
     return migration_id_from_import == migration_id_from_scripts
 
 

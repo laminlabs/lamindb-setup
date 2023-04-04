@@ -9,8 +9,9 @@ from ..dev._settings_instance import InstanceSettings
 from ..dev._setup_schema import get_schema_module_name
 
 
+# this is a special function for schema packages
 def get_package_info(
-    schema_root: Optional[Path] = None, package_name: Optional[str] = None
+    *, schema_root: Optional[Path] = None, package_name: Optional[str] = None
 ):
     if package_name is None:
         package_name = get_package_name(schema_root)
@@ -108,6 +109,8 @@ def generate_module_files(
     _migrations_path = Path(__file__).parent
 
     # ensures migrations/versions folder exists
+    if not (migrations_path / "versions").exists:
+        raise RuntimeError(f"{migrations_path} does not exist")
     (migrations_path / "versions").mkdir(exist_ok=True, parents=True)
 
     if not (migrations_path / "env.py").exists():
