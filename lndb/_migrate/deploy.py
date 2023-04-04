@@ -11,11 +11,11 @@ from lamin_logger import logger
 from natsort import natsorted
 from packaging.version import parse as vparse
 
-from ..dev._db import insert
-from ..dev._settings_instance import InstanceSettings
-from ..dev._settings_user import UserSettings
-from ..dev._setup_schema import create_schema_if_not_exists, get_schema_module_name
-from ._utils import generate_module_files, modify_alembic_ini
+from lndb._migrate.utils import generate_module_files, modify_alembic_ini
+from lndb.dev._db import insert
+from lndb.dev._settings_instance import InstanceSettings
+from lndb.dev._settings_user import UserSettings
+from lndb.dev._setup_schema import create_schema_if_not_exists, get_schema_module_name
 
 
 def check_deploy_migration(

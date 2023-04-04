@@ -1,44 +1,22 @@
 import importlib
+import shutil
 from pathlib import Path
-from typing import Optional
-
-from lndb.test import get_package_name
-from lndb.test._migrations_unit import get_migration_id_from_scripts
+from typing import Optional, Tuple
 
 from ..dev._settings_instance import InstanceSettings
 from ..dev._setup_schema import get_schema_module_name
 
 
-def get_package_info(
-    schema_root: Optional[Path] = None, package_name: Optional[str] = None
-):
-    if package_name is None:
-        package_name = get_package_name(schema_root)
+# this is a special function for schema packages
+def get_schema_package_info(package_name: str) -> Tuple[Path, Path, str]:
     package = importlib.import_module(package_name)
     if not hasattr(package, "_schema_id"):
         package_name = f"{package_name}.schema"
         package = importlib.import_module(package_name)
     schema_id = getattr(package, "_schema_id")
-    migrations_path = Path(package.__file__).parent / "migrations"  # type:ignore
-    return package_name, migrations_path, schema_id
-
-
-def generate_alembic_ini(
-    package_name: str,
-    migrations_path: Optional[Path] = None,
-    schema_id: Optional[str] = None,
-):
-    if migrations_path is None:
-        _, migrations_path, schema_id = get_package_info(package_name=package_name)
-    _migrations_path = Path(__file__).parent
-
-    if not (migrations_path.parent / "alembic.ini").exists():
-        content = (
-            _readfile(_migrations_path / "alembic.ini")
-            .replace("[{schema_id}]", f"[{schema_id}]")
-            .replace("{package_name}/migrations", f"{package_name}/migrations")
-        )
-        _writefile(migrations_path.parent / "alembic.ini", content)
+    package_dir = Path(package.__file__).parent  # type: ignore
+    migrations_dir = package_dir / "migrations"
+    return package_dir, migrations_dir, schema_id
 
 
 def modify_migration_id_in__init__(package_name) -> None:
@@ -54,6 +32,8 @@ def modify_migration_id_in__init__(package_name) -> None:
         if line.startswith("_migration = "):
             current_line = line
             break
+
+    from lndb.test._migrations_unit import get_migration_id_from_scripts
 
     migration_id = get_migration_id_from_scripts(package_name)
     content = content.replace(current_line, f'_migration = "{migration_id}"')
@@ -100,19 +80,21 @@ def modify_alembic_ini(
 
 def generate_module_files(
     package_name: str,
-    migrations_path: Optional[Path] = None,
+    # the following two are for backward compat only!
+    # they are not being used
+    migrations_path: Optional[Path] = None,  # noqa
     schema_id: Optional[str] = None,
 ):
-    if migrations_path is None:
-        _, migrations_path, schema_id = get_package_info(package_name=package_name)
-    _migrations_path = Path(__file__).parent
+    # this calls ensures that package_name is the only used argument here
+    package_dir, migrations_dir, schema_id = get_schema_package_info(package_name)
+    migrations_templates_dir = Path(__file__).parent
 
     # ensures migrations/versions folder exists
-    (migrations_path / "versions").mkdir(exist_ok=True, parents=True)
+    (migrations_dir / "versions").mkdir(exist_ok=True, parents=True)
 
-    if not (migrations_path / "env.py").exists():
+    if not (migrations_dir / "env.py").exists():
         content = (
-            _readfile(_migrations_path / "env.py")
+            _readfile(migrations_templates_dir / "env.py")
             .replace("_schema_id = None\n", "")
             .replace("# from {package_name} import *", f"from {package_name} import *")
             .replace(
@@ -120,22 +102,26 @@ def generate_module_files(
                 f"from {package_name} import _schema_id",
             )
         )
-        _writefile(migrations_path / "env.py", content)
+        _writefile(migrations_dir / "env.py", content)
 
-    if not (migrations_path / "script.py.mako").exists():
-        import shutil
-
+    if not (migrations_dir / "script.py.mako").exists():
         shutil.copyfile(
-            _migrations_path / "script.py.mako", migrations_path / "script.py.mako"
+            migrations_templates_dir / "script.py.mako",
+            migrations_dir / "script.py.mako",
         )
 
-    generate_alembic_ini(
-        package_name=package_name, migrations_path=migrations_path, schema_id=schema_id
-    )
+    # this is at the package_dir level, not at the migrations_dir level
+    if not (package_dir / "alembic.ini").exists():
+        content = (
+            _readfile(migrations_templates_dir / "alembic.ini")
+            .replace("[{schema_id}]", f"[{schema_id}]")
+            .replace("{package_dir}/migrations", f"{str(migrations_dir)}")
+        )
+        _writefile(migrations_dir.parent / "alembic.ini", content)
 
 
-def set_alembic_logging_level(migrations_path: Path, level="INFO"):
-    alembic_ini_path = migrations_path.parent / "alembic.ini"
+def set_alembic_logging_level(migrations_dir: Path, level="INFO"):
+    alembic_ini_path = migrations_dir.parent / "alembic.ini"
     text = _readfile(alembic_ini_path)
     current_level = text.split("[logger_alembic]\n")[1].split("\n")[0]
     new_level = f"level = {level}"
