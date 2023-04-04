@@ -14,7 +14,8 @@ from lndb._migrate.utils import (
 )
 
 push_instruction = """\
-Please push your changes to a new remote branch and open a PR.
+Please push your changes to a new remote branch, open a PR, and wait for CI.
+
 Inspect the bottom of the output of the CI step 'Build'
 and add the code to the migration script.
 
@@ -22,7 +23,7 @@ It will look like the following:
     op.drop_column('biosample', 'description', schema='wetlab')
     op.add_column('experiment', sa.Column('donor_id', sqlmodel.sql.sqltypes.AutoString(), schema="wetlab")  # noqa
 
-Add renames manually like so:
+Beware to account for renaming columns and tables manually, e.g.:
     op.alter_column("mytable", column_name="oldname", new_column_name="newname", schema="myschema")  # noqa
 
 """
@@ -69,7 +70,7 @@ class migrate:
             set_alembic_logging_level(migrations_dir, level="WARN")
             logger.info("Generate empty migration script.")
         command = (
-            f"alembic --config f{str(package_dir)}/alembic.ini --name"
+            f"alembic --config {str(package_dir)}/alembic.ini --name"
             f" {schema_id} revision --autogenerate -m '{version}'"
         )
         process = run(command, shell=True)

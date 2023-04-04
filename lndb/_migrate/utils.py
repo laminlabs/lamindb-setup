@@ -115,7 +115,7 @@ def generate_module_files(
         content = (
             _readfile(migrations_templates_dir / "alembic.ini")
             .replace("[{schema_id}]", f"[{schema_id}]")
-            .replace("{package_name}/migrations", f"{str(package_dir)}/migrations")
+            .replace("{package_dir}/migrations", f"{str(migrations_dir)}")
         )
         _writefile(migrations_dir.parent / "alembic.ini", content)
 
