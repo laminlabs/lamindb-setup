@@ -92,4 +92,5 @@ class migrate:
         else:
             print(process.stderr)
             logger.error("Generating migration failed.")
+            logger.info(f"Check content of {str(package_dir)}/alembic.ini")
             return "migrate-gen-failed"
