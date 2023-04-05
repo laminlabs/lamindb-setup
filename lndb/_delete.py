@@ -21,11 +21,14 @@ def delete(instance_name: str):
     isettings = load_instance_settings(settings_file)
 
     delete_settings(settings_file)
-    if instance_identifier == settings.instance.identifier:
-        current_settings_file = current_instance_settings_file()
-        logger.info(f"    current instance settings {current_settings_file} deleted")
-        current_settings_file.unlink()
-        settings._instance_settings = None
+    if settings._instance_exists:
+        if instance_identifier == settings.instance.identifier:
+            current_settings_file = current_instance_settings_file()
+            logger.info(
+                f"    current instance settings {current_settings_file} deleted"
+            )
+            current_settings_file.unlink()
+            settings._instance_settings = None
     delete_cache(isettings.storage.cache_dir)
     logger.info(
         f"    consider deleting your stored data manually: {isettings.storage.root}"
