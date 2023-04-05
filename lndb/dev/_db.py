@@ -6,9 +6,8 @@ from typing import Any, List, Optional, Union
 
 import sqlmodel as sqm
 from lamin_logger import logger
+from lndb_storage import UPath
 from sqlalchemy.exc import ProgrammingError
-
-from lndb.dev import UPath
 
 from .._settings import settings
 

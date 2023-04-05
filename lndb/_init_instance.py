@@ -3,6 +3,7 @@ from pathlib import Path
 from typing import Optional, Union
 
 from lamin_logger import logger
+from lndb_storage import UPath
 from lnhub_rest._add_storage import get_storage_region
 from lnhub_rest._init_instance import init_instance as init_instance_hub
 from lnhub_rest._init_instance import (
@@ -14,7 +15,7 @@ from pydantic import PostgresDsn
 
 from ._load_instance import load, load_from_isettings
 from ._settings import settings
-from .dev import InstanceSettings, UPath
+from .dev import InstanceSettings
 from .dev._db import insert_if_not_exists, upsert
 from .dev._docs import doc_args
 from .dev._setup_knowledge import write_bionty_versions

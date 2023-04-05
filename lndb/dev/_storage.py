@@ -3,8 +3,7 @@ from pathlib import Path
 from typing import Literal, Optional, Union
 
 from appdirs import AppDirs
-
-from ._upath_ext import UPath
+from lndb_storage import UPath
 
 DIRS = AppDirs("lamindb", "laminlabs")
 

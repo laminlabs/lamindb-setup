@@ -2,11 +2,12 @@ from pathlib import Path
 from typing import Union
 
 from lamin_logger import logger
+from lndb_storage import UPath
 from lnhub_rest._add_storage import add_storage as add_storage_hub
 
 from ._init_instance import register
 from ._settings import settings
-from .dev import UPath, deprecated
+from .dev import deprecated
 from .dev._settings_instance import InstanceSettings
 
 

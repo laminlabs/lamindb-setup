@@ -13,6 +13,7 @@ dependencies = [
     "laminci>=0.3.0",  # disentangle over time
     "lnschema_core>=0.28.0",
     "lamin_logger>=0.2.3",
+    "lndb_storage==0.2rc2",
     "sqlmodel>=0.0.8",
     "appdirs",
     "supabase",
@@ -24,12 +25,6 @@ dependencies = [
     "natsort",
     "pandas",
     "pytest_alembic==0.9.1",  # let's pin this as we use internals
-    "boto3==1.24.59", # for aiobotocore inside s3fs, to fix deps resolution
-    "botocore==1.27.59", # for aiobotocore inside s3fs, to fix deps resolution
-    "fsspec==2023.1.0",
-    "s3fs==2023.1.0",
-    "gcsfs==2023.1.0",
-    "universal_pathlib",
     "cloudpathlib",
     "python-dateutil",
 ]
@@ -43,7 +38,7 @@ dev = [
     "nox",
 ]
 test = [
-    "lamindb[bionty,wetlab]>=0.34.2",
+    "lamindb[bionty,wetlab]>=0.35.6",
     "pytest>=6.0",
     "pytest-cov",
     "nbproject-test>=0.4.3",
