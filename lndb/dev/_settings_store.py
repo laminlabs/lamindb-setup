@@ -1,14 +1,19 @@
 import os
 from pathlib import Path
 
+import lamin_logger as logger
 from pydantic import BaseSettings
 
 
 def get_settings_dir():
     if "LAMIN_BASE_SETTINGS_DIR" in os.environ:
-        return Path(os.environ["LAMIN_BASE_SETTINGS_DIR"]) / ".lndb"
+        settings_dir = Path(os.environ["LAMIN_BASE_SETTINGS_DIR"]) / ".lamin"
     else:
-        return Path.home() / ".lndb"
+        settings_dir = Path.home() / ".lamin"
+    if settings_dir.with_name(".lndb").exists():
+        settings_dir.with_name(".lndb").rename(settings_dir)
+        logger.info("Renamed legacy settings dir '.lndb' to '.lamin'")
+    return settings_dir
 
 
 # user_config_dir in appdirs is weird on MacOS!
