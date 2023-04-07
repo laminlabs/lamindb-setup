@@ -1,4 +1,5 @@
 import os
+import shutil
 from pathlib import Path
 
 import lamin_logger as logger
@@ -10,9 +11,16 @@ def get_settings_dir():
         settings_dir = Path(os.environ["LAMIN_BASE_SETTINGS_DIR"]) / ".lamin"
     else:
         settings_dir = Path.home() / ".lamin"
-    if settings_dir.with_name(".lndb").exists():
-        settings_dir.with_name(".lndb").rename(settings_dir)
-        logger.info("Renamed legacy settings dir '.lndb' to '.lamin'")
+    # deal with legacy settings directory
+    legacy_dir = settings_dir.with_name(".lndb")
+    if legacy_dir.exists():
+        if not settings_dir.exists():
+            legacy_dir.rename(settings_dir)
+            logger.info("Renamed legacy settings dir '.lndb' to '.lamin'")
+        else:
+            for path in legacy_dir.glob("*"):
+                shutil.copy(path, legacy_dir)
+            logger.info("Moved content of legacy settings dir '.lndb' to '.lamin'")
     return settings_dir
 
 
