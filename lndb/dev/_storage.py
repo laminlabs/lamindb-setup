@@ -9,8 +9,8 @@ from lndb_storage import UPath
 DIRS = AppDirs("lamindb", "laminlabs")
 
 
-class Storage:
-    """Manage cloud or local storage."""
+class StorageSettings:
+    """Manage cloud or local storage settings."""
 
     # we can't type instance_settings if we keep it in this separate file
     def __init__(
@@ -135,3 +135,7 @@ class Storage:
     def local_filepath(self, filekey: Union[Path, UPath, str]) -> Path:
         """Local (cache) filepath from filekey: `local(filepath(...))`."""
         return self.cloud_to_local(self.key_to_filepath(filekey))
+
+
+# below is for backward compat
+Storage = StorageSettings

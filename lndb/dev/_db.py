@@ -8,7 +8,7 @@ from lamin_logger import logger
 from sqlalchemy.exc import ProgrammingError
 
 from .._settings import settings
-from ._storage import Storage as StorageSettings
+from ._storage import StorageSettings
 
 
 class upsert:
