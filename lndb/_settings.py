@@ -1,9 +1,8 @@
 import os
 from typing import Union
 
-from .dev._settings_instance import InstanceSettings
-from .dev._settings_load import load_instance_settings, load_or_create_user_settings
-from .dev._settings_user import UserSettings
+from lndb.dev import InstanceSettings, Storage, UserSettings
+from lndb.dev._settings_load import load_instance_settings, load_or_create_user_settings
 
 
 # https://stackoverflow.com/questions/128573/using-property-on-classmethods/64738850#64738850
@@ -31,7 +30,7 @@ class settings:
 
     @classproperty
     def user(cls) -> UserSettings:
-        """User-related settings."""
+        """User."""
         if (
             cls._user_settings is None
             or cls._user_settings_env != get_env_name()  # noqa
@@ -44,7 +43,7 @@ class settings:
 
     @classproperty
     def instance(cls) -> InstanceSettings:
-        """Instance-related settings."""
+        """Instance."""
         if (
             cls._instance_settings is None
             or cls._instance_settings_env != get_env_name()  # noqa
@@ -52,6 +51,11 @@ class settings:
             cls._instance_settings = load_instance_settings()
             cls._instance_settings_env = get_env_name()
         return cls._instance_settings  # type: ignore
+
+    @classproperty
+    def storage(cls) -> Storage:
+        """Storage."""
+        return cls.instance.storage
 
     @classproperty
     def _instance_exists(cls):
