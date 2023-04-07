@@ -2,6 +2,7 @@ import os
 from pathlib import Path
 from typing import Literal, Optional, Union
 
+import sqlmodel as sqm
 from appdirs import AppDirs
 from lndb_storage import UPath
 
@@ -11,7 +12,13 @@ DIRS = AppDirs("lamindb", "laminlabs")
 class Storage:
     """Manage cloud or local storage."""
 
-    def __init__(self, root: Union[str, Path, UPath], region: Optional[str] = None):
+    # we can't type instance_settings if we keep it in this separate file
+    def __init__(
+        self,
+        root: Union[str, Path, UPath],
+        instance_settings,
+        region: Optional[str] = None,
+    ):
         if isinstance(root, UPath):
             root_path = root
         elif isinstance(root, Path):
@@ -23,6 +30,8 @@ class Storage:
             raise ValueError("root should be of type Union[str, Path, UPath].")
         self._root = root_path
         self._region = region
+        self._id: Optional[str] = None
+        self._instance_settings = instance_settings
 
     @staticmethod
     def _str_to_path(storage: str) -> Union[Path, UPath]:
@@ -37,6 +46,25 @@ class Storage:
         return storage_root
 
     @property
+    def id(self) -> str:
+        """Storage id."""
+        if self._id is None:
+            from lnschema_core import Storage
+
+            with sqm.Session(self._instance_settings.engine) as session:
+                # needs to have been registered before!
+                storage = session.exec(
+                    sqm.select(Storage).where(Storage.root == self.root_as_str)
+                ).one_or_none()
+            if storage is None:
+                raise RuntimeError(
+                    f"{self.root_as_str} wasn't registered in the db! "
+                    "Check ln.select(ln.Storage).all()"
+                )
+            self._id = storage.id
+        return self._id
+
+    @property
     def root(self) -> Union[Path, UPath]:
         """Root storage location."""
         return self._root
@@ -44,11 +72,7 @@ class Storage:
     @property
     def root_as_str(self) -> str:
         """Formatted root string."""
-        root_str = self.root.as_posix()
-        if root_str[-1] == "/":
-            return root_str[:-1]
-        else:
-            return root_str
+        return self.root.as_posix().rstrip("/")
 
     @property
     def cache_dir(
