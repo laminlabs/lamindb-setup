@@ -2,7 +2,7 @@ import os
 import shutil
 from pathlib import Path
 
-import lamin_logger as logger
+from lamin_logger import logger
 from pydantic import BaseSettings
 
 
@@ -17,11 +17,14 @@ def get_settings_dir():
     if legacy_dir.exists():
         if not settings_dir.exists():
             legacy_dir.rename(settings_dir)
-            logger.info("Renamed legacy settings dir '.lndb' to '.lamin'")
+            logger.info(f"Renamed legacy settings dir {legacy_dir} to {settings_dir}")
         else:
             for path in legacy_dir.glob("*"):
-                shutil.copy(path, legacy_dir)
-            logger.info("Moved content of legacy settings dir '.lndb' to '.lamin'")
+                shutil.copy(path, settings_dir)
+            logger.info(
+                f"Copied content of legacy settings dir {legacy_dir} to {settings_dir}."
+                f" You can delete {legacy_dir}!"
+            )
     return settings_dir
 
 
