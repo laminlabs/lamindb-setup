@@ -8,24 +8,24 @@ authors = [{name = "Lamin Labs", email = "laminlabs@gmail.com"}]
 readme = "README.md"
 dynamic = ["version", "description"]
 dependencies = [
+    # PINNED internal LAMIN dependencies
+    # These cannot be pinned in LaminDB!!!
     "lnhub_rest==0.7.2",
-    # no other packages should be pinned
+    "lndb_storage==0.2rc2",
+    # NO other packages should be pinned
     "laminci>=0.3.0",  # disentangle over time
     "lnschema_core>=0.28.0",
     "lamin_logger>=0.2.3",
-    "lndb_storage==0.2rc2",
+    # External dependencies
+    "pytest_alembic==0.9.1",  # let's pin this as we use internals
     "sqlmodel>=0.0.8",
+    "psycopg2-binary",
     "appdirs",
-    "supabase",
     "python-dotenv",
     "erdiagram",
-    "alembic<1.10.0",  # test whether this broke CI
-    "psycopg2-binary",
-    "pyjwt",
+    "alembic",
     "natsort",
     "pandas",
-    "pytest_alembic==0.9.1",  # let's pin this as we use internals
-    "cloudpathlib",
     "python-dateutil",
 ]
 
