@@ -43,7 +43,9 @@ class InstanceSettings:
     ):
         self._owner: str = owner
         self._name: str = name
-        self._storage: Storage = Storage(storage_root, region=storage_region)
+        self._storage: Storage = Storage(
+            storage_root, instance_settings=self, region=storage_region
+        )
         self._db: Optional[str] = db
         self._schema_str: Optional[str] = schema
         self._engine: Engine = sqm.create_engine(self.db)

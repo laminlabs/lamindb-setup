@@ -1,15 +1,14 @@
 # We see a lot of import statements for lnschema_core below
 # This is currently needed as we can only import the schema module
 # once isettings have been adjusted
-from pathlib import Path
-from typing import Any, List, Optional, Union
+from typing import Any, List
 
 import sqlmodel as sqm
 from lamin_logger import logger
-from lndb_storage import UPath
 from sqlalchemy.exc import ProgrammingError
 
 from .._settings import settings
+from ._storage import StorageSettings
 
 
 class upsert:
@@ -69,20 +68,16 @@ class insert_if_not_exists:
     """
 
     @classmethod
-    def storage(cls, root: Union[Path, UPath], region: Optional[str]):
-        from lnschema_core import Storage
+    def storage(cls, storage_settings: StorageSettings):
+        from lnschema_core import Storage as StorageORM
 
-        if isinstance(root, UPath):
-            root_str = root.as_posix().rstrip("/")
-        else:
-            root_str = root.resolve().as_posix()
+        root_str = storage_settings.root_as_str
         with sqm.Session(settings.instance.engine) as session:
             storage = session.exec(
-                sqm.select(Storage).where(Storage.root == root_str)
+                sqm.select(StorageORM).where(StorageORM.root == root_str)
             ).first()
         if storage is None:
-            storage = insert.storage(root_str, region)
-
+            storage = insert.storage(root_str, storage_settings.region)
         return storage
 
 

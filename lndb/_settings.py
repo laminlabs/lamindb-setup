@@ -1,7 +1,7 @@
 import os
 from typing import Union
 
-from lndb.dev import InstanceSettings, Storage, UserSettings
+from lndb.dev import InstanceSettings, StorageSettings, UserSettings
 from lndb.dev._settings_load import load_instance_settings, load_or_create_user_settings
 
 
@@ -54,7 +54,7 @@ class settings:
         return cls._instance_settings  # type: ignore
 
     @classproperty
-    def storage(cls) -> Storage:
+    def storage(cls) -> StorageSettings:
         """Storage."""
         return cls.instance.storage
 
