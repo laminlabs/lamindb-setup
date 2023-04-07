@@ -11,6 +11,7 @@ def get_settings_dir():
         settings_dir = Path(os.environ["LAMIN_BASE_SETTINGS_DIR"]) / ".lamin"
     else:
         settings_dir = Path.home() / ".lamin"
+    settings_dir.mkdir(parents=True, exist_ok=True)
     # deal with legacy settings directory
     legacy_dir = settings_dir.with_name(".lndb")
     if legacy_dir.exists():
@@ -27,9 +28,6 @@ def get_settings_dir():
 # user_config_dir in appdirs is weird on MacOS!
 # hence, let's take home/.lndb
 settings_dir = get_settings_dir()
-settings_dir.mkdir(parents=True, exist_ok=True)
-# current_instance_settings_file = settings_dir / "current_instance.env"
-# current_user_settings_file = settings_dir / "current_user.env"
 
 
 def get_settings_file_name_prefix():
