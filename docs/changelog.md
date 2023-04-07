@@ -3,13 +3,13 @@
 <!-- prettier-ignore -->
 Name | PR | Developer | Date | Version
 --- | --- | --- | --- | ---
-🚸 Rename settings directory to `.lamin` | [349](https://github.com/laminlabs/lndb/pull/349) | [falexwolf](https://github.com/falexwolf) | 2023-04-07 |
+🚸 Rename settings directory to `.lamin` | [349](https://github.com/laminlabs/lndb/pull/349) | [falexwolf](https://github.com/falexwolf) | 2023-04-07 | 0.40.0
 🚸 Expose storage in settings | [348](https://github.com/laminlabs/lndb/pull/348) | [falexwolf](https://github.com/falexwolf) | 2023-04-07 |
 ♻️ Move storage related code to lndb_storage | [338](https://github.com/laminlabs/lndb/pull/338) | [Koncopd](https://github.com/Koncopd) | 2023-04-05 |
 ♻️ Refactor migrations | [346](https://github.com/laminlabs/lndb/pull/346) | [falexwolf](https://github.com/falexwolf) | 2023-04-04 |
 🧑‍💻 Enable to load instance from hub using access token | [343](https://github.com/laminlabs/lndb/pull/343) | [fredericenard](https://github.com/fredericenard) | 2023-04-03 | 0.39.2
 ⬆️ Upgrade lnhub-rest to 0.7.2 | [341](https://github.com/laminlabs/lndb/pull/341) | [falexwolf](https://github.com/falexwolf) | 2023-03-31 | 0.39.1
-:green_heart: Try to fix CI | [342](https://github.com/laminlabs/lndb/pull/342) | [falexwolf](https://github.com/falexwolf) | 2023-03-30 |
+💚 Try to fix CI | [342](https://github.com/laminlabs/lndb/pull/342) | [falexwolf](https://github.com/falexwolf) | 2023-03-30 |
 🚸 Check schema version upon init | [340](https://github.com/laminlabs/lndb/pull/340) | [falexwolf](https://github.com/falexwolf) | 2023-03-30 | 0.39.0
 🚸 Enforce order of schema modules for migration | [339](https://github.com/laminlabs/lndb/pull/339) | [falexwolf](https://github.com/falexwolf) | 2023-03-27 | 0.38.1
 💚 Improve e2e migrations guide | [337](https://github.com/laminlabs/lndb/pull/337) | [falexwolf](https://github.com/falexwolf) | 2023-03-26 | 0.38.0
