@@ -26,7 +26,7 @@ from .dev._storage import Storage
 def register(isettings: InstanceSettings, usettings):
     """Register user & storage in DB."""
     upsert.user(usettings.email, usettings.id, usettings.handle, usettings.name)
-    insert_if_not_exists.storage(isettings.storage.root, isettings.storage.region)
+    insert_if_not_exists.storage(isettings.storage)
 
 
 def import_schema_lamin_root_api():
