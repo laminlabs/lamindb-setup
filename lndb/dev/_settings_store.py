@@ -7,10 +7,7 @@ from pydantic import BaseSettings
 
 
 def get_settings_dir():
-    if "LAMIN_BASE_SETTINGS_DIR" in os.environ:
-        settings_dir = Path(os.environ["LAMIN_BASE_SETTINGS_DIR"]) / ".lamin"
-    else:
-        settings_dir = Path.home() / ".lamin"
+    settings_dir = Path.home() / ".lamin"
     settings_dir.mkdir(parents=True, exist_ok=True)
     # deal with legacy settings directory
     legacy_dir = settings_dir.with_name(".lndb")
