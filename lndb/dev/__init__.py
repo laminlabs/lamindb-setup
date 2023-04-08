@@ -1,11 +1,20 @@
 """Developer API.
 
+Settings:
+
 .. autosummary::
    :toctree:
 
    UserSettings
    InstanceSettings
    StorageSettings
+
+Paths and file system.
+
+.. autosummary::
+   :toctree:
+
+   upath
 
 """
 from ._deprecated import deprecated
