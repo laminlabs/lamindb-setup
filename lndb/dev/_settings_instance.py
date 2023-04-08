@@ -5,9 +5,9 @@ from typing import Literal, Optional, Set, Tuple, Union
 
 import sqlalchemy as sa
 import sqlmodel as sqm
-from lndb_storage import UPath
 from pydantic import PostgresDsn
 from sqlalchemy.future import Engine
+from upath import UPath
 
 from ._exclusion import empty_locker, get_locker
 from ._settings_save import save_instance_settings

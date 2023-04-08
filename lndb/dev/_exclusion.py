@@ -5,7 +5,7 @@ from typing import Optional, Union
 import fsspec
 from dateutil.parser import isoparse  # type: ignore
 from lamin_logger import logger
-from lndb_storage import UPath, _infer_filesystem
+from upath import UPath
 
 EXPIRATION_TIME = 1800  # 30 min
 
@@ -24,6 +24,8 @@ class empty_locker:
 
 class Locker:
     def __init__(self, user_id: str, storage_root: Union[UPath, Path]):
+        from lndb_storage import _infer_filesystem
+
         logger.debug(f"Init cloud sqlite locker: {user_id}, {storage_root}.")
 
         self._counter = 0
