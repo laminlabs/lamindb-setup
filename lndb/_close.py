@@ -1,5 +1,8 @@
 import os
 
+from lamin_logger import logger
+
+from ._settings import settings
 from .dev._settings_store import current_instance_settings_file
 
 
@@ -8,8 +11,10 @@ def close() -> None:
 
     Returns `None` if succeeds, otherwise an exception is raised.
     """
-    try:
+    if current_instance_settings_file().exists():
+        instance = settings.instance.identifier
         current_instance_settings_file().unlink()
         os.environ["LAMINDB_INSTANCE_LOADED"] = "0"
-    except FileNotFoundError:
-        raise
+        logger.success(f"Closed {instance}")
+    else:
+        logger.info("No instance loaded")

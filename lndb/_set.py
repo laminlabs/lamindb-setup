@@ -2,8 +2,9 @@ from pathlib import Path
 from typing import Union
 
 from lamin_logger import logger
-from lndb_storage import UPath
 from lnhub_rest._add_storage import add_storage as add_storage_hub
+
+from lndb.dev.upath import UPath
 
 from ._init_instance import register
 from ._settings import settings

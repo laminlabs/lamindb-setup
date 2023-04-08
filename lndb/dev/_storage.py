@@ -4,7 +4,8 @@ from typing import Literal, Optional, Union
 
 import sqlmodel as sqm
 from appdirs import AppDirs
-from lndb_storage import UPath
+
+from .upath import UPath
 
 DIRS = AppDirs("lamindb", "laminlabs")
 

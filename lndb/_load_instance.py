@@ -95,11 +95,7 @@ def load_from_isettings(
     isettings: InstanceSettings,
     migrate: Optional[bool] = None,
 ):
-    from ._init_instance import (
-        import_schema_lamin_root_api,
-        persist_settings_load_schema,
-        register,
-    )
+    from ._init_instance import persist_settings_load_schema, register, reload_lamindb
     from ._migrate import check_deploy_migration
     from .dev._setup_knowledge import load_bionty_versions
 
@@ -112,5 +108,5 @@ def load_from_isettings(
         return message
     register(isettings, settings.user)
     load_bionty_versions(isettings)
-    import_schema_lamin_root_api()
+    reload_lamindb()
     return message

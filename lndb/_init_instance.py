@@ -1,9 +1,9 @@
+import importlib
 import sys
 from pathlib import Path
 from typing import Optional, Union
 
 from lamin_logger import logger
-from lndb_storage import UPath
 from lnhub_rest._add_storage import get_storage_region
 from lnhub_rest._init_instance import init_instance as init_instance_hub
 from lnhub_rest._init_instance import (
@@ -12,6 +12,8 @@ from lnhub_rest._init_instance import (
     validate_storage_arg,
 )
 from pydantic import PostgresDsn
+
+from lndb.dev.upath import UPath
 
 from ._load_instance import load, load_from_isettings
 from ._settings import settings
@@ -29,12 +31,12 @@ def register(isettings: InstanceSettings, usettings):
     insert_if_not_exists.storage(isettings.storage)
 
 
-def import_schema_lamin_root_api():
+def reload_lamindb():
     # only touch lamindb if we're operating from lamindb
     if "lamindb" in sys.modules:
         import lamindb
 
-        lamindb.schema._import_schema()
+        importlib.reload(lamindb)
 
 
 def persist_settings_load_schema(isettings: InstanceSettings):
@@ -148,7 +150,7 @@ def init(
         logger.warning("Your instance seems already set up, attempt load:")
         message = load_from_isettings(isettings, migrate=_migrate)
 
-    import_schema_lamin_root_api()
+    reload_lamindb()
     logger.success(
         f"Created & loaded instance: {settings.user.handle}/{isettings.name}"
     )

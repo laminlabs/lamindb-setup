@@ -1,5 +1,14 @@
 """Developer API.
 
+Paths and file system:
+
+.. autosummary::
+   :toctree:
+
+   upath
+
+Settings:
+
 .. autosummary::
    :toctree:
 
@@ -8,6 +17,7 @@
    StorageSettings
 
 """
+from . import upath
 from ._deprecated import deprecated
 from ._docs import doc_args
 from ._settings_instance import InstanceSettings
