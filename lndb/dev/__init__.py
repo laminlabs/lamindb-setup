@@ -1,5 +1,12 @@
 """Developer API.
 
+Paths and file system:
+
+.. autosummary::
+   :toctree:
+
+   upath
+
 Settings:
 
 .. autosummary::
@@ -8,13 +15,6 @@ Settings:
    UserSettings
    InstanceSettings
    StorageSettings
-
-Paths and file system.
-
-.. autosummary::
-   :toctree:
-
-   upath
 
 """
 from . import upath
