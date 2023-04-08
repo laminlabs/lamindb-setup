@@ -12,7 +12,8 @@ from lnhub_rest._init_instance import (
     validate_storage_arg,
 )
 from pydantic import PostgresDsn
-from upath import UPath
+
+from lndb.dev.upath import UPath
 
 from ._load_instance import load, load_from_isettings
 from ._settings import settings

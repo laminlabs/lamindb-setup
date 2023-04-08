@@ -17,6 +17,7 @@ Paths and file system.
    upath
 
 """
+from . import upath
 from ._deprecated import deprecated
 from ._docs import doc_args
 from ._settings_instance import InstanceSettings
