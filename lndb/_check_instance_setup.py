@@ -25,9 +25,9 @@ def check_instance_setup(from_lamindb: bool = False):
         except Exception:
             # user will get more detailed traceback once they run the CLI
             raise RuntimeError(
-                "Your current instance cannot be reached.\nInit or load a connectable"
-                " instance on the command line: `lamin load <instance>` or `lamin init"
-                " <...>`"
+                "Current instance cannot be reached, close it: `lamin close`\n"
+                "Alternatively, init or load a connectable instance on the"
+                " command line: `lamin load <instance>` or `lamin init <...>`"
             )
     else:
         logger.warning(
