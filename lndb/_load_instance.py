@@ -33,6 +33,8 @@ def load(
     hub_result = load_instance_from_hub(
         owner=owner, name=name, _access_token=_access_token
     )
+    # if hub_result is not a string, it means it made a request
+    # that successfully returned metadata
     if not isinstance(hub_result, str):
         instance, storage = hub_result
         isettings = InstanceSettings(
@@ -44,13 +46,21 @@ def load(
             schema=instance.schema_str,
         )
     else:
+        logger.info(
+            f"Instance {owner}/{name} not loadable from hub with message:"
+            f" '{hub_result}'"
+        )
         settings_file = instance_settings_file(name, owner)
         if settings_file.exists():
+            logger.info(
+                "Loading instance through locally cached instance metadata"
+                f" {settings_file}"
+            )
             isettings = load_instance_settings(settings_file)
         else:
             if _log_error_message:
                 logger.error(
-                    "Instance not reachable. Check your access permissions or whether"
+                    "Instance not reachable. Check your access permissions and whether"
                     " the instance exists."
                 )
             return "instance-not-reachable"
