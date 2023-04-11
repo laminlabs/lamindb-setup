@@ -4,7 +4,6 @@ from lamin_logger import logger
 from lnhub_rest._signup_signin import sign_in_hub, sign_up_hub
 from sqlalchemy import create_engine
 
-from ._schema import schema
 from ._settings import settings
 from .dev._db import upsert
 from .dev._settings_load import load_or_create_user_settings, load_user_settings
@@ -118,12 +117,6 @@ def login(
                 # if the file doesn't exist, there is no need to
                 # log in the user
                 # hence, simply end log in here
-                return None
-            # if the file exists but does not have a user table, raise a warning
-            if "core.user" not in schema.list_entities():
-                logger.warning(
-                    f"An SQLite file {settings.instance._sqlite_file} exists but does not have a user table. "  # noqa
-                )
                 return None
         else:  # let's check whether we can connect to the instance DB
             db = settings.instance.db
