@@ -60,9 +60,9 @@ def load(
         else:
             if _log_error_message:
                 logger.error(
-                    "Instance {owner}/{name} neither loadable from hub nor local cache."
-                    " Check whether instance exists and you have access:"
-                    " https://lamin.ai/{owner}/{name}?tab=collaborators"
+                    f"Instance {owner}/{name} neither loadable from hub nor local"
+                    " cache. Check whether instance exists and you have access:"
+                    f" https://lamin.ai/{owner}/{name}?tab=collaborators"
                 )
             return "instance-not-reachable"
 
