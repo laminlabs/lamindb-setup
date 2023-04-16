@@ -46,10 +46,6 @@ def load(
             schema=instance.schema_str,
         )
     else:
-        logger.info(
-            f"Instance {owner}/{name} not loadable from hub with message:"
-            f" '{hub_result}'"
-        )
         settings_file = instance_settings_file(name, owner)
         if settings_file.exists():
             logger.info(
