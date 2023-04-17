@@ -82,7 +82,7 @@ def check_schema_version_and_import(schema_name) -> ModuleType:
                             "\nWARNING: importlib_metadata.version('lamindb') gives"
                             f" v{lamindb_version}, whereas `import lamindb` gives"
                             f" v{lamindb.__version__}"
-                            "\nConsider `pip install lamindb=={lamindb_version}`"
+                            f"\nConsider `pip install lamindb=={lamindb_version}`"
                         )
                     else:
                         warning = ""
