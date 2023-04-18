@@ -3,7 +3,7 @@ from typing import Optional
 
 from lamin_logger import logger
 from lnhub_rest._assets import instances as test_instances
-from lnhub_rest._init_instance import (
+from lnhub_rest.core.instance._init_instance import (
     validate_db_arg,
     validate_schema_arg,
     validate_storage_arg,

@@ -4,13 +4,13 @@ from pathlib import Path
 from typing import Optional, Union
 
 from lamin_logger import logger
-from lnhub_rest._add_storage import get_storage_region
-from lnhub_rest._init_instance import init_instance as init_instance_hub
-from lnhub_rest._init_instance import (
+from lnhub_rest.core.instance._init_instance import init_instance as init_instance_hub
+from lnhub_rest.core.instance._init_instance import (
     validate_db_arg,
     validate_schema_arg,
     validate_storage_arg,
 )
+from lnhub_rest.core.storage._add_storage import get_storage_region
 from pydantic import PostgresDsn
 
 from lndb.dev.upath import UPath

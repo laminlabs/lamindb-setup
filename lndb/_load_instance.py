@@ -2,7 +2,9 @@ import os
 from typing import Optional
 
 from lamin_logger import logger
-from lnhub_rest._load_instance import load_instance as load_instance_from_hub
+from lnhub_rest.core.instance._load_instance import (
+    load_instance as load_instance_from_hub,
+)
 
 from ._settings import InstanceSettings, settings
 from .dev._settings_load import load_instance_settings
