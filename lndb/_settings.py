@@ -19,7 +19,7 @@ class settings:
     """Settings access.
 
     - :class:`~lndb.dev.InstanceSettings`
-    - :class:`~lndb.dev.Storage`
+    - :class:`~lndb.dev.StorageSettings`
     - :class:`~lndb.dev.UserSettings`
     """
 
