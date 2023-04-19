@@ -4,7 +4,7 @@ import sys
 
 from lamin_logger import logger
 
-from . import _init_instance, _setup_user, delete, info, set_storage
+from . import _init_instance, _setup_user, delete, info, set
 from ._close import close as close_instance
 from ._init_instance import description as instance
 from .dev._settings_user import user_description as user
@@ -118,7 +118,7 @@ def main():
     elif args.command == "info":
         return info()
     elif args.command == "set":
-        return set_storage(storage=args.storage)
+        return set.storage(storage=args.storage)
     elif args.command == "migrate":
         from . import migrate
 

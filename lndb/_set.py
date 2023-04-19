@@ -18,10 +18,6 @@ class set:
     @staticmethod
     def storage(root: Union[str, Path, UPath]):
         """Set storage."""
-        if settings.instance.owner != settings.user.handle:
-            logger.error("Can only set storage if current user is instance owner.")
-            return "only-owner-can-set-storage"
-
         if settings.instance.dialect == "sqlite":
             logger.error("Can't set storage for sqlite instances.")
             return "set-storage-failed"
