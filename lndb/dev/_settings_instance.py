@@ -57,7 +57,7 @@ class InstanceSettings:
         for attr in attrs:
             value = getattr(self, attr)
             if attr == "storage":
-                representation += f"\n- storage root: {value.root}"
+                representation += f"\n- storage root: {value.root_as_str}"
                 representation += f"\n- storage region: {value.region}"
             else:
                 representation += f"\n- {attr}: {value}"
