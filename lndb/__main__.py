@@ -118,7 +118,7 @@ def main():
     elif args.command == "info":
         return info()
     elif args.command == "set":
-        return set.storage(storage=args.storage)
+        return set.storage(args.storage)
     elif args.command == "migrate":
         from . import migrate
 
