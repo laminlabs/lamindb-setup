@@ -64,7 +64,6 @@ class description:
     db = """Database connection url, do not pass for SQLite."""
     name = """Instance name."""
     schema = """Comma-separated string of schema modules. None if not set."""
-    hub = "Register instance on hub (local instance are not automatically registered)."
 
 
 @doc_args(
@@ -72,7 +71,6 @@ class description:
     description.name,
     description.db,
     description.schema,
-    description.hub,
 )
 def init(
     *,
@@ -80,7 +78,6 @@ def init(
     name: Optional[str] = None,
     db: Optional[PostgresDsn] = None,
     schema: Optional[str] = None,
-    hub: Optional[bool] = None,
     _migrate: bool = False,  # not user-facing
 ) -> Optional[str]:
     """Creating and loading a LaminDB instance.
@@ -125,9 +122,7 @@ def init(
                 )
             )
 
-    if hub is None:
-        hub = isettings.is_remote
-    if hub:
+    if isettings.is_remote:
         result = init_instance_hub(
             owner=owner,
             name=name_str,
@@ -141,7 +136,9 @@ def init(
             raise RuntimeError(f"Creating instance on hub failed:\n{result}")
         logger.success(f"Registered instance on hub: https://lamin.ai/{owner}/{name}")
     else:
-        logger.info("Not registering instance on hub")
+        logger.info(
+            "Not registering instance on hub, if you want, call `lamin register`"
+        )
 
     # this does not yet setup a setup for a new database
     persist_settings_load_schema(isettings)

@@ -27,6 +27,7 @@ More instance operations:
    delete
    info
    set
+   register
 
 Manage creating and testing migrations (deployment is automatic):
 
@@ -63,6 +64,7 @@ from ._info import info  # noqa
 from ._init_instance import init  # noqa
 from ._load_instance import load  # noqa
 from ._migrate import migrate
+from ._register_instance import register  # noqa
 from ._schema import schema  # noqa
 from ._set import set, set_storage  # noqa
 from ._settings import settings  # noqa
