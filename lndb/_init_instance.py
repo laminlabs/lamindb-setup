@@ -87,7 +87,6 @@ def init(
         name: {}
         db: {}
         schema: {}
-        hub: {}
     """
     assert settings.user.id  # check user is logged in
     owner = settings.user.handle

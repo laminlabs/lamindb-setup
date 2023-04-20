@@ -112,7 +112,6 @@ def main():
             db=args.db,
             schema=args.schema,
             name=args.name,
-            hub=args.hub,
         )
         return process_result(result)
     elif args.command == "load":
