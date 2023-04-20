@@ -221,13 +221,11 @@ class InstanceSettings:
                 return False, f"SQLite file {self._sqlite_file} does not exist"
             else:
                 return False, f"Connection {self.db} not reachable"
-        # cannot import at top file!
-        from lnschema_core.dev import version_yvzi
+        # cannot import lnschema_core here, yet!
 
-        stmt = sqm.select(version_yvzi)
-        with self.session() as ss:
+        with self.engine.connect() as conn:
             try:
-                result = ss.exec(stmt).first()
+                result = conn.execute(sa.text("select * from version_yvzi")).first()
             except Exception as e:
                 return False, f"Your DB is not initialized: {e}"
             if result is None:
