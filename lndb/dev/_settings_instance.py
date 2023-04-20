@@ -5,6 +5,7 @@ from typing import Literal, Optional, Set, Tuple, Union
 
 import sqlalchemy as sa
 import sqlmodel as sqm
+from lamin_logger import logger
 from pydantic import PostgresDsn
 from sqlalchemy.future import Engine
 
@@ -215,29 +216,34 @@ class InstanceSettings:
 
     def _is_db_setup(self) -> Tuple[bool, str]:
         """Is the database available and initialized as LaminDB?"""
+        if not self._is_db_reachable():
+            if self.dialect == "sqlite":
+                return False, f"SQLite file {self._sqlite_file} does not exist"
+            else:
+                return False, f"Connection {self.db} not reachable"
+        # cannot import at top file!
+        from lnschema_core.dev import version_yvzi
+
+        stmt = sqm.select(version_yvzi)
+        with self.session() as ss:
+            try:
+                result = ss.exec(stmt).first()
+            except Exception as e:
+                return False, f"Your DB is not initialized: {e}"
+            if result is None:
+                return False, "Your DB is not initialized: version_yvzi has no row"
+        return True, ""
+
+    def _is_db_reachable(self) -> bool:
         if self.dialect == "sqlite":
             if not self._sqlite_file.exists():
-                return False, "SQLite file does not exist"
-            else:
-                return True, ""
-        else:  # postgres
-            assert self.dialect == "postgresql"
-            with self.engine.connect() as conn:
-                results = conn.execute(
-                    sa.text(
-                        """
-                    SELECT EXISTS (
-                        SELECT FROM
-                            information_schema.tables
-                        WHERE
-                            table_schema LIKE 'public' AND
-                            table_name = 'version_yvzi'
-                    );
-                """
-                    )
-                ).first()  # returns tuple of boolean
-                check = results[0]
-                if not check:
-                    return False, "Postgres does not seem initialized."
-                else:
-                    return True, ""
+                logger.warning(f"SQLite file {self._sqlite_file} does not exist")
+                return False
+        else:
+            engine = sa.create_engine(self.db)
+            try:
+                engine.connect()
+            except Exception:
+                logger.warning(f"Connection {self.db} not reachable")
+                return False
+        return True

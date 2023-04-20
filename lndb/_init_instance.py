@@ -136,6 +136,7 @@ def init(
         elif isinstance(result, str):
             raise RuntimeError(f"Creating instance on hub failed:\n{result}")
 
+    # this does not yet setup a setup for a new database
     persist_settings_load_schema(isettings)
 
     message = None
