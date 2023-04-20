@@ -64,7 +64,7 @@ class description:
     db = """Database connection url, do not pass for SQLite."""
     name = """Instance name."""
     schema = """Comma-separated string of schema modules. None if not set."""
-    hub = "Register instance on hub."
+    hub = "Register instance on hub (local instance are not automatically registered)."
 
 
 @doc_args(

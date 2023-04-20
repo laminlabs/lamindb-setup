@@ -48,6 +48,7 @@ aa("--storage", type=str, metavar="s", help=instance.storage_root)
 aa("--db", type=str, metavar="s", default=None, help=instance.db)
 aa("--schema", type=str, metavar="s", default=None, help=instance.schema)
 aa("--name", type=str, metavar="s", default=None, help=instance.name)
+aa("--hub", type=bool, default=None, action="store_true", help=instance.hub)
 
 # load instance
 load = subparsers.add_parser("load", help=load_help)
@@ -101,7 +102,11 @@ def main():
         )
     elif args.command == "init":
         result = _init_instance.init(
-            storage=args.storage, db=args.db, schema=args.schema, name=args.name
+            storage=args.storage,
+            db=args.db,
+            schema=args.schema,
+            name=args.name,
+            hub=args.hub,
         )
         return process_result(result)
     elif args.command == "load":
