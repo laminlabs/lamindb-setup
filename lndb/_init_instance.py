@@ -139,6 +139,9 @@ def init(
             pass  # everything is alright!
         elif isinstance(result, str):
             raise RuntimeError(f"Creating instance on hub failed:\n{result}")
+        logger.success(f"Registered instance on hub: https://lamin.ai/{owner}/{name}")
+    else:
+        logger.info("Not registering instance on hub")
 
     persist_settings_load_schema(isettings)
 
