@@ -2,7 +2,6 @@ from typing import Union
 
 from lamin_logger import logger
 from lnhub_rest.core.account._signup_signin import sign_in_hub, sign_up_hub
-from sqlalchemy import create_engine
 
 from ._settings import settings
 from .dev._db import upsert
@@ -103,33 +102,10 @@ def login(
     settings._user_settings = None
 
     # register login of user in instance db
-    # (upsert local user record with cloud data)
     if settings._instance_exists:
-        # the above if condition is not safe enough
-        # users might delete a database but still keeping the
-        # current_instance.env settings file around
-        # hence, the if condition will pass despite the database
-        # having actually been deleted
-        # so, let's do another check
-        if settings.instance.dialect == "sqlite":
-            # let's check whether the sqlite file is actually available
-            if not settings.instance._sqlite_file.exists():
-                # if the file doesn't exist, there is no need to
-                # log in the user
-                # hence, simply end log in here
-                return None
-        else:  # let's check whether we can connect to the instance DB
-            db = settings.instance.db
-            engine = create_engine(db)
-            try:
-                engine.connect()
-            except Exception:
-                logger.warning(
-                    f"Connection {db} of current instance not reachable. "
-                    "Consider closing it: lndb close."
-                )
-                return None
-
+        if not settings.instance._is_db_reachable():
+            logger.info("Consider closing the instance: `lamin close`")
+            return None
         upsert.user(
             settings.user.email,
             settings.user.id,
