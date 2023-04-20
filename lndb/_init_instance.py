@@ -143,6 +143,10 @@ def init(
         setup_schema(isettings, settings.user)
         register(isettings, settings.user)
         write_bionty_versions(isettings)
+        # now ensure that everything worked
+        check, msg = isettings._is_db_setup()
+        if not check:
+            raise RuntimeError(msg)
     else:
         # we're currently using this for testing migrations
         # passing connection strings of databases that need to be tested
