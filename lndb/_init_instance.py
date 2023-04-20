@@ -64,6 +64,7 @@ class description:
     db = """Database connection url, do not pass for SQLite."""
     name = """Instance name."""
     schema = """Comma-separated string of schema modules. None if not set."""
+    hub = "Register instance on hub."
 
 
 @doc_args(
@@ -71,6 +72,7 @@ class description:
     description.name,
     description.db,
     description.schema,
+    description.hub,
 )
 def init(
     *,
@@ -78,6 +80,7 @@ def init(
     name: Optional[str] = None,
     db: Optional[PostgresDsn] = None,
     schema: Optional[str] = None,
+    hub: Optional[bool] = None,
     _migrate: bool = False,  # not user-facing
 ) -> Optional[str]:
     """Creating and loading a LaminDB instance.
@@ -87,6 +90,7 @@ def init(
         name: {}
         db: {}
         schema: {}
+        hub: {}
     """
     assert settings.user.id  # check user is logged in
     owner = settings.user.handle
@@ -121,9 +125,9 @@ def init(
                 )
             )
 
-    # for remote instance, a lot of validation happens in the next function
-    # if this errors, the whole function errors
-    if isettings.is_remote:
+    if hub is None:
+        hub = isettings.is_remote
+    if hub:
         result = init_instance_hub(
             owner=owner,
             name=name_str,
