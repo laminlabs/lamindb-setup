@@ -10,7 +10,7 @@ def register():
     result = init_instance_hub(
         owner=isettings.owner,
         name=isettings.name,
-        storage=isettings.storage_as_str,
+        storage=isettings.storage.root_as_str,
         db=isettings.db,
         schema=isettings._schema_str,
     )
