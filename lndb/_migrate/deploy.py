@@ -4,11 +4,11 @@ import importlib
 import os
 from pathlib import Path
 from subprocess import run
+from types import ModuleType
 from typing import Any, Optional
 
 import sqlmodel as sqm
 from lamin_logger import logger
-from natsort import natsorted
 from packaging.version import parse as vparse
 
 from lndb._migrate.utils import generate_module_files, modify_alembic_ini
@@ -18,16 +18,89 @@ from lndb.dev._settings_user import UserSettings
 from lndb.dev._setup_schema import create_schema_if_not_exists, get_schema_module_name
 
 
+def decide_deploy_migration(
+    schema_name: str, isettings: InstanceSettings, schema_module: ModuleType
+):
+    schema_id = schema_module._schema_id
+    schema_module_name = schema_module.__name__
+    current_version = schema_module.__version__
+    current_migration = schema_module._migration
+
+    # query the versions table of the schema in the database
+    with sqm.Session(isettings.engine) as session:
+        table_loc = (
+            schema_module.dev if hasattr(schema_module, "dev") else schema_module
+        )
+        version_table = getattr(table_loc, f"version_{schema_id}")
+        result = session.exec(
+            sqm.select(version_table.v, version_table.migration).order_by(
+                version_table.created_at.desc()
+            )
+        ).first()
+        deployed_version, deployed_migration = result["v"], result["migration"]
+
+    # if there is no migration, yet, we don't need to deploy it  # noqa
+    if deployed_migration is None and current_migration is None:
+        deploy_migration = False
+    # if the current version is smaller than the deployed version  # noqa
+    elif vparse(current_version) < vparse(deployed_version):
+        # no need to worry if current migration is same as deployed migration
+        if current_migration == deployed_migration:
+            deploy_migration = False
+        else:  # otherwise, raise an error
+            raise RuntimeError(
+                f"You are trying to connect to an instance ({isettings.identifier})"
+                f" that runs v{deployed_version} (migration {deployed_migration}) of"
+                f" {schema_module_name} but you only have v{current_version} (migration"
+                f" {current_migration}) installed.\nPlease run `pip install"
+                f" {schema_module_name}=={deployed_version}`, or install the latest"
+                " schema module version from GitHub."
+            )
+    else:  # if the current version is higher or equal to the latest deployed version
+        # no need to worry if current migration is same as deployed migration
+        if current_migration == deployed_migration:
+            deploy_migration = False
+        else:
+            logger.warning(
+                f"Deployed schema {schema_name} v{deployed_version} (migration"
+                f" {deployed_migration}) is not up to date with installed"
+                f" v{current_version} (migration {current_migration})"
+            )
+            # if migration is confirmed, continue
+            if "PYTEST_CURRENT_TEST" not in os.environ:
+                logger.warning(
+                    "You might need to run the command in a shell if you can't respond"
+                    " to the following dialogue"
+                )
+                response = input(
+                    f"Do you want to migrate {schema_name} from"
+                    f" {deployed_version}/{deployed_migration} to"
+                    f" {current_version}/{current_migration} (y/n)?"
+                )
+                if response != "y":
+                    logger.warning(
+                        f"Instance {isettings.identifier} does not match the latest version of schema {schema_name}.\n"  # noqa
+                        f"For production use, either install {schema_module_name} {deployed_version} "  # noqa
+                        f"or migrate the database to {current_version}."
+                    )
+                    deploy_migration = False
+                else:
+                    deploy_migration = True
+            else:
+                logger.warning(
+                    f"Migrate instance {isettings.name} outside a test (CI) run. "
+                    "Unexpected errors might happen."
+                )
+                deploy_migration = False
+    return deploy_migration
+
+
 def check_deploy_migration(
     *,
     usettings: UserSettings,
     isettings: InstanceSettings,
     attempt_deploy: Optional[bool] = None,
 ):
-    if "LAMIN_SKIP_MIGRATION" in os.environ:
-        if os.environ["LAMIN_SKIP_MIGRATION"] == "true":
-            return "migrate-skipped"
-
     # lock the whole migration
     locker = isettings._cloud_sqlite_locker
     locker.lock()
@@ -45,71 +118,15 @@ def check_deploy_migration(
         create_schema_if_not_exists(schema_name, isettings)
         schema_module_name = get_schema_module_name(schema_name)
         schema_module = importlib.import_module(schema_module_name)
-        # if _migration is None, there hasn't yet been any
-        if schema_module._migration is None:
-            status.append("migrate-unnecessary")
-            continue
-
         schema_id = schema_module._schema_id
-
-        with sqm.Session(isettings.engine) as session:
-            table_loc = (
-                schema_module.dev if hasattr(schema_module, "dev") else schema_module
-            )
-            version_table = getattr(table_loc, f"version_{schema_id}")
-            versions = session.exec(sqm.select(version_table.v)).all()
-            versions = natsorted(versions)  # latest version is last
-
         current_version = schema_module.__version__
 
-        # attempt deploy as we want to test migrating the database
-        if attempt_deploy:
+        if attempt_deploy:  # attempt deploy as we want to test migrating the database
             deploy_migration = True
-        # check whether we need to deploy based on version comparison
-        elif current_version not in versions and len(versions) > 0:
-            if vparse(current_version) < vparse(versions[-1]):  # type: ignore
-                raise RuntimeError(
-                    f"You are trying to connect to a DB ({isettings.identifier}) that"
-                    f" runs v{versions[-1]} of {schema_module_name} but you only have"
-                    f" v{current_version} installed.\nPlease run `pip install"
-                    f" {schema_module_name}=={versions[-1]}`, or install the latest"
-                    " schema module version from GitHub."
-                )
-            logger.warning(
-                f"Schema {schema_name} v{versions[-1]} is not up to date"
-                f" with {current_version}"
+        else:  # check whether we need to deploy based on version comparison
+            deploy_migration = decide_deploy_migration(
+                schema_name, isettings, schema_module
             )
-            # if migration is confirmed, continue
-            if "PYTEST_CURRENT_TEST" not in os.environ:
-                logger.warning(
-                    "Run the command in the shell to respond to the following dialogue"
-                )
-
-                response = input(
-                    f"Do you want to migrate {schema_name} from {versions[-1]} to"
-                    f" {current_version} (y/n)?"
-                )
-
-                if response != "y":
-                    logger.warning(
-                        f"Instance {isettings.identifier} does not match the latest version of schema {schema_name}.\n"  # noqa
-                        "For production use, either install"
-                        f" {schema_module_name} {versions[-1]} "
-                        f"or migrate the database to {current_version}."
-                    )
-                    return None
-            else:
-                logger.warning(
-                    f"Migrate instance {isettings.name} outside a test (CI) run. "
-                    "Unexpected errors might happen."
-                )
-                return "migrate-failed"
-
-            deploy_migration = True
-
-        else:
-            deploy_migration = False
-            status.append("migrate-unnecessary")
 
         if deploy_migration:
             generate_module_files(
@@ -126,6 +143,8 @@ def check_deploy_migration(
                 schema_module=schema_module,
             )
             status.append(migrate_status)
+        else:
+            status.append("migrate-unnecessary")
 
     locker.unlock()
 
