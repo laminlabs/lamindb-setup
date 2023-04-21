@@ -143,7 +143,7 @@ def init(
     persist_settings_load_schema(isettings)
 
     message = None
-    if not isettings._is_db_setup()[0]:
+    if not isettings._is_db_setup(mute=True)[0]:
         setup_schema(isettings, settings.user)
         register(isettings, settings.user)
         write_bionty_versions(isettings)

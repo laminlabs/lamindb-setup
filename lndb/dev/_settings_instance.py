@@ -214,9 +214,9 @@ class InstanceSettings:
 
         settings._instance_settings = self
 
-    def _is_db_setup(self) -> Tuple[bool, str]:
+    def _is_db_setup(self, mute: bool = False) -> Tuple[bool, str]:
         """Is the database available and initialized as LaminDB?"""
-        if not self._is_db_reachable():
+        if not self._is_db_reachable(mute=mute):
             if self.dialect == "sqlite":
                 return False, f"SQLite file {self._sqlite_file} does not exist"
             else:
@@ -232,16 +232,18 @@ class InstanceSettings:
                 return False, "Your DB is not initialized: version_yvzi has no row"
         return True, ""
 
-    def _is_db_reachable(self) -> bool:
+    def _is_db_reachable(self, mute: bool = False) -> bool:
         if self.dialect == "sqlite":
             if not self._sqlite_file.exists():
-                logger.warning(f"SQLite file {self._sqlite_file} does not exist")
+                if not mute:
+                    logger.warning(f"SQLite file {self._sqlite_file} does not exist")
                 return False
         else:
             engine = sa.create_engine(self.db)
             try:
                 engine.connect()
             except Exception:
-                logger.warning(f"Connection {self.db} not reachable")
+                if not mute:
+                    logger.warning(f"Connection {self.db} not reachable")
                 return False
         return True
