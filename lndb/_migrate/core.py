@@ -68,6 +68,8 @@ class migrate:
                     return None
             else:
                 logger.error("Please load the instance you'd like to migrate!")
+                return None
+
             modify_alembic_ini(
                 filepath=package_dir / "alembic.ini",
                 isettings=settings.instance,
