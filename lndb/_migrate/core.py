@@ -52,15 +52,22 @@ class migrate:
         generate_module_files(package_name)
         testdb_path = package_dir.parent / "testdb/testdb.lndb"  # type: ignore # noqa
         if testdb_path.exists():
-            # runs dev mode to write migration scripts
             rm = False
             set_alembic_logging_level(migrations_dir, level="INFO")
             logger.info(f"Generating based on {testdb_path}")
         else:
-            # runs CI-guided mode to generate empty migration scripts
             rm = True
             from lndb._settings import settings
 
+            if settings._instance_exists:
+                response = input(
+                    "Will generate migration for instance"
+                    " f{settings.instance.identifier}. Continue? (y/n)"
+                )
+                if response != "y":
+                    return None
+            else:
+                logger.error("Please load the instance you'd like to migrate!")
             modify_alembic_ini(
                 filepath=package_dir / "alembic.ini",
                 isettings=settings.instance,
@@ -68,7 +75,6 @@ class migrate:
                 move_sl=False,
             )
             set_alembic_logging_level(migrations_dir, level="WARN")
-            logger.info("Generate empty migration script.")
         command = (
             f"alembic --config {str(package_dir)}/alembic.ini --name"
             f" {schema_id} revision --autogenerate -m '{version}'"

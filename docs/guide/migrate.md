@@ -12,22 +12,22 @@ This page documents how to create a tested migration using the CI-guided workflo
 1. Create a new branch (e.g. `migr`) in your repository: Update an ORM, e.g., by renaming a column.
 
    :::{dropdown} Example: Rename a column.
-   Let's try to rename the `v` column to `version` in `Notebook` table of `lnschema_core`.
+   Let's try to rename the `version` column to `v` in the `Transform` ORM of `lnschema_core`.
 
-   In the `lnschema_core/_core.py` `Notebook` class, modify line:
+   In the `lnschema_core/_core.py` `Transform` ORM, modify line:
 
    ```{code-block} python
    ---
    emphasize-lines: 1, 3
    ---
-   v: str = Field(default="1", primary_key=True)
-   to:
    version: str = Field(default="1", primary_key=True)
+   to:
+   v: str = Field(default="1", primary_key=True)
    ```
 
    :::
 
-2. On the command line (at the root of the repository), run `lamin migrate generate` to generate an empty script file under `{package_name}/migrations/versions/`.
+2. On the command line (at the root of the repository), run `lamin migrate generate` to generate a migration script under `{package_name}/migrations/versions/`.
 
    :::{dropdown} Example
 
@@ -46,7 +46,7 @@ This page documents how to create a tested migration using the CI-guided workflo
    |-- _core.py
    ```
 
-   Content of migration script.
+   Example of an empty migration script.
 
    ```{code-block} python
    ---
@@ -77,7 +77,7 @@ This page documents how to create a tested migration using the CI-guided workflo
 
    :::
 
-3. Commit all changes, create a pull request from the `migr` branch, and inspect the output of the failing CI step `Build`.
+3. Commit all changes, create a pull request from the `migr` branch, and inspect the CI step `Build`.
 
    :::{dropdown} Example: Bottom of failed CI output.
 
@@ -87,7 +87,7 @@ This page documents how to create a tested migration using the CI-guided workflo
 
    :::
 
-4. Copy the suggested changes into the `update()` function in the `{date}-{revision}-vx_x_x.py` file.
+4. In case CI failed, copy the suggested changes into the `update()` function in the `{date}-{revision}-vx_x_x.py` file.
    Commit & push changes: Now CI should pass! 🎉
 
    :::{dropdown} Example: Modified migration script.
