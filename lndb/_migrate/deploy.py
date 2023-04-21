@@ -53,7 +53,7 @@ def decide_deploy_migration(
                 f" that runs v{deployed_version} (migration {deployed_migration}) of"
                 f" {schema_module_name} but you only have v{current_version} (migration"
                 f" {current_migration}) installed.\nPlease run `pip install"
-                " {schema_module_name}=={deployed_version}`, or install the latest"
+                f" {schema_module_name}=={deployed_version}`, or install the latest"
                 " schema module version from GitHub."
             )
     else:  # if the current version is higher or equal to the latest deployed version
