@@ -121,8 +121,6 @@ def init(
                 )
             )
 
-    # for remote instance, a lot of validation happens in the next function
-    # if this errors, the whole function errors
     if isettings.is_remote:
         result = init_instance_hub(
             owner=owner,
@@ -135,6 +133,11 @@ def init(
             pass  # everything is alright!
         elif isinstance(result, str):
             raise RuntimeError(f"Creating instance on hub failed:\n{result}")
+        logger.success(f"Registered instance on hub: https://lamin.ai/{owner}/{name}")
+    else:
+        logger.info(
+            "Not registering instance on hub, if you want, call `lamin register`"
+        )
 
     # this does not yet setup a setup for a new database
     persist_settings_load_schema(isettings)

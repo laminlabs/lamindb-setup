@@ -4,7 +4,7 @@ import sys
 
 from lamin_logger import logger
 
-from . import _init_instance, _setup_user, delete, info, set
+from . import _init_instance, _setup_user, delete, info, register, set
 from ._close import close as close_instance
 from ._init_instance import description as instance
 from .dev._settings_user import user_description as user
@@ -18,6 +18,10 @@ info_help = "Show current instance information."
 close_help = "Close instance."
 migr_help = "Manage migrations."
 delete_help = "Delete an instance."
+register_help = (
+    "Register instance on hub (local instances are not automatically registered)."
+)
+
 
 description_cli = "Configure LaminDB and perform simple actions."
 parser = argparse.ArgumentParser(
@@ -71,7 +75,10 @@ aa = set_storage_parser.add_argument
 aa("--storage", type=str, metavar="s", help=instance.storage_root)
 
 # close instance
-close = subparsers.add_parser("close", help=close_help)
+subparsers.add_parser("close", help=close_help)
+
+# register instance
+subparsers.add_parser("register", help=register_help)
 
 # migrate
 migr = subparsers.add_parser("migrate", help=migr_help)
@@ -101,7 +108,10 @@ def main():
         )
     elif args.command == "init":
         result = _init_instance.init(
-            storage=args.storage, db=args.db, schema=args.schema, name=args.name
+            storage=args.storage,
+            db=args.db,
+            schema=args.schema,
+            name=args.name,
         )
         return process_result(result)
     elif args.command == "load":
@@ -111,6 +121,8 @@ def main():
         return process_result(result)
     elif args.command == "close":
         return close_instance()
+    elif args.command == "register":
+        return register()
     elif args.command == "delete":
         return delete(
             instance_name=args.instance,
