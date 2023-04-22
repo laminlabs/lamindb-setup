@@ -20,7 +20,7 @@ from lndb.dev._setup_schema import create_schema_if_not_exists, get_schema_modul
 
 def decide_deploy_migration(
     schema_name: str, isettings: InstanceSettings, schema_module: ModuleType
-):
+) -> bool:
     schema_id = schema_module._schema_id
     schema_module_name = schema_module.__name__
     current_version = schema_module.__version__
@@ -37,6 +37,9 @@ def decide_deploy_migration(
                 version_table.created_at.desc()
             )
         ).first()
+        if result is None:
+            logger.warning("No row in the versions table")
+            return False
         deployed_version, deployed_migration = result["v"], result["migration"]
 
     # if there is no migration, yet, we don't need to deploy it  # noqa
