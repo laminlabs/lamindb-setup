@@ -75,21 +75,23 @@ def check_schema_version_and_import(schema_name) -> ModuleType:
                 if not req.specifier.contains(module_version):
                     # it's currently important that we only import lamindb in
                     # case of an error being raised
-                    import lamindb
-
-                    if lamindb.__version__ != lamindb_version:
-                        warning = (
-                            "\nWARNING: importlib_metadata.version('lamindb') gives"
-                            f" v{lamindb_version}, whereas `import lamindb` gives"
-                            f" v{lamindb.__version__}"
-                            f"\nConsider `pip install lamindb=={lamindb_version}`"
-                        )
-                    else:
-                        warning = ""
+                    # the following might mask the actual error because this is
+                    # raised during instance creation time where lamindb
+                    # cannot yet be imported
+                    # import lamindb
+                    # if lamindb.__version__ != lamindb_version:
+                    #     warning = (
+                    #         "\nWARNING: importlib_metadata.version('lamindb') gives"
+                    #         f" v{lamindb_version}, whereas `import lamindb` gives"
+                    #         f" v{lamindb.__version__}"
+                    #         f"\nConsider `pip install lamindb=={lamindb_version}`"
+                    #     )
+                    # else:
+                    #     warning = ""
                     raise RuntimeError(
                         f"lamindb v{lamindb_version} needs"
                         f" lnschema_{schema_name}{req.specifier}, you have"
-                        f" {module_version} {warning}"
+                        f" {module_version}"
                     )
 
     try:
