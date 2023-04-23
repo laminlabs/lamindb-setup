@@ -39,7 +39,7 @@ dev = [
     "nox",
 ]
 test = [
-    "lamindb[bionty,wetlab]>=0.35.6",
+    "lamindb[bionty,lamin1]>=0.39rc1",
     "pytest>=6.0",
     "pytest-cov",
     "nbproject-test>=0.4.3",
