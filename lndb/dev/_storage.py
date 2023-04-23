@@ -70,6 +70,11 @@ class StorageSettings:
         """Root storage location."""
         return self._root
 
+    def set_root_fs_kwargs(self, **kwargs):
+        """Set additional fsspec arguments for cloud root. `profile`, for example."""
+        if isinstance(self._root, UPath):
+            self._root = UPath(self._root, **kwargs)
+
     @property
     def root_as_str(self) -> str:
         """Formatted root string."""
