@@ -16,8 +16,20 @@ class set:
     """Set properties of current instance."""
 
     @staticmethod
-    def storage(root: Union[str, Path, UPath]):
-        """Set storage."""
+    def storage(root: Union[str, Path, UPath], **fs_kwargs):
+        """Set storage.
+
+        Args:
+            root: `Union[str, Path, UPath]` - The new storage root, e.g., an S3 bucket.
+            **fs_kwargs: Additional fsspec arguments for cloud root, e.g., profile.
+
+        Example:
+
+        >>> ln.setup.set.storage(
+        >>>    "s3://some-bucket",
+        >>>     fs_kwargs=dict(profile="some_profile", cache_regions=True)
+        >>> )
+        """
         if settings.instance.dialect == "sqlite":
             logger.error("Can't set storage for sqlite instances.")
             return "set-storage-failed"
@@ -30,12 +42,14 @@ class set:
             schema=settings.instance._schema_str,
         )
 
-        new_isettings._persist()
+        new_isettings._persist()  # this also updates the settings object
         register(new_isettings, settings.user)
         if settings.instance.is_remote:
             add_storage_hub(root, account_handle=settings.instance.owner)
 
-        logger.info(f"Set storage {root}")
+        settings.storage._set_fs_kwargs(**fs_kwargs)
+
+        logger.success(f"Set storage {root}")
 
 
 @deprecated("lndb.set.storage()")
