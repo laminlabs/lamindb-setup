@@ -27,7 +27,8 @@ class set:
 
         >>> ln.setup.set.storage(
         >>>    "s3://some-bucket",
-        >>>     fs_kwargs=dict(profile="some_profile", cache_regions=True)
+        >>>     profile="some_profile", # fsspec arg
+        >>>     cache_regions=True # fsspec arg for s3
         >>> )
         """
         if settings.instance.dialect == "sqlite":
