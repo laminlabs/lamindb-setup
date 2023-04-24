@@ -62,7 +62,7 @@ class migrate:
             if settings._instance_exists:
                 response = input(
                     "Will generate migration for instance"
-                    " f{settings.instance.identifier}. Continue? (y/n)"
+                    f" {settings.instance.identifier}. Continue? (y/n)"
                 )
                 if response != "y":
                     return None
