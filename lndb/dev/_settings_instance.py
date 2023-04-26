@@ -12,7 +12,7 @@ from sqlalchemy.future import Engine
 from ._exclusion import empty_locker, get_locker
 from ._settings_save import save_instance_settings
 from ._settings_store import current_instance_settings_file, instance_settings_file
-from ._storage import Storage
+from ._storage import StorageSettings
 from .upath import UPath
 
 # leave commented out until we understand more how to deal with
@@ -44,7 +44,7 @@ class InstanceSettings:
     ):
         self._owner: str = owner
         self._name: str = name
-        self._storage: Storage = Storage(
+        self._storage: StorageSettings = StorageSettings(
             storage_root, instance_settings=self, region=storage_region
         )
         self._db: Optional[str] = db
@@ -172,7 +172,7 @@ class InstanceSettings:
             return empty_locker
 
     @property
-    def storage(self) -> Storage:
+    def storage(self) -> StorageSettings:
         """Low-level access to storage location."""
         return self._storage
 
@@ -218,13 +218,16 @@ class InstanceSettings:
         """Is the database available and initialized as LaminDB?"""
         if not self._is_db_reachable(mute=mute):
             if self.dialect == "sqlite":
-                return False, f"SQLite file {self._sqlite_file} does not exist"
+                return (
+                    False,
+                    f"SQLite file {self._sqlite_file} does not exist! It should be in"
+                    f" the storage root: {self.storage.root}",
+                )
             else:
                 return False, f"Connection {self.db} not reachable"
-        # cannot import lnschema_core here, yet!
 
         with self.engine.connect() as conn:
-            try:
+            try:  # cannot import lnschema_core here, need to use plain SQL
                 result = conn.execute(sa.text("select * from version_yvzi")).first()
             except Exception as e:
                 return False, f"Your DB is not initialized: {e}"
