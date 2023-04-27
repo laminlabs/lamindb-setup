@@ -3,11 +3,8 @@ from typing import Optional
 
 from lamin_logger import logger
 from lnhub_rest._assets import instances as test_instances
-from lnhub_rest.core.instance._init_instance import (
-    validate_db_arg,
-    validate_schema_arg,
-    validate_storage_arg,
-)
+from lnhub_rest.core.instance._init_instance import validate_db_arg, validate_schema_arg
+from lnhub_rest.core.storage._add_storage import validate_storage_root_arg
 
 from lndb._init_instance import infer_instance_name, init
 from lndb._settings import settings
@@ -74,7 +71,7 @@ def migrate_clone(
         kill_docker: Kill the docker container.
     """
     schema = validate_schema_arg(schema)
-    validate_storage_arg(str(storage))  # needs improvement!
+    validate_storage_root_arg(str(storage))  # needs improvement!
     validate_db_arg(db)
     logger.info(f"Will attempt to migrate these schemas beyond core: {schema}")
     name_str = infer_instance_name(storage=storage, name=name, db=db)
