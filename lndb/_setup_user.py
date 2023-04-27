@@ -4,6 +4,7 @@ from lamin_logger import logger
 from lnhub_rest.core.account._signup_signin import sign_in_hub, sign_up_hub
 
 from ._settings import settings
+from ._settings_store import settings_dir
 from .dev._db import upsert
 from .dev._settings_load import load_or_create_user_settings, load_user_settings
 from .dev._settings_save import save_user_settings
@@ -24,6 +25,12 @@ def signup(email: str) -> Union[str, None]:
     save_user_settings(user_settings)
     user_settings.password = response
     save_user_settings(user_settings)
+    usettings_file = settings_dir / f"user-{email}.env"
+    logger.info(
+        f"Email & password are cached: {usettings_file}\n"  # noqa
+        "Going forward, credentials are auto-loaded! "  # noqa
+        "In case of loss, recover your password via email: https://lamin.ai"
+    )
     return None  # user needs to confirm email now
 
 
