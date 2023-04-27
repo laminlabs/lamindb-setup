@@ -14,6 +14,7 @@ login_help = "Log in an already-signed-up user."
 init_help = "Init & config instance with db & storage."
 load_help = "Load instance by name."
 set_storage_help = "Set storage used by an instance."
+load_storage_help = "Load the instance with an updated default storage."
 info_help = "Show current instance information."
 close_help = "Close instance."
 migr_help = "Manage migrations."
@@ -60,6 +61,7 @@ instance_help = """
 The instance identifier can the instance name (owner is
 current user), handle/name, or the URL: https://lamin.ai/handle/name."""
 aa("instance", type=str, metavar="s", default=None, help=instance_help)
+aa("storage", type=str, metavar="s", default=None, help=load_storage_help)
 
 # delete instance
 delete_parser = subparsers.add_parser("delete", help=delete_help)
@@ -117,6 +119,7 @@ def main():
     elif args.command == "load":
         result = _init_instance.load(
             identifier=args.instance,
+            storage=args.storage,
         )
         return process_result(result)
     elif args.command == "close":
