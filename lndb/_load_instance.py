@@ -155,8 +155,8 @@ def update_isettings_with_storage(
         from lnschema_core import Storage
 
         isettings._storage = ssettings  # need this here already
-        print(isettings.db)
         if isettings.dialect == "sqlite":
+            isettings._engine = sqm.create_engine(isettings.db)
             with sqm.Session(isettings.engine) as session:
                 storage = session.exec(
                     sqm.select(Storage).where(Storage.root == ssettings.root_as_str)
@@ -167,6 +167,7 @@ def update_isettings_with_storage(
                     storage_record.root = ssettings.root_as_str
                     session.add(storage_record)
                     session.commit()
+                    session.refresh(storage_record)
                 logger.success(
                     f"Updated storage root {storage_record.id} to"
                     f" {ssettings.root_as_str}"
