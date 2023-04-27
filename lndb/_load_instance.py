@@ -141,7 +141,7 @@ def update_isettings_with_storage(
     isettings._persist()  # this is temporary for import of lnschema_core
     ssettings = StorageSettings(storage, instance_settings=isettings)
     if ssettings.is_cloud:
-        try:
+        try:  # triggering ssettings.id makes a lookup in the storage table
             logger.success(f"Loaded storage: {ssettings.id} / {ssettings.root_as_str}")
         except RuntimeError:
             raise RuntimeError(
@@ -154,6 +154,8 @@ def update_isettings_with_storage(
         # assumption is you want to merely update the storage location
         from lnschema_core import Storage
 
+        isettings._storage = ssettings  # need this here already
+        print(isettings.db)
         if isettings.dialect == "sqlite":
             with sqm.Session(isettings.engine) as session:
                 storage = session.exec(
