@@ -28,6 +28,7 @@ dependencies = [
     "natsort",
     "pandas",
     "python-dateutil",
+    "universal_pathlib"
 ]
 
 [project.urls]
