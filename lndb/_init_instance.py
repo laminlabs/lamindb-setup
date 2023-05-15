@@ -127,6 +127,7 @@ def init(
             storage=str(storage),
             db=db,
             schema=schema,
+            _access_token=settings.user.access_token,
         )
         if result == "instance-exists-already":
             pass  # everything is alright!
