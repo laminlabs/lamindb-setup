@@ -44,15 +44,15 @@ aa(
     metavar="user",
     help="Email or user handle. Email is needed at first login.",
 )  # noqa
-aa("--password", type=str, metavar="s", default=None, help=user.password)
+aa("--password", type=str, metavar="pw", default=None, help=user.password)
 
 # init instance
 init = subparsers.add_parser("init", help=init_help)
 aa = init.add_argument
 aa("--storage", type=str, metavar="s", help=instance.storage_root)
-aa("--db", type=str, metavar="s", default=None, help=instance.db)
-aa("--schema", type=str, metavar="s", default=None, help=instance.schema)
-aa("--name", type=str, metavar="s", default=None, help=instance.name)
+aa("--db", type=str, metavar="d", default=None, help=instance.db)
+aa("--schema", type=str, metavar="schema", default=None, help=instance.schema)
+aa("--name", type=str, metavar="n", default=None, help=instance.name)
 
 # load instance
 load = subparsers.add_parser("load", help=load_help)
@@ -60,13 +60,13 @@ aa = load.add_argument
 instance_help = """
 The instance identifier can the instance name (owner is
 current user), handle/name, or the URL: https://lamin.ai/handle/name."""
-aa("instance", type=str, metavar="s", default=None, help=instance_help)
-aa("storage", type=str, metavar="s", default=None, help=load_storage_help)
+aa("instance", type=str, metavar="i", default=None, help=instance_help)
+aa("--storage", type=str, metavar="s", default=None, help=load_storage_help)
 
 # delete instance
 delete_parser = subparsers.add_parser("delete", help=delete_help)
 aa = delete_parser.add_argument
-aa("instance", type=str, metavar="s", default=None, help=instance.name)
+aa("instance", type=str, metavar="i", default=None, help=instance.name)
 
 # show instance info
 info_parser = subparsers.add_parser("info", help=info_help)

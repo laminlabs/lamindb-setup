@@ -11,7 +11,7 @@ dependencies = [
     # PINNED internal LAMIN dependency
     # !!! lnhub_rest cannot be pinned in LaminDB !!!
     # !!! LaminDB should not directly depend on lnhub_rest !!!
-    "lnhub_rest==0.9.3",
+    "lnhub_rest==0.9.4",
     # NO other Lamin packages should be pinned or even be a dependency
     "laminci>=0.3.0",  # disentangle over time
     "lnschema_core>=0.28.0",
@@ -28,6 +28,7 @@ dependencies = [
     "natsort",
     "pandas",
     "python-dateutil",
+    "universal_pathlib"
 ]
 
 [project.urls]

@@ -18,7 +18,7 @@ def signup(email: str) -> Union[str, None]:
         logger.error("The handle already exists. Please choose a different one.")
         return "handle-exists"
     if response == "user-exists":  # user already exists
-        logger.error("User already exists! Please login instead: `lndb login`.")
+        logger.error("User already exists! Please login instead: `lamin login`.")
         return "user-exists"
     user_settings = load_or_create_user_settings()
     user_settings.email = email
@@ -79,11 +79,11 @@ def login(
         user_settings.password = password
 
     if user_settings.email is None:
-        raise RuntimeError("No stored user email, please call: lndb login {user}")
+        raise RuntimeError("No stored user email, please call: lamin login {user}")
 
     if user_settings.password is None:
         raise RuntimeError(
-            "No stored user password, please call: lndb login <your-email>"
+            "No stored user password, please call: lamin login <your-email>"
             " --password <your-password>"
         )
 
