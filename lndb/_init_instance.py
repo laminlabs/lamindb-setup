@@ -10,6 +10,7 @@ from lnhub_rest.core.storage._add_storage import (
     get_storage_region,
     validate_storage_root_arg,
 )
+from lnhub_rest.orm._sbclient import get_access_token
 from pydantic import PostgresDsn
 
 from lndb.dev.upath import UPath
@@ -127,7 +128,7 @@ def init(
             storage=str(storage),
             db=db,
             schema=schema,
-            _access_token=settings.user.access_token,
+            _access_token=get_access_token(settings.user.email, settings.user.password),
         )
         if result == "instance-exists-already":
             pass  # everything is alright!
