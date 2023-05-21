@@ -7,6 +7,7 @@ from lamin_logger import logger
 from . import _init_instance, _setup_user, delete, info, register, set
 from ._close import close as close_instance
 from ._init_instance import description as instance
+from ._notebook import track
 from .dev._settings_user import user_description as user
 
 signup_help = "First time sign up."
@@ -22,7 +23,7 @@ delete_help = "Delete an instance."
 register_help = (
     "Register instance on hub (local instances are not automatically registered)."
 )
-
+track_help = "Track a notebook (init metadata)."
 
 description_cli = "Configure LaminDB and perform simple actions."
 parser = argparse.ArgumentParser(
@@ -74,7 +75,7 @@ info_parser = subparsers.add_parser("info", help=info_help)
 # set storage
 set_storage_parser = subparsers.add_parser("set", help=set_storage_help)
 aa = set_storage_parser.add_argument
-aa("--storage", type=str, metavar="s", help=instance.storage_root)
+aa("--storage", type=str, metavar="f", help=instance.storage_root)
 
 # close instance
 subparsers.add_parser("close", help=close_help)
@@ -86,6 +87,18 @@ subparsers.add_parser("register", help=register_help)
 migr = subparsers.add_parser("migrate", help=migr_help)
 aa = migr.add_argument
 aa("action", choices=["generate"], help="Generate migration.")
+
+# track anotebook (init nbproject metadata)
+track_parser = subparsers.add_parser("track", help=track_help)
+aa = track_parser.add_argument
+nb_path_help = "A path to the notebook to track."
+aa("nb_path", type=str, metavar="filepath", help=nb_path_help)
+parent_help = (
+    "One or more (delimited by ',') ids of direct ancestors in a notebook pipeline"
+)
+aa("--parent", type=str, metavar="parent", default=None, help=parent_help)
+pypackage_help = "One or more (delimited by ',') python packages to track."
+aa("--pypackage", type=str, metavar="pypackage", default=None, help=pypackage_help)
 
 # parse args
 args = parser.parse_args()
@@ -139,6 +152,8 @@ def main():
 
         if args.action == "generate":
             return migrate.generate()
+    elif args.command == "track":
+        track(args.nb_path, args.parent, args.pypackage)
     else:
         logger.error("Invalid command. Try `lamin -h`.")
         return 1
