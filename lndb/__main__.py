@@ -91,12 +91,8 @@ aa("action", choices=["generate"], help="Generate migration.")
 # track anotebook (init nbproject metadata)
 track_parser = subparsers.add_parser("track", help=track_help)
 aa = track_parser.add_argument
-nb_path_help = "A path to the notebook to track."
-aa("nb_path", type=str, metavar="filepath", help=nb_path_help)
-parent_help = (
-    "One or more (delimited by ',') ids of direct ancestors in a notebook pipeline"
-)
-aa("--parent", type=str, metavar="parent", default=None, help=parent_help)
+filepath_help = "A path to the notebook to track."
+aa("filepath", type=str, metavar="filepath", help=filepath_help)
 pypackage_help = "One or more (delimited by ',') python packages to track."
 aa("--pypackage", type=str, metavar="pypackage", default=None, help=pypackage_help)
 
@@ -153,7 +149,7 @@ def main():
         if args.action == "generate":
             return migrate.generate()
     elif args.command == "track":
-        track(args.nb_path, args.parent, args.pypackage)
+        track(args.filepath, args.pypackage)
     else:
         logger.error("Invalid command. Try `lamin -h`.")
         return 1
