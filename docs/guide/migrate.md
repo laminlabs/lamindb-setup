@@ -9,6 +9,14 @@ Currently only recommended on the enterprise plan. [Reach out](https://lamin.ai/
 
 This page documents how to create a tested migration using the CI-guided workflow for postgres-based instances.
 
+Ensure that you have installed the schema module in editable mode for example through
+
+```bash
+pip install -e .
+```
+
+Further, ensure that you have loaded a Lamin instance.
+
 1. Create a new branch (e.g. `migr`) in your repository: Update an ORM, e.g., by renaming a column.
 
    :::{dropdown} Example: Rename a column.
