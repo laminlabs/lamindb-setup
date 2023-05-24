@@ -5,6 +5,7 @@ from typing import Any, List
 
 import sqlmodel as sqm
 from lamin_logger import logger
+import sqlalchemy as sa
 from sqlalchemy.exc import ProgrammingError
 
 from .._settings import settings
@@ -14,21 +15,11 @@ from ._storage import StorageSettings
 class upsert:
     @classmethod
     def user(cls, email: str, user_id: str, handle: str, name: str = None):
-        import lnschema_core as schema_core
-
-        with sqm.Session(settings.instance.engine) as session:
-            user_table = (
-                schema_core.User if hasattr(schema_core, "User") else schema_core.user
-            )  # noqa
+        with settings.instance.engine.connect() as conn:
             try:
-                user = session.get(user_table, user_id)
-            except ProgrammingError as e:
-                logger.error(
-                    "Cannot find user table.\nLikely, you try to run SQLite and"
-                    " Postgres from the same process.\n\n->Abort and restart with only"
-                    " one SQL dialect in one process.\n\n"
-                )
-                raise e
+                user = conn.execute(sa.text(f"select * from core.user where id = '{user_id}'")).first()
+            except Exception as e:
+                user = conn.execute(sa.text(f"select * from lnschema_core_user where id = '{user_id}'")).first()
         if user is None:
             user_id = insert.user(email, user_id, handle, name)  # type: ignore
             # do not update sqlite on the cloud as this happens within
