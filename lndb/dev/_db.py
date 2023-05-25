@@ -67,12 +67,12 @@ class insert_if_not_exists:
         with settings.instance.engine.connect() as conn:
             try:
                 storage = conn.execute(
-                    sa.text(f"select * from core.user where root = '{root_str}'")
+                    sa.text(f"select * from core.storage where root = '{root_str}'")
                 ).first()
             except Exception:
                 storage = conn.execute(
                     sa.text(
-                        f"select * from lnschema_core_user where root = '{root_str}'"
+                        f"select * from lnschema_core_storage where root = '{root_str}'"
                     )
                 ).first()
         if storage is None:
