@@ -134,9 +134,7 @@ class insert:
         import lnschema_core as schema_core
 
         with sqm.Session(settings.instance.engine) as session:
-            user_table = (
-                schema_core.User if hasattr(schema_core, "User") else schema_core.user
-            )  # noqa
+            user_table = schema_core.User
             user = user_table(id=user_id, email=email, handle=handle, name=name)
             session.add(user)
             session.commit()
