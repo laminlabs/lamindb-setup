@@ -150,20 +150,18 @@ class insert:
                     sa.text(
                         "insert into core.storage (root, region, type) values"
                         " (:root, :region, :type)"
-                    ),
-                    root=root,
-                    region=region,
-                    type=settings.instance.storage.type,
+                    ).bindparams(
+                        root=root, region=region, type=settings.instance.storage.type
+                    )
                 )
             except Exception:
                 conn.execute(
                     sa.text(
                         "insert into lnschema_core_storage (root, region, type) values"
                         " (:root, :region, :type)"
-                    ),
-                    root=root,
-                    region=region,
-                    type=settings.instance.storage.type,
+                    ).bindparams(
+                        root=root, region=region, type=settings.instance.storage.type
+                    )
                 )
         settings.instance._update_cloud_sqlite_file()
 
