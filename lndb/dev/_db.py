@@ -144,23 +144,32 @@ class insert:
     @classmethod
     def storage(cls, root, region) -> None:
         """Storage."""
+        from lnschema_core.dev.id import storage as storage_id
+
+        id = storage_id()
         with settings.instance.engine.connect() as conn:
             try:
                 conn.execute(
                     sa.text(
-                        "insert into core.storage (root, region, type) values"
-                        " (:root, :region, :type)"
+                        "insert into core.storage (id, root, region, type) values"
+                        " (:id, :root, :region, :type)"
                     ).bindparams(
-                        root=root, region=region, type=settings.instance.storage.type
+                        id=id,
+                        root=root,
+                        region=region,
+                        type=settings.instance.storage.type,
                     )
                 )
             except Exception:
                 conn.execute(
                     sa.text(
-                        "insert into lnschema_core_storage (root, region, type) values"
-                        " (:root, :region, :type)"
+                        "insert into lnschema_core_storage (id, root, region, type)"
+                        " values (:id, :root, :region, :type)"
                     ).bindparams(
-                        root=root, region=region, type=settings.instance.storage.type
+                        id=id,
+                        root=root,
+                        region=region,
+                        type=settings.instance.storage.type,
                     )
                 )
         settings.instance._update_cloud_sqlite_file()
