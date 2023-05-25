@@ -9,5 +9,4 @@ load-instance
 set-storage
 schema-modules
 migrate
-delete
 ```
