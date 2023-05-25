@@ -62,7 +62,7 @@ class insert_if_not_exists:
     """
 
     @classmethod
-    def storage(cls, storage_settings: StorageSettings):
+    def storage(cls, storage_settings: StorageSettings) -> None:
         root_str = storage_settings.root_as_str
         with settings.instance.engine.connect() as conn:
             try:
@@ -77,7 +77,6 @@ class insert_if_not_exists:
                 ).first()
         if storage is None:
             storage = insert.storage(root_str, storage_settings.region)
-        return storage
 
 
 class insert:
@@ -143,26 +142,24 @@ class insert:
         return user.id
 
     @classmethod
-    def storage(cls, root, region):
+    def storage(cls, root, region) -> None:
         """Storage."""
-        import lnschema_core as schema_core
-
-        with sqm.Session(settings.instance.engine) as session:
-            storage_table = (
-                schema_core.Storage
-                if hasattr(schema_core, "Storage")
-                else schema_core.storage
-            )  # noqa
-            storage = storage_table(
-                root=root, region=region, type=settings.instance.storage.type
-            )
-            session.add(storage)
-            session.commit()
-            session.refresh(storage)
-
+        with settings.instance.engine.connect() as conn:
+            try:
+                conn.execute(
+                    sa.text(
+                        "insert into core.storage (root, region, type) values"
+                        f" ('{root}', {region}, {settings.instance.storage.type})"
+                    )
+                )
+            except Exception:
+                conn.execute(
+                    sa.text(
+                        "insert into lnschema_core_storage (root, region, type) values"
+                        f" ('{root}', {region}, {settings.instance.storage.type})"
+                    )
+                )
         settings.instance._update_cloud_sqlite_file()
-
-        return storage
 
     @classmethod
     def bionty_versions(cls, records: List[sqm.SQLModel]):
