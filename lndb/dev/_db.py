@@ -71,8 +71,13 @@ class insert_if_not_exists:
         root_str = storage_settings.root_as_str
         with settings.instance.engine.connect() as conn:
             try:
+                table = (
+                    "core.storage"
+                    if settings.instance.dialect == "postgresql"
+                    else '"core.storage"'
+                )
                 storage = conn.execute(
-                    sa.text(f"select * from core.storage where root = '{root_str}'")
+                    sa.text(f"select * from {table} where root = '{root_str}'")
                 ).first()
             except Exception:
                 storage = conn.execute(
