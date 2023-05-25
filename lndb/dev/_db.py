@@ -14,8 +14,8 @@ from ._storage import StorageSettings
 class upsert:
     @classmethod
     def user(cls, email: str, user_id: str, handle: str, name: str = None):
-        with settings.instance.engine.connect() as conn:
-            try:
+        try:
+            with settings.instance.engine.connect() as conn:
                 table = (
                     "core.user"
                     if settings.instance.dialect == "postgresql"
@@ -24,7 +24,8 @@ class upsert:
                 user = conn.execute(
                     sa.text(f"select * from {table} where id = '{user_id}'")
                 ).first()
-            except Exception:
+        except Exception:
+            with settings.instance.engine.connect() as conn:
                 user = conn.execute(
                     sa.text(f"select * from lnschema_core_user where id = '{user_id}'")
                 ).first()
@@ -69,8 +70,8 @@ class insert_if_not_exists:
     @classmethod
     def storage(cls, storage_settings: StorageSettings) -> None:
         root_str = storage_settings.root_as_str
-        with settings.instance.engine.connect() as conn:
-            try:
+        try:
+            with settings.instance.engine.connect() as conn:
                 table = (
                     "core.storage"
                     if settings.instance.dialect == "postgresql"
@@ -79,7 +80,8 @@ class insert_if_not_exists:
                 storage = conn.execute(
                     sa.text(f"select * from {table} where root = '{root_str}'")
                 ).first()
-            except Exception:
+        except Exception:
+            with settings.instance.engine.connect() as conn:
                 storage = conn.execute(
                     sa.text(
                         f"select * from lnschema_core_storage where root = '{root_str}'"
@@ -155,8 +157,9 @@ class insert:
         from lnschema_core.dev.id import storage as storage_id
 
         id = storage_id()
-        with settings.instance.engine.begin() as conn:
-            try:
+
+        try:
+            with settings.instance.engine.begin() as conn:
                 table = (
                     "core.storage"
                     if settings.instance.dialect == "postgresql"
@@ -173,7 +176,8 @@ class insert:
                         type=settings.instance.storage.type,
                     )
                 )
-            except Exception:
+        except Exception:
+            with settings.instance.engine.begin() as conn:
                 conn.execute(
                     sa.text(
                         "insert into lnschema_core_storage (id, root, region, type)"
