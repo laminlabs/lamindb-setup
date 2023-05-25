@@ -155,7 +155,7 @@ class insert:
         from lnschema_core.dev.id import storage as storage_id
 
         id = storage_id()
-        with settings.instance.engine.connect() as conn:
+        with settings.instance.engine.begin() as conn:
             try:
                 table = (
                     "core.storage"
