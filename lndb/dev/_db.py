@@ -3,9 +3,9 @@
 # once isettings have been adjusted
 from typing import Any, List
 
+import sqlalchemy as sa
 import sqlmodel as sqm
 from lamin_logger import logger
-from sqlalchemy.exc import ProgrammingError
 
 from .._settings import settings
 from ._storage import StorageSettings
@@ -14,21 +14,20 @@ from ._storage import StorageSettings
 class upsert:
     @classmethod
     def user(cls, email: str, user_id: str, handle: str, name: str = None):
-        import lnschema_core as schema_core
-
-        with sqm.Session(settings.instance.engine) as session:
-            user_table = (
-                schema_core.User if hasattr(schema_core, "User") else schema_core.user
-            )  # noqa
+        with settings.instance.engine.connect() as conn:
             try:
-                user = session.get(user_table, user_id)
-            except ProgrammingError as e:
-                logger.error(
-                    "Cannot find user table.\nLikely, you try to run SQLite and"
-                    " Postgres from the same process.\n\n->Abort and restart with only"
-                    " one SQL dialect in one process.\n\n"
+                table = (
+                    "core.user"
+                    if settings.instance.dialect == "postgresql"
+                    else '"core.user"'
                 )
-                raise e
+                user = conn.execute(
+                    sa.text(f"select * from {table} where id = '{user_id}'")
+                ).first()
+            except Exception:
+                user = conn.execute(
+                    sa.text(f"select * from lnschema_core_user where id = '{user_id}'")
+                ).first()
         if user is None:
             user_id = insert.user(email, user_id, handle, name)  # type: ignore
             # do not update sqlite on the cloud as this happens within
@@ -68,17 +67,26 @@ class insert_if_not_exists:
     """
 
     @classmethod
-    def storage(cls, storage_settings: StorageSettings):
-        from lnschema_core import Storage as StorageORM
-
+    def storage(cls, storage_settings: StorageSettings) -> None:
         root_str = storage_settings.root_as_str
-        with sqm.Session(settings.instance.engine) as session:
-            storage = session.exec(
-                sqm.select(StorageORM).where(StorageORM.root == root_str)
-            ).first()
+        with settings.instance.engine.connect() as conn:
+            try:
+                table = (
+                    "core.storage"
+                    if settings.instance.dialect == "postgresql"
+                    else '"core.storage"'
+                )
+                storage = conn.execute(
+                    sa.text(f"select * from {table} where root = '{root_str}'")
+                ).first()
+            except Exception:
+                storage = conn.execute(
+                    sa.text(
+                        f"select * from lnschema_core_storage where root = '{root_str}'"
+                    )
+                ).first()
         if storage is None:
             storage = insert.storage(root_str, storage_settings.region)
-        return storage
 
 
 class insert:
@@ -131,9 +139,7 @@ class insert:
         import lnschema_core as schema_core
 
         with sqm.Session(settings.instance.engine) as session:
-            user_table = (
-                schema_core.User if hasattr(schema_core, "User") else schema_core.user
-            )  # noqa
+            user_table = schema_core.User
             user = user_table(id=user_id, email=email, handle=handle, name=name)
             session.add(user)
             session.commit()
@@ -144,26 +150,42 @@ class insert:
         return user.id
 
     @classmethod
-    def storage(cls, root, region):
+    def storage(cls, root, region) -> None:
         """Storage."""
-        import lnschema_core as schema_core
+        from lnschema_core.dev.id import storage as storage_id
 
-        with sqm.Session(settings.instance.engine) as session:
-            storage_table = (
-                schema_core.Storage
-                if hasattr(schema_core, "Storage")
-                else schema_core.storage
-            )  # noqa
-            storage = storage_table(
-                root=root, region=region, type=settings.instance.storage.type
-            )
-            session.add(storage)
-            session.commit()
-            session.refresh(storage)
-
+        id = storage_id()
+        with settings.instance.engine.begin() as conn:
+            try:
+                table = (
+                    "core.storage"
+                    if settings.instance.dialect == "postgresql"
+                    else '"core.storage"'
+                )
+                conn.execute(
+                    sa.text(
+                        f"insert into {table} (id, root, region, type) values"
+                        " (:id, :root, :region, :type)"
+                    ).bindparams(
+                        id=id,
+                        root=root,
+                        region=region,
+                        type=settings.instance.storage.type,
+                    )
+                )
+            except Exception:
+                conn.execute(
+                    sa.text(
+                        "insert into lnschema_core_storage (id, root, region, type)"
+                        " values (:id, :root, :region, :type)"
+                    ).bindparams(
+                        id=id,
+                        root=root,
+                        region=region,
+                        type=settings.instance.storage.type,
+                    )
+                )
         settings.instance._update_cloud_sqlite_file()
-
-        return storage
 
     @classmethod
     def bionty_versions(cls, records: List[sqm.SQLModel]):
