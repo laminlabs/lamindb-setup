@@ -3,10 +3,9 @@
 # once isettings have been adjusted
 from typing import Any, List
 
+import sqlalchemy as sa
 import sqlmodel as sqm
 from lamin_logger import logger
-import sqlalchemy as sa
-from sqlalchemy.exc import ProgrammingError
 
 from .._settings import settings
 from ._storage import StorageSettings
@@ -17,9 +16,13 @@ class upsert:
     def user(cls, email: str, user_id: str, handle: str, name: str = None):
         with settings.instance.engine.connect() as conn:
             try:
-                user = conn.execute(sa.text(f"select * from core.user where id = '{user_id}'")).first()
-            except Exception as e:
-                user = conn.execute(sa.text(f"select * from lnschema_core_user where id = '{user_id}'")).first()
+                user = conn.execute(
+                    sa.text(f"select * from core.user where id = '{user_id}'")
+                ).first()
+            except Exception:
+                user = conn.execute(
+                    sa.text(f"select * from lnschema_core_user where id = '{user_id}'")
+                ).first()
         if user is None:
             user_id = insert.user(email, user_id, handle, name)  # type: ignore
             # do not update sqlite on the cloud as this happens within
@@ -60,13 +63,18 @@ class insert_if_not_exists:
 
     @classmethod
     def storage(cls, storage_settings: StorageSettings):
-        from lnschema_core import Storage as StorageORM
-
         root_str = storage_settings.root_as_str
-        with sqm.Session(settings.instance.engine) as session:
-            storage = session.exec(
-                sqm.select(StorageORM).where(StorageORM.root == root_str)
-            ).first()
+        with settings.instance.engine.connect() as conn:
+            try:
+                storage = conn.execute(
+                    sa.text(f"select * from core.user where root = '{root_str}'")
+                ).first()
+            except Exception:
+                storage = conn.execute(
+                    sa.text(
+                        f"select * from lnschema_core_user where root = '{root_str}'"
+                    )
+                ).first()
         if storage is None:
             storage = insert.storage(root_str, storage_settings.region)
         return storage
