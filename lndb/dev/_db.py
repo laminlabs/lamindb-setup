@@ -16,8 +16,13 @@ class upsert:
     def user(cls, email: str, user_id: str, handle: str, name: str = None):
         with settings.instance.engine.connect() as conn:
             try:
+                table = (
+                    "core.user"
+                    if settings.instance.dialect == "postgresql"
+                    else '"core.user"'
+                )
                 user = conn.execute(
-                    sa.text(f"select * from core.user where id = '{user_id}'")
+                    sa.text(f"select * from {table} where id = '{user_id}'")
                 ).first()
             except Exception:
                 user = conn.execute(
@@ -149,9 +154,14 @@ class insert:
         id = storage_id()
         with settings.instance.engine.connect() as conn:
             try:
+                table = (
+                    "core.storage"
+                    if settings.instance.dialect == "postgresql"
+                    else '"core.storage"'
+                )
                 conn.execute(
                     sa.text(
-                        "insert into core.storage (id, root, region, type) values"
+                        f"insert into {table} (id, root, region, type) values"
                         " (:id, :root, :region, :type)"
                     ).bindparams(
                         id=id,
