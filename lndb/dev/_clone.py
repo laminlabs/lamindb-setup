@@ -3,15 +3,11 @@
 from typing import Optional
 
 import sqlalchemy as sa
+from laminci.db import setup_local_test_postgres, setup_local_test_sqlite_file  # noqa
 from sqlalchemy import MetaData, create_engine, func, select
 
 from .._settings import settings
 from ._settings_instance import InstanceSettings
-from ._testdb import (
-    setup_local_test_postgres,
-    setup_local_test_postgres_supabase,
-    setup_local_test_sqlite_file,
-)
 
 
 def clone_schema(
@@ -58,7 +54,6 @@ def clone_schema(
 def clone_test(
     src_settings: Optional[InstanceSettings] = None,
     n_rows: int = 10000,
-    supabase: bool = False,
 ):
     """Clone from current instance to a test instance."""
     if src_settings is None:
@@ -68,8 +63,6 @@ def clone_test(
 
     if src_settings.dialect == "sqlite":
         tgt_db = setup_local_test_sqlite_file(src_settings)
-    elif supabase:
-        tgt_db = setup_local_test_postgres_supabase()
     else:
         tgt_db = setup_local_test_postgres()
 
