@@ -30,12 +30,16 @@ def register(isettings: InstanceSettings, usettings):
     insert_if_not_exists.storage(isettings.storage)
 
 
-def reload_lamindb():
+def reload_lamindb(isettings: InstanceSettings):
     # only touch lamindb if we're operating from lamindb
     if "lamindb" in sys.modules:
         import lamindb
 
         importlib.reload(lamindb)
+    else:
+        # only log if we're outside lamindb
+        # lamindb itself logs upon import!
+        logger.success(f"Loaded instance: {isettings.owner}/{isettings.name}")
 
 
 def persist_settings_load_schema(isettings: InstanceSettings):
@@ -157,7 +161,7 @@ def init(
         logger.warning("Your instance seems already set up, attempt load:")
         message = load_from_isettings(isettings, migrate=_migrate)
 
-    reload_lamindb()
+    reload_lamindb(isettings)
     logger.success(
         f"Created & loaded instance: {settings.user.handle}/{isettings.name}"
     )
