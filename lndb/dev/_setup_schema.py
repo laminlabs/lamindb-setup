@@ -1,68 +1,16 @@
 import importlib
 from types import ModuleType
 
-import sqlalchemy as sa
 import sqlmodel as sqm
 from importlib_metadata import requires as importlib_requires
 from importlib_metadata import version as get_pip_version
 from lamin_logger import logger
-from lnhub_rest._assets._schemas import get_schema_lookup_name, get_schema_module_name
+from lnhub_rest._assets._schemas import get_schema_module_name
 from packaging.requirements import Requirement
 
 from ._db import insert
 from ._settings_instance import InstanceSettings
 from ._settings_user import UserSettings
-
-
-def create_schema_if_not_exists(schema_name: str, isettings: InstanceSettings):
-    # create the SQL-level schema module in case it doesn't exist
-    schema_lookup_name = get_schema_lookup_name(schema_name)
-    if isettings.dialect != "sqlite":
-        with isettings.engine.connect() as conn:
-            if not conn.dialect.has_schema(conn, schema_lookup_name):
-                conn.execute(sa.schema.CreateSchema(schema_lookup_name))
-            conn.commit()
-
-
-def reload_orms(schema_name, module, isettings):
-    # root-level ORMs
-    orms = [cls for cls in module.__dict__.values() if hasattr(cls, "__table__")]
-    # dev-level ORMs
-    if hasattr(module, "dev"):
-        orms += [
-            cls
-            for cls in module.dev.__dict__.values()
-            if hasattr(cls, "__table__")
-            # exclude the version_* and migration_* tables in the root namespace
-            and not cls.__name__.startswith("version_")
-            and not cls.__name__.startswith("migration_")
-        ]
-    # link tables
-    if hasattr(module, "link"):
-        orms += [
-            cls for cls in module.link.__dict__.values() if hasattr(cls, "__table__")
-        ]
-    if isettings.dialect == "sqlite":
-        # only those orms that are actually in a schema
-        orms = [
-            orm
-            for orm in orms
-            if hasattr(orm.__table__, "schema") and orm.__table__.schema is not None
-        ]
-        for orm in orms:
-            orm.__table__.schema = None
-            # I don't know why the following is needed... it shouldn't
-            if not orm.__table__.name.startswith(f"{schema_name}."):
-                orm.__table__.name = f"{schema_name}.{orm.__table__.name}"
-    else:  # postgres
-        orms = [
-            orm
-            for orm in orms
-            if (hasattr(orm.__table__, "schema") and orm.__table__.schema is None)
-        ]
-        for orm in orms:
-            orm.__table__.schema = schema_name
-            orm.__table__.name = orm.__table__.name.replace(f"{schema_name}.", "")
 
 
 def check_schema_version_and_import(schema_name) -> ModuleType:
@@ -109,22 +57,10 @@ def check_schema_version_and_import(schema_name) -> ModuleType:
 
 
 def load_schema(isettings: InstanceSettings):
-    reload = False  # see comments below
     schema_names = ["core"] + list(isettings.schema)
     msg = "Loading schema modules: "
     for schema_name in schema_names:
-        create_schema_if_not_exists(schema_name, isettings)
         module = check_schema_version_and_import(schema_name)
-        if schema_name == "core":
-            # here, we determine whether we have to reload the ORMs
-            # it's necessary if switching from or to sqlite
-            user_table = module.User.__table__
-            if isettings.dialect != "sqlite" and user_table.schema is None:
-                reload = True
-            if isettings.dialect == "sqlite" and user_table.schema is not None:
-                reload = True
-        if reload:  # importlib.reload doesn't do the job! hence, manual below
-            reload_orms(schema_name, module, isettings)
         msg += f"{schema_name}=={module.__version__} "
     return msg, schema_names
 
