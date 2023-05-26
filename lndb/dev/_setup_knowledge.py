@@ -49,6 +49,12 @@ def load_bionty_versions(isettings: InstanceSettings, display: bool = False):
 
         basedir = Path(bt.__file__).parent / "versions"
 
+        # these two lines help over the incomplete migration
+        # of the core schema module v0.34.0 and related in lnschema_bionty
+        # v0.18.0
+        dev.BiontyVersions.__table__.schema = None
+        dev.CurrentBiontyVersions.__table__.schema = None
+
         stmt = sqm.select(dev.BiontyVersions).join(dev.CurrentBiontyVersions)
         with isettings.session() as ss:
             results = ss.exec(stmt).all()

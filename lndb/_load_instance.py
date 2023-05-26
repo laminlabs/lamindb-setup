@@ -90,11 +90,8 @@ def load(
             return "instance-not-reachable"
 
     message = load_from_isettings(isettings, migrate)
-
     if not message == "migrate-failed":
         os.environ["LAMINDB_INSTANCE_LOADED"] = "1"
-
-    logger.success(f"Loaded instance: {isettings.owner}/{isettings.name}")
     return message
 
 
@@ -131,7 +128,7 @@ def load_from_isettings(
         return message
     register(isettings, settings.user)
     load_bionty_versions(isettings)
-    reload_lamindb()
+    reload_lamindb(isettings)
     return message
 
 

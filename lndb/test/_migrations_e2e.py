@@ -2,13 +2,13 @@ from subprocess import run
 from typing import Optional
 
 from lamin_logger import logger
+from laminci.db import setup_local_test_sqlite_file
 from lnhub_rest._assets import instances as test_instances
 from lnhub_rest.core.instance._init_instance import validate_db_arg, validate_schema_arg
 from lnhub_rest.core.storage._add_storage import validate_storage_root_arg
 
 from lndb._init_instance import infer_instance_name, init
 from lndb._settings import settings
-from lndb.dev import setup_local_test_sqlite_file
 from lndb.dev._clone import clone_test
 from lndb.dev._settings_instance import InstanceSettings
 

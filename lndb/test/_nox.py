@@ -7,5 +7,3 @@ from laminci.nox import (  # noqa
     run_pytest,
     setup_test_instances_from_main_branch,
 )
-
-from lndb.dev import setup_local_test_postgres  # noqa
