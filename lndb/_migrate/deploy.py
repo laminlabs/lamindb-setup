@@ -65,9 +65,10 @@ def decide_deploy_migration(
             deploy_migration = False
         else:
             logger.warning(
-                f"Deployed schema {schema_name} v{deployed_version} (migration"
-                f" {deployed_migration}) is not up to date with installed"
-                f" v{current_version} (migration {current_migration})"
+                f"In instance {isettings.identifier}, deployed schema"
+                f" {schema_name} v{deployed_version} (migration {deployed_migration})"
+                f" is not up to date with installed v{current_version} (migration"
+                f" {current_migration})"
             )
             # if migration is confirmed, continue
             if "PYTEST_CURRENT_TEST" not in os.environ:
