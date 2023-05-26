@@ -14,7 +14,7 @@ dependencies = [
     "lnhub_rest==0.9.4",
     # NO other Lamin packages should be pinned or even be a dependency
     "laminci>=0.3.0",  # disentangle over time
-    "lnschema_core>=0.28.0",
+    "lnschema_core>=0.34a2",
     "lamin_logger>=0.2.3",
     # External dependencies
     "pytest_alembic==0.9.1",  # let's pin this as we use internals
@@ -40,7 +40,7 @@ dev = [
     "nox",
 ]
 test = [
-    "lamindb[bionty,lamin1]>=0.39rc1",
+    "lamindb[bionty,lamin1]>=0.41a1",
     "pytest>=6.0",
     "pytest-cov",
     "nbproject-test>=0.4.3",
