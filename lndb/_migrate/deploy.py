@@ -15,7 +15,7 @@ from lndb._migrate.utils import generate_module_files, modify_alembic_ini
 from lndb.dev._db import insert
 from lndb.dev._settings_instance import InstanceSettings
 from lndb.dev._settings_user import UserSettings
-from lndb.dev._setup_schema import create_schema_if_not_exists, get_schema_module_name
+from lndb.dev._setup_schema import get_schema_module_name
 
 
 def decide_deploy_migration(
@@ -118,7 +118,6 @@ def check_deploy_migration(
         schema_names.insert(1, "bionty")
 
     for schema_name in schema_names:
-        create_schema_if_not_exists(schema_name, isettings)
         schema_module_name = get_schema_module_name(schema_name)
         schema_module = importlib.import_module(schema_module_name)
         schema_id = schema_module._schema_id
