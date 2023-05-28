@@ -4,7 +4,9 @@ import lndb as lndb
 
 
 def test_db_unique_error():
-    lndb.login("testuser2")
+    lndb.login(
+        "testuser2@lamin.ai", password="goeoNJKE61ygbz1vhaCVynGERaRrlviPBVQsjkhz"
+    )
 
     # postgres
 
