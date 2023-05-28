@@ -11,14 +11,13 @@ dependencies = [
     # PINNED internal LAMIN dependency
     # !!! lnhub_rest cannot be pinned in LaminDB !!!
     # !!! LaminDB should not directly depend on lnhub_rest !!!
-    "lnhub_rest==0.9.4",
+    "lnhub_rest==0.9.7",
     # NO other Lamin packages should be pinned or even be a dependency
     "laminci>=0.3.0",  # disentangle over time
     "lnschema_core>=0.34a2",
     "lamin_logger>=0.2.3",
     # External dependencies
     "pytest_alembic==0.9.1",  # let's pin this as we use internals
-    "cloudpathlib",  # we can remove this once lnschema-core is released (2023-04-07)
     "sqlmodel>=0.0.8",
     "psycopg2-binary",
     "appdirs",
