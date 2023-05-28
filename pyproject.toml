@@ -11,7 +11,7 @@ dependencies = [
     # PINNED internal LAMIN dependency
     # !!! lnhub_rest cannot be pinned in LaminDB !!!
     # !!! LaminDB should not directly depend on lnhub_rest !!!
-    "lnhub_rest==0.9.7",
+    "lnhub_rest==0.9.8",
     # NO other Lamin packages should be pinned or even be a dependency
     "laminci>=0.3.0",  # disentangle over time
     "lnschema_core>=0.34a2",
@@ -40,6 +40,7 @@ dev = [
 ]
 test = [
     "lnschema_lamin1",
+    "lamindb[bionty,lamin1]>=0.41a3",
     "pytest>=6.0",
     "pytest-cov",
     "nbproject-test>=0.4.3",
