@@ -71,6 +71,9 @@ def load(
                 )
             return "instance-not-reachable"
 
+    if _test:
+        return None
+
     if storage is not None:
         update_isettings_with_storage(isettings, storage)
 
@@ -79,9 +82,6 @@ def load(
             f"Storage root does not exist: {isettings.storage.root}\n"
             "Please amend by passing --storage <my-storage-root>"
         )
-
-    if _test:
-        return None
 
     check, msg = isettings._is_db_setup()
     if not check:
@@ -156,11 +156,11 @@ def update_isettings_with_storage(
     else:
         # local storage
         # assumption is you want to merely update the storage location
-        from lnschema_core import Storage
-
         isettings._storage = ssettings  # need this here already
         if isettings.dialect == "sqlite":
             if _USE_DJANGO:
+                from lnschema_core.models import Storage
+
                 storage, created = Storage.objects.get_or_create(
                     root=ssettings.root_as_str,
                     defaults=dict(root=ssettings.root_as_str),
@@ -170,6 +170,8 @@ def update_isettings_with_storage(
                         f"Added storage root {storage.id}:  {ssettings.root_as_str}"
                     )
             else:
+                from lnschema_core import Storage
+
                 isettings._engine = sqm.create_engine(isettings.db)
                 with sqm.Session(isettings.engine) as session:
                     storage = session.exec(
