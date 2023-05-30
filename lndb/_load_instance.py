@@ -10,6 +10,7 @@ from lnhub_rest.core.instance._load_instance import (
 
 from lndb.dev.upath import UPath
 
+from . import _USE_DJANGO
 from ._settings import InstanceSettings, settings
 from .dev._settings_load import load_instance_settings
 from .dev._settings_store import instance_settings_file
@@ -23,6 +24,7 @@ def load(
     storage: Optional[Union[str, Path, UPath]] = None,
     _log_error_message: bool = True,
     _access_token: Optional[str] = None,
+    _test: bool = False,
 ) -> Optional[str]:
     """Load existing instance.
 
@@ -78,6 +80,9 @@ def load(
             "Please amend by passing --storage <my-storage-root>"
         )
 
+    if _test:
+        return None
+
     check, msg = isettings._is_db_setup()
     if not check:
         if _log_error_message:
@@ -115,17 +120,19 @@ def get_owner_name_from_identifier(identifier: str):
 def load_from_isettings(
     isettings: InstanceSettings,
     migrate: Optional[bool] = None,
-):
+) -> Optional[str]:
     from ._init_instance import persist_settings_load_schema, register, reload_lamindb
     from ._migrate import check_deploy_migration
     from .dev._setup_knowledge import load_bionty_versions
 
     persist_settings_load_schema(isettings)
-    message = check_deploy_migration(
-        usettings=settings.user, isettings=isettings, attempt_deploy=migrate
-    )
-    if message == "migrate-failed":
-        return message
+    message = None
+    if not _USE_DJANGO:
+        message = check_deploy_migration(
+            usettings=settings.user, isettings=isettings, attempt_deploy=migrate
+        )
+        if message == "migrate-failed":
+            return message
     register(isettings, settings.user)
     load_bionty_versions(isettings)
     reload_lamindb(isettings)
@@ -153,22 +160,32 @@ def update_isettings_with_storage(
 
         isettings._storage = ssettings  # need this here already
         if isettings.dialect == "sqlite":
-            isettings._engine = sqm.create_engine(isettings.db)
-            with sqm.Session(isettings.engine) as session:
-                storage = session.exec(
-                    sqm.select(Storage).where(Storage.root == ssettings.root_as_str)
-                ).one_or_none()
-            if storage is None:
-                with sqm.Session(isettings.engine) as session:
-                    storage_record = session.exec(sqm.select(Storage)).one()
-                    storage_record.root = ssettings.root_as_str
-                    session.add(storage_record)
-                    session.commit()
-                    session.refresh(storage_record)
-                logger.success(
-                    f"Updated storage root {storage_record.id} to"
-                    f" {ssettings.root_as_str}"
+            if _USE_DJANGO:
+                storage, created = Storage.objects.get_or_create(
+                    root=ssettings.root_as_str,
+                    defaults=dict(root=ssettings.root_as_str),
                 )
+                if created:
+                    logger.success(
+                        f"Added storage root {storage.id}:  {ssettings.root_as_str}"
+                    )
+            else:
+                isettings._engine = sqm.create_engine(isettings.db)
+                with sqm.Session(isettings.engine) as session:
+                    storage = session.exec(
+                        sqm.select(Storage).where(Storage.root == ssettings.root_as_str)
+                    ).one_or_none()
+                if storage is None:
+                    with sqm.Session(isettings.engine) as session:
+                        storage_record = session.exec(sqm.select(Storage)).one()
+                        storage_record.root = ssettings.root_as_str
+                        session.add(storage_record)
+                        session.commit()
+                        session.refresh(storage_record)
+                    logger.success(
+                        f"Updated storage root {storage_record.id} to"
+                        f" {ssettings.root_as_str}"
+                    )
         else:
             raise RuntimeError(
                 "Cannot currently not update local storage of sqlite upon load. Use"
