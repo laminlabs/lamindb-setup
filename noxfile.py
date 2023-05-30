@@ -1,4 +1,5 @@
 import os
+import sys
 
 import nox
 from laminci import move_built_docs_to_docs_slash_project_slug, upload_docs_artifact
@@ -10,7 +11,7 @@ from laminci.nox import (
     run_pytest,
 )
 
-nox.options.reuse_existing_virtualenvs = True
+nox.options.default_venv_backend = "none"
 
 
 LAMIN_ENV = "prod"
@@ -30,9 +31,17 @@ def lint(session: nox.Session) -> None:
     run_pre_commit(session)
 
 
+@nox.session
+def install(session: nox.Session) -> None:
+    session.run(*"pip install --no-deps .".split())
+    session.run(*"git clone https://github.com/laminlabs/lamindb --depth 1".split())
+    if sys.platform.startswith("linux"):  # remove version pin when running on CI
+        session.run(*"sed -i /lndb==/d ./lamindb/pyproject.toml".split())
+    session.run(*"pip install ./lamindb[bionty,lamin1,aws,gcp]".split())
+
+
 @nox.session(python=["3.7", "3.8", "3.9", "3.10", "3.11"])
 def build(session):
-    session.install(".[dev,test]")
     login_testuser1(session, env=env)
     login_testuser2(session, env=env)
     run_pytest(session, env=env)
