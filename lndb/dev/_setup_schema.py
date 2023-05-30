@@ -10,6 +10,7 @@ from packaging.requirements import Requirement
 
 from .. import _USE_DJANGO
 from ._db import insert
+from ._django import setup_django
 from ._settings_instance import InstanceSettings
 from ._settings_user import UserSettings
 
@@ -58,6 +59,8 @@ def check_schema_version_and_import(schema_name) -> ModuleType:
 
 
 def load_schema(isettings: InstanceSettings):
+    if _USE_DJANGO:
+        setup_django(isettings)
     schema_names = ["core"] + list(isettings.schema)
     msg = "Loading schema modules: "
     for schema_name in schema_names:
