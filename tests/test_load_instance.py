@@ -4,6 +4,7 @@ import lndb
 
 
 def test_load_add_storage_location():
+    lndb.delete("mydata")
     lndb.init(storage="mydata", _test=True)
     # assume we move the storage location
     Path("./mydata").rename("./mydata_new_loc")
@@ -25,6 +26,8 @@ def test_load_add_storage_location():
 
 
 def test_load_remote_instance():
+    lndb.delete("lndb-setup-ci")
+    lndb.init(storage="s3://lndb-setup-ci")
     # ensure that the locally cached env file is deleted
     from lndb.dev._settings_store import instance_settings_file
 
