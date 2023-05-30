@@ -30,8 +30,8 @@ def setup_django(isettings: InstanceSettings):
             DATABASES=DATABASES,
         )
         django.setup(set_prefix=False)
-    else:
-        raise RuntimeError(
-            "Please restart Python session, django doesn't currently support "
-            "switching among instances in one session"
-        )
+    # else:
+    #     raise RuntimeError(
+    #         "Please restart Python session, django doesn't currently support "
+    #         "switching among instances in one session"
+    #     )

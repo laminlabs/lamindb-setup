@@ -5,7 +5,7 @@ import lndb
 
 def test_load_add_storage_location():
     lndb.delete("mydata")
-    lndb.init(storage="mydata", _test=True)
+    lndb.init(storage="./mydata", _test=True)
     # assume we move the storage location
     Path("./mydata").rename("./mydata_new_loc")
     # with pytest.raises(
@@ -32,7 +32,7 @@ def test_load_remote_instance():
     from lndb.dev._settings_store import instance_settings_file
 
     instance_settings_file("lndb-setup-ci", "testuser1").unlink()
-    lndb.load("lndb-setup-ci", _test=False)
+    lndb.load("testuser1/lndb-setup-ci", _test=False)
     assert lndb.settings.instance.storage.is_cloud
     assert lndb.settings.instance.storage.root_as_str == "s3://lndb-setup-ci"
     assert (
