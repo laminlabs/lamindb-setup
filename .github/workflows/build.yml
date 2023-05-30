@@ -61,25 +61,18 @@ jobs:
         run: |
           sudo apt-get -y install graphviz
           sudo apt-get install libpq-dev
-      - name: Lint
-        run: |
-          nox -s lint
+      - run: nox -s lint
       - name: Configure AWS
         uses: aws-actions/configure-aws-credentials@v2
         with:
           aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           aws-region: eu-central-1
-      - name: Configure Google Cloud
-        id: "auth"
-        uses: "google-github-actions/auth@v0"
+      - uses: "google-github-actions/auth@v0"
         with:
           credentials_json: "${{ secrets.GCP_CREDENTIALS }}"
-      - name: "Set up Cloud SDK"
-        uses: "google-github-actions/setup-gcloud@v0"
-      - name: Build
-        run: |
-          nox -s build --python ${{ matrix.python-version }}
+      - uses: "google-github-actions/setup-gcloud@v0"
+      - run: nox -s build
         env:
           GITHUB_EVENT_NAME: ${{ github.event_name }}
           SUPABASE_STAGING_URL: ${{ secrets.SUPABASE_STAGING_URL }}
@@ -89,13 +82,6 @@ jobs:
         uses: codecov/codecov-action@v2
         with:
           token: ${{ secrets.CODECOV_TOKEN }}
-      - name: Read lamin-project.yaml
-        if: matrix.python-version == '3.9'
-        id: lamin-project
-        uses: CumulusDS/get-yaml-paths-action@v0.1.0
-        with:
-          file: lamin-project.yaml
-          project_slug: project_slug
       - name: Deploy docs
         if: matrix.python-version == '3.9'
         id: netlify
