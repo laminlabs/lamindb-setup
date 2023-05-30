@@ -52,6 +52,8 @@ Developer API.
 """
 
 __version__ = "0.45a4"  # denote a release candidate for 0.1.0 with 0.1rc1
+_USE_DJANGO = True
+
 
 import builtins
 import sys

@@ -228,11 +228,16 @@ class InstanceSettings:
 
         with self.engine.connect() as conn:
             try:  # cannot import lnschema_core here, need to use plain SQL
-                result = conn.execute(sa.text("select * from version_yvzi")).first()
+                result = conn.execute(
+                    sa.text("select * from lnschema_core_user")
+                ).first()
             except Exception as e:
                 return False, f"Your DB is not initialized: {e}"
             if result is None:
-                return False, "Your DB is not initialized: version_yvzi has no row"
+                return (
+                    False,
+                    "Your DB is not initialized: lnschema_core_user has no row",
+                )
         return True, ""
 
     def _is_db_reachable(self, mute: bool = False) -> bool:

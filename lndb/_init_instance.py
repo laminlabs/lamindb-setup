@@ -14,6 +14,7 @@ from pydantic import PostgresDsn
 
 from lndb.dev.upath import UPath
 
+from . import _USE_DJANGO
 from ._load_instance import load, load_from_isettings
 from ._settings import settings
 from .dev import InstanceSettings
@@ -26,13 +27,29 @@ from .dev._storage import Storage
 
 def register(isettings: InstanceSettings, usettings):
     """Register user & storage in DB."""
-    upsert.user(usettings.email, usettings.id, usettings.handle, usettings.name)
-    insert_if_not_exists.storage(isettings.storage)
+    if _USE_DJANGO:
+        from lnschema_core.models import Storage, User
+
+        User.objects.update_or_create(
+            id=usettings.get_id_as_int(),
+            defaults=dict(
+                handle=usettings.handle,
+                name=usettings.name,
+                email=usettings.email,
+            ),
+        )
+        Storage.objects.get_or_create(
+            root=isettings.storage.root_as_str,
+            region=isettings.storage.region,
+        )
+    else:
+        upsert.user(usettings.email, usettings.id, usettings.handle, usettings.name)
+        insert_if_not_exists.storage(isettings.storage)
 
 
 def reload_lamindb(isettings: InstanceSettings):
     # only touch lamindb if we're operating from lamindb
-    if "lamindb" in sys.modules:
+    if "lamindb" in sys.modules and not _USE_DJANGO:
         import lamindb
 
         importlib.reload(lamindb)
