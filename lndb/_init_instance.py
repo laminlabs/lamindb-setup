@@ -99,6 +99,7 @@ def init(
     db: Optional[PostgresDsn] = None,
     schema: Optional[str] = None,
     _migrate: bool = False,  # not user-facing
+    _test: bool = False,
 ) -> Optional[str]:
     """Creating and loading a LaminDB instance.
 
@@ -161,6 +162,9 @@ def init(
 
     # this does not yet setup a setup for a new database
     persist_settings_load_schema(isettings)
+
+    if _test:
+        return None
 
     message = None
     if not isettings._is_db_setup(mute=True)[0]:
