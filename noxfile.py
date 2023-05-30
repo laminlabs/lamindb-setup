@@ -34,6 +34,8 @@ def lint(session: nox.Session) -> None:
 @nox.session
 def install(session: nox.Session) -> None:
     session.run(*"pip install --no-deps .".split())
+    if os.getenv("GITHUB_EVENT_NAME") not in (None, "push"):
+        session.run(*"pip install --no-deps ./lnschema-core".split())
     session.run(*"git clone https://github.com/laminlabs/lamindb --depth 1".split())
     if sys.platform.startswith("linux"):  # remove version pin when running on CI
         session.run(*"sed -i /lndb==/d ./lamindb/pyproject.toml".split())
