@@ -88,22 +88,34 @@ def setup_schema(isettings: InstanceSettings, usettings: UserSettings):
     else:
         if is_run_from_ipython:
             os.environ["DJANGO_ALLOW_ASYNC_UNSAFE"] = "true"
+        import dj_database_url
         import django
         from django.conf import settings
         from django.core.management import call_command
 
-        settings.configure(
-            INSTALLED_APPS=[
-                "lnschema_core",
-            ],
-            DATABASES={
-                "default": {
-                    "ENGINE": "django.db.backends.sqlite3",
-                    "NAME": isettings._sqlite_file_local,
-                }
-            },
+        default_db = dj_database_url.config(
+            default=isettings.db,
+            conn_max_age=600,
+            conn_health_checks=True,
         )
-        django.setup(set_prefix=False)
+        DATABASES = {
+            "default": default_db,
+        }
+
+        if not settings.configured:
+            settings.configure(
+                INSTALLED_APPS=[
+                    "lnschema_core",
+                ],
+                DATABASES=DATABASES,
+            )
+            django.setup(set_prefix=False)
+        else:
+            raise RuntimeError(
+                "Please restart Python session, django doesn't currently support "
+                "switching among instances in one session"
+            )
+
         call_command("migrate")
 
         from lnschema_core.models import User
