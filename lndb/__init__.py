@@ -53,6 +53,7 @@ Developer API.
 
 __version__ = "0.45a4"  # denote a release candidate for 0.1.0 with 0.1rc1
 
+import builtins
 import sys
 from os import name as _os_name
 
@@ -71,8 +72,8 @@ from ._settings import settings  # noqa
 from ._setup_user import login, signup  # noqa
 
 
-# unlock and clear even if an uncaught exception happens
-def _clear_on_exception(typ, value, traceback):
+# unlock and clear on uncaught exception
+def _clear_on_exception():
     from .dev._exclusion import _locker
 
     if _locker is not None:
@@ -80,10 +81,32 @@ def _clear_on_exception(typ, value, traceback):
             _locker._clear()
         except:
             pass
-    sys.__excepthook__(typ, value, traceback)
 
 
-sys.excepthook = _clear_on_exception
+_is_ipython = getattr(builtins, "__IPYTHON__", False)
+if _is_ipython:
+    try:
+        from IPython import get_ipython
+
+        ipython = get_ipython()
+    except:
+        _is_ipython = False
+# unlock and clear even if an uncaught exception happens in an ipython session
+if _is_ipython:
+
+    def _clear_on_exception_ipython(self, etype, value, tb, tb_offset=None):
+        _clear_on_exception()
+        return self.showtraceback()
+
+    ipython.set_custom_exc((BaseException,), _clear_on_exception_ipython)
+# unlock and clear even if an uncaught exception happens in a script
+else:
+
+    def _clear_on_exception_script(typ, value, traceback):
+        _clear_on_exception()
+        sys.__excepthook__(typ, value, traceback)
+
+    sys.excepthook = _clear_on_exception_script
 
 # hide the supabase error in a thread on windows
 if _os_name == "nt":

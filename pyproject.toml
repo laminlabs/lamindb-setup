@@ -40,7 +40,7 @@ dev = [
 ]
 test = [
     "lnschema_lamin1",
-    "lamindb[bionty,lamin1]>=0.41a3",
+    "lamindb[bionty,lamin1,aws,gcp]>=0.41a4",
     "pytest>=6.0",
     "pytest-cov",
     "nbproject-test>=0.4.3",
