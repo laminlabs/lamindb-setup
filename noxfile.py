@@ -33,7 +33,7 @@ def lint(session: nox.Session) -> None:
 
 @nox.session
 def install(session: nox.Session) -> None:
-    session.run(*"pip install --no-deps .".split())
+    session.run(*"pip install --no-deps .[django]".split())
     if os.getenv("GITHUB_EVENT_NAME") not in (None, "push"):
         session.run(*"pip install --no-deps ./lnschema-core".split())
     session.run(*"git clone https://github.com/laminlabs/lamindb --depth 1".split())
