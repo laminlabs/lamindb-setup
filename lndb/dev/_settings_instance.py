@@ -226,7 +226,8 @@ class InstanceSettings:
             else:
                 return False, f"Connection {self.db} not reachable"
 
-        with self.engine.connect() as conn:
+        engine = sqm.create_engine(self.db)
+        with engine.connect() as conn:
             try:  # cannot import lnschema_core here, need to use plain SQL
                 result = conn.execute(
                     sa.text("select * from lnschema_core_user")
@@ -238,6 +239,7 @@ class InstanceSettings:
                     False,
                     "Your DB is not initialized: lnschema_core_user has no row",
                 )
+        self._engine = engine
         return True, ""
 
     def _is_db_reachable(self, mute: bool = False) -> bool:

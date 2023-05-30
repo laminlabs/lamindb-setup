@@ -22,6 +22,8 @@ def setup_django(isettings: InstanceSettings):
         "default": default_db,
     }
 
+    print("setting up django")
+
     if not settings.configured:
         settings.configure(
             INSTALLED_APPS=[

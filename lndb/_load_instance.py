@@ -142,7 +142,6 @@ def load_from_isettings(
 def update_isettings_with_storage(
     isettings: InstanceSettings, storage: Union[str, Path, UPath]
 ) -> None:
-    isettings._persist()  # this is temporary for import of lnschema_core
     ssettings = StorageSettings(storage, instance_settings=isettings)
     if ssettings.is_cloud:
         try:  # triggering ssettings.id makes a lookup in the storage table
@@ -157,6 +156,7 @@ def update_isettings_with_storage(
         # local storage
         # assumption is you want to merely update the storage location
         isettings._storage = ssettings  # need this here already
+        isettings._persist()
         if isettings.dialect == "sqlite":
             if _USE_DJANGO:
                 from lnschema_core.models import Storage
