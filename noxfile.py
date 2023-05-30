@@ -39,11 +39,11 @@ def install(session: nox.Session) -> None:
     session.run(*"git clone https://github.com/laminlabs/lamindb --depth 1".split())
     if sys.platform.startswith("linux"):  # remove version pin when running on CI
         session.run(*"sed -i /lndb==/d ./lamindb/pyproject.toml".split())
-    session.run(*"pip install ./lamindb[bionty,lamin1,aws,gcp]".split())
+    session.run(*"pip install ./lamindb[bionty,lamin1,aws,test]".split())
 
 
-@nox.session(python=["3.7", "3.8", "3.9", "3.10", "3.11"])
-def build(session):
+@nox.session
+def build(session: nox.Session):
     login_testuser1(session, env=env)
     login_testuser2(session, env=env)
     run_pytest(session, env=env)
