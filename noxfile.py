@@ -3,13 +3,7 @@ import sys
 
 import nox
 from laminci import move_built_docs_to_docs_slash_project_slug, upload_docs_artifact
-from laminci.nox import (
-    build_docs,
-    login_testuser1,
-    login_testuser2,
-    run_pre_commit,
-    run_pytest,
-)
+from laminci.nox import build_docs, login_testuser1, login_testuser2, run_pre_commit
 
 nox.options.default_venv_backend = "none"
 
@@ -44,10 +38,21 @@ def install(session: nox.Session) -> None:
 
 
 @nox.session
-def build(session: nox.Session):
+@nox.parametrize(
+    "group",
+    ["unit", "docs"],
+)
+def build(session: nox.Session, group: str):
     login_testuser1(session, env=env)
     login_testuser2(session, env=env)
-    run_pytest(session, env=env)
+    coverage_args = "--cov=lndb --cov-append --cov-report=term-missing"  # noqa
+    if group == "unit":
+        session.run(*f"pytest -s {coverage_args} ./tests".split())
+    elif group == "docs":
+        session.run(*f"pytest -s {coverage_args} ./docs".split())
+
+
+def docs(session: nox.Session):
     build_docs(session)
     upload_docs_artifact()
     move_built_docs_to_docs_slash_project_slug()

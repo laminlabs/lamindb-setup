@@ -6,7 +6,7 @@ from lamin_logger import logger
 
 def test_notebooks():
     # assuming this is in the tests folder
-    docsdir = Path(__file__).parents[1] / "docs/"
+    docsdir = Path(__file__).parent
 
     for subdir in ["guide", "faq"]:
         checkdir = docsdir / subdir
