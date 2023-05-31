@@ -127,7 +127,9 @@ def init(
 
     name_str = infer_instance_name(storage=storage, name=name, db=db)
     # test whether instance exists by trying to load it
-    message = load(f"{owner}/{name_str}", _log_error_message=False, migrate=_migrate)
+    message = load(
+        f"{owner}/{name_str}", _log_error_message=False, migrate=_migrate, _test=_test
+    )
     if message != "instance-not-reachable":
         return message
 
@@ -163,17 +165,20 @@ def init(
             pass  # everything is alright!
         elif isinstance(result, str):
             raise RuntimeError(f"Creating instance on hub failed:\n{result}")
-        logger.success(f"Registered instance on hub: https://lamin.ai/{owner}/{name}")
+        logger.success(
+            f"Registered instance on hub: https://lamin.ai/{owner}/{name_str}"
+        )
     else:
         logger.info(
             "Not registering instance on hub, if you want, call `lamin register`"
         )
 
+    if _test:
+        isettings._persist()
+        return None
+
     # this does not yet setup a setup for a new database
     persist_settings_load_schema(isettings)
-
-    if _test:
-        return None
 
     message = None
     if not isettings._is_db_setup(mute=True)[0]:
