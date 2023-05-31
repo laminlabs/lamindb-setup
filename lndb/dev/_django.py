@@ -1,8 +1,11 @@
 import builtins
 import os
 
-from django.db import connections
-from django.db.migrations.executor import MigrationExecutor
+try:
+    from django.db import connections
+    from django.db.migrations.executor import MigrationExecutor
+except ImportError:
+    pass
 
 from ._settings_instance import InstanceSettings
 
