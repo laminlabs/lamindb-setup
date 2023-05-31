@@ -75,7 +75,7 @@ jobs:
       #   with:
       #     credentials_json: "${{ secrets.GCP_CREDENTIALS }}"
       # - uses: "google-github-actions/setup-gcloud@v0"
-      - run: nox -s install
+      - run: nox -s "install(group='${{ matrix.group }}')"
       - run: nox -s "build(group='${{ matrix.group }}')"
         env:
           GITHUB_EVENT_NAME: ${{ github.event_name }}
