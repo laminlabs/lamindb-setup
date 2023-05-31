@@ -60,6 +60,7 @@ def build(session: nox.Session, group: str):
         session.run(*f"pytest -s {coverage_args} ./docs".split(), env=env)
 
 
+@nox.session
 def docs(session: nox.Session):
     build_docs(session)
     upload_docs_artifact()
