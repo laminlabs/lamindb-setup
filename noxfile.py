@@ -3,13 +3,7 @@ import sys
 
 import nox
 from laminci import move_built_docs_to_docs_slash_project_slug, upload_docs_artifact
-from laminci.nox import (
-    build_docs,
-    login_testuser1,
-    login_testuser2,
-    run_pre_commit,
-    run_pytest,
-)
+from laminci.nox import build_docs, login_testuser1, login_testuser2, run_pre_commit
 
 nox.options.default_venv_backend = "none"
 
@@ -32,10 +26,18 @@ def lint(session: nox.Session) -> None:
 
 
 @nox.session
-def install(session: nox.Session) -> None:
+@nox.parametrize(
+    "group",
+    ["unit", "docs", "unit-django", "docs-django"],
+)
+def install(session: nox.Session, group: str) -> None:
+    if "django" in group:
+        session.run(*"pip install django dj_database_url".split())
     session.run(*"pip install --no-deps .".split())
+    # install from sub-module
     if os.getenv("GITHUB_EVENT_NAME") not in (None, "push"):
         session.run(*"pip install --no-deps ./lnschema-core".split())
+    # install lamindb
     session.run(*"git clone https://github.com/laminlabs/lamindb --depth 1".split())
     if sys.platform.startswith("linux"):  # remove version pin when running on CI
         session.run(*"sed -i /lndb==/d ./lamindb/pyproject.toml".split())
@@ -43,10 +45,25 @@ def install(session: nox.Session) -> None:
 
 
 @nox.session
-def build(session: nox.Session):
+@nox.parametrize(
+    "group",
+    ["unit", "docs", "unit-django", "docs-django"],
+)
+def build(session: nox.Session, group: str):
     login_testuser1(session, env=env)
     login_testuser2(session, env=env)
-    run_pytest(session, env=env)
+    if "django" in group:
+        os.environ["LAMINDB_USE_DJANGO"] = "1"
+        env["LAMINDB_USE_DJANGO"] = "1"
+    coverage_args = "--cov=lndb --cov-append --cov-report=term-missing"  # noqa
+    if group.startswith("unit"):
+        session.run(*f"pytest -s {coverage_args} ./tests".split(), env=env)
+    elif group.startswith("docs"):
+        session.run(*f"pytest -s {coverage_args} ./docs".split(), env=env)
+
+
+@nox.session
+def docs(session: nox.Session):
     build_docs(session)
     upload_docs_artifact()
     move_built_docs_to_docs_slash_project_slug()

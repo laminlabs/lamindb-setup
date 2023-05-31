@@ -1,3 +1,4 @@
+from base64 import b64decode
 from dataclasses import dataclass
 from typing import Union
 
@@ -20,7 +21,7 @@ class UserSettings:
     """User password."""
     access_token: Union[str, None] = None
     """User access token."""
-    id: Union[str, None] = None
+    id: str = "null"
     """User ID."""
     handle: Union[str, None] = None
     "Unique handle."
@@ -35,3 +36,6 @@ class UserSettings:
             value = getattr(self, attr)
             representation += f"\n- {attr}: {value}"
         return representation
+
+    def get_id_as_int(self) -> int:
+        return int.from_bytes(b64decode(self.id), "big")

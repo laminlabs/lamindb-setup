@@ -4,7 +4,6 @@ from lamin_logger import logger
 from lnhub_rest.core.account._signup_signin import sign_in_hub, sign_up_hub
 
 from ._settings import settings
-from .dev._db import upsert
 from .dev._settings_load import load_or_create_user_settings, load_user_settings
 from .dev._settings_save import save_user_settings
 from .dev._settings_store import user_settings_file_email, user_settings_file_handle
@@ -100,17 +99,4 @@ def login(
     save_user_settings(user_settings)
 
     settings._user_settings = None
-
-    # register login of user in instance db
-    if settings._instance_exists:
-        if not settings.instance._is_db_reachable():
-            logger.info("Consider closing the instance: `lamin close`")
-            return None
-        upsert.user(
-            settings.user.email,
-            settings.user.id,
-            settings.user.handle,
-            settings.user.name,
-        )
-
     return None

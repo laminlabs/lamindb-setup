@@ -14,6 +14,7 @@ from pydantic import PostgresDsn
 
 from lndb.dev.upath import UPath
 
+from . import _USE_DJANGO
 from ._load_instance import load, load_from_isettings
 from ._settings import settings
 from .dev import InstanceSettings
@@ -26,15 +27,40 @@ from .dev._storage import Storage
 
 def register(isettings: InstanceSettings, usettings):
     """Register user & storage in DB."""
-    upsert.user(usettings.email, usettings.id, usettings.handle, usettings.name)
-    insert_if_not_exists.storage(isettings.storage)
+    if _USE_DJANGO:
+        from lnschema_core.models import Storage, User
+
+        user, created = User.objects.update_or_create(
+            id=usettings.get_id_as_int(),
+            defaults=dict(
+                handle=usettings.handle,
+                name=usettings.name,
+                email=usettings.email,
+            ),
+        )
+        storage, created = Storage.objects.update_or_create(
+            root=isettings.storage.root_as_str,
+            defaults=dict(
+                root=isettings.storage.root_as_str,
+                region=isettings.storage.region,
+            ),
+        )
+        if created:
+            logger.success(
+                f"Added storage root {storage.id}:  {isettings.storage.root_as_str}"
+            )
+    else:
+        upsert.user(usettings.email, usettings.id, usettings.handle, usettings.name)
+        insert_if_not_exists.storage(isettings.storage)
 
 
 def reload_lamindb(isettings: InstanceSettings):
     # only touch lamindb if we're operating from lamindb
     if "lamindb" in sys.modules:
         import lamindb
+        import lnschema_core
 
+        importlib.reload(lnschema_core)
         importlib.reload(lamindb)
     else:
         # only log if we're outside lamindb
@@ -82,6 +108,7 @@ def init(
     db: Optional[PostgresDsn] = None,
     schema: Optional[str] = None,
     _migrate: bool = False,  # not user-facing
+    _test: bool = False,
 ) -> Optional[str]:
     """Creating and loading a LaminDB instance.
 
@@ -100,7 +127,9 @@ def init(
 
     name_str = infer_instance_name(storage=storage, name=name, db=db)
     # test whether instance exists by trying to load it
-    message = load(f"{owner}/{name_str}", _log_error_message=False, migrate=_migrate)
+    message = load(
+        f"{owner}/{name_str}", _log_error_message=False, migrate=_migrate, _test=_test
+    )
     if message != "instance-not-reachable":
         return message
 
@@ -136,11 +165,17 @@ def init(
             pass  # everything is alright!
         elif isinstance(result, str):
             raise RuntimeError(f"Creating instance on hub failed:\n{result}")
-        logger.success(f"Registered instance on hub: https://lamin.ai/{owner}/{name}")
+        logger.success(
+            f"Registered instance on hub: https://lamin.ai/{owner}/{name_str}"
+        )
     else:
         logger.info(
             "Not registering instance on hub, if you want, call `lamin register`"
         )
+
+    if _test:
+        isettings._persist()
+        return None
 
     # this does not yet setup a setup for a new database
     persist_settings_load_schema(isettings)

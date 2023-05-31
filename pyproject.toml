@@ -14,11 +14,10 @@ dependencies = [
     "lnhub_rest==0.9.8",
     # NO other Lamin packages should be pinned or even be a dependency
     "laminci>=0.3.0",  # disentangle over time
-    "lnschema_core>=0.34a2",
+    "lnschema_core[sqlmodel]>=0.34a2",
     "lamin_logger>=0.2.3",
     # External dependencies
     "pytest_alembic==0.9.1",  # let's pin this as we use internals
-    "sqlmodel>=0.0.8",
     "psycopg2-binary",
     "appdirs",
     "python-dotenv",
@@ -34,11 +33,12 @@ dependencies = [
 Home = "https://github.com/laminlabs/lndb"
 
 [project.optional-dependencies]
-dev = [
-    "pre-commit",
-    "nox",
+django = [
+    "lnschema_core[django]",
 ]
 test = [
+    "pre-commit",
+    "nox",
     "pytest>=6.0",
     "pytest-cov",
     "nbproject-test>=0.4.3",

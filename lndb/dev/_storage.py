@@ -5,6 +5,7 @@ from typing import Literal, Optional, Union
 import sqlmodel as sqm
 from appdirs import AppDirs
 
+from .. import _USE_DJANGO
 from .upath import UPath
 
 DIRS = AppDirs("lamindb", "laminlabs")
@@ -50,18 +51,23 @@ class StorageSettings:
     def id(self) -> str:
         """Storage id."""
         if self._id is None:
-            from lnschema_core import Storage
+            if not _USE_DJANGO:
+                from lnschema_core import Storage
 
-            with sqm.Session(self._instance_settings.engine) as session:
-                # needs to have been registered before!
-                storage = session.exec(
-                    sqm.select(Storage).where(Storage.root == self.root_as_str)
-                ).one_or_none()
-            if storage is None:
-                raise RuntimeError(
-                    f"{self.root_as_str} wasn't registered in the db! "
-                    "Check ln.select(ln.Storage).all()"
-                )
+                with sqm.Session(self._instance_settings.engine) as session:
+                    # needs to have been registered before!
+                    storage = session.exec(
+                        sqm.select(Storage).where(Storage.root == self.root_as_str)
+                    ).one_or_none()
+                if storage is None:
+                    raise RuntimeError(
+                        f"{self.root_as_str} wasn't registered in the db! "
+                        "Check ln.select(ln.Storage).all()"
+                    )
+            else:
+                from lnschema_core.models import Storage
+
+                storage = Storage.objects.get(root=self.root_as_str)
             self._id = storage.id
         return self._id
 
