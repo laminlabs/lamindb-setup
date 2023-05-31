@@ -53,7 +53,7 @@ Developer API.
 
 import os
 
-__version__ = "0.45.0"  # denote a release candidate for 0.1.0 with 0.1rc1
+__version__ = "0.46a1"  # denote a release candidate for 0.1.0 with 0.1rc1
 _USE_DJANGO = os.getenv("LAMINDB_USE_DJANGO") is not None
 # _USE_DJANGO = True
 if _USE_DJANGO:
