@@ -18,8 +18,8 @@ jobs:
         group:
           - "unit"
           - "docs"
-          - "unit-sa"
-          - "docs-sa"
+          - "unit-django"
+          - "docs-django"
     timeout-minutes: 20
 
     steps:
