@@ -79,6 +79,10 @@ def load(
         return None
     if _USE_DJANGO:
         setup_django(isettings)
+    else:
+        from ._init_instance import persist_settings_load_schema
+
+        persist_settings_load_schema(isettings)
     if storage is not None and isettings.dialect == "sqlite":
         update_storage(isettings)
 
