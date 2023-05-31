@@ -33,14 +33,15 @@ def lint(session: nox.Session) -> None:
 def install(session: nox.Session, group: str) -> None:
     if "django" in group:
         session.run(*"pip install django dj_database_url".split())
-    session.run(*"pip install --no-deps .".split())
     # install from sub-module
     if os.getenv("GITHUB_EVENT_NAME") not in (None, "push"):
         session.run(*"pip install --no-deps ./lnschema-core".split())
+    session.run(*"pip install .".split())
     # install lamindb
     session.run(*"git clone https://github.com/laminlabs/lamindb --depth 1".split())
     if sys.platform.startswith("linux"):  # remove version pin when running on CI
         session.run(*"sed -i /lndb==/d ./lamindb/pyproject.toml".split())
+        session.run(*"sed -i /lnschema-core==/d ./lamindb/pyproject.toml".split())
     session.run(*"pip install ./lamindb[bionty,lamin1,aws,test]".split())
 
 
