@@ -52,6 +52,7 @@ def setup_django(isettings: InstanceSettings):
 
             print("applying migrations")
             call_command("migrate")
+            isettings._update_cloud_sqlite_file()
         global IS_SETUP
         IS_SETUP = True
     # else:

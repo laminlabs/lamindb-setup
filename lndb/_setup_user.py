@@ -3,9 +3,7 @@ from typing import Union
 from lamin_logger import logger
 from lnhub_rest.core.account._signup_signin import sign_in_hub, sign_up_hub
 
-from . import _USE_DJANGO
 from ._settings import settings
-from .dev._db import upsert
 from .dev._settings_load import load_or_create_user_settings, load_user_settings
 from .dev._settings_save import save_user_settings
 from .dev._settings_store import user_settings_file_email, user_settings_file_handle
@@ -101,31 +99,4 @@ def login(
     save_user_settings(user_settings)
 
     settings._user_settings = None
-
-    # register login of user in instance db
-    if settings._instance_exists:
-        if not settings.instance._is_db_reachable():
-            logger.info("Consider closing the instance: `lamin close`")
-            return None
-        if _USE_DJANGO:
-            from lnschema_core.models import User
-
-            user, created = User.objects.update_or_create(
-                id=user_settings.get_id_as_int(),
-                defaults=dict(
-                    handle=user_settings.handle,
-                    name=user_settings.name,
-                    email=user_settings.email,
-                ),
-            )
-            if created:
-                logger.success("Your user got added to the DB")
-        else:
-            upsert.user(
-                settings.user.email,
-                settings.user.id,
-                settings.user.handle,
-                settings.user.name,
-            )
-
     return None

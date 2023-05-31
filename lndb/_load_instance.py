@@ -77,6 +77,18 @@ def load(
     if _test:
         isettings._persist()  # this is to test the settings
         return None
+
+    check, msg = isettings._is_db_setup()
+    if not check:
+        if _log_error_message:
+            raise RuntimeError(msg)
+        else:
+            logger.warning(
+                "Instance metadata exists, but DB might have been corrupted or deleted."
+                " Re-initializing the DB."
+            )
+            return "instance-not-reachable"
+
     if _USE_DJANGO:
         setup_django(isettings)
     else:
@@ -91,17 +103,6 @@ def load(
             f"Storage root does not exist: {isettings.storage.root}\n"
             "Please amend by passing --storage <my-storage-root>"
         )
-
-    check, msg = isettings._is_db_setup()
-    if not check:
-        if _log_error_message:
-            raise RuntimeError(msg)
-        else:
-            logger.warning(
-                "Instance metadata exists, but DB might have been corrupted or deleted."
-                " Re-initializing the DB."
-            )
-            return "instance-not-reachable"
 
     message = load_from_isettings(isettings, migrate)
     if not message == "migrate-failed":
