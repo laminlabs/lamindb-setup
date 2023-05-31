@@ -1,13 +1,27 @@
 import builtins
 import os
 
+from django.db import connections
+from django.db.migrations.executor import MigrationExecutor
+
 from ._settings_instance import InstanceSettings
 
-is_run_from_ipython = getattr(builtins, "__IPYTHON__", False)
+IS_RUN_FROM_IPYTHON = getattr(builtins, "__IPYTHON__", False)
+IS_SETUP = False
+
+
+def is_database_synchronized():
+    from django.db import DEFAULT_DB_ALIAS
+
+    connection = connections[DEFAULT_DB_ALIAS]
+    connection.prepare_database()
+    executor = MigrationExecutor(connection)
+    targets = executor.loader.graph.leaf_nodes()
+    return not executor.migration_plan(targets)
 
 
 def setup_django(isettings: InstanceSettings):
-    if is_run_from_ipython:
+    if IS_RUN_FROM_IPYTHON:
         os.environ["DJANGO_ALLOW_ASYNC_UNSAFE"] = "true"
     import dj_database_url
     import django
@@ -22,8 +36,6 @@ def setup_django(isettings: InstanceSettings):
         "default": default_db,
     }
 
-    print("setting up django")
-
     if not settings.configured:
         settings.configure(
             INSTALLED_APPS=[
@@ -32,6 +44,13 @@ def setup_django(isettings: InstanceSettings):
             DATABASES=DATABASES,
         )
         django.setup(set_prefix=False)
+        if not is_database_synchronized():
+            from django.core.management import call_command
+
+            print("applying migrations")
+            call_command("migrate")
+        global IS_SETUP
+        IS_SETUP = True
     # else:
     #     raise RuntimeError(
     #         "Please restart Python session, django doesn't currently support "

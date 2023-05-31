@@ -12,6 +12,7 @@ from lndb.dev.upath import UPath
 
 from . import _USE_DJANGO
 from ._settings import InstanceSettings, settings
+from .dev._django import setup_django
 from .dev._settings_load import load_instance_settings
 from .dev._settings_store import instance_settings_file
 from .dev._storage import StorageSettings
@@ -71,11 +72,15 @@ def load(
                 )
             return "instance-not-reachable"
 
-    if _test:
-        return None
-
     if storage is not None:
         update_isettings_with_storage(isettings, storage)
+    if _test:
+        isettings._persist()  # this is to test the settings
+        return None
+    if _USE_DJANGO:
+        setup_django(isettings)
+    if storage is not None and isettings.dialect == "sqlite":
+        update_storage(isettings)
 
     if not isettings.storage.root.exists():
         raise RuntimeError(
@@ -156,42 +161,37 @@ def update_isettings_with_storage(
         # local storage
         # assumption is you want to merely update the storage location
         isettings._storage = ssettings  # need this here already
-        isettings._persist()
-        if isettings.dialect == "sqlite":
-            if _USE_DJANGO:
-                from lnschema_core.models import Storage
-
-                storage, created = Storage.objects.get_or_create(
-                    root=ssettings.root_as_str,
-                    defaults=dict(root=ssettings.root_as_str),
-                )
-                if created:
-                    logger.success(
-                        f"Added storage root {storage.id}:  {ssettings.root_as_str}"
-                    )
-            else:
-                from lnschema_core import Storage
-
-                isettings._engine = sqm.create_engine(isettings.db)
-                with sqm.Session(isettings.engine) as session:
-                    storage = session.exec(
-                        sqm.select(Storage).where(Storage.root == ssettings.root_as_str)
-                    ).one_or_none()
-                if storage is None:
-                    with sqm.Session(isettings.engine) as session:
-                        storage_record = session.exec(sqm.select(Storage)).one()
-                        storage_record.root = ssettings.root_as_str
-                        session.add(storage_record)
-                        session.commit()
-                        session.refresh(storage_record)
-                    logger.success(
-                        f"Updated storage root {storage_record.id} to"
-                        f" {ssettings.root_as_str}"
-                    )
-        else:
-            raise RuntimeError(
-                "Cannot currently not update local storage of sqlite upon load. Use"
-                " `lamin set --storage`"
-            )
     # update isettings in place
     isettings._storage = ssettings
+
+
+# this is different from register!
+def update_storage(isettings: InstanceSettings):
+    if _USE_DJANGO:
+        from lnschema_core.models import Storage
+
+        storages = Storage.objects.all()
+        if len(storages) != 1:
+            raise RuntimeError("Can't identify which storage location to update")
+        storage = storages[0]
+        storage.root = isettings.storage.root_as_str
+        storage.save()
+    else:
+        from lnschema_core import Storage
+
+        isettings._engine = sqm.create_engine(isettings.db)
+        with sqm.Session(isettings.engine) as session:
+            storage = session.exec(
+                sqm.select(Storage).where(Storage.root == isettings.storage.root_as_str)
+            ).one_or_none()
+        if storage is None:
+            with sqm.Session(isettings.engine) as session:
+                storage_record = session.exec(sqm.select(Storage)).one()
+                storage_record.root = isettings.storage.root_as_str
+                session.add(storage_record)
+                session.commit()
+                session.refresh(storage_record)
+            logger.success(
+                f"Updated storage root {storage_record.id} to"
+                f" {isettings.storage.root_as_str}"
+            )

@@ -30,7 +30,7 @@ def register(isettings: InstanceSettings, usettings):
     if _USE_DJANGO:
         from lnschema_core.models import Storage, User
 
-        User.objects.update_or_create(
+        user, created = User.objects.update_or_create(
             id=usettings.get_id_as_int(),
             defaults=dict(
                 handle=usettings.handle,
@@ -38,10 +38,17 @@ def register(isettings: InstanceSettings, usettings):
                 email=usettings.email,
             ),
         )
-        Storage.objects.get_or_create(
+        storage, created = Storage.objects.update_or_create(
             root=isettings.storage.root_as_str,
-            region=isettings.storage.region,
+            defaults=dict(
+                root=isettings.storage.root_as_str,
+                region=isettings.storage.region,
+            ),
         )
+        if created:
+            logger.success(
+                f"Added storage root {storage.id}:  {isettings.storage.root_as_str}"
+            )
     else:
         upsert.user(usettings.email, usettings.id, usettings.handle, usettings.name)
         insert_if_not_exists.storage(isettings.storage)
@@ -49,9 +56,11 @@ def register(isettings: InstanceSettings, usettings):
 
 def reload_lamindb(isettings: InstanceSettings):
     # only touch lamindb if we're operating from lamindb
-    if "lamindb" in sys.modules and not _USE_DJANGO:
+    if "lamindb" in sys.modules:
         import lamindb
+        import lnschema_core
 
+        importlib.reload(lnschema_core)
         importlib.reload(lamindb)
     else:
         # only log if we're outside lamindb

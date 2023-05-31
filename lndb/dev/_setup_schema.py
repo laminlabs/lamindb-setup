@@ -61,6 +61,7 @@ def check_schema_version_and_import(schema_name) -> ModuleType:
 def load_schema(isettings: InstanceSettings):
     if _USE_DJANGO:
         setup_django(isettings)
+
     schema_names = ["core"] + list(isettings.schema)
     msg = "Loading schema modules: "
     for schema_name in schema_names:
@@ -85,10 +86,6 @@ def setup_schema(isettings: InstanceSettings, usettings: UserSettings):
         )
 
     else:
-        from django.core.management import call_command
-
-        call_command("migrate")
-
         from lnschema_core.models import User
 
         user = User(
