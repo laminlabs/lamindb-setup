@@ -26,9 +26,14 @@ def lint(session: nox.Session) -> None:
 
 
 @nox.session
-def install(session: nox.Session) -> None:
-    session.run(*"pip install django dj_database_url".split())
-    session.run(*"pip install --no-deps .[django]".split())
+@nox.parametrize(
+    "group",
+    ["unit", "docs", "unit-django", "unit-django"],
+)
+def install(session: nox.Session, group: str) -> None:
+    if "django" in group:
+        session.run(*"pip install django dj_database_url".split())
+    session.run(*"pip install --no-deps .".split())
     if os.getenv("GITHUB_EVENT_NAME") not in (None, "push"):
         session.run(*"pip install --no-deps ./lnschema-core".split())
     session.run(*"git clone https://github.com/laminlabs/lamindb --depth 1".split())
@@ -40,15 +45,17 @@ def install(session: nox.Session) -> None:
 @nox.session
 @nox.parametrize(
     "group",
-    ["unit", "docs"],
+    ["unit", "docs", "unit-django", "unit-django"],
 )
 def build(session: nox.Session, group: str):
     login_testuser1(session, env=env)
     login_testuser2(session, env=env)
+    if "django" in group:
+        os.environ["LAMINDB_USE_DJANGO"] = "1"
     coverage_args = "--cov=lndb --cov-append --cov-report=term-missing"  # noqa
-    if group == "unit":
+    if group.startswith("unit"):
         session.run(*f"pytest -s {coverage_args} ./tests".split())
-    elif group == "docs":
+    elif group.startswith("docs"):
         session.run(*f"pytest -s {coverage_args} ./docs".split())
 
 

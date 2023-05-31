@@ -18,6 +18,8 @@ jobs:
         group:
           - "unit"
           - "docs"
+          - "unit-sa"
+          - "docs-sa"
     timeout-minutes: 20
 
     steps:

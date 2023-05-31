@@ -51,9 +51,12 @@ Developer API.
    dev
 """
 
-__version__ = "0.45a4"  # denote a release candidate for 0.1.0 with 0.1rc1
-_USE_DJANGO = True
+import os
 
+__version__ = "0.45a4"  # denote a release candidate for 0.1.0 with 0.1rc1
+_USE_DJANGO = os.getenv("LAMINDB_USE_DJANGO") is not None
+if _USE_DJANGO:
+    print("using django backend")
 
 import builtins
 import sys
