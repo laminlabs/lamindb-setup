@@ -85,6 +85,7 @@ jobs:
         with:
           token: ${{ secrets.CODECOV_TOKEN }}
       - uses: nwtgck/actions-netlify@v1.2
+        if: ${{ matrix.group == 'docs' }}
         with:
           publish-dir: "_build/html"
           production-deploy: ${{ github.event_name == 'push' }}
