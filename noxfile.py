@@ -34,9 +34,8 @@ def install(session: nox.Session, group: str) -> None:
     if "django" in group:
         session.run(*"pip install django dj_database_url".split())
     # install from sub-module
-    if os.getenv("GITHUB_EVENT_NAME") not in (None, "push"):
-        session.run(*"pip install --no-deps ./lnschema-core".split())
-    session.run(*"pip install .".split())
+    session.run(*"pip install --no-deps ./lnschema-core".split())
+    session.run(*"pip install --no-deps .".split())
     # install lamindb
     session.run(*"git clone https://github.com/laminlabs/lamindb --depth 1".split())
     if sys.platform.startswith("linux"):  # remove version pin when running on CI
