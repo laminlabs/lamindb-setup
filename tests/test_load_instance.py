@@ -2,6 +2,7 @@ import lndb
 
 
 def test_load_remote_instance():
+    lndb.login("testuser1")
     lndb.delete("lndb-setup-ci")
     lndb.init(storage="s3://lndb-setup-ci", _test=True)
     # ensure that the locally cached env file is deleted
