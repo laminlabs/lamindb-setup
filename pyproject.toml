@@ -14,7 +14,7 @@ dependencies = [
     "lnhub_rest==0.9.8",
     # NO other Lamin packages should be pinned or even be a dependency
     "laminci>=0.3.0",  # disentangle over time
-    "lnschema_core[sqlmodel]>=0.34a2",
+    "lnschema_core[sqlmodel]>=0.35a1",
     "lamin_logger>=0.2.3",
     # External dependencies
     "pytest_alembic==0.9.1",  # let's pin this as we use internals
@@ -34,7 +34,7 @@ Home = "https://github.com/laminlabs/lndb"
 
 [project.optional-dependencies]
 django = [
-    "lnschema_core[django]",
+    "django",
 ]
 test = [
     "pre-commit",
