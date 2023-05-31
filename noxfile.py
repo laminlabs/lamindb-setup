@@ -28,7 +28,7 @@ def lint(session: nox.Session) -> None:
 @nox.session
 @nox.parametrize(
     "group",
-    ["unit", "docs", "unit-django", "unit-django"],
+    ["unit", "docs", "unit-django", "docs-django"],
 )
 def install(session: nox.Session, group: str) -> None:
     if "django" in group:
@@ -45,7 +45,7 @@ def install(session: nox.Session, group: str) -> None:
 @nox.session
 @nox.parametrize(
     "group",
-    ["unit", "docs", "unit-django", "unit-django"],
+    ["unit", "docs", "unit-django", "docs-django"],
 )
 def build(session: nox.Session, group: str):
     login_testuser1(session, env=env)
