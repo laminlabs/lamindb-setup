@@ -32,11 +32,11 @@ def lint(session: nox.Session) -> None:
 def install(session: nox.Session, group: str) -> None:
     if "django" in group:
         session.run(*"pip install django dj_database_url".split())
+    session.run(*"pip install lnschema-bionty lnschema_lamin1".split())
     # install lnschema-core from sub-module
     session.run(*"pip install --no-deps ./lnschema-core".split())
     # install lamindb-setup without deps
     session.run(*"pip install .[aws,test]".split())
-    session.run(*"pip install lnschema-bionty lnschema_lamin1".split())
 
 
 @nox.session
