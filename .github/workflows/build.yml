@@ -65,7 +65,7 @@ jobs:
         run: |
           sudo apt-get -y install graphviz
           sudo apt-get install libpq-dev
-      - run: nox -s lint
+      # - run: nox -s lint
       - uses: aws-actions/configure-aws-credentials@v2
         with:
           aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}

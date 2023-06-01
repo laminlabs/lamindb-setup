@@ -12,7 +12,7 @@ from lnhub_rest.core.storage._add_storage import (
 )
 from pydantic import PostgresDsn
 
-from lndb.dev.upath import UPath
+from lamindb_setup.dev.upath import UPath
 
 from . import _USE_DJANGO
 from ._load_instance import load, load_from_isettings
@@ -56,11 +56,13 @@ def register(isettings: InstanceSettings, usettings):
 
 def reload_lamindb(isettings: InstanceSettings):
     # only touch lamindb if we're operating from lamindb
-    if "lamindb" in sys.modules:
-        import lamindb
+    if "lnschema_core" in sys.modules:
         import lnschema_core
 
         importlib.reload(lnschema_core)
+    if "lamindb" in sys.modules:
+        import lamindb
+
         importlib.reload(lamindb)
     else:
         # only log if we're outside lamindb

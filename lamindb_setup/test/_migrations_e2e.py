@@ -7,10 +7,10 @@ from lnhub_rest._assets import instances as test_instances
 from lnhub_rest.core.instance._init_instance import validate_db_arg, validate_schema_arg
 from lnhub_rest.core.storage._add_storage import validate_storage_root_arg
 
-from lndb._init_instance import infer_instance_name, init
-from lndb._settings import settings
-from lndb.dev._clone import clone_test
-from lndb.dev._settings_instance import InstanceSettings
+from lamindb_setup._init_instance import infer_instance_name, init
+from lamindb_setup._settings import settings
+from lamindb_setup.dev._clone import clone_test
+from lamindb_setup.dev._settings_instance import InstanceSettings
 
 # from ._migrations_unit import model_definitions_match_ddl
 

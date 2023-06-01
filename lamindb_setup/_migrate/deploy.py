@@ -11,11 +11,11 @@ import sqlmodel as sqm
 from lamin_logger import logger
 from packaging.version import parse as vparse
 
-from lndb._migrate.utils import generate_module_files, modify_alembic_ini
-from lndb.dev._db import insert
-from lndb.dev._settings_instance import InstanceSettings
-from lndb.dev._settings_user import UserSettings
-from lndb.dev._setup_schema import get_schema_module_name
+from lamindb_setup._migrate.utils import generate_module_files, modify_alembic_ini
+from lamindb_setup.dev._db import insert
+from lamindb_setup.dev._settings_instance import InstanceSettings
+from lamindb_setup.dev._settings_user import UserSettings
+from lamindb_setup.dev._setup_schema import get_schema_module_name
 
 
 def decide_deploy_migration(

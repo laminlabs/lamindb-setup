@@ -8,7 +8,7 @@ from lnhub_rest.core.instance._load_instance import (
     load_instance as load_instance_from_hub,
 )
 
-from lndb.dev.upath import UPath
+from lamindb_setup.dev.upath import UPath
 
 from . import _USE_DJANGO
 from ._settings import InstanceSettings, settings

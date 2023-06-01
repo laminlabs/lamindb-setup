@@ -16,28 +16,21 @@ from ._settings_user import UserSettings
 
 
 def check_schema_version_and_import(schema_name) -> ModuleType:
+    lamindb_installed = True
+    try:
+        get_pip_version("lamindb")  # noqa
+    except Exception:
+        lamindb_installed = False
+
     def check_version(module_version):
+        if not lamindb_installed:
+            return None
         schema_module_name = get_schema_module_name(schema_name)
         lamindb_version = get_pip_version("lamindb")
         for req in importlib_requires("lamindb"):
             req = Requirement(req)
             if schema_module_name == req.name:
                 if not req.specifier.contains(module_version):
-                    # it's currently important that we only import lamindb in
-                    # case of an error being raised
-                    # the following might mask the actual error because this is
-                    # raised during instance creation time where lamindb
-                    # cannot yet be imported
-                    # import lamindb
-                    # if lamindb.__version__ != lamindb_version:
-                    #     warning = (
-                    #         "\nWARNING: importlib_metadata.version('lamindb') gives"
-                    #         f" v{lamindb_version}, whereas `import lamindb` gives"
-                    #         f" v{lamindb.__version__}"
-                    #         f"\nConsider `pip install lamindb=={lamindb_version}`"
-                    #     )
-                    # else:
-                    #     warning = ""
                     raise RuntimeError(
                         f"lamindb v{lamindb_version} needs"
                         f" lnschema_{schema_name}{req.specifier}, you have"
