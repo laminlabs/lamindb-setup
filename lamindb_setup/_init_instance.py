@@ -56,11 +56,13 @@ def register(isettings: InstanceSettings, usettings):
 
 def reload_lamindb(isettings: InstanceSettings):
     # only touch lamindb if we're operating from lamindb
-    if "lamindb" in sys.modules:
-        import lamindb
+    if "lnschema_core" in sys.modules:
         import lnschema_core
 
         importlib.reload(lnschema_core)
+    if "lamindb" in sys.modules:
+        import lamindb
+
         importlib.reload(lamindb)
     else:
         # only log if we're outside lamindb
