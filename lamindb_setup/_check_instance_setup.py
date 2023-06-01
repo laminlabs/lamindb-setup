@@ -1,3 +1,5 @@
+import importlib
+
 from lamin_logger import logger
 
 from . import _USE_DJANGO
@@ -10,13 +12,18 @@ def check_instance_setup(from_lamindb: bool = False):
             # attempt loading the settings file
             from .dev._settings_load import load_instance_settings
 
-            load_instance_settings()
+            isettings = load_instance_settings()
 
             if _USE_DJANGO:
-                from .dev._django import IS_SETUP
+                from .dev._django import IS_SETUP, setup_django
 
-                if not IS_SETUP:
-                    return False
+                if from_lamindb:
+                    setup_django(isettings)
+                    import lnschema_core
+
+                    importlib.reload(lnschema_core)
+                else:
+                    return IS_SETUP
 
             # if importing from lamindb, also ensure migrations are correct
             if from_lamindb and not _USE_DJANGO:
