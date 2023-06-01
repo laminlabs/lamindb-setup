@@ -35,7 +35,7 @@ def install(session: nox.Session, group: str) -> None:
     # install lnschema-core from sub-module
     session.run(*"pip install --no-deps ./lnschema-core".split())
     # install lamindb-setup without deps
-    session.run(*"pip install --no-deps .".split())
+    session.run(*"pip install .[aws]".split())
 
 
 @nox.session

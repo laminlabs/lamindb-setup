@@ -33,6 +33,9 @@ dependencies = [
 Home = "https://github.com/laminlabs/lamindb-setup"
 
 [project.optional-dependencies]
+aws = [
+    "s3fs",
+]
 django = [
     "django",
 ]
