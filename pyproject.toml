@@ -45,7 +45,6 @@ test = [
     "pytest>=6.0",
     "pytest-cov",
     "nbproject-test>=0.4.3",
-    "nbproject",
 ]
 
 [project.scripts]

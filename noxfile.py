@@ -35,7 +35,7 @@ def install(session: nox.Session, group: str) -> None:
     # install lnschema-core from sub-module
     session.run(*"pip install --no-deps ./lnschema-core".split())
     # install lamindb-setup without deps
-    session.run(*"pip install .[aws]".split())
+    session.run(*"pip install .[aws,test]".split())
 
 
 @nox.session
@@ -49,7 +49,7 @@ def build(session: nox.Session, group: str):
     if "django" in group:
         os.environ["LAMINDB_USE_DJANGO"] = "1"
         env["LAMINDB_USE_DJANGO"] = "1"
-    coverage_args = "--cov=lndb --cov-append --cov-report=term-missing"  # noqa
+    coverage_args = "--cov=lamindb_setup --cov-append --cov-report=term-missing"  # noqa
     if group.startswith("unit"):
         session.run(*f"pytest -s {coverage_args} ./tests".split(), env=env)
     elif group.startswith("docs"):
