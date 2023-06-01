@@ -3,7 +3,7 @@
 <!-- prettier-ignore -->
 Name | PR | Developer | Date | Version
 --- | --- | --- | --- | ---
-🚚 Rename package to `lamindb_setup` | [389](https://github.com/laminlabs/lamindb-setup/pull/389) | [falexwolf](https://github.com/falexwolf) | 2023-06-01 |
+🚚 Rename package to `lamindb_setup` | [389](https://github.com/laminlabs/lamindb-setup/pull/389) | [falexwolf](https://github.com/falexwolf) | 2023-06-01 | 0.46a2
 🏗️ Add Django backend | [388](https://github.com/laminlabs/lndb/pull/388) | [falexwolf](https://github.com/falexwolf) | 2023-05-31 | 0.46a1
 ♻️ Refactor CI | [387](https://github.com/laminlabs/lndb/pull/387) | [falexwolf](https://github.com/falexwolf) | 2023-05-30 | 0.45.0
 🐛 Unlock on uncaught exceptions in ipython | [386](https://github.com/laminlabs/lndb/pull/386) | [Koncopd](https://github.com/Koncopd) | 2023-05-30 |
