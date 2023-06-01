@@ -18,8 +18,8 @@ from ._settings_user import UserSettings
 def check_schema_version_and_import(schema_name) -> ModuleType:
     lamindb_installed = True
     try:
-        import lamindb  # noqa
-    except ImportError:
+        get_pip_version("lamindb")  # noqa
+    except Exception:
         lamindb_installed = False
 
     def check_version(module_version):
