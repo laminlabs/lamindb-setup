@@ -33,7 +33,7 @@ def modify_migration_id_in__init__(package_name) -> None:
             current_line = line
             break
 
-    from lndb.test._migrations_unit import get_migration_id_from_scripts
+    from lamindb_setup.test._migrations_unit import get_migration_id_from_scripts
 
     migration_id = get_migration_id_from_scripts(package_name)
     content = content.replace(current_line, f'_migration = "{migration_id}"')

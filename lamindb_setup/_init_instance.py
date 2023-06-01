@@ -12,7 +12,7 @@ from lnhub_rest.core.storage._add_storage import (
 )
 from pydantic import PostgresDsn
 
-from lndb.dev.upath import UPath
+from lamindb_setup.dev.upath import UPath
 
 from . import _USE_DJANGO
 from ._load_instance import load, load_from_isettings

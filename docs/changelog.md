@@ -58,7 +58,7 @@ Add universal_pathlib to dependencies | [375](https://github.com/laminlabs/lndb/
 🐛 Fix `._current.yaml` | [326](https://github.com/laminlabs/lndb/pull/326) | [sunnyosun](https://github.com/sunnyosun) | 2023-03-09 | 0.37.4
 ⬆️ Upgrade to lnhub_rest 0.6.1 | [325](https://github.com/laminlabs/lndb/pull/325) | [falexwolf](https://github.com/falexwolf) | 2023-03-09 | 0.37.3
 ⬆️ Upgrade lnschema-bionty | [318](https://github.com/laminlabs/lndb/pull/318) | [sunnyosun](https://github.com/sunnyosun) | 2023-03-09 | 0.37.2
-✅ Test lndb in staging environment | [324](https://github.com/laminlabs/lndb/pull/324) | [fredericenard](https://github.com/fredericenard) | 2023-03-08 |
+✅ Test lamindb_setup in staging environment | [324](https://github.com/laminlabs/lndb/pull/324) | [fredericenard](https://github.com/fredericenard) | 2023-03-08 |
 👷 Enable testing using a specific environment | [323](https://github.com/laminlabs/lndb/pull/323) | [fredericenard](https://github.com/fredericenard) | 2023-03-07 |
 ⬆️ Upgrade lnhub-rest | [322](https://github.com/laminlabs/lndb/pull/322) | [fredericenard](https://github.com/fredericenard) | 2023-03-07 |
 ⬆️ Upgrade lamindb | [321](https://github.com/laminlabs/lndb/pull/321) | [fredericenard](https://github.com/fredericenard) | 2023-03-07 |
@@ -71,10 +71,10 @@ Add universal_pathlib to dependencies | [375](https://github.com/laminlabs/lndb/
 ✨ Reload `lamindb.schema` if `lamindb` is imported | [312](https://github.com/laminlabs/lndb/pull/312) | [falexwolf](https://github.com/falexwolf) | 2023-03-01 | 0.36.0
 👷 Check laminci versions | [310](https://github.com/laminlabs/lndb/pull/310) | [falexwolf](https://github.com/falexwolf) | 2023-03-01 |
 📝 Fix class ref in settings | [308](https://github.com/laminlabs/lndb/pull/308) | [sunnyosun](https://github.com/sunnyosun) | 2023-02-28 |
-🚚 Rename lndb to lamin in guide & faq | [307](https://github.com/laminlabs/lndb/pull/307) | [falexwolf](https://github.com/falexwolf) | 2023-02-27 |
+🚚 Rename lamindb_setup to lamin in guide & faq | [307](https://github.com/laminlabs/lndb/pull/307) | [falexwolf](https://github.com/falexwolf) | 2023-02-27 |
 🎨 Rename root_str to root_as_str | [305](https://github.com/laminlabs/lndb/pull/305) | [Koncopd](https://github.com/Koncopd) | 2023-02-25 |
 ✨ Add root_str property to Storage | [304](https://github.com/laminlabs/lndb/pull/304) | [Koncopd](https://github.com/Koncopd) | 2023-02-25 |
-🚚 Rename lndb CLI to lamin | [303](https://github.com/laminlabs/lndb/pull/303) | [falexwolf](https://github.com/falexwolf) | 2023-02-24 |
+🚚 Rename lamindb_setup CLI to lamin | [303](https://github.com/laminlabs/lndb/pull/303) | [falexwolf](https://github.com/falexwolf) | 2023-02-24 |
 🚚 Move code to laminci | [302](https://github.com/laminlabs/lndb/pull/302) | [falexwolf](https://github.com/falexwolf) | 2023-02-23 |
 🐛 Fix CI docs upload | [301](https://github.com/laminlabs/lndb/pull/301) | [falexwolf](https://github.com/falexwolf) | 2023-02-22 | 0.35.3
 👷 Upload docs artifacts | [300](https://github.com/laminlabs/lndb/pull/300) | [falexwolf](https://github.com/falexwolf) | 2023-02-22 |
@@ -164,7 +164,7 @@ Add universal_pathlib to dependencies | [375](https://github.com/laminlabs/lndb/
 🐛 Make delete command compatible with delete function | [188](https://github.com/laminlabs/lndb-setup/pull/188) | [fredericenard](https://github.com/fredericenard) | 2023-01-06 |
 ✨ Command delete for the CLI | [175](https://github.com/laminlabs/lndb-setup/pull/175) | [fredericenard](https://github.com/fredericenard) | 2023-01-05 |
 🍱 Clean up & complete test instances | [186](https://github.com/laminlabs/lndb-setup/pull/186) | [falexwolf](https://github.com/falexwolf) | 2023-01-05 | 0.28.1
-✨ Output information about current user in `lndb info` | [185](https://github.com/laminlabs/lndb-setup/pull/185) | [falexwolf](https://github.com/falexwolf) | 2023-01-05 |
+✨ Output information about current user in `lamindb_setup info` | [185](https://github.com/laminlabs/lndb-setup/pull/185) | [falexwolf](https://github.com/falexwolf) | 2023-01-05 |
 ✨ Add command for generating migrations | [184](https://github.com/laminlabs/lndb-setup/pull/184) | [falexwolf](https://github.com/falexwolf) | 2023-01-05 |
 📝 Added swarm_test instance | [183](https://github.com/laminlabs/lndb-setup/pull/183) | [sunnyosun](https://github.com/sunnyosun) | 2023-01-05 |
 🐛 Migration skipped return None | [181](https://github.com/laminlabs/lndb-setup/pull/181) | [fredericenard](https://github.com/fredericenard) | 2023-01-05 | 0.28.0
@@ -244,7 +244,7 @@ Add universal_pathlib to dependencies | [375](https://github.com/laminlabs/lndb/
 🩹 Hide hub error in a thread on Windows | [90](https://github.com/laminlabs/lndb-setup/pull/90) | [Koncopd](https://github.com/Koncopd) | 2022-10-30 |
 🐛 Add entry in user_instance table | [89](https://github.com/laminlabs/lndb-setup/pull/89) | [fredericenard](https://github.com/fredericenard) | 2022-10-27 | 0.13.2
 🐛 Fix instance exists check | [88](https://github.com/laminlabs/lndb-setup/pull/88) | [fredericenard](https://github.com/fredericenard) | 2022-10-26 | 0.13.1
-🔥 Remove lndb hub depency | [86](https://github.com/laminlabs/lndb-setup/pull/86) | [fredericenard](https://github.com/fredericenard) | 2022-10-26 | 0.13.0
+🔥 Remove lamindb_setup hub depency | [86](https://github.com/laminlabs/lndb-setup/pull/86) | [fredericenard](https://github.com/fredericenard) | 2022-10-26 | 0.13.0
 🎨 Remove lndb_hub dependency | [85](https://github.com/laminlabs/lndb-setup/pull/85) | [fredericenard](https://github.com/fredericenard) | 2022-10-26 |
 ✨ Enable dev settings | [84](https://github.com/laminlabs/lndb-setup/pull/84) | [fredericenard](https://github.com/fredericenard) | 2022-10-26 |
 ✨ Push instance during setup | [81](https://github.com/laminlabs/lndb-setup/pull/81) | [fredericenard](https://github.com/fredericenard) | 2022-10-22 |

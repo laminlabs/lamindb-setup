@@ -4,8 +4,8 @@ from typing import Optional
 from lamin_logger import logger
 from laminci import get_package_name
 
-from lndb._migrate.deploy import check_deploy_migration  # noqa
-from lndb._migrate.utils import (
+from lamindb_setup._migrate.deploy import check_deploy_migration  # noqa
+from lamindb_setup._migrate.utils import (
     generate_module_files,
     get_schema_package_info,
     modify_alembic_ini,
@@ -57,7 +57,7 @@ class migrate:
             logger.info(f"Generating based on {testdb_path}")
         else:
             rm = True
-            from lndb._settings import settings
+            from lamindb_setup._settings import settings
 
             if settings._instance_exists:
                 response = input(

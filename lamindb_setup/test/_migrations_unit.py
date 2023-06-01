@@ -14,9 +14,9 @@ from pytest_alembic.plugin.error import AlembicTestFailure
 from pytest_alembic.runner import MigrationContext
 from sqlmodel import SQLModel
 
-from lndb._delete import delete
-from lndb._init_instance import init
-from lndb._migrate import generate_module_files, get_schema_package_info
+from lamindb_setup._delete import delete
+from lamindb_setup._init_instance import init
+from lamindb_setup._migrate import generate_module_files, get_schema_package_info
 
 
 def get_migration_config(package_name: str, *, target_metadata=None, **kwargs):
