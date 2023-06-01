@@ -1,6 +1,5 @@
-from ln_setup.dev._settings_store import instance_settings_file
-
 import lamindb_setup as ln_setup
+from lamindb_setup.dev._settings_store import instance_settings_file
 
 
 def test_load_remote_instance():
