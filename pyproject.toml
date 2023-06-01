@@ -12,6 +12,7 @@ dependencies = [
     # !!! lnhub_rest cannot be pinned in LaminDB !!!
     # !!! LaminDB should not directly depend on lnhub_rest !!!
     "lnhub_rest==0.9.8",
+    "lndb",  # this is just until lnhub_rest is decoupled from lndb
     # NO other Lamin packages should be pinned or even be a dependency
     "laminci>=0.3.0",  # disentangle over time
     "lnschema_core>=0.35a1",
