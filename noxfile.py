@@ -35,7 +35,8 @@ def install(session: nox.Session, group: str) -> None:
     session.run(*"pip install bionty".split())
     session.run(*"pip install --no-deps lnschema_bionty".split())
     session.run(
-        *"pip install --no-deps https://github.com/laminlabs/lnschema-lamin1".split()
+        *"pip install --no-deps git+https://github.com/laminlabs/lnschema-lamin1"
+        .split()
     )
     # install lnschema-core from sub-module
     session.run(*"pip install --no-deps ./lnschema-core".split())
