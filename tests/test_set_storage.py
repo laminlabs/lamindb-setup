@@ -1,8 +1,8 @@
-import lamindb as ln
+import lamindb_setup as ln_setup
 
 
 def test_set_storage_sqlite():
-    ln.setup.delete("mydata")
-    ln.setup.init(storage="./mydata", _test=True)
-    assert ln.setup.set.storage("mydata2") == "set-storage-failed"
-    ln.setup.delete("mydata")
+    ln_setup.delete("mydata")
+    ln_setup.init(storage="./mydata", _test=True)
+    assert ln_setup.set.storage("mydata2") == "set-storage-failed"
+    ln_setup.delete("mydata")
