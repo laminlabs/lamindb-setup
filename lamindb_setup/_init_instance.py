@@ -31,13 +31,15 @@ def register(isettings: InstanceSettings, usettings):
         from lnschema_core.models import Storage, User
 
         user, created = User.objects.update_or_create(
-            id=usettings.get_id_as_int(),
+            id=usettings.id,
             defaults=dict(
                 handle=usettings.handle,
                 name=usettings.name,
                 email=usettings.email,
             ),
         )
+        if created:
+            logger.success(f"Saved: {user}")
         storage, created = Storage.objects.update_or_create(
             root=isettings.storage.root_as_str,
             defaults=dict(
@@ -46,9 +48,7 @@ def register(isettings: InstanceSettings, usettings):
             ),
         )
         if created:
-            logger.success(
-                f"Added storage root {storage.id}:  {isettings.storage.root_as_str}"
-            )
+            logger.success(f"Saved: {storage}")
     else:
         upsert.user(usettings.email, usettings.id, usettings.handle, usettings.name)
         insert_if_not_exists.storage(isettings.storage)

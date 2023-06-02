@@ -78,17 +78,6 @@ def setup_schema(isettings: InstanceSettings, usettings: UserSettings):
             name=usettings.name,
         )
 
-    else:
-        from lnschema_core.models import User
-
-        user = User(
-            id=usettings.get_id_as_int(),
-            email=usettings.email,
-            handle=usettings.handle,
-            name=usettings.name,
-        )
-        user.save()
-
     if not _USE_DJANGO:
         for schema_name in schema_names:
             schema_module = importlib.import_module(get_schema_module_name(schema_name))

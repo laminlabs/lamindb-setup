@@ -9,6 +9,7 @@ from lamin_logger import logger
 from pydantic import PostgresDsn
 from sqlalchemy.future import Engine
 
+from .. import _USE_DJANGO
 from ._exclusion import empty_locker, get_locker
 from ._settings_save import save_instance_settings
 from ._settings_store import current_instance_settings_file, instance_settings_file
@@ -28,6 +29,20 @@ from .upath import UPath
 #         cursor = dbapi_connection.cursor()
 #         cursor.execute("PRAGMA foreign_keys=ON;")
 #         cursor.close()
+
+
+class DjangoSession:
+    def delete(self, record):
+        record.delete()
+
+    def commit(self):
+        pass
+
+    def close(self):
+        pass
+
+    def refresh(self, record):
+        pass
 
 
 class InstanceSettings:
@@ -154,8 +169,10 @@ class InstanceSettings:
         In case of remote sqlite, updates the local sqlite file first.
         """
         self._update_local_sqlite_file()
-
-        return sqm.Session(self.engine, expire_on_commit=False)
+        if _USE_DJANGO:
+            return DjangoSession()
+        else:
+            return sqm.Session(self.engine, expire_on_commit=False)
 
     @property
     def is_cloud_sqlite(self) -> bool:
