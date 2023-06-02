@@ -32,13 +32,16 @@ from .upath import UPath
 
 
 class DjangoSession:
-    def delete(self, record) -> None:
+    def delete(self, record):
         record.delete()
 
     def commit(self):
         pass
 
     def close(self):
+        pass
+
+    def refresh(self, record):
         pass
 
 
