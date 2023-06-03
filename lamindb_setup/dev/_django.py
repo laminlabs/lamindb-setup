@@ -1,6 +1,8 @@
 import builtins
 import os
 
+from lnhub_rest._assets._schemas import get_schema_module_name
+
 try:
     from django.db import connections
     from django.db.migrations.executor import MigrationExecutor
@@ -39,11 +41,12 @@ def setup_django(isettings: InstanceSettings):
         "default": default_db,
     }
 
+    schema_names = ["core"] + list(isettings.schema)
+    schema_module_names = [get_schema_module_name(n) for n in schema_names]
+
     if not settings.configured:
         settings.configure(
-            INSTALLED_APPS=[
-                "lnschema_core",
-            ],
+            INSTALLED_APPS=schema_module_names,
             DATABASES=DATABASES,
         )
         django.setup(set_prefix=False)
