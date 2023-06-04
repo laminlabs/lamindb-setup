@@ -187,9 +187,6 @@ def init(
         isettings._persist()
         return None
 
-    # this does not yet setup a setup for a new database
-    persist_settings_load_schema(isettings)
-
     message = None
     if not isettings._is_db_setup(mute=True)[0]:
         setup_schema(isettings, settings.user)

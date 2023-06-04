@@ -51,9 +51,10 @@ def check_schema_version_and_import(schema_name) -> ModuleType:
     return module
 
 
-def load_schema(isettings: InstanceSettings):
+def load_schema(isettings: InstanceSettings, init: bool = False):
     if _USE_DJANGO:
-        setup_django(isettings)
+        print(init)
+        setup_django(isettings, init=init)
 
     schema_names = ["core"] + list(isettings.schema)
     msg = "Loading schema modules: "
@@ -64,7 +65,8 @@ def load_schema(isettings: InstanceSettings):
 
 
 def setup_schema(isettings: InstanceSettings, usettings: UserSettings):
-    msg, schema_names = load_schema(isettings)
+    print("setup schema")
+    msg, schema_names = load_schema(isettings, init=True)
     logger.info(f"{msg}")
 
     if not _USE_DJANGO:

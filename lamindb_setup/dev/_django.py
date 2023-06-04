@@ -1,6 +1,7 @@
 import builtins
 import os
 
+from lamin_logger import logger
 from lnhub_rest._assets._schemas import get_schema_module_name
 
 try:
@@ -15,17 +16,19 @@ IS_RUN_FROM_IPYTHON = getattr(builtins, "__IPYTHON__", False)
 IS_SETUP = False
 
 
-def is_database_synchronized():
+def get_migrations_to_sync():
     from django.db import DEFAULT_DB_ALIAS
 
     connection = connections[DEFAULT_DB_ALIAS]
     connection.prepare_database()
     executor = MigrationExecutor(connection)
     targets = executor.loader.graph.leaf_nodes()
-    return not executor.migration_plan(targets)
+    planned_migrations = [mig[0] for mig in executor.migration_plan(targets)]
+    return planned_migrations
 
 
-def setup_django(isettings: InstanceSettings):
+def setup_django(isettings: InstanceSettings, init: bool = False):
+    print("setup django")
     if IS_RUN_FROM_IPYTHON:
         os.environ["DJANGO_ALLOW_ASYNC_UNSAFE"] = "true"
     import dj_database_url
@@ -50,12 +53,20 @@ def setup_django(isettings: InstanceSettings):
             DATABASES=DATABASES,
         )
         django.setup(set_prefix=False)
-        if not is_database_synchronized():
-            from django.core.management import call_command
 
-            print("applying migrations")
-            call_command("migrate")
-            isettings._update_cloud_sqlite_file()
+        planned_migrations = get_migrations_to_sync()
+        print(init)
+        if len(planned_migrations) > 0:
+            if init:
+                from django.core.management import call_command
+
+                call_command("migrate")
+                isettings._update_cloud_sqlite_file()
+            else:
+                logger.warning(
+                    "Your database is not up to date, consider deploying migrations"
+                    f" via: lamin migrate deploy:\n{planned_migrations}"
+                )
         global IS_SETUP
         IS_SETUP = True
     # else:
