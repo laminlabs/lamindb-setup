@@ -1,5 +1,3 @@
-import sqlalchemy as sql
-
 from ._settings import settings
 
 
@@ -10,9 +8,10 @@ class schema:
     def draw(cls, view=True):
         """Make a diagram of entity relationships."""
         import erdiagram
+        import sqlalchemy as sa
 
         engine = settings.instance.engine
-        metadata = sql.MetaData(bind=engine)
+        metadata = sa.MetaData(bind=engine)
         metadata.reflect()
         graph = erdiagram.create_schema_graph(
             metadata=metadata,
@@ -29,7 +28,9 @@ class schema:
     @classmethod
     def list_entities(cls):
         """Return all entities in the db."""
-        metadata = sql.MetaData()
+        import sqlalchemy as sa
+
+        metadata = sa.MetaData()
         engine = settings.instance.engine
         metadata.reflect(bind=engine)
         table_names = [table.name for table in metadata.sorted_tables]

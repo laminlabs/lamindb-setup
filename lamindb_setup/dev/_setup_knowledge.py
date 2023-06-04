@@ -1,10 +1,6 @@
 from pathlib import Path
 from typing import Dict
 
-import pandas as pd
-import sqlalchemy as sqm
-from IPython.display import display as ipython_display
-
 from ._settings_instance import InstanceSettings
 
 
@@ -12,31 +8,40 @@ def write_bionty_versions(isettings: InstanceSettings):
     """Write bionty ._current.yaml to the CurrentBiontyVersions table."""
     if "bionty" in isettings.schema:
         import bionty as bt
-        from bionty.dev._io import load_yaml
-        from lnschema_bionty import dev
+        from lnschema_bionty import BiontyVersions, CurrentBiontyVersions
 
-        basedir = Path(bt.__file__).parent / "versions"
-        _current = load_yaml(basedir / "._current.yaml")
-        local = load_yaml(Path.home() / ".lamin/bionty/versions/local.yaml")
+        columns_mapper = {
+            "bionty class": "entity",
+            "source key": "source_key",
+            "ontology": "source_name",
+        }
 
-        # here we set integer ids from 0
-        records = []
-        for i, (entity, db) in enumerate(_current.items()):
-            db_name = next(iter(db))
-            db_version = db[db_name]
-            record = dev.BiontyVersions(
-                id=i,
-                entity=entity,
-                database=db_name,
-                database_v=db_version,
-                database_url=local.get(entity)
-                .get(db_name)
-                .get("versions")
-                .get(db_version)[0],
-            )
-            records.append(record)
+        all_versions = bt.display_available_versions(return_df=True).reset_index()
+        all_versions.columns = all_versions.columns.str.lower()
+        all_versions.rename(columns=columns_mapper, inplace=True)
+        all_versions_dict = all_versions.to_dict(orient="records")
 
-        # insert.bionty_versions(records)
+        current_versions = bt.display_active_versions(return_df=True).reset_index()
+        current_versions.columns = current_versions.columns.str.lower()
+        current_versions.rename(columns=columns_mapper, inplace=True)
+        current_versions = current_versions.set_index(["entity", "species"])
+
+        all_records = []
+        current_records = []
+
+        for kwargs in all_versions_dict:
+            record = BiontyVersions(**kwargs)
+            all_records.append(record)
+            current = current_versions.loc[
+                (kwargs["entity"], kwargs["species"])
+            ].to_dict()
+            if (current["source_key"] == kwargs["source_key"]) and (
+                current["version"] == kwargs["version"]
+            ):
+                current_records.append(CurrentBiontyVersions(bionty_version=record))
+
+        BiontyVersions.objects.bulk_create(all_records)
+        CurrentBiontyVersions.objects.bulk_create(current_records)
 
 
 def load_bionty_versions(isettings: InstanceSettings, display: bool = False):
@@ -54,6 +59,8 @@ def load_bionty_versions(isettings: InstanceSettings, display: bool = False):
         dev.BiontyVersions.__table__.schema = None
         dev.CurrentBiontyVersions.__table__.schema = None
 
+        import sqlalchemy as sqm  # no module-level import, not a dependency!!!
+
         stmt = sqm.select(dev.BiontyVersions).join(dev.CurrentBiontyVersions)
         with isettings.session() as ss:
             results = ss.exec(stmt).all()
@@ -62,6 +69,10 @@ def load_bionty_versions(isettings: InstanceSettings, display: bool = False):
         if len(results) == 0:
             write_bionty_versions(isettings)
         records = [row.dict() for row in results]
+
+        import pandas as pd  # no module-level import, is slow!!!
+        from IPython.display import display as ipython_display  # is slow!
+
         df = pd.DataFrame.from_records(records)
         df_lndb = df.set_index("entity")[["database", "database_v"]]
         if display:

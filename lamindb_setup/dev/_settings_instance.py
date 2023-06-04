@@ -3,10 +3,7 @@ import shutil
 from pathlib import Path
 from typing import Literal, Optional, Set, Tuple, Union
 
-import sqlalchemy as sa
 from lamin_logger import logger
-from pydantic import PostgresDsn
-from sqlalchemy.future import Engine
 
 from ._exclusion import empty_locker, get_locker
 from ._settings_save import save_instance_settings
@@ -38,7 +35,7 @@ class InstanceSettings:
         name: str,  # instance name
         storage_root: Union[str, Path, UPath],  # storage location on cloud
         storage_region: Optional[str] = None,
-        db: Optional[PostgresDsn] = None,  # DB URI
+        db: Optional[str] = None,  # DB URI
         schema: Optional[str] = None,  # comma-separated string of schema names
     ):
         self._owner: str = owner
@@ -141,11 +138,13 @@ class InstanceSettings:
             return "postgresql"
 
     @property
-    def engine(self) -> Engine:
+    def engine(self):
         """Database engine.
 
         In case of remote sqlite, does not update the local sqlite.
         """
+        import sqlalchemy as sa
+
         return sa.create_engine(self.db, future=True)
 
     @property
@@ -221,6 +220,8 @@ class InstanceSettings:
             else:
                 return False, f"Connection {self.db} not reachable"
 
+        import sqlalchemy as sa
+
         engine = sa.create_engine(self.db)
         with engine.connect() as conn:
             try:  # cannot import lnschema_core here, need to use plain SQL
@@ -244,6 +245,8 @@ class InstanceSettings:
                     logger.warning(f"SQLite file {self._sqlite_file} does not exist")
                 return False
         else:
+            import sqlalchemy as sa
+
             engine = sa.create_engine(self.db)
             try:
                 engine.connect()

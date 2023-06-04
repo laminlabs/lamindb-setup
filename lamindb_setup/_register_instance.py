@@ -1,11 +1,14 @@
 from lamin_logger import logger
-from lnhub_rest.core.instance._init_instance import init_instance as init_instance_hub
 
 from ._settings import settings
 
 
 def register():
     """Register an instance on the hub."""
+    from lnhub_rest.core.instance._init_instance import (
+        init_instance as init_instance_hub,
+    )
+
     isettings = settings.instance
     result = init_instance_hub(
         owner=isettings.owner,

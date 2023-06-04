@@ -1,11 +1,13 @@
 from lamin_logger import logger
 
 from ._init_instance import reload_schema_modules
+from ._silence_loggers import silence_loggers
 from .dev._settings_store import current_instance_settings_file
 
 
 def check_instance_setup(from_lamindb: bool = False):
     if current_instance_settings_file().exists():
+        silence_loggers()
         try:
             # attempt loading the settings file
             from .dev._settings_load import load_instance_settings

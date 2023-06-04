@@ -3,9 +3,6 @@ from pathlib import Path
 from typing import Optional, Union
 
 from lamin_logger import logger
-from lnhub_rest.core.instance._load_instance import (
-    load_instance as load_instance_from_hub,
-)
 
 from lamindb_setup.dev.upath import UPath
 
@@ -35,6 +32,10 @@ def load(
         migrate: `Optional[bool] = None` - Whether to auto-migrate or not.
     """
     owner, name = get_owner_name_from_identifier(identifier)
+
+    from lnhub_rest.core.instance._load_instance import (
+        load_instance as load_instance_from_hub,
+    )
 
     hub_result = load_instance_from_hub(
         owner=owner, name=name, _access_token=_access_token
@@ -119,11 +120,11 @@ def load_from_isettings(
     migrate: Optional[bool] = None,
 ) -> None:
     from ._init_instance import persist_settings_load_schema, register, reload_lamindb
-    from .dev._setup_knowledge import load_bionty_versions
+    from .dev._setup_knowledge import load_bionty_versions  # noqa
 
     persist_settings_load_schema(isettings)
     register(isettings, settings.user)
-    load_bionty_versions(isettings)
+    # load_bionty_versions(isettings)
     reload_lamindb(isettings)
 
 

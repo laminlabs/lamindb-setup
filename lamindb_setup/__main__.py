@@ -1,13 +1,7 @@
 import argparse
-import os
-import sys
 
-from lamin_logger import logger
-
-from . import _init_instance, _setup_user, delete, info, register, set
-from ._close import close as close_instance
-from ._init_instance import description as instance
-from ._notebook import track
+# most important dynamic to optimize import time
+from ._docstrings import instance_description as instance
 from .dev._settings_user import user_description as user
 
 signup_help = "First time sign up."
@@ -108,17 +102,21 @@ def process_result(result):
 
 
 def main():
-    if os.path.basename(sys.argv[0]) == "lndb":
-        logger.warning("CLI `lndb` is deprecated, use `lamin` instead.")
     if args.command == "signup":
-        return _setup_user.signup(email=args.email)
+        from ._setup_user import signup
+
+        return signup(email=args.email)
     if args.command == "login":
-        return _setup_user.login(
+        from ._setup_user import login
+
+        return login(
             args.user,
             password=args.password,
         )
     elif args.command == "init":
-        result = _init_instance.init(
+        from ._init_instance import init
+
+        result = init(
             storage=args.storage,
             db=args.db,
             schema=args.schema,
@@ -126,32 +124,44 @@ def main():
         )
         return process_result(result)
     elif args.command == "load":
-        result = _init_instance.load(
+        from ._load_instance import load
+
+        result = load(
             identifier=args.instance,
             storage=args.storage,
         )
         return process_result(result)
     elif args.command == "close":
-        return close_instance()
+        from ._close import close
+
+        return close()
     elif args.command == "register":
+        from ._register_instance import register
+
         return register()
     elif args.command == "delete":
+        from ._delete import delete
+
         return delete(
             instance_name=args.instance,
         )
     elif args.command == "info":
+        from ._info import info
+
         return info()
     elif args.command == "set":
+        from ._set import set
+
         return set.storage(args.storage)
     elif args.command == "migrate":
-        from . import migrate
+        from ._migrate import migrate
 
         if args.action == "create":
             return migrate.create()
         elif args.action == "deploy":
             return migrate.deploy()
     elif args.command == "track":
+        from ._notebook import track
+
         track(args.filepath, args.pypackage)
-    else:
-        logger.error("Invalid command. Try `lamin -h`.")
-        return 1
+    return 1

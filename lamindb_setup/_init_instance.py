@@ -4,22 +4,16 @@ from pathlib import Path
 from typing import Optional, Union
 
 from lamin_logger import logger
-from lnhub_rest._assets._schemas import get_schema_module_name
-from lnhub_rest.core.instance._init_instance import init_instance as init_instance_hub
-from lnhub_rest.core.instance._init_instance import validate_db_arg, validate_schema_arg
-from lnhub_rest.core.storage._add_storage import (
-    get_storage_region,
-    validate_storage_root_arg,
-)
 from pydantic import PostgresDsn
 
 from lamindb_setup.dev.upath import UPath
 
+from ._docstrings import instance_description as description
 from ._load_instance import load, load_from_isettings
 from ._settings import settings
 from .dev import InstanceSettings
 from .dev._docs import doc_args
-from .dev._setup_knowledge import write_bionty_versions
+from .dev._setup_knowledge import write_bionty_versions  # noqa
 from .dev._setup_schema import load_schema
 from .dev._storage import Storage
 
@@ -54,6 +48,8 @@ def register(isettings: InstanceSettings, usettings):
 
 
 def reload_schema_modules(isettings: InstanceSettings):
+    from lnhub_rest._assets._schemas import get_schema_module_name
+
     schema_names = ["core"] + list(isettings.schema)
     schema_module_names = [get_schema_module_name(n) for n in schema_names]
 
@@ -92,17 +88,6 @@ Either delete your cache ({}) or add it back to the cloud (if delete was acciden
 """
 
 
-# This provides the doc strings for the init function on the
-# CLI and the API
-# It is located here as it *mostly* parallels the InstanceSettings docstrings.
-# Small differences are on purpose, due to the different scope!
-class description:
-    storage_root = """Storage root. Either local dir, ``s3://bucket_name`` or ``gs://bucket_name``."""  # noqa
-    db = """Database connection url, do not pass for SQLite."""
-    name = """Instance name."""
-    schema = """Comma-separated string of schema modules. None if not set."""
-
-
 @doc_args(
     description.storage_root,
     description.name,
@@ -126,6 +111,18 @@ def init(
         db: {}
         schema: {}
     """
+    from lnhub_rest.core.instance._init_instance import (
+        init_instance as init_instance_hub,
+    )
+    from lnhub_rest.core.instance._init_instance import (
+        validate_db_arg,
+        validate_schema_arg,
+    )
+    from lnhub_rest.core.storage._add_storage import (
+        get_storage_region,
+        validate_storage_root_arg,
+    )
+
     assert settings.user.id  # check user is logged in
     owner = settings.user.handle
 
@@ -188,7 +185,7 @@ def init(
     if not isettings._is_db_setup(mute=True)[0]:
         load_schema(isettings, init=True)
         register(isettings, settings.user)  # if this doesn't emit warning, we're good
-        write_bionty_versions(isettings)
+        # write_bionty_versions(isettings)
         isettings._update_cloud_sqlite_file()
     else:
         # we're currently using this for testing migrations
