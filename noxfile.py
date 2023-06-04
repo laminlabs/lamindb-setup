@@ -59,6 +59,7 @@ def build(session: nox.Session, group: str):
 
 @nox.session
 def docs(session: nox.Session):
+    session.run(*"lamin init --storage ./docsbuild".split())
     build_docs(session)
     upload_docs_artifact()
     move_built_docs_to_docs_slash_project_slug()
