@@ -2,7 +2,6 @@ from pathlib import Path
 from typing import Union
 
 from lamin_logger import logger
-from lnhub_rest.core.storage._add_storage import add_storage as add_storage_hub
 
 from lamindb_setup.dev.upath import UPath
 
@@ -31,6 +30,8 @@ class set:
         >>>     cache_regions=True # fsspec arg for s3
         >>> )
         """
+        from lnhub_rest.core.storage._add_storage import add_storage as add_storage_hub
+
         if settings.instance.dialect == "sqlite":
             logger.error("Can't set storage for sqlite instances.")
             return "set-storage-failed"

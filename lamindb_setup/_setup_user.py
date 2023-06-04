@@ -1,7 +1,6 @@
 from typing import Union
 
 from lamin_logger import logger
-from lnhub_rest.core.account._signup_signin import sign_in_hub, sign_up_hub
 
 from ._settings import settings
 from .dev._settings_load import load_or_create_user_settings, load_user_settings
@@ -11,6 +10,8 @@ from .dev._settings_store import user_settings_file_email, user_settings_file_ha
 
 def signup(email: str) -> Union[str, None]:
     """Sign up user."""
+    from lnhub_rest.core.account._signup_signin import sign_up_hub
+
     response = sign_up_hub(email)
     if response == "handle-exists":  # handle already exists
         logger.error("The handle already exists. Please choose a different one.")
@@ -78,6 +79,8 @@ def login(
             "No stored user password, please call: lamin login <your-email>"
             " --password <your-password>"
         )
+
+    from lnhub_rest.core.account._signup_signin import sign_in_hub
 
     response = sign_in_hub(
         user_settings.email, user_settings.password, user_settings.handle

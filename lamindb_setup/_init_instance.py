@@ -4,13 +4,6 @@ from pathlib import Path
 from typing import Optional, Union
 
 from lamin_logger import logger
-from lnhub_rest._assets._schemas import get_schema_module_name
-from lnhub_rest.core.instance._init_instance import init_instance as init_instance_hub
-from lnhub_rest.core.instance._init_instance import validate_db_arg, validate_schema_arg
-from lnhub_rest.core.storage._add_storage import (
-    get_storage_region,
-    validate_storage_root_arg,
-)
 from pydantic import PostgresDsn
 
 from lamindb_setup.dev.upath import UPath
@@ -55,6 +48,8 @@ def register(isettings: InstanceSettings, usettings):
 
 
 def reload_schema_modules(isettings: InstanceSettings):
+    from lnhub_rest._assets._schemas import get_schema_module_name
+
     schema_names = ["core"] + list(isettings.schema)
     schema_module_names = [get_schema_module_name(n) for n in schema_names]
 
@@ -116,6 +111,18 @@ def init(
         db: {}
         schema: {}
     """
+    from lnhub_rest.core.instance._init_instance import (
+        init_instance as init_instance_hub,
+    )
+    from lnhub_rest.core.instance._init_instance import (
+        validate_db_arg,
+        validate_schema_arg,
+    )
+    from lnhub_rest.core.storage._add_storage import (
+        get_storage_region,
+        validate_storage_root_arg,
+    )
+
     assert settings.user.id  # check user is logged in
     owner = settings.user.handle
 
