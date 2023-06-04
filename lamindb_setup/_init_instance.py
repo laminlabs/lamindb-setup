@@ -15,22 +15,21 @@ from pydantic import PostgresDsn
 
 from lamindb_setup.dev.upath import UPath
 
-from . import _USE_DJANGO
 from ._load_instance import load, load_from_isettings
 from ._settings import settings
 from .dev import InstanceSettings
-from .dev._db import insert_if_not_exists, upsert
 from .dev._docs import doc_args
 from .dev._setup_knowledge import write_bionty_versions
-from .dev._setup_schema import load_schema, setup_schema
+from .dev._setup_schema import load_schema
 from .dev._storage import Storage
 
 
 def register(isettings: InstanceSettings, usettings):
     """Register user & storage in DB."""
-    if _USE_DJANGO:
-        from lnschema_core.models import Storage, User
+    from django.db.utils import OperationalError
+    from lnschema_core.models import Storage, User
 
+    try:
         user, created = User.objects.update_or_create(
             id=usettings.id,
             defaults=dict(
@@ -50,9 +49,8 @@ def register(isettings: InstanceSettings, usettings):
         )
         if created:
             logger.success(f"Saved: {storage}")
-    else:
-        upsert.user(usettings.email, usettings.id, usettings.handle, usettings.name)
-        insert_if_not_exists.storage(isettings.storage)
+    except OperationalError as error:
+        logger.warning(f"Instance seems not set up ({error})")
 
 
 def reload_schema_modules(isettings: InstanceSettings):
@@ -188,14 +186,10 @@ def init(
         return None
 
     if not isettings._is_db_setup(mute=True)[0]:
-        setup_schema(isettings, settings.user)
-        register(isettings, settings.user)
+        load_schema(isettings, init=True)
+        register(isettings, settings.user)  # if this doesn't emit warning, we're good
         write_bionty_versions(isettings)
         isettings._update_cloud_sqlite_file()
-        # now ensure that everything worked
-        check, msg = isettings._is_db_setup()
-        if not check:
-            raise RuntimeError(msg)
     else:
         # we're currently using this for testing migrations
         # passing connection strings of databases that need to be tested
