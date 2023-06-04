@@ -13,6 +13,7 @@ dependencies = [
     # !!! LaminDB should not directly depend on lnhub_rest !!!
     "lnhub_rest==0.9.8",
     "lndb",  # this is just until lnhub_rest is decoupled from lndb
+    "sqlmodel",  # this here is also just for lnhub_rest...
     # NO other Lamin packages should be pinned or even be a dependency
     "lnschema_core>=0.35a1",
     "lamin_logger>=0.2.3",
