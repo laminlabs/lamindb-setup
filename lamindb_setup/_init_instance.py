@@ -15,6 +15,7 @@ from pydantic import PostgresDsn
 
 from lamindb_setup.dev.upath import UPath
 
+from ._docstrings import instance_description as description
 from ._load_instance import load, load_from_isettings
 from ._settings import settings
 from .dev import InstanceSettings
@@ -90,17 +91,6 @@ ERROR_SQLITE_CACHE = """
 Your cached local SQLite file exists, while your cloud SQLite file ({}) doesn't.
 Either delete your cache ({}) or add it back to the cloud (if delete was accidental).
 """
-
-
-# This provides the doc strings for the init function on the
-# CLI and the API
-# It is located here as it *mostly* parallels the InstanceSettings docstrings.
-# Small differences are on purpose, due to the different scope!
-class description:
-    storage_root = """Storage root. Either local dir, ``s3://bucket_name`` or ``gs://bucket_name``."""  # noqa
-    db = """Database connection url, do not pass for SQLite."""
-    name = """Instance name."""
-    schema = """Comma-separated string of schema modules. None if not set."""
 
 
 @doc_args(

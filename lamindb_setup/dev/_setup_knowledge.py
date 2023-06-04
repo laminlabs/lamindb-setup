@@ -1,10 +1,6 @@
 from pathlib import Path
 from typing import Dict
 
-import pandas as pd
-import sqlalchemy as sqm
-from IPython.display import display as ipython_display
-
 from ._settings_instance import InstanceSettings
 
 
@@ -48,7 +44,6 @@ def write_bionty_versions(isettings: InstanceSettings):
         CurrentBiontyVersions.objects.bulk_create(current_records)
 
 
-
 def load_bionty_versions(isettings: InstanceSettings, display: bool = False):
     """Write CurrentBiontyVersions to ._lamindb_setup.yaml in bionty."""
     if "bionty" in isettings.schema:
@@ -64,6 +59,8 @@ def load_bionty_versions(isettings: InstanceSettings, display: bool = False):
         dev.BiontyVersions.__table__.schema = None
         dev.CurrentBiontyVersions.__table__.schema = None
 
+        import sqlalchemy as sqm  # no module-level import, not a dependency!!!
+
         stmt = sqm.select(dev.BiontyVersions).join(dev.CurrentBiontyVersions)
         with isettings.session() as ss:
             results = ss.exec(stmt).all()
@@ -72,6 +69,10 @@ def load_bionty_versions(isettings: InstanceSettings, display: bool = False):
         if len(results) == 0:
             write_bionty_versions(isettings)
         records = [row.dict() for row in results]
+
+        import pandas as pd  # no module-level import, is slow!!!
+        from IPython.display import display as ipython_display  # is slow!
+
         df = pd.DataFrame.from_records(records)
         df_lndb = df.set_index("entity")[["database", "database_v"]]
         if display:
