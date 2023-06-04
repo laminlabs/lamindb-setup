@@ -13,13 +13,14 @@ from datetime import timezone
 from pathlib import Path
 from typing import Union
 
-import fsspec
 from dateutil.parser import isoparse  # type: ignore
 from lamin_logger import logger
 from upath import UPath
 
 
 def infer_filesystem(path: Union[Path, UPath, str]):
+    import fsspec  # improve cold start
+
     path_str = str(path)
 
     if isinstance(path, UPath):

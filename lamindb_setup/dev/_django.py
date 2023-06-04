@@ -2,13 +2,6 @@ import builtins
 import os
 
 from lamin_logger import logger
-from lnhub_rest._assets._schemas import get_schema_module_name
-
-try:
-    from django.db import connections
-    from django.db.migrations.executor import MigrationExecutor
-except ImportError:
-    pass
 
 from ._settings_instance import InstanceSettings
 
@@ -17,7 +10,8 @@ IS_SETUP = False
 
 
 def get_migrations_to_sync():
-    from django.db import DEFAULT_DB_ALIAS
+    from django.db import DEFAULT_DB_ALIAS, connections
+    from django.db.migrations.executor import MigrationExecutor
 
     connection = connections[DEFAULT_DB_ALIAS]
     connection.prepare_database()
@@ -48,6 +42,8 @@ def setup_django(
     DATABASES = {
         "default": default_db,
     }
+    from lnhub_rest._assets._schemas import get_schema_module_name
+
     schema_names = ["core"] + list(isettings.schema)
     schema_module_names = [get_schema_module_name(n) for n in schema_names]
 
