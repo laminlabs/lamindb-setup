@@ -2,7 +2,7 @@ from pathlib import Path
 from typing import Dict
 
 import pandas as pd
-import sqlmodel as sqm
+import sqlalchemy as sqm
 from IPython.display import display as ipython_display
 
 from ._settings_instance import InstanceSettings
@@ -46,6 +46,7 @@ def write_bionty_versions(isettings: InstanceSettings):
 
         BiontyVersions.objects.bulk_create(all_records)
         CurrentBiontyVersions.objects.bulk_create(current_records)
+
 
 
 def load_bionty_versions(isettings: InstanceSettings, display: bool = False):
