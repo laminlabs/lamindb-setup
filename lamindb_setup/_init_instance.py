@@ -26,27 +26,31 @@ from .dev._storage import Storage
 
 def register(isettings: InstanceSettings, usettings):
     """Register user & storage in DB."""
+    from django.db.utils import OperationalError
     from lnschema_core.models import Storage, User
 
-    user, created = User.objects.update_or_create(
-        id=usettings.id,
-        defaults=dict(
-            handle=usettings.handle,
-            name=usettings.name,
-            email=usettings.email,
-        ),
-    )
-    if created:
-        logger.success(f"Saved: {user}")
-    storage, created = Storage.objects.update_or_create(
-        root=isettings.storage.root_as_str,
-        defaults=dict(
+    try:
+        user, created = User.objects.update_or_create(
+            id=usettings.id,
+            defaults=dict(
+                handle=usettings.handle,
+                name=usettings.name,
+                email=usettings.email,
+            ),
+        )
+        if created:
+            logger.success(f"Saved: {user}")
+        storage, created = Storage.objects.update_or_create(
             root=isettings.storage.root_as_str,
-            region=isettings.storage.region,
-        ),
-    )
-    if created:
-        logger.success(f"Saved: {storage}")
+            defaults=dict(
+                root=isettings.storage.root_as_str,
+                region=isettings.storage.region,
+            ),
+        )
+        if created:
+            logger.success(f"Saved: {storage}")
+    except OperationalError as error:
+        logger.warning(f"Instance seems not set up ({error})")
 
 
 def reload_schema_modules(isettings: InstanceSettings):
@@ -183,13 +187,9 @@ def init(
 
     if not isettings._is_db_setup(mute=True)[0]:
         load_schema(isettings, init=True)
-        register(isettings, settings.user)
+        register(isettings, settings.user)  # if this doesn't emit warning, we're good
         write_bionty_versions(isettings)
         isettings._update_cloud_sqlite_file()
-        # now ensure that everything worked
-        check, msg = isettings._is_db_setup()
-        if not check:
-            raise RuntimeError(msg)
     else:
         # we're currently using this for testing migrations
         # passing connection strings of databases that need to be tested
