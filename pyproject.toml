@@ -16,7 +16,7 @@ dependencies = [
     "sqlmodel",  # this here is also just for lnhub_rest...
     # NO other Lamin packages should be pinned or even be a dependency
     "lnschema_core>=0.35a1",
-    "lamin_logger>=0.2.3",
+    "lamin_logger>=0.3.3",
     # External dependencies
     "django",
     "dj_database_url",
