@@ -2,7 +2,6 @@ import os
 from pathlib import Path
 from typing import Optional, Union
 
-import sqlmodel as sqm
 from lamin_logger import logger
 from lnhub_rest.core.instance._load_instance import (
     load_instance as load_instance_from_hub,
@@ -10,7 +9,6 @@ from lnhub_rest.core.instance._load_instance import (
 
 from lamindb_setup.dev.upath import UPath
 
-from . import _USE_DJANGO
 from ._settings import InstanceSettings, settings
 from .dev._django import setup_django
 from .dev._settings_load import load_instance_settings
@@ -35,11 +33,6 @@ def load(
         storage: `Optional[PathLike] = None` - Load the instance with an
             updated default storage.
         migrate: `Optional[bool] = None` - Whether to auto-migrate or not.
-
-    Returns:
-        - "migrate-failed" if migration failed
-        - "migrate-success" if migration was successful
-        - "migrate-unnecessary" if migration was not required
     """
     owner, name = get_owner_name_from_identifier(identifier)
 
@@ -89,14 +82,9 @@ def load(
             )
             return "instance-not-reachable"
 
-    if _USE_DJANGO:
-        setup_django(isettings)
-    else:
-        from ._init_instance import persist_settings_load_schema
-
-        persist_settings_load_schema(isettings)
+    setup_django(isettings)
     if storage is not None and isettings.dialect == "sqlite":
-        update_storage(isettings)
+        update_root_field_in_default_storage(isettings)
 
     if not isettings.storage.root.exists():
         raise RuntimeError(
@@ -104,10 +92,9 @@ def load(
             "Please amend by passing --storage <my-storage-root>"
         )
 
-    message = load_from_isettings(isettings, migrate)
-    if not message == "migrate-failed":
-        os.environ["LAMINDB_INSTANCE_LOADED"] = "1"
-    return message
+    load_from_isettings(isettings, migrate)
+    os.environ["LAMINDB_INSTANCE_LOADED"] = "1"
+    return None
 
 
 def get_owner_name_from_identifier(identifier: str):
@@ -130,23 +117,14 @@ def get_owner_name_from_identifier(identifier: str):
 def load_from_isettings(
     isettings: InstanceSettings,
     migrate: Optional[bool] = None,
-) -> Optional[str]:
+) -> None:
     from ._init_instance import persist_settings_load_schema, register, reload_lamindb
-    from ._migrate import check_deploy_migration
     from .dev._setup_knowledge import load_bionty_versions
 
     persist_settings_load_schema(isettings)
-    message = None
-    if not _USE_DJANGO:
-        message = check_deploy_migration(
-            usettings=settings.user, isettings=isettings, attempt_deploy=migrate
-        )
-        if message == "migrate-failed":
-            return message
     register(isettings, settings.user)
     load_bionty_versions(isettings)
     reload_lamindb(isettings)
-    return message
 
 
 def update_isettings_with_storage(
@@ -171,32 +149,21 @@ def update_isettings_with_storage(
 
 
 # this is different from register!
-def update_storage(isettings: InstanceSettings):
-    if _USE_DJANGO:
-        from lnschema_core.models import Storage
+# register registers a new storage location
+# update_root_field_in_default_storage updates the root
+# field in the default storage locations
+def update_root_field_in_default_storage(isettings: InstanceSettings):
+    from lnschema_core.models import Storage
 
-        storages = Storage.objects.all()
-        if len(storages) != 1:
-            raise RuntimeError("Can't identify which storage location to update")
-        storage = storages[0]
-        storage.root = isettings.storage.root_as_str
-        storage.save()
-    else:
-        from lnschema_core import Storage
-
-        isettings._engine = sqm.create_engine(isettings.db)
-        with sqm.Session(isettings.engine) as session:
-            storage = session.exec(
-                sqm.select(Storage).where(Storage.root == isettings.storage.root_as_str)
-            ).one_or_none()
-        if storage is None:
-            with sqm.Session(isettings.engine) as session:
-                storage_record = session.exec(sqm.select(Storage)).one()
-                storage_record.root = isettings.storage.root_as_str
-                session.add(storage_record)
-                session.commit()
-                session.refresh(storage_record)
-            logger.success(
-                f"Updated storage root {storage_record.id} to"
-                f" {isettings.storage.root_as_str}"
-            )
+    storages = Storage.objects.all()
+    if len(storages) != 1:
+        raise RuntimeError(
+            "You have several storage locations: Can't identify in which storage"
+            " location the root column is to be updated!"
+        )
+    storage = storages[0]
+    storage.root = isettings.storage.root_as_str
+    storage.save()
+    logger.success(
+        f"Updated storage root {storage.id} to {isettings.storage.root_as_str}"
+    )
