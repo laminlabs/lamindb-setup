@@ -47,16 +47,16 @@ def current_user_settings_file():
 
 def instance_settings_file(name: str, owner: str):
     return (
-        settings_dir / f"{get_settings_file_name_prefix()}{owner}-instance-{name}.env"
+        settings_dir / f"{get_settings_file_name_prefix()}instance--{owner}--{name}.env"
     )
 
 
 def user_settings_file_email(email: str):
-    return settings_dir / f"{get_settings_file_name_prefix()}user-{email}.env"
+    return settings_dir / f"{get_settings_file_name_prefix()}user--{email}.env"
 
 
 def user_settings_file_handle(handle: str):
-    return settings_dir / f"{get_settings_file_name_prefix()}user-{handle}.env"
+    return settings_dir / f"{get_settings_file_name_prefix()}user--{handle}.env"
 
 
 class InstanceSettingsStore(BaseSettings):
