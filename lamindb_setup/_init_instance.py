@@ -21,7 +21,7 @@ from ._settings import settings
 from .dev import InstanceSettings
 from .dev._db import insert_if_not_exists, upsert
 from .dev._docs import doc_args
-from .dev._setup_knowledge import write_bionty_versions
+from .dev._setup_knowledge import write_bionty_versions  # noqa
 from .dev._setup_schema import load_schema, setup_schema
 from .dev._storage import Storage
 
@@ -191,7 +191,7 @@ def init(
     if not isettings._is_db_setup(mute=True)[0]:
         setup_schema(isettings, settings.user)
         register(isettings, settings.user)
-        write_bionty_versions(isettings)
+        #        write_bionty_versions(isettings)
         isettings._update_cloud_sqlite_file()
         # now ensure that everything worked
         check, msg = isettings._is_db_setup()

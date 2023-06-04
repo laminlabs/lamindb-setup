@@ -133,7 +133,7 @@ def load_from_isettings(
 ) -> Optional[str]:
     from ._init_instance import persist_settings_load_schema, register, reload_lamindb
     from ._migrate import check_deploy_migration
-    from .dev._setup_knowledge import load_bionty_versions
+    from .dev._setup_knowledge import load_bionty_versions  # noqa
 
     persist_settings_load_schema(isettings)
     message = None
@@ -144,7 +144,7 @@ def load_from_isettings(
         if message == "migrate-failed":
             return message
     register(isettings, settings.user)
-    load_bionty_versions(isettings)
+    # load_bionty_versions(isettings)
     reload_lamindb(isettings)
     return message
 
