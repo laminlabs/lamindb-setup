@@ -76,9 +76,13 @@ jobs:
       - run: nox -s "install(group='${{ matrix.group }}')"
       - run: nox -s "build(group='${{ matrix.group }}')"
         env:
-          GITHUB_EVENT_NAME: ${{ github.event_name }}
           SUPABASE_STAGING_URL: ${{ secrets.SUPABASE_STAGING_URL }}
           SUPABASE_STAGING_ANON_KEY: ${{ secrets.SUPABASE_STAGING_ANON_KEY }}
+      - name: upload coverage
+        uses: actions/upload-artifact@v2
+        with:
+          name: coverage--${{ matrix.group }}
+          path: .coverage
       - run: nox -s docs
         if: ${{ matrix.group == 'docs' }}
       - uses: codecov/codecov-action@v2
@@ -94,3 +98,24 @@ jobs:
         env:
           NETLIFY_AUTH_TOKEN: ${{ secrets.NETLIFY_AUTH_TOKEN }}
           NETLIFY_SITE_ID: ${{ secrets.NETLIFY_SITE_ID }}
+
+  coverage:
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - uses: actions/setup-python@v4
+        with:
+          python-version: 3.9
+          cache: "pip"
+          cache-dependency-path: ".github/workflows/build.yml"
+      - run: pip install coverage
+      - uses: actions/download-artifact@v2
+      - name: run coverage
+        run: |
+          coverage combine coverage--*/.coverage*
+          coverage report --fail-under=0
+          coverage xml
+      - uses: codecov/codecov-action@v2
+        with:
+          token: ${{ secrets.CODECOV_TOKEN }}
