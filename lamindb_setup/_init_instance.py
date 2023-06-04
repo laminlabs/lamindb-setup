@@ -187,14 +187,12 @@ def init(
         isettings._persist()
         return None
 
-    # this does not yet setup a setup for a new database
-    persist_settings_load_schema(isettings)
-
     message = None
     if not isettings._is_db_setup(mute=True)[0]:
         setup_schema(isettings, settings.user)
         register(isettings, settings.user)
         write_bionty_versions(isettings)
+        isettings._update_cloud_sqlite_file()
         # now ensure that everything worked
         check, msg = isettings._is_db_setup()
         if not check:
@@ -206,6 +204,7 @@ def init(
         logger.warning("Your instance seems already set up, attempt load:")
         message = load_from_isettings(isettings, migrate=_migrate)
 
+    isettings._persist()
     reload_lamindb(isettings)
     logger.success(
         f"Created & loaded instance: {settings.user.handle}/{isettings.name}"

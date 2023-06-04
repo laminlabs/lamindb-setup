@@ -86,7 +86,7 @@ subparsers.add_parser("register", help=register_help)
 # migrate
 migr = subparsers.add_parser("migrate", help=migr_help)
 aa = migr.add_argument
-aa("action", choices=["generate"], help="Generate migration.")
+aa("action", choices=["create", "deploy"], help="Manage migrations.")
 
 # track anotebook (init nbproject metadata)
 track_parser = subparsers.add_parser("track", help=track_help)
@@ -146,8 +146,10 @@ def main():
     elif args.command == "migrate":
         from . import migrate
 
-        if args.action == "generate":
-            return migrate.generate()
+        if args.action == "create":
+            return migrate.create()
+        elif args.action == "deploy":
+            return migrate.deploy()
     elif args.command == "track":
         track(args.filepath, args.pypackage)
     else:

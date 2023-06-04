@@ -27,11 +27,9 @@ def lint(session: nox.Session) -> None:
 @nox.session
 @nox.parametrize(
     "group",
-    ["unit", "docs", "unit-django", "docs-django"],
+    ["unit", "docs"],
 )
 def install(session: nox.Session, group: str) -> None:
-    if "django" in group:
-        session.run(*"pip install django dj_database_url".split())
     session.run(*"pip install bionty".split())
     session.run(*"pip install --no-deps lnschema_bionty".split())
     session.run(
@@ -47,14 +45,11 @@ def install(session: nox.Session, group: str) -> None:
 @nox.session
 @nox.parametrize(
     "group",
-    ["unit", "docs", "unit-django", "docs-django"],
+    ["unit", "docs"],
 )
 def build(session: nox.Session, group: str):
     login_testuser1(session, env=env)
     login_testuser2(session, env=env)
-    if "django" in group:
-        os.environ["LAMINDB_USE_DJANGO"] = "1"
-        env["LAMINDB_USE_DJANGO"] = "1"
     coverage_args = "--cov=lamindb_setup --cov-append --cov-report=term-missing"  # noqa
     if group.startswith("unit"):
         session.run(*f"pytest -s {coverage_args} ./tests".split(), env=env)
@@ -64,6 +59,7 @@ def build(session: nox.Session, group: str):
 
 @nox.session
 def docs(session: nox.Session):
+    session.run(*"lamin init --storage ./docsbuild".split())
     build_docs(session)
     upload_docs_artifact()
     move_built_docs_to_docs_slash_project_slug()

@@ -13,6 +13,9 @@ from lamindb_setup._migrate.utils import (
     set_alembic_logging_level,
 )
 
+from .._settings import settings
+from ..dev._django import setup_django
+
 push_instruction = """\
 Please push your changes to a new remote branch, open a PR, and wait for CI.
 
@@ -102,3 +105,11 @@ class migrate:
             logger.error("Generating migration failed.")
             logger.info(f"Check content of {str(package_dir)}/alembic.ini")
             return "migrate-gen-failed"
+
+    @classmethod
+    def create(cls):
+        setup_django(settings.instance, create_migrations=True)
+
+    @classmethod
+    def deploy(cls):
+        setup_django(settings.instance, deploy_migrations=True)
