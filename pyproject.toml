@@ -20,12 +20,10 @@ dependencies = [
     # External dependencies
     "django",
     "dj_database_url",
-    "pytest_alembic==0.9.1",  # let's pin this as we use internals
     "psycopg2-binary",
     "appdirs",
     "python-dotenv",
     "erdiagram",
-    "alembic",
     "natsort",
     "pandas",
     "python-dateutil",

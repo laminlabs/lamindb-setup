@@ -5,7 +5,6 @@ import pandas as pd
 import sqlmodel as sqm
 from IPython.display import display as ipython_display
 
-from ._db import insert
 from ._settings_instance import InstanceSettings
 
 
@@ -37,7 +36,7 @@ def write_bionty_versions(isettings: InstanceSettings):
             )
             records.append(record)
 
-        insert.bionty_versions(records)
+        # insert.bionty_versions(records)
 
 
 def load_bionty_versions(isettings: InstanceSettings, display: bool = False):

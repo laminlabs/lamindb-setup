@@ -4,7 +4,6 @@ from pathlib import Path
 from typing import Literal, Optional, Set, Tuple, Union
 
 import sqlalchemy as sa
-import sqlmodel as sqm
 from lamin_logger import logger
 from pydantic import PostgresDsn
 from sqlalchemy.future import Engine
@@ -30,20 +29,6 @@ from .upath import UPath
 #         cursor.close()
 
 
-class DjangoSession:
-    def delete(self, record):
-        record.delete()
-
-    def commit(self):
-        pass
-
-    def close(self):
-        pass
-
-    def refresh(self, record):
-        pass
-
-
 class InstanceSettings:
     """Instance settings."""
 
@@ -63,7 +48,6 @@ class InstanceSettings:
         )
         self._db: Optional[str] = db
         self._schema_str: Optional[str] = schema
-        self._engine: Engine = sqm.create_engine(self.db)
 
     def __repr__(self):
         """Rich string representation."""
@@ -162,15 +146,11 @@ class InstanceSettings:
 
         In case of remote sqlite, does not update the local sqlite.
         """
-        return self._engine
+        return sa.create_engine(self.db, future=True)
 
-    def session(self) -> sqm.Session:
-        """Database session.
-
-        In case of remote sqlite, updates the local sqlite file first.
-        """
-        self._update_local_sqlite_file()
-        return DjangoSession()
+    @property
+    def session(self):
+        raise NotImplementedError
 
     @property
     def is_cloud_sqlite(self) -> bool:
@@ -241,7 +221,7 @@ class InstanceSettings:
             else:
                 return False, f"Connection {self.db} not reachable"
 
-        engine = sqm.create_engine(self.db)
+        engine = sa.create_engine(self.db)
         with engine.connect() as conn:
             try:  # cannot import lnschema_core here, need to use plain SQL
                 result = conn.execute(
