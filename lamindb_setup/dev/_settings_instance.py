@@ -133,6 +133,7 @@ class InstanceSettings:
     def _update_local_sqlite_file(self) -> None:
         """Download the cloud sqlite file if it is newer than local."""
         if self.is_cloud_sqlite:
+            logger.info("Updating local sqlite file")
             sqlite_file = self._sqlite_file
             cache_file = self.storage.cloud_to_local_no_update(sqlite_file)
             sqlite_file.synchronize(cache_file)  # type: ignore

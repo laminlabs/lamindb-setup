@@ -31,6 +31,7 @@ def setup_django(
     isettings: InstanceSettings,
     deploy_migrations: bool = False,
     create_migrations: bool = False,
+    init: bool = False,
 ):
     if IS_RUN_FROM_IPYTHON:
         os.environ["DJANGO_ALLOW_ASYNC_UNSAFE"] = "true"
@@ -66,7 +67,8 @@ def setup_django(
         if len(planned_migrations) > 0:
             if deploy_migrations:
                 call_command("migrate")
-                isettings._update_cloud_sqlite_file()
+                if not init:  # delay sync
+                    isettings._update_cloud_sqlite_file()
             else:
                 logger.warning(
                     f"Your database is not up to date:\n{planned_migrations}\nConsider"
@@ -74,5 +76,8 @@ def setup_django(
                     " consider installing an older schema module version to avoid"
                     " potential errors"
                 )
+        else:
+            if deploy_migrations:
+                logger.info("Database already up-to-date with migrations!")
         global IS_SETUP
         IS_SETUP = True

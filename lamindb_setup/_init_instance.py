@@ -192,6 +192,7 @@ def init(
         setup_schema(isettings, settings.user)
         register(isettings, settings.user)
         write_bionty_versions(isettings)
+        isettings._update_cloud_sqlite_file()
         # now ensure that everything worked
         check, msg = isettings._is_db_setup()
         if not check:
