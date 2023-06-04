@@ -32,8 +32,9 @@ def check_instance_setup(from_lamindb: bool = False):
                 " command line: `lamin load <instance>` or `lamin init <...>`"
             )
     else:
-        logger.warning(
-            "You haven't yet setup an instance using the CLI: Please call"
-            " `ln.setup.init()` or `ln.setup.load()`"
-        )
+        if from_lamindb:
+            logger.warning(
+                "You haven't yet setup an instance using the CLI: Please call"
+                " `ln.setup.init()` or `ln.setup.load()`"
+            )
         return False
