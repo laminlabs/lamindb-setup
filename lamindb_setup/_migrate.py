@@ -1,5 +1,5 @@
-from .._settings import settings
-from ..dev._django import setup_django
+from ._settings import settings
+from .dev._django import setup_django
 
 
 class migrate:
