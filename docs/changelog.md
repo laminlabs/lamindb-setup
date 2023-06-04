@@ -3,6 +3,7 @@
 <!-- prettier-ignore -->
 Name | PR | Developer | Date | Version
 --- | --- | --- | --- | ---
+✨ Extend django to lnschema-bionty | [392](https://github.com/laminlabs/lamindb-setup/pull/392) | [sunnyosun](https://github.com/sunnyosun) | 2023-06-04 |
 ✨ New id and version in track | [391](https://github.com/laminlabs/lamindb-setup/pull/391) | [Koncopd](https://github.com/Koncopd) | 2023-06-02 |
 🏗️ Enable Django backend (lamindb) | [390](https://github.com/laminlabs/lamindb-setup/pull/390) | [falexwolf](https://github.com/falexwolf) | 2023-06-02 |
 🚚 Rename package to `lamindb_setup` | [389](https://github.com/laminlabs/lamindb-setup/pull/389) | [falexwolf](https://github.com/falexwolf) | 2023-06-01 | 0.46a2
