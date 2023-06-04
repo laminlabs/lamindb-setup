@@ -14,18 +14,13 @@ dependencies = [
     "lnhub_rest==0.9.8",
     "lndb",  # this is just until lnhub_rest is decoupled from lndb
     # NO other Lamin packages should be pinned or even be a dependency
-    "laminci>=0.3.0",  # disentangle over time
     "lnschema_core>=0.35a1",
     "lamin_logger>=0.2.3",
     # External dependencies
     "django",
     "dj_database_url",
-    "psycopg2-binary",
     "appdirs",
-    "python-dotenv",
-    "erdiagram",
-    "natsort",
-    "pandas",
+    "pandas",  # remove!!!
     "python-dateutil",
     "universal_pathlib"
 ]
@@ -38,6 +33,9 @@ aws = [
     "s3fs",
 ]
 test = [
+    "psycopg2-binary",
+    "python-dotenv",
+    "erdiagram",
     "pre-commit",
     "nox",
     "pytest>=6.0",
