@@ -54,14 +54,13 @@ Developer API.
 import os
 
 __version__ = "0.46a3"  # denote a release candidate for 0.1.0 with 0.1rc1
-_USE_DJANGO = True
 
 import builtins
 import sys
 from os import name as _os_name
 
 from . import _check_versions  # noqa
-from . import dev, test
+from . import dev
 from ._close import close  # noqa
 from ._delete import delete  # noqa
 from ._info import info  # noqa

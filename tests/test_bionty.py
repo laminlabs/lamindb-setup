@@ -4,7 +4,8 @@ import lamindb_setup as ln_setup
 
 
 def test_init_bionty():
-    if not ln_setup._USE_DJANGO:
+    _USE_DJANGO = True
+    if not _USE_DJANGO:
         ln_setup.login(
             "testuser1@lamin.ai", password="cEvcwMJFX4OwbsYVaMt2Os6GxxGgDUlBGILs2RyS"
         )
