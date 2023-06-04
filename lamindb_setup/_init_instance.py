@@ -4,6 +4,7 @@ from pathlib import Path
 from typing import Optional, Union
 
 from lamin_logger import logger
+from lnhub_rest._assets._schemas import get_schema_module_name
 from lnhub_rest.core.instance._init_instance import init_instance as init_instance_hub
 from lnhub_rest.core.instance._init_instance import validate_db_arg, validate_schema_arg
 from lnhub_rest.core.storage._add_storage import (
@@ -54,12 +55,19 @@ def register(isettings: InstanceSettings, usettings):
         insert_if_not_exists.storage(isettings.storage)
 
 
+def reload_schema_modules(isettings: InstanceSettings):
+    schema_names = ["core"] + list(isettings.schema)
+    schema_module_names = [get_schema_module_name(n) for n in schema_names]
+
+    for schema_module_name in schema_module_names:
+        if schema_module_name in sys.modules:
+            schema_module = importlib.import_module(schema_module_name)
+            importlib.reload(schema_module)
+
+
 def reload_lamindb(isettings: InstanceSettings):
     # only touch lamindb if we're operating from lamindb
-    if "lnschema_core" in sys.modules:
-        import lnschema_core
-
-        importlib.reload(lnschema_core)
+    reload_schema_modules(isettings)
     if "lamindb" in sys.modules:
         import lamindb
 

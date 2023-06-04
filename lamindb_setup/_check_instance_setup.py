@@ -1,8 +1,7 @@
-import importlib
-
 from lamin_logger import logger
 
 from . import _USE_DJANGO
+from ._init_instance import reload_schema_modules
 from .dev._settings_store import current_instance_settings_file
 
 
@@ -19,9 +18,7 @@ def check_instance_setup(from_lamindb: bool = False):
 
                 if from_lamindb:
                     setup_django(isettings)
-                    import lnschema_core
-
-                    importlib.reload(lnschema_core)
+                    reload_schema_modules(isettings)
                 else:
                     return IS_SETUP
 
