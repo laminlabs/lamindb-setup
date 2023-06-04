@@ -108,7 +108,7 @@ class migrate:
 
     @classmethod
     def create(cls):
-        setup_django(settings.instance, make_migrations=True)
+        setup_django(settings.instance, create_migrations=True)
 
     @classmethod
     def deploy(cls):

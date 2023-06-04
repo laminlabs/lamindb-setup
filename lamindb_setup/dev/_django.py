@@ -30,7 +30,7 @@ def get_migrations_to_sync():
 def setup_django(
     isettings: InstanceSettings,
     deploy_migrations: bool = False,
-    create_migration: bool = False,
+    create_migrations: bool = False,
 ):
     if IS_RUN_FROM_IPYTHON:
         os.environ["DJANGO_ALLOW_ASYNC_UNSAFE"] = "true"
@@ -54,11 +54,13 @@ def setup_django(
         settings.configure(
             INSTALLED_APPS=schema_module_names,
             DATABASES=DATABASES,
+            DEFAULT_AUTO_FIELD="django.db.models.BigAutoField",
         )
         django.setup(set_prefix=False)
 
-        if create_migration:
+        if create_migrations:
             call_command("makemigrations")
+            return None
 
         planned_migrations = get_migrations_to_sync()
         if len(planned_migrations) > 0:
