@@ -121,6 +121,7 @@ class InstanceSettings:
     def _update_cloud_sqlite_file(self) -> None:
         """Upload the local sqlite file to the cloud file."""
         if self.is_cloud_sqlite:
+            logger.info("Updating cloud sqlite file")
             sqlite_file = self._sqlite_file
             cache_file = self.storage.cloud_to_local_no_update(sqlite_file)
             sqlite_file.upload_from(cache_file)  # type: ignore

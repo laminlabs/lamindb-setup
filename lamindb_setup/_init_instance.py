@@ -203,6 +203,7 @@ def init(
         logger.warning("Your instance seems already set up, attempt load:")
         message = load_from_isettings(isettings, migrate=_migrate)
 
+    isettings._persist()
     reload_lamindb(isettings)
     logger.success(
         f"Created & loaded instance: {settings.user.handle}/{isettings.name}"

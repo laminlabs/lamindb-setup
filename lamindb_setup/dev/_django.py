@@ -27,13 +27,17 @@ def get_migrations_to_sync():
     return planned_migrations
 
 
-def setup_django(isettings: InstanceSettings, init: bool = False):
-    print("setup django")
+def setup_django(
+    isettings: InstanceSettings,
+    deploy_migrations: bool = False,
+    create_migration: bool = False,
+):
     if IS_RUN_FROM_IPYTHON:
         os.environ["DJANGO_ALLOW_ASYNC_UNSAFE"] = "true"
     import dj_database_url
     import django
     from django.conf import settings
+    from django.core.management import call_command
 
     default_db = dj_database_url.config(
         default=isettings.db,
@@ -43,7 +47,6 @@ def setup_django(isettings: InstanceSettings, init: bool = False):
     DATABASES = {
         "default": default_db,
     }
-
     schema_names = ["core"] + list(isettings.schema)
     schema_module_names = [get_schema_module_name(n) for n in schema_names]
 
@@ -54,23 +57,20 @@ def setup_django(isettings: InstanceSettings, init: bool = False):
         )
         django.setup(set_prefix=False)
 
-        planned_migrations = get_migrations_to_sync()
-        print(init)
-        if len(planned_migrations) > 0:
-            if init:
-                from django.core.management import call_command
+        if create_migration:
+            call_command("makemigrations")
 
+        planned_migrations = get_migrations_to_sync()
+        if len(planned_migrations) > 0:
+            if deploy_migrations:
                 call_command("migrate")
                 isettings._update_cloud_sqlite_file()
             else:
                 logger.warning(
-                    "Your database is not up to date, consider deploying migrations"
-                    f" via: lamin migrate deploy:\n{planned_migrations}"
+                    f"Your database is not up to date:\n{planned_migrations}\nConsider"
+                    " migrating it: lamin migrate deploy\nIf you can't yet migrate,"
+                    " consider installing an older schema module version to avoid"
+                    " potential errors"
                 )
         global IS_SETUP
         IS_SETUP = True
-    # else:
-    #     raise RuntimeError(
-    #         "Please restart Python session, django doesn't currently support "
-    #         "switching among instances in one session"
-    #     )
