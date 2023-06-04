@@ -3,6 +3,7 @@
 <!-- prettier-ignore -->
 Name | PR | Developer | Date | Version
 --- | --- | --- | --- | ---
+🔥 Delete SQLAlchemy related content | [395](https://github.com/laminlabs/lamindb-setup/pull/395) | [falexwolf](https://github.com/falexwolf) | 2023-06-04 |
 🔥 Remove alembic migrations infra & fix coverage | [394](https://github.com/laminlabs/lamindb-setup/pull/394) | [falexwolf](https://github.com/falexwolf) | 2023-06-04 |
 ✨ Add migrations management for Django (start breaking SQLAlchemy) | [393](https://github.com/laminlabs/lamindb-setup/pull/393) | [falexwolf](https://github.com/falexwolf) | 2023-06-04 |
 ✨ Extend django to lnschema-bionty | [392](https://github.com/laminlabs/lamindb-setup/pull/392) | [sunnyosun](https://github.com/sunnyosun) | 2023-06-04 |
