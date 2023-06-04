@@ -119,7 +119,7 @@ def init(
     schema: Optional[str] = None,
     _migrate: bool = False,  # not user-facing
     _test: bool = False,
-) -> Optional[str]:
+) -> None:
     """Creating and loading a LaminDB instance.
 
     Args:
@@ -137,11 +137,11 @@ def init(
 
     name_str = infer_instance_name(storage=storage, name=name, db=db)
     # test whether instance exists by trying to load it
-    message = load(
+    response = load(
         f"{owner}/{name_str}", _log_error_message=False, migrate=_migrate, _test=_test
     )
-    if message != "instance-not-reachable":
-        return message
+    if response is None:
+        return None  # successful load!
 
     isettings = InstanceSettings(
         owner=owner,
@@ -187,7 +187,6 @@ def init(
         isettings._persist()
         return None
 
-    message = None
     if not isettings._is_db_setup(mute=True)[0]:
         setup_schema(isettings, settings.user)
         register(isettings, settings.user)
@@ -202,14 +201,13 @@ def init(
         # passing connection strings of databases that need to be tested
         # for migrations
         logger.warning("Your instance seems already set up, attempt load:")
-        message = load_from_isettings(isettings, migrate=_migrate)
+        load_from_isettings(isettings, migrate=_migrate)
 
     isettings._persist()
     reload_lamindb(isettings)
     logger.success(
         f"Created & loaded instance: {settings.user.handle}/{isettings.name}"
     )
-    return message
 
 
 def infer_instance_name(
