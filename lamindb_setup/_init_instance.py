@@ -15,44 +15,38 @@ from pydantic import PostgresDsn
 
 from lamindb_setup.dev.upath import UPath
 
-from . import _USE_DJANGO
 from ._load_instance import load, load_from_isettings
 from ._settings import settings
 from .dev import InstanceSettings
-from .dev._db import insert_if_not_exists, upsert
 from .dev._docs import doc_args
 from .dev._setup_knowledge import write_bionty_versions
-from .dev._setup_schema import load_schema, setup_schema
+from .dev._setup_schema import load_schema
 from .dev._storage import Storage
 
 
 def register(isettings: InstanceSettings, usettings):
     """Register user & storage in DB."""
-    if _USE_DJANGO:
-        from lnschema_core.models import Storage, User
+    from lnschema_core.models import Storage, User
 
-        user, created = User.objects.update_or_create(
-            id=usettings.id,
-            defaults=dict(
-                handle=usettings.handle,
-                name=usettings.name,
-                email=usettings.email,
-            ),
-        )
-        if created:
-            logger.success(f"Saved: {user}")
-        storage, created = Storage.objects.update_or_create(
+    user, created = User.objects.update_or_create(
+        id=usettings.id,
+        defaults=dict(
+            handle=usettings.handle,
+            name=usettings.name,
+            email=usettings.email,
+        ),
+    )
+    if created:
+        logger.success(f"Saved: {user}")
+    storage, created = Storage.objects.update_or_create(
+        root=isettings.storage.root_as_str,
+        defaults=dict(
             root=isettings.storage.root_as_str,
-            defaults=dict(
-                root=isettings.storage.root_as_str,
-                region=isettings.storage.region,
-            ),
-        )
-        if created:
-            logger.success(f"Saved: {storage}")
-    else:
-        upsert.user(usettings.email, usettings.id, usettings.handle, usettings.name)
-        insert_if_not_exists.storage(isettings.storage)
+            region=isettings.storage.region,
+        ),
+    )
+    if created:
+        logger.success(f"Saved: {storage}")
 
 
 def reload_schema_modules(isettings: InstanceSettings):
@@ -188,7 +182,7 @@ def init(
         return None
 
     if not isettings._is_db_setup(mute=True)[0]:
-        setup_schema(isettings, settings.user)
+        load_schema(isettings, init=True)
         register(isettings, settings.user)
         write_bionty_versions(isettings)
         isettings._update_cloud_sqlite_file()

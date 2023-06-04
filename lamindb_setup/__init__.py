@@ -54,7 +54,6 @@ Developer API.
 import os
 
 __version__ = "0.46a3"  # denote a release candidate for 0.1.0 with 0.1rc1
-_USE_DJANGO = True
 
 import builtins
 import sys
