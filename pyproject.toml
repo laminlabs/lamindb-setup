@@ -11,7 +11,7 @@ dependencies = [
     # PINNED internal LAMIN dependency
     # !!! lnhub_rest cannot be pinned in LaminDB !!!
     # !!! LaminDB should not directly depend on lnhub_rest !!!
-    "lnhub_rest==0.9.9",
+    "lnhub_rest==0.9.10",
     "lndb",  # this is just until lnhub_rest is decoupled from lndb
     "sqlmodel",  # this here is also just for lnhub_rest...
     # NO other Lamin packages should be pinned or even be a dependency
