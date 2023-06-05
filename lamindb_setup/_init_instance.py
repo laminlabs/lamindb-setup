@@ -174,8 +174,8 @@ def init(
             f"Registered instance on hub: https://lamin.ai/{owner}/{name_str}"
         )
     else:
-        logger.info(
-            "Not registering instance on hub, if you want, call `lamin register`"
+        logger.hint(
+            "Not registering local instance on hub, if you want, call `lamin register`"
         )
 
     if _test:
