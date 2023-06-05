@@ -20,6 +20,7 @@ dependencies = [
     "django",
     "dj_database_url",
     "pydantic[dotenv]",
+    "ipython",
     "sqlalchemy",  # just temporarily
     "appdirs",
     "pandas",  # remove!!!
