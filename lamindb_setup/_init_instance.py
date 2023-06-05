@@ -38,7 +38,9 @@ def register(isettings: InstanceSettings, usettings):
             root=isettings.storage.root_as_str,
             defaults=dict(
                 root=isettings.storage.root_as_str,
+                type=isettings.storage.type,
                 region=isettings.storage.region,
+                created_by_id=usettings.id,
             ),
         )
         if created:
