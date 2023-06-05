@@ -196,9 +196,6 @@ def init(
 
     isettings._persist()
     reload_lamindb(isettings)
-    logger.success(
-        f"Created & loaded instance: {settings.user.handle}/{isettings.name}"
-    )
 
 
 def infer_instance_name(

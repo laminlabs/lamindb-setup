@@ -51,10 +51,10 @@ def load_schema(isettings: InstanceSettings, *, init: bool = False):
     setup_django(isettings, deploy_migrations=init, init=init)
 
     schema_names = ["core"] + list(isettings.schema)
-    msg = "Loading schema modules: "
+    msg = ""
     for schema_name in schema_names:
         module = check_schema_version_and_import(schema_name)
         msg += f"{schema_name}=={module.__version__} "
     if init:
-        logger.info(f"{msg}")
+        logger.info(f"Creating schemas: {msg}")
     return msg, schema_names
