@@ -62,7 +62,8 @@ def setup_django(
         planned_migrations = get_migrations_to_sync()
         if len(planned_migrations) > 0:
             if deploy_migrations:
-                call_command("migrate")
+                verbosity = 0 if init else 2
+                call_command("migrate", verbosity=verbosity)
                 if not init:  # delay sync
                     isettings._update_cloud_sqlite_file()
             else:
