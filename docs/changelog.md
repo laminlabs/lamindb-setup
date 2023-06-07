@@ -3,6 +3,7 @@
 <!-- prettier-ignore -->
 Name | PR | Developer | Date | Version
 --- | --- | --- | --- | ---
+💚 Fix dependencies | [404](https://github.com/laminlabs/lamindb-setup/pull/404) | [falexwolf](https://github.com/falexwolf) | 2023-06-07 |
 ♻️ Rename and set empty locker for now | [403](https://github.com/laminlabs/lamindb-setup/pull/403) | [falexwolf](https://github.com/falexwolf) | 2023-06-07 |
 🚸 Simplify remote SQLite synching & locking | [402](https://github.com/laminlabs/lamindb-setup/pull/402) | [falexwolf](https://github.com/falexwolf) | 2023-06-07 |
 :sparkles: Setup bionty version tables | [400](https://github.com/laminlabs/lamindb-setup/pull/400) | [sunnyosun](https://github.com/sunnyosun) | 2023-06-07 |
