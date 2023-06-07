@@ -3,6 +3,7 @@
 <!-- prettier-ignore -->
 Name | PR | Developer | Date | Version
 --- | --- | --- | --- | ---
+♻️ Reorder args of CLI | [407](https://github.com/laminlabs/lamindb-setup/pull/407) | [falexwolf](https://github.com/falexwolf) | 2023-06-07 |
 ♻️ Refactored init & load instance | [406](https://github.com/laminlabs/lamindb-setup/pull/406) | [falexwolf](https://github.com/falexwolf) | 2023-06-07 |
 💚 Fix dependencies | [404](https://github.com/laminlabs/lamindb-setup/pull/404) | [falexwolf](https://github.com/falexwolf) | 2023-06-07 |
 ♻️ Rename and set empty locker for now | [403](https://github.com/laminlabs/lamindb-setup/pull/403) | [falexwolf](https://github.com/falexwolf) | 2023-06-07 |
