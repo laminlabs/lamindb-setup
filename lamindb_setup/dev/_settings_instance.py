@@ -227,6 +227,9 @@ class InstanceSettings:
             else:
                 return False, f"Connection {self.db} not reachable"
 
+        # in order to proceed with the next check, we need the local sqlite
+        self._update_local_sqlite_file()
+
         import sqlalchemy as sa
 
         engine = sa.create_engine(self.db)

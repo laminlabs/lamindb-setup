@@ -3,9 +3,10 @@ from pathlib import Path
 
 from lamin_logger import logger
 
+from ._close import close
 from ._settings import settings
 from .dev._settings_load import load_instance_settings
-from .dev._settings_store import current_instance_settings_file, instance_settings_file
+from .dev._settings_store import instance_settings_file
 
 
 def delete(instance_name: str):
@@ -24,16 +25,9 @@ def delete(instance_name: str):
     delete_settings(settings_file)
     if settings._instance_exists:
         if instance_identifier == settings.instance.identifier:
-            current_settings_file = current_instance_settings_file()
-            logger.info(
-                f"    current instance settings {current_settings_file} deleted"
-            )
-            current_settings_file.unlink()
+            close()  # close() does further operations, unlocking...
             settings._instance_settings = None
     delete_cache(isettings.storage.cache_dir)
-    logger.info(
-        f"    consider deleting your stored data manually: {isettings.storage.root}"
-    )
     if isettings.dialect == "sqlite":
         if isettings._sqlite_file.exists():
             isettings._sqlite_file.unlink()
@@ -41,7 +35,8 @@ def delete(instance_name: str):
         else:
             logger.info("    '.lndb' sqlite file does not exist")
     if isettings.is_remote:
-        logger.info("    please manually delete your remote instance on lamin.ai")
+        logger.info("    manually delete your remote instance on lamin.ai")
+    logger.info(f"    manually delete your stored data: {isettings.storage.root}")
 
 
 def delete_cache(cache_dir: Path):
@@ -53,6 +48,6 @@ def delete_cache(cache_dir: Path):
 def delete_settings(settings_file: Path):
     if settings_file.exists():
         settings_file.unlink()
-        logger.info("    instance settings '.env' deleted")
+        logger.info(f"    deleted instance settings file: {settings_file}")
     else:
-        logger.info("    instance settings '.env' do not exist locally")
+        logger.info(f"    instance settings file doesn't exist: {settings_file}")

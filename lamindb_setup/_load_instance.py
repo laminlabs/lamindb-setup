@@ -72,8 +72,7 @@ def load(
         isettings._persist()  # this is to test the settings
         return None
 
-    isettings._update_local_sqlite_file()
-    check, msg = isettings._is_db_setup()
+    check, msg = isettings._is_db_setup()  # this also updates local SQLite
     if not check:
         if _log_error_message:
             raise RuntimeError(msg)
