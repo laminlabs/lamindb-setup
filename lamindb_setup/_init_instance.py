@@ -1,4 +1,5 @@
 import importlib
+import os
 import sys
 from pathlib import Path
 from typing import Optional, Union
@@ -9,7 +10,6 @@ from pydantic import PostgresDsn
 from lamindb_setup.dev.upath import UPath
 
 from ._docstrings import instance_description as description
-from ._load_instance import load
 from ._settings import settings
 from .dev import InstanceSettings
 from .dev._docs import doc_args
@@ -18,7 +18,7 @@ from .dev._setup_schema import load_schema
 from .dev._storage import Storage
 
 
-def register(isettings: InstanceSettings, usettings):
+def register_user_and_storage(isettings: InstanceSettings, usettings):
     """Register user & storage in DB."""
     from django.db.utils import OperationalError
     from lnschema_core.models import Storage, User
@@ -74,16 +74,6 @@ def reload_lamindb(isettings: InstanceSettings):
         logger.success(f"Loaded instance: {isettings.owner}/{isettings.name}")
 
 
-def persist_settings_load_schema(isettings: InstanceSettings):
-    # The reason for why the following two calls should always come together
-    # is that the schema modules need information about what type of database
-    # (sqlite or not) is mounted at time of importing the module!
-    # hence, the schema modules look for the settings file that is generated
-    # by calling isettings._persist()
-    isettings._persist()
-    load_schema(isettings)
-
-
 ERROR_SQLITE_CACHE = """
 Your cached local SQLite file exists, while your cloud SQLite file ({}) doesn't.
 Either delete your cache ({}) or add it back to the cloud (if delete was accidental).
@@ -102,7 +92,6 @@ def init(
     name: Optional[str] = None,
     db: Optional[PostgresDsn] = None,
     schema: Optional[str] = None,
-    _migrate: bool = False,  # not user-facing
     _test: bool = False,
 ) -> None:
     """Creating and loading a LaminDB instance.
@@ -113,6 +102,7 @@ def init(
         db: {}
         schema: {}
     """
+    # clean up in next refactor
     from lnhub_rest.core.instance._init_instance import (
         init_instance as init_instance_hub,
     )
@@ -125,6 +115,9 @@ def init(
         validate_storage_root_arg,
     )
 
+    # avoid circular import
+    from ._load_instance import load
+
     assert settings.user.id  # check user is logged in
     owner = settings.user.handle
 
@@ -134,9 +127,7 @@ def init(
 
     name_str = infer_instance_name(storage=storage, name=name, db=db)
     # test whether instance exists by trying to load it
-    response = load(
-        f"{owner}/{name_str}", _log_error_message=False, migrate=_migrate, _test=_test
-    )
+    response = load(f"{owner}/{name_str}", _log_error_message=False, _test=_test)
     if response is None:
         return None  # successful load!
 
@@ -149,7 +140,7 @@ def init(
         schema=schema,
     )
 
-    if isettings.storage.is_cloud:
+    if isettings._is_cloud_sqlite:
         if (
             not isettings._sqlite_file.exists()
             and isettings._sqlite_file_local.exists()
@@ -171,13 +162,9 @@ def init(
         if result == "instance-exists-already":
             pass  # everything is alright!
         elif isinstance(result, str):
-            raise RuntimeError(f"Creating instance on hub failed:\n{result}")
+            raise RuntimeError(f"Registering instance on hub failed:\n{result}")
         logger.success(
             f"Registered instance on hub: https://lamin.ai/{owner}/{name_str}"
-        )
-    else:
-        logger.hint(
-            "Not registering local instance on hub, if you want, call `lamin register`"
         )
 
     if _test:
@@ -189,17 +176,40 @@ def init(
             "Your instance DB is already set up but couldn't be loaded, something"
             " is off"
         )
-    load_schema(isettings, init=True)
-    register(isettings, settings.user)  # if this doesn't emit warning, we're good
-    write_bionty_versions(isettings)
+
+    load_from_isettings(isettings, init=True)
+
+    # hints
     if isettings._is_cloud_sqlite:
         logger.hint("To push changes to the cloud SQLite file, call: lamin close")
         # @Sergei, this is currently not yet enabled
         # logger.hint(
         #     f"In the meantime, {isettings._sqlite_file} is locked for other users"
         # )
-    isettings._persist()  # we're now good to write non-corrupted settings
+    if not isettings.is_remote:
+        logger.hint(
+            "Did not register local instance on hub (if you want to, call `lamin"
+            " register`)"
+        )
+    return None
+
+
+def load_from_isettings(
+    isettings: InstanceSettings,
+    *,
+    init: bool = False,
+) -> None:
+    from .dev._setup_bionty_versions import load_bionty_versions  # noqa
+
+    load_schema(isettings, init=init)
+    register_user_and_storage(isettings, settings.user)
+    if init:
+        write_bionty_versions(isettings)
+    else:
+        load_bionty_versions(isettings)
+    isettings._persist()
     reload_lamindb(isettings)
+    os.environ["LAMINDB_INSTANCE_LOADED"] = "1"
 
 
 def infer_instance_name(
