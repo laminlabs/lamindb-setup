@@ -5,7 +5,6 @@ from typing import Literal, Optional, Set, Tuple, Union
 
 from lamin_logger import logger
 
-from ._exclusion import empty_locker, get_locker
 from ._settings_save import save_instance_settings
 from ._settings_store import current_instance_settings_file, instance_settings_file
 from ._storage import StorageSettings
@@ -165,6 +164,9 @@ class InstanceSettings:
 
     @property
     def _cloud_sqlite_locker(self):
+        # avoid circular import
+        from ._exclusion import empty_locker, get_locker
+
         if self._is_cloud_sqlite:
             return get_locker(self)
         else:
