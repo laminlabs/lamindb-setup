@@ -1,31 +1,21 @@
-from pathlib import Path
-from typing import Dict
+from lamin_logger import logger
 
 from ._settings_instance import InstanceSettings
 
 
 def write_bionty_versions(isettings: InstanceSettings):
-    """Write bionty ._current.yaml to the CurrentBiontyVersions table."""
+    """Write bionty versions to BiontyVersions and CurrentBiontyVersions tables."""
     if "bionty" in isettings.schema:
         import bionty as bt
-        from lnschema_bionty import BiontyVersions, CurrentBiontyVersions
+        from lamindb._save import save
+        from lnschema_bionty.models import BiontyVersions, CurrentBiontyVersions
 
-        columns_mapper = {
-            "bionty class": "entity",
-            "source key": "source_key",
-            "ontology": "source_name",
-        }
-
-        all_versions = bt.display_available_versions(return_df=True).reset_index()
-        all_versions.columns = all_versions.columns.str.lower()
-        all_versions.rename(columns=columns_mapper, inplace=True)
+        all_versions = bt.display_available_versions().reset_index()
         all_versions_dict = all_versions.to_dict(orient="records")
 
-        current_versions = bt.display_active_versions(return_df=True).reset_index()
-        current_versions.columns = current_versions.columns.str.lower()
-        current_versions.rename(columns=columns_mapper, inplace=True)
-        current_versions = current_versions.set_index(["entity", "species"])
-
+        current_versions = (
+            bt.display_active_versions().reset_index().set_index(["entity", "species"])
+        )
         all_records = []
         current_records = []
 
@@ -40,45 +30,27 @@ def write_bionty_versions(isettings: InstanceSettings):
             ):
                 current_records.append(CurrentBiontyVersions(bionty_version=record))
 
-        BiontyVersions.objects.bulk_create(all_records)
-        CurrentBiontyVersions.objects.bulk_create(current_records)
+        save(all_records + current_records)
+        logger.hint(
+            "Inserted records to BiontyVersions and CurrentBiontyVersions tables"
+        )
 
 
-def load_bionty_versions(isettings: InstanceSettings, display: bool = False):
-    """Write CurrentBiontyVersions to ._lamindb_setup.yaml in bionty."""
+def load_bionty_versions(isettings: InstanceSettings):
+    """Write CurrentBiontyVersions to LAMINDB_VERSIONS_PATH in bionty."""
     if "bionty" in isettings.schema:
-        import bionty as bt
+        from bionty.dev._handle_versions import (
+            LAMINDB_VERSIONS_PATH,
+            parse_current_versions,
+        )
         from bionty.dev._io import write_yaml
-        from lnschema_bionty import dev
+        from lamindb._select import select
+        from lnschema_bionty.models import BiontyVersions
 
-        basedir = Path(bt.__file__).parent / "versions"
+        current_df = select(BiontyVersions).exclude(currentbiontyversions=None).df()
+        current_dict = parse_current_versions(current_df.to_dict(orient="records"))
 
-        # these two lines help over the incomplete migration
-        # of the core schema module v0.34.0 and related in lnschema_bionty
-        # v0.18.0
-        dev.BiontyVersions.__table__.schema = None
-        dev.CurrentBiontyVersions.__table__.schema = None
-
-        import sqlalchemy as sqm  # no module-level import, not a dependency!!!
-
-        stmt = sqm.select(dev.BiontyVersions).join(dev.CurrentBiontyVersions)
-        with isettings.session() as ss:
-            results = ss.exec(stmt).all()
-        # avoid breaking change
-        # if no versions were written in the db, write versions from bionty
-        if len(results) == 0:
-            write_bionty_versions(isettings)
-        records = [row.dict() for row in results]
-
-        import pandas as pd  # no module-level import, is slow!!!
-        from IPython.display import display as ipython_display  # is slow!
-
-        df = pd.DataFrame.from_records(records)
-        df_lndb = df.set_index("entity")[["database", "database_v"]]
-        if display:
-            ipython_display(df_lndb)
-        lndb_dict: Dict = {}
-        for entity, db in df_lndb.iterrows():
-            lndb_dict[entity] = {}
-            lndb_dict[entity][db["database"]] = db["database_v"]
-        write_yaml(lndb_dict, basedir / "._lamindb_setup.yaml")
+        write_yaml(current_dict, LAMINDB_VERSIONS_PATH)
+        logger.hint(
+            "Configured default bionty references using CurrentBiontyVersions table"
+        )
