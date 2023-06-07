@@ -120,7 +120,7 @@ def load_from_isettings(
     migrate: Optional[bool] = None,
 ) -> None:
     from ._init_instance import persist_settings_load_schema, register, reload_lamindb
-    from .dev._setup_knowledge import load_bionty_versions  # noqa
+    from .dev._setup_bionty_versions import load_bionty_versions  # noqa
 
     persist_settings_load_schema(isettings)
     register(isettings, settings.user)

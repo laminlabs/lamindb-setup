@@ -1,3 +1,4 @@
+from django.db import transaction
 from lamin_logger import logger
 
 from ._settings_instance import InstanceSettings
@@ -7,7 +8,6 @@ def write_bionty_versions(isettings: InstanceSettings):
     """Write bionty versions to BiontyVersions and CurrentBiontyVersions tables."""
     if "bionty" in isettings.schema:
         import bionty as bt
-        from lamindb._save import save
         from lnschema_bionty.models import BiontyVersions, CurrentBiontyVersions
 
         all_versions = bt.display_available_versions().reset_index()
@@ -30,10 +30,9 @@ def write_bionty_versions(isettings: InstanceSettings):
             ):
                 current_records.append(CurrentBiontyVersions(bionty_version=record))
 
-        save(all_records + current_records)
-        logger.hint(
-            "Inserted records to BiontyVersions and CurrentBiontyVersions tables"
-        )
+        with transaction.atomic():
+            for record in all_records + current_records:
+                record.save()
 
 
 def load_bionty_versions(isettings: InstanceSettings):
@@ -44,10 +43,9 @@ def load_bionty_versions(isettings: InstanceSettings):
             parse_current_versions,
         )
         from bionty.dev._io import write_yaml
-        from lamindb._select import select
         from lnschema_bionty.models import BiontyVersions
 
-        current_df = select(BiontyVersions).exclude(currentbiontyversions=None).df()
+        current_df = BiontyVersions.objects.exclude(currentbiontyversions=None).df()
         current_dict = parse_current_versions(current_df.to_dict(orient="records"))
 
         write_yaml(current_dict, LAMINDB_VERSIONS_PATH)

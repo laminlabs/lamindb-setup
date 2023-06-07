@@ -100,7 +100,7 @@ class InstanceSettings:
     def _update_cloud_sqlite_file(self) -> None:
         """Upload the local sqlite file to the cloud file."""
         if self._is_cloud_sqlite:
-            logger.info("Updating & unlocking remote SQLite")
+            logger.info("Updating & unlocking cloud SQLite")
             sqlite_file = self._sqlite_file
             cache_file = self.storage.cloud_to_local_no_update(sqlite_file)
             sqlite_file.upload_from(cache_file)  # type: ignore
@@ -114,7 +114,7 @@ class InstanceSettings:
         """Download the cloud sqlite file if it is newer than local."""
         if self._is_cloud_sqlite:
             logger.info(
-                "Synching remote SQLite to local, locking remote (unlock via: lamin"
+                "Synching cloud SQLite to local, locking remote (unlock via: lamin"
                 " close)"
             )
             sqlite_file = self._sqlite_file
@@ -165,10 +165,10 @@ class InstanceSettings:
     @property
     def _cloud_sqlite_locker(self):
         # avoid circular import
-        from ._exclusion import empty_locker, get_locker
+        from ._cloud_sqlite_locker import empty_locker
 
         if self._is_cloud_sqlite:
-            return get_locker(self)
+            return empty_locker
         else:
             return empty_locker
 
@@ -195,7 +195,7 @@ class InstanceSettings:
         if self.dialect == "postgresql":
             if is_local_uri(self.db):
                 return False
-        # returns True for remote SQLite
+        # returns True for cloud SQLite
         # and remote postgres
         return True
 
