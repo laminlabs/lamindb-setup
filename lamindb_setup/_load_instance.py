@@ -1,4 +1,3 @@
-import os
 from pathlib import Path
 from typing import Optional, Union
 
@@ -6,6 +5,7 @@ from lamin_logger import logger
 
 from lamindb_setup.dev.upath import UPath
 
+from ._init_instance import load_from_isettings
 from ._settings import InstanceSettings, settings
 from .dev._django import setup_django
 from .dev._settings_load import load_instance_settings
@@ -16,7 +16,6 @@ from .dev._storage import StorageSettings
 def load(
     identifier: str,
     *,
-    migrate: Optional[bool] = None,
     storage: Optional[Union[str, Path, UPath]] = None,
     _log_error_message: bool = True,
     _access_token: Optional[str] = None,
@@ -29,7 +28,6 @@ def load(
             current user), handle/name, or the URL: https://lamin.ai/handle/name.
         storage: `Optional[PathLike] = None` - Load the instance with an
             updated default storage.
-        migrate: `Optional[bool] = None` - Whether to auto-migrate or not.
     """
     owner, name = get_owner_name_from_identifier(identifier)
 
@@ -83,18 +81,11 @@ def load(
             )
             return "instance-not-reachable"
 
+    # need to set up Django here because we query the storage table
     setup_django(isettings)
     if storage is not None and isettings.dialect == "sqlite":
         update_root_field_in_default_storage(isettings)
-
-    if not isettings.storage.root.exists():
-        raise RuntimeError(
-            f"Storage root does not exist: {isettings.storage.root}\n"
-            "Please amend by passing --storage <my-storage-root>"
-        )
-
-    load_from_isettings(isettings, migrate)
-    os.environ["LAMINDB_INSTANCE_LOADED"] = "1"
+    load_from_isettings(isettings)
     return None
 
 
@@ -127,7 +118,7 @@ def load_from_isettings(
     load_bionty_sources(isettings)
     reload_lamindb(isettings)
 
-
+    
 def update_isettings_with_storage(
     isettings: InstanceSettings, storage: Union[str, Path, UPath]
 ) -> None:

@@ -25,22 +25,6 @@ parser = argparse.ArgumentParser(
 )
 subparsers = parser.add_subparsers(dest="command")
 
-# signup user
-signup = subparsers.add_parser("signup", help=signup_help)
-aa = signup.add_argument
-aa("email", type=str, metavar="email", help=user.email)
-
-# login user
-login = subparsers.add_parser("login", help=login_help)
-aa = login.add_argument
-aa(
-    "user",
-    type=str,
-    metavar="user",
-    help="Email or user handle. Email is needed at first login.",
-)  # noqa
-aa("--password", type=str, metavar="pw", default=None, help=user.password)
-
 # init instance
 init = subparsers.add_parser("init", help=init_help)
 aa = init.add_argument
@@ -89,6 +73,24 @@ filepath_help = "A path to the notebook to track."
 aa("filepath", type=str, metavar="filepath", help=filepath_help)
 pypackage_help = "One or more (delimited by ',') python packages to track."
 aa("--pypackage", type=str, metavar="pypackage", default=None, help=pypackage_help)
+
+
+# signup user
+signup = subparsers.add_parser("signup", help=signup_help)
+aa = signup.add_argument
+aa("email", type=str, metavar="email", help=user.email)
+
+# login user
+login = subparsers.add_parser("login", help=login_help)
+aa = login.add_argument
+aa(
+    "user",
+    type=str,
+    metavar="user",
+    help="Email or user handle. Email is needed at first login.",
+)  # noqa
+aa("--password", type=str, metavar="pw", default=None, help=user.password)
+
 
 # parse args
 args = parser.parse_args()
