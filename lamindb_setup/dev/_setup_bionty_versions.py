@@ -38,6 +38,7 @@ def write_bionty_versions(isettings: InstanceSettings):
 def load_bionty_versions(isettings: InstanceSettings):
     """Write CurrentBiontyVersions to LAMINDB_VERSIONS_PATH in bionty."""
     if "bionty" in isettings.schema:
+        import pandas as pd
         from bionty.dev._handle_versions import (
             LAMINDB_VERSIONS_PATH,
             parse_current_versions,
@@ -45,7 +46,9 @@ def load_bionty_versions(isettings: InstanceSettings):
         from bionty.dev._io import write_yaml
         from lnschema_bionty.models import BiontyVersions
 
-        current_df = BiontyVersions.objects.exclude(currentbiontyversions=None).df()
+        current_df = pd.DataFrame(
+            BiontyVersions.objects.exclude(currentbiontyversions=None).values()
+        )
         current_dict = parse_current_versions(current_df.to_dict(orient="records"))
 
         write_yaml(current_dict, LAMINDB_VERSIONS_PATH)
