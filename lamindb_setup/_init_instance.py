@@ -13,7 +13,7 @@ from ._load_instance import load
 from ._settings import settings
 from .dev import InstanceSettings
 from .dev._docs import doc_args
-from .dev._setup_bionty_versions import write_bionty_versions  # noqa
+from .dev._setup_bionty_sources import write_bionty_sources  # noqa
 from .dev._setup_schema import load_schema
 from .dev._storage import Storage
 
@@ -191,7 +191,7 @@ def init(
         )
     load_schema(isettings, init=True)
     register(isettings, settings.user)  # if this doesn't emit warning, we're good
-    write_bionty_versions(isettings)
+    write_bionty_sources(isettings)
     if isettings._is_cloud_sqlite:
         logger.hint("To push changes to the cloud SQLite file, call: lamin close")
         # @Sergei, this is currently not yet enabled
