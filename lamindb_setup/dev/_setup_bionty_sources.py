@@ -10,11 +10,13 @@ def write_bionty_sources(isettings: InstanceSettings):
         import bionty as bt
         from lnschema_bionty.models import BiontySource
 
-        all_versions = bt.display_available_versions().reset_index()
+        all_versions = bt.display_available_sources().reset_index()
         all_versions_dict = all_versions.to_dict(orient="records")
 
         active_versions = (
-            bt.display_active_versions().reset_index().set_index(["entity", "species"])
+            bt.display_currently_used_sources()
+            .reset_index()
+            .set_index(["entity", "species"])
         )
 
         all_records = []
