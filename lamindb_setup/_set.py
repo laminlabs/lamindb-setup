@@ -5,7 +5,7 @@ from lamin_logger import logger
 
 from lamindb_setup.dev.upath import UPath
 
-from ._init_instance import register
+from ._init_instance import register_user_and_storage
 from ._settings import settings
 from .dev import deprecated
 from .dev._settings_instance import InstanceSettings
@@ -45,7 +45,7 @@ class set:
         )
 
         new_isettings._persist()  # this also updates the settings object
-        register(new_isettings, settings.user)
+        register_user_and_storage(new_isettings, settings.user)
         if settings.instance.is_remote:
             add_storage_hub(root, account_handle=settings.instance.owner)
 
