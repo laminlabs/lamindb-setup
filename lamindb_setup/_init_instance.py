@@ -188,7 +188,11 @@ def init(
         load_schema(isettings, init=True)
         register(isettings, settings.user)  # if this doesn't emit warning, we're good
         write_bionty_versions(isettings)
-        isettings._update_cloud_sqlite_file()
+        if isettings._is_cloud_sqlite:
+            logger.hint("To push changes to the cloud SQLite file, call: lamin close")
+            logger.hint(
+                f"In the meantime, {isettings._sqlite_file} is locked for other users"
+            )
     else:
         # we're currently using this for testing migrations
         # passing connection strings of databases that need to be tested

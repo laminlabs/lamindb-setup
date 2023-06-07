@@ -64,7 +64,7 @@ def setup_django(
             if deploy_migrations:
                 verbosity = 0 if init else 2
                 call_command("migrate", verbosity=verbosity)
-                if not init:  # delay sync
+                if not init:  # only update if this is a deploy migration command
                     isettings._update_cloud_sqlite_file()
             else:
                 logger.warning(

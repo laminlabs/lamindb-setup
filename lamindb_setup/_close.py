@@ -13,6 +13,7 @@ def close() -> None:
     """
     if current_instance_settings_file().exists():
         instance = settings.instance.identifier
+        settings.instance._update_cloud_sqlite_file()
         current_instance_settings_file().unlink()
         os.environ["LAMINDB_INSTANCE_LOADED"] = "0"
         logger.success(f"Closed {instance}")

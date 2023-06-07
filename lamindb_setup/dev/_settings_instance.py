@@ -100,8 +100,8 @@ class InstanceSettings:
 
     def _update_cloud_sqlite_file(self) -> None:
         """Upload the local sqlite file to the cloud file."""
-        if self.is_cloud_sqlite:
-            logger.info("Updating cloud sqlite file")
+        if self._is_cloud_sqlite:
+            logger.info("Updating & unlocking remote SQLite")
             sqlite_file = self._sqlite_file
             cache_file = self.storage.cloud_to_local_no_update(sqlite_file)
             sqlite_file.upload_from(cache_file)  # type: ignore
@@ -109,14 +109,19 @@ class InstanceSettings:
             # this seems to work even if there is an open connection
             # to the cache file
             os.utime(cache_file, times=(cloud_mtime, cloud_mtime))
+            self._cloud_sqlite_locker.unlock()
 
     def _update_local_sqlite_file(self) -> None:
         """Download the cloud sqlite file if it is newer than local."""
-        if self.is_cloud_sqlite:
-            logger.info("Updating local sqlite file")
+        if self._is_cloud_sqlite:
+            logger.info(
+                "Synching remote SQLite to local, locking remote (unlock via: lamin"
+                " close)"
+            )
             sqlite_file = self._sqlite_file
             cache_file = self.storage.cloud_to_local_no_update(sqlite_file)
             sqlite_file.synchronize(cache_file)  # type: ignore
+            self._cloud_sqlite_locker.lock()
 
     @property
     def db(self) -> str:
@@ -152,7 +157,7 @@ class InstanceSettings:
         raise NotImplementedError
 
     @property
-    def is_cloud_sqlite(self) -> bool:
+    def _is_cloud_sqlite(self) -> bool:
         # can we make this a private property, Sergei?
         # as it's not relevant to the user
         """Is this a cloud instance with sqlite db."""
@@ -160,7 +165,7 @@ class InstanceSettings:
 
     @property
     def _cloud_sqlite_locker(self):
-        if self.is_cloud_sqlite:
+        if self._is_cloud_sqlite:
             return get_locker()
         else:
             return empty_locker
