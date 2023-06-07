@@ -124,7 +124,7 @@ def load_from_isettings(
 
     persist_settings_load_schema(isettings)
     register(isettings, settings.user)
-    # load_bionty_versions(isettings)
+    load_bionty_versions(isettings)
     reload_lamindb(isettings)
 
 
