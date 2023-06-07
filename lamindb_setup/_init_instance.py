@@ -13,7 +13,6 @@ from ._docstrings import instance_description as description
 from ._settings import settings
 from .dev import InstanceSettings
 from .dev._docs import doc_args
-from .dev._setup_bionty_versions import write_bionty_versions  # noqa
 from .dev._setup_schema import load_schema
 from .dev._storage import Storage
 
@@ -176,10 +175,7 @@ def init(
             "Your instance DB is already set up but couldn't be loaded, something"
             " is off"
         )
-
     load_from_isettings(isettings, init=True)
-
-    # hints
     if isettings._is_cloud_sqlite:
         logger.hint("To push changes to the cloud SQLite file, call: lamin close")
         # @Sergei, this is currently not yet enabled
@@ -199,14 +195,14 @@ def load_from_isettings(
     *,
     init: bool = False,
 ) -> None:
-    from .dev._setup_bionty_versions import load_bionty_versions  # noqa
+    from .dev._setup_bionty_sources import load_bionty_sources, write_bionty_sources
 
     load_schema(isettings, init=init)
     register_user_and_storage(isettings, settings.user)
     if init:
-        write_bionty_versions(isettings)
+        write_bionty_sources(isettings)
     else:
-        load_bionty_versions(isettings)
+        load_bionty_sources(isettings)
     isettings._persist()
     reload_lamindb(isettings)
     os.environ["LAMINDB_INSTANCE_LOADED"] = "1"
