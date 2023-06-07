@@ -26,6 +26,14 @@ from .upath import UPath
 #         cursor.close()
 
 
+def upload_and_sync_timestamp(local_file: Path, cloud_file: UPath):
+    cloud_file.upload_from(local_file)  # type: ignore
+    cloud_mtime = cloud_file.modified.timestamp()  # type: ignore
+    # this seems to work even if there is an open connection
+    # to the cache file
+    os.utime(local_file, times=(cloud_mtime, cloud_mtime))
+
+
 class InstanceSettings:
     """Instance settings."""
 
@@ -98,17 +106,21 @@ class InstanceSettings:
         """Local SQLite file."""
         return self.storage.cloud_to_local_no_update(self._sqlite_file)
 
-    def _update_cloud_sqlite_file(self) -> None:
+    def _update_cloud_sqlite_file(self, new_process=True) -> None:
         """Upload the local sqlite file to the cloud file."""
         if self.is_cloud_sqlite:
             logger.info("Updating cloud sqlite file")
-            sqlite_file = self._sqlite_file
-            cache_file = self.storage.cloud_to_local_no_update(sqlite_file)
-            sqlite_file.upload_from(cache_file)  # type: ignore
-            cloud_mtime = sqlite_file.modified.timestamp()  # type: ignore
-            # this seems to work even if there is an open connection
-            # to the cache file
-            os.utime(cache_file, times=(cloud_mtime, cloud_mtime))
+            cloud_file = self._sqlite_file
+            cache_file = self.storage.cloud_to_local_no_update(cloud_file)
+
+            if new_process:
+                from multiprocessing import Process
+
+                Process(
+                    target=upload_and_sync_timestamp, args=(cache_file, cloud_file)
+                ).start()
+            else:
+                upload_and_sync_timestamp(cache_file, cloud_file)
 
     def _update_local_sqlite_file(self) -> None:
         """Download the cloud sqlite file if it is newer than local."""
