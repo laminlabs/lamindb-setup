@@ -166,7 +166,7 @@ class InstanceSettings:
     @property
     def _cloud_sqlite_locker(self):
         if self._is_cloud_sqlite:
-            return get_locker()
+            return get_locker(self)
         else:
             return empty_locker
 

@@ -155,11 +155,11 @@ class Locker:
 _locker: Optional[Locker] = None
 
 
-def get_locker() -> Locker:
+def get_locker(isettings) -> Locker:
     from .._settings import settings
 
     user_id = settings.user.id
-    storage_root = settings.instance.storage.root
+    storage_root = isettings.storage.root
 
     global _locker
 
