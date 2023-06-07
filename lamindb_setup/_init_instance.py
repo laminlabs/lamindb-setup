@@ -13,7 +13,7 @@ from ._load_instance import load
 from ._settings import settings
 from .dev import InstanceSettings
 from .dev._docs import doc_args
-from .dev._setup_knowledge import write_bionty_versions  # noqa
+from .dev._setup_bionty_versions import write_bionty_versions  # noqa
 from .dev._setup_schema import load_schema
 from .dev._storage import Storage
 
