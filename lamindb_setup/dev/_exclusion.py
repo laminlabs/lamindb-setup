@@ -6,6 +6,7 @@ import fsspec
 from dateutil.parser import isoparse  # type: ignore
 from lamin_logger import logger
 
+from ._settings_instance import InstanceSettings
 from .upath import UPath
 from .upath import infer_filesystem as _infer_filesystem
 
@@ -155,11 +156,11 @@ class Locker:
 _locker: Optional[Locker] = None
 
 
-def get_locker() -> Locker:
+def get_locker(isettings: InstanceSettings) -> Locker:
     from .._settings import settings
 
     user_id = settings.user.id
-    storage_root = settings.instance.storage.root
+    storage_root = isettings.storage.root
 
     global _locker
 

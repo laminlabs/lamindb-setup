@@ -9,7 +9,7 @@ from pydantic import PostgresDsn
 from lamindb_setup.dev.upath import UPath
 
 from ._docstrings import instance_description as description
-from ._load_instance import load, load_from_isettings
+from ._load_instance import load
 from ._settings import settings
 from .dev import InstanceSettings
 from .dev._docs import doc_args
@@ -184,19 +184,17 @@ def init(
         isettings._persist()
         return None
 
-    if not isettings._is_db_setup(mute=True)[0]:
-        load_schema(isettings, init=True)
-        register(isettings, settings.user)  # if this doesn't emit warning, we're good
-        write_bionty_versions(isettings)
-        isettings._update_cloud_sqlite_file()
-    else:
-        # we're currently using this for testing migrations
-        # passing connection strings of databases that need to be tested
-        # for migrations
-        logger.warning("Your instance seems already set up, attempt load:")
-        load_from_isettings(isettings, migrate=_migrate)
-
-    isettings._persist()
+    assert not isettings._is_db_setup(mute=True)[0]
+    load_schema(isettings, init=True)
+    register(isettings, settings.user)  # if this doesn't emit warning, we're good
+    write_bionty_versions(isettings)
+    if isettings._is_cloud_sqlite:
+        logger.hint("To push changes to the cloud SQLite file, call: lamin close")
+        # @Sergei, this is currently not yet enabled
+        # logger.hint(
+        #     f"In the meantime, {isettings._sqlite_file} is locked for other users"
+        # )
+    isettings._persist()  # we're now good to write non-corrupted settings
     reload_lamindb(isettings)
 
 
