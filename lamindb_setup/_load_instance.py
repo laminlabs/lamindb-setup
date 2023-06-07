@@ -106,19 +106,6 @@ def get_owner_name_from_identifier(identifier: str):
     return owner, name
 
 
-def load_from_isettings(
-    isettings: InstanceSettings,
-    migrate: Optional[bool] = None,
-) -> None:
-    from ._init_instance import persist_settings_load_schema, register, reload_lamindb
-    from .dev._setup_bionty_sources import load_bionty_sources  # noqa
-
-    persist_settings_load_schema(isettings)
-    register(isettings, settings.user)
-    load_bionty_sources(isettings)
-    reload_lamindb(isettings)
-
-    
 def update_isettings_with_storage(
     isettings: InstanceSettings, storage: Union[str, Path, UPath]
 ) -> None:
