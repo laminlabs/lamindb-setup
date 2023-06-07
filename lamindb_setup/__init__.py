@@ -75,7 +75,7 @@ from ._setup_user import login, signup  # noqa
 
 # unlock and clear on uncaught exception
 def _clear_on_exception():
-    from .dev._exclusion import _locker
+    from .dev._cloud_sqlite_locker import _locker
 
     if _locker is not None:
         try:

@@ -184,7 +184,11 @@ def init(
         isettings._persist()
         return None
 
-    assert not isettings._is_db_setup(mute=True)[0]
+    if isettings._is_db_setup(mute=True)[0]:
+        raise RuntimeError(
+            "Your instance DB is already set up but couldn't be loaded, something"
+            " is off"
+        )
     load_schema(isettings, init=True)
     register(isettings, settings.user)  # if this doesn't emit warning, we're good
     write_bionty_versions(isettings)
