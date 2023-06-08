@@ -68,10 +68,13 @@ def setup_django(
                     isettings._update_cloud_sqlite_file()
             else:
                 logger.warning(
-                    f"Your database is not up to date:\n{planned_migrations}\nConsider"
-                    " migrating it: lamin migrate deploy\nIf you can't yet migrate,"
-                    " consider installing an older schema module version to avoid"
-                    " potential errors"
+                    "\n\nYour database is not up to date with your installed"
+                    " schemas!\n\nIt misses the following"
+                    f" migrations:\n{planned_migrations}\n\nIf you are an admin and"
+                    " know what you're doing, deploy the migration:\nlamin migrate"
+                    " deploy\n\nOtherwise, please install previouses release of the"
+                    " above-mentioned schemas\n\nIn case you haven't yet migrated to"
+                    " Django, use lamindb 0.41.2 & reach out to Lamin\n"
                 )
         else:
             if deploy_migrations:
