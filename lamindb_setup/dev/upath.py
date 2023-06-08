@@ -14,7 +14,6 @@ from pathlib import Path
 from typing import Union
 
 from dateutil.parser import isoparse  # type: ignore
-from lamin_logger import logger
 from upath import UPath
 
 
@@ -62,12 +61,14 @@ def _synchronize(self, filepath: Path):
         self.download_to(filepath)
         os.utime(filepath, times=(mts, mts))
     elif cloud_mts < local_mts:
-        logger.warning(
-            f"Local file ({filepath}) for cloud path ({self}) is newer on disk than in cloud.\n"  # noqa
-            "It seems you manually updated the database locally and didn't push changes to the cloud.\n"  # noqa
-            "This can lead to data loss if somebody else modified the cloud file in"  # noqa
-            " the meantime."
-        )
+        pass
+        # these warnings are out-dated because it can be normal to have a more up-to-date version locally  # noqa
+        # logger.warning(
+        #     f"Local file ({filepath}) for cloud path ({self}) is newer on disk than in cloud.\n"  # noqa
+        #     "It seems you manually updated the database locally and didn't push changes to the cloud.\n"  # noqa
+        #     "This can lead to data loss if somebody else modified the cloud file in"  # noqa
+        #     " the meantime."
+        # )
 
 
 def _modified(self):
