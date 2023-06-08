@@ -1,8 +1,7 @@
-# Overview
+# Setup
 
 ```{toctree}
 :maxdepth: 1
-:hidden:
 
 setup-user
 init-instance
