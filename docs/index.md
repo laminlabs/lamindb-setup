@@ -7,7 +7,7 @@
 :maxdepth: 1
 
 guide/index
-api
+reference
 faq/index
 changelog
 ```

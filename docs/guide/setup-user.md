@@ -13,9 +13,9 @@ ln_setup.signup("testuser1@lamin.ai")  # CLI: lamin signup testuser1@lamin.ai
 
 This will generate a password and cache both email and password in your `~/.lamin` directory.
 
-📧 You will also receive a confirmation email with a link to choose your user handle and complete the sign-up!
+📧 You will also receive a confirmation email with a link to choose your user handle and complete the sign-up.
 
-```{dropdown} Error messages
+:::{dropdown} Error messages
 
 If you try to sign up again, you'll see an error message:
 
@@ -33,8 +33,8 @@ RuntimeError: It seems you already signed up with this email. Please click on th
 
 ```
 
-Depending on timing, it might also raise a `429 Too Many Requests` error.
-```
+Depending on timing, you might see a `429 Too Many Requests` error.
+:::
 
 ## Log in
 
