@@ -60,6 +60,7 @@ import sys
 from os import name as _os_name
 
 from . import dev
+from ._check_instance_setup import check_instance_setup as _check_instance_setup  # noqa
 from ._close import close  # noqa
 from ._delete import delete  # noqa
 from ._info import info  # noqa
