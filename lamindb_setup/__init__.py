@@ -51,9 +51,8 @@ Developer API.
    dev
 """
 
-import os
 
-__version__ = "0.47.0"  # denote a release candidate for 0.1.0 with 0.1rc1
+__version__ = "0.47.1"  # denote a release candidate for 0.1.0 with 0.1rc1
 
 import builtins
 import sys
