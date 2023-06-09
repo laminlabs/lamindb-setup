@@ -34,6 +34,15 @@ def write_bionty_sources(isettings: InstanceSettings):
             for record in all_records:
                 record.save()
 
+        import shutil
+
+        from bionty.dev._handle_sources import (
+            CURRENT_SOURCES_PATH,
+            LAMINDB_SOURCES_PATH,
+        )
+
+        shutil.copy(CURRENT_SOURCES_PATH, LAMINDB_SOURCES_PATH)
+
 
 def load_bionty_sources(isettings: InstanceSettings):
     """Write currently_used bionty sources to LAMINDB_VERSIONS_PATH in bionty."""
@@ -49,3 +58,10 @@ def load_bionty_sources(isettings: InstanceSettings):
 
         write_yaml(parse_currently_used_sources(active_records), LAMINDB_SOURCES_PATH)
         logger.hint("Configured default bionty sources from BiontySource table")
+
+
+def delete_bionty_sources_yaml():
+    """Delete LAMINDB_SOURCES_PATH in bionty."""
+    from bionty.dev._handle_sources import LAMINDB_SOURCES_PATH
+
+    LAMINDB_SOURCES_PATH.unlink(missing_ok=True)
