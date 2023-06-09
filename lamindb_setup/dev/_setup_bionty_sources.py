@@ -7,6 +7,15 @@ from ._settings_instance import InstanceSettings
 def write_bionty_sources(isettings: InstanceSettings):
     """Write bionty sources to BiontySource table."""
     if "bionty" in isettings.schema:
+        import shutil
+
+        from bionty.dev._handle_sources import (
+            CURRENT_SOURCES_PATH,
+            LAMINDB_SOURCES_PATH,
+        )
+
+        shutil.copy(CURRENT_SOURCES_PATH, LAMINDB_SOURCES_PATH)
+
         import bionty as bt
         from lnschema_bionty.models import BiontySource
 
@@ -33,15 +42,6 @@ def write_bionty_sources(isettings: InstanceSettings):
         with transaction.atomic():
             for record in all_records:
                 record.save()
-
-        import shutil
-
-        from bionty.dev._handle_sources import (
-            CURRENT_SOURCES_PATH,
-            LAMINDB_SOURCES_PATH,
-        )
-
-        shutil.copy(CURRENT_SOURCES_PATH, LAMINDB_SOURCES_PATH)
 
 
 def load_bionty_sources(isettings: InstanceSettings):
