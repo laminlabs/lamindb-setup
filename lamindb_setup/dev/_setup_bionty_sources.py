@@ -10,18 +10,18 @@ def write_bionty_sources(isettings: InstanceSettings):
         import bionty as bt
         from lnschema_bionty.models import BiontySource
 
-        all_versions = bt.display_available_sources().reset_index()
-        all_versions_dict = all_versions.to_dict(orient="records")
+        all_sources = bt.display_available_sources().reset_index()
+        all_sources_dict = all_sources.to_dict(orient="records")
 
-        active_versions = (
+        currently_used = (
             bt.display_currently_used_sources()
             .reset_index()
             .set_index(["entity", "species"])
         )
 
         all_records = []
-        for kwargs in all_versions_dict:
-            act = active_versions.loc[(kwargs["entity"], kwargs["species"])].to_dict()
+        for kwargs in all_sources_dict:
+            act = currently_used.loc[(kwargs["entity"], kwargs["species"])].to_dict()
             if (act["source_key"] == kwargs["source_key"]) and (
                 act["version"] == kwargs["version"]
             ):
@@ -38,7 +38,7 @@ def write_bionty_sources(isettings: InstanceSettings):
 def load_bionty_sources(isettings: InstanceSettings):
     """Write currently_used bionty sources to LAMINDB_VERSIONS_PATH in bionty."""
     if "bionty" in isettings.schema:
-        from bionty.dev._handle_versions import (
+        from bionty.dev._handle_sources import (
             LAMINDB_SOURCES_PATH,
             parse_currently_used_sources,
         )
