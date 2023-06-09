@@ -1,5 +1,4 @@
 import importlib
-import os
 import sys
 from pathlib import Path
 from typing import Optional, Union
@@ -205,7 +204,6 @@ def load_from_isettings(
         load_bionty_sources(isettings)
     isettings._persist()
     reload_lamindb(isettings)
-    os.environ["LAMINDB_INSTANCE_LOADED"] = "1"
 
 
 def infer_instance_name(
