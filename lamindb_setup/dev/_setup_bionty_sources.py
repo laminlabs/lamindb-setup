@@ -59,6 +59,9 @@ def load_bionty_sources(isettings: InstanceSettings):
 
 def delete_bionty_sources_yaml():
     """Delete LAMINDB_SOURCES_PATH in bionty."""
-    from bionty.dev._handle_sources import LAMINDB_SOURCES
+    try:
+        from bionty.dev._handle_sources import LAMINDB_SOURCES
 
-    LAMINDB_SOURCES.unlink(missing_ok=True)
+        LAMINDB_SOURCES.unlink(missing_ok=True)
+    except ModuleNotFoundError:
+        pass
