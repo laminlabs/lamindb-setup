@@ -28,7 +28,7 @@ def write_bionty_sources(isettings: InstanceSettings):
         all_records = []
         for kwargs in all_sources_dict:
             act = currently_used.loc[(kwargs["entity"], kwargs["species"])].to_dict()
-            if (act["source_key"] == kwargs["source_key"]) and (
+            if (act["source"] == kwargs["source"]) and (
                 act["version"] == kwargs["version"]
             ):
                 kwargs["currently_used"] = True
