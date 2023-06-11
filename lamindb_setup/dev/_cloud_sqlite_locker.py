@@ -7,15 +7,16 @@ from dateutil.parser import isoparse  # type: ignore
 from lamin_logger import logger
 
 from ._settings_instance import InstanceSettings
-from .upath import UPath
-from .upath import infer_filesystem as _infer_filesystem
+from .upath import UPath, infer_filesystem
 
-EXPIRATION_TIME = 1800  # 30 min
+EXPIRATION_TIME = 3600  # 60 min
 
-MAX_MSG_COUNTER = 1000  # print the msg after this number of iterations
+MAX_MSG_COUNTER = 100  # print the msg after this number of iterations
 
 
 class empty_locker:
+    has_lock = True
+
     @classmethod
     def lock(cls):
         pass
@@ -26,17 +27,17 @@ class empty_locker:
 
 
 class Locker:
-    def __init__(self, user_id: str, storage_root: Union[UPath, Path]):
-        logger.debug(f"Init cloud sqlite locker: {user_id}, {storage_root}.")
+    def __init__(self, user_id: str, storage_root: Union[UPath, Path], name: str):
+        logger.debug(f"Init cloud sqlite locker: {user_id}, {storage_root}, {name}.")
 
         self._counter = 0
 
         self.user = user_id
 
         self.root = storage_root
-        self.fs, _ = _infer_filesystem(storage_root)
+        self.fs, _ = infer_filesystem(storage_root)
 
-        exclusion_path = storage_root / "exclusion"
+        exclusion_path = storage_root / f"exclusion/{name}"
         self.mapper = fsspec.FSMap(str(exclusion_path), self.fs, create=True)
 
         priorities_path = str(exclusion_path / "priorities")
@@ -73,9 +74,13 @@ class Locker:
                     continue
                 period = (datetime.now() - self.modified(user_path)).total_seconds()
                 if period > EXPIRATION_TIME:
+                    logger.info(
+                        f"The lock of the user {user} seems to be stale, clearing"
+                        f" {endpoint}."
+                    )
                     self.mapper[user_endpoint] = b"0"
 
-        self._locked = False
+        self._has_lock = None
 
     def modified(self, path):
         if "gcs" not in self.fs.protocol:
@@ -95,17 +100,16 @@ class Locker:
 
     def _msg_on_counter(self, user):
         if self._counter == MAX_MSG_COUNTER:
-            logger.info(
-                f"Another user ({user}) is doing a write operation to the database, "
-                "please wait or stop the code execution."
-            )
+            logger.info(f"Competing for the lock with the user {user}.")
 
         if self._counter <= MAX_MSG_COUNTER:
             self._counter += 1
 
     def _lock_unsafe(self):
-        if self._locked:
+        if self._has_lock:
             return None
+
+        self._has_lock = True
 
         self.users = self.mapper["priorities"].decode().split("*")
 
@@ -121,52 +125,57 @@ class Locker:
             if i == self.priority:
                 continue
 
-            while int(self.mapper[f"entering/{user}"]):
-                self._msg_on_counter(user)
-            while True:
-                c_number = int(self.mapper[f"numbers/{user}"])
-                if c_number == 0:
-                    break
-                if number < c_number:
-                    break
-                if number == c_number and self.priority < i:
-                    break
+            while self.mapper[f"entering/{user}"] == b"1":
                 self._msg_on_counter(user)
 
-        self._locked = True
+            c_number = int(self.mapper[f"numbers/{user}"])
+
+            if c_number == 0:
+                continue
+
+            if (number > c_number) or (number == c_number and self.priority > i):
+                self._has_lock = False
+                logger.info(f"The instance is already locked by the user {user}.")
+                return None
 
     def lock(self):
         try:
             self._lock_unsafe()
         except BaseException as e:
             self.unlock()
+            self._clear()
             raise e
 
     def unlock(self):
         self.mapper[f"numbers/{self.user}"] = b"0"
-
-        self._locked = False
+        self._has_lock = None
         self._counter = 0
 
     def _clear(self):
-        self.unlock()
         self.mapper[f"entering/{self.user}"] = b"0"
+
+    @property
+    def has_lock(self):
+        if self._has_lock is None:
+            logger.info("The lock has not been initialized, trying to obtain the lock.")
+            self.lock()
+
+        return self._has_lock
 
 
 _locker: Optional[Locker] = None
 
 
 def get_locker(isettings: InstanceSettings) -> Locker:
-    from .._settings import settings
-
-    user_id = settings.user.id
-    storage_root = isettings.storage.root
-
     global _locker
 
     if _locker is None:
-        _locker = Locker(user_id, storage_root)
-    elif user_id != _locker.user or storage_root is not _locker.root:
-        _locker = Locker(user_id, storage_root)
+        from .._settings import settings
+
+        user_id = settings.user.id
+        storage_root = isettings.storage.root
+        instance_name = isettings.name
+
+        _locker = Locker(user_id, storage_root, instance_name)
 
     return _locker
