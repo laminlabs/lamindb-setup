@@ -33,6 +33,7 @@ class Locker:
         self._counter = 0
 
         self.user = user_id
+        self.name = name
 
         self.root = storage_root
         self.fs, _ = infer_filesystem(storage_root)
@@ -81,6 +82,7 @@ class Locker:
                     self.mapper[user_endpoint] = b"0"
 
         self._has_lock = None
+        self._locked_by = None
 
     def modified(self, path):
         if "gcs" not in self.fs.protocol:
@@ -110,6 +112,7 @@ class Locker:
             return None
 
         self._has_lock = True
+        self._locked_by = self.user
 
         self.users = self.mapper["priorities"].decode().split("*")
 
@@ -135,6 +138,8 @@ class Locker:
 
             if (number > c_number) or (number == c_number and self.priority > i):
                 self._has_lock = False
+                self._locked_by = user
+                self.mapper[f"numbers/{self.user}"] = b"0"
                 logger.info(f"The instance is already locked by the user {user}.")
                 return None
 
@@ -149,6 +154,7 @@ class Locker:
     def unlock(self):
         self.mapper[f"numbers/{self.user}"] = b"0"
         self._has_lock = None
+        self._locked_by = None
         self._counter = 0
 
     def _clear(self):
@@ -167,15 +173,20 @@ _locker: Optional[Locker] = None
 
 
 def get_locker(isettings: InstanceSettings) -> Locker:
+    from .._settings import settings
+
     global _locker
 
-    if _locker is None:
-        from .._settings import settings
+    user_id = settings.user.id
+    storage_root = isettings.storage.root
+    instance_name = isettings.name
 
-        user_id = settings.user.id
-        storage_root = isettings.storage.root
-        instance_name = isettings.name
-
+    if (
+        _locker is None
+        or _locker.user != user_id
+        or _locker.root is not storage_root
+        or _locker.name != instance_name
+    ):
         _locker = Locker(user_id, storage_root, instance_name)
 
     return _locker

@@ -81,6 +81,11 @@ def load(
             )
             return "instance-not-reachable"
 
+    # at this point the lock should be already initialized
+    if not isettings._cloud_sqlite_locker.has_lock:
+        locked_by = isettings._cloud_sqlite_locker._locked_by
+        raise RuntimeError(f"Can't load the instance, it is locked by {locked_by}.")
+
     # need to set up Django here because we query the storage table
     setup_django(isettings)
     if storage is not None and isettings.dialect == "sqlite":
