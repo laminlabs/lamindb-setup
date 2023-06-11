@@ -164,10 +164,10 @@ class InstanceSettings:
     @property
     def _cloud_sqlite_locker(self):
         # avoid circular import
-        from ._cloud_sqlite_locker import empty_locker
+        from ._cloud_sqlite_locker import empty_locker, get_locker
 
         if self._is_cloud_sqlite:
-            return empty_locker
+            return get_locker(self)
         else:
             return empty_locker
 
