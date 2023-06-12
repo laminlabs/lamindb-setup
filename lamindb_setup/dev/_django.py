@@ -151,11 +151,11 @@ def setup_django(
                 call_command("migrate", verbosity=verbosity)
                 if check:
                     update_lnschema_core_migration(backward=True)
-                # if not init:
-                # only update if called from lamin migrate deploy
-                # if called from load_schema(..., init=True)
-                # no need to update the remote sqlite
-                # isettings._update_cloud_sqlite_file()
+                if not init:
+                    # only update if called from lamin migrate deploy
+                    # if called from load_schema(..., init=True)
+                    # no need to update the remote sqlite
+                    isettings._update_cloud_sqlite_file()
             else:
                 logger.warning(
                     "\n\nYour database is not up to date with your installed"
