@@ -94,6 +94,22 @@ def check_is_legacy_instance_and_fix(isettings) -> bool:
         "alter table lnschema_core_features rename to lnschema_core_featureset",
         "alter table lnschema_core_featureset add column updated_at datetime",
     ]
+    if "bionty" in isettings.schema:
+        # fmt: off
+        stmts += [
+            "alter table lnschema_bionty_species rename to lnschema_bionty_legacy_species",  # noqa
+            "alter table lnschema_bionty_gene rename to lnschema_bionty_legacy_gene",  # noqa
+            "alter table lnschema_bionty_protein rename to lnschema_bionty_legacy_protein",  # noqa
+            "alter table lnschema_bionty_cellmarker rename to lnschema_bionty_legacy_cellmarker",  # noqa
+            "alter table lnschema_bionty_tissue rename to lnschema_bionty_legacy_tissue",  # noqa
+            "alter table lnschema_bionty_celltype rename to lnschema_bionty_legacy_celltype",  # noqa
+            "alter table lnschema_bionty_disease rename to lnschema_bionty_legacy_disease",  # noqa
+            "alter table lnschema_bionty_cellline rename to lnschema_bionty_legacy_cellline",  # noqa
+            "alter table lnschema_bionty_phenotype rename to lnschema_bionty_legacy_phenotype",  # noqa
+            "alter table lnschema_bionty_pathway rename to lnschema_bionty_legacy_pathway",  # noqa
+            "alter table lnschema_bionty_readout rename to lnschema_bionty_legacy_readout",  # noqa
+        ]
+        # fmt: on
     with engine.connect() as conn:
         for stmt in stmts:
             try:
