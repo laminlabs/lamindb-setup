@@ -35,23 +35,37 @@ def replace_content(filename: Path, mapped_content: Dict[str, str]) -> None:
 def update_lnschema_core_migration(backward=False):
     import lnschema_core
 
-    mapper = {"MANAGED = True", "MANAGED = False"}
+    mapper = {"MANAGED = True": "MANAGED = False"}
     if backward:
-        mapper = {"MANAGED = False", "MANAGED = True"}
+        mapper = {"MANAGED = False": "MANAGED = True"}
     replace_content(lnschema_core.__file__, mapper)
 
 
-def check_is_legacy_instance_and_fix(isettings):
+def check_is_legacy_instance_and_fix(isettings) -> bool:
     import sqlalchemy as sa
 
     engine = sa.create_engine(isettings.db)
     # this checks whether django_migrations is already available
     try:
         with engine.connect() as conn:
-            conn.execute(sa.text("select * from django_migrations")).first()
-        return
+            conn.execute(sa.text("select * from lnschema_core_user")).first()
+        user_table_exists = True
     except Exception:
-        pass
+        user_table_exists = False
+    try:
+        with engine.connect() as conn:
+            conn.execute(sa.text("select * from django_migrations")).first()
+        django_table_exists = True
+    except Exception:
+        django_table_exists = False
+
+    # neither user table nor django table there, it's an empty new instance
+    if not user_table_exists and not django_table_exists:
+        return False
+    # the django table is there, it's a django instance
+    if django_table_exists:
+        return False
+    # otherwise, it's a legacy instance: it has the user table but not the django table
 
     # now let's proceed
     stmts = [
