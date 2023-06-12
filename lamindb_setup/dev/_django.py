@@ -1,7 +1,5 @@
 import builtins
 import os
-from pathlib import Path
-from typing import Dict
 
 from lamin_logger import logger
 
@@ -21,27 +19,6 @@ def get_migrations_to_sync():
     targets = executor.loader.graph.leaf_nodes()
     planned_migrations = [mig[0] for mig in executor.migration_plan(targets)]
     return planned_migrations
-
-
-def replace_content(filename: Path, mapped_content: Dict[str, str]) -> None:
-    with open(filename) as f:
-        content = f.read()
-    with open(filename, "w") as f:
-        for key, value in mapped_content.items():
-            content = content.replace(key, value)
-        f.write(content)
-
-
-def update_lnschema_core_migration(backward=False):
-    import lnschema_core
-
-    mapper = {"MANAGED = True": "MANAGED = False"}
-    if backward:
-        mapper = {"MANAGED = False": "MANAGED = True"}
-    replace_content(
-        Path(lnschema_core.__file__).parent / Path("migrations") / "0001_initial.py",
-        mapper,
-    )
 
 
 def check_is_legacy_instance_and_fix(isettings) -> bool:
@@ -100,6 +77,17 @@ def check_is_legacy_instance_and_fix(isettings) -> bool:
         "update lnschema_core_transform set stem_id = id",
         "alter table lnschema_core_features rename to lnschema_core_featureset",
         f"alter table lnschema_core_featureset add column updated_at {datetime_str}",
+        # now rename
+        "alter table lnschema_core_user rename to lnschema_core_legacy_user",
+        "alter table lnschema_core_storage rename to lnschema_core_legacy_storage",
+        "alter table lnschema_core_project rename to lnschema_core_legacy_project",
+        "alter table lnschema_core_transform rename to lnschema_core_legacy_transform",
+        "alter table lnschema_core_run rename to lnschema_core_legacy_run",
+        "alter table lnschema_core_featureset rename to"
+        " lnschema_core_legacy_featureset",
+        "alter table lnschema_core_folder rename to lnschema_core_legacy_folder",
+        "alter table lnschema_core_file rename to lnschema_core_legacy_file",
+        "alter table lnschema_core_runinput rename to lnschema_core_legacy_runinput",
     ]
     if "bionty" in isettings.schema:
         # fmt: off
@@ -123,10 +111,54 @@ def check_is_legacy_instance_and_fix(isettings) -> bool:
                 conn.execute(sa.text(stmt))
             except Exception as e:
                 logger.warning(f"Failed to execute: {stmt} because of {e}")
-
-    update_lnschema_core_migration()
     logger.success("Created legacy migration preparations")
     return True
+
+
+def insert_legacy_data(isettings: InstanceSettings):
+    import sqlalchemy as sa
+
+    datetime_str = "datetime" if isettings.dialect == "sqlite" else "timestamp"
+
+    if isettings.dialect == "sqlite":
+        stmts = [
+            "alter table lnschema_core_user drop column created_at",
+            f"alter table lnschema_core_user create column created_at {datetime_str}",
+            "alter table lnschema_core_transform drop column created_at",
+            "alter table lnschema_core_transform create column created_by_id"
+            "alter table lnschema_core_run drop column created_by_id",
+            "alter table lnschema_core_run create column created_at VARCHAR(8)",
+            "alter table lnschema_core_file drop column updated_at",
+            f"alter table lnschema_core_file create column updated_at {datetime_str}",
+        ]
+    else:
+        stmts = []
+        # f"alter table lnschema_core_user alter column created_at {datetime_str} drop not null",  # noqa
+        # f"alter table lnschema_core_transform alter column created_at {datetime_str} drop not null",  # noqa
+        # "alter table lnschema_core_run alter column created_by_id VARCHAR(8) drop not null",  # noqa
+        # f"alter table lnschema_core_file alter column updated_at {datetime_str} drop not null",  # noqa
+
+    engine = sa.create_engine(isettings.db)
+    stmts += [
+        "insert into lnschema_core_user select * from lnschema_core_legacy_user",
+        "insert into lnschema_core_storage select * from lnschema_core_legacy_storage",
+        "insert into lnschema_core_project select * from lnschema_core_legacy_project",
+        "insert into lnschema_core_transform select * from"
+        " lnschema_core_legacy_transform",
+        "insert into lnschema_core_run select * from lnschema_core_legacy_run",
+        "insert into lnschema_core_featureset select * from"
+        " lnschema_core_legacy_featureset",
+        "insert into lnschema_core_folder select * from lnschema_core_legacy_folder",
+        "insert into lnschema_core_file select * from lnschema_core_legacy_file",
+        "insert into lnschema_core_runinput select * from"
+        " lnschema_core_legacy_runinput",
+    ]
+    with engine.connect() as conn:
+        for stmt in stmts:
+            try:
+                conn.execute(sa.text(stmt))
+            except Exception as e:
+                logger.warning(f"Failed to execute: {stmt} because of {e}")
 
 
 def setup_django(
@@ -177,7 +209,7 @@ def setup_django(
                 verbosity = 0 if init else 2
                 call_command("migrate", verbosity=verbosity)
                 if check_legacy:
-                    update_lnschema_core_migration(backward=True)
+                    insert_legacy_data(isettings)
                 if not init:
                     # only update if called from lamin migrate deploy
                     # if called from load_schema(..., init=True)
