@@ -118,28 +118,18 @@ def check_is_legacy_instance_and_fix(isettings) -> bool:
 def insert_legacy_data(isettings: InstanceSettings):
     import sqlalchemy as sa
 
-    datetime_str = "datetime" if isettings.dialect == "sqlite" else "timestamp"
-
-    if isettings.dialect == "sqlite":
+    stmts = []
+    if isettings.dialect != "sqlite":
+        # problem is this list is still incomplete, we'd need it for all columns
         stmts = [
-            "alter table lnschema_core_user drop column created_at",
-            f"alter table lnschema_core_user create column created_at {datetime_str}",
-            "alter table lnschema_core_transform drop column created_at",
-            "alter table lnschema_core_transform create column created_by_id"
-            "alter table lnschema_core_run drop column created_by_id",
-            "alter table lnschema_core_run create column created_at VARCHAR(8)",
-            "alter table lnschema_core_file drop column updated_at",
-            f"alter table lnschema_core_file create column updated_at {datetime_str}",
+            "alter table lnschema_core_user alter column created_at drop not null",  # noqa
+            "alter table lnschema_core_transform alter column created_at drop not null",  # noqa
+            "alter table lnschema_core_run alter column created_by_id drop not null",  # noqa
+            "alter table lnschema_core_file alter column updated_at drop not null",  # noqa
         ]
-    else:
-        stmts = []
-        # f"alter table lnschema_core_user alter column created_at {datetime_str} drop not null",  # noqa
-        # f"alter table lnschema_core_transform alter column created_at {datetime_str} drop not null",  # noqa
-        # "alter table lnschema_core_run alter column created_by_id VARCHAR(8) drop not null",  # noqa
-        # f"alter table lnschema_core_file alter column updated_at {datetime_str} drop not null",  # noqa
 
     engine = sa.create_engine(isettings.db)
-    stmts += [
+    stmts = [
         "insert into lnschema_core_user select * from lnschema_core_legacy_user",
         "insert into lnschema_core_storage select * from lnschema_core_legacy_storage",
         "insert into lnschema_core_project select * from lnschema_core_legacy_project",
@@ -224,7 +214,8 @@ def setup_django(
                     " deploy\n\nOtherwise, please install previouses release of the"
                     " above-mentioned schemas\n\nIn case you haven't yet migrated to"
                     " Django, please upgrade to lamindb 0.41.2 before deploying this"
-                    " migration\n"
+                    " migration - you'll need a manual step then, please reach out to"
+                    " Lamin\n"
                 )
         else:
             if deploy_migrations:
