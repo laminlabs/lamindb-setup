@@ -38,7 +38,10 @@ def update_lnschema_core_migration(backward=False):
     mapper = {"MANAGED = True": "MANAGED = False"}
     if backward:
         mapper = {"MANAGED = False": "MANAGED = True"}
-    replace_content(lnschema_core.__file__, mapper)
+    replace_content(
+        Path(lnschema_core.__file__).parent / Path("migrations") / "0001_initial.py",
+        mapper,
+    )
 
 
 def check_is_legacy_instance_and_fix(isettings) -> bool:
@@ -83,7 +86,9 @@ def check_is_legacy_instance_and_fix(isettings) -> bool:
         "alter table lnschema_core_run add column run_at datetime",
         "drop index if exists ix_core_run_transform_v",
         "drop index if exists ix_lnschema_core_run_transform_version",
+        "drop index if exists ix_lnschema_core_file_transform_version",
         "alter table lnschema_core_run drop column transform_version",
+        "alter table lnschema_core_file drop column transform_version",
         "alter table lnschema_core_project add column external_id varchar(40)",
         "alter table lnschema_core_transform rename column name to short_name",
         "alter table lnschema_core_transform rename column title to name",
@@ -118,6 +123,7 @@ def check_is_legacy_instance_and_fix(isettings) -> bool:
                 logger.warning(f"Failed to execute: {stmt} because of {e}")
 
     update_lnschema_core_migration()
+    logger.success("Created legacy migration preparations")
     return True
 
 
@@ -129,6 +135,10 @@ def setup_django(
 ):
     if IS_RUN_FROM_IPYTHON:
         os.environ["DJANGO_ALLOW_ASYNC_UNSAFE"] = "true"
+
+    if deploy_migrations:
+        check_legacy = check_is_legacy_instance_and_fix(isettings)
+
     import dj_database_url
     import django
     from django.conf import settings
@@ -163,9 +173,8 @@ def setup_django(
         if len(planned_migrations) > 0:
             if deploy_migrations:
                 verbosity = 0 if init else 2
-                check = check_is_legacy_instance_and_fix(isettings)
                 call_command("migrate", verbosity=verbosity)
-                if check:
+                if check_legacy:
                     update_lnschema_core_migration(backward=True)
                 if not init:
                     # only update if called from lamin migrate deploy
