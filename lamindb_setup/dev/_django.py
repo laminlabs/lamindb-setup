@@ -45,6 +45,17 @@ def check_is_legacy_instance_and_fix(isettings) -> bool:
     import sqlalchemy as sa
 
     engine = sa.create_engine(isettings.db)
+
+    # this checks whether its a legacy instance before lamindb 0.41.0
+    try:
+        with engine.connect() as conn:
+            conn.execute(sa.text("select * from core.user")).first()
+        raise RuntimeError(
+            "Please first load your instance with lamindb 0.41.2, after that, you can"
+            " upgrade to lamindb >=0.42"
+        )
+    except Exception:
+        pass
     # this checks whether django_migrations is already available
     try:
         with engine.connect() as conn:
@@ -153,7 +164,8 @@ def setup_django(
                     " know what you're doing, deploy the migration:\nlamin migrate"
                     " deploy\n\nOtherwise, please install previouses release of the"
                     " above-mentioned schemas\n\nIn case you haven't yet migrated to"
-                    " Django, use lamindb 0.41.2 & reach out to Lamin\n"
+                    " Django, please upgrade to lamindb 0.41.2 before deploying this"
+                    " migration\n"
                 )
         else:
             if deploy_migrations:
