@@ -81,9 +81,11 @@ def check_is_legacy_instance_and_fix(isettings) -> bool:
         return False
     # otherwise, it's a legacy instance: it has the user table but not the django table
 
+    datetime_str = "datetime" if isettings.dialect == "sqlite" else "timestamp"
+
     # now let's proceed
     stmts = [
-        "alter table lnschema_core_run add column run_at datetime",
+        f"alter table lnschema_core_run add column run_at {datetime_str}",
         "drop index if exists ix_core_run_transform_v",
         "drop index if exists ix_lnschema_core_run_transform_version",
         "drop index if exists ix_lnschema_core_file_transform_version",
@@ -97,7 +99,7 @@ def check_is_legacy_instance_and_fix(isettings) -> bool:
         "alter table lnschema_core_transform add column stem_id varchar(12)",
         "update lnschema_core_transform set stem_id = id",
         "alter table lnschema_core_features rename to lnschema_core_featureset",
-        "alter table lnschema_core_featureset add column updated_at datetime",
+        f"alter table lnschema_core_featureset add column updated_at {datetime_str}",
     ]
     if "bionty" in isettings.schema:
         # fmt: off
