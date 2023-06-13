@@ -93,3 +93,4 @@ UPath.download_to = _download_to
 UPath.upload_from = _upload_from
 UPath.synchronize = _synchronize
 UPath.modified = property(_modified)
+UPath.__doc__ = "Universal path."
