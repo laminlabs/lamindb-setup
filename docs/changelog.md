@@ -3,6 +3,7 @@
 <!-- prettier-ignore -->
 Name | PR | Developer | Date | Version
 --- | --- | --- | --- | ---
+✨ Add ability to check for migrations | [419](https://github.com/laminlabs/lamindb-setup/pull/419) | [falexwolf](https://github.com/falexwolf) | 2023-06-14 |
 🎨 Updated bionty function imports | [418](https://github.com/laminlabs/lamindb-setup/pull/418) | [sunnyosun](https://github.com/sunnyosun) | 2023-06-14 |
 ♻️ Different migr strategy | [417](https://github.com/laminlabs/lamindb-setup/pull/417) | [falexwolf](https://github.com/falexwolf) | 2023-06-12 | 0.47.7
 🍱 Added migration script from legacy instances | [416](https://github.com/laminlabs/lamindb-setup/pull/416) | [falexwolf](https://github.com/falexwolf) | 2023-06-12 | 0.47.5
