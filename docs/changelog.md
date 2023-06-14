@@ -19,7 +19,7 @@ Name | PR | Developer | Date | Version
 💚 Fix dependencies | [404](https://github.com/laminlabs/lamindb-setup/pull/404) | [falexwolf](https://github.com/falexwolf) | 2023-06-07 |
 ♻️ Rename and set empty locker for now | [403](https://github.com/laminlabs/lamindb-setup/pull/403) | [falexwolf](https://github.com/falexwolf) | 2023-06-07 |
 🚸 Simplify remote SQLite synching & locking | [402](https://github.com/laminlabs/lamindb-setup/pull/402) | [falexwolf](https://github.com/falexwolf) | 2023-06-07 |
-:sparkles: Setup bionty version tables | [400](https://github.com/laminlabs/lamindb-setup/pull/400) | [sunnyosun](https://github.com/sunnyosun) | 2023-06-07 |
+✨ Setup bionty version tables | [400](https://github.com/laminlabs/lamindb-setup/pull/400) | [sunnyosun](https://github.com/sunnyosun) | 2023-06-07 |
 🔊 Better logging | [399](https://github.com/laminlabs/lamindb-setup/pull/399) | [falexwolf](https://github.com/falexwolf) | 2023-06-05 | 0.46a4
 💄 Prettier settings file names | [398](https://github.com/laminlabs/lamindb-setup/pull/398) | [falexwolf](https://github.com/falexwolf) | 2023-06-04 |
 ⚡ Bionty versions table & performance improvements | [396](https://github.com/laminlabs/lamindb-setup/pull/396) | [sunnyosun](https://github.com/sunnyosun) | 2023-06-04 |
@@ -92,7 +92,7 @@ Add universal_pathlib to dependencies | [375](https://github.com/laminlabs/lndb/
 ⬆️ Upgrade lamindb | [321](https://github.com/laminlabs/lndb/pull/321) | [fredericenard](https://github.com/fredericenard) | 2023-03-07 |
 ⬆️ Upgrade lamindb | [320](https://github.com/laminlabs/lndb/pull/320) | [fredericenard](https://github.com/fredericenard) | 2023-03-07 | 0.37.1
 📌 Pin lnhub-rest | [319](https://github.com/laminlabs/lndb/pull/319) | [fredericenard](https://github.com/fredericenard) | 2023-03-07 |
-:memo: Reduce visual noise in migrate guide | [317](https://github.com/laminlabs/lndb/pull/317) | [falexwolf](https://github.com/falexwolf) | 2023-03-06 | 0.37.0
+📝 Reduce visual noise in migrate guide | [317](https://github.com/laminlabs/lndb/pull/317) | [falexwolf](https://github.com/falexwolf) | 2023-03-06 | 0.37.0
 📝 Fix docs build | [315](https://github.com/laminlabs/lndb/pull/315) | [Koncopd](https://github.com/Koncopd) | 2023-03-05 |
 🐛 Fix resolution of storage root paths for local instances | [314](https://github.com/laminlabs/lndb/pull/314) | [Koncopd](https://github.com/Koncopd) | 2023-03-05 |
 📝 Replace `lamin` API with `lamindb_setup` API | [313](https://github.com/laminlabs/lndb/pull/313) | [falexwolf](https://github.com/falexwolf) | 2023-03-01 |
@@ -139,7 +139,7 @@ Add universal_pathlib to dependencies | [375](https://github.com/laminlabs/lndb/
 🐛 Fix access to newly created instances on s3 due to region | [268](https://github.com/laminlabs/lndb-setup/pull/268) | [Koncopd](https://github.com/Koncopd) | 2023-02-09 |
 🚸 Validate instances at `init` | [264](https://github.com/laminlabs/lndb-setup/pull/264) | [falexwolf](https://github.com/falexwolf) | 2023-02-09 |
 🚸 Add error if client version schema package version is lower than deployed db schema module version | [267](https://github.com/laminlabs/lndb-setup/pull/267) | [falexwolf](https://github.com/falexwolf) | 2023-02-09 |
-:recycle: Remove _sbclient suffix | [263](https://github.com/laminlabs/lndb-setup/pull/263) | [falexwolf](https://github.com/falexwolf) | 2023-02-06 |
+♻️ Remove _sbclient suffix | [263](https://github.com/laminlabs/lndb-setup/pull/263) | [falexwolf](https://github.com/falexwolf) | 2023-02-06 |
 🚸 Better UX `delete()` | [260](https://github.com/laminlabs/lndb-setup/pull/260) | [falexwolf](https://github.com/falexwolf) | 2023-02-06 |
 🐛 Fix check_versions | [262](https://github.com/laminlabs/lndb-setup/pull/262) | [falexwolf](https://github.com/falexwolf) | 2023-02-06 | 0.30.14
 🚑 Fix login on new environments | [261](https://github.com/laminlabs/lndb-setup/pull/261) | [falexwolf](https://github.com/falexwolf) | 2023-02-06 | 0.30.13
