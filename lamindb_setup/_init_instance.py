@@ -177,10 +177,6 @@ def init(
     load_from_isettings(isettings, init=True)
     if isettings._is_cloud_sqlite:
         logger.hint("To push changes to the cloud SQLite file, call: lamin close")
-        # @Sergei, this is currently not yet enabled
-        # logger.hint(
-        #     f"In the meantime, {isettings._sqlite_file} is locked for other users"
-        # )
     if not isettings.is_remote:
         logger.hint(
             "Did not register local instance on hub (if you want to, call `lamin"
