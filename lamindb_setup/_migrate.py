@@ -5,7 +5,16 @@ from .dev._django import setup_django
 
 
 class migrate:
-    """Manage migrations."""
+    """Manage migrations.
+
+    Examples:
+
+    >>> import lamindb as ln
+    >>> ln.setup.migrate.create()
+    >>> ln.setup.migrate.deploy()
+    >>> ln.setup.migrate.check()
+
+    """
 
     @classmethod
     def create(cls) -> None:
