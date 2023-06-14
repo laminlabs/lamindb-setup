@@ -9,14 +9,19 @@ def write_bionty_sources(isettings: InstanceSettings):
     if "bionty" in isettings.schema:
         import shutil
 
-        from bionty.dev._handle_sources import CURRENT_SOURCES, LAMINDB_SOURCES
+        from bionty.dev._handle_sources import (
+            CURRENT_SOURCES,
+            LAMINDB_SOURCES,
+            LOCAL_SOURCES,
+            parse_sources_yaml,
+        )
 
         shutil.copy(CURRENT_SOURCES, LAMINDB_SOURCES)
 
         import bionty as bt
         from lnschema_bionty.models import BiontySource
 
-        all_sources = bt.display_available_sources().reset_index()
+        all_sources = parse_sources_yaml(LOCAL_SOURCES)
         all_sources_dict = all_sources.to_dict(orient="records")
 
         currently_used = (
