@@ -1,5 +1,4 @@
 from django.db import transaction
-from lamin_logger import logger
 
 from ._settings_instance import InstanceSettings
 
@@ -62,7 +61,6 @@ def load_bionty_sources(isettings: InstanceSettings):
             )
 
             write_yaml(parse_currently_used_sources(active_records), LAMINDB_SOURCES)
-            logger.hint("Configured default bionty sources from BiontySource table")
         except Exception:
             pass
 

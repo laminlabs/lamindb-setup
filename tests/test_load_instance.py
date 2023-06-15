@@ -14,3 +14,4 @@ def test_load_remote_instance():
         ln_setup.settings.instance._sqlite_file.as_posix()
         == "s3://lndb-setup-ci/lndb-setup-ci.lndb"
     )
+    # ln_setup.delete("lndb-setup-ci")

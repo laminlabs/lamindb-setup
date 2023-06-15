@@ -51,13 +51,7 @@ class StorageSettings:
         if self._id is None:
             from lnschema_core.models import Storage
 
-            storage = Storage.objects.get(root=self.root_as_str)
-            if storage is None:
-                raise RuntimeError(
-                    f"{self.root_as_str} wasn't registered in the db! "
-                    "Check `ln.select(ln.Storage).df()`"
-                )
-            self._id = storage.id
+            self._id = Storage.objects.get(root=self.root_as_str).id
         return self._id
 
     @property
