@@ -4,10 +4,10 @@ from types import ModuleType
 from importlib_metadata import requires as importlib_requires
 from importlib_metadata import version as get_pip_version
 from lamin_logger import logger
-from lnhub_rest._assets._schemas import get_schema_module_name
 from packaging.requirements import Requirement
 
 from ._django import setup_django
+from ._hub_assets import get_schema_module_name
 from ._settings_instance import InstanceSettings
 
 

@@ -48,7 +48,7 @@ def register_user_and_storage(isettings: InstanceSettings, usettings):
 
 
 def reload_schema_modules(isettings: InstanceSettings):
-    from lnhub_rest._assets._schemas import get_schema_module_name
+    from .dev._hub_assets import get_schema_module_name
 
     schema_names = ["core"] + list(isettings.schema)
     schema_module_names = [get_schema_module_name(n) for n in schema_names]
@@ -101,20 +101,15 @@ def init(
         schema: {}
     """
     # clean up in next refactor
-    from lnhub_rest.core.instance._init_instance import (
-        init_instance as init_instance_hub,
-    )
-    from lnhub_rest.core.instance._init_instance import (
-        validate_db_arg,
-        validate_schema_arg,
-    )
-    from lnhub_rest.core.storage._add_storage import (
-        get_storage_region,
-        validate_storage_root_arg,
-    )
-
     # avoid circular import
     from ._load_instance import load
+    from .dev._hub_core import init_instance as init_instance_hub
+    from .dev._hub_utils import (
+        get_storage_region,
+        validate_db_arg,
+        validate_schema_arg,
+        validate_storage_root_arg,
+    )
 
     assert settings.user.id  # check user is logged in
     owner = settings.user.handle
@@ -133,7 +128,7 @@ def init(
         owner=owner,
         name=name_str,
         storage_root=storage,
-        storage_region=get_storage_region(storage),
+        storage_region=get_storage_region(storage),  # type: ignore
         db=db,
         schema=schema,
     )
