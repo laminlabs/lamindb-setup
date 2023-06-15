@@ -70,6 +70,7 @@ def check_is_legacy_instance_and_fix(isettings) -> bool:
         "drop index if exists ix_lnschema_core_file_transform_version",
         "alter table lnschema_core_run drop column transform_version",
         "alter table lnschema_core_file drop column transform_version",
+        "update lnschema_core_file set created_by_id = 'DzTjkKse' where created_by_id is null",
         "alter table lnschema_core_project add column external_id varchar(40)",
         "alter table lnschema_core_transform rename column name to short_name",
         "alter table lnschema_core_transform rename column title to name",
@@ -121,11 +122,13 @@ def insert_legacy_data(isettings: InstanceSettings):
     engine = sa.create_engine(isettings.db)
     # fmt: off
     stmts = [
-        "insert into lnschema_core_user (id, handle, email, name, created_at, updated_at) select id, handle, email, name, created_at, created_at from lnschema_core_legacy_user",
+        # we use the handle instead of the name below to deal with SQLite's inability of changing nullability
+        "insert into lnschema_core_user (id, handle, email, name, created_at, updated_at) select id, handle, email, handle, created_at, created_at from lnschema_core_legacy_user",
         "update lnschema_core_legacy_storage set updated_at = created_at",
         "insert into lnschema_core_storage select * from lnschema_core_legacy_storage",
         "update lnschema_core_legacy_project set updated_at = created_at",
         "insert into lnschema_core_project select * from lnschema_core_legacy_project",
+        "insert into lnschema_core_transform (id, name, short_name, stem_id, version, type, reference, created_at, updated_at, created_by_id) select id, name, short_name, stem_id, version, type, reference, created_at, created_at, created_by_id from lnschema_core_legacy_transform",
         "insert into lnschema_core_run (id, name, external_id, transform_id, created_at, run_at, created_by_id) select id, name, external_id, transform_id, created_at, created_at, created_by_id from lnschema_core_legacy_run",
         "insert into lnschema_core_featureset (id, type, created_at, updated_at, created_by_id) select id, type, created_at, created_at, created_by_id from lnschema_core_legacy_featureset",
         "insert into lnschema_core_folder (id, name, key, storage_id, created_at, updated_at, created_by_id) select id, name, key, storage_id, created_at, created_at, created_by_id from lnschema_core_legacy_folder",
