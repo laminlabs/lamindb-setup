@@ -1,3 +1,4 @@
+# flake8: noqa
 import builtins
 import os
 
@@ -61,6 +62,7 @@ def check_is_legacy_instance_and_fix(isettings) -> bool:
     datetime_str = "datetime" if isettings.dialect == "sqlite" else "timestamp"
 
     # now let's proceed
+    # fmt: off
     stmts = [
         f"alter table lnschema_core_run add column run_at {datetime_str}",
         "drop index if exists ix_core_run_transform_v",
@@ -68,6 +70,7 @@ def check_is_legacy_instance_and_fix(isettings) -> bool:
         "drop index if exists ix_lnschema_core_file_transform_version",
         "alter table lnschema_core_run drop column transform_version",
         "alter table lnschema_core_file drop column transform_version",
+        "update lnschema_core_file set created_by_id = 'DzTjkKse' where created_by_id is null",
         "alter table lnschema_core_project add column external_id varchar(40)",
         "alter table lnschema_core_transform rename column name to short_name",
         "alter table lnschema_core_transform rename column title to name",
@@ -83,14 +86,12 @@ def check_is_legacy_instance_and_fix(isettings) -> bool:
         "alter table lnschema_core_project rename to lnschema_core_legacy_project",
         "alter table lnschema_core_transform rename to lnschema_core_legacy_transform",
         "alter table lnschema_core_run rename to lnschema_core_legacy_run",
-        "alter table lnschema_core_featureset rename to"
-        " lnschema_core_legacy_featureset",
+        "alter table lnschema_core_featureset rename to lnschema_core_legacy_featureset",
         "alter table lnschema_core_folder rename to lnschema_core_legacy_folder",
         "alter table lnschema_core_file rename to lnschema_core_legacy_file",
         "alter table lnschema_core_runinput rename to lnschema_core_legacy_runinput",
     ]
     if "bionty" in isettings.schema:
-        # fmt: off
         stmts += [
             "alter table lnschema_bionty_species rename to lnschema_bionty_legacy_species",  # noqa
             "alter table lnschema_bionty_gene rename to lnschema_bionty_legacy_gene",  # noqa
@@ -104,7 +105,7 @@ def check_is_legacy_instance_and_fix(isettings) -> bool:
             "alter table lnschema_bionty_pathway rename to lnschema_bionty_legacy_pathway",  # noqa
             "alter table lnschema_bionty_readout rename to lnschema_bionty_legacy_readout",  # noqa
         ]
-        # fmt: on
+    # fmt: on
     with engine.connect() as conn:
         for stmt in stmts:
             try:
@@ -118,31 +119,23 @@ def check_is_legacy_instance_and_fix(isettings) -> bool:
 def insert_legacy_data(isettings: InstanceSettings):
     import sqlalchemy as sa
 
-    stmts = []
-    if isettings.dialect != "sqlite":
-        # problem is this list is still incomplete, we'd need it for all columns
-        stmts = [
-            "alter table lnschema_core_user alter column created_at drop not null",  # noqa
-            "alter table lnschema_core_transform alter column created_at drop not null",  # noqa
-            "alter table lnschema_core_run alter column created_by_id drop not null",  # noqa
-            "alter table lnschema_core_file alter column updated_at drop not null",  # noqa
-        ]
-
     engine = sa.create_engine(isettings.db)
+    # fmt: off
     stmts = [
-        "insert into lnschema_core_user select * from lnschema_core_legacy_user",
+        # we use the handle instead of the name below to deal with SQLite's inability of changing nullability
+        "insert into lnschema_core_user (id, handle, email, name, created_at, updated_at) select id, handle, email, handle, created_at, created_at from lnschema_core_legacy_user",
+        "update lnschema_core_legacy_storage set updated_at = created_at",
         "insert into lnschema_core_storage select * from lnschema_core_legacy_storage",
+        "update lnschema_core_legacy_project set updated_at = created_at",
         "insert into lnschema_core_project select * from lnschema_core_legacy_project",
-        "insert into lnschema_core_transform select * from"
-        " lnschema_core_legacy_transform",
-        "insert into lnschema_core_run select * from lnschema_core_legacy_run",
-        "insert into lnschema_core_featureset select * from"
-        " lnschema_core_legacy_featureset",
-        "insert into lnschema_core_folder select * from lnschema_core_legacy_folder",
-        "insert into lnschema_core_file select * from lnschema_core_legacy_file",
-        "insert into lnschema_core_runinput select * from"
-        " lnschema_core_legacy_runinput",
+        "insert into lnschema_core_transform (id, name, short_name, stem_id, version, type, reference, created_at, updated_at, created_by_id) select id, name, short_name, stem_id, version, type, reference, created_at, created_at, created_by_id from lnschema_core_legacy_transform",
+        "insert into lnschema_core_run (id, name, external_id, transform_id, created_at, run_at, created_by_id) select id, name, external_id, transform_id, created_at, created_at, created_by_id from lnschema_core_legacy_run",
+        "insert into lnschema_core_featureset (id, type, created_at, updated_at, created_by_id) select id, type, created_at, created_at, created_by_id from lnschema_core_legacy_featureset",
+        "insert into lnschema_core_folder (id, name, key, storage_id, created_at, updated_at, created_by_id) select id, name, key, storage_id, created_at, created_at, created_by_id from lnschema_core_legacy_folder",
+        "insert into lnschema_core_file (id, name, suffix, size, hash, key, run_id, transform_id, storage_id, created_at, updated_at, created_by_id) select id, name, suffix, size, hash, key, run_id, transform_id, storage_id, created_at, created_at, created_by_id from lnschema_core_legacy_file",
+        "insert into lnschema_core_runinput (run_id, file_id) select run_id, file_id from lnschema_core_legacy_runinput",
     ]
+    # fmt: on
     with engine.connect() as conn:
         for stmt in stmts:
             try:
