@@ -124,8 +124,7 @@ def insert_legacy_data(isettings: InstanceSettings):
     stmts = [
         # we use the handle instead of the name below to deal with SQLite's inability of changing nullability
         "insert into lnschema_core_user (id, handle, email, name, created_at, updated_at) select id, handle, email, handle, created_at, created_at from lnschema_core_legacy_user",
-        "update lnschema_core_legacy_storage set updated_at = created_at",
-        "insert into lnschema_core_storage select * from lnschema_core_legacy_storage",
+        "insert into lnschema_core_storage (id, root, type, region, created_at, updated_at, created_by_id) select id, root, type, region, created_at, created_at, created_by_id from lnschema_core_legacy_storage",
         "update lnschema_core_legacy_project set updated_at = created_at",
         "insert into lnschema_core_project select * from lnschema_core_legacy_project",
         "insert into lnschema_core_transform (id, name, short_name, stem_id, version, type, reference, created_at, updated_at, created_by_id) select id, name, short_name, stem_id, version, type, reference, created_at, created_at, created_by_id from lnschema_core_legacy_transform",
