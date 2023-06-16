@@ -15,7 +15,7 @@ dependencies = [
     "dj_database_url",
     "pydantic[dotenv]",
     "ipython",
-    "sqlalchemy",  # just temporarily
+    "sqlalchemy<2.0.0",  # just temporarily
     "appdirs",
     "pandas",  # remove!!!
     "python-dateutil",
