@@ -10,7 +10,7 @@ from .dev._settings_store import user_settings_file_email, user_settings_file_ha
 
 def signup(email: str) -> Union[str, None]:
     """Sign up user."""
-    from lnhub_rest.core.account._signup_signin import sign_up_hub
+    from .dev._hub_core import sign_up_hub
 
     response = sign_up_hub(email)
     if response == "handle-exists":  # handle already exists
@@ -80,7 +80,7 @@ def login(
             " --password <your-password>"
         )
 
-    from lnhub_rest.core.account._signup_signin import sign_in_hub
+    from .dev._hub_core import sign_in_hub
 
     response = sign_in_hub(
         user_settings.email, user_settings.password, user_settings.handle

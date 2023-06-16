@@ -30,7 +30,7 @@ class set:
         >>>     cache_regions=True # fsspec arg for s3
         >>> )
         """
-        from lnhub_rest.core.storage._add_storage import add_storage as add_storage_hub
+        from .dev._hub_core import add_storage as add_storage_hub
 
         if settings.instance.dialect == "sqlite":
             logger.error("Can't set storage for sqlite instances.")
@@ -47,7 +47,9 @@ class set:
         new_isettings._persist()  # this also updates the settings object
         register_user_and_storage(new_isettings, settings.user)
         if settings.instance.is_remote:
-            add_storage_hub(root, account_handle=settings.instance.owner)
+            add_storage_hub(
+                root, account_handle=settings.instance.owner  # type: ignore
+            )
 
         settings.storage._set_fs_kwargs(**fs_kwargs)
 

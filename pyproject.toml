@@ -8,12 +8,6 @@ authors = [{name = "Lamin Labs", email = "laminlabs@gmail.com"}]
 readme = "README.md"
 dynamic = ["version", "description"]
 dependencies = [
-    # PINNED internal LAMIN dependency
-    # !!! lnhub_rest cannot be pinned in LaminDB !!!
-    # !!! LaminDB should not directly depend on lnhub_rest !!!
-    "lnhub_rest==0.9.10",
-    "sqlmodel",  # this here just for lnhub_rest
-    # NO other Lamin packages should be pinned or even be a dependency
     "lnschema_core>=0.35.4",
     "lamin_logger>=0.3.3",
     # External dependencies
@@ -21,11 +15,13 @@ dependencies = [
     "dj_database_url",
     "pydantic[dotenv]",
     "ipython",
-    "sqlalchemy",  # just temporarily
+    "sqlalchemy<2.0.0",  # just temporarily
     "appdirs",
     "pandas",  # remove!!!
     "python-dateutil",
-    "universal_pathlib"
+    "universal_pathlib",
+    "supabase==1.0.3",
+    "pyjwt",
 ]
 
 [project.urls]

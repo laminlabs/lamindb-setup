@@ -31,9 +31,7 @@ def load(
     """
     owner, name = get_owner_name_from_identifier(identifier)
 
-    from lnhub_rest.core.instance._load_instance import (
-        load_instance as load_instance_from_hub,
-    )
+    from .dev._hub_core import load_instance as load_instance_from_hub
 
     hub_result = load_instance_from_hub(
         owner=owner, name=name, _access_token=_access_token
@@ -45,10 +43,10 @@ def load(
         isettings = InstanceSettings(
             owner=owner,
             name=name,
-            storage_root=storage_result.root,
-            storage_region=storage_result.region,
-            db=instance_result.db,
-            schema=instance_result.schema_str,
+            storage_root=storage_result["root"],
+            storage_region=storage_result["region"],
+            db=instance_result["db"],
+            schema=instance_result["schema_str"],
         )
     else:
         settings_file = instance_settings_file(name, owner)
