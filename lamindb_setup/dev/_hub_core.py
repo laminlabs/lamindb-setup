@@ -34,8 +34,6 @@ def add_storage(
 
     hub = connect_hub_with_auth(access_token=_access_token)
     try:
-        # TODO: confirm lndb check behavior
-        # check_breaks_lndb_and_error(hub)  # assumes that only called from within lndb
         validate_storage_root_arg(root)
         # get account
         account = sb_select_account_by_handle(account_handle, hub)
@@ -95,8 +93,6 @@ def init_instance(
     hub = connect_hub_with_auth(
         email=_email, password=_password, access_token=_access_token
     )
-    # TODO: confirm lndb check behavior
-    # check_breaks_lndb_and_error(hub)  # assumes that only called from within lndb
     try:
         # validate input arguments
         schema_str = validate_schema_arg(schema)
@@ -179,8 +175,6 @@ def load_instance(
         email=_email, password=_password, access_token=_access_token
     )
     try:
-        # TODO: confirm lndb check behavior
-        # check_breaks_lndb_and_error(hub)  # assumes that only called from within lndb
         # get account
         account = sb_select_account_by_handle(owner, hub)
         if account is None:
@@ -206,8 +200,6 @@ def sign_up_hub(email) -> str:
     from .._settings_store import settings_dir
 
     hub = connect_hub()
-    # TODO: confirm lndb check behavior
-    # check_breaks_lndb_and_error(hub)
     password = secret()  # generate new password
     auth_response = hub.auth.sign_up(
         {
@@ -248,8 +240,6 @@ def sign_up_hub(email) -> str:
 
 def sign_in_hub(email, password, handle=None):
     hub = connect_hub()
-    # TODO: confirm lndb check behavior
-    # check_breaks_lndb_and_error(hub)
     try:
         auth_response = hub.auth.sign_in_with_password(
             {
