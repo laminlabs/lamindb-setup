@@ -20,7 +20,7 @@ dependencies = [
     "pandas",  # remove!!!
     "python-dateutil",
     "universal_pathlib",
-    "postgrest"
+    "supabase"
 ]
 
 [project.urls]
