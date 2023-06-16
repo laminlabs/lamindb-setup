@@ -40,6 +40,7 @@ test = [
     "pytest-cov",
     "nbproject-test>=0.4.3",
     "sqlmodel",
+    "pyjwt",
 ]
 
 [project.scripts]
