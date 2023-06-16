@@ -19,7 +19,8 @@ dependencies = [
     "appdirs",
     "pandas",  # remove!!!
     "python-dateutil",
-    "universal_pathlib"
+    "universal_pathlib",
+    "postgrest"
 ]
 
 [project.urls]
