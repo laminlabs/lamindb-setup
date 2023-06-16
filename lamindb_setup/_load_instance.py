@@ -43,10 +43,10 @@ def load(
         isettings = InstanceSettings(
             owner=owner,
             name=name,
-            storage_root=storage_result.root,
-            storage_region=storage_result.region,
-            db=instance_result.db,
-            schema=instance_result.schema_str,
+            storage_root=storage_result["root"],
+            storage_region=storage_result["region"],
+            db=instance_result["db"],
+            schema=instance_result["schema_str"],
         )
     else:
         settings_file = instance_settings_file(name, owner)

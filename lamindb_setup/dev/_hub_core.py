@@ -15,7 +15,6 @@ from ._hub_crud import (
     sb_select_storage,
     sb_select_storage_by_root,
 )
-from ._hub_models import Instance, Storage
 from ._hub_utils import (
     base62,
     get_storage_region,
@@ -175,7 +174,7 @@ def load_instance(
     _email: Optional[str] = None,
     _password: Optional[str] = None,
     _access_token: Optional[str] = None,
-) -> Union[Tuple[Instance, Storage], str]:
+) -> Union[Tuple[dict, dict], str]:
     hub = connect_hub_with_auth(
         email=_email, password=_password, access_token=_access_token
     )
@@ -190,13 +189,11 @@ def load_instance(
         instance = sb_select_instance_by_name(account["id"], name, hub)
         if instance is None:
             return "instance-not-reachable"
-        instance = Instance(**instance)
 
         # get default storage
         storage = sb_select_storage(instance.storage_id, hub)
         if storage is None:
             return "storage-does-not-exist-on-hub"
-        storage = Storage(**storage)
 
         return instance, storage
     except Exception:
