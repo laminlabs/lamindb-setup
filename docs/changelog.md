@@ -3,6 +3,7 @@
 <!-- prettier-ignore -->
 Name | PR | Developer | Date | Version
 --- | --- | --- | --- | ---
+🎨  Remove `lnhub_rest` from `lamindb_setup` | [421](https://github.com/laminlabs/lamindb-setup/pull/421) | [bpenteado](https://github.com/bpenteado) | 2023-06-16 |
 🍱 Fix legacy data migration | [420](https://github.com/laminlabs/lamindb-setup/pull/420) | [falexwolf](https://github.com/falexwolf) | 2023-06-15 | 0.47.9
 ✨ Add ability to check for migrations | [419](https://github.com/laminlabs/lamindb-setup/pull/419) | [falexwolf](https://github.com/falexwolf) | 2023-06-14 | 0.47.8
 🎨 Updated bionty function imports | [418](https://github.com/laminlabs/lamindb-setup/pull/418) | [sunnyosun](https://github.com/sunnyosun) | 2023-06-14 |
