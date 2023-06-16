@@ -20,7 +20,7 @@ dependencies = [
     "pandas",  # remove!!!
     "python-dateutil",
     "universal_pathlib",
-    "supabase"
+    "supabase",
 ]
 
 [project.urls]
@@ -39,6 +39,7 @@ test = [
     "pytest>=6.0",
     "pytest-cov",
     "nbproject-test>=0.4.3",
+    "sqlmodel",
 ]
 
 [project.scripts]
