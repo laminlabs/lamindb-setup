@@ -20,7 +20,8 @@ dependencies = [
     "pandas",  # remove!!!
     "python-dateutil",
     "universal_pathlib",
-    "supabase",
+    "supabase==1.0.3",
+    "pyjwt",
 ]
 
 [project.urls]
@@ -39,8 +40,6 @@ test = [
     "pytest>=6.0",
     "pytest-cov",
     "nbproject-test>=0.4.3",
-    "sqlmodel",
-    "pyjwt",
 ]
 
 [project.scripts]
