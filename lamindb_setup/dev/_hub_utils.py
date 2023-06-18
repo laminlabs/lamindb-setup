@@ -20,7 +20,8 @@ def secret() -> str:
 def validate_schema_arg(schema: Optional[str] = None) -> str:
     if schema is None or schema == "":
         return ""
-    # currently no further validation, can add back if we see a need
+    # currently no actual validation, can add back if we see a need
+    # the following just strips white spaces
     to_be_validated = [s.strip() for s in schema.split(",")]
     return ",".join(to_be_validated)
 

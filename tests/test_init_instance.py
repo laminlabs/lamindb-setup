@@ -84,5 +84,5 @@ def test_init_instance_postgres_cloud_aws_europe():
 
 
 def test_value_error_schema():
-    with pytest.raises(ValueError):
+    with pytest.raises(ModuleNotFoundError):
         ln_setup.init(storage="tmpstorage1", schema="bionty, xyz1")
