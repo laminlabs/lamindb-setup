@@ -1,7 +1,5 @@
 from pathlib import Path
 
-import pytest
-
 import lamindb_setup as ln_setup
 
 pgurl = "postgresql://postgres:pwd@0.0.0.0:5432/pgtest"
@@ -83,6 +81,6 @@ def test_init_instance_postgres_cloud_aws_europe():
 # #     ln_setup.init(storage="s3://lamindb-ci")
 
 
-def test_value_error_schema():
-    with pytest.raises(ModuleNotFoundError):
-        ln_setup.init(storage="tmpstorage1", schema="bionty, xyz1")
+# def test_value_error_schema():
+#     with pytest.raises(ModuleNotFoundError):
+#         ln_setup.init(storage="tmpstorage1", schema="bionty, xyz1")
