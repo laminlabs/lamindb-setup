@@ -4,8 +4,6 @@ from pathlib import Path
 from typing import Mapping, Optional
 from uuid import UUID
 
-from ._hub_assets import schemas as known_schema_names
-
 
 def base62(n_char: int) -> str:
     """Like nanoid without hyphen and underscore."""
@@ -22,15 +20,10 @@ def secret() -> str:
 def validate_schema_arg(schema: Optional[str] = None) -> str:
     if schema is None or schema == "":
         return ""
-    validated_schema = []
+    # currently no actual validation, can add back if we see a need
+    # the following just strips white spaces
     to_be_validated = [s.strip() for s in schema.split(",")]
-    for name in known_schema_names:
-        if name in to_be_validated:
-            validated_schema.append(name)
-            to_be_validated.remove(name)
-    if len(to_be_validated) != 0:
-        raise ValueError(f"Unkown schema module name(s): {to_be_validated}")
-    return ",".join(validated_schema)
+    return ",".join(to_be_validated)
 
 
 def validate_db_arg(db: Optional[str]) -> None:

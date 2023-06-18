@@ -12,7 +12,7 @@ from ._docstrings import instance_description as description
 from ._settings import settings
 from .dev import InstanceSettings
 from .dev._docs import doc_args
-from .dev._setup_schema import load_schema
+from .dev._setup_schema import get_schema_module_name, load_schema
 from .dev._storage import Storage
 
 
@@ -48,8 +48,6 @@ def register_user_and_storage(isettings: InstanceSettings, usettings):
 
 
 def reload_schema_modules(isettings: InstanceSettings):
-    from .dev._hub_assets import get_schema_module_name
-
     schema_names = ["core"] + list(isettings.schema)
     schema_module_names = [get_schema_module_name(n) for n in schema_names]
 
