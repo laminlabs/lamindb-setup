@@ -7,8 +7,11 @@ from lamin_logger import logger
 from packaging.requirements import Requirement
 
 from ._django import setup_django
-from ._hub_assets import get_schema_module_name
 from ._settings_instance import InstanceSettings
+
+
+def get_schema_module_name(schema_name):
+    return f"lnschema_{schema_name.replace('-', '_')}"
 
 
 def check_schema_version_and_import(schema_name) -> ModuleType:
