@@ -178,6 +178,8 @@ def setup_django(
             INSTALLED_APPS=schema_module_names,
             DATABASES=DATABASES,
             DEFAULT_AUTO_FIELD="django.db.models.BigAutoField",
+            TIME_ZONE="UTC",
+            USE_TZ=True,
         )
         django.setup(set_prefix=False)
 
