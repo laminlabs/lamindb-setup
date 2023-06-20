@@ -3,6 +3,7 @@
 <!-- prettier-ignore -->
 Name | PR | Developer | Date | Version
 --- | --- | --- | --- | ---
+✅ Try to trigger error | [424](https://github.com/laminlabs/lamindb-setup/pull/424) | [falexwolf](https://github.com/falexwolf) | 2023-06-20 |
 🔧 Back to UTC | [423](https://github.com/laminlabs/lamindb-setup/pull/423) | [falexwolf](https://github.com/falexwolf) | 2023-06-20 |
 ♻️ Simplify schema validation | [422](https://github.com/laminlabs/lamindb-setup/pull/422) | [falexwolf](https://github.com/falexwolf) | 2023-06-18 | 0.47.10
 🎨  Remove `lnhub_rest` from `lamindb_setup` | [421](https://github.com/laminlabs/lamindb-setup/pull/421) | [bpenteado](https://github.com/bpenteado) | 2023-06-16 |
