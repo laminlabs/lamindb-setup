@@ -55,7 +55,7 @@ def load(
             isettings = load_instance_settings(settings_file)
         else:
             if _log_error_message:
-                logger.error(
+                raise RuntimeError(
                     f"Instance {owner}/{name} neither loadable from hub nor local"
                     " cache. Check whether instance exists and you have access:"
                     f" https://lamin.ai/{owner}/{name}?tab=collaborators"
