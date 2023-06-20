@@ -185,14 +185,13 @@ def load_instance(
             return "instance-not-reachable"
 
         # get default storage
-        storage = sb_select_storage(instance.storage_id, hub)
+        storage = sb_select_storage(instance["storage_id"], hub)
         if storage is None:
             return "storage-does-not-exist-on-hub"
 
         return instance, storage
-    except Exception as e:
-        raise e
-        # return "loading-instance-failed"
+    except Exception:
+        return "loading-instance-failed"
     finally:
         hub.auth.sign_out()
 
