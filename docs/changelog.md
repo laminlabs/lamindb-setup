@@ -3,6 +3,7 @@
 <!-- prettier-ignore -->
 Name | PR | Developer | Date | Version
 --- | --- | --- | --- | ---
+➖ Simplify deps | [426](https://github.com/laminlabs/lamindb-setup/pull/426) | [falexwolf](https://github.com/falexwolf) | 2023-06-21 |
 ✅ Try to trigger error | [424](https://github.com/laminlabs/lamindb-setup/pull/424) | [falexwolf](https://github.com/falexwolf) | 2023-06-20 | 0.47.11
 🔧 Back to UTC | [423](https://github.com/laminlabs/lamindb-setup/pull/423) | [falexwolf](https://github.com/falexwolf) | 2023-06-20 |
 ♻️ Simplify schema validation | [422](https://github.com/laminlabs/lamindb-setup/pull/422) | [falexwolf](https://github.com/falexwolf) | 2023-06-18 | 0.47.10
