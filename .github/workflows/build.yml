@@ -15,12 +15,27 @@ jobs:
       fail-fast: false
       matrix:
         python-version: ["3.9"]
+        environment:
+          - "local"
+          - "staging"
+          - "prod"
         group:
           - "unit"
           - "docs"
     timeout-minutes: 20
 
     steps:
+      - run: echo "${{ matrix.environment }}" > lamin_env.config
+      - name: Configure local supabase instance
+        if: ${{ matrix.env == 'local' }}
+        run: |
+          supabase start
+          echo "$(supabase status -o env)" >> $GITHUB_ENV
+      - name: Configure staging & prod supabase instances
+        if: ${{ matrix.env != 'local' }}
+        run: |
+          [ "$BRANCH_NAME" = "staging" ] && echo "${{ secrets.LNHUB_REST_STAGING_ENV }}" >> $GITHUB_ENV || true
+          [ "$BRANCH_NAME" = "main" ] && echo "${{ secrets.LNHUB_REST_PROD_ENV }}" >> $GITHUB_ENV || true
       - name: Checkout main
         uses: actions/checkout@v3
         with:

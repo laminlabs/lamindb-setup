@@ -1,20 +1,11 @@
-import os
-
 import nox
 from laminci import upload_docs_artifact
 from laminci.nox import build_docs, login_testuser1, login_testuser2, run_pre_commit
 
 nox.options.default_venv_backend = "none"
 
-
-LAMIN_ENV = "prod"
-if "GITHUB_REF_NAME" in os.environ:
-    if os.environ["GITHUB_REF_NAME"] == "main":
-        LAMIN_ENV = "prod"
-    elif os.environ["GITHUB_REF_NAME"] == "staging":
-        LAMIN_ENV = "staging"
-elif "LAMIN_ENV" in os.environ:
-    LAMIN_ENV = os.environ["LAMIN_ENV"]
+with open("lamin_env.config") as f:
+    LAMIN_ENV = f.readline().strip()
 
 env = {"LAMIN_ENV": LAMIN_ENV}
 
