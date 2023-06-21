@@ -14,10 +14,8 @@ dependencies = [
     "django",
     "dj_database_url",
     "pydantic[dotenv]",
-    "ipython",
     "sqlalchemy<2.0.0",  # just temporarily
     "appdirs",
-    "pandas",  # remove!!!
     "python-dateutil",
     "universal_pathlib",
     "supabase==1.0.3",
@@ -31,7 +29,7 @@ Home = "https://github.com/laminlabs/lamindb-setup"
 aws = [
     "s3fs",
 ]
-test = [
+dev = [
     "psycopg2-binary",
     "python-dotenv",
     "erdiagram",
