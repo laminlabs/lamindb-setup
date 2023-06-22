@@ -39,6 +39,7 @@ dev = [
     "pytest-cov",
     "pytest-xdist",
     "nbproject-test>=0.4.3",
+    "faker"
 ]
 
 [project.scripts]
