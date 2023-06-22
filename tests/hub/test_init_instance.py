@@ -1,3 +1,5 @@
+import pytest
+
 from lamindb_setup.dev._hub_core import init_instance
 from lamindb_setup.dev._hub_crud import sb_select_instance_by_name
 
@@ -6,7 +8,8 @@ def db_name(test_instance_name):
     return f"postgresql://postgres:pwd@fakeserver.xyz:5432/{test_instance_name}"
 
 
-def test_init_instance(auth_1, instance_name_1, user_account_1, account_hub_1):
+@pytest.fixture
+def instance_1(auth_1, instance_name_1, user_account_1, account_hub_1):
     init_instance(
         owner=auth_1["handle"],
         name=instance_name_1,
