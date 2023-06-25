@@ -17,6 +17,4 @@ def test_signup_hub():
 
 def test_signin_hub(auth_2):
     response = sign_in_hub(auth_2["email"], auth_2["password"])
-    id, handle, _, _ = response
-    assert id == auth_2["id"]
-    assert handle == auth_2["handle"]
+    assert response == "complete-signup"

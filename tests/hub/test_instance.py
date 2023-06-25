@@ -28,6 +28,7 @@ def db_name(test_instance_name):
 def s3_bucket_1(instance_name_1):
     conn = boto3.resource("s3", region_name=S3_REGION)
     response = conn.create_bucket(Bucket=instance_name_1)
+    print("S# MOCKING RESPONSE", response)
     return response
 
 
