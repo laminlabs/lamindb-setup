@@ -1,8 +1,10 @@
 import secrets
 import string
 from pathlib import Path
-from typing import Mapping, Optional
+from typing import Mapping, Optional, Union
 from uuid import UUID
+
+from .upath import UPath
 
 
 def base62(n_char: int) -> str:
@@ -73,7 +75,7 @@ def validate_unique_sqlite(
             )
 
 
-def get_storage_region(storage_root: str) -> Optional[str]:
+def get_storage_region(storage_root: Union[str, Path, UPath]) -> Optional[str]:
     storage_root_str = str(storage_root)
     storage_region = None
 
