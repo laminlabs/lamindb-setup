@@ -31,6 +31,7 @@ class set:
         >>> )
         """
         from .dev._hub_core import add_storage as add_storage_hub
+        from .dev._hub_utils import get_storage_region
 
         if settings.instance.dialect == "sqlite":
             logger.error("Can't set storage for sqlite instances.")
@@ -40,6 +41,7 @@ class set:
             owner=settings.instance.owner,
             name=settings.instance.name,
             storage_root=root,
+            storage_region=get_storage_region(root),
             db=settings.instance.db,
             schema=settings.instance._schema_str,
         )
