@@ -38,7 +38,10 @@ dev = [
     "nox",
     "pytest>=6.0",
     "pytest-cov",
+    "pytest-xdist",
     "nbproject-test>=0.4.3",
+    "faker",
+    "moto[s3]",
 ]
 
 [project.scripts]
