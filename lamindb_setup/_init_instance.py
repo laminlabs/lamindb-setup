@@ -171,7 +171,7 @@ def init(
     if isettings._is_cloud_sqlite:
         isettings._cloud_sqlite_locker.lock()
         logger.hint(
-            "Locked the instance.\nTo unlock and push changes to the cloud SQLite file,"
+            "Locked the instance. To unlock and push changes to the cloud SQLite file,"
             " call: lamin close"
         )
     if not isettings.is_remote:
