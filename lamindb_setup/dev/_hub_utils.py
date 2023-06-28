@@ -4,6 +4,9 @@ from pathlib import Path
 from typing import Mapping, Optional, Union
 from uuid import UUID
 
+from pydantic import BaseModel, validator
+from pydantic.networks import MultiHostDsn
+
 from .upath import UPath
 
 
@@ -29,19 +32,8 @@ def validate_schema_arg(schema: Optional[str] = None) -> str:
 
 
 def validate_db_arg(db: Optional[str]) -> None:
-    if db is not None:
-        if db.startswith("postgres") and not db.startswith("postgresql"):
-            raise ValueError(
-                "Please follow the SQLAlchemy convention of prefixing the connection"
-                " string with 'postgresql://' instead of 'postgres://'"
-            )
-        if not db.startswith("postgresql"):
-            raise ValueError("Only postgres connection strings are allowed.")
-        if not len(db.split("://")) == 2:
-            raise ValueError("Your postgres URI does not contain '://'")
-        remainder = db.split("://")[1]
-        if not len(remainder.split("/")) == 2:
-            raise ValueError("Your postgres URI does not end with a database '/dbname'")
+    if db:
+        LaminDsnModel(db=db)
 
 
 def validate_unique_sqlite(
@@ -118,3 +110,59 @@ def get_storage_type(storage_root: str):
         return "gs"
     else:
         return "local"
+
+
+class LaminDsn(MultiHostDsn):
+    """Custom DSN Type for Lamin.
+
+    This class allows us to customize the allowed schemes for databases
+    and also handles the parsing and building of DSN strings with the
+    database name instead of URL path.
+    """
+
+    allowed_schemes = {
+        "postgresql",
+        # future enabled schemes
+        # "snowflake",
+        # "bigquery"
+    }
+    user_required = True
+    __slots__ = ()
+
+    @property
+    def database(self):
+        return self.path[1:]
+
+    @classmethod
+    def build(
+        cls,
+        *,
+        scheme: str,
+        user: Optional[str] = None,
+        password: Optional[str] = None,
+        host: str,
+        port: Optional[str] = None,
+        database: Optional[str] = None,
+        query: Optional[str] = None,
+        fragment: Optional[str] = None,
+        **_kwargs: str,
+    ) -> str:
+        return super().build(
+            scheme=scheme,
+            user=user,
+            password=password,
+            host=host,
+            port=port,
+            path=f"/{database}",
+            query=query,
+            fragment=fragment,
+        )
+
+
+class LaminDsnModel(BaseModel):
+    db: LaminDsn
+
+    @validator("db")
+    def check_db_name(cls, v):
+        assert v.path and len(v.path) > 1, "database must be provided"
+        return v

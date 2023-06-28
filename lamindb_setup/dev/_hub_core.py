@@ -8,6 +8,7 @@ from postgrest.exceptions import APIError
 from ._hub_client import connect_hub, connect_hub_with_auth, get_lamin_site_base_url
 from ._hub_crud import (
     sb_insert_collaborator,
+    sb_insert_db_user,
     sb_insert_instance,
     sb_insert_storage,
     sb_select_account_by_handle,
@@ -16,6 +17,7 @@ from ._hub_crud import (
     sb_select_storage_by_root,
 )
 from ._hub_utils import (
+    LaminDsnModel,
     base62,
     get_storage_region,
     get_storage_type,
@@ -99,6 +101,9 @@ def init_instance(
         # storage is validated in add_storage
         validate_db_arg(db)
 
+        if db:
+            db_dsn = LaminDsnModel(db=db)
+
         # get account
         account = sb_select_account_by_handle(owner, hub)
         if account is None:
@@ -122,29 +127,60 @@ def init_instance(
         )
 
         instance_id = uuid4().hex
+        db_user_id = uuid4().hex
 
-        sb_insert_instance(
-            {
-                "id": instance_id,
-                "account_id": account["id"],
-                "name": name,
-                "storage_id": storage_id,
-                "db": db,
-                "schema_str": schema_str,
-                "public": False if public is None else public,
-                "description": description,
-            },
-            hub,
-        )
+        if db_dsn:
+            instance = sb_insert_instance(  # noqa
+                {
+                    "id": instance_id,
+                    "account_id": account["id"],
+                    "name": name,
+                    "storage_id": storage_id,
+                    "db": db,
+                    "db_scheme": db_dsn.db.scheme,
+                    "db_host": db_dsn.db.host,
+                    "db_port": db_dsn.db.port,
+                    "db_database": db_dsn.db.database,
+                    "schema_str": schema_str,
+                    "public": False if public is None else public,
+                    "description": description,
+                },
+                hub,
+            )
 
-        sb_insert_collaborator(
-            {
-                "instance_id": instance_id,
-                "account_id": account["id"],
-                "role": "admin",
-            },
-            hub,
-        )
+            db_user = sb_insert_db_user(  # noqa
+                {
+                    "id": db_user_id,
+                    "instance_id": instance_id,
+                    "db_user": db_dsn.db.user,
+                    "db_password": db_dsn.db.password,
+                },
+                hub,
+            )
+        else:
+            sb_insert_instance(
+                {
+                    "id": instance_id,
+                    "account_id": account["id"],
+                    "name": name,
+                    "storage_id": storage_id,
+                    "db": db,
+                    "schema_str": schema_str,
+                    "public": False if public is None else public,
+                    "description": description,
+                },
+                hub,
+            )
+
+            sb_insert_collaborator(
+                {
+                    "instance_id": instance_id,
+                    "account_id": account["user_id"],
+                    "db_user_id": db_user_id,
+                    "role": "admin",
+                },
+                hub,
+            )
 
         # upon successful insert of a new row in the instance table
         # (and all associated tables), return None

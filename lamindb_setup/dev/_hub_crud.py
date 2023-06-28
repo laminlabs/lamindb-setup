@@ -118,3 +118,15 @@ def sb_select_storage_by_root(root: str, supabase_client: Client):
     if len(data) == 0:
         return None
     return data[0]
+
+
+# --------------- DBUser ----------------------
+def sb_insert_db_user(instance_fields: dict, supabase_client: Client):
+    try:
+        data = supabase_client.table("db_user").insert(instance_fields).execute().data
+    except Exception as e:
+        if str(e) == str("Expecting value: line 1 column 1 (char 0)"):
+            pass
+        else:
+            raise e
+    return data[0]
