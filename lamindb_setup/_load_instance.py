@@ -70,7 +70,13 @@ def load(
 
     check, msg = isettings._is_db_setup()  # this also updates local SQLite
     if not check:
-        if _log_error_message:
+        local_db = isettings._is_cloud_sqlite and isettings._sqlite_file_local.exists()
+        if local_db:
+            logger.warning(
+                "SQLite file does not exist in the cloud, but exists locally. To push"
+                " the file to the cloud, call: lamin close"
+            )
+        elif _log_error_message:
             raise RuntimeError(msg)
         else:
             logger.warning(
