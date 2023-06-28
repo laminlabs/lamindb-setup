@@ -12,11 +12,13 @@ from ._hub_crud import (
     sb_insert_instance,
     sb_insert_storage,
     sb_select_account_by_handle,
+    sb_select_db_user_by_instance,
     sb_select_instance_by_name,
     sb_select_storage,
     sb_select_storage_by_root,
 )
 from ._hub_utils import (
+    LaminDsn,
     LaminDsnModel,
     base62,
     get_storage_region,
@@ -219,6 +221,24 @@ def load_instance(
         instance = sb_select_instance_by_name(account["id"], name, hub)
         if instance is None:
             return "instance-not-reachable"
+
+        # get db_account
+        db_user = sb_select_db_user_by_instance(instance.id, hub)
+        if db_user is None:
+            return "db-account-not-reachable"
+
+        # construct dsn from instance and db_account fields
+        db_dsn = LaminDsn.build(
+            scheme=instance["db_scheme"],
+            user=db_user["db_user_name"],
+            password=db_user["db_user_password"],
+            host=instance["db_host"],
+            port=str(instance["db_port"]),
+            database=instance["db_database"],
+        )
+
+        # override the db string with the constructed dsn
+        instance.db = db_dsn
 
         # get default storage
         storage = sb_select_storage(instance["storage_id"], hub)
