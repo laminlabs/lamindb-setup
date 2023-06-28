@@ -170,15 +170,18 @@ def init(
     load_from_isettings(isettings, init=True)
     if isettings._is_cloud_sqlite:
         isettings._cloud_sqlite_locker.lock()
-        logger.hint(
+        logger.warning(
             "Locked the instance. To unlock and push changes to the cloud SQLite file,"
             " call: lamin close"
         )
     if not isettings.is_remote:
+        verbosity = logger._verbosity
+        logger.set_verbosity(3)
         logger.hint(
             "Did not register local instance on hub (if you want to, call `lamin"
             " register`)"
         )
+        logger.set_verbosity(verbosity)
     return None
 
 
