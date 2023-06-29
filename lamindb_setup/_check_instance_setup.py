@@ -34,7 +34,7 @@ def check_instance_setup(from_lamindb: bool = False):
     else:
         if from_lamindb:
             logger.warning(
-                "You haven't yet setup an instance using the CLI: Please call"
+                "You haven't yet setup an instance: Please call"
                 " `ln.setup.init()` or `ln.setup.load()`"
             )
         return False
