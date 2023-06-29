@@ -223,7 +223,7 @@ def load_instance(
             return "instance-not-reachable"
 
         # get db_account
-        db_user = sb_select_db_user_by_instance(instance.id, hub)
+        db_user = sb_select_db_user_by_instance(instance["id"], hub)
         if db_user is None:
             return "db-account-not-reachable"
 
@@ -238,7 +238,7 @@ def load_instance(
         )
 
         # override the db string with the constructed dsn
-        instance.db = db_dsn
+        instance["db"] = db_dsn
 
         # get default storage
         storage = sb_select_storage(instance["storage_id"], hub)
