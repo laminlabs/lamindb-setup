@@ -154,8 +154,8 @@ def init_instance(
                 {
                     "id": db_user_id,
                     "instance_id": instance_id,
-                    "db_user": db_dsn.db.user,
-                    "db_password": db_dsn.db.password,
+                    "db_user_name": db_dsn.db.user,
+                    "db_user_password": db_dsn.db.password,
                 },
                 hub,
             )
