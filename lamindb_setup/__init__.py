@@ -72,6 +72,7 @@ from ._set import set, set_storage  # noqa
 from ._settings import settings  # noqa
 from ._setup_user import login, signup  # noqa
 
+_TESTING = False  # used in lamindb tests
 
 # unlock and clear on uncaught exception
 def _clear_on_exception():
