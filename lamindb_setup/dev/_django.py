@@ -204,12 +204,11 @@ def setup_django(
                     "\n\nYour database is not up to date with your installed"
                     " schemas!\n\nIt misses the following"
                     f" migrations:\n{planned_migrations}\n\nIf you are an admin and"
-                    " know what you're doing, deploy the migration:\nlamin migrate"
-                    " deploy\n\nOtherwise, please install previouses release of the"
-                    " above-mentioned schemas\n\nIn case you haven't yet migrated to"
-                    " Django, please upgrade to lamindb 0.41.2 before deploying this"
-                    " migration - you'll need a manual step then, please reach out to"
-                    " Lamin\n"
+                    " know what you're doing, deploy the migration: lamin migrate"
+                    " deploy\n\nOtherwise, please install an earlier version of  your"
+                    " custom schema module\n\nIn case you haven't yet migrated to"
+                    " Django, please FIRST upgrade to lamindb 0.41.2 before deploying"
+                    " this migration and consider reaching out to Lamin\n"
                 )
         else:
             if deploy_migrations:
