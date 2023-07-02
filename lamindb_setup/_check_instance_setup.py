@@ -4,6 +4,10 @@ from ._init_instance import reload_schema_modules
 from ._silence_loggers import silence_loggers
 from .dev._settings_store import current_instance_settings_file
 
+_INSTANCE_NOT_SETUP_WARNING = """\
+You haven't yet setup an instance: Please call `ln.setup.init()` or `ln.setup.load()`
+"""
+
 
 def check_instance_setup(from_lamindb: bool = False):
     if current_instance_settings_file().exists():
@@ -33,8 +37,5 @@ def check_instance_setup(from_lamindb: bool = False):
             )
     else:
         if from_lamindb:
-            logger.warning(
-                "You haven't yet setup an instance: Please call"
-                " `ln.setup.init()` or `ln.setup.load()`"
-            )
+            logger.warning(_INSTANCE_NOT_SETUP_WARNING)
         return False
