@@ -18,9 +18,9 @@ def track(notebook_path: str, pypackage: Optional[str] = None):
         metadata = initialize_metadata(nb, pypackage=pypackage).dict()
         nb.metadata["nbproject"] = metadata
         write_notebook(nb, notebook_path)
-        logger.success("Initialized the notebook metadata.")
+        logger.success("Attached metadata to notebook")
     else:
-        logger.info(f"The notebook {notebook_path} is already tracked.")
+        logger.info(f"The notebook {notebook_path} is already tracked")
 
         updated = False
         response = input("Do you want to assign a new id or version? (y/n) ")
