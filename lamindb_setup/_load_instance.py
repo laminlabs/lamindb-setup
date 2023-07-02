@@ -1,3 +1,4 @@
+import sys
 from pathlib import Path
 from typing import Optional, Union
 
@@ -29,6 +30,13 @@ def load(
         storage: `Optional[PathLike] = None` - Load the instance with an
             updated default storage.
     """
+    from ._check_instance_setup import check_instance_setup
+
+    if "lamindb" in sys.modules and check_instance_setup():
+        raise RuntimeError(
+            "Currently don't support init or load of multiple instances in the same"
+            " Python sessionWe will bring this feature back at some point"
+        )
     owner, name = get_owner_name_from_identifier(identifier)
 
     from .dev._hub_core import load_instance as load_instance_from_hub

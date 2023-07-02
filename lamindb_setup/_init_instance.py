@@ -98,6 +98,13 @@ def init(
         db: {}
         schema: {}
     """
+    from ._check_instance_setup import check_instance_setup
+
+    if "lamindb" in sys.modules and check_instance_setup():
+        raise RuntimeError(
+            "Currently don't support init or load of multiple instances in the same"
+            " Python sessionWe will bring this feature back at some point"
+        )
     # clean up in next refactor
     # avoid circular import
     from ._load_instance import load
