@@ -33,7 +33,7 @@ def load(
     """
     from ._check_instance_setup import check_instance_setup
 
-    if check_instance_setup():
+    if check_instance_setup() and not _test:
         raise RuntimeError(
             "Currently don't support init or load of multiple instances in the same"
             " Python sessionWe will bring this feature back at some point"
