@@ -1,5 +1,6 @@
 from lamin_logger import logger
 
+from ._check_instance_setup import check_instance_setup
 from ._settings import settings
 from .dev._django import setup_django
 
@@ -19,11 +20,15 @@ class migrate:
     @classmethod
     def create(cls) -> None:
         """Create a migration."""
+        if check_instance_setup():
+            raise RuntimeError("Restart Python session to create migration or use CLI!")
         setup_django(settings.instance, create_migrations=True)
 
     @classmethod
     def deploy(cls) -> None:
         """Deploy a migration."""
+        if check_instance_setup():
+            raise RuntimeError("Restart Python session to migrate or use CLI!")
         setup_django(settings.instance, deploy_migrations=True)
 
     @classmethod

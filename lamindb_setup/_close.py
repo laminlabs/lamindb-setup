@@ -12,7 +12,10 @@ def close(mute: bool = False) -> None:
     """
     if current_instance_settings_file().exists():
         instance = settings.instance.identifier
-        settings.instance._update_cloud_sqlite_file()
+        try:
+            settings.instance._update_cloud_sqlite_file()
+        except FileNotFoundError:
+            logger.warning("Did not find local cache file")
         current_instance_settings_file().unlink()
         delete_bionty_sources_yaml()
         logger.success(f"Closed instance: {instance}")
