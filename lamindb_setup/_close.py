@@ -5,7 +5,7 @@ from .dev._settings_store import current_instance_settings_file
 from .dev._setup_bionty_sources import delete_bionty_sources_yaml
 
 
-def close() -> None:
+def close(mute: bool = False) -> None:
     """Close existing instance.
 
     Returns `None` if succeeds, otherwise an exception is raised.
@@ -15,6 +15,8 @@ def close() -> None:
         settings.instance._update_cloud_sqlite_file()
         current_instance_settings_file().unlink()
         delete_bionty_sources_yaml()
-        logger.success(f"Closed {instance}")
+        if not mute:
+            logger.success(f"Closed {instance}")
     else:
-        logger.info("No instance loaded")
+        if not mute:
+            logger.info("No instance loaded")

@@ -15,4 +15,5 @@ def silence_loggers():
         boto3.set_stream_logger(name="aiobotocore.credentials", level=logging.WARNING)
         boto3.set_stream_logger(name="urllib3.connectionpool", level=logging.WARNING)
     except ImportError:
+        print("no boto3")
         pass

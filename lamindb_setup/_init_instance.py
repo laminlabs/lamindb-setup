@@ -8,8 +8,10 @@ from pydantic import PostgresDsn
 
 from lamindb_setup.dev.upath import UPath
 
+from ._close import close as close_instance
 from ._docstrings import instance_description as description
 from ._settings import settings
+from ._silence_loggers import silence_loggers
 from .dev import InstanceSettings
 from .dev._docs import doc_args
 from .dev._setup_schema import get_schema_module_name, load_schema
@@ -98,6 +100,7 @@ def init(
         db: {}
         schema: {}
     """
+    close_instance(mute=True)
     from ._check_instance_setup import check_instance_setup
 
     if "lamindb" in sys.modules and check_instance_setup():
@@ -168,6 +171,8 @@ def init(
     if _test:
         isettings._persist()
         return None
+
+    silence_loggers
 
     if isettings._is_db_setup(mute=True)[0]:
         raise RuntimeError(

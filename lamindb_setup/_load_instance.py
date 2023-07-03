@@ -6,8 +6,10 @@ from lamin_logger import logger
 
 from lamindb_setup.dev.upath import UPath
 
+from ._close import close as close_instance
 from ._init_instance import load_from_isettings
 from ._settings import InstanceSettings, settings
+from ._silence_loggers import silence_loggers
 from .dev._django import setup_django
 from .dev._settings_load import load_instance_settings
 from .dev._settings_store import instance_settings_file
@@ -30,6 +32,7 @@ def load(
         storage: `Optional[PathLike] = None` - Load the instance with an
             updated default storage.
     """
+    close_instance(mute=True)
     from ._check_instance_setup import check_instance_setup
 
     if "lamindb" in sys.modules and check_instance_setup():
@@ -75,6 +78,8 @@ def load(
     if _test:
         isettings._persist()  # this is to test the settings
         return None
+
+    silence_loggers()
 
     check, msg = isettings._is_db_setup()  # this also updates local SQLite
     if not check:
