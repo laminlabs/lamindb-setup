@@ -15,7 +15,7 @@ def close(mute: bool = False) -> None:
         settings.instance._update_cloud_sqlite_file()
         current_instance_settings_file().unlink()
         delete_bionty_sources_yaml()
-        logger.success(f"Closed {instance}")
+        logger.success(f"Closed instance: {instance}")
     else:
         if not mute:
             logger.info("No instance loaded")
