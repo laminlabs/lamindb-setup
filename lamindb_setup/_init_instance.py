@@ -172,7 +172,7 @@ def init(
         isettings._persist()
         return None
 
-    silence_loggers
+    silence_loggers()
 
     if isettings._is_db_setup(mute=True)[0]:
         raise RuntimeError(
