@@ -20,14 +20,26 @@ def check_instance_setup(from_lamindb: bool = False):
 
             from .dev._django import IS_SETUP, setup_django
 
+            # this flag should probably be renamed to `from_user`
+            # it will typically be invoked if lamindb is imported for use
+            # but users might also import their schema modules first
+            # and then want lamindb be to be available
             if from_lamindb:
-                setup_django(isettings)
-                reload_schema_modules(isettings)
+                # this guarantees that ths is called exactly once
+                # prior to django being setup!
+                if not IS_SETUP:
+                    setup_django(isettings)
+                    reload_schema_modules(isettings)
+                    # only now we can import lamindb
+                    import lamindb as ln
+
+                    logger.success(
+                        f"Loaded instance: {isettings.identifier} (lamindb"
+                        f" {ln.__version__})"
+                    )
+                return True
             else:
                 return IS_SETUP
-
-            # set the check to true
-            return True
         except Exception:
             # user will get more detailed traceback once they run the CLI
             raise RuntimeError(
