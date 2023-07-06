@@ -175,12 +175,15 @@ def init(
 
     silence_loggers()
 
+    also_init_bionty = True
     if isettings._is_db_setup(mute=True)[0]:
-        raise RuntimeError(
-            "Your instance DB is already set up but couldn't be loaded, something"
-            " is off"
+        logger.warning(
+            "Your instance DB already has content, but we couldn't find settings,"
+            " proceeding with setup"
         )
-    load_from_isettings(isettings, init=True)
+        # do not write the bionty tables again
+        also_init_bionty = False
+    load_from_isettings(isettings, init=True, also_init_bionty=also_init_bionty)
     if isettings._is_cloud_sqlite:
         isettings._cloud_sqlite_locker.lock()
         logger.warning(
@@ -202,12 +205,13 @@ def load_from_isettings(
     isettings: InstanceSettings,
     *,
     init: bool = False,
+    also_init_bionty: bool = True,
 ) -> None:
     from .dev._setup_bionty_sources import load_bionty_sources, write_bionty_sources
 
     load_schema(isettings, init=init)
     register_user_and_storage(isettings, settings.user)
-    if init:
+    if init and also_init_bionty:
         write_bionty_sources(isettings)
     else:
         load_bionty_sources(isettings)
