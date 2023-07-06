@@ -130,8 +130,9 @@ def insert_legacy_data(isettings: InstanceSettings):
         "insert into lnschema_core_transform (id, name, short_name, stem_id, version, type, reference, created_at, updated_at, created_by_id) select id, name, short_name, stem_id, version, type, reference, created_at, created_at, created_by_id from lnschema_core_legacy_transform",
         "insert into lnschema_core_run (id, name, external_id, transform_id, created_at, run_at, created_by_id) select id, name, external_id, transform_id, created_at, created_at, created_by_id from lnschema_core_legacy_run",
         "insert into lnschema_core_featureset (id, type, created_at, updated_at, created_by_id) select id, type, created_at, created_at, created_by_id from lnschema_core_legacy_featureset",
-        "insert into lnschema_core_folder (id, name, key, storage_id, created_at, updated_at, created_by_id) select id, name, key, storage_id, created_at, created_at, created_by_id from lnschema_core_legacy_folder",
         "insert into lnschema_core_file (id, description, suffix, size, hash, key, run_id, transform_id, storage_id, created_at, updated_at, created_by_id) select id, name, suffix, size, hash, key, run_id, transform_id, storage_id, created_at, created_at, created_by_id from lnschema_core_legacy_file",
+        # take into account the old file name convention
+        "insert into lnschema_core_file (id, name, suffix, size, hash, key, run_id, transform_id, storage_id, created_at, updated_at, created_by_id) select id, name, suffix, size, hash, key, run_id, transform_id, storage_id, created_at, created_at, created_by_id from lnschema_core_legacy_file",
         "insert into lnschema_core_runinput (run_id, file_id) select run_id, file_id from lnschema_core_legacy_runinput",
     ]
     # fmt: on
@@ -139,6 +140,7 @@ def insert_legacy_data(isettings: InstanceSettings):
         for stmt in stmts:
             try:
                 conn.execute(sa.text(stmt))
+                logger.success(stmt)
             except Exception as e:
                 logger.warning(f"Failed to execute: {stmt} because of {e}")
 
