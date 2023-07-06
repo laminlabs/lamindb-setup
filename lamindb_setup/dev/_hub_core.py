@@ -222,23 +222,24 @@ def load_instance(
         if instance is None:
             return "instance-not-reachable"
 
-        # get db_account
-        db_user = sb_select_db_user_by_instance(instance["id"], hub)
-        if db_user is None:
-            return "db-account-not-reachable"
+        if instance["db"].startswith("postgresql"):
+            # get db_account
+            db_user = sb_select_db_user_by_instance(instance["id"], hub)
+            if db_user is None:
+                return "db-user-not-reachable"
 
-        # construct dsn from instance and db_account fields
-        db_dsn = LaminDsn.build(
-            scheme=instance["db_scheme"],
-            user=db_user["db_user_name"],
-            password=db_user["db_user_password"],
-            host=instance["db_host"],
-            port=str(instance["db_port"]),
-            database=instance["db_database"],
-        )
+            # construct dsn from instance and db_account fields
+            db_dsn = LaminDsn.build(
+                scheme=instance["db_scheme"],
+                user=db_user["db_user_name"],
+                password=db_user["db_user_password"],
+                host=instance["db_host"],
+                port=str(instance["db_port"]),
+                database=instance["db_database"],
+            )
 
-        # override the db string with the constructed dsn
-        instance["db"] = db_dsn
+            # override the db string with the constructed dsn
+            instance["db"] = db_dsn
 
         # get default storage
         storage = sb_select_storage(instance["storage_id"], hub)
