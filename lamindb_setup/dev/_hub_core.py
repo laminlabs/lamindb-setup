@@ -222,7 +222,7 @@ def load_instance(
         if instance is None:
             return "instance-not-reachable"
 
-        if instance["db"].startswith("postgresql"):
+        if not (instance["db"] is None or instance["db"].startswith("sqlite://")):
             # get db_account
             db_user = sb_select_db_user_by_instance(instance["id"], hub)
             if db_user is None:
