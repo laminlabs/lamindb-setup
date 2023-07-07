@@ -33,15 +33,20 @@ def load(
     """
     from ._check_instance_setup import check_instance_setup
 
+    owner, name = get_owner_name_from_identifier(identifier)
+
     if check_instance_setup() and not _test:
         raise RuntimeError(
             "Currently don't support init or load of multiple instances in the same"
             " Python sessionWe will bring this feature back at some point"
         )
     else:
-        close_instance(mute=True)
-
-    owner, name = get_owner_name_from_identifier(identifier)
+        # compare normalized identifier with a potentially previously loaded identifier
+        if (
+            settings._instance_exists
+            and f"{owner}/{name}" != settings.instance.identifier
+        ):
+            close_instance(mute=True)
 
     from .dev._hub_core import load_instance as load_instance_from_hub
 
