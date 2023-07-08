@@ -9,7 +9,7 @@ from lamin_logger import logger
 from ._settings_instance import InstanceSettings
 from .upath import UPath, infer_filesystem
 
-EXPIRATION_TIME = 3600  # 60 min
+EXPIRATION_TIME = 7 * 24 * 60 * 60  # 1 week
 
 MAX_MSG_COUNTER = 100  # print the msg after this number of iterations
 
