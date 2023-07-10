@@ -7,7 +7,7 @@ from laminci.nox import build_docs, login_testuser1, login_testuser2, run_pre_co
 nox.options.default_venv_backend = "none"
 
 
-LAMIN_ENV = "prod"
+LAMIN_ENV = "staging"
 if "GITHUB_REF_NAME" in os.environ:
     if os.environ["GITHUB_REF_NAME"] == "main":
         LAMIN_ENV = "prod"
