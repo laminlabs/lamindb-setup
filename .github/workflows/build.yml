@@ -77,7 +77,7 @@ jobs:
       #     credentials_json: "${{ secrets.GCP_CREDENTIALS }}"
       # - uses: "google-github-actions/setup-gcloud@v0"
       - run: nox -s "install(group='${{ matrix.group }}')"
-      - run: nox -s "build(group='${{ matrix.group }}', lamin_env='${{ matrix.lamin_env }}')"
+      - run: nox -s "build(lamin_env='${{ matrix.lamin_env }}', group='${{ matrix.group }}')"
         env:
           SUPABASE_STAGING_URL: ${{ secrets.SUPABASE_STAGING_URL }}
           SUPABASE_STAGING_ANON_KEY: ${{ secrets.SUPABASE_STAGING_ANON_KEY }}
