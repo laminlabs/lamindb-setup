@@ -69,6 +69,7 @@ def connect_hub_with_auth(
             user_settings = load_or_create_user_settings()
             email = user_settings.email
             password = user_settings.password
+        print(f"Email: {email}/n LenPass: {password}")
         access_token = get_access_token(email=email, password=password)
     hub.postgrest.auth(access_token)
     return hub
