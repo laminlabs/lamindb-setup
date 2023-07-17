@@ -12,11 +12,9 @@ DIRS = AppDirs("lamindb", "laminlabs")
 class StorageSettings:
     """Manage cloud or local storage settings."""
 
-    # we can't type instance_settings if we keep it in this separate file
     def __init__(
         self,
         root: Union[str, Path, UPath],
-        instance_settings,
         region: Optional[str] = None,
     ):
         if isinstance(root, UPath):
@@ -31,7 +29,6 @@ class StorageSettings:
         self._root = root_path
         self._region = region
         self._id: Optional[str] = None
-        self._instance_settings = instance_settings
 
     @staticmethod
     def _str_to_path(storage: str) -> Union[Path, UPath]:
