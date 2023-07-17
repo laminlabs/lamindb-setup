@@ -52,7 +52,12 @@ def build(session: nox.Session, group: str, lamin_env: str):
 
 
 @nox.session
-def docs(session: nox.Session):
+@nox.parametrize(
+    "lamin_env",
+    ["staging", "prod"],
+)
+def docs(session: nox.Session, lamin_env: str):
+    login_testuser1(session, env={"LAMIN_ENV": lamin_env})
     session.run(*"lamin init --storage ./docsbuild".split())
     build_docs(session)
     upload_docs_artifact()

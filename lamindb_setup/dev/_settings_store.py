@@ -1,4 +1,4 @@
-# import os
+import os
 import shutil
 from pathlib import Path
 
@@ -31,9 +31,9 @@ settings_dir = get_settings_dir()
 
 
 def get_settings_file_name_prefix():
-    # if "LAMIN_ENV" in os.environ:
-    #     if os.environ["LAMIN_ENV"] == "staging":
-    #         return "staging-"
+    if "LAMIN_ENV" in os.environ:
+        if os.environ["LAMIN_ENV"] == "staging":
+            return "staging-"
     return ""
 
 
