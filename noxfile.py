@@ -17,11 +17,10 @@ def lint(session: nox.Session) -> None:
 )
 def install(session: nox.Session, group: str) -> None:
     session.run(*"pip install git+https://github.com/laminlabs/bionty".split())
-    # session.run(
-    #     *"pip install --no-deps git+https://github.com/laminlabs/lnschema-bionty"
-    #     .split()
-    # )
-    session.run(*"pip install lnschema_bionty".split())
+    session.run(
+        *"pip install --no-deps git+https://github.com/laminlabs/lnschema-bionty"
+        .split()
+    )
     # install lnschema-core from sub-module
     session.run(*"pip install --no-deps ./lnschema-core".split())
     # install lamindb-setup without deps
