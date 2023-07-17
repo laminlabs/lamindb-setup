@@ -76,13 +76,10 @@ class StorageSettings:
     @property
     def cache_dir(
         self,
-    ) -> Union[Path, None]:
+    ) -> Path:
         """Cache root, a local directory to cache cloud files."""
-        if self.is_cloud:
-            cache_dir = Path(DIRS.user_cache_dir)
-            cache_dir.mkdir(parents=True, exist_ok=True)
-        else:
-            cache_dir = None
+        cache_dir = Path(DIRS.user_cache_dir)
+        cache_dir.mkdir(parents=True, exist_ok=True)
         return cache_dir
 
     @property
@@ -127,7 +124,7 @@ class StorageSettings:
     # hence, we manually construct the local file path
     # using the `.parts` attribute in the following line
     def cloud_to_local_no_update(self, filepath: Union[Path, UPath]) -> Path:
-        if self.is_cloud:
+        if isinstance(filepath, UPath):
             return self.cache_dir.joinpath(filepath._url.netloc, *filepath.parts[1:])  # type: ignore # noqa
         return filepath
 
