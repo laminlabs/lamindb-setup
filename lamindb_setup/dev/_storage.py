@@ -12,11 +12,9 @@ DIRS = AppDirs("lamindb", "laminlabs")
 class StorageSettings:
     """Manage cloud or local storage settings."""
 
-    # we can't type instance_settings if we keep it in this separate file
     def __init__(
         self,
         root: Union[str, Path, UPath],
-        instance_settings,
         region: Optional[str] = None,
     ):
         if isinstance(root, UPath):
@@ -31,7 +29,6 @@ class StorageSettings:
         self._root = root_path
         self._region = region
         self._id: Optional[str] = None
-        self._instance_settings = instance_settings
 
     @staticmethod
     def _str_to_path(storage: str) -> Union[Path, UPath]:
@@ -79,13 +76,10 @@ class StorageSettings:
     @property
     def cache_dir(
         self,
-    ) -> Union[Path, None]:
+    ) -> Path:
         """Cache root, a local directory to cache cloud files."""
-        if self.is_cloud:
-            cache_dir = Path(DIRS.user_cache_dir)
-            cache_dir.mkdir(parents=True, exist_ok=True)
-        else:
-            cache_dir = None
+        cache_dir = Path(DIRS.user_cache_dir)
+        cache_dir.mkdir(parents=True, exist_ok=True)
         return cache_dir
 
     @property
@@ -130,7 +124,7 @@ class StorageSettings:
     # hence, we manually construct the local file path
     # using the `.parts` attribute in the following line
     def cloud_to_local_no_update(self, filepath: Union[Path, UPath]) -> Path:
-        if self.is_cloud:
+        if isinstance(filepath, UPath):
             return self.cache_dir.joinpath(filepath._url.netloc, *filepath.parts[1:])  # type: ignore # noqa
         return filepath
 

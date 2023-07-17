@@ -137,7 +137,7 @@ def get_owner_name_from_identifier(identifier: str):
 def update_isettings_with_storage(
     isettings: InstanceSettings, storage: Union[str, Path, UPath]
 ) -> None:
-    ssettings = StorageSettings(storage, instance_settings=isettings)
+    ssettings = StorageSettings(storage)
     if ssettings.is_cloud:
         try:  # triggering ssettings.id makes a lookup in the storage table
             logger.success(f"Loaded storage: {ssettings.id} / {ssettings.root_as_str}")
