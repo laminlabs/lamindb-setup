@@ -89,7 +89,7 @@ def get_access_token(email: Optional[str] = None, password: Optional[str] = None
 
 
 def lamindb_client_config_settings(settings: BaseSettings) -> Dict[str, Any]:
-    if os.environ["LAMIN_ENV"] == "staging":
+    if os.getenv("LAMIN_ENV") == "staging":
         connector_path = (
             "https://lamin-site-assets.s3.amazonaws.com/connector_staging.env"
         )
