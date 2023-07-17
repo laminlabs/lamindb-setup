@@ -89,9 +89,13 @@ def get_access_token(email: Optional[str] = None, password: Optional[str] = None
 
 
 def lamindb_client_config_settings(settings: BaseSettings) -> Dict[str, Any]:
-    connector_file, _ = urlretrieve(
-        "https://lamin-site-assets.s3.amazonaws.com/connector.env"
-    )
+    if os.environ["LAMIN_ENV"] == "staging":
+        connector_path = (
+            "https://lamin-site-assets.s3.amazonaws.com/connector_staging.env"
+        )
+    else:
+        connector_path = "https://lamin-site-assets.s3.amazonaws.com/connector.env"
+    connector_file, _ = urlretrieve(connector_path)
     connector = Connector(_env_file=connector_file)
     return dict(
         lamin_env="client",
