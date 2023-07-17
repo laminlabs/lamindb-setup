@@ -15,13 +15,29 @@ from ._silence_loggers import silence_loggers
 from .dev import InstanceSettings
 from .dev._docs import doc_args
 from .dev._setup_schema import get_schema_module_name, load_schema
-from .dev._storage import Storage
+from .dev._storage import StorageSettings
+
+
+def register_storage(ssettings: StorageSettings):
+    from lnschema_core.models import Storage
+
+    storage, created = Storage.objects.update_or_create(
+        root=ssettings.root_as_str,
+        defaults=dict(
+            root=ssettings.root_as_str,
+            type=ssettings.type,
+            region=ssettings.region,
+            created_by_id=settings.user.id,
+        ),
+    )
+    if created:
+        logger.success(f"Saved: {storage}")
 
 
 def register_user_and_storage(isettings: InstanceSettings, usettings):
     """Register user & storage in DB."""
     from django.db.utils import OperationalError
-    from lnschema_core.models import Storage, User
+    from lnschema_core.models import User
 
     try:
         user, created = User.objects.update_or_create(
@@ -34,17 +50,7 @@ def register_user_and_storage(isettings: InstanceSettings, usettings):
         )
         if created:
             logger.success(f"Saved: {user}")
-        storage, created = Storage.objects.update_or_create(
-            root=isettings.storage.root_as_str,
-            defaults=dict(
-                root=isettings.storage.root_as_str,
-                type=isettings.storage.type,
-                region=isettings.storage.region,
-                created_by_id=usettings.id,
-            ),
-        )
-        if created:
-            logger.success(f"Saved: {storage}")
+        register_storage(isettings.storage)
     except OperationalError as error:
         logger.warning(f"Instance seems not set up ({error})")
 
@@ -232,7 +238,7 @@ def infer_instance_name(
         return str(db).split("/")[-1]
 
     if isinstance(storage, str):
-        storage_path = Storage._str_to_path(storage)
+        storage_path = StorageSettings._str_to_path(storage)
     else:
         storage_path = storage
 
