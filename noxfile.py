@@ -37,18 +37,17 @@ def install(session: nox.Session, group: str) -> None:
     ["staging", "prod"],
 )
 def build(session: nox.Session, group: str, lamin_env: str):
-    login_testuser1(session, env={"LAMIN_ENV": lamin_env})
-    login_testuser2(session, env={"LAMIN_ENV": lamin_env})
+    env = {"LAMIN_ENV": lamin_env}
+    login_testuser1(session, env=env)
+    login_testuser2(session, env=env)
     coverage_args = "--cov=lamindb_setup --cov-append --cov-report=term-missing"  # noqa
     if group.startswith("unit"):
         session.run(
             *f"pytest -s {coverage_args} ./tests --ignore tests/hub".split(),
-            env={"LAMIN_ENV": lamin_env},
+            env=env,
         )
     elif group.startswith("docs"):
-        session.run(
-            *f"pytest -s {coverage_args} ./docs".split(), env={"LAMIN_ENV": lamin_env}
-        )
+        session.run(*f"pytest -s {coverage_args} ./docs".split(), env=env)
 
 
 @nox.session
@@ -57,7 +56,8 @@ def build(session: nox.Session, group: str, lamin_env: str):
     ["staging", "prod"],
 )
 def docs(session: nox.Session, lamin_env: str):
-    login_testuser1(session, env={"LAMIN_ENV": lamin_env})
+    env = {"LAMIN_ENV": lamin_env}
+    login_testuser1(session, env=env)
     session.run(*"lamin init --storage ./docsbuild".split())
     build_docs(session)
     upload_docs_artifact()
