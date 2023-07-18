@@ -64,6 +64,6 @@ def docs(session: nox.Session, lamin_env: str):
             env=env,
         )
     login_testuser1(session, env=env)
-    session.run(*"lamin init --storage ./docsbuild".split())
+    session.run(*"lamin init --storage ./docsbuild".split(), env=env)
     build_docs(session)
     upload_docs_artifact()
