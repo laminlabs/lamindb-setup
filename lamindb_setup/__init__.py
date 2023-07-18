@@ -52,7 +52,7 @@ Developer API.
 """
 
 
-__version__ = "0.47.11"  # denote a release candidate for 0.1.0 with 0.1rc1
+__version__ = "0.48.8"  # denote a release candidate for 0.1.0 with 0.1rc1
 
 import builtins
 import sys
@@ -72,6 +72,7 @@ from ._set import set, set_storage  # noqa
 from ._settings import settings  # noqa
 from ._setup_user import login, signup  # noqa
 
+_TESTING = False  # used in lamindb tests
 
 # unlock and clear on uncaught exception
 def _clear_on_exception():

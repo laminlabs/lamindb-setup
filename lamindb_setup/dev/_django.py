@@ -130,7 +130,8 @@ def insert_legacy_data(isettings: InstanceSettings):
         "insert into lnschema_core_transform (id, name, short_name, stem_id, version, type, reference, created_at, updated_at, created_by_id) select id, name, short_name, stem_id, version, type, reference, created_at, created_at, created_by_id from lnschema_core_legacy_transform",
         "insert into lnschema_core_run (id, name, external_id, transform_id, created_at, run_at, created_by_id) select id, name, external_id, transform_id, created_at, created_at, created_by_id from lnschema_core_legacy_run",
         "insert into lnschema_core_featureset (id, type, created_at, updated_at, created_by_id) select id, type, created_at, created_at, created_by_id from lnschema_core_legacy_featureset",
-        "insert into lnschema_core_folder (id, name, key, storage_id, created_at, updated_at, created_by_id) select id, name, key, storage_id, created_at, created_at, created_by_id from lnschema_core_legacy_folder",
+        "insert into lnschema_core_file (id, description, suffix, size, hash, key, run_id, transform_id, storage_id, created_at, updated_at, created_by_id) select id, name, suffix, size, hash, key, run_id, transform_id, storage_id, created_at, created_at, created_by_id from lnschema_core_legacy_file",
+        # take into account the old file name convention
         "insert into lnschema_core_file (id, name, suffix, size, hash, key, run_id, transform_id, storage_id, created_at, updated_at, created_by_id) select id, name, suffix, size, hash, key, run_id, transform_id, storage_id, created_at, created_at, created_by_id from lnschema_core_legacy_file",
         "insert into lnschema_core_runinput (run_id, file_id) select run_id, file_id from lnschema_core_legacy_runinput",
     ]
@@ -139,6 +140,7 @@ def insert_legacy_data(isettings: InstanceSettings):
         for stmt in stmts:
             try:
                 conn.execute(sa.text(stmt))
+                logger.success(stmt)
             except Exception as e:
                 logger.warning(f"Failed to execute: {stmt} because of {e}")
 
@@ -204,12 +206,11 @@ def setup_django(
                     "\n\nYour database is not up to date with your installed"
                     " schemas!\n\nIt misses the following"
                     f" migrations:\n{planned_migrations}\n\nIf you are an admin and"
-                    " know what you're doing, deploy the migration:\nlamin migrate"
-                    " deploy\n\nOtherwise, please install previouses release of the"
-                    " above-mentioned schemas\n\nIn case you haven't yet migrated to"
-                    " Django, please upgrade to lamindb 0.41.2 before deploying this"
-                    " migration - you'll need a manual step then, please reach out to"
-                    " Lamin\n"
+                    " know what you're doing, deploy the migration: lamin migrate"
+                    " deploy\n\nOtherwise, please install an earlier version of  your"
+                    " custom schema module\n\nIn case you haven't yet migrated to"
+                    " Django, please FIRST upgrade to lamindb 0.41.2 before deploying"
+                    " this migration and consider reaching out to Lamin\n"
                 )
         else:
             if deploy_migrations:

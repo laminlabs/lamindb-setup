@@ -10,12 +10,11 @@ def setup_instance():
     ln_setup.delete("testdb")
 
 
-def test_migrate_create(setup_instance):
-    assert ln_setup.migrate.create() is None
-
-
-def test_migrate_deploy(setup_instance):
-    assert ln_setup.migrate.deploy() is None
+# tested in notebook right now
+# def test_migrate_create(setup_instance):
+#     assert ln_setup.migrate.create() is None
+# def test_migrate_deploy(setup_instance):
+#     assert ln_setup.migrate.deploy() is None
 
 
 def test_migrate_check(setup_instance):

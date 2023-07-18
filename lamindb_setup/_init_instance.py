@@ -8,18 +8,36 @@ from pydantic import PostgresDsn
 
 from lamindb_setup.dev.upath import UPath
 
+from ._close import close as close_instance
 from ._docstrings import instance_description as description
 from ._settings import settings
+from ._silence_loggers import silence_loggers
 from .dev import InstanceSettings
 from .dev._docs import doc_args
 from .dev._setup_schema import get_schema_module_name, load_schema
-from .dev._storage import Storage
+from .dev._storage import StorageSettings
+
+
+def register_storage(ssettings: StorageSettings):
+    from lnschema_core.models import Storage
+
+    storage, created = Storage.objects.update_or_create(
+        root=ssettings.root_as_str,
+        defaults=dict(
+            root=ssettings.root_as_str,
+            type=ssettings.type,
+            region=ssettings.region,
+            created_by_id=settings.user.id,
+        ),
+    )
+    if created:
+        logger.success(f"Saved: {storage}")
 
 
 def register_user_and_storage(isettings: InstanceSettings, usettings):
     """Register user & storage in DB."""
     from django.db.utils import OperationalError
-    from lnschema_core.models import Storage, User
+    from lnschema_core.models import User
 
     try:
         user, created = User.objects.update_or_create(
@@ -32,17 +50,7 @@ def register_user_and_storage(isettings: InstanceSettings, usettings):
         )
         if created:
             logger.success(f"Saved: {user}")
-        storage, created = Storage.objects.update_or_create(
-            root=isettings.storage.root_as_str,
-            defaults=dict(
-                root=isettings.storage.root_as_str,
-                type=isettings.storage.type,
-                region=isettings.storage.region,
-                created_by_id=usettings.id,
-            ),
-        )
-        if created:
-            logger.success(f"Saved: {storage}")
+        register_storage(isettings.storage)
     except OperationalError as error:
         logger.warning(f"Instance seems not set up ({error})")
 
@@ -98,6 +106,15 @@ def init(
         db: {}
         schema: {}
     """
+    from ._check_instance_setup import check_instance_setup
+
+    if check_instance_setup() and not _test:
+        raise RuntimeError(
+            "Currently don't support init or load of multiple instances in the same"
+            " Python session. We will bring this feature back at some point."
+        )
+    else:
+        close_instance(mute=True)
     # clean up in next refactor
     # avoid circular import
     from ._load_instance import load
@@ -162,12 +179,17 @@ def init(
         isettings._persist()
         return None
 
+    silence_loggers()
+
+    also_init_bionty = True
     if isettings._is_db_setup(mute=True)[0]:
-        raise RuntimeError(
-            "Your instance DB is already set up but couldn't be loaded, something"
-            " is off"
+        logger.warning(
+            "Your instance DB already has content, but we couldn't find settings,"
+            " proceeding with setup"
         )
-    load_from_isettings(isettings, init=True)
+        # do not write the bionty tables again
+        also_init_bionty = False
+    load_from_isettings(isettings, init=True, also_init_bionty=also_init_bionty)
     if isettings._is_cloud_sqlite:
         isettings._cloud_sqlite_locker.lock()
         logger.warning(
@@ -189,12 +211,13 @@ def load_from_isettings(
     isettings: InstanceSettings,
     *,
     init: bool = False,
+    also_init_bionty: bool = True,
 ) -> None:
     from .dev._setup_bionty_sources import load_bionty_sources, write_bionty_sources
 
     load_schema(isettings, init=init)
     register_user_and_storage(isettings, settings.user)
-    if init:
+    if init and also_init_bionty:
         write_bionty_sources(isettings)
     else:
         load_bionty_sources(isettings)
@@ -215,7 +238,7 @@ def infer_instance_name(
         return str(db).split("/")[-1]
 
     if isinstance(storage, str):
-        storage_path = Storage._str_to_path(storage)
+        storage_path = StorageSettings._str_to_path(storage)
     else:
         storage_path = storage
 

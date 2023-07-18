@@ -6,4 +6,5 @@
 edge-cases-login-init
 switch-environment
 test-sqlite-sync
+multi-session
 ```
