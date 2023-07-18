@@ -5,8 +5,10 @@ from lamin_logger import logger
 
 from lamindb_setup.dev.upath import UPath
 
+from ._close import close as close_instance
 from ._init_instance import load_from_isettings
 from ._settings import InstanceSettings, settings
+from ._silence_loggers import silence_loggers
 from .dev._django import setup_django
 from .dev._settings_load import load_instance_settings
 from .dev._settings_store import instance_settings_file
@@ -29,7 +31,22 @@ def load(
         storage: `Optional[PathLike] = None` - Load the instance with an
             updated default storage.
     """
+    from ._check_instance_setup import check_instance_setup
+
     owner, name = get_owner_name_from_identifier(identifier)
+
+    if check_instance_setup() and not _test:
+        raise RuntimeError(
+            "Currently don't support init or load of multiple instances in the same"
+            " Python sessionWe will bring this feature back at some point"
+        )
+    else:
+        # compare normalized identifier with a potentially previously loaded identifier
+        if (
+            settings._instance_exists
+            and f"{owner}/{name}" != settings.instance.identifier
+        ):
+            close_instance(mute=True)
 
     from .dev._hub_core import load_instance as load_instance_from_hub
 
@@ -69,9 +86,17 @@ def load(
         isettings._persist()  # this is to test the settings
         return None
 
+    silence_loggers()
+
     check, msg = isettings._is_db_setup()  # this also updates local SQLite
     if not check:
-        if _log_error_message:
+        local_db = isettings._is_cloud_sqlite and isettings._sqlite_file_local.exists()
+        if local_db:
+            logger.warning(
+                "SQLite file does not exist in the cloud, but exists locally. To push"
+                " the file to the cloud, call: lamin close"
+            )
+        elif _log_error_message:
             raise RuntimeError(msg)
         else:
             logger.warning(
@@ -113,7 +138,7 @@ def get_owner_name_from_identifier(identifier: str):
 def update_isettings_with_storage(
     isettings: InstanceSettings, storage: Union[str, Path, UPath]
 ) -> None:
-    ssettings = StorageSettings(storage, instance_settings=isettings)
+    ssettings = StorageSettings(storage)
     if ssettings.is_cloud:
         try:  # triggering ssettings.id makes a lookup in the storage table
             logger.success(f"Loaded storage: {ssettings.id} / {ssettings.root_as_str}")

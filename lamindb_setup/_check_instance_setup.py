@@ -4,6 +4,10 @@ from ._init_instance import reload_schema_modules
 from ._silence_loggers import silence_loggers
 from .dev._settings_store import current_instance_settings_file
 
+_INSTANCE_NOT_SETUP_WARNING = """\
+You haven't yet setup an instance: Please call `ln.setup.init()` or `ln.setup.load()`
+"""
+
 
 def check_instance_setup(from_lamindb: bool = False):
     if current_instance_settings_file().exists():
@@ -16,14 +20,26 @@ def check_instance_setup(from_lamindb: bool = False):
 
             from .dev._django import IS_SETUP, setup_django
 
+            # this flag should probably be renamed to `from_user`
+            # it will typically be invoked if lamindb is imported for use
+            # but users might also import their schema modules first
+            # and then want lamindb be to be available
             if from_lamindb:
-                setup_django(isettings)
-                reload_schema_modules(isettings)
+                # this guarantees that ths is called exactly once
+                # prior to django being setup!
+                if not IS_SETUP:
+                    setup_django(isettings)
+                    reload_schema_modules(isettings)
+                    # only now we can import lamindb
+                    import lamindb as ln
+
+                    logger.success(
+                        f"Loaded instance: {isettings.identifier} (lamindb"
+                        f" {ln.__version__})"
+                    )
+                return True
             else:
                 return IS_SETUP
-
-            # set the check to true
-            return True
         except Exception:
             # user will get more detailed traceback once they run the CLI
             raise RuntimeError(
@@ -33,8 +49,5 @@ def check_instance_setup(from_lamindb: bool = False):
             )
     else:
         if from_lamindb:
-            logger.warning(
-                "You haven't yet setup an instance using the CLI: Please call"
-                " `ln.setup.init()` or `ln.setup.load()`"
-            )
+            logger.warning(_INSTANCE_NOT_SETUP_WARNING)
         return False

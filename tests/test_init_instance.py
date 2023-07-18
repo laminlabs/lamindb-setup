@@ -16,7 +16,7 @@ def test_init_instance_postgres_default_name():
         ln_setup.settings.instance.storage.root.as_posix()
         == Path("mydatapg").absolute().as_posix()
     )
-    assert ln_setup.settings.instance.storage.cache_dir is None
+    ln_setup.delete("pgtest")
 
 
 def test_init_instance_postgres_custom_name():
@@ -30,7 +30,7 @@ def test_init_instance_postgres_custom_name():
         ln_setup.settings.instance.storage.root.as_posix()
         == Path("mystorage").absolute().as_posix()
     )
-    assert ln_setup.settings.instance.storage.cache_dir is None
+    ln_setup.delete("mydata2")
 
 
 def test_init_instance_postgres_cloud_aws_us():

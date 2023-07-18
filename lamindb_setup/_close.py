@@ -5,16 +5,20 @@ from .dev._settings_store import current_instance_settings_file
 from .dev._setup_bionty_sources import delete_bionty_sources_yaml
 
 
-def close() -> None:
+def close(mute: bool = False) -> None:
     """Close existing instance.
 
     Returns `None` if succeeds, otherwise an exception is raised.
     """
     if current_instance_settings_file().exists():
         instance = settings.instance.identifier
-        settings.instance._update_cloud_sqlite_file()
+        try:
+            settings.instance._update_cloud_sqlite_file()
+        except FileNotFoundError:
+            logger.warning("Did not find local cache file")
         current_instance_settings_file().unlink()
         delete_bionty_sources_yaml()
-        logger.success(f"Closed {instance}")
+        logger.success(f"Closed instance: {instance}")
     else:
-        logger.info("No instance loaded")
+        if not mute:
+            logger.info("No instance loaded")
