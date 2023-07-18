@@ -69,11 +69,6 @@ def connect_hub_with_auth(
             user_settings = load_or_create_user_settings()
             email = user_settings.email
             password = user_settings.password
-        from ._settings_load import current_user_settings_file
-
-        print(f"Email: {email}/n LenPass: {password}")
-        print(f"User settings: {user_settings}")
-        print(f"Current user settings file: {current_user_settings_file()}")
         access_token = get_access_token(email=email, password=password)
     hub.postgrest.auth(access_token)
     return hub
