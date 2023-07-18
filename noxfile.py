@@ -57,6 +57,12 @@ def build(session: nox.Session, group: str, lamin_env: str):
 )
 def docs(session: nox.Session, lamin_env: str):
     env = {"LAMIN_ENV": lamin_env}
+    if lamin_env == "staging":  # make sure CI is running against staging
+        session.run(
+            *"lamin login testuser1.staging@lamin.ai --password password".split(" "),
+            external=True,
+            env=env,
+        )
     login_testuser1(session, env=env)
     session.run(*"lamin init --storage ./docsbuild".split())
     build_docs(session)
