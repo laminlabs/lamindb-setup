@@ -36,7 +36,7 @@ def load(
     hub_result = load_instance_from_hub(
         owner=owner, name=name, _access_token=_access_token
     )
-    print(hub_result)
+
     # if hub_result is not a string, it means it made a request
     # that successfully returned metadata
     if not isinstance(hub_result, str):
