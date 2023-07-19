@@ -118,3 +118,33 @@ def sb_select_storage_by_root(root: str, supabase_client: Client):
     if len(data) == 0:
         return None
     return data[0]
+
+
+# --------------- DBUser ----------------------
+def sb_insert_db_user(instance_fields: dict, supabase_client: Client):
+    try:
+        data = supabase_client.table("db_user").insert(instance_fields).execute().data
+    except Exception as e:
+        if str(e) == str("Expecting value: line 1 column 1 (char 0)"):
+            pass
+        else:
+            raise e
+    return data[0]
+
+
+def sb_select_db_user_by_instance(instance_id: str, supabase_client: Client):
+    """Get the DBAccount directly associated with Instance.
+
+    By contrast this is not the DBAccount that is linked through the
+    UserInstance table.
+    """
+    data = (
+        supabase_client.table("db_user")
+        .select("*")
+        .eq("instance_id", instance_id)
+        .execute()
+        .data
+    )
+    if len(data) == 0:
+        return None
+    return data[0]

@@ -8,14 +8,18 @@ from postgrest.exceptions import APIError
 from ._hub_client import connect_hub, connect_hub_with_auth, get_lamin_site_base_url
 from ._hub_crud import (
     sb_insert_collaborator,
+    sb_insert_db_user,
     sb_insert_instance,
     sb_insert_storage,
     sb_select_account_by_handle,
+    sb_select_db_user_by_instance,
     sb_select_instance_by_name,
     sb_select_storage,
     sb_select_storage_by_root,
 )
 from ._hub_utils import (
+    LaminDsn,
+    LaminDsnModel,
     base62,
     get_storage_region,
     get_storage_type,
@@ -99,6 +103,9 @@ def init_instance(
         # storage is validated in add_storage
         validate_db_arg(db)
 
+        if db:
+            db_dsn = LaminDsnModel(db=db)
+
         # get account
         account = sb_select_account_by_handle(owner, hub)
         if account is None:
@@ -122,29 +129,60 @@ def init_instance(
         )
 
         instance_id = uuid4().hex
+        db_user_id = uuid4().hex
 
-        sb_insert_instance(
-            {
-                "id": instance_id,
-                "account_id": account["id"],
-                "name": name,
-                "storage_id": storage_id,
-                "db": db,
-                "schema_str": schema_str,
-                "public": False if public is None else public,
-                "description": description,
-            },
-            hub,
-        )
+        if db_dsn:
+            instance = sb_insert_instance(  # noqa
+                {
+                    "id": instance_id,
+                    "account_id": account["id"],
+                    "name": name,
+                    "storage_id": storage_id,
+                    "db": db,
+                    "db_scheme": db_dsn.db.scheme,
+                    "db_host": db_dsn.db.host,
+                    "db_port": db_dsn.db.port,
+                    "db_database": db_dsn.db.database,
+                    "schema_str": schema_str,
+                    "public": False if public is None else public,
+                    "description": description,
+                },
+                hub,
+            )
 
-        sb_insert_collaborator(
-            {
-                "instance_id": instance_id,
-                "account_id": account["id"],
-                "role": "admin",
-            },
-            hub,
-        )
+            db_user = sb_insert_db_user(  # noqa
+                {
+                    "id": db_user_id,
+                    "instance_id": instance_id,
+                    "db_user_name": db_dsn.db.user,
+                    "db_user_password": db_dsn.db.password,
+                },
+                hub,
+            )
+        else:
+            sb_insert_instance(
+                {
+                    "id": instance_id,
+                    "account_id": account["id"],
+                    "name": name,
+                    "storage_id": storage_id,
+                    "db": db,
+                    "schema_str": schema_str,
+                    "public": False if public is None else public,
+                    "description": description,
+                },
+                hub,
+            )
+
+            sb_insert_collaborator(
+                {
+                    "instance_id": instance_id,
+                    "account_id": account["user_id"],
+                    "db_user_id": db_user_id,
+                    "role": "admin",
+                },
+                hub,
+            )
 
         # upon successful insert of a new row in the instance table
         # (and all associated tables), return None
@@ -183,6 +221,25 @@ def load_instance(
         instance = sb_select_instance_by_name(account["id"], name, hub)
         if instance is None:
             return "instance-not-reachable"
+
+        if not (instance["db"] is None or instance["db"].startswith("sqlite://")):
+            # get db_account
+            db_user = sb_select_db_user_by_instance(instance["id"], hub)
+            if db_user is None:
+                return "db-user-not-reachable"
+
+            # construct dsn from instance and db_account fields
+            db_dsn = LaminDsn.build(
+                scheme=instance["db_scheme"],
+                user=db_user["db_user_name"],
+                password=db_user["db_user_password"],
+                host=instance["db_host"],
+                port=str(instance["db_port"]),
+                database=instance["db_database"],
+            )
+
+            # override the db string with the constructed dsn
+            instance["db"] = db_dsn
 
         # get default storage
         storage = sb_select_storage(instance["storage_id"], hub)
