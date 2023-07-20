@@ -129,9 +129,10 @@ def init_instance(
         )
 
         instance_id = uuid4().hex
-        db_user_id = uuid4().hex
+        db_user_id = None
 
         if db_dsn:
+            db_user_id = uuid4().hex
             instance = sb_insert_instance(  # noqa
                 {
                     "id": instance_id,
@@ -174,15 +175,15 @@ def init_instance(
                 hub,
             )
 
-            sb_insert_collaborator(
-                {
-                    "instance_id": instance_id,
-                    "account_id": account["user_id"],
-                    "db_user_id": db_user_id,
-                    "role": "admin",
-                },
-                hub,
-            )
+        sb_insert_collaborator(
+            {
+                "instance_id": instance_id,
+                "account_id": account["user_id"],
+                "db_user_id": db_user_id,
+                "role": "admin",
+            },
+            hub,
+        )
 
         # upon successful insert of a new row in the instance table
         # (and all associated tables), return None
