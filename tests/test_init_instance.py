@@ -7,6 +7,7 @@ pgurl = "postgresql://postgres:pwd@0.0.0.0:5432/pgtest"
 
 def test_init_instance_postgres_default_name():
     ln_setup.init(storage="./mydatapg", db=pgurl, _test=True)
+    ln_setup.register()
     assert ln_setup.settings.instance.name == "pgtest"
     assert not ln_setup.settings.instance.storage.is_cloud
     assert ln_setup.settings.instance.owner == ln_setup.settings.user.handle
@@ -21,6 +22,7 @@ def test_init_instance_postgres_default_name():
 
 def test_init_instance_postgres_custom_name():
     ln_setup.init(storage="./mystorage", name="mydata2", db=pgurl, _test=True)
+    ln_setup.register()
     assert ln_setup.settings.instance.name == "mydata2"
     assert not ln_setup.settings.instance.storage.is_cloud
     assert ln_setup.settings.instance.owner == ln_setup.settings.user.handle
