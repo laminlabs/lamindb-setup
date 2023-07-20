@@ -40,7 +40,7 @@ def test_connection_string(account_hub_1, instance_1, instance_name_1):
     )
     assert instance_1["db_scheme"] == "postgresql"
     assert instance_1["db_host"] == "fakeserver.xyz"
-    assert instance_1["db_port"] == "5432"
+    assert instance_1["db_port"] == 5432
     assert instance_1["db_database"] == instance_name_1
     assert db_user.db_user_name == "postgres"
     assert db_user.db_user_password == "pwd"
