@@ -21,6 +21,7 @@ def test_init_instance_postgres_default_name():
     instance = sb_select_instance_by_name(
         account_id=account["id"],
         name=ln_setup.settings.instance.name,
+        supabase_client=hub,
     )
     db_user = sb_select_db_user_by_instance(
         instance_id=instance["id"], supabase_client=hub
