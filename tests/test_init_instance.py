@@ -3,6 +3,7 @@ from pathlib import Path
 import lamindb_setup as ln_setup
 from lamindb_setup.dev._hub_client import connect_hub_with_auth
 from lamindb_setup.dev._hub_crud import (
+    sb_delete_instance,
     sb_select_account_by_handle,
     sb_select_db_user_by_instance,
     sb_select_instance_by_name,
@@ -44,6 +45,7 @@ def test_init_instance_postgres_default_name():
         == Path("mydatapg").absolute().as_posix()
     )
     ln_setup.delete("pgtest")
+    sb_delete_instance(instance["id"], hub)
 
 
 def test_init_instance_postgres_custom_name():
