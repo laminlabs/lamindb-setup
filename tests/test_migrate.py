@@ -19,3 +19,7 @@ def setup_instance():
 
 def test_migrate_check(setup_instance):
     assert ln_setup.migrate.check()
+
+
+def test_migrate_show(setup_instance):
+    assert ln_setup.migrate.show()
