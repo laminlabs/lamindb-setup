@@ -38,7 +38,7 @@ def load(
     if check_instance_setup() and not _test:
         raise RuntimeError(
             "Currently don't support init or load of multiple instances in the same"
-            " Python sessionWe will bring this feature back at some point"
+            " Python session. We will bring this feature back at some point"
         )
     else:
         # compare normalized identifier with a potentially previously loaded identifier
