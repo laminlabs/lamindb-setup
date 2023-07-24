@@ -41,7 +41,11 @@ def test_load_public_connection_string():
         name=ln_setup.settings.instance.name,
         supabase_client=hub,
     )
-    sb_update_instance(instance["id"], {"public": True}, hub)
+    sb_update_instance(
+        instance_id=instance["id"],
+        instance_fields={"public": True},
+        supabase_client=hub,
+    )
     # Load instance with non-collaborator user
     ln_setup.login("testuser2")
     instance_settings_file("pgtest", "testuser1").unlink()
