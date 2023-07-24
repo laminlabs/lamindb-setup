@@ -32,6 +32,16 @@ class migrate:
         setup_django(settings.instance, deploy_migrations=True)
 
     @classmethod
+    def show(
+        cls, package_name: str = "lnschema_core", migration_nr: str = "0001"
+    ) -> None:
+        """Show migration to be deployed."""
+        from django.core.management import call_command
+
+        setup_django(settings.instance)
+        call_command("sqlmigrate", package_name, migration_nr)
+
+    @classmethod
     def check(cls) -> bool:
         """Check whether ORM definitions are in sync with migrations."""
         from django.core.management import call_command
