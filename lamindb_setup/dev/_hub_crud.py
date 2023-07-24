@@ -52,6 +52,21 @@ def sb_select_instance_by_name(
     return data[0]
 
 
+def sb_update_instance(
+    instance_id: str, instance_fields: dict, supabase_client: Client
+):
+    data = (
+        supabase_client.table("instance")
+        .update(instance_fields)
+        .eq("id", instance_id)
+        .execute()
+        .data
+    )
+    if len(data) == 0:
+        return None
+    return data[0]
+
+
 def sb_delete_instance(
     id: str,
     supabase_client: Client,

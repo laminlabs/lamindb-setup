@@ -4,6 +4,7 @@ from lamindb_setup.dev._hub_crud import (
     sb_delete_instance,
     sb_select_account_by_handle,
     sb_select_instance_by_name,
+    sb_update_instance,
 )
 from lamindb_setup.dev._settings_store import instance_settings_file
 
@@ -28,9 +29,9 @@ def test_load_public_connection_string():
     # users of public instances
     pgurl = "postgresql://postgres:pwd@0.0.0.0:5432/pgtest"
     ln_setup.login("testuser1")
-    ln_setup.init(storage="./mydatapg", db=pgurl, public=True, _test=True)
+    ln_setup.init(storage="./mydatapg", db=pgurl, _test=True)
     ln_setup.register()
-    # Get hub instance entries
+    # Get hub instance entries and make it public
     hub = connect_hub_with_auth(access_token=ln_setup.settings.user.access_token)
     account = sb_select_account_by_handle(
         handle=ln_setup.settings.instance.owner, supabase_client=hub
@@ -40,6 +41,7 @@ def test_load_public_connection_string():
         name=ln_setup.settings.instance.name,
         supabase_client=hub,
     )
+    sb_update_instance(instance["id"], {"public": True}, hub)
     # Load instance with non-collaborator user
     ln_setup.login("testuser2")
     instance_settings_file("pgtest", "testuser1").unlink()
