@@ -66,7 +66,7 @@ migr = subparsers.add_parser("migrate", help=migr_help)
 aa = migr.add_argument
 aa("action", choices=["create", "deploy"], help="Manage migrations.")
 
-# track anotebook (init nbproject metadata)
+# track a notebook (init nbproject metadata)
 track_parser = subparsers.add_parser("track", help=track_help)
 aa = track_parser.add_argument
 filepath_help = "A path to the notebook to track."
@@ -166,4 +166,7 @@ def main():
         from ._notebook import track
 
         track(args.filepath, args.pypackage)
-    return 1
+
+    else:
+        parser.print_help()
+    return -1
