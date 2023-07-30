@@ -105,6 +105,8 @@ def init_instance(
 
         if db:
             db_dsn = LaminDsnModel(db=db)
+        else:
+            db_dsn = None
 
         # get account
         account = sb_select_account_by_handle(owner, hub)
