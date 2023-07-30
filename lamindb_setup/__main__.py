@@ -1,4 +1,5 @@
 import argparse
+from importlib.metadata import version
 
 # most important dynamic to optimize import time
 from ._docstrings import instance_description as instance
@@ -18,6 +19,7 @@ register_help = (
     "Register instance on hub (local instances are not automatically registered)."
 )
 track_help = "Track a notebook (init metadata)."
+version_help = "Show the version and exit."
 
 description_cli = "Configure LaminDB and perform simple actions."
 parser = argparse.ArgumentParser(
@@ -74,7 +76,6 @@ aa("filepath", type=str, metavar="filepath", help=filepath_help)
 pypackage_help = "One or more (delimited by ',') python packages to track."
 aa("--pypackage", type=str, metavar="pypackage", default=None, help=pypackage_help)
 
-
 # signup user
 signup = subparsers.add_parser("signup", help=signup_help)
 aa = signup.add_argument
@@ -91,6 +92,8 @@ aa(
 )  # noqa
 aa("--password", type=str, metavar="pw", default=None, help=user.password)
 
+# show version
+parser.add_argument("--version", action="version", version=version("lamindb"))
 
 # parse args
 args = parser.parse_args()
