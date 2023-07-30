@@ -93,7 +93,8 @@ aa(
 aa("--password", type=str, metavar="pw", default=None, help=user.password)
 
 # show version
-parser.add_argument("--version", action="version", version=version("lamindb"))
+lamindb_version = version("lamindb") or ""
+parser.add_argument("--version", action="version", version=lamindb_version)
 
 # parse args
 args = parser.parse_args()
