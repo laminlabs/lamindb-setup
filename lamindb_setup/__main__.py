@@ -1,4 +1,5 @@
 import argparse
+from importlib.metadata import version, PackageNotFoundError
 
 # most important dynamic to optimize import time
 from ._docstrings import instance_description as instance
@@ -18,6 +19,7 @@ register_help = (
     "Register instance on hub (local instances are not automatically registered)."
 )
 track_help = "Track a notebook (init metadata)."
+version_help = "Show the version and exit."
 
 description_cli = "Configure LaminDB and perform simple actions."
 parser = argparse.ArgumentParser(
@@ -66,14 +68,13 @@ migr = subparsers.add_parser("migrate", help=migr_help)
 aa = migr.add_argument
 aa("action", choices=["create", "deploy"], help="Manage migrations.")
 
-# track anotebook (init nbproject metadata)
+# track a notebook (init nbproject metadata)
 track_parser = subparsers.add_parser("track", help=track_help)
 aa = track_parser.add_argument
 filepath_help = "A path to the notebook to track."
 aa("filepath", type=str, metavar="filepath", help=filepath_help)
 pypackage_help = "One or more (delimited by ',') python packages to track."
 aa("--pypackage", type=str, metavar="pypackage", default=None, help=pypackage_help)
-
 
 # signup user
 signup = subparsers.add_parser("signup", help=signup_help)
@@ -91,6 +92,13 @@ aa(
 )  # noqa
 aa("--password", type=str, metavar="pw", default=None, help=user.password)
 
+# show version
+try:
+    lamindb_version = version("lamindb")
+except PackageNotFoundError:
+    lamindb_version = "Cannot be determined."
+
+parser.add_argument("--version", action="version", version=lamindb_version)
 
 # parse args
 args = parser.parse_args()
@@ -166,4 +174,7 @@ def main():
         from ._notebook import track
 
         track(args.filepath, args.pypackage)
-    return 1
+
+    else:
+        parser.print_help()
+    return -1
