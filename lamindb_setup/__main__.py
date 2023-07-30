@@ -1,5 +1,5 @@
 import argparse
-from importlib.metadata import version
+from importlib.metadata import version, PackageNotFoundError
 
 # most important dynamic to optimize import time
 from ._docstrings import instance_description as instance
@@ -93,7 +93,11 @@ aa(
 aa("--password", type=str, metavar="pw", default=None, help=user.password)
 
 # show version
-lamindb_version = version("lamindb") or ""
+try:
+    lamindb_version = version("lamindb")
+except PackageNotFoundError:
+    lamindb_version = "Cannot be determined."
+
 parser.add_argument("--version", action="version", version=lamindb_version)
 
 # parse args
