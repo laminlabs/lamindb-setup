@@ -110,12 +110,12 @@ class StorageSettings:
         """Cloud or local filepath from filekey."""
         return self.root / filekey
 
-    def cloud_to_local(self, filepath: Union[Path, UPath]) -> Path:
+    def cloud_to_local(self, filepath: Union[Path, UPath], **kwargs) -> Path:
         """Local (cache) filepath from filepath."""
         local_filepath = self.cloud_to_local_no_update(filepath)  # type: ignore
         if isinstance(filepath, UPath):
             local_filepath.parent.mkdir(parents=True, exist_ok=True)
-            filepath.synchronize(local_filepath)
+            filepath.synchronize(local_filepath, **kwargs)
         return local_filepath
 
     # conversion to Path via cloud_to_local() would trigger download
