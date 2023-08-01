@@ -95,7 +95,7 @@ def test_init_instance_sqlite():
         name="local-sqlite-instance",
         _test=True,
     )
-    assert ln_setup.settings.instance.name == "mydatasqlite"
+    assert ln_setup.settings.instance.name == "local-sqlite-instance"
     assert not ln_setup.settings.instance.storage.is_cloud
     assert ln_setup.settings.instance.owner == ln_setup.settings.user.handle
     assert ln_setup.settings.instance.dialect == "sqlite"
