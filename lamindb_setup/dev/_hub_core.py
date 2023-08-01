@@ -103,7 +103,7 @@ def init_instance(
         # storage is validated in add_storage
         validate_db_arg(db)
 
-        if db:
+        if db is not None:
             db_dsn = LaminDsnModel(db=db)
         else:
             db_dsn = None
@@ -133,7 +133,7 @@ def init_instance(
         instance_id = uuid4().hex
         db_user_id = None
 
-        if db_dsn:
+        if db_dsn is not None:
             db_user_id = uuid4().hex
             instance = sb_insert_instance(  # noqa
                 {
