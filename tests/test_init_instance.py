@@ -89,6 +89,19 @@ def test_init_instance_postgres_cloud_aws_europe():
     )
 
 
+def test_init_instance_sqlite():
+    ln_setup.init(
+        storage="./mydatasqlite",
+        name="local-sqlite-instance",
+        _test=True,
+    )
+    assert ln_setup.settings.instance.name == "local-sqlite-instance"
+    assert not ln_setup.settings.instance.storage.is_cloud
+    assert ln_setup.settings.instance.owner == ln_setup.settings.user.handle
+    assert ln_setup.settings.instance.dialect == "sqlite"
+    ln_setup.delete("local-sqlite-instance")
+
+
 # def test_db_unique_error():
 #     ln_setup.login("testuser2")
 
