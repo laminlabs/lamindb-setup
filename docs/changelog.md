@@ -3,6 +3,7 @@
 <!-- prettier-ignore -->
 Name | PR | Developer | Date | Version
 --- | --- | --- | --- | ---
+✅ Fix init-instance test for sqlite instance | [450](https://github.com/laminlabs/lamindb-setup/pull/450) | [bpenteado](https://github.com/bpenteado) | 2023-08-02 |
 🎨 Fix `init-instance` anti-patterns and expand tests | [449](https://github.com/laminlabs/lamindb-setup/pull/449) | [bpenteado](https://github.com/bpenteado) | 2023-08-01 |
 ✨ Propagate kwargs through synchronization functions | [448](https://github.com/laminlabs/lamindb-setup/pull/448) | [Koncopd](https://github.com/Koncopd) | 2023-07-31 | 0.49.2
 🐛 Fix local variable 'db_dsn' referenced before assignment | [447](https://github.com/laminlabs/lamindb-setup/pull/447) | [fredericenard](https://github.com/fredericenard) | 2023-07-30 |
