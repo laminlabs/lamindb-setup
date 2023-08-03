@@ -1,6 +1,6 @@
 import os
 from pathlib import Path
-from typing import Literal, Optional, Union
+from typing import Any, Literal, Optional, Union
 
 from appdirs import AppDirs
 
@@ -28,7 +28,8 @@ class StorageSettings:
             raise ValueError("root should be of type Union[str, Path, UPath].")
         self._root = root_path
         self._region = region
-        self._id: Optional[str] = None
+        # would prefer to type below as ORM, but need to think through import order
+        self._record: Optional[Any] = None
 
     @staticmethod
     def _str_to_path(storage: str) -> Union[Path, UPath]:
@@ -45,11 +46,17 @@ class StorageSettings:
     @property
     def id(self) -> str:
         """Storage id."""
-        if self._id is None:
+        return self.record.id
+
+    @property
+    def record(self) -> Any:
+        """Storage record."""
+        if self._record is None:
+            # dynamic import because of import order
             from lnschema_core.models import Storage
 
-            self._id = Storage.objects.get(root=self.root_as_str).id
-        return self._id
+            self._record = Storage.objects.get(root=self.root_as_str)
+        return self._record
 
     @property
     def root(self) -> Union[Path, UPath]:
