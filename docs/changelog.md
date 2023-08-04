@@ -3,6 +3,7 @@
 <!-- prettier-ignore -->
 Name | PR | Developer | Date | Version
 --- | --- | --- | --- | ---
+⬇️ Upper bound external dependencies | [452](https://github.com/laminlabs/lamindb-setup/pull/452) | [falexwolf](https://github.com/falexwolf) | 2023-08-04 |
 🎨 Add `.record` property to `StorageSettings` | [451](https://github.com/laminlabs/lamindb-setup/pull/451) | [falexwolf](https://github.com/falexwolf) | 2023-08-03 |
 ✅ Fix init-instance test for sqlite instance | [450](https://github.com/laminlabs/lamindb-setup/pull/450) | [bpenteado](https://github.com/bpenteado) | 2023-08-02 |
 🎨 Fix `init-instance` anti-patterns and expand tests | [449](https://github.com/laminlabs/lamindb-setup/pull/449) | [bpenteado](https://github.com/bpenteado) | 2023-08-01 |
