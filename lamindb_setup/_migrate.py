@@ -33,7 +33,7 @@ class migrate:
 
     @classmethod
     def check(cls) -> bool:
-        """Check whether ORM definitions are in sync with migrations."""
+        """Check whether Registry definitions are in sync with migrations."""
         from django.core.management import call_command
 
         setup_django(settings.instance)
