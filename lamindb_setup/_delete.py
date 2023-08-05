@@ -25,7 +25,7 @@ def delete(instance_name: str):
     delete_settings(settings_file)
     if settings._instance_exists:
         if instance_identifier == settings.instance.identifier:
-            close()  # close() does further operations, unlocking...
+            close(mute=True)  # close() does further operations, unlocking...
             settings._instance_settings = None
     delete_cache(isettings.storage.cache_dir)
     if isettings.dialect == "sqlite":
