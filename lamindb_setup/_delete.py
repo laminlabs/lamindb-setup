@@ -12,7 +12,7 @@ from .dev._settings_store import instance_settings_file
 def delete(instance_name: str):
     """Delete an instance."""
     instance_identifier = f"{settings.user.handle}/{instance_name}"
-    logger.info(f"Deleting instance {instance_identifier}")
+    logger.info(f"deleting instance {instance_identifier}")
     settings_file = instance_settings_file(instance_name, settings.user.handle)
     if not settings_file.exists():
         logger.warning(

@@ -15,10 +15,11 @@ def close(mute: bool = False) -> None:
         try:
             settings.instance._update_cloud_sqlite_file()
         except FileNotFoundError:
-            logger.warning("Did not find local cache file")
+            logger.warning("did not find local cache file")
         current_instance_settings_file().unlink()
         delete_bionty_sources_yaml()
-        logger.success(f"closed instance: {instance}")
+        if not mute:
+            logger.success(f"closed instance: {instance}")
     else:
         if not mute:
-            logger.info("No instance loaded")
+            logger.info("no instance loaded")
