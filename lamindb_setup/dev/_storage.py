@@ -28,7 +28,7 @@ class StorageSettings:
             raise ValueError("root should be of type Union[str, Path, UPath].")
         self._root = root_path
         self._region = region
-        # would prefer to type below as ORM, but need to think through import order
+        # would prefer to type below as Registry, but need to think through import order
         self._record: Optional[Any] = None
 
     @staticmethod
