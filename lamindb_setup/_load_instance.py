@@ -69,7 +69,7 @@ def load(
     else:
         settings_file = instance_settings_file(name, owner)
         if settings_file.exists():
-            logger.info(f"Found cached instance metadata: {settings_file}")
+            logger.info(f"found cached instance metadata: {settings_file}")
             isettings = load_instance_settings(settings_file)
         else:
             if _log_error_message:
