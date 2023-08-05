@@ -59,5 +59,5 @@ def load_schema(isettings: InstanceSettings, *, init: bool = False):
         module = check_schema_version_and_import(schema_name)
         msg += f"{schema_name}=={module.__version__} "
     if init:
-        logger.info(f"Creating schemas: {msg}")
+        logger.info(f"creating schemas: {msg}")
     return msg, schema_names

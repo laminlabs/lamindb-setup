@@ -112,7 +112,7 @@ def check_is_legacy_instance_and_fix(isettings) -> bool:
                 conn.execute(sa.text(stmt))
             except Exception as e:
                 logger.warning(f"Failed to execute: {stmt} because of {e}")
-    logger.success("Created legacy migration preparations")
+    logger.success("created legacy migration preparations")
     return True
 
 
