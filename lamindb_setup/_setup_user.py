@@ -14,10 +14,10 @@ def signup(email: str) -> Union[str, None]:
 
     response = sign_up_hub(email)
     if response == "handle-exists":  # handle already exists
-        logger.error("The handle already exists. Please choose a different one.")
+        logger.error("The handle already exists: please choose a different one")
         return "handle-exists"
     if response == "user-exists":  # user already exists
-        logger.error("User already exists! Please login instead: `lamin login`.")
+        logger.error("User already exists! Please login instead: `lamin login`")
         return "user-exists"
     user_settings = load_or_create_user_settings()
     user_settings.email = email
@@ -92,9 +92,9 @@ def login(
     else:
         user_id, user_handle, user_name, access_token = response
     if handle is None:
-        logger.success(f"Logged in with handle {user_handle} and id {user_id}")
+        logger.success(f"logged in with handle {user_handle} and id {user_id}")
     else:
-        logger.success(f"Logged in with email {user_settings.email} and id {user_id}")
+        logger.success(f"logged in with email {user_settings.email} and id {user_id}")
     user_settings.id = user_id
     user_settings.handle = user_handle
     user_settings.name = user_name
