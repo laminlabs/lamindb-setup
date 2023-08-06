@@ -198,7 +198,7 @@ def init(
         )
     if not isettings.is_remote:
         verbosity = logger._verbosity
-        logger.set_verbosity(3)
+        logger.set_verbosity(4)
         logger.hint(
             "did not register local instance on hub (if you want, call `lamin"
             " register`)"
