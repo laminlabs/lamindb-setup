@@ -1,7 +1,7 @@
 from pathlib import Path
 from typing import Optional, Union
 
-from lamin_logger import logger
+from lamin_utils import logger
 
 from lamindb_setup.dev.upath import UPath
 

@@ -1,6 +1,6 @@
 from typing import Union
 
-from lamin_logger import logger
+from lamin_utils import logger
 
 from ._settings import settings
 from .dev._settings_load import load_or_create_user_settings, load_user_settings

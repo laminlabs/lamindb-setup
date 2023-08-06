@@ -1,4 +1,4 @@
-from lamin_logger import logger
+from lamin_utils import logger
 
 from ._init_instance import reload_schema_modules
 from ._silence_loggers import silence_loggers

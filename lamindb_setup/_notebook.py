@@ -1,6 +1,6 @@
 from typing import Optional
 
-from lamin_logger import logger
+from lamin_utils import logger
 
 
 def track(notebook_path: str, pypackage: Optional[str] = None):

@@ -1,4 +1,4 @@
-from lamin_logger import logger
+from lamin_utils import logger
 
 from ._check_instance_setup import check_instance_setup
 from ._settings import settings
