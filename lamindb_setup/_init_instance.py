@@ -3,7 +3,7 @@ import sys
 from pathlib import Path
 from typing import Optional, Union
 
-from lamin_logger import logger
+from lamin_utils import logger
 from pydantic import PostgresDsn
 
 from lamindb_setup.dev.upath import UPath
@@ -198,7 +198,7 @@ def init(
         )
     if not isettings.is_remote:
         verbosity = logger._verbosity
-        logger.set_verbosity(3)
+        logger.set_verbosity(4)
         logger.hint(
             "did not register local instance on hub (if you want, call `lamin"
             " register`)"

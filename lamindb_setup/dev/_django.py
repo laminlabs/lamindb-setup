@@ -2,7 +2,7 @@
 import builtins
 import os
 
-from lamin_logger import logger
+from lamin_utils import logger
 
 from ._settings_instance import InstanceSettings
 

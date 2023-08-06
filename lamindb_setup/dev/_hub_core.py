@@ -2,7 +2,7 @@ import os
 from typing import Optional, Tuple, Union
 from uuid import UUID, uuid4
 
-from lamin_logger import logger
+from lamin_utils import logger
 from postgrest.exceptions import APIError
 
 from ._hub_client import connect_hub, connect_hub_with_auth, get_lamin_site_base_url

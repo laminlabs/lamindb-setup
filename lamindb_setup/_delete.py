@@ -1,7 +1,7 @@
 import shutil
 from pathlib import Path
 
-from lamin_logger import logger
+from lamin_utils import logger
 
 from ._close import close
 from ._settings import settings

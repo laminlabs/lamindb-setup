@@ -1,4 +1,4 @@
-from lamin_logger import logger
+from lamin_utils import logger
 
 from ._settings import settings
 from .dev._settings_store import current_instance_settings_file

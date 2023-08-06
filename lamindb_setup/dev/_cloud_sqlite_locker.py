@@ -4,7 +4,7 @@ from typing import Optional, Union
 
 import fsspec
 from dateutil.parser import isoparse  # type: ignore
-from lamin_logger import logger
+from lamin_utils import logger
 
 from ._settings_instance import InstanceSettings
 from .upath import UPath, infer_filesystem

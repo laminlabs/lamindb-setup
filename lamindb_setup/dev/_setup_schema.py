@@ -3,7 +3,7 @@ from types import ModuleType
 
 from importlib_metadata import requires as importlib_requires
 from importlib_metadata import version as get_pip_version
-from lamin_logger import logger
+from lamin_utils import logger
 from packaging.requirements import Requirement
 
 from ._django import setup_django

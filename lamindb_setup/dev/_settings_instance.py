@@ -3,7 +3,7 @@ import shutil
 from pathlib import Path
 from typing import Literal, Optional, Set, Tuple, Union
 
-from lamin_logger import logger
+from lamin_utils import logger
 
 from ._settings_save import save_instance_settings
 from ._settings_store import current_instance_settings_file, instance_settings_file

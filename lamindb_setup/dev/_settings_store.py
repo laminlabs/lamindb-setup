@@ -2,7 +2,7 @@ import os
 import shutil
 from pathlib import Path
 
-from lamin_logger import logger
+from lamin_utils import logger
 from pydantic import BaseSettings
 
 
