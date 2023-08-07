@@ -168,7 +168,11 @@ class InstanceSettings:
         from ._cloud_sqlite_locker import empty_locker, get_locker
 
         if self._is_cloud_sqlite:
-            return get_locker(self)
+            try:
+                return get_locker(self)
+            except PermissionError:
+                logger.warning("read-only access - did not access locker")
+                return empty_locker
         else:
             return empty_locker
 
