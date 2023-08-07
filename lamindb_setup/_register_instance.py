@@ -20,4 +20,4 @@ def register():
     elif isinstance(result, str):
         raise RuntimeError(f"creating instance on hub failed:\n{result}")
     else:
-        logger.success(f"instance registered: https://lamin.ai/{isettings.identifier}")
+        logger.save(f"instance registered: https://lamin.ai/{isettings.identifier}")

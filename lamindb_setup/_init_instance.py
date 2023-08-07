@@ -31,7 +31,7 @@ def register_storage(ssettings: StorageSettings):
         ),
     )
     if created:
-        logger.download(f"saved: {storage}")
+        logger.save(f"saved: {storage}")
 
 
 def register_user_and_storage(isettings: InstanceSettings, usettings):
@@ -49,7 +49,7 @@ def register_user_and_storage(isettings: InstanceSettings, usettings):
             ),
         )
         if created:
-            logger.download(f"saved: {user}")
+            logger.save(f"saved: {user}")
         register_storage(isettings.storage)
     except OperationalError as error:
         logger.warning(f"instance seems not set up ({error})")
@@ -171,9 +171,7 @@ def init(
             pass  # everything is alright!
         elif isinstance(result, str):
             raise RuntimeError(f"Registering instance on hub failed:\n{result}")
-        logger.success(
-            f"registered instance on hub: https://lamin.ai/{owner}/{name_str}"
-        )
+        logger.save(f"registered instance on hub: https://lamin.ai/{owner}/{name_str}")
 
     if _test:
         isettings._persist()

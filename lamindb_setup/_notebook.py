@@ -18,7 +18,7 @@ def track(notebook_path: str, pypackage: Optional[str] = None):
         metadata = initialize_metadata(nb, pypackage=pypackage).dict()
         nb.metadata["nbproject"] = metadata
         write_notebook(nb, notebook_path)
-        logger.success("attached metadata to notebook")
+        logger.save("attached metadata to notebook")
     else:
         logger.info(f"the notebook {notebook_path} is already tracked")
 
@@ -41,5 +41,5 @@ def track(notebook_path: str, pypackage: Optional[str] = None):
             updated = True
 
         if updated:
-            logger.success("updated the notebook metadata.")
+            logger.save("updated the notebook metadata.")
             write_notebook(nb, notebook_path)

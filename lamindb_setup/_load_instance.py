@@ -172,6 +172,4 @@ def update_root_field_in_default_storage(isettings: InstanceSettings):
     storage = storages[0]
     storage.root = isettings.storage.root_as_str
     storage.save()
-    logger.success(
-        f"Updated storage root {storage.id} to {isettings.storage.root_as_str}"
-    )
+    logger.save(f"updated storage root {storage.id} to {isettings.storage.root_as_str}")

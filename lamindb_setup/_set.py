@@ -56,7 +56,7 @@ class set:
 
         settings.storage._set_fs_kwargs(**fs_kwargs)
 
-        logger.success(f"set storage {root}")
+        logger.save(f"set storage {root}")
 
 
 @deprecated("lamindb_setup.set.storage()")
