@@ -41,7 +41,7 @@ class migrate:
             call_command("makemigrations", check_changes=True)
         except SystemExit:
             logger.error(
-                "Migrations are not in sync with ORMs, please create a migration: lamin"
+                "migrations are not in sync with ORMs, please create a migration: lamin"
                 " migrate create"
             )
             return False

@@ -52,7 +52,7 @@ def register_user_and_storage(isettings: InstanceSettings, usettings):
             logger.success(f"saved: {user}")
         register_storage(isettings.storage)
     except OperationalError as error:
-        logger.warning(f"Instance seems not set up ({error})")
+        logger.warning(f"instance seems not set up ({error})")
 
 
 def reload_schema_modules(isettings: InstanceSettings):
