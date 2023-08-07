@@ -22,7 +22,6 @@ jobs:
           - "staging"
           - "prod"
     timeout-minutes: 20
-
     steps:
       - uses: actions/checkout@v3
         with:
@@ -88,8 +87,32 @@ jobs:
           NETLIFY_AUTH_TOKEN: ${{ secrets.NETLIFY_AUTH_TOKEN }}
           NETLIFY_SITE_ID: ${{ secrets.NETLIFY_SITE_ID }}
 
+  # a test group for testing user access to public buckets without AWS credentials
+  noaws:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version: ["3.9"]
+    steps:
+      - uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+          submodules: recursive
+      - uses: actions/setup-python@v4
+        with:
+          python-version: ${{ matrix.python-version }}
+          cache: "pip"
+          cache-dependency-path: ".github/workflows/build.yml" # See dependencies below
+      - run: pip install -U laminci
+      - run: nox -s "install(group='noaws')"
+      - run: nox -s noaws
+      - uses: actions/upload-artifact@v2
+        with:
+          name: coverage--noaws
+          path: .coverage
+
   coverage:
-    needs: build
+    needs: [build, noaws]
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3

@@ -13,18 +13,21 @@ def lint(session: nox.Session) -> None:
 @nox.session
 @nox.parametrize(
     "group",
-    ["unit", "docs"],
+    ["unit", "docs", "noaws"],
 )
 def install(session: nox.Session, group: str) -> None:
-    session.run(*"pip install git+https://github.com/laminlabs/bionty".split())
-    session.run(
-        *"pip install --no-deps git+https://github.com/laminlabs/lnschema-bionty"
-        .split()
-    )
-    # install lnschema-core from sub-module
-    session.run(*"pip install --no-deps ./lnschema-core".split())
-    # install lamindb-setup without deps
-    session.run(*"pip install .[aws,dev]".split())
+    if group != "noaws":
+        session.run(*"pip install git+https://github.com/laminlabs/bionty".split())
+        session.run(
+            *"pip install --no-deps git+https://github.com/laminlabs/lnschema-bionty"
+            .split()
+        )
+        # install lnschema-core from sub-module
+        session.run(*"pip install --no-deps ./lnschema-core".split())
+        # install lamindb-setup without deps
+        session.run(*"pip install .[aws,dev]".split())
+    else:
+        session.run(*"pip install .[aws,dev]".split())
 
 
 @nox.session
@@ -43,7 +46,7 @@ def build(session: nox.Session, group: str, lamin_env: str):
     coverage_args = "--cov=lamindb_setup --cov-append --cov-report=term-missing"  # noqa
     if group.startswith("unit"):
         session.run(
-            *f"pytest -s {coverage_args} ./tests --ignore tests/hub".split(),
+            *f"pytest -s {coverage_args} ./tests/unit".split(),
             env=env,
         )
     elif group.startswith("docs"):
@@ -68,3 +71,12 @@ def docs(session: nox.Session, lamin_env: str):
     if lamin_env != "staging":
         build_docs(session)
         upload_docs_artifact()
+
+
+@nox.session
+def noaws(session: nox.Session):
+    login_testuser1(session)
+    coverage_args = "--cov=lamindb_setup --cov-append --cov-report=term-missing"  # noqa
+    session.run(
+        *f"pytest -s {coverage_args} ./tests/test_load_persistent_instance.py".split()
+    )
