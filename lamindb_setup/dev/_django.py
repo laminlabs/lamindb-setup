@@ -214,6 +214,6 @@ def setup_django(
                 )
         else:
             if deploy_migrations:
-                logger.info("database already up-to-date with migrations!")
+                logger.success("database already up-to-date with migrations!")
         global IS_SETUP
         IS_SETUP = True
