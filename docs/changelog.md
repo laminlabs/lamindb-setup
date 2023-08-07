@@ -3,6 +3,7 @@
 <!-- prettier-ignore -->
 Name | PR | Developer | Date | Version
 --- | --- | --- | --- | ---
+👷 Simplify CI setup | [458](https://github.com/laminlabs/lamindb-setup/pull/458) | [falexwolf](https://github.com/falexwolf) | 2023-08-07 |
 🎨 Use logger.save | [459](https://github.com/laminlabs/lamindb-setup/pull/459) | [sunnyosun](https://github.com/sunnyosun) | 2023-08-07 |
 🐛 Fix aws access with no credentials | [457](https://github.com/laminlabs/lamindb-setup/pull/457) | [Koncopd](https://github.com/Koncopd) | 2023-08-07 |
 🔊 Refactored logging msg | [456](https://github.com/laminlabs/lamindb-setup/pull/456) | [sunnyosun](https://github.com/sunnyosun) | 2023-08-07 |
