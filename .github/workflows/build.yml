@@ -112,7 +112,7 @@ jobs:
           path: .coverage
 
   coverage:
-    needs: [noaws]
+    needs: [build, noaws]
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
