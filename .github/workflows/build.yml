@@ -93,7 +93,6 @@ jobs:
     strategy:
       matrix:
         python-version: ["3.9"]
-        group: ["unit"]
     steps:
       - uses: actions/checkout@v3
         with:
@@ -105,7 +104,7 @@ jobs:
           cache: "pip"
           cache-dependency-path: ".github/workflows/build.yml" # See dependencies below
       - run: pip install -U laminci
-      - run: nox -s "install(group='${{ matrix.group }}')"
+      - run: nox -s "install(group='noaws')"
       - run: nox -s noaws
       - uses: actions/upload-artifact@v2
         with:
