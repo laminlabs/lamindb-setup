@@ -1,10 +1,9 @@
-import os
 from pathlib import Path
 from typing import Any, Literal, Optional, Union
 
 from appdirs import AppDirs
 
-from .upath import UPath
+from .upath import CloudPath, S3Path, UPath
 
 DIRS = AppDirs("lamindb", "laminlabs")
 
@@ -17,30 +16,24 @@ class StorageSettings:
         root: Union[str, Path, UPath],
         region: Optional[str] = None,
     ):
-        if isinstance(root, UPath):
-            root_path = root
-        elif isinstance(root, Path):
-            root.mkdir(parents=True, exist_ok=True)  # resolve fails for nonexisting dir
-            root_path = root.resolve()
-        elif isinstance(root, str):
-            root_path = Storage._str_to_path(root)
+        if isinstance(root, (str, Path, UPath)):
+            self._root = self._to_upath(root)
         else:
             raise ValueError("root should be of type Union[str, Path, UPath].")
-        self._root = root_path
         self._region = region
         # would prefer to type below as Registry, but need to think through import order
         self._record: Optional[Any] = None
 
     @staticmethod
-    def _str_to_path(storage: str) -> Union[Path, UPath]:
-        if storage.startswith("s3://"):
-            # for new buckets there could be problems if the region is not specified
-            storage_root = UPath(storage, cache_regions=True)
-        elif storage.startswith("gs://"):
-            storage_root = UPath(storage)
-        else:  # local path
-            os.makedirs(storage, exist_ok=True)  # resolve fails for nonexisting dir
-            storage_root = Path(storage).resolve()
+    def _to_upath(storage: Union[str, Path, UPath]) -> UPath:
+        storage_root = UPath(storage)
+        if isinstance(storage_root, S3Path):
+            storage_root = UPath(storage_root, cache_regions=True)
+        elif not isinstance(storage_root, CloudPath):
+            storage_root.mkdir(
+                parents=True, exist_ok=True
+            )  # resolve fails for nonexisting dir
+            storage_root = storage_root.resolve()
         return storage_root
 
     @property
@@ -72,7 +65,7 @@ class StorageSettings:
         >>>    profile="some_profile", cache_regions=True
         >>> )
         """
-        if isinstance(self._root, UPath):
+        if isinstance(self._root, CloudPath):
             self._root = UPath(self._root, **kwargs)
 
     @property
@@ -92,7 +85,7 @@ class StorageSettings:
     @property
     def is_cloud(self) -> bool:
         """`True` if `storage_root` is in cloud, `False` otherwise."""
-        return isinstance(self.root, UPath)
+        return isinstance(self.root, CloudPath)
 
     @property
     def region(self) -> Optional[str]:
@@ -120,7 +113,7 @@ class StorageSettings:
     def cloud_to_local(self, filepath: Union[Path, UPath], **kwargs) -> Path:
         """Local (cache) filepath from filepath."""
         local_filepath = self.cloud_to_local_no_update(filepath)  # type: ignore
-        if isinstance(filepath, UPath):
+        if isinstance(filepath, CloudPath):
             local_filepath.parent.mkdir(parents=True, exist_ok=True)
             filepath.synchronize(local_filepath, **kwargs)
         return local_filepath
@@ -131,7 +124,7 @@ class StorageSettings:
     # hence, we manually construct the local file path
     # using the `.parts` attribute in the following line
     def cloud_to_local_no_update(self, filepath: Union[Path, UPath]) -> Path:
-        if isinstance(filepath, UPath):
+        if isinstance(filepath, CloudPath):
             return self.cache_dir.joinpath(filepath._url.netloc, *filepath.parts[1:])  # type: ignore # noqa
         return filepath
 

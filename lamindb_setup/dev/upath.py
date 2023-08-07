@@ -15,6 +15,7 @@ from typing import Union
 
 from dateutil.parser import isoparse  # type: ignore
 from upath import UPath
+from upath.implementations.cloud import CloudPath, S3Path  # noqa
 
 
 def infer_filesystem(path: Union[Path, UPath, str]):

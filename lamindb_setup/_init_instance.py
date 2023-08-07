@@ -6,7 +6,7 @@ from typing import Optional, Union
 from lamin_utils import logger
 from pydantic import PostgresDsn
 
-from lamindb_setup.dev.upath import UPath
+from lamindb_setup.dev.upath import CloudPath, UPath
 
 from ._close import close as close_instance
 from ._docstrings import instance_description as description
@@ -237,12 +237,9 @@ def infer_instance_name(
         # better way of accessing the database name?
         return str(db).split("/")[-1]
 
-    if isinstance(storage, str):
-        storage_path = StorageSettings._str_to_path(storage)
-    else:
-        storage_path = storage
+    storage_path = StorageSettings._to_upath(storage)
 
-    if isinstance(storage_path, UPath):
+    if isinstance(storage_path, CloudPath):
         name = storage_path._url.netloc
     else:
         name = str(storage_path.stem)
