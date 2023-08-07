@@ -68,3 +68,12 @@ def docs(session: nox.Session, lamin_env: str):
     if lamin_env != "staging":
         build_docs(session)
         upload_docs_artifact()
+
+
+@nox.session
+def noaws(session: nox.Session):
+    login_testuser1(session)
+    coverage_args = "--cov=lamindb_setup --cov-append --cov-report=term-missing"  # noqa
+    session.run(
+        *f"pytest -s {coverage_args} .tests/test_load_persistent_instance.py".split()
+    )  # noqa
