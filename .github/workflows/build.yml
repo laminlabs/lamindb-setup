@@ -88,8 +88,49 @@ jobs:
           NETLIFY_AUTH_TOKEN: ${{ secrets.NETLIFY_AUTH_TOKEN }}
           NETLIFY_SITE_ID: ${{ secrets.NETLIFY_SITE_ID }}
 
+  testnoaws:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version: ["3.9"]
+        group: ["unit"]
+    steps:
+      - uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+          submodules: recursive
+      - uses: actions/setup-python@v4
+        with:
+          python-version: ${{ matrix.python-version }}
+          cache: "pip"
+          cache-dependency-path: ".github/workflows/build.yml" # See dependencies below
+      - uses: actions/cache@v3
+        with:
+          path: ~/.cache/pre-commit
+          key: pre-commit-${{ runner.os }}-${{ hashFiles('.pre-commit-config.yaml') }}
+      - id: cache-postgres
+        uses: actions/cache@v3
+        with:
+          path: ~/postgres.tar
+          key: cache-postgres-0
+      - if: steps.cache-postgres.outputs.cache-hit != 'true'
+        run: docker pull postgres:latest && docker image save postgres:latest --output ~/postgres.tar
+      - if: steps.cache-postgres.outputs.cache-hit == 'true'
+        run: docker image load --input ~/postgres.tar
+      - run: pip install -U laminci
+      - name: install apt-get deps
+        run: |
+          sudo apt-get -y install graphviz
+          sudo apt-get install libpq-dev
+      - run: nox -s "install(group='${{ matrix.group }}')"
+      - run: nox -s "build(lamin_env='${{ matrix.lamin_env }}', group='${{ matrix.group }}')"
+      - uses: actions/upload-artifact@v2
+        with:
+          name: coverage--${{ matrix.group }}
+          path: .coverage
+
   coverage:
-    needs: build
+    needs: [build, testnoaws]
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
