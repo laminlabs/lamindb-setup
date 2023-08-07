@@ -3,6 +3,8 @@ from pathlib import Path
 from typing import Any, Literal, Optional, Union
 
 from appdirs import AppDirs
+from botocore.exceptions import NoCredentialsError
+from lamin_utils import logger
 
 from .upath import UPath
 
@@ -36,6 +38,11 @@ class StorageSettings:
         if storage.startswith("s3://"):
             # for new buckets there could be problems if the region is not specified
             storage_root = UPath(storage, cache_regions=True)
+            try:
+                storage_root.stat()
+            except NoCredentialsError:
+                logger.warning("did not find aws credentials, using anonymous")
+                storage_root = UPath(storage_root, anon=True)
         elif storage.startswith("gs://"):
             storage_root = UPath(storage)
         else:  # local path
