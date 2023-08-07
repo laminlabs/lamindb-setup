@@ -111,7 +111,7 @@ def check_is_legacy_instance_and_fix(isettings) -> bool:
             try:
                 conn.execute(sa.text(stmt))
             except Exception as e:
-                logger.warning(f"Failed to execute: {stmt} because of {e}")
+                logger.warning(f"failed to execute: {stmt} because of {e}")
     logger.success("created legacy migration preparations")
     return True
 
@@ -142,7 +142,7 @@ def insert_legacy_data(isettings: InstanceSettings):
                 conn.execute(sa.text(stmt))
                 logger.success(stmt)
             except Exception as e:
-                logger.warning(f"Failed to execute: {stmt} because of {e}")
+                logger.warning(f"failed to execute: {stmt} because of {e}")
 
 
 def setup_django(
@@ -214,6 +214,6 @@ def setup_django(
                 )
         else:
             if deploy_migrations:
-                logger.info("Database already up-to-date with migrations!")
+                logger.success("database already up-to-date with migrations!")
         global IS_SETUP
         IS_SETUP = True

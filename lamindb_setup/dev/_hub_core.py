@@ -311,7 +311,7 @@ def sign_in_hub(email, password, handle=None):
     except Exception as exception:  # this is bad, but I don't find APIError right now
         logger.error(exception)
         logger.error(
-            "Could not login. Probably your password is wrong or you didn't complete"
+            "could not login. probably your password is wrong or you didn't complete"
             " signup."
         )
         return "could-not-login"
@@ -322,10 +322,10 @@ def sign_in_hub(email, password, handle=None):
         user_name = data.data[0]["name"]
         if handle is not None and handle != user_handle:
             logger.warning(
-                f"Using account handle {user_handle} (cached handle was {handle})"
+                f"using account handle {user_handle} (cached handle was {handle})"
             )
     else:  # user did not complete signup as usermeta has no matching row
-        logger.error("Complete signup on your account page.")
+        logger.error("complete signup on your account page.")
         return "complete-signup"
     hub.auth.sign_out()
     return user_id, user_handle, user_name, auth_response.session.access_token

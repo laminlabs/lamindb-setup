@@ -31,7 +31,7 @@ def register_storage(ssettings: StorageSettings):
         ),
     )
     if created:
-        logger.success(f"saved: {storage}")
+        logger.download(f"saved: {storage}")
 
 
 def register_user_and_storage(isettings: InstanceSettings, usettings):
@@ -49,10 +49,10 @@ def register_user_and_storage(isettings: InstanceSettings, usettings):
             ),
         )
         if created:
-            logger.success(f"saved: {user}")
+            logger.download(f"saved: {user}")
         register_storage(isettings.storage)
     except OperationalError as error:
-        logger.warning(f"Instance seems not set up ({error})")
+        logger.warning(f"instance seems not set up ({error})")
 
 
 def reload_schema_modules(isettings: InstanceSettings):
