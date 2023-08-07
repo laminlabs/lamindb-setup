@@ -3,7 +3,7 @@
 <!-- prettier-ignore -->
 Name | PR | Developer | Date | Version
 --- | --- | --- | --- | ---
-👷 Test configuration with no AWS access | [460](https://github.com/laminlabs/lamindb-setup/pull/460) | [falexwolf](https://github.com/falexwolf) | 2023-08-07 |
+👷 Test configuration with no AWS access | [460](https://github.com/laminlabs/lamindb-setup/pull/460) | [falexwolf](https://github.com/falexwolf) | 2023-08-07 | 0.49.6
 👷 Simplify CI setup | [458](https://github.com/laminlabs/lamindb-setup/pull/458) | [falexwolf](https://github.com/falexwolf) | 2023-08-07 |
 🎨 Use logger.save | [459](https://github.com/laminlabs/lamindb-setup/pull/459) | [sunnyosun](https://github.com/sunnyosun) | 2023-08-07 |
 🐛 Fix aws access with no credentials | [457](https://github.com/laminlabs/lamindb-setup/pull/457) | [Koncopd](https://github.com/Koncopd) | 2023-08-07 |
