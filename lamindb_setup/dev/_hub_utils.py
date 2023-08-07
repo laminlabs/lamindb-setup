@@ -72,18 +72,46 @@ def get_storage_region(storage_root: Union[str, Path, UPath]) -> Optional[str]:
     storage_region = None
 
     if storage_root_str.startswith("s3://"):
-        import botocore.session
+        import botocore.session as session
+        from botocore.config import Config
+        from botocore.exceptions import ClientError, NoCredentialsError
 
-        response = (
-            botocore.session.get_session()
-            .create_client("s3")
-            .get_bucket_location(Bucket=storage_root_str.replace("s3://", ""))
-        )
-        # returns `None` for us-east-1
-        # returns a string like "eu-central-1" etc. for all other regions
-        storage_region = response["LocationConstraint"]
-        if storage_region is None:
-            storage_region = "us-east-1"
+        bucket = storage_root_str.replace("s3://", "")
+
+        s3_session = session.get_session()
+
+        s3_client = s3_session.create_client("s3")
+        try:
+            response = s3_client.head_bucket(Bucket=bucket)
+            exc = None
+        except Exception as e:
+            response = None
+            exc = e
+
+        if isinstance(exc, NoCredentialsError):
+            s3_client = s3_session.create_client(
+                "s3", config=Config(signature_version=session.UNSIGNED)
+            )
+            try:
+                response = s3_client.head_bucket(Bucket=bucket)
+                exc = None
+            except Exception as e:
+                response = None
+                exc = e
+
+        if isinstance(exc, ClientError):
+            response = exc.response
+
+        if response is not None:
+            storage_region = (
+                response["ResponseMetadata"]
+                .get("HTTPHeaders", {})
+                .get("x-amz-bucket-region")
+            )
+            return storage_region
+
+        if exc is not None:
+            raise exc
 
     return storage_region
 
