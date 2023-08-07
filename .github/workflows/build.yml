@@ -94,6 +94,7 @@ jobs:
       matrix:
         python-version: ["3.9"]
         group: ["unit"]
+        lamin_env: ["prod"]
     steps:
       - uses: actions/checkout@v3
         with:
