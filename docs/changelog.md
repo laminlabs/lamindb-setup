@@ -3,6 +3,7 @@
 <!-- prettier-ignore -->
 Name | PR | Developer | Date | Version
 --- | --- | --- | --- | ---
+🐛 Fix aws access with no credentials | [457](https://github.com/laminlabs/lamindb-setup/pull/457) | [Koncopd](https://github.com/Koncopd) | 2023-08-07 |
 🔊 Refactored logging msg | [456](https://github.com/laminlabs/lamindb-setup/pull/456) | [sunnyosun](https://github.com/sunnyosun) | 2023-08-07 |
 ♻️ Replace `lamin_logger` with `lamin_utils` | [454](https://github.com/laminlabs/lamindb-setup/pull/454) | [falexwolf](https://github.com/falexwolf) | 2023-08-06 | 0.49.5
 🚚 Rename `ORM` to `Registry` | [453](https://github.com/laminlabs/lamindb-setup/pull/453) | [sunnyosun](https://github.com/sunnyosun) | 2023-08-05 |
