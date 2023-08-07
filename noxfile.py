@@ -43,7 +43,7 @@ def build(session: nox.Session, group: str, lamin_env: str):
     coverage_args = "--cov=lamindb_setup --cov-append --cov-report=term-missing"  # noqa
     if group.startswith("unit"):
         session.run(
-            *f"pytest -s {coverage_args} ./tests --ignore tests/hub".split(),
+            *f"pytest -s {coverage_args} ./tests/unit".split(),
             env=env,
         )
     elif group.startswith("docs"):
