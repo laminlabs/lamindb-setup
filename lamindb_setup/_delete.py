@@ -35,9 +35,11 @@ def delete(instance_name: str):
         else:
             logger.warning("    '.lndb' sqlite file does not exist")
     if isettings.is_remote:
-        logger.warning("    consider manually delete your remote instance on lamin.ai")
+        logger.warning(
+            "    consider manually deleting your remote instance on lamin.ai"
+        )
     logger.warning(
-        f"    consider manually delete your stored data: {isettings.storage.root}"
+        f"    consider manually deleting your stored data: {isettings.storage.root}"
     )
 
 
