@@ -15,10 +15,10 @@ Your database is not up to date with your installed Python library.
 The database misses the following migrations:
 {missing_migrations}
 
-Only if you are an _admin_ and manage migrations _manually_, deploy them to the database:
+Only if you are an admin and manage migrations manually, deploy them to the database:
 lamin migrate deploy
 
-Otherwise, _downgrade_ your Python library to match the database.
+Otherwise, downgrade your Python library to match the database!
 """
 
 
