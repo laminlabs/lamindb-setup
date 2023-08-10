@@ -8,6 +8,18 @@ from ._settings_instance import InstanceSettings
 
 IS_RUN_FROM_IPYTHON = getattr(builtins, "__IPYTHON__", False)
 IS_SETUP = False
+MIGRATIONS_NEEDED_WARNING = """
+
+Your database is not up to date with your installed Python library.
+
+The database misses the following migrations:
+{needed_migrations}
+
+Only if you are an _admin_ and manage migrations _manually_, deploy missing migrations to the database:
+lamin migrate deploy
+
+Otherwise, _downgrade_ your Python library to match the database.
+"""
 
 
 def get_migrations_to_sync():
@@ -18,8 +30,8 @@ def get_migrations_to_sync():
     connection.prepare_database()
     executor = MigrationExecutor(connection)
     targets = executor.loader.graph.leaf_nodes()
-    planned_migrations = [mig[0] for mig in executor.migration_plan(targets)]
-    return planned_migrations
+    needed_migrations = [mig[0] for mig in executor.migration_plan(targets)]
+    return needed_migrations
 
 
 def check_is_legacy_instance_and_fix(isettings) -> bool:
@@ -189,8 +201,8 @@ def setup_django(
             call_command("makemigrations")
             return None
 
-        planned_migrations = get_migrations_to_sync()
-        if len(planned_migrations) > 0:
+        needed_migrations = get_migrations_to_sync()
+        if len(needed_migrations) > 0:
             if deploy_migrations:
                 verbosity = 0 if init else 2
                 call_command("migrate", verbosity=verbosity)
@@ -203,14 +215,9 @@ def setup_django(
                     isettings._update_cloud_sqlite_file()
             else:
                 logger.warning(
-                    "\n\nYour database is not up to date with your installed"
-                    " schemas!\n\nIt misses the following"
-                    f" migrations:\n{planned_migrations}\n\nIf you are an admin and"
-                    " know what you're doing, deploy the migration: lamin migrate"
-                    " deploy\n\nOtherwise, please install an earlier version of  your"
-                    " custom schema module\n\nIn case you haven't yet migrated to"
-                    " Django, please FIRST upgrade to lamindb 0.41.2 before deploying"
-                    " this migration and consider reaching out to Lamin\n"
+                    MIGRATIONS_NEEDED_WARNING.format(
+                        needed_migrations=needed_migrations
+                    )
                 )
         else:
             if deploy_migrations:

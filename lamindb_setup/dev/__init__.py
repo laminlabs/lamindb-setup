@@ -19,6 +19,7 @@ Settings:
 """
 from . import upath
 from ._deprecated import deprecated
+from ._django import MIGRATIONS_NEEDED_WARNING
 from ._docs import doc_args
 from ._settings_instance import InstanceSettings
 from ._settings_user import UserSettings
