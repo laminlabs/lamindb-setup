@@ -1,5 +1,5 @@
 import argparse
-from importlib.metadata import version, PackageNotFoundError
+from importlib.metadata import PackageNotFoundError, version
 
 # most important dynamic to optimize import time
 from ._docstrings import instance_description as instance
@@ -152,9 +152,29 @@ def main():
     elif args.command == "delete":
         from ._delete import delete
 
-        return delete(
-            instance_name=args.instance,
+        valid_responses = ["y", "yes"]
+        user_input = (
+            input("Are you sure you want to delete this instance? (y/n): ")
+            .strip()
+            .lower()
         )
+        while (
+            user_input not in valid_responses
+            and user_input != "n"
+            and user_input != "no"
+        ):
+            user_input = (
+                input("Invalid input. Please enter 'y' to confirm or 'n' to cancel: ")
+                .strip()
+                .lower()
+            )
+
+        if user_input in valid_responses:
+            return delete(
+                instance_name=args.instance,
+            )
+        else:
+            return -1
     elif args.command == "info":
         from ._info import info
 
