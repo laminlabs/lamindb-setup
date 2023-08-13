@@ -1,5 +1,5 @@
 import argparse
-from importlib.metadata import version, PackageNotFoundError
+from importlib.metadata import PackageNotFoundError, version
 
 # most important dynamic to optimize import time
 from ._docstrings import instance_description as instance
@@ -90,7 +90,7 @@ aa(
     metavar="user",
     help="Email or user handle. Email is needed at first login.",
 )  # noqa
-aa("--password", type=str, metavar="pw", default=None, help=user.password)
+aa("password", nargs="?", type=str, metavar="pw", default=None, help=user.password)
 
 # show version
 try:
