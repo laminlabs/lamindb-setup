@@ -90,7 +90,7 @@ aa(
     metavar="user",
     help="Email or user handle. Email is needed at first login.",
 )  # noqa
-aa("--password", type=str, metavar="pw", default=None, help=user.password)
+aa("password", nargs="?", type=str, metavar="password", help="User password.") 
 
 # show version
 try:
