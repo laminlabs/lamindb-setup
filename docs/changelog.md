@@ -3,6 +3,23 @@
 <!-- prettier-ignore -->
 Name | PR | Developer | Date | Version
 --- | --- | --- | --- | ---
+📝 Move `setup-user` guide to lamindb | [463](https://github.com/laminlabs/lamindb-setup/pull/463) | [falexwolf](https://github.com/falexwolf) | 2023-08-11 |
+🚸 Reformat missing-migrations warning | [461](https://github.com/laminlabs/lamindb-setup/pull/461) | [falexwolf](https://github.com/falexwolf) | 2023-08-10 | 0.49.7
+🐛 Fix and test close for read only buckets | [462](https://github.com/laminlabs/lamindb-setup/pull/462) | [Koncopd](https://github.com/Koncopd) | 2023-08-10 |
+👷 Test configuration with no AWS access | [460](https://github.com/laminlabs/lamindb-setup/pull/460) | [falexwolf](https://github.com/falexwolf) | 2023-08-07 | 0.49.6
+👷 Simplify CI setup | [458](https://github.com/laminlabs/lamindb-setup/pull/458) | [falexwolf](https://github.com/falexwolf) | 2023-08-07 |
+🎨 Use logger.save | [459](https://github.com/laminlabs/lamindb-setup/pull/459) | [sunnyosun](https://github.com/sunnyosun) | 2023-08-07 |
+🐛 Fix aws access with no credentials | [457](https://github.com/laminlabs/lamindb-setup/pull/457) | [Koncopd](https://github.com/Koncopd) | 2023-08-07 |
+🔊 Refactored logging msg | [456](https://github.com/laminlabs/lamindb-setup/pull/456) | [sunnyosun](https://github.com/sunnyosun) | 2023-08-07 |
+♻️ Replace `lamin_logger` with `lamin_utils` | [454](https://github.com/laminlabs/lamindb-setup/pull/454) | [falexwolf](https://github.com/falexwolf) | 2023-08-06 | 0.49.5
+🚚 Rename `ORM` to `Registry` | [453](https://github.com/laminlabs/lamindb-setup/pull/453) | [sunnyosun](https://github.com/sunnyosun) | 2023-08-05 |
+⬇️ Upper bound external dependencies | [452](https://github.com/laminlabs/lamindb-setup/pull/452) | [falexwolf](https://github.com/falexwolf) | 2023-08-04 | 0.49.4
+🎨 Add `.record` property to `StorageSettings` | [451](https://github.com/laminlabs/lamindb-setup/pull/451) | [falexwolf](https://github.com/falexwolf) | 2023-08-03 | 0.49.3
+✅ Fix init-instance test for sqlite instance | [450](https://github.com/laminlabs/lamindb-setup/pull/450) | [bpenteado](https://github.com/bpenteado) | 2023-08-02 |
+🎨 Fix `init-instance` anti-patterns and expand tests | [449](https://github.com/laminlabs/lamindb-setup/pull/449) | [bpenteado](https://github.com/bpenteado) | 2023-08-01 |
+✨ Propagate kwargs through synchronization functions | [448](https://github.com/laminlabs/lamindb-setup/pull/448) | [Koncopd](https://github.com/Koncopd) | 2023-07-31 | 0.49.2
+🐛 Fix local variable 'db_dsn' referenced before assignment | [447](https://github.com/laminlabs/lamindb-setup/pull/447) | [fredericenard](https://github.com/fredericenard) | 2023-07-30 |
+🚸 Show help by default and add --version | [446](https://github.com/laminlabs/lamindb-setup/pull/446) | [Zethson](https://github.com/Zethson) | 2023-07-30 |
 🐛 Fix flawed DBUser logic in `init_instance` | [442](https://github.com/laminlabs/lamindb-setup/pull/442) | [bpenteado](https://github.com/bpenteado) | 2023-07-24 | 0.49.1
 🗃️ Enable multiple DB access roles in instances (decompose connection string) | [431](https://github.com/laminlabs/lamindb-setup/pull/431) | [bpenteado](https://github.com/bpenteado) | 2023-07-19 | 0.49.0
 💚 Fix instability | [441](https://github.com/laminlabs/lamindb-setup/pull/441) | [falexwolf](https://github.com/falexwolf) | 2023-07-19 |

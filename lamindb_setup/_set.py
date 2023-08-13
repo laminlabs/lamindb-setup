@@ -1,7 +1,7 @@
 from pathlib import Path
 from typing import Union
 
-from lamin_logger import logger
+from lamin_utils import logger
 
 from lamindb_setup.dev.upath import UPath
 
@@ -33,7 +33,7 @@ class set:
         from .dev._hub_utils import get_storage_region
 
         if settings.instance.dialect == "sqlite":
-            logger.error("Can't set storage for sqlite instances.")
+            logger.error("can't set storage for sqlite instances.")
             return "set-storage-failed"
 
         new_isettings = InstanceSettings(
@@ -56,7 +56,7 @@ class set:
 
         settings.storage._set_fs_kwargs(**fs_kwargs)
 
-        logger.success(f"Set storage {root}")
+        logger.save(f"set storage {root}")
 
 
 @deprecated("lamindb_setup.set.storage()")

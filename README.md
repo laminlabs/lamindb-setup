@@ -2,5 +2,5 @@
 
 # lamindb-setup: Setup LaminDB
 
-- Stable user docs: [lamin.ai/docs/setup/](https://lamin.ai/docs/setup/)
-- Latest developer docs: [netlify](https://lndb-htry.netlify.app/docs/lndb/)
+- User [docs](https://lamin.ai/docs)
+- Developer [docs](https://lamindb-setup-htry.netlify.app/)

@@ -3,7 +3,7 @@ import sys
 from pathlib import Path
 from typing import Optional, Union
 
-from lamin_logger import logger
+from lamin_utils import logger
 from pydantic import PostgresDsn
 
 from lamindb_setup.dev.upath import UPath
@@ -31,7 +31,7 @@ def register_storage(ssettings: StorageSettings):
         ),
     )
     if created:
-        logger.success(f"Saved: {storage}")
+        logger.save(f"saved: {storage}")
 
 
 def register_user_and_storage(isettings: InstanceSettings, usettings):
@@ -49,10 +49,10 @@ def register_user_and_storage(isettings: InstanceSettings, usettings):
             ),
         )
         if created:
-            logger.success(f"Saved: {user}")
+            logger.save(f"saved: {user}")
         register_storage(isettings.storage)
     except OperationalError as error:
-        logger.warning(f"Instance seems not set up ({error})")
+        logger.warning(f"instance seems not set up ({error})")
 
 
 def reload_schema_modules(isettings: InstanceSettings):
@@ -75,7 +75,7 @@ def reload_lamindb(isettings: InstanceSettings):
     else:
         # only log if we're outside lamindb
         # lamindb itself logs upon import!
-        logger.success(f"Loaded instance: {isettings.owner}/{isettings.name}")
+        logger.success(f"loaded instance: {isettings.owner}/{isettings.name}")
 
 
 ERROR_SQLITE_CACHE = """
@@ -171,9 +171,7 @@ def init(
             pass  # everything is alright!
         elif isinstance(result, str):
             raise RuntimeError(f"Registering instance on hub failed:\n{result}")
-        logger.success(
-            f"Registered instance on hub: https://lamin.ai/{owner}/{name_str}"
-        )
+        logger.save(f"registered instance on hub: https://lamin.ai/{owner}/{name_str}")
 
     if _test:
         isettings._persist()
@@ -184,7 +182,7 @@ def init(
     also_init_bionty = True
     if isettings._is_db_setup(mute=True)[0]:
         logger.warning(
-            "Your instance DB already has content, but we couldn't find settings,"
+            "your instance DB already has content, but couldn't find settings,"
             " proceeding with setup"
         )
         # do not write the bionty tables again
@@ -193,14 +191,14 @@ def init(
     if isettings._is_cloud_sqlite:
         isettings._cloud_sqlite_locker.lock()
         logger.warning(
-            "Locked the instance. To unlock and push changes to the cloud SQLite file,"
-            " call: lamin close"
+            "locked instance (to unlock and push changes to the cloud SQLite file,"
+            " call: lamin close)"
         )
     if not isettings.is_remote:
         verbosity = logger._verbosity
-        logger.set_verbosity(3)
+        logger.set_verbosity(4)
         logger.hint(
-            "Did not register local instance on hub (if you want to, call `lamin"
+            "did not register local instance on hub (if you want, call `lamin"
             " register`)"
         )
         logger.set_verbosity(verbosity)

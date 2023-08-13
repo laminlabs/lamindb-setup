@@ -1,4 +1,4 @@
-from lamin_logger import logger
+from lamin_utils import logger
 
 from ._check_instance_setup import check_instance_setup
 from ._settings import settings
@@ -33,7 +33,7 @@ class migrate:
 
     @classmethod
     def check(cls) -> bool:
-        """Check whether ORM definitions are in sync with migrations."""
+        """Check whether Registry definitions are in sync with migrations."""
         from django.core.management import call_command
 
         setup_django(settings.instance)
@@ -41,7 +41,7 @@ class migrate:
             call_command("makemigrations", check_changes=True)
         except SystemExit:
             logger.error(
-                "Migrations are not in sync with ORMs, please create a migration: lamin"
+                "migrations are not in sync with ORMs, please create a migration: lamin"
                 " migrate create"
             )
             return False

@@ -1,8 +1,10 @@
 import os
 from pathlib import Path
-from typing import Literal, Optional, Union
+from typing import Any, Literal, Optional, Union
 
 from appdirs import AppDirs
+from botocore.exceptions import NoCredentialsError
+from lamin_utils import logger
 
 from .upath import UPath
 
@@ -28,13 +30,19 @@ class StorageSettings:
             raise ValueError("root should be of type Union[str, Path, UPath].")
         self._root = root_path
         self._region = region
-        self._id: Optional[str] = None
+        # would prefer to type below as Registry, but need to think through import order
+        self._record: Optional[Any] = None
 
     @staticmethod
     def _str_to_path(storage: str) -> Union[Path, UPath]:
         if storage.startswith("s3://"):
             # for new buckets there could be problems if the region is not specified
             storage_root = UPath(storage, cache_regions=True)
+            try:
+                storage_root.stat()
+            except NoCredentialsError:
+                logger.warning("did not find aws credentials, using anonymous")
+                storage_root = UPath(storage_root, anon=True)
         elif storage.startswith("gs://"):
             storage_root = UPath(storage)
         else:  # local path
@@ -45,11 +53,17 @@ class StorageSettings:
     @property
     def id(self) -> str:
         """Storage id."""
-        if self._id is None:
+        return self.record.id
+
+    @property
+    def record(self) -> Any:
+        """Storage record."""
+        if self._record is None:
+            # dynamic import because of import order
             from lnschema_core.models import Storage
 
-            self._id = Storage.objects.get(root=self.root_as_str).id
-        return self._id
+            self._record = Storage.objects.get(root=self.root_as_str)
+        return self._record
 
     @property
     def root(self) -> Union[Path, UPath]:
@@ -110,12 +124,12 @@ class StorageSettings:
         """Cloud or local filepath from filekey."""
         return self.root / filekey
 
-    def cloud_to_local(self, filepath: Union[Path, UPath]) -> Path:
+    def cloud_to_local(self, filepath: Union[Path, UPath], **kwargs) -> Path:
         """Local (cache) filepath from filepath."""
         local_filepath = self.cloud_to_local_no_update(filepath)  # type: ignore
         if isinstance(filepath, UPath):
             local_filepath.parent.mkdir(parents=True, exist_ok=True)
-            filepath.synchronize(local_filepath)
+            filepath.synchronize(local_filepath, **kwargs)
         return local_filepath
 
     # conversion to Path via cloud_to_local() would trigger download

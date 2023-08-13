@@ -1,4 +1,4 @@
-from lamin_logger import logger
+from lamin_utils import logger
 
 from ._init_instance import reload_schema_modules
 from ._silence_loggers import silence_loggers
@@ -34,7 +34,7 @@ def check_instance_setup(from_lamindb: bool = False):
                     import lamindb as ln
 
                     logger.success(
-                        f"Loaded instance: {isettings.identifier} (lamindb"
+                        f"loaded instance: {isettings.identifier} (lamindb"
                         f" {ln.__version__})"
                     )
                 return True

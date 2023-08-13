@@ -1,4 +1,4 @@
-from lamin_logger import logger
+from lamin_utils import logger
 
 from ._settings import settings
 from .dev._settings_store import current_instance_settings_file
@@ -14,11 +14,17 @@ def close(mute: bool = False) -> None:
         instance = settings.instance.identifier
         try:
             settings.instance._update_cloud_sqlite_file()
-        except FileNotFoundError:
-            logger.warning("Did not find local cache file")
+        except Exception as e:
+            if isinstance(e, FileNotFoundError):
+                logger.warning("did not find local cache file")
+            elif isinstance(e, PermissionError):
+                logger.warning("did not upload cache file - not enough permissions")
+            else:
+                raise e
         current_instance_settings_file().unlink()
         delete_bionty_sources_yaml()
-        logger.success(f"Closed instance: {instance}")
+        if not mute:
+            logger.success(f"closed instance: {instance}")
     else:
         if not mute:
-            logger.info("No instance loaded")
+            logger.info("no instance loaded")

@@ -1,4 +1,4 @@
-from lamin_logger import logger
+from lamin_utils import logger
 
 from ._settings import settings
 
@@ -16,8 +16,8 @@ def register():
         schema=isettings._schema_str,
     )
     if result == "instance-exists-already":
-        logger.info("Instance was already registered")
+        logger.info("instance was already registered")
     elif isinstance(result, str):
-        raise RuntimeError(f"Creating instance on hub failed:\n{result}")
+        raise RuntimeError(f"creating instance on hub failed:\n{result}")
     else:
-        logger.success(f"Instance registered: https://lamin.ai/{isettings.identifier}")
+        logger.save(f"instance registered: https://lamin.ai/{isettings.identifier}")

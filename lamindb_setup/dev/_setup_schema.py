@@ -3,7 +3,7 @@ from types import ModuleType
 
 from importlib_metadata import requires as importlib_requires
 from importlib_metadata import version as get_pip_version
-from lamin_logger import logger
+from lamin_utils import logger
 from packaging.requirements import Requirement
 
 from ._django import setup_django
@@ -59,5 +59,5 @@ def load_schema(isettings: InstanceSettings, *, init: bool = False):
         module = check_schema_version_and_import(schema_name)
         msg += f"{schema_name}=={module.__version__} "
     if init:
-        logger.info(f"Creating schemas: {msg}")
+        logger.info(f"creating schemas: {msg}")
     return msg, schema_names

@@ -1,6 +1,6 @@
 from typing import Optional
 
-from lamin_logger import logger
+from lamin_utils import logger
 
 
 def track(notebook_path: str, pypackage: Optional[str] = None):
@@ -8,7 +8,7 @@ def track(notebook_path: str, pypackage: Optional[str] = None):
         from nbproject.dev import initialize_metadata, read_notebook, write_notebook
         from nbproject.dev._initialize import nbproject_id
     except ImportError:
-        logger.warning("Install nbproject! pip install nbproject")
+        logger.warning("install nbproject! pip install nbproject")
         return None
 
     nb = read_notebook(notebook_path)
@@ -18,9 +18,9 @@ def track(notebook_path: str, pypackage: Optional[str] = None):
         metadata = initialize_metadata(nb, pypackage=pypackage).dict()
         nb.metadata["nbproject"] = metadata
         write_notebook(nb, notebook_path)
-        logger.success("Attached metadata to notebook")
+        logger.save("attached metadata to notebook")
     else:
-        logger.info(f"The notebook {notebook_path} is already tracked")
+        logger.info(f"the notebook {notebook_path} is already tracked")
 
         updated = False
         response = input("Do you want to assign a new id or version? (y/n) ")
@@ -41,5 +41,5 @@ def track(notebook_path: str, pypackage: Optional[str] = None):
             updated = True
 
         if updated:
-            logger.success("Updated the notebook metadata.")
+            logger.save("updated the notebook metadata.")
             write_notebook(nb, notebook_path)

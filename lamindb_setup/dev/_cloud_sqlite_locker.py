@@ -4,7 +4,7 @@ from typing import Optional, Union
 
 import fsspec
 from dateutil.parser import isoparse  # type: ignore
-from lamin_logger import logger
+from lamin_utils import logger
 
 from ._settings_instance import InstanceSettings
 from .upath import UPath, infer_filesystem
@@ -28,7 +28,7 @@ class empty_locker:
 
 class Locker:
     def __init__(self, user_id: str, storage_root: Union[UPath, Path], name: str):
-        logger.debug(f"Init cloud sqlite locker: {user_id}, {storage_root}, {name}.")
+        logger.debug(f"init cloud sqlite locker: {user_id}, {storage_root}, {name}.")
 
         self._counter = 0
 
@@ -76,7 +76,7 @@ class Locker:
                 period = (datetime.now() - self.modified(user_path)).total_seconds()
                 if period > EXPIRATION_TIME:
                     logger.info(
-                        f"The lock of the user {user} seems to be stale, clearing"
+                        f"the lock of the user {user} seems to be stale, clearing"
                         f" {endpoint}."
                     )
                     self.mapper[user_endpoint] = b"0"
@@ -102,7 +102,7 @@ class Locker:
 
     def _msg_on_counter(self, user):
         if self._counter == MAX_MSG_COUNTER:
-            logger.info(f"Competing for the lock with the user {user}.")
+            logger.warning(f"competing for the lock with the user {user}.")
 
         if self._counter <= MAX_MSG_COUNTER:
             self._counter += 1
@@ -140,7 +140,7 @@ class Locker:
                 self._has_lock = False
                 self._locked_by = user
                 self.mapper[f"numbers/{self.user}"] = b"0"
-                logger.info(f"The instance is already locked by the user {user}.")
+                logger.warning(f"the instance is already locked by the user {user}.")
                 return None
 
     def lock(self):
@@ -163,7 +163,7 @@ class Locker:
     @property
     def has_lock(self):
         if self._has_lock is None:
-            logger.info("The lock has not been initialized, trying to obtain the lock.")
+            logger.info("the lock has not been initialized, trying to obtain the lock.")
             self.lock()
 
         return self._has_lock

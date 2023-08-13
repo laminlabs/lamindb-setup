@@ -43,14 +43,14 @@ def _upload_from(self, path, **kwargs):
     self.fs.upload(str(path), str(self), **kwargs)
 
 
-def _synchronize(self, filepath: Path):
+def _synchronize(self, filepath: Path, **kwargs):
     if not self.exists():
         return None
 
     if not filepath.exists():
         filepath.parent.mkdir(parents=True, exist_ok=True)
         mts = self.modified.timestamp()
-        self.download_to(filepath)
+        self.download_to(filepath, **kwargs)
         os.utime(filepath, times=(mts, mts))
         return None
 
@@ -58,7 +58,7 @@ def _synchronize(self, filepath: Path):
     local_mts = filepath.stat().st_mtime
     if cloud_mts > local_mts:
         mts = self.modified.timestamp()
-        self.download_to(filepath)
+        self.download_to(filepath, **kwargs)
         os.utime(filepath, times=(mts, mts))
     elif cloud_mts < local_mts:
         pass

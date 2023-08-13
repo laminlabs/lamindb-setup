@@ -9,18 +9,18 @@ readme = "README.md"
 dynamic = ["version", "description"]
 dependencies = [
     "lnschema_core>=0.35.4",
-    "lamin_logger>=0.3.3",
+    "lamin_utils>=0.3.3",
     # External dependencies
-    "django",
-    "dj_database_url",
-    "pydantic[dotenv]",
-    "sqlalchemy<2.0.0",  # just temporarily
-    "appdirs",
-    "python-dateutil",
-    "universal_pathlib",
-    "botocore",
+    "django<5.0.0",
+    "dj_database_url<3.0.0",
+    "pydantic[dotenv]<2.0.0",
+    "sqlalchemy<2.0.0",
+    "appdirs<2.0.0",
+    "python-dateutil<3.0.0",
+    "universal_pathlib==0.1.0",  # is still experimental, need pinning
+    "botocore<2.0.0",
     "supabase==1.0.3",
-    "pyjwt",
+    "pyjwt<3.0.0",
 ]
 
 [project.urls]

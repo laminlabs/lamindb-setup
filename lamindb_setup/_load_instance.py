@@ -1,7 +1,7 @@
 from pathlib import Path
 from typing import Optional, Union
 
-from lamin_logger import logger
+from lamin_utils import logger
 
 from lamindb_setup.dev.upath import UPath
 
@@ -69,13 +69,13 @@ def load(
     else:
         settings_file = instance_settings_file(name, owner)
         if settings_file.exists():
-            logger.info(f"Found cached instance metadata: {settings_file}")
+            logger.info(f"found cached instance metadata: {settings_file}")
             isettings = load_instance_settings(settings_file)
         else:
             if _log_error_message:
                 raise RuntimeError(
-                    f"Instance {owner}/{name} neither loadable from hub nor local"
-                    " cache. Check whether instance exists and you have access:"
+                    f"instance {owner}/{name} neither loadable from hub nor local"
+                    " cache. check whether instance exists and you have access:"
                     f" https://lamin.ai/{owner}/{name}?tab=collaborators"
                 )
             return "instance-not-reachable"
@@ -141,11 +141,11 @@ def update_isettings_with_storage(
     ssettings = StorageSettings(storage)
     if ssettings.is_cloud:
         try:  # triggering ssettings.id makes a lookup in the storage table
-            logger.success(f"Loaded storage: {ssettings.id} / {ssettings.root_as_str}")
+            logger.success(f"loaded storage: {ssettings.id} / {ssettings.root_as_str}")
         except RuntimeError:
             raise RuntimeError(
-                "Storage not registered!\n"
-                "Load instance without the `storage` arg and register storage root: "
+                "storage not registered!\n"
+                "load instance without the `storage` arg and register storage root: "
                 f"`lamin set storage --storage {storage}`"
             )
     else:
@@ -172,6 +172,4 @@ def update_root_field_in_default_storage(isettings: InstanceSettings):
     storage = storages[0]
     storage.root = isettings.storage.root_as_str
     storage.save()
-    logger.success(
-        f"Updated storage root {storage.id} to {isettings.storage.root_as_str}"
-    )
+    logger.save(f"updated storage root {storage.id} to {isettings.storage.root_as_str}")

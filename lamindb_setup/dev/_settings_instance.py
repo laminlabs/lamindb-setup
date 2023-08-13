@@ -3,7 +3,7 @@ import shutil
 from pathlib import Path
 from typing import Literal, Optional, Set, Tuple, Union
 
-from lamin_logger import logger
+from lamin_utils import logger
 
 from ._settings_save import save_instance_settings
 from ._settings_store import current_instance_settings_file, instance_settings_file
@@ -100,7 +100,7 @@ class InstanceSettings:
     def _update_cloud_sqlite_file(self) -> None:
         """Upload the local sqlite file to the cloud file."""
         if self._is_cloud_sqlite:
-            logger.warning("Updating & unlocking cloud SQLite")
+            logger.warning("updating & unlocking cloud SQLite")
             sqlite_file = self._sqlite_file
             cache_file = self.storage.cloud_to_local_no_update(sqlite_file)
             sqlite_file.upload_from(cache_file)  # type: ignore
@@ -114,7 +114,7 @@ class InstanceSettings:
         """Download the cloud sqlite file if it is newer than local."""
         if self._is_cloud_sqlite:
             logger.warning(
-                "Updating local SQLite & locking cloud SQLite (sync back & unlock:"
+                "updating local SQLite & locking cloud SQLite (sync back & unlock:"
                 " lamin close)"
             )
             sqlite_file = self._sqlite_file
@@ -168,7 +168,11 @@ class InstanceSettings:
         from ._cloud_sqlite_locker import empty_locker, get_locker
 
         if self._is_cloud_sqlite:
-            return get_locker(self)
+            try:
+                return get_locker(self)
+            except PermissionError:
+                logger.warning("read-only access - did not access locker")
+                return empty_locker
         else:
             return empty_locker
 
@@ -221,8 +225,8 @@ class InstanceSettings:
             if self.dialect == "sqlite":
                 return (
                     False,
-                    f"SQLite file {self._sqlite_file} does not exist! It should be in"
-                    f" the storage root: {self.storage.root}",
+                    f"SQLite file {self._sqlite_file} does not exist! It should be"
+                    f" in the storage root: {self.storage.root}",
                 )
             else:
                 return False, f"Connection {self.db} not reachable"
@@ -262,6 +266,6 @@ class InstanceSettings:
                 engine.connect()
             except Exception:
                 if not mute:
-                    logger.warning(f"Connection {self.db} not reachable")
+                    logger.warning(f"connection {self.db} not reachable")
                 return False
         return True
