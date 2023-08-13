@@ -158,16 +158,6 @@ def main():
             .strip()
             .lower()
         )
-        while (
-            user_input not in valid_responses
-            and user_input != "n"
-            and user_input != "no"
-        ):
-            user_input = (
-                input("Invalid input. Please enter 'y' to confirm or 'n' to cancel: ")
-                .strip()
-                .lower()
-            )
 
         if user_input in valid_responses:
             return delete(
