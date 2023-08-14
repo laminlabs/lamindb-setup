@@ -21,7 +21,7 @@ jobs:
         lamin_env:
           - "staging"
           - "prod"
-    timeout-minutes: 35
+    timeout-minutes: 15
     steps:
       - uses: actions/checkout@v3
         with:
