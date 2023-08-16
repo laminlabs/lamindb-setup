@@ -3,6 +3,7 @@
 <!-- prettier-ignore -->
 Name | PR | Developer | Date | Version
 --- | --- | --- | --- | ---
+🔥 Remove support for migrating legacy SA instances | [472](https://github.com/laminlabs/lamindb-setup/pull/472) | [falexwolf](https://github.com/falexwolf) | 2023-08-16 |
 🔥 Remove sqlalchemy as a dependency | [471](https://github.com/laminlabs/lamindb-setup/pull/471) | [falexwolf](https://github.com/falexwolf) | 2023-08-16 |
 🔥 Remove lnschema-core submodule | [470](https://github.com/laminlabs/lamindb-setup/pull/470) | [falexwolf](https://github.com/falexwolf) | 2023-08-16 |
 ♻️ Refactor delete dialogue | [469](https://github.com/laminlabs/lamindb-setup/pull/469) | [falexwolf](https://github.com/falexwolf) | 2023-08-16 |
