@@ -196,7 +196,10 @@ class InstanceSettings:
         settings._instance_settings = self
 
     def _is_db_setup(self, mute: bool = False) -> Tuple[bool, str]:
-        """Is the database available and initialized as LaminDB?"""
+        # Is the database available and initialized as LaminDB?
+        # returns a tuple of status code and message
+        if not self._sqlite_file.exists():
+            return False, "SQLite file does not exist"
         from ._django import setup_django
 
         # in order to proceed with the next check, we need the local sqlite
