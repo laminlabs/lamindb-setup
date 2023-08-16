@@ -111,7 +111,7 @@ def load(
         raise RuntimeError(f"Can't load the instance, it is locked by {locked_by}.")
 
     # need to set up Django here because we query the storage table
-    setup_django(isettings)
+    setup_django(isettings, configure_only=True)
     if storage is not None and isettings.dialect == "sqlite":
         update_root_field_in_default_storage(isettings)
     load_from_isettings(isettings)

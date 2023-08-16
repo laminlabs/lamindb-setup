@@ -74,8 +74,8 @@ def setup_django(
         )
         django.setup(set_prefix=False)
 
-        if configure_only:
-            return None
+    if configure_only:
+        return None
 
     # migrations management
     if create_migrations:
