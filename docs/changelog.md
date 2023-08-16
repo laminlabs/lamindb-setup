@@ -3,7 +3,7 @@
 <!-- prettier-ignore -->
 Name | PR | Developer | Date | Version
 --- | --- | --- | --- | ---
-🚑️ Fix loading postgres instances | [475](https://github.com/laminlabs/lamindb-setup/pull/475) | [falexwolf](https://github.com/falexwolf) | 2023-08-16 |
+🚑️ Fix loading postgres instances | [475](https://github.com/laminlabs/lamindb-setup/pull/475) | [falexwolf](https://github.com/falexwolf) | 2023-08-16 | 0.50.1
 🐛 Fix init in an empty s3 bucket | [473](https://github.com/laminlabs/lamindb-setup/pull/473) | [Koncopd](https://github.com/Koncopd) | 2023-08-16 | 0.50.0
 🔥 Remove support for migrating legacy SA instances | [472](https://github.com/laminlabs/lamindb-setup/pull/472) | [falexwolf](https://github.com/falexwolf) | 2023-08-16 |
 🔥 Remove sqlalchemy as a dependency | [471](https://github.com/laminlabs/lamindb-setup/pull/471) | [falexwolf](https://github.com/falexwolf) | 2023-08-16 |
