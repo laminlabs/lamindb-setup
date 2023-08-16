@@ -34,22 +34,27 @@ def register_storage(ssettings: StorageSettings):
         logger.save(f"saved: {storage}")
 
 
+def register_user(usettings):
+    from lnschema_core.models import User
+
+    user, created = User.objects.update_or_create(
+        id=usettings.id,
+        defaults=dict(
+            handle=usettings.handle,
+            name=usettings.name,
+            email=usettings.email,
+        ),
+    )
+    if created:
+        logger.save(f"saved: {user}")
+
+
 def register_user_and_storage(isettings: InstanceSettings, usettings):
     """Register user & storage in DB."""
     from django.db.utils import OperationalError
-    from lnschema_core.models import User
 
     try:
-        user, created = User.objects.update_or_create(
-            id=usettings.id,
-            defaults=dict(
-                handle=usettings.handle,
-                name=usettings.name,
-                email=usettings.email,
-            ),
-        )
-        if created:
-            logger.save(f"saved: {user}")
+        register_user(usettings)
         register_storage(isettings.storage)
     except OperationalError as error:
         logger.warning(f"instance seems not set up ({error})")
