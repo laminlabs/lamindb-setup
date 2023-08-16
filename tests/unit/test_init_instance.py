@@ -62,7 +62,7 @@ def test_init_instance_postgres_custom_name():
     ln_setup.delete("mydata2", force=True)
 
 
-def test_init_instance_postgres_cloud_aws_us():
+def test_init_instance_cloud_aws_us():
     ln_setup.init(storage="s3://lndb-setup-ci", _test=True)
     assert ln_setup.settings.storage.is_cloud
     assert str(ln_setup.settings.storage.root) == "s3://lndb-setup-ci/"
@@ -74,7 +74,7 @@ def test_init_instance_postgres_cloud_aws_us():
     )
 
 
-def test_init_instance_postgres_cloud_aws_europe():
+def test_init_instance_cloud_aws_europe():
     # do the same for an S3 bucket in Europe
     ln_setup.init(
         storage="s3://lndb-setup-ci-eu-central-1",
