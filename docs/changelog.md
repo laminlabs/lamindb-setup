@@ -3,6 +3,7 @@
 <!-- prettier-ignore -->
 Name | PR | Developer | Date | Version
 --- | --- | --- | --- | ---
+🔥 Remove lnschema-core submodule | [470](https://github.com/laminlabs/lamindb-setup/pull/470) | [falexwolf](https://github.com/falexwolf) | 2023-08-16 |
 ♻️ Refactor delete dialogue | [469](https://github.com/laminlabs/lamindb-setup/pull/469) | [falexwolf](https://github.com/falexwolf) | 2023-08-16 |
 🚸 Add delete confirmation dialogue | [467](https://github.com/laminlabs/lamindb-setup/pull/467) | [Zethson](https://github.com/Zethson) | 2023-08-15 |
 📝 Move `setup-user` guide to lamindb | [463](https://github.com/laminlabs/lamindb-setup/pull/463) | [falexwolf](https://github.com/falexwolf) | 2023-08-11 |
