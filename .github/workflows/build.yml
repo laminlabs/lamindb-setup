@@ -31,7 +31,7 @@ jobs:
         with:
           python-version: ${{ matrix.python-version }}
           cache: "pip"
-          cache-dependency-path: ".github/workflows/build.yml" # See dependencies below
+          cache-dependency-path: ".github/workflows/build.yml"
       - uses: actions/cache@v3
         with:
           path: ~/.cache/pre-commit
@@ -63,21 +63,22 @@ jobs:
       - run: nox -s "install(group='${{ matrix.group }}')"
       - run: nox -s "build(lamin_env='${{ matrix.lamin_env }}', group='${{ matrix.group }}')"
       - uses: actions/upload-artifact@v2
+        if: ${{ matrix.lamin_env == 'prod' }}
         with:
           name: coverage--${{ matrix.group }}
           path: .coverage
       # docs from here
       - uses: actions/checkout@v3
-        if: ${{ matrix.group == 'docs' && matrix.group == 'prod' }}
+        if: ${{ matrix.group == 'docs' && matrix.lamin_env == 'prod' }}
         with:
           repository: laminlabs/lndocs
           ssh-key: ${{ secrets.READ_LNDOCS }}
           path: lndocs
           ref: main
       - run: nox -s docs
-        if: ${{ matrix.group == 'docs' && matrix.group == 'prod' }}
+        if: ${{ matrix.group == 'docs' && matrix.lamin_env == 'prod' }}
       - uses: nwtgck/actions-netlify@v1.2
-        if: ${{ matrix.group == 'docs' && matrix.group == 'prod' }}
+        if: ${{ matrix.group == 'docs' && matrix.lamin_env == 'prod' }}
         with:
           publish-dir: "_build/html"
           production-deploy: ${{ github.event_name == 'push' }}
@@ -102,7 +103,7 @@ jobs:
         with:
           python-version: ${{ matrix.python-version }}
           cache: "pip"
-          cache-dependency-path: ".github/workflows/build.yml" # See dependencies below
+          cache-dependency-path: ".github/workflows/build.yml"
       - run: pip install -U laminci
       - run: nox -s "install(group='noaws')"
       - run: nox -s noaws
