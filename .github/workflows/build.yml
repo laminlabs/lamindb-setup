@@ -14,7 +14,6 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        python-version: ["3.9"]
         group:
           - "unit"
           - "docs"
@@ -29,7 +28,7 @@ jobs:
           submodules: recursive
       - uses: actions/setup-python@v4
         with:
-          python-version: ${{ matrix.python-version }}
+          python-version: "3.9"
           cache: "pip"
           cache-dependency-path: ".github/workflows/build.yml"
       - uses: actions/cache@v3
@@ -67,33 +66,12 @@ jobs:
         with:
           name: coverage--${{ matrix.group }}
           path: .coverage
-      # docs from here
-      - uses: actions/checkout@v3
-        if: ${{ matrix.group == 'docs' && matrix.lamin_env == 'prod' }}
-        with:
-          repository: laminlabs/lndocs
-          ssh-key: ${{ secrets.READ_LNDOCS }}
-          path: lndocs
-          ref: main
-      - run: nox -s docs
-        if: ${{ matrix.group == 'docs' && matrix.lamin_env == 'prod' }}
-      - uses: nwtgck/actions-netlify@v1.2
-        if: ${{ matrix.group == 'docs' && matrix.lamin_env == 'prod' }}
-        with:
-          publish-dir: "_build/html"
-          production-deploy: ${{ github.event_name == 'push' }}
-          github-token: ${{ secrets.GITHUB_TOKEN }}
-          enable-commit-comment: false
-        env:
-          NETLIFY_AUTH_TOKEN: ${{ secrets.NETLIFY_AUTH_TOKEN }}
-          NETLIFY_SITE_ID: ${{ secrets.NETLIFY_SITE_ID }}
 
   # a test group for testing user access to public buckets without AWS credentials
   noaws:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        python-version: ["3.9"]
     steps:
       - uses: actions/checkout@v3
         with:
@@ -101,16 +79,16 @@ jobs:
           submodules: recursive
       - uses: actions/setup-python@v4
         with:
-          python-version: ${{ matrix.python-version }}
+          python-version: "3.9"
           cache: "pip"
           cache-dependency-path: ".github/workflows/build.yml"
       - run: pip install -U laminci
       - run: nox -s "install(group='noaws')"
       - run: nox -s noaws
-      - uses: actions/upload-artifact@v2
-        with:
-          name: coverage--noaws
-          path: .coverage
+      # - uses: actions/upload-artifact@v2
+      #   with:
+      #     name: coverage--noaws
+      #     path: .coverage
 
   coverage:
     needs: [build, noaws]
@@ -119,7 +97,7 @@ jobs:
       - uses: actions/checkout@v3
       - uses: actions/setup-python@v4
         with:
-          python-version: 3.9
+          python-version: "3.9"
           cache: "pip"
           cache-dependency-path: ".github/workflows/build.yml"
       - run: |
@@ -134,3 +112,42 @@ jobs:
       - uses: codecov/codecov-action@v2
         with:
           token: ${{ secrets.CODECOV_TOKEN }}
+
+  docs:
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+        with:
+          submodules: recursive
+          fetch-depth: 0
+      - name: checkout lndocs
+        uses: actions/checkout@v3
+        with:
+          repository: laminlabs/lndocs
+          ssh-key: ${{ secrets.READ_LNDOCS }}
+          path: lndocs
+          ref: main
+      - uses: aws-actions/configure-aws-credentials@v1
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: us-east-1
+      - uses: actions/setup-python@v4
+        with:
+          python-version: "3.9"
+          cache: "pip"
+          cache-dependency-path: ".github/workflows/build.yml"
+      - run: pip install -U laminci
+      - run: nox -s "install(group='noaws')"
+      - uses: actions/download-artifact@v2
+      - run: nox -s docs
+      - uses: nwtgck/actions-netlify@v1.2
+        with:
+          publish-dir: "_build/html"
+          production-deploy: ${{ github.event_name == 'push' }}
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          enable-commit-comment: false
+        env:
+          NETLIFY_AUTH_TOKEN: ${{ secrets.NETLIFY_AUTH_TOKEN }}
+          NETLIFY_SITE_ID: ${{ secrets.NETLIFY_SITE_ID }}
