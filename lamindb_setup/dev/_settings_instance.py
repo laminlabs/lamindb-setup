@@ -199,19 +199,10 @@ class InstanceSettings:
         """Is the database available and initialized as LaminDB?"""
         from ._django import setup_django
 
-        setup_django(self, configure_only=True)
-        if not self._is_db_reachable(mute=mute):
-            if self.dialect == "sqlite":
-                return (
-                    False,
-                    f"SQLite file {self._sqlite_file} does not exist! It should be"
-                    f" in the storage root: {self.storage.root}",
-                )
-            else:
-                return False, f"Connection {self.db} not reachable"
-
         # in order to proceed with the next check, we need the local sqlite
         self._update_local_sqlite_file()
+
+        setup_django(self, configure_only=True)
 
         from django.db import connection
 
@@ -226,20 +217,3 @@ class InstanceSettings:
                     "Your DB is not initialized: lnschema_core_user has no row",
                 )
         return True, ""
-
-    def _is_db_reachable(self, mute: bool = False) -> bool:
-        if self.dialect == "sqlite":
-            if not self._sqlite_file.exists():
-                if not mute:
-                    logger.warning(f"SQLite file {self._sqlite_file} does not exist")
-                return False
-        else:
-            from django.db import connection
-
-            try:
-                connection.cursor()
-            except Exception:
-                if not mute:
-                    logger.warning(f"connection {self.db} not reachable")
-                return False
-        return True
