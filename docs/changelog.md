@@ -3,6 +3,7 @@
 <!-- prettier-ignore -->
 Name | PR | Developer | Date | Version
 --- | --- | --- | --- | ---
+🩹 Create record in user table upon login for existing instance | [477](https://github.com/laminlabs/lamindb-setup/pull/477) | [falexwolf](https://github.com/falexwolf) | 2023-08-16 |
 👷 Try fixing coverage compute | [476](https://github.com/laminlabs/lamindb-setup/pull/476) | [falexwolf](https://github.com/falexwolf) | 2023-08-16 |
 🚑️ Fix loading postgres instances | [475](https://github.com/laminlabs/lamindb-setup/pull/475) | [falexwolf](https://github.com/falexwolf) | 2023-08-16 | 0.50.1
 🐛 Fix init in an empty s3 bucket | [473](https://github.com/laminlabs/lamindb-setup/pull/473) | [Koncopd](https://github.com/Koncopd) | 2023-08-16 | 0.50.0
