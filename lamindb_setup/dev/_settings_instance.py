@@ -10,20 +10,6 @@ from ._settings_store import current_instance_settings_file, instance_settings_f
 from ._storage import StorageSettings
 from .upath import UPath
 
-# leave commented out until we understand more how to deal with
-# migrations in redun
-# https://stackoverflow.com/questions/2614984/sqlite-sqlalchemy-how-to-enforce-foreign-keys
-# foreign key constraints for sqlite3
-# from sqlite3 import Connection as SQLite3Connection
-# from sqlalchemy import event
-# from sqlalchemy.engine import Engine
-# @event.listens_for(Engine, "connect")
-# def _set_sqlite_pragma(dbapi_connection, connection_record):
-#     if isinstance(dbapi_connection, SQLite3Connection):
-#         cursor = dbapi_connection.cursor()
-#         cursor.execute("PRAGMA foreign_keys=ON;")
-#         cursor.close()
-
 
 class InstanceSettings:
     """Instance settings."""
@@ -124,7 +110,7 @@ class InstanceSettings:
 
     @property
     def db(self) -> str:
-        """Database URL."""
+        """Database connection string (URI)."""
         if self._db is None:
             # here, we want the updated sqlite file
             # hence, we don't use self._sqlite_file_local()
@@ -140,16 +126,6 @@ class InstanceSettings:
         else:
             assert self._db.startswith("postgresql")
             return "postgresql"
-
-    @property
-    def engine(self):
-        """Database engine.
-
-        In case of remote sqlite, does not update the local sqlite.
-        """
-        import sqlalchemy as sa
-
-        return sa.create_engine(self.db, future=True)
 
     @property
     def session(self):
@@ -221,27 +197,18 @@ class InstanceSettings:
 
     def _is_db_setup(self, mute: bool = False) -> Tuple[bool, str]:
         """Is the database available and initialized as LaminDB?"""
-        if not self._is_db_reachable(mute=mute):
-            if self.dialect == "sqlite":
-                return (
-                    False,
-                    f"SQLite file {self._sqlite_file} does not exist! It should be"
-                    f" in the storage root: {self.storage.root}",
-                )
-            else:
-                return False, f"Connection {self.db} not reachable"
+        from ._django import setup_django
 
         # in order to proceed with the next check, we need the local sqlite
         self._update_local_sqlite_file()
 
-        import sqlalchemy as sa
+        setup_django(self, configure_only=True)
 
-        engine = sa.create_engine(self.db)
-        with engine.connect() as conn:
+        from django.db import connection
+
+        with connection.cursor() as cursor:
             try:  # cannot import lnschema_core here, need to use plain SQL
-                result = conn.execute(
-                    sa.text("select * from lnschema_core_user")
-                ).first()
+                result = cursor.execute("select * from lnschema_core_user").fetchone()
             except Exception as e:
                 return False, f"Your DB is not initialized: {e}"
             if result is None:
@@ -249,23 +216,4 @@ class InstanceSettings:
                     False,
                     "Your DB is not initialized: lnschema_core_user has no row",
                 )
-        self._engine = engine
         return True, ""
-
-    def _is_db_reachable(self, mute: bool = False) -> bool:
-        if self.dialect == "sqlite":
-            if not self._sqlite_file.exists():
-                if not mute:
-                    logger.warning(f"SQLite file {self._sqlite_file} does not exist")
-                return False
-        else:
-            import sqlalchemy as sa
-
-            engine = sa.create_engine(self.db)
-            try:
-                engine.connect()
-            except Exception:
-                if not mute:
-                    logger.warning(f"connection {self.db} not reachable")
-                return False
-        return True
