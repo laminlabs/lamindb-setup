@@ -197,6 +197,9 @@ class InstanceSettings:
 
     def _is_db_setup(self, mute: bool = False) -> Tuple[bool, str]:
         """Is the database available and initialized as LaminDB?"""
+        from ._django import setup_django
+
+        setup_django(self, configure_only=True)
         if not self._is_db_reachable(mute=mute):
             if self.dialect == "sqlite":
                 return (
