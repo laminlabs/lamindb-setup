@@ -1,5 +1,4 @@
 import nox
-from laminci import upload_docs_artifact
 from laminci.nox import build_docs, login_testuser1, login_testuser2, run_pre_commit
 
 nox.options.default_venv_backend = "none"
@@ -71,7 +70,6 @@ def docs(session: nox.Session, lamin_env: str):
     session.run(*"lamin init --storage ./docsbuild".split(), env=env)
     if lamin_env != "staging":
         build_docs(session)
-        upload_docs_artifact()
 
 
 @nox.session
