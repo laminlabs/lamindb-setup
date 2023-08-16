@@ -12,7 +12,7 @@ from lamindb_setup.dev._settings_store import instance_settings_file
 
 def test_load_remote_instance():
     ln_setup.login("testuser1")
-    ln_setup.delete("lndb-setup-ci")
+    ln_setup.delete("lndb-setup-ci", force=True)
     ln_setup.init(storage="s3://lndb-setup-ci", _test=True)
     instance_settings_file("lndb-setup-ci", "testuser1").unlink()
     ln_setup.load("testuser1/lndb-setup-ci", _test=True)

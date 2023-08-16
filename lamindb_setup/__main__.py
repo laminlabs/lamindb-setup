@@ -48,6 +48,8 @@ aa("--storage", type=str, metavar="s", default=None, help=load_storage_help)
 delete_parser = subparsers.add_parser("delete", help=delete_help)
 aa = delete_parser.add_argument
 aa("instance", type=str, metavar="i", default=None, help=instance.name)
+aa = delete_parser.add_argument
+aa("--force", default=False, action="store_true", help="Do not ask for confirmation")
 
 # show instance info
 info_parser = subparsers.add_parser("info", help=info_help)
@@ -152,19 +154,7 @@ def main():
     elif args.command == "delete":
         from ._delete import delete
 
-        valid_responses = ["y", "yes"]
-        user_input = (
-            input("Are you sure you want to delete this instance? (y/n): ")
-            .strip()
-            .lower()
-        )
-
-        if user_input in valid_responses:
-            return delete(
-                instance_name=args.instance,
-            )
-        else:
-            return -1
+        return delete(args.instance, force=args.force)
     elif args.command == "info":
         from ._info import info
 

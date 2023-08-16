@@ -9,8 +9,18 @@ from .dev._settings_load import load_instance_settings
 from .dev._settings_store import instance_settings_file
 
 
-def delete(instance_name: str):
+def delete(instance_name: str, force: bool = False):
     """Delete an instance."""
+    if not force:
+        valid_responses = ["y", "yes"]
+        user_input = (
+            input("Are you sure you want to delete this instance? (y/n): ")
+            .strip()
+            .lower()
+        )
+        if user_input not in valid_responses:
+            return -1
+
     instance_identifier = f"{settings.user.handle}/{instance_name}"
     logger.info(f"deleting instance {instance_identifier}")
     settings_file = instance_settings_file(instance_name, settings.user.handle)
