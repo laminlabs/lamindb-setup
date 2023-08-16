@@ -22,9 +22,10 @@ def install(session: nox.Session, group: str) -> None:
             *"pip install --no-deps git+https://github.com/laminlabs/lnschema-bionty"
             .split()
         )
-        # install lnschema-core from sub-module
-        session.run(*"pip install --no-deps ./lnschema-core".split())
-        # install lamindb-setup without deps
+        session.run(
+            *"pip install --no-deps git+https://github.com/laminlabs/lnschema-core"
+            .split()
+        )
         session.run(*"pip install .[aws,dev]".split())
     else:
         session.run(*"pip install .[aws,dev]".split())
