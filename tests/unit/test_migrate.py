@@ -7,7 +7,7 @@ import lamindb_setup as ln_setup
 def setup_instance():
     ln_setup.init(storage="./testdb")
     yield
-    ln_setup.delete("testdb")
+    ln_setup.delete("testdb", force=True)
 
 
 # tested in notebook right now

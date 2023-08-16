@@ -44,8 +44,8 @@ def test_init_instance_postgres_default_name():
         ln_setup.settings.instance.storage.root.as_posix()
         == Path("mydatapg").absolute().as_posix()
     )
-    ln_setup.delete("pgtest")
     sb_delete_instance(instance["id"], hub)
+    ln_setup.delete("pgtest", force=True)
 
 
 def test_init_instance_postgres_custom_name():
@@ -59,7 +59,7 @@ def test_init_instance_postgres_custom_name():
         ln_setup.settings.instance.storage.root.as_posix()
         == Path("mystorage").absolute().as_posix()
     )
-    ln_setup.delete("mydata2")
+    ln_setup.delete("mydata2", force=True)
 
 
 def test_init_instance_postgres_cloud_aws_us():
@@ -109,7 +109,7 @@ def test_init_instance_sqlite():
     assert not ln_setup.settings.instance.storage.is_cloud
     assert ln_setup.settings.instance.owner == ln_setup.settings.user.handle
     assert ln_setup.settings.instance.dialect == "sqlite"
-    ln_setup.delete("local-sqlite-instance")
+    ln_setup.delete("local-sqlite-instance", force=True)
     sb_delete_instance(instance["id"], hub)
 
 
