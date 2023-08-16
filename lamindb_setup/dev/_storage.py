@@ -1,4 +1,3 @@
-import os
 from pathlib import Path
 from typing import Any, Literal, Optional, Union
 
@@ -6,7 +5,7 @@ from appdirs import AppDirs
 from botocore.exceptions import NoCredentialsError
 from lamin_utils import logger
 
-from .upath import UPath
+from .upath import S3Path, UPath
 
 DIRS = AppDirs("lamindb", "laminlabs")
 
@@ -19,15 +18,26 @@ class StorageSettings:
         root: Union[str, Path, UPath],
         region: Optional[str] = None,
     ):
-        if isinstance(root, UPath):
+        if isinstance(root, (UPath, Path)):
             root_path = root
-        elif isinstance(root, Path):
-            root.mkdir(parents=True, exist_ok=True)  # resolve fails for nonexisting dir
-            root_path = root.resolve()
         elif isinstance(root, str):
             root_path = Storage._str_to_path(root)
         else:
             raise ValueError("root should be of type Union[str, Path, UPath].")
+        # additional setup for s3 upath
+        if isinstance(root_path, S3Path):
+            root_path = UPath(root_path, cache_regions=True)
+            try:
+                root_path.fs.call_s3("head_bucket", Bucket=root_path._url.netloc)
+            except NoCredentialsError:
+                logger.warning("did not find aws credentials, using anonymous")
+                root_path = UPath(root_path, anon=True)
+
+        if isinstance(root_path, Path):
+            # resolve fails for nonexisting dir
+            root_path.mkdir(parents=True, exist_ok=True)
+            root_path = root_path.resolve()
+
         self._root = root_path
         self._region = region
         # would prefer to type below as Registry, but need to think through import order
@@ -35,19 +45,10 @@ class StorageSettings:
 
     @staticmethod
     def _str_to_path(storage: str) -> Union[Path, UPath]:
-        if storage.startswith("s3://"):
-            # for new buckets there could be problems if the region is not specified
-            storage_root = UPath(storage, cache_regions=True)
-            try:
-                storage_root.stat()
-            except NoCredentialsError:
-                logger.warning("did not find aws credentials, using anonymous")
-                storage_root = UPath(storage_root, anon=True)
-        elif storage.startswith("gs://"):
+        if storage.startswith(("s3://", "gs://")):
             storage_root = UPath(storage)
         else:  # local path
-            os.makedirs(storage, exist_ok=True)  # resolve fails for nonexisting dir
-            storage_root = Path(storage).resolve()
+            storage_root = Path(storage)
         return storage_root
 
     @property
