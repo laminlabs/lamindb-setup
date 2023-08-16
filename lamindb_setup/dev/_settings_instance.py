@@ -210,14 +210,11 @@ class InstanceSettings:
         # in order to proceed with the next check, we need the local sqlite
         self._update_local_sqlite_file()
 
-        import sqlalchemy as sa
+        from django.db import connection
 
-        engine = sa.create_engine(self.db)
-        with engine.connect() as conn:
+        with connection.cursor() as cursor:
             try:  # cannot import lnschema_core here, need to use plain SQL
-                result = conn.execute(
-                    sa.text("select * from lnschema_core_user")
-                ).first()
+                result = cursor.execute("select * from lnschema_core_user").fetchone()
             except Exception as e:
                 return False, f"Your DB is not initialized: {e}"
             if result is None:
@@ -225,7 +222,6 @@ class InstanceSettings:
                     False,
                     "Your DB is not initialized: lnschema_core_user has no row",
                 )
-        self._engine = engine
         return True, ""
 
     def _is_db_reachable(self, mute: bool = False) -> bool:
@@ -235,11 +231,10 @@ class InstanceSettings:
                     logger.warning(f"SQLite file {self._sqlite_file} does not exist")
                 return False
         else:
-            import sqlalchemy as sa
+            from django.db import connection
 
-            engine = sa.create_engine(self.db)
             try:
-                engine.connect()
+                connection.connect()
             except Exception:
                 if not mute:
                     logger.warning(f"connection {self.db} not reachable")
