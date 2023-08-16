@@ -14,7 +14,6 @@ dependencies = [
     "django<5.0.0",
     "dj_database_url<3.0.0",
     "pydantic[dotenv]<2.0.0",
-    "sqlalchemy<2.0.0",
     "appdirs<2.0.0",
     "python-dateutil<3.0.0",
     "universal_pathlib==0.1.0",  # is still experimental, need pinning
