@@ -237,7 +237,7 @@ class InstanceSettings:
             from django.db import connection
 
             try:
-                connection.connect()
+                connection.cursor()
             except Exception:
                 if not mute:
                     logger.warning(f"connection {self.db} not reachable")
