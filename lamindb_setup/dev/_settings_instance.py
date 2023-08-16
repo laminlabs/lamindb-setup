@@ -10,20 +10,6 @@ from ._settings_store import current_instance_settings_file, instance_settings_f
 from ._storage import StorageSettings
 from .upath import UPath
 
-# leave commented out until we understand more how to deal with
-# migrations in redun
-# https://stackoverflow.com/questions/2614984/sqlite-sqlalchemy-how-to-enforce-foreign-keys
-# foreign key constraints for sqlite3
-# from sqlite3 import Connection as SQLite3Connection
-# from sqlalchemy import event
-# from sqlalchemy.engine import Engine
-# @event.listens_for(Engine, "connect")
-# def _set_sqlite_pragma(dbapi_connection, connection_record):
-#     if isinstance(dbapi_connection, SQLite3Connection):
-#         cursor = dbapi_connection.cursor()
-#         cursor.execute("PRAGMA foreign_keys=ON;")
-#         cursor.close()
-
 
 class InstanceSettings:
     """Instance settings."""
@@ -124,7 +110,7 @@ class InstanceSettings:
 
     @property
     def db(self) -> str:
-        """Database URL."""
+        """Database connection string (URI)."""
         if self._db is None:
             # here, we want the updated sqlite file
             # hence, we don't use self._sqlite_file_local()
@@ -140,16 +126,6 @@ class InstanceSettings:
         else:
             assert self._db.startswith("postgresql")
             return "postgresql"
-
-    @property
-    def engine(self):
-        """Database engine.
-
-        In case of remote sqlite, does not update the local sqlite.
-        """
-        import sqlalchemy as sa
-
-        return sa.create_engine(self.db, future=True)
 
     @property
     def session(self):
