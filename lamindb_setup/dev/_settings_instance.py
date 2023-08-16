@@ -195,10 +195,10 @@ class InstanceSettings:
 
         settings._instance_settings = self
 
-    def _is_db_setup(self, mute: bool = False) -> Tuple[bool, str]:
+    def _is_db_setup(self) -> Tuple[bool, str]:
         # Is the database available and initialized as LaminDB?
         # returns a tuple of status code and message
-        if not self._sqlite_file.exists():
+        if self.dialect == "sqlite" and not self._sqlite_file.exists():
             return False, "SQLite file does not exist"
         from ._django import setup_django
 
@@ -210,8 +210,9 @@ class InstanceSettings:
         from django.db import connection
 
         with connection.cursor() as cursor:
-            try:  # cannot import lnschema_core here, need to use plain SQL
-                result = cursor.execute("select * from lnschema_core_user").fetchone()
+            try:
+                cursor.execute("select * from lnschema_core_user")
+                result = cursor.fetchone()
             except Exception as e:
                 return False, f"Your DB is not initialized: {e}"
             if result is None:

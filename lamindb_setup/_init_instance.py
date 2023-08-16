@@ -180,7 +180,7 @@ def init(
     silence_loggers()
 
     also_init_bionty = True
-    if isettings._is_db_setup(mute=True)[0]:
+    if isettings._is_db_setup()[0]:
         logger.warning(
             "your instance DB already has content, but couldn't find settings,"
             " proceeding with setup"
