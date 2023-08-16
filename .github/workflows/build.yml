@@ -45,10 +45,6 @@ jobs:
       - if: steps.cache-postgres.outputs.cache-hit == 'true'
         run: docker image load --input ~/postgres.tar
       - run: pip install -U laminci
-      - name: install apt-get deps
-        run: |
-          sudo apt-get -y install graphviz
-          sudo apt-get install libpq-dev
       # - run: nox -s lint
       - uses: aws-actions/configure-aws-credentials@v2
         with:
