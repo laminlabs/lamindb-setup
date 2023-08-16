@@ -10,7 +10,7 @@ class schema:
         import erdiagram
         import sqlalchemy as sa
 
-        engine = settings.instance.engine
+        engine = sa.create_engine(settings.instance.db, future=True)
         metadata = sa.MetaData(bind=engine)
         metadata.reflect()
         graph = erdiagram.create_schema_graph(
@@ -31,7 +31,7 @@ class schema:
         import sqlalchemy as sa
 
         metadata = sa.MetaData()
-        engine = settings.instance.engine
+        engine = sa.create_engine(settings.instance.db, future=True)
         metadata.reflect(bind=engine)
         table_names = [table.name for table in metadata.sorted_tables]
         return table_names
