@@ -83,10 +83,10 @@ jobs:
       - run: pip install -U laminci
       - run: nox -s "install(group='noaws')"
       - run: nox -s noaws
-      # - uses: actions/upload-artifact@v2
-      #   with:
-      #     name: coverage--noaws
-      #     path: .coverage
+      - uses: actions/upload-artifact@v2
+        with:
+          name: coverage--noaws
+          path: .coverage
 
   coverage:
     needs: [build, noaws]

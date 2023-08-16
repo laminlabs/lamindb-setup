@@ -3,6 +3,7 @@ from laminci import upload_docs_artifact
 from laminci.nox import build_docs, login_testuser1, login_testuser2, run_pre_commit
 
 nox.options.default_venv_backend = "none"
+COVERAGE_ARGS = "--cov=lamindb_setup --cov-append --cov-report=term-missing"
 
 
 @nox.session
@@ -44,14 +45,13 @@ def build(session: nox.Session, group: str, lamin_env: str):
     env = {"LAMIN_ENV": lamin_env}
     login_testuser1(session, env=env)
     login_testuser2(session, env=env)
-    coverage_args = "--cov=lamindb_setup --cov-append --cov-report=term-missing"  # noqa
     if group.startswith("unit"):
         session.run(
-            *f"pytest -s {coverage_args} ./tests/unit".split(),
+            *f"pytest -s {COVERAGE_ARGS} ./tests/unit".split(),
             env=env,
         )
     elif group.startswith("docs"):
-        session.run(*f"pytest -s {coverage_args} ./docs".split(), env=env)
+        session.run(*f"pytest -s {COVERAGE_ARGS} ./docs".split(), env=env)
 
 
 @nox.session
@@ -77,7 +77,6 @@ def docs(session: nox.Session, lamin_env: str):
 @nox.session
 def noaws(session: nox.Session):
     login_testuser1(session)
-    coverage_args = "--cov=lamindb_setup --cov-append --cov-report=term-missing"  # noqa
     session.run(
-        *f"pytest -s {coverage_args} ./tests/test_load_persistent_instance.py".split()
+        *f"pytest -s {COVERAGE_ARGS} ./tests/test_load_persistent_instance.py".split()
     )
