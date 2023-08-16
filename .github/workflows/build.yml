@@ -70,8 +70,6 @@ jobs:
   # a test group for testing user access to public buckets without AWS credentials
   noaws:
     runs-on: ubuntu-latest
-    strategy:
-      matrix:
     steps:
       - uses: actions/checkout@v3
         with:
