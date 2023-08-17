@@ -46,7 +46,7 @@ jobs:
         run: docker image load --input ~/postgres.tar
       - run: pip install -U laminci
       - run: nox -s lint
-        if: ${{ matrix.lamin_env == 'prod' && matrix.group == 'prod' }}
+        if: ${{ matrix.lamin_env == 'prod' && matrix.group == 'unit' }}
       - uses: aws-actions/configure-aws-credentials@v2
         with:
           aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
