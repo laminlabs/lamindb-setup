@@ -45,12 +45,14 @@ jobs:
       - if: steps.cache-postgres.outputs.cache-hit == 'true'
         run: docker image load --input ~/postgres.tar
       - run: pip install -U laminci
-      # - run: nox -s lint
+      - run: nox -s lint
+        if: ${{ matrix.lamin_env == 'prod' && matrix.group == 'prod' }}
       - uses: aws-actions/configure-aws-credentials@v2
         with:
           aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           aws-region: eu-central-1
+      # account for in a different job
       # - uses: "google-github-actions/auth@v0"
       #   with:
       #     credentials_json: "${{ secrets.GCP_CREDENTIALS }}"
