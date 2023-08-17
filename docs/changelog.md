@@ -3,6 +3,7 @@
 <!-- prettier-ignore -->
 Name | PR | Developer | Date | Version
 --- | --- | --- | --- | ---
+👷 Renable linting | [478](https://github.com/laminlabs/lamindb-setup/pull/478) | [falexwolf](https://github.com/falexwolf) | 2023-08-17 |
 🩹 Create record in user table upon login for existing instance | [477](https://github.com/laminlabs/lamindb-setup/pull/477) | [falexwolf](https://github.com/falexwolf) | 2023-08-16 | 0.50.2
 👷 Try fixing coverage compute | [476](https://github.com/laminlabs/lamindb-setup/pull/476) | [falexwolf](https://github.com/falexwolf) | 2023-08-16 |
 🚑️ Fix loading postgres instances | [475](https://github.com/laminlabs/lamindb-setup/pull/475) | [falexwolf](https://github.com/falexwolf) | 2023-08-16 | 0.50.1
