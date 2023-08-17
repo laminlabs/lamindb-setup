@@ -34,7 +34,7 @@ def install(session: nox.Session, group: str) -> None:
 @nox.session
 @nox.parametrize(
     "group",
-    ["unit", "docs"],
+    ["unit", "hub", "docs"],
 )
 @nox.parametrize(
     "lamin_env",
@@ -47,6 +47,11 @@ def build(session: nox.Session, group: str, lamin_env: str):
     if group.startswith("unit"):
         session.run(
             *f"pytest -s {COVERAGE_ARGS} ./tests/unit".split(),
+            env=env,
+        )
+    elif group.startswith("hub"):
+        session.run(
+            *f"pytest -s {COVERAGE_ARGS} ./tests/hub".split(),
             env=env,
         )
     elif group.startswith("docs"):

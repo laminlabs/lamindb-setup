@@ -39,6 +39,10 @@ dev = [
     "nbproject-test>=0.4.3",
 ]
 
+test = [
+    "lnhub-rest"
+]
+
 [project.scripts]
 lamin = "lamindb_setup.__main__:main"
 
