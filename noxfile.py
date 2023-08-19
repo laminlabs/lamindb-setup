@@ -1,8 +1,23 @@
+import os
+from typing import Dict
+
 import nox
 from laminci.nox import build_docs, login_testuser1, login_testuser2, run_pre_commit
 
 nox.options.default_venv_backend = "none"
 COVERAGE_ARGS = "--cov=lamindb_setup --cov-append --cov-report=term-missing"
+
+
+# this function is duplicated across lnhub-rest and lamindb-setup
+def get_local_env() -> Dict[str, str]:
+    env = {
+        "LAMIN_ENV": "local",
+        "POSTGRES_DSN": os.environ["DB_URL"].replace('"', ""),
+        "SUPABASE_API_URL": os.environ["API_URL"].replace('"', ""),
+        "SUPABASE_ANON_KEY": os.environ["ANON_KEY"].replace('"', ""),
+        "SUPABASE_SERVICE_ROLE_KEY": os.environ["SERVICE_ROLE_KEY"].replace('"', ""),
+    }
+    return env
 
 
 @nox.session
@@ -13,10 +28,10 @@ def lint(session: nox.Session) -> None:
 @nox.session
 @nox.parametrize(
     "group",
-    ["unit", "docs", "noaws"],
+    ["unit", "hub", "docs", "noaws"],
 )
 def install(session: nox.Session, group: str) -> None:
-    if group != "noaws":
+    if group in {"unit", "docs"}:
         session.run(*"pip install git+https://github.com/laminlabs/bionty".split())
         session.run(
             *"pip install --no-deps git+https://github.com/laminlabs/lnschema-bionty"
@@ -27,30 +42,48 @@ def install(session: nox.Session, group: str) -> None:
             .split()
         )
         session.run(*"pip install .[aws,dev]".split())
-    else:
+    elif group == "noaws":
         session.run(*"pip install .[aws,dev]".split())
+    elif group == "hub":
+        session.run(*"pip install .[aws,dev,hub]".split())
+        session.run(*"pip install ./lnhub-rest[server]".split())
+        # grab directories & files from lnhub-rest repo
+        session.run(*"cp -r lnhub-rest/supabase .".split())
 
 
 @nox.session
 @nox.parametrize(
     "group",
-    ["unit", "docs"],
+    ["unit", "hub", "docs"],
 )
 @nox.parametrize(
     "lamin_env",
-    ["staging", "prod"],
+    ["staging", "prod", "local"],
 )
 def build(session: nox.Session, group: str, lamin_env: str):
     env = {"LAMIN_ENV": lamin_env}
-    login_testuser1(session, env=env)
-    login_testuser2(session, env=env)
-    if group.startswith("unit"):
+    if group != "hub":
+        login_testuser1(session, env=env)
+        login_testuser2(session, env=env)
+    if group == "unit":
         session.run(
             *f"pytest -s {COVERAGE_ARGS} ./tests/unit".split(),
             env=env,
         )
-    elif group.startswith("docs"):
+    elif group == "docs":
         session.run(*f"pytest -s {COVERAGE_ARGS} ./docs".split(), env=env)
+    elif group == "hub":
+        # only run for local environment
+        assert lamin_env == "local"
+        env = get_local_env()
+        with session.chdir("./lnhub-rest"):
+            session.run(*"lnhub alembic upgrade head".split(), env=env)
+        session.run(*"cp lnhub-rest/tests/conftest.py tests/".split())
+        # the -n 1 is to ensure that supabase thread exits properly
+        session.run(
+            *f"pytest -n 1 {COVERAGE_ARGS} ./tests/hub".split(),
+            env=env,
+        )
 
 
 @nox.session

@@ -38,6 +38,9 @@ dev = [
     "pytest-xdist",
     "nbproject-test>=0.4.3",
 ]
+hub = [
+    "faker",
+]
 
 [project.scripts]
 lamin = "lamindb_setup.__main__:main"
