@@ -26,9 +26,9 @@ def install(session: nox.Session, group: str) -> None:
             *"pip install --no-deps git+https://github.com/laminlabs/lnschema-core"
             .split()
         )
-        session.run(*"pip install .[aws,dev]".split())
+        session.run(*"pip install .[aws,dev,test]".split())
     else:
-        session.run(*"pip install .[aws,dev]".split())
+        session.run(*"pip install .[aws,dev,test]".split())
 
 
 @nox.session
@@ -41,7 +41,6 @@ def install(session: nox.Session, group: str) -> None:
     ["staging", "prod"],
 )
 def build(session: nox.Session, group: str, lamin_env: str):
-    # debug
     env = {"LAMIN_ENV": lamin_env}
     login_testuser1(session, env=env)
     login_testuser2(session, env=env)
