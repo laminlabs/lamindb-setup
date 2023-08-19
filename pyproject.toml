@@ -41,7 +41,8 @@ dev = [
 
 test = [
     "lnhub-rest",
-    "faker"
+    "faker",
+    "fastapi"
 ]
 
 [project.scripts]
