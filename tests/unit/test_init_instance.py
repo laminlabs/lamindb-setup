@@ -41,7 +41,7 @@ def get_instance_and_user_from_hub(
 
 
 def test_init_instance_postgres_default_name(get_hub_client):
-    hub = get_hub_client()
+    hub = get_hub_client
     instance_name = "pgtest"
     instance, db_user = get_instance_and_user_from_hub(instance_name, hub)
     # if instance exists, delete it
