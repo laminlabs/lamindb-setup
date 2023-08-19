@@ -40,10 +40,8 @@ dev = [
 ]
 
 test = [
-    "lnhub-rest",
+    "lnhub-rest[server]",
     "faker",
-    "fastapi",
-    "sqlmodel"
 ]
 
 [project.scripts]
