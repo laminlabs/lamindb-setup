@@ -83,6 +83,7 @@ jobs:
   # a test group for testing low-level hub functionality
   hub:
     runs-on: ubuntu-latest
+    timeout-minutes: 15
     steps:
       - uses: actions/checkout@v3
       - name: checkout lnhub-rest

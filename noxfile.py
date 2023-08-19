@@ -36,7 +36,6 @@ def install(session: nox.Session, group: str) -> None:
         session.run(*"pip install ./lnhub-rest[server]".split())
         # grab directories & files from lnhub-rest repo
         session.run(*"cp -r lnhub-rest/supabase .".split())
-        session.run(*"cp lnhub-rest/tests/conftest.py tests/hub/".split())
 
 
 @nox.session
@@ -67,6 +66,16 @@ def build(session: nox.Session, group: str, lamin_env: str):
                 '"', ""
             ),
         }
+        session.run(
+            "lnhub",
+            "alembic",
+            "upgrade",
+            "head",
+            env={
+                "LAMIN_ENV": "local",
+            },
+        )
+        session.run(*"cp lnhub-rest/tests/conftest.py tests/hub/".split())
         session.run(
             *f"pytest -s {COVERAGE_ARGS} ./tests/hub".split(),
             env=env,
