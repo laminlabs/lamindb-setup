@@ -16,7 +16,6 @@ jobs:
       matrix:
         group:
           - "unit"
-          - "hub"
           - "docs"
         lamin_env:
           - "staging"
@@ -82,11 +81,35 @@ jobs:
       - run: pip install -U laminci
       - run: nox -s "install(group='noaws')"
       - run: nox -s noaws
-      # this makes coverage from unit tests fail
-      # - uses: actions/upload-artifact@v2
-      #   with:
-      #     name: coverage--noaws
-      #     path: .coverage
+      - uses: actions/upload-artifact@v2
+        with:
+          name: coverage--noaws
+          path: .coverage
+
+  # a test group for testing low-level hub functionality
+  hub:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+          submodules: recursive
+      - uses: actions/setup-python@v4
+        with:
+          python-version: "3.9"
+          cache: "pip"
+          cache-dependency-path: ".github/workflows/build.yml"
+      - uses: supabase/setup-cli@v1
+      - run: |
+          supabase start
+          echo "$(supabase status -o env)" >> $GITHUB_ENV
+      - run: pip install -U laminci
+      - run: nox -s "install(group='hub')"
+      - run: nox -s "build(lamin_env='local', group='hub')"
+      - uses: actions/upload-artifact@v2
+        with:
+          name: coverage--hub
+          path: .coverage
 
   coverage:
     needs: [build, noaws]

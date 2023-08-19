@@ -38,8 +38,7 @@ dev = [
     "pytest-xdist",
     "nbproject-test>=0.4.3",
 ]
-
-test = [
+hub = [
     "lnhub-rest[server]",
     "faker",
 ]

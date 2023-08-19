@@ -16,7 +16,7 @@ def lint(session: nox.Session) -> None:
     ["unit", "hub", "docs", "noaws"],
 )
 def install(session: nox.Session, group: str) -> None:
-    if group != "noaws":
+    if group in {"unit", "docs"}:
         session.run(*"pip install git+https://github.com/laminlabs/bionty".split())
         session.run(
             *"pip install --no-deps git+https://github.com/laminlabs/lnschema-bionty"
@@ -26,9 +26,11 @@ def install(session: nox.Session, group: str) -> None:
             *"pip install --no-deps git+https://github.com/laminlabs/lnschema-core"
             .split()
         )
-        session.run(*"pip install .[aws,dev,test]".split())
-    else:
-        session.run(*"pip install .[aws,dev,test]".split())
+        session.run(*"pip install .[aws,dev]".split())
+    elif group == "noaws":
+        session.run(*"pip install .[aws,dev]".split())
+    elif group == "hub":
+        session.run(*"pip install .[aws,dev,hub]".split())
 
 
 @nox.session
@@ -38,12 +40,13 @@ def install(session: nox.Session, group: str) -> None:
 )
 @nox.parametrize(
     "lamin_env",
-    ["staging", "prod"],
+    ["staging", "prod", "local"],
 )
 def build(session: nox.Session, group: str, lamin_env: str):
     env = {"LAMIN_ENV": lamin_env}
-    login_testuser1(session, env=env)
-    login_testuser2(session, env=env)
+    if group != "hub":
+        login_testuser1(session, env=env)
+        login_testuser2(session, env=env)
     if group.startswith("unit"):
         session.run(
             *f"pytest -s {COVERAGE_ARGS} ./tests/unit".split(),
