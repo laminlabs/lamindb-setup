@@ -47,13 +47,3 @@ lamin = "lamindb_setup.__main__:main"
 
 [tool.black]
 preview = true
-
-[tool.pytest.ini_options]
-testpaths = [
-    "tests",
-]
-
-[tool.coverage.run]
-omit = [
-    "lamindb_setup/*",
-]

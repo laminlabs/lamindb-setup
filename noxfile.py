@@ -41,11 +41,11 @@ def install(session: nox.Session, group: str) -> None:
             *"pip install --no-deps git+https://github.com/laminlabs/lnschema-core"
             .split()
         )
-        session.run(*"pip install .[aws,dev]".split())
+        session.run(*"pip install -e .[aws,dev]".split())
     elif group == "noaws":
-        session.run(*"pip install .[aws,dev]".split())
+        session.run(*"pip install -e .[aws,dev]".split())
     elif group == "hub":
-        session.run(*"pip install .[aws,dev,hub]".split())
+        session.run(*"pip install -e .[aws,dev,hub]".split())
         session.run(*"pip install ./lnhub-rest[server]".split())
         # grab directories & files from lnhub-rest repo
         session.run(*"cp -r lnhub-rest/supabase .".split())
@@ -67,7 +67,7 @@ def build(session: nox.Session, group: str, lamin_env: str):
         login_testuser2(session, env=env)
     if group == "unit":
         session.run(
-            *f"pytest -s {COVERAGE_ARGS} ./tests/unit".split(),
+            *f"pytest {COVERAGE_ARGS} ./tests/unit".split(),
             env=env,
         )
     elif group == "docs":
@@ -109,5 +109,5 @@ def docs(session: nox.Session, lamin_env: str):
 def noaws(session: nox.Session):
     login_testuser1(session)
     session.run(
-        *f"pytest -s {COVERAGE_ARGS} ./tests/test_load_persistent_instance.py".split()
+        *f"pytest {COVERAGE_ARGS} ./tests/test_load_persistent_instance.py".split()
     )
