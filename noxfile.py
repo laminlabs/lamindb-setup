@@ -31,6 +31,7 @@ def install(session: nox.Session, group: str) -> None:
         session.run(*"pip install .[aws,dev]".split())
     elif group == "hub":
         session.run(*"pip install .[aws,dev,hub]".split())
+        session.run(*"pip install ./lnhub-rest[server]".split())
 
 
 @nox.session

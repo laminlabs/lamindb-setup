@@ -39,7 +39,6 @@ dev = [
     "nbproject-test>=0.4.3",
 ]
 hub = [
-    "lnhub-rest[server]",
     "faker",
 ]
 

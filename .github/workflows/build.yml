@@ -116,6 +116,13 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
+      - name: checkout lnhub-rest
+        uses: actions/checkout@v3
+        with:
+          repository: laminlabs/lndocs
+          token: ${{ secrets.GH_TOKEN_DEPLOY_LAMINAPP }}
+          path: lnhub-rest
+          ref: main
       - uses: actions/setup-python@v4
         with:
           python-version: "3.9"
