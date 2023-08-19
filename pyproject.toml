@@ -42,7 +42,8 @@ dev = [
 test = [
     "lnhub-rest",
     "faker",
-    "fastapi"
+    "fastapi",
+    "sqlmodel"
 ]
 
 [project.scripts]
