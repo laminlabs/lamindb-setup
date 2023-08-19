@@ -1,8 +1,12 @@
 from pathlib import Path
+from typing import Dict, Tuple
+
+import pytest
 
 import lamindb_setup as ln_setup
 from lamindb_setup.dev._hub_client import connect_hub_with_auth
 from lamindb_setup.dev._hub_crud import (
+    Client,
     sb_delete_instance,
     sb_select_account_by_handle,
     sb_select_db_user_by_instance,
@@ -12,29 +16,51 @@ from lamindb_setup.dev._hub_crud import (
 pgurl = "postgresql://postgres:pwd@0.0.0.0:5432/pgtest"
 
 
-def test_init_instance_postgres_default_name():
-    ln_setup.init(storage="./mydatapg", db=pgurl, _test=True)
-    ln_setup.register()
+@pytest.fixture
+def get_hub_client():
     hub = connect_hub_with_auth(access_token=ln_setup.settings.user.access_token)
+    yield hub
+    hub.auth.sign_out()
+
+
+def get_instance_and_user_from_hub(
+    instance_name: str, hub: Client
+) -> Tuple[Dict[str, str], Dict[str, str]]:
     account = sb_select_account_by_handle(
         handle=ln_setup.settings.instance.owner, supabase_client=hub
     )
     instance = sb_select_instance_by_name(
         account_id=account["id"],
-        name=ln_setup.settings.instance.name,
+        name=instance_name,
         supabase_client=hub,
     )
     db_user = sb_select_db_user_by_instance(
         instance_id=instance["id"], supabase_client=hub
     )
-    # Hub checks
+    return instance, db_user
+
+
+def test_init_instance_postgres_default_name(get_hub_client):
+    hub = get_hub_client()
+    instance_name = "pgtest"
+    instance, db_user = get_instance_and_user_from_hub(instance_name)
+    # if instance exists, delete it
+    if instance is not None:
+        sb_delete_instance(instance["id"], hub)
+    # now, run init
+    ln_setup.init(storage=f"./{instance_name}", db=pgurl, _test=True)
+    ln_setup.register()
+    # and check
+    instance, db_user = get_instance_and_user_from_hub(instance_name)
+    # hub checks
     assert db_user["db_user_name"] == "postgres"
     assert db_user["db_user_password"] == "pwd"
+    assert instance["name"] == "pgtest"
     assert instance["db_scheme"] == "postgresql"
     assert instance["db_host"] == "0.0.0.0"
     assert instance["db_port"] == 5432
     assert instance["db_database"] == "pgtest"
-    # API checks
+    # client checks
     assert ln_setup.settings.instance.name == "pgtest"
     assert not ln_setup.settings.instance.storage.is_cloud
     assert ln_setup.settings.instance.owner == ln_setup.settings.user.handle
