@@ -3,6 +3,7 @@
 <!-- prettier-ignore -->
 Name | PR | Developer | Date | Version
 --- | --- | --- | --- | ---
+👷 Fix coverage compute | [480](https://github.com/laminlabs/lamindb-setup/pull/480) | [falexwolf](https://github.com/falexwolf) | 2023-08-19 |
 👷 Run hub tests from `lamindb-setup` | [479](https://github.com/laminlabs/lamindb-setup/pull/479) | [bpenteado](https://github.com/bpenteado) | 2023-08-19 |
 👷 Renable linting | [478](https://github.com/laminlabs/lamindb-setup/pull/478) | [falexwolf](https://github.com/falexwolf) | 2023-08-17 |
 🩹 Create record in user table upon login for existing instance | [477](https://github.com/laminlabs/lamindb-setup/pull/477) | [falexwolf](https://github.com/falexwolf) | 2023-08-16 | 0.50.2
