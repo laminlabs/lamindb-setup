@@ -49,18 +49,6 @@ def auth_2():
 
 
 @pytest.fixture(scope="session")
-def auth_3():
-    auth_3 = create_test_auth()
-    return auth_3
-
-
-@pytest.fixture(scope="session")
-def auth_4():
-    auth_4 = create_test_auth()
-    return auth_4
-
-
-@pytest.fixture(scope="session")
 def user_account_1(auth_1):
     user_account = create_test_account(
         handle=auth_1["handle"], access_token=auth_1["access_token"]
