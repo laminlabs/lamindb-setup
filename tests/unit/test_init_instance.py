@@ -1,5 +1,5 @@
 from pathlib import Path
-from typing import Dict, Tuple
+from typing import Dict, Optional, Tuple
 
 import pytest
 
@@ -25,7 +25,7 @@ def get_hub_client():
 
 def get_instance_and_user_from_hub(
     instance_name: str, hub: Client
-) -> Tuple[Dict[str, str], Dict[str, str]]:
+) -> Tuple[Optional[Dict[str, str]], Optional[Dict[str, str]]]:
     assert ln_setup.settings.user.handle == "testuser2"
     account = sb_select_account_by_handle(handle="testuser2", supabase_client=hub)
     instance = sb_select_instance_by_name(
@@ -33,6 +33,8 @@ def get_instance_and_user_from_hub(
         name=instance_name,
         supabase_client=hub,
     )
+    if instance is None:
+        return None, None
     db_user = sb_select_db_user_by_instance(
         instance_id=instance["id"], supabase_client=hub
     )
