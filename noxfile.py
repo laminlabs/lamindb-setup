@@ -76,7 +76,8 @@ def build(session: nox.Session, group: str, lamin_env: str):
         # only run for local environment
         assert lamin_env == "local"
         env = get_local_env()
-        session.run(*"lnhub alembic upgrade head".split(), env=env)
+        with session.chdir("./lnhub-rest"):
+            session.run(*"lnhub alembic upgrade head".split(), env=env)
         session.run(*"cp lnhub-rest/tests/conftest.py tests/".split())
         # the -n 1 is to ensure that supabase thread exits properly
         session.run(
