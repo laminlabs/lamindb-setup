@@ -32,9 +32,9 @@ def install(session: nox.Session, group: str) -> None:
     elif group == "hub":
         session.run(*"pip install .[aws,dev,hub]".split())
         session.run(*"pip install ./lnhub-rest[server]".split())
-        # grab files from lnhub-rest repo
-        session.run("cp lnhub-rest/supabase .")
-        session.run("cp lnhub-rest/tests/conftest.py tests/hub/")
+        # grab directories & files from lnhub-rest repo
+        session.run("cp -r lnhub-rest/supabase .".split())
+        session.run("cp lnhub-rest/tests/conftest.py tests/hub/".split())
 
 
 @nox.session
