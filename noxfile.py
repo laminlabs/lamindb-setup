@@ -66,18 +66,10 @@ def build(session: nox.Session, group: str, lamin_env: str):
                 '"', ""
             ),
         }
-        session.run(
-            "lnhub",
-            "alembic",
-            "upgrade",
-            "head",
-            env={
-                "LAMIN_ENV": "local",
-            },
-        )
+        session.run(*"lnhub alembic upgrade head".split(), env=env)
         session.run(*"cp lnhub-rest/tests/conftest.py tests/hub/".split())
         session.run(
-            *f"pytest -s {COVERAGE_ARGS} ./tests/hub".split(),
+            *f"pytest -n 1 {COVERAGE_ARGS} ./tests/hub".split(),
             env=env,
         )
     elif group.startswith("docs"):
