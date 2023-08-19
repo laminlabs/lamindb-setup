@@ -41,11 +41,11 @@ def install(session: nox.Session, group: str) -> None:
             *"pip install --no-deps git+https://github.com/laminlabs/lnschema-core"
             .split()
         )
-        session.run(*"pip install .[aws,dev]".split())
+        session.run(*"pip install -e .[aws,dev]".split())
     elif group == "noaws":
-        session.run(*"pip install .[aws,dev]".split())
+        session.run(*"pip install -e .[aws,dev]".split())
     elif group == "hub":
-        session.run(*"pip install .[aws,dev,hub]".split())
+        session.run(*"pip install -e .[aws,dev,hub]".split())
         session.run(*"pip install ./lnhub-rest[server]".split())
         # grab directories & files from lnhub-rest repo
         session.run(*"cp -r lnhub-rest/supabase .".split())
