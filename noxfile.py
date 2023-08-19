@@ -1,10 +1,23 @@
 import os
+from typing import Dict
 
 import nox
 from laminci.nox import build_docs, login_testuser1, login_testuser2, run_pre_commit
 
 nox.options.default_venv_backend = "none"
 COVERAGE_ARGS = "--cov=lamindb_setup --cov-append --cov-report=term-missing"
+
+
+# this function is duplicated across lnhub-rest and lamindb-setup
+def get_local_env() -> Dict[str, str]:
+    env = {
+        "LAMIN_ENV": "local",
+        "POSTGRES_DSN": os.environ["DB_URL"].replace('"', ""),
+        "SUPABASE_API_URL": os.environ["API_URL"].replace('"', ""),
+        "SUPABASE_ANON_KEY": os.environ["ANON_KEY"].replace('"', ""),
+        "SUPABASE_SERVICE_ROLE_KEY": os.environ["SERVICE_ROLE_KEY"].replace('"', ""),
+    }
+    return env
 
 
 @nox.session
@@ -52,28 +65,24 @@ def build(session: nox.Session, group: str, lamin_env: str):
     if group != "hub":
         login_testuser1(session, env=env)
         login_testuser2(session, env=env)
-    if group.startswith("unit"):
+    if group == "unit":
         session.run(
             *f"pytest -s {COVERAGE_ARGS} ./tests/unit".split(),
             env=env,
         )
-    elif group.startswith("hub"):
-        env = {
-            "LAMIN_ENV": "local",
-            "SUPABASE_API_URL": os.environ["API_URL"].replace('"', ""),
-            "SUPABASE_ANON_KEY": os.environ["ANON_KEY"].replace('"', ""),
-            "SUPABASE_SERVICE_ROLE_KEY": os.environ["SERVICE_ROLE_KEY"].replace(
-                '"', ""
-            ),
-        }
+    elif group == "docs":
+        session.run(*f"pytest -s {COVERAGE_ARGS} ./docs".split(), env=env)
+    elif group == "hub":
+        # only run for local environment
+        assert lamin_env == "local"
+        env = get_local_env()
         session.run(*"lnhub alembic upgrade head".split(), env=env)
-        session.run(*"cp lnhub-rest/tests/conftest.py tests/hub/".split())
+        session.run(*"cp lnhub-rest/tests/conftest.py tests/".split())
+        # the -n 1 is to ensure that supabase thread exits properly
         session.run(
             *f"pytest -n 1 {COVERAGE_ARGS} ./tests/hub".split(),
             env=env,
         )
-    elif group.startswith("docs"):
-        session.run(*f"pytest -s {COVERAGE_ARGS} ./docs".split(), env=env)
 
 
 @nox.session
