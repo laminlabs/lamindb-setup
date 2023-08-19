@@ -13,7 +13,7 @@ def lint(session: nox.Session) -> None:
 @nox.session
 @nox.parametrize(
     "group",
-    ["unit", "docs", "noaws"],
+    ["unit", "hub", "docs", "noaws"],
 )
 def install(session: nox.Session, group: str) -> None:
     if group != "noaws":
