@@ -1,3 +1,5 @@
+import os
+
 import nox
 from laminci.nox import build_docs, login_testuser1, login_testuser2, run_pre_commit
 
@@ -57,6 +59,14 @@ def build(session: nox.Session, group: str, lamin_env: str):
             env=env,
         )
     elif group.startswith("hub"):
+        env = {
+            "LAMIN_ENV": "local",
+            "SUPABASE_API_URL": os.environ["API_URL"].replace('"', ""),
+            "SUPABASE_ANON_KEY": os.environ["ANON_KEY"].replace('"', ""),
+            "SUPABASE_SERVICE_ROLE_KEY": os.environ["SERVICE_ROLE_KEY"].replace(
+                '"', ""
+            ),
+        }
         session.run(
             *f"pytest -s {COVERAGE_ARGS} ./tests/hub".split(),
             env=env,
