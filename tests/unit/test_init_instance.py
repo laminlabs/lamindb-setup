@@ -26,9 +26,8 @@ def get_hub_client():
 def get_instance_and_user_from_hub(
     instance_name: str, hub: Client
 ) -> Tuple[Dict[str, str], Dict[str, str]]:
-    account = sb_select_account_by_handle(
-        handle=ln_setup.settings.instance.owner, supabase_client=hub
-    )
+    assert ln_setup.settings.user.handle == "testuser1"
+    account = sb_select_account_by_handle(handle="testuser1", supabase_client=hub)
     instance = sb_select_instance_by_name(
         account_id=account["id"],
         name=instance_name,
