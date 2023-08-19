@@ -67,7 +67,7 @@ def build(session: nox.Session, group: str, lamin_env: str):
         login_testuser2(session, env=env)
     if group == "unit":
         session.run(
-            *f"pytest -s {COVERAGE_ARGS} ./tests/unit".split(),
+            *f"pytest {COVERAGE_ARGS} ./tests/unit".split(),
             env=env,
         )
     elif group == "docs":
