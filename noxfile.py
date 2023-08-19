@@ -109,5 +109,5 @@ def docs(session: nox.Session, lamin_env: str):
 def noaws(session: nox.Session):
     login_testuser1(session)
     session.run(
-        *f"pytest -s {COVERAGE_ARGS} ./tests/test_load_persistent_instance.py".split()
+        *f"pytest {COVERAGE_ARGS} ./tests/test_load_persistent_instance.py".split()
     )
