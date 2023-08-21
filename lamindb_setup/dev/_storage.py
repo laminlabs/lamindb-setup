@@ -30,7 +30,8 @@ class StorageSettings:
             try:
                 root_path.fs.call_s3("head_bucket", Bucket=root_path._url.netloc)
             except NoCredentialsError:
-                logger.warning("did not find aws credentials, using anonymous")
+                # below is not necessary as a warning
+                logger.debug("did not find aws credentials, using anonymous")
                 root_path = UPath(root_path, anon=True)
 
         # root_path is either Path or UPath at this point
