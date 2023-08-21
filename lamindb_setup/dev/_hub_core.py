@@ -277,7 +277,7 @@ def sign_up_hub(email) -> str:
             )
         usettings_file = settings_dir / f"user-{email}.env"
         logger.info(
-            "Please *confirm* the sign-up email. After that, login with `lndb login"
+            "Please *confirm* the sign-up email. After that, login with `lamin login"
             f" {email}`!\n\n"
             f"Generated password: {password}\n"
             f"Email & password are cached: {usettings_file}\n"  # noqa
