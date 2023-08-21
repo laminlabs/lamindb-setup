@@ -1,4 +1,3 @@
-import os
 from typing import Optional, Tuple, Union
 from uuid import UUID, uuid4
 
@@ -47,15 +46,7 @@ def add_storage(
         if storage is not None:
             return storage["id"], None
 
-        # add storage
-        # LNHUB_NOT_USE_BOTO3 is legacy
-        if (
-            "LNHUB_NOT_USE_BOTOCORE" in os.environ
-            or "LNHUB_NOT_USE_BOTO3" in os.environ  # noqa
-        ):
-            storage_region = None
-        else:
-            storage_region = get_storage_region(root)
+        storage_region = get_storage_region(root)
         storage_type = get_storage_type(root)
         storage = sb_insert_storage(
             {
@@ -286,7 +277,7 @@ def sign_up_hub(email) -> str:
             )
         usettings_file = settings_dir / f"user-{email}.env"
         logger.info(
-            "Please *confirm* the sign-up email. After that, login with `lndb login"
+            "Please *confirm* the sign-up email. After that, login with `lamin login"
             f" {email}`!\n\n"
             f"Generated password: {password}\n"
             f"Email & password are cached: {usettings_file}\n"  # noqa
