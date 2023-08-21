@@ -86,8 +86,11 @@ class InstanceSettings:
     def _update_cloud_sqlite_file(self) -> None:
         """Upload the local sqlite file to the cloud file."""
         if self._is_cloud_sqlite:
-            logger.warning("updating & unlocking cloud SQLite")
             sqlite_file = self._sqlite_file
+            logger.warning(
+                f"updating & unlocking cloud SQLite '{sqlite_file}' of instance"
+                f" '{self.identifier}'"
+            )
             cache_file = self.storage.cloud_to_local_no_update(sqlite_file)
             sqlite_file.upload_from(cache_file)  # type: ignore
             cloud_mtime = sqlite_file.modified.timestamp()  # type: ignore
