@@ -3,6 +3,7 @@
 <!-- prettier-ignore -->
 Name | PR | Developer | Date | Version
 --- | --- | --- | --- | ---
+🔊 Add more logging to closing SQLite | [483](https://github.com/laminlabs/lamindb-setup/pull/483) | [falexwolf](https://github.com/falexwolf) | 2023-08-21 |
 🐛 Fix UPath check on Storage init | [482](https://github.com/laminlabs/lamindb-setup/pull/482) | [Koncopd](https://github.com/Koncopd) | 2023-08-21 |
 🔥 Remove unused environment variable and fix sign up logging | [481](https://github.com/laminlabs/lamindb-setup/pull/481) | [falexwolf](https://github.com/falexwolf) | 2023-08-21 |
 👷 Fix coverage compute | [480](https://github.com/laminlabs/lamindb-setup/pull/480) | [falexwolf](https://github.com/falexwolf) | 2023-08-19 |
