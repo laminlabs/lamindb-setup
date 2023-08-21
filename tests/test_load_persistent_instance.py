@@ -5,5 +5,5 @@ import lamindb_setup as ln_setup
 
 
 def test_load_persistent_instance():
-    ln_setup.load("laminapp-admin/persistent-instance-to-test-load")
+    ln_setup.load("testuser1/lamin-site-assets")
     ln_setup.close()
