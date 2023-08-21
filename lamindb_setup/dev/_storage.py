@@ -33,7 +33,8 @@ class StorageSettings:
                 logger.warning("did not find aws credentials, using anonymous")
                 root_path = UPath(root_path, anon=True)
 
-        if isinstance(root_path, Path):
+        # root_path is either Path or UPath at this point
+        if not isinstance(root_path, UPath):
             # resolve fails for nonexisting dir
             root_path.mkdir(parents=True, exist_ok=True)
             root_path = root_path.resolve()
