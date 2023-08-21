@@ -3,6 +3,7 @@
 <!-- prettier-ignore -->
 Name | PR | Developer | Date | Version
 --- | --- | --- | --- | ---
+🔥 Remove unused environment variable and fix sign up logging | [481](https://github.com/laminlabs/lamindb-setup/pull/481) | [falexwolf](https://github.com/falexwolf) | 2023-08-21 |
 👷 Fix coverage compute | [480](https://github.com/laminlabs/lamindb-setup/pull/480) | [falexwolf](https://github.com/falexwolf) | 2023-08-19 |
 👷 Run hub tests from `lamindb-setup` | [479](https://github.com/laminlabs/lamindb-setup/pull/479) | [bpenteado](https://github.com/bpenteado) | 2023-08-19 |
 👷 Renable linting | [478](https://github.com/laminlabs/lamindb-setup/pull/478) | [falexwolf](https://github.com/falexwolf) | 2023-08-17 |
