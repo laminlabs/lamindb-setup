@@ -1,5 +1,6 @@
-# this tries to load a persistent instance created with
-# lamin init --storage s3://lndb-setup-ci --name persistent-instance-to-test-load
+# this tries to load a persistent instance created in a public s3 bucket
+# with s3:GetObject and s3:ListBucket policies enabled for all
+# the bucket is s3://lamin-site-assets
 
 import lamindb_setup as ln_setup
 
