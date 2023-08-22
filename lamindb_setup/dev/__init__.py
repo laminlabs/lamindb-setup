@@ -22,8 +22,8 @@ from ._deprecated import deprecated
 from ._django import MISSING_MIGRATIONS_WARNING
 from ._docs import doc_args
 from ._settings_instance import InstanceSettings
+from ._settings_storage import StorageSettings
 from ._settings_user import UserSettings
-from ._storage import StorageSettings
 
 # below is for backward compat
 Storage = StorageSettings

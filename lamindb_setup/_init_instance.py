@@ -14,8 +14,8 @@ from ._settings import settings
 from ._silence_loggers import silence_loggers
 from .dev import InstanceSettings
 from .dev._docs import doc_args
+from .dev._settings_storage import StorageSettings
 from .dev._setup_schema import get_schema_module_name, load_schema
-from .dev._storage import StorageSettings
 
 
 def register_storage(ssettings: StorageSettings):
