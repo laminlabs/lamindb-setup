@@ -16,6 +16,7 @@ from .dev import InstanceSettings
 from .dev._docs import doc_args
 from .dev._settings_storage import StorageSettings
 from .dev._setup_schema import get_schema_module_name, load_schema
+from .dev.upath import create_path
 
 
 def register_storage(ssettings: StorageSettings):
@@ -240,11 +241,7 @@ def infer_instance_name(
         # better way of accessing the database name?
         return str(db).split("/")[-1]
 
-    if isinstance(storage, str):
-        storage_path = StorageSettings._str_to_path(storage)
-    else:
-        storage_path = storage
-
+    storage_path = create_path(storage)
     if isinstance(storage_path, UPath):
         name = storage_path._url.netloc
     else:

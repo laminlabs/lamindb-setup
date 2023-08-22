@@ -19,15 +19,40 @@ from lamin_utils import logger
 from upath import UPath
 from upath.implementations.cloud import CloudPath, S3Path  # noqa
 
+AWS_CREDENTIALS_PRESENT = None
 
-def create_upath(raw_path):
-    path = UPath(raw_path)
+
+def str_to_path(storage: str) -> Union[Path, UPath]:
+    if storage.startswith(("s3://", "gs://")):
+        storage_root = UPath(storage)
+    else:  # local path
+        storage_root = Path(storage)
+    return storage_root
+
+
+def set_aws_credentials_present(path: S3Path) -> None:
+    global AWS_CREDENTIALS_PRESENT
+    try:
+        path.fs.call_s3("head_bucket", Bucket=path._url.netloc)
+        AWS_CREDENTIALS_PRESENT = True
+    except NoCredentialsError:
+        logger.debug("did not find aws credentials, using anonymous")
+        AWS_CREDENTIALS_PRESENT = False
+
+
+def create_path(pathlike: Union[str, Path, UPath]) -> Union[Path, UPath]:
+    """Convert pathlike to Path or UPath inheriting options from root."""
+    if isinstance(pathlike, str):
+        path = str_to_path(pathlike)
+    elif isinstance(pathlike, (UPath, Path)):
+        path = pathlike
+    else:
+        raise ValueError("pathlike should be of type Union[str, Path, UPath]")
     if isinstance(path, S3Path):
         path = UPath(path, cache_regions=True)
-        try:
-            path.fs.call_s3("head_bucket", Bucket=path._url.netloc)
-        except NoCredentialsError:
-            logger.debug("did not find aws credentials, using anonymous")
+        if AWS_CREDENTIALS_PRESENT is None:
+            set_aws_credentials_present(path)
+        if not AWS_CREDENTIALS_PRESENT:
             path = UPath(path, anon=True)
     return path
 

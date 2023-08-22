@@ -3,7 +3,7 @@ from typing import Any, Literal, Optional, Union
 
 from appdirs import AppDirs
 
-from .upath import S3Path, UPath, create_upath
+from .upath import UPath, create_path
 
 DIRS = AppDirs("lamindb", "laminlabs")
 
@@ -16,50 +16,16 @@ class StorageSettings:
         root: Union[str, Path, UPath],
         region: Optional[str] = None,
     ):
-        if isinstance(root, (UPath, Path)):
-            root_path = root
-        elif isinstance(root, str):
-            root_path = Storage._str_to_path(root)
-        else:
-            raise ValueError("root should be of type Union[str, Path, UPath].")
-
-        if isinstance(root_path, UPath):
-            root_path = create_upath(root_path)
-
+        root_path = create_path(root)
         # root_path is either Path or UPath at this point
-        if not isinstance(root_path, UPath):
+        if not isinstance(root_path, UPath):  # local paths
             # resolve fails for nonexisting dir
             root_path.mkdir(parents=True, exist_ok=True)
             root_path = root_path.resolve()
-
         self._root = root_path
         self._region = region
         # would prefer to type below as Registry, but need to think through import order
         self._record: Optional[Any] = None
-
-    @staticmethod
-    def _str_to_path(storage: str) -> Union[Path, UPath]:
-        if storage.startswith(("s3://", "gs://")):
-            storage_root = UPath(storage)
-        else:  # local path
-            storage_root = Path(storage)
-        return storage_root
-
-    def to_path(self, pathlike: Union[str, Path, UPath]) -> Union[Path, UPath]:
-        """Convert pathlike to Path or UPath inheriting options from root."""
-        if isinstance(pathlike, str):
-            path = self._str_to_path(pathlike)
-        else:
-            path = pathlike
-        if isinstance(path, S3Path) and isinstance(self.root, S3Path):
-            inherit = ("anon", "cache_regions")
-            root_kwargs = self.root._kwargs
-            kwargs = {}
-            for kwarg in inherit:
-                if kwarg in root_kwargs:
-                    kwargs[kwarg] = root_kwargs[kwarg]
-            path = UPath(path, **kwargs)
-        return path
 
     @property
     def id(self) -> str:
