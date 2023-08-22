@@ -6,8 +6,7 @@ import lamindb_setup as ln_setup
 
 
 def test_load_persistent_instance():
+    assert ln_setup.dev.upath.AWS_CREDENTIALS_PRESENT is None
     ln_setup.load("testuser1/lamin-site-assets")
-    from ln_setup.dev.upath import AWS_CREDENTIALS_PRESENT
-
-    assert not AWS_CREDENTIALS_PRESENT
+    assert not ln_setup.dev.upath.AWS_CREDENTIALS_PRESENT
     ln_setup.close()
