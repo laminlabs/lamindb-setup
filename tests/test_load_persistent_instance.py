@@ -6,10 +6,7 @@ import lamindb_setup as ln_setup
 
 
 def test_load_persistent_instance():
+    assert ln_setup.dev.upath.AWS_CREDENTIALS_PRESENT is None
     ln_setup.load("testuser1/lamin-site-assets")
-
-    path = ln_setup.settings.storage.to_path("s3://lamin-site-assets/xyz.xyz")
-    assert path._kwargs["anon"]
-    assert path._kwargs["cache_regions"]
-
+    assert not ln_setup.dev.upath.AWS_CREDENTIALS_PRESENT
     ln_setup.close()

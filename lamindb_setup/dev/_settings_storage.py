@@ -2,10 +2,8 @@ from pathlib import Path
 from typing import Any, Literal, Optional, Union
 
 from appdirs import AppDirs
-from botocore.exceptions import NoCredentialsError
-from lamin_utils import logger
 
-from .upath import S3Path, UPath
+from .upath import UPath, create_path
 
 DIRS = AppDirs("lamindb", "laminlabs")
 
@@ -18,56 +16,16 @@ class StorageSettings:
         root: Union[str, Path, UPath],
         region: Optional[str] = None,
     ):
-        if isinstance(root, (UPath, Path)):
-            root_path = root
-        elif isinstance(root, str):
-            root_path = Storage._str_to_path(root)
-        else:
-            raise ValueError("root should be of type Union[str, Path, UPath].")
-        # additional setup for s3 upath
-        if isinstance(root_path, S3Path):
-            root_path = UPath(root_path, cache_regions=True)
-            try:
-                root_path.fs.call_s3("head_bucket", Bucket=root_path._url.netloc)
-            except NoCredentialsError:
-                # below is not necessary as a warning
-                logger.debug("did not find aws credentials, using anonymous")
-                root_path = UPath(root_path, anon=True)
-
+        root_path = create_path(root)
         # root_path is either Path or UPath at this point
-        if not isinstance(root_path, UPath):
+        if not isinstance(root_path, UPath):  # local paths
             # resolve fails for nonexisting dir
             root_path.mkdir(parents=True, exist_ok=True)
             root_path = root_path.resolve()
-
         self._root = root_path
         self._region = region
         # would prefer to type below as Registry, but need to think through import order
         self._record: Optional[Any] = None
-
-    @staticmethod
-    def _str_to_path(storage: str) -> Union[Path, UPath]:
-        if storage.startswith(("s3://", "gs://")):
-            storage_root = UPath(storage)
-        else:  # local path
-            storage_root = Path(storage)
-        return storage_root
-
-    def to_path(self, pathlike: Union[str, Path, UPath]) -> Union[Path, UPath]:
-        """Convert pathlike to Path or UPath inheriting options from root."""
-        if isinstance(pathlike, str):
-            path = self._str_to_path(pathlike)
-        else:
-            path = pathlike
-        if isinstance(path, S3Path) and isinstance(self.root, S3Path):
-            inherit = ("anon", "cache_regions")
-            root_kwargs = self.root._kwargs
-            kwargs = {}
-            for kwarg in inherit:
-                if kwarg in root_kwargs:
-                    kwargs[kwarg] = root_kwargs[kwarg]
-            path = UPath(path, **kwargs)
-        return path
 
     @property
     def id(self) -> str:
