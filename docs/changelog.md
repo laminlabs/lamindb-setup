@@ -3,6 +3,7 @@
 <!-- prettier-ignore -->
 Name | PR | Developer | Date | Version
 --- | --- | --- | --- | ---
+🚚 Rename `_storage.py` to `_settings_storage.py` | [485](https://github.com/laminlabs/lamindb-setup/pull/485) | [falexwolf](https://github.com/falexwolf) | 2023-08-22 |
 ✨ A function to convert pathlike to Path or UPath inheriting options from root | [484](https://github.com/laminlabs/lamindb-setup/pull/484) | [Koncopd](https://github.com/Koncopd) | 2023-08-22 |
 🔊 Add more logging to closing SQLite | [483](https://github.com/laminlabs/lamindb-setup/pull/483) | [falexwolf](https://github.com/falexwolf) | 2023-08-21 |
 🐛 Fix UPath check on Storage init | [482](https://github.com/laminlabs/lamindb-setup/pull/482) | [Koncopd](https://github.com/Koncopd) | 2023-08-21 |
