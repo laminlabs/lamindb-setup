@@ -23,6 +23,9 @@ class StorageSettings:
         else:
             raise ValueError("root should be of type Union[str, Path, UPath].")
 
+        if isinstance(root_path, UPath):
+            root_path = create_upath(root_path)
+
         # root_path is either Path or UPath at this point
         if not isinstance(root_path, UPath):
             # resolve fails for nonexisting dir
@@ -37,7 +40,7 @@ class StorageSettings:
     @staticmethod
     def _str_to_path(storage: str) -> Union[Path, UPath]:
         if storage.startswith(("s3://", "gs://")):
-            storage_root = create_upath(storage)
+            storage_root = UPath(storage)
         else:  # local path
             storage_root = Path(storage)
         return storage_root
