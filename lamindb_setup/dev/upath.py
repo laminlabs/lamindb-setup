@@ -13,9 +13,23 @@ from datetime import timezone
 from pathlib import Path
 from typing import Union
 
+from botocore.exceptions import NoCredentialsError
 from dateutil.parser import isoparse  # type: ignore
+from lamin_utils import logger
 from upath import UPath
 from upath.implementations.cloud import CloudPath, S3Path  # noqa
+
+
+def create_upath(raw_path):
+    path = UPath(raw_path)
+    if isinstance(path, S3Path):
+        path = UPath(path, cache_regions=True)
+        try:
+            path.fs.call_s3("head_bucket", Bucket=path._url.netloc)
+        except NoCredentialsError:
+            logger.debug("did not find aws credentials, using anonymous")
+            path = UPath(path, anon=True)
+    return path
 
 
 def infer_filesystem(path: Union[Path, UPath, str]):

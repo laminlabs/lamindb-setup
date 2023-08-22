@@ -2,10 +2,8 @@ from pathlib import Path
 from typing import Any, Literal, Optional, Union
 
 from appdirs import AppDirs
-from botocore.exceptions import NoCredentialsError
-from lamin_utils import logger
 
-from .upath import S3Path, UPath
+from .upath import S3Path, UPath, create_upath
 
 DIRS = AppDirs("lamindb", "laminlabs")
 
@@ -24,15 +22,6 @@ class StorageSettings:
             root_path = Storage._str_to_path(root)
         else:
             raise ValueError("root should be of type Union[str, Path, UPath].")
-        # additional setup for s3 upath
-        if isinstance(root_path, S3Path):
-            root_path = UPath(root_path, cache_regions=True)
-            try:
-                root_path.fs.call_s3("head_bucket", Bucket=root_path._url.netloc)
-            except NoCredentialsError:
-                # below is not necessary as a warning
-                logger.debug("did not find aws credentials, using anonymous")
-                root_path = UPath(root_path, anon=True)
 
         # root_path is either Path or UPath at this point
         if not isinstance(root_path, UPath):
@@ -48,7 +37,7 @@ class StorageSettings:
     @staticmethod
     def _str_to_path(storage: str) -> Union[Path, UPath]:
         if storage.startswith(("s3://", "gs://")):
-            storage_root = UPath(storage)
+            storage_root = create_upath(storage)
         else:  # local path
             storage_root = Path(storage)
         return storage_root
