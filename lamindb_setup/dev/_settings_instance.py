@@ -6,8 +6,8 @@ from typing import Literal, Optional, Set, Tuple, Union
 from lamin_utils import logger
 
 from ._settings_save import save_instance_settings
+from ._settings_storage import StorageSettings
 from ._settings_store import current_instance_settings_file, instance_settings_file
-from ._storage import StorageSettings
 from .upath import UPath
 
 
