@@ -53,6 +53,22 @@ class StorageSettings:
             storage_root = Path(storage)
         return storage_root
 
+    def to_path(self, pathlike: Union[str, Path, UPath]) -> Union[Path, UPath]:
+        """Convert pathlike to Path or UPath inheriting options from root."""
+        if isinstance(pathlike, str):
+            path = self._str_to_path(pathlike)
+        else:
+            path = pathlike
+        if isinstance(path, S3Path) and isinstance(self.root, S3Path):
+            inherit = ("anon", "cache_regions")
+            root_kwargs = self.root._kwargs
+            kwargs = {}
+            for kwarg in inherit:
+                if kwarg in root_kwargs:
+                    kwargs[kwarg] = root_kwargs[kwarg]
+            path = UPath(path, **kwargs)
+        return path
+
     @property
     def id(self) -> str:
         """Storage id."""
