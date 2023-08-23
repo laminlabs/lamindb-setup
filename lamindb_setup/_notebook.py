@@ -3,6 +3,7 @@ from typing import Optional
 from lamin_utils import logger
 
 
+# also see lamindb.dev._run_context.reinitialize_notebook for related code
 def update_notebook_metadata(nb, notebook_path):
     from nbproject.dev import write_notebook
     from nbproject.dev._initialize import nbproject_id
@@ -12,16 +13,14 @@ def update_notebook_metadata(nb, notebook_path):
     if response != "n":
         nb.metadata["nbproject"]["id"] = nbproject_id()
         updated = True
-    response = input(
-        "Do you want to set a new version (e.g. '1.1')? Type 'n' for 'no'. (version/n) "
-    )
-    if response != "n":
+    response = input("Do you want to set a new version (e.g. '1.1')? (y/n) ")
+    if response == "y":
         new_version = input("Please type the version: ")
         nb.metadata["nbproject"]["version"] = new_version
         updated = True
 
     if updated:
-        logger.save("updated the notebook metadata.")
+        logger.save("updated notebook metadata")
         write_notebook(nb, notebook_path)
 
 
@@ -29,7 +28,7 @@ def track(notebook_path: str, pypackage: Optional[str] = None):
     try:
         from nbproject.dev import initialize_metadata, read_notebook, write_notebook
     except ImportError:
-        logger.warning("install nbproject! pip install nbproject")
+        logger.error("install nbproject: pip install nbproject")
         return None
 
     nb = read_notebook(notebook_path)
