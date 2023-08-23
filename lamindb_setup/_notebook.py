@@ -8,12 +8,17 @@ def update_notebook_metadata(nb, notebook_path):
     from nbproject.dev import write_notebook
     from nbproject.dev._initialize import nbproject_id
 
+    current_version = nb.metadata["nbproject"]["version"]
+
     updated = False
     response = input("Do you want to generate a new id? (y/n) ")
     if response != "n":
         nb.metadata["nbproject"]["id"] = nbproject_id()
         updated = True
-    response = input("Do you want to set a new version (e.g. '1.1')? (y/n) ")
+    response = input(
+        f"The current version is '{current_version}' - do you want to set a new"
+        " version? (y/n) "
+    )
     if response == "y":
         new_version = input("Please type the version: ")
         nb.metadata["nbproject"]["version"] = new_version
