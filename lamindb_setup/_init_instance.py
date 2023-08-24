@@ -132,6 +132,13 @@ def init(
         validate_storage_root_arg,
     )
 
+    #
+    if name is not None and "/" in name:
+        logger.warning(
+            "Please provide a valid instance name: '/' delimiter not allowed."
+        )
+        return None
+
     assert settings.user.id  # check user is logged in
     owner = settings.user.handle
 
