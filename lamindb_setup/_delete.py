@@ -13,8 +13,9 @@ def delete(instance_name: str, force: bool = False):
     """Delete an instance."""
     if "/" in instance_name:
         logger.warning(
-            "Deleting the instance of another user is currently not supported. Please"
-            " provide only the instance name when deleting an instance."
+            "Deleting the instance of another user is currently not supported with the"
+            " CLI. Please provide only the instance name when deleting an instance ('/'"
+            " delimiter not allowed)."
         )
         return None
 
