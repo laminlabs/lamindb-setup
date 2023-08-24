@@ -11,6 +11,13 @@ from .dev._settings_store import instance_settings_file
 
 def delete(instance_name: str, force: bool = False):
     """Delete an instance."""
+    if "/" in instance_name:
+        logger.warning(
+            "Deleting the instance of another user is currently not supported. Please"
+            " provide only the instance name when deleting an instance."
+        )
+        return None
+
     if not force:
         valid_responses = ["y", "yes"]
         user_input = (
