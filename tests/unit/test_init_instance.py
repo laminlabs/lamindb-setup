@@ -143,7 +143,10 @@ def test_init_instance_sqlite():
 def test_init_invalid_name():
     with pytest.raises(ValueError) as error:
         ln_setup.init(storage="./invalidname", name="invalid/name")
-    assert error.exconly() == "Invalid instance name: '/' delimiter not allowed."
+    assert (
+        error.exconly()
+        == "ValueError: Invalid instance name: '/' delimiter not allowed."
+    )
 
 
 # def test_db_unique_error():
