@@ -17,7 +17,7 @@ def delete(instance_name: str, force: bool = False):
             " CLI. Please provide only the instance name when deleting an instance ('/'"
             " delimiter not allowed)."
         )
-        return None
+        raise ValueError("Invalid instance name: '/' delimiter not allowed.")
 
     if not force:
         valid_responses = ["y", "yes"]
