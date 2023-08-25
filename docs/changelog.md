@@ -3,6 +3,7 @@
 <!-- prettier-ignore -->
 Name | PR | Developer | Date | Version
 --- | --- | --- | --- | ---
+🚸 Implement delimiter validation during `init` and `delete` | [489](https://github.com/laminlabs/lamindb-setup/pull/489) | [bpenteado](https://github.com/bpenteado) | 2023-08-25 |
 ♻️ Refactor notebook update | [488](https://github.com/laminlabs/lamindb-setup/pull/488) | [falexwolf](https://github.com/falexwolf) | 2023-08-23 | 0.51.0
 ♻️ Introduce `create_path` | [486](https://github.com/laminlabs/lamindb-setup/pull/486) | [falexwolf](https://github.com/falexwolf) | 2023-08-22 |
 🚚 Rename `_storage.py` to `_settings_storage.py` | [485](https://github.com/laminlabs/lamindb-setup/pull/485) | [falexwolf](https://github.com/falexwolf) | 2023-08-22 |
