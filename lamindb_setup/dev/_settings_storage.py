@@ -99,7 +99,9 @@ class StorageSettings:
         """Cloud or local filepath from filekey."""
         return self.root / filekey
 
-    def cloud_to_local(self, filepath: Union[Path, UPath], **kwargs) -> Path:
+    def cloud_to_local(
+        self, filepath: Union[Path, UPath], **kwargs
+    ) -> Union[Path, UPath]:
         """Local (cache) filepath from filepath."""
         local_filepath = self.cloud_to_local_no_update(filepath)  # type: ignore
         if isinstance(filepath, UPath) and not isinstance(filepath, LocalPathClasses):

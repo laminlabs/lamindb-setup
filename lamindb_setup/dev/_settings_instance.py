@@ -71,11 +71,8 @@ class InstanceSettings:
             return {schema for schema in self._schema_str.split(",") if schema != ""}
 
     @property
-    def _sqlite_file(self) -> Union[Path, UPath]:
-        """SQLite file.
-
-        Is a UPath if on S3 or GS, otherwise a Path.
-        """
+    def _sqlite_file(self) -> UPath:
+        """SQLite file."""
         return self.storage.key_to_filepath(f"{self.name}.lndb")
 
     @property
