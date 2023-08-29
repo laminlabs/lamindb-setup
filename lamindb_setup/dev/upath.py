@@ -38,8 +38,10 @@ def set_aws_credentials_present(path: S3Path) -> None:
 
 def create_path(pathlike: Union[str, Path, UPath]) -> UPath:
     """Convert pathlike to Path or UPath inheriting options from root."""
-    if isinstance(pathlike, (str, Path, UPath)):
+    if isinstance(pathlike, (str, UPath)):
         path = UPath(pathlike)
+    elif isinstance(pathlike, Path):
+        path = UPath(str(pathlike))  # UPath applied on Path gives Path back
     else:
         raise ValueError("pathlike should be of type Union[str, Path, UPath]")
 
