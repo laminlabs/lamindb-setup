@@ -18,16 +18,12 @@ from dateutil.parser import isoparse  # type: ignore
 from lamin_utils import logger
 from upath import UPath
 from upath.implementations.cloud import CloudPath, S3Path  # noqa
+from upath.implementations.local import LocalPath, PosixUPath, WindowsUPath
+
+LocalPathClasses = (PosixUPath, WindowsUPath, LocalPath)
+
 
 AWS_CREDENTIALS_PRESENT = None
-
-
-def str_to_path(storage: str) -> Union[Path, UPath]:
-    if storage.startswith(("s3://", "gs://")):
-        storage_root = UPath(storage)
-    else:  # local path
-        storage_root = Path(storage)
-    return storage_root
 
 
 def set_aws_credentials_present(path: S3Path) -> None:
@@ -40,20 +36,22 @@ def set_aws_credentials_present(path: S3Path) -> None:
         AWS_CREDENTIALS_PRESENT = False
 
 
-def create_path(pathlike: Union[str, Path, UPath]) -> Union[Path, UPath]:
+def create_path(pathlike: Union[str, Path, UPath]) -> UPath:
     """Convert pathlike to Path or UPath inheriting options from root."""
-    if isinstance(pathlike, str):
-        path = str_to_path(pathlike)
-    elif isinstance(pathlike, (UPath, Path)):
-        path = pathlike
+    if isinstance(pathlike, (str, UPath)):
+        path = UPath(pathlike)
+    elif isinstance(pathlike, Path):
+        path = UPath(str(pathlike))  # UPath applied on Path gives Path back
     else:
         raise ValueError("pathlike should be of type Union[str, Path, UPath]")
+
     if isinstance(path, S3Path):
         path = UPath(path, cache_regions=True)
         if AWS_CREDENTIALS_PRESENT is None:
             set_aws_credentials_present(path)
         if not AWS_CREDENTIALS_PRESENT:
             path = UPath(path, anon=True)
+
     return path
 
 

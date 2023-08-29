@@ -1,9 +1,9 @@
 from pathlib import Path
-from typing import Any, Literal, Optional, Union
+from typing import Any, Optional, Union
 
 from appdirs import AppDirs
 
-from .upath import UPath, create_path
+from .upath import LocalPathClasses, UPath, create_path
 
 DIRS = AppDirs("lamindb", "laminlabs")
 
@@ -18,7 +18,7 @@ class StorageSettings:
     ):
         root_path = create_path(root)
         # root_path is either Path or UPath at this point
-        if not isinstance(root_path, UPath):  # local paths
+        if isinstance(root_path, LocalPathClasses):  # local paths
             # resolve fails for nonexisting dir
             root_path.mkdir(parents=True, exist_ok=True)
             root_path = root_path.resolve()
@@ -43,7 +43,7 @@ class StorageSettings:
         return self._record
 
     @property
-    def root(self) -> Union[Path, UPath]:
+    def root(self) -> UPath:
         """Root storage location."""
         return self._root
 
@@ -56,7 +56,7 @@ class StorageSettings:
         >>>    profile="some_profile", cache_regions=True
         >>> )
         """
-        if isinstance(self._root, UPath):
+        if not isinstance(self._root, LocalPathClasses):
             self._root = UPath(self._root, **kwargs)
 
     @property
@@ -69,14 +69,14 @@ class StorageSettings:
         self,
     ) -> Path:
         """Cache root, a local directory to cache cloud files."""
-        cache_dir = Path(DIRS.user_cache_dir)
+        cache_dir = UPath(DIRS.user_cache_dir)
         cache_dir.mkdir(parents=True, exist_ok=True)
         return cache_dir
 
     @property
     def is_cloud(self) -> bool:
         """`True` if `storage_root` is in cloud, `False` otherwise."""
-        return isinstance(self.root, UPath)
+        return not isinstance(self.root, LocalPathClasses)
 
     @property
     def region(self) -> Optional[str]:
@@ -84,27 +84,27 @@ class StorageSettings:
         return self._region
 
     @property
-    def type(self) -> Literal["s3", "gs", "local"]:
-        """AWS S3 vs. Google Cloud vs. local.
+    def type(self) -> str:
+        """AWS S3 vs. Google Cloud vs. local vs. the other protocols.
 
-        Returns "s3" or "gs" or "local".
+        Returns the protocol.
         """
-        root_str = str(self.root)
-        if root_str.startswith("s3://"):
-            return "s3"
-        elif root_str.startswith("gs://"):
-            return "gs"
-        else:
-            return "local"
+        import fsspec
 
-    def key_to_filepath(self, filekey: Union[Path, UPath, str]) -> Union[Path, UPath]:
+        convert = {"file": "local"}
+        protocol = fsspec.utils.get_protocol(str(self.root))
+        return convert.get(protocol, protocol)
+
+    def key_to_filepath(self, filekey: Union[Path, UPath, str]) -> UPath:
         """Cloud or local filepath from filekey."""
         return self.root / filekey
 
-    def cloud_to_local(self, filepath: Union[Path, UPath], **kwargs) -> Path:
+    def cloud_to_local(
+        self, filepath: Union[Path, UPath], **kwargs
+    ) -> Union[Path, UPath]:
         """Local (cache) filepath from filepath."""
         local_filepath = self.cloud_to_local_no_update(filepath)  # type: ignore
-        if isinstance(filepath, UPath):
+        if isinstance(filepath, UPath) and not isinstance(filepath, LocalPathClasses):
             local_filepath.parent.mkdir(parents=True, exist_ok=True)
             filepath.synchronize(local_filepath, **kwargs)
         return local_filepath
@@ -114,12 +114,14 @@ class StorageSettings:
     # in pure write operations that update the cloud, we don't want this
     # hence, we manually construct the local file path
     # using the `.parts` attribute in the following line
-    def cloud_to_local_no_update(self, filepath: Union[Path, UPath]) -> Path:
-        if isinstance(filepath, UPath):
+    def cloud_to_local_no_update(
+        self, filepath: Union[Path, UPath]
+    ) -> Union[Path, UPath]:
+        if isinstance(filepath, UPath) and not isinstance(filepath, LocalPathClasses):
             return self.cache_dir.joinpath(filepath._url.netloc, *filepath.parts[1:])  # type: ignore # noqa
         return filepath
 
-    def local_filepath(self, filekey: Union[Path, UPath, str]) -> Path:
+    def local_filepath(self, filekey: Union[Path, UPath, str]) -> UPath:
         """Local (cache) filepath from filekey: `local(filepath(...))`."""
         return self.cloud_to_local(self.key_to_filepath(filekey))
 

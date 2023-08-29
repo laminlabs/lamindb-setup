@@ -6,7 +6,7 @@ from typing import Optional, Union
 from lamin_utils import logger
 from pydantic import PostgresDsn
 
-from lamindb_setup.dev.upath import UPath
+from lamindb_setup.dev.upath import LocalPathClasses, UPath
 
 from ._close import close as close_instance
 from ._docstrings import instance_description as description
@@ -249,10 +249,10 @@ def infer_instance_name(
         return str(db).split("/")[-1]
 
     storage_path = create_path(storage)
-    if isinstance(storage_path, UPath):
-        name = storage_path._url.netloc
+    if isinstance(storage_path, LocalPathClasses):
+        name = storage_path.stem
     else:
-        name = str(storage_path.stem)
+        name = storage_path._url.netloc
     name = name.lower()
 
     return name
