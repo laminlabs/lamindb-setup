@@ -3,6 +3,7 @@
 <!-- prettier-ignore -->
 Name | PR | Developer | Date | Version
 --- | --- | --- | --- | ---
+♻️ Refactor to use UPath everywhere  | [490](https://github.com/laminlabs/lamindb-setup/pull/490) | [Koncopd](https://github.com/Koncopd) | 2023-08-29 |
 🔥 Remove deprecated locker code | [491](https://github.com/laminlabs/lamindb-setup/pull/491) | [Koncopd](https://github.com/Koncopd) | 2023-08-28 |
 🚸 Implement delimiter validation during `init` and `delete` | [489](https://github.com/laminlabs/lamindb-setup/pull/489) | [bpenteado](https://github.com/bpenteado) | 2023-08-25 |
 ♻️ Refactor notebook update | [488](https://github.com/laminlabs/lamindb-setup/pull/488) | [falexwolf](https://github.com/falexwolf) | 2023-08-23 | 0.51.0
