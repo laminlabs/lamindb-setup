@@ -65,6 +65,7 @@ def load(
             storage_region=storage_result["region"],
             db=instance_result["db"],
             schema=instance_result["schema_str"],
+            id=instance_result["id"],
         )
     else:
         settings_file = instance_settings_file(name, owner)

@@ -66,6 +66,7 @@ class InstanceSettingsStore(BaseSettings):
     storage_region: str  # should be Optional, but we use types for instantiating
     db: str  # should be Optional, but we use types for instantiating
     schema_str: str  # should be Optional, but we use types for instantiating
+    id: str  # should be Optional, but we use types for instantiating
 
     class Config:
         env_file = ".env"
