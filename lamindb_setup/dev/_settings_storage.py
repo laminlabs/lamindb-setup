@@ -69,7 +69,7 @@ class StorageSettings:
         self,
     ) -> Path:
         """Cache root, a local directory to cache cloud files."""
-        cache_dir = Path(DIRS.user_cache_dir)
+        cache_dir = UPath(DIRS.user_cache_dir)
         cache_dir.mkdir(parents=True, exist_ok=True)
         return cache_dir
 
@@ -121,7 +121,7 @@ class StorageSettings:
             return self.cache_dir.joinpath(filepath._url.netloc, *filepath.parts[1:])  # type: ignore # noqa
         return filepath
 
-    def local_filepath(self, filekey: Union[Path, UPath, str]) -> Path:
+    def local_filepath(self, filekey: Union[Path, UPath, str]) -> UPath:
         """Local (cache) filepath from filekey: `local(filepath(...))`."""
         return self.cloud_to_local(self.key_to_filepath(filekey))
 
