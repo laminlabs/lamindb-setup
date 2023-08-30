@@ -3,6 +3,7 @@
 <!-- prettier-ignore -->
 Name | PR | Developer | Date | Version
 --- | --- | --- | --- | ---
+🚸 Cache instance id during `load` | [492](https://github.com/laminlabs/lamindb-setup/pull/492) | [bpenteado](https://github.com/bpenteado) | 2023-08-30 |
 ♻️ Refactor to use UPath everywhere  | [490](https://github.com/laminlabs/lamindb-setup/pull/490) | [Koncopd](https://github.com/Koncopd) | 2023-08-29 | 0.51.1
 🔥 Remove deprecated locker code | [491](https://github.com/laminlabs/lamindb-setup/pull/491) | [Koncopd](https://github.com/Koncopd) | 2023-08-28 |
 🚸 Implement delimiter validation during `init` and `delete` | [489](https://github.com/laminlabs/lamindb-setup/pull/489) | [bpenteado](https://github.com/bpenteado) | 2023-08-25 |
