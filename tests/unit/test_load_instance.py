@@ -16,6 +16,7 @@ def test_load_remote_instance():
     ln_setup.init(storage="s3://lndb-setup-ci", _test=True)
     instance_settings_file("lndb-setup-ci", "testuser1").unlink()
     ln_setup.load("testuser1/lndb-setup-ci", _test=True)
+    assert ln_setup.settings.instance._id is not None
     assert ln_setup.settings.instance.storage.is_cloud
     assert ln_setup.settings.instance.storage.root_as_str == "s3://lndb-setup-ci"
     assert (
