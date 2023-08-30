@@ -47,11 +47,6 @@ class InstanceSettings:
         return representation
 
     @property
-    def id(self) -> Union[None, str]:
-        """Instance id."""
-        return self._id
-
-    @property
     def owner(self) -> str:
         """Instance owner. A user or organization account handle."""
         return self._owner

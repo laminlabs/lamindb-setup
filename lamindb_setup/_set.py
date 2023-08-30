@@ -43,7 +43,7 @@ class set:
             storage_region=get_storage_region(root),
             db=settings.instance.db,
             schema=settings.instance._schema_str,
-            id=settings.instance.id,
+            id=settings.instance._id,
         )
 
         new_isettings._persist()  # this also updates the settings object
