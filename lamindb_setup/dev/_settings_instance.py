@@ -22,6 +22,7 @@ class InstanceSettings:
         storage_region: Optional[str] = None,
         db: Optional[str] = None,  # DB URI
         schema: Optional[str] = None,  # comma-separated string of schema names
+        id: Optional[str] = None,  # instance id
     ):
         self._owner: str = owner
         self._name: str = name
@@ -30,6 +31,7 @@ class InstanceSettings:
         )
         self._db: Optional[str] = db
         self._schema_str: Optional[str] = schema
+        self._id: Optional[str] = id
 
     def __repr__(self):
         """Rich string representation."""

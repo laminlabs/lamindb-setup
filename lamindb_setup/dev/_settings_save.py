@@ -56,3 +56,5 @@ def save_instance_settings(settings: Any, settings_file: Path):
             settings._schema_str if settings._schema_str is not None else "null"
         )
         f.write(f"schema_str={schema_str}\n")
+        id = settings._id if settings._id is not None else "null"
+        f.write(f"id={id}\n")
