@@ -17,9 +17,7 @@ def register():
         db=isettings.db if isettings.dialect != "sqlite" else None,
         schema=isettings._schema_str,
     )
-    if result == "error-instance-exists-already":
-        logger.info("instance was already registered")
-    elif result.startswith("error-"):
+    if result.startswith("error-"):
         raise RuntimeError(f"Registering instance on hub failed:\n{result}")
     else:
         logger.save(f"instance registered: https://lamin.ai/{isettings.identifier}")
