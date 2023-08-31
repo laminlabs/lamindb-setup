@@ -1,3 +1,5 @@
+from uuid import UUID
+
 from lamin_utils import logger
 
 from ._settings import settings
@@ -21,5 +23,5 @@ def register():
         raise RuntimeError(f"Registering instance on hub failed:\n{result}")
     else:
         logger.save(f"instance registered: https://lamin.ai/{isettings.identifier}")
-        isettings._id = result
+        isettings._id = UUID(result).hex
         isettings._persist()
