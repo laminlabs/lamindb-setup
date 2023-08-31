@@ -180,10 +180,9 @@ def init(
             db=db,
             schema=schema,
         )
-        if result == "error-instance-exists-already" or not result.startswith("error-"):
-            isettings._id = result
-        else:
+        if result.startswith("error-"):
             raise RuntimeError(f"Registering instance on hub failed:\n{result}")
+        isettings._id = result
         logger.save(f"registered instance on hub: https://lamin.ai/{owner}/{name_str}")
 
     if _test:
