@@ -110,12 +110,12 @@ def init_instance(
             storage_root, account_handle=account["handle"], _access_token=_access_token
         )
         if message is not None:
-            return message
+            return "error-" + message
         assert storage_id is not None
 
         instance = sb_select_instance_by_name(account["id"], name, hub)
         if instance is not None:
-            return "error-instance-exists-already"
+            return instance["id"]
 
         validate_unique_sqlite(
             hub=hub, db=db, storage_id=storage_id, name=name, account=account
