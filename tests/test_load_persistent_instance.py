@@ -23,6 +23,5 @@ def test_load_persistent_instance():
         supabase_client=hub,
     )
     assert ln_setup.settings.instance._id == instance["id"]
-    assert ln_setup.settings.instance._id is not None
     assert not ln_setup.dev.upath.AWS_CREDENTIALS_PRESENT
     ln_setup.close()

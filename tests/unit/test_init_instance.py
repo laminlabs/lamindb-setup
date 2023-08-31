@@ -101,7 +101,7 @@ def test_init_instance_cloud_aws_us():
         name=ln_setup.settings.instance.name,
         supabase_client=hub,
     )
-    assert ln_setup.settings.instance._id == instance["id"] + "."
+    assert ln_setup.settings.instance._id == instance["id"]
     assert ln_setup.settings.storage.is_cloud
     assert str(ln_setup.settings.storage.root) == "s3://lndb-setup-ci/"
     assert ln_setup.settings.storage.root_as_str == "s3://lndb-setup-ci"
