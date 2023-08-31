@@ -1,5 +1,6 @@
 from pathlib import Path
 from typing import Optional, Union
+from uuid import UUID
 
 from lamin_utils import logger
 
@@ -65,7 +66,7 @@ def load(
             storage_region=storage_result["region"],
             db=instance_result["db"],
             schema=instance_result["schema_str"],
-            id=instance_result["id"],
+            id=UUID(instance_result["id"]).hex,
         )
     else:
         settings_file = instance_settings_file(name, owner)
