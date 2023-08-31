@@ -2,6 +2,8 @@
 # with s3:GetObject and s3:ListBucket policies enabled for all
 # the bucket is s3://lamin-site-assets
 
+from uuid import UUID
+
 import lamindb_setup as ln_setup
 from lamindb_setup.dev._hub_client import connect_hub_with_auth
 from lamindb_setup.dev._hub_crud import (
@@ -22,6 +24,6 @@ def test_load_persistent_instance():
         name=ln_setup.settings.instance.name,
         supabase_client=hub,
     )
-    assert ln_setup.settings.instance._id == instance["id"]
+    assert ln_setup.settings.instance._id == UUID(instance["id"]).hex
     assert not ln_setup.dev.upath.AWS_CREDENTIALS_PRESENT
     ln_setup.close()

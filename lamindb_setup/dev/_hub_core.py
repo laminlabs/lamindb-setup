@@ -121,7 +121,7 @@ def init_instance(
             hub=hub, db=db, storage_id=storage_id, name=name, account=account
         )
 
-        instance_id = str(uuid4())
+        instance_id = uuid4().hex
         db_user_id = None
 
         if db_dsn is not None:
