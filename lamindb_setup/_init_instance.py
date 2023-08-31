@@ -2,6 +2,7 @@ import importlib
 import sys
 from pathlib import Path
 from typing import Optional, Union
+from uuid import UUID
 
 from lamin_utils import logger
 from pydantic import PostgresDsn
@@ -180,10 +181,9 @@ def init(
             db=db,
             schema=schema,
         )
-        if result == "instance-exists-already":
-            pass  # everything is alright!
-        elif isinstance(result, str):
+        if result.startswith("error-"):
             raise RuntimeError(f"Registering instance on hub failed:\n{result}")
+        isettings._id = UUID(result).hex
         logger.save(f"registered instance on hub: https://lamin.ai/{owner}/{name_str}")
 
     if _test:

@@ -1,5 +1,6 @@
 from pathlib import Path
 from typing import Dict, Optional, Tuple
+from uuid import UUID
 
 import pytest
 
@@ -62,6 +63,7 @@ def test_init_instance_postgres_default_name(get_hub_client):
     assert instance["db_port"] == 5432
     assert instance["db_database"] == "pgtest"
     # client checks
+    assert ln_setup.settings.instance._id == UUID(instance["id"]).hex
     assert ln_setup.settings.instance.name == "pgtest"
     assert not ln_setup.settings.instance.storage.is_cloud
     assert ln_setup.settings.instance.owner == ln_setup.settings.user.handle
@@ -91,6 +93,16 @@ def test_init_instance_postgres_custom_name():
 
 def test_init_instance_cloud_aws_us():
     ln_setup.init(storage="s3://lndb-setup-ci", _test=True)
+    hub = connect_hub_with_auth(access_token=ln_setup.settings.user.access_token)
+    account = sb_select_account_by_handle(
+        handle=ln_setup.settings.instance.owner, supabase_client=hub
+    )
+    instance = sb_select_instance_by_name(
+        account_id=account["id"],
+        name=ln_setup.settings.instance.name,
+        supabase_client=hub,
+    )
+    assert ln_setup.settings.instance._id == UUID(instance["id"]).hex
     assert ln_setup.settings.storage.is_cloud
     assert str(ln_setup.settings.storage.root) == "s3://lndb-setup-ci/"
     assert ln_setup.settings.storage.root_as_str == "s3://lndb-setup-ci"
@@ -108,6 +120,7 @@ def test_init_instance_cloud_aws_europe():
         name="lndb-setup-ci-europe",
         _test=True,
     )
+    assert ln_setup.settings.instance._id is not None
     assert ln_setup.settings.storage.region == "eu-central-1"
     assert ln_setup.settings.instance.name == "lndb-setup-ci-europe"
     assert (
@@ -132,6 +145,7 @@ def test_init_instance_sqlite():
         name=ln_setup.settings.instance.name,
         supabase_client=hub,
     )
+    assert ln_setup.settings.instance._id == UUID(instance["id"]).hex
     assert ln_setup.settings.instance.name == "local-sqlite-instance"
     assert not ln_setup.settings.instance.storage.is_cloud
     assert ln_setup.settings.instance.owner == ln_setup.settings.user.handle

@@ -84,7 +84,7 @@ def init_instance(
     _email: Optional[str] = None,
     _password: Optional[str] = None,
     _access_token: Optional[str] = None,
-) -> Optional[str]:
+) -> str:
     hub = connect_hub_with_auth(
         email=_email, password=_password, access_token=_access_token
     )
@@ -102,7 +102,7 @@ def init_instance(
         # get account
         account = sb_select_account_by_handle(owner, hub)
         if account is None:
-            return "account-not-exists"
+            return "error-account-not-exists"
 
         # get storage and add if not yet there
         storage_root = storage.rstrip("/")  # current fix because of upath migration
@@ -110,12 +110,12 @@ def init_instance(
             storage_root, account_handle=account["handle"], _access_token=_access_token
         )
         if message is not None:
-            return message
+            return "error-" + message
         assert storage_id is not None
 
         instance = sb_select_instance_by_name(account["id"], name, hub)
         if instance is not None:
-            return "instance-exists-already"
+            return instance["id"]
 
         validate_unique_sqlite(
             hub=hub, db=db, storage_id=storage_id, name=name, account=account
@@ -177,17 +177,13 @@ def init_instance(
             },
             hub,
         )
-
-        # upon successful insert of a new row in the instance table
-        # (and all associated tables), return None
-        # clients test for this return value, hence, don't change it
-        return None
+        return instance_id
     except APIError as api_error:
         uq_instance_db_error = (
             'duplicate key value violates unique constraint "uq_instance_db"'
         )
         if api_error.message == uq_instance_db_error:
-            return "db-already-exists"
+            return "error-db-already-exists"
         raise api_error
     except Exception as e:
         raise e

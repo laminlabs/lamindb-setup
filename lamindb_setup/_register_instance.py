@@ -1,3 +1,5 @@
+from uuid import UUID
+
 from lamin_utils import logger
 
 from ._settings import settings
@@ -15,9 +17,9 @@ def register():
         db=isettings.db if isettings.dialect != "sqlite" else None,
         schema=isettings._schema_str,
     )
-    if result == "instance-exists-already":
-        logger.info("instance was already registered")
-    elif isinstance(result, str):
-        raise RuntimeError(f"creating instance on hub failed:\n{result}")
+    if result.startswith("error-"):
+        raise RuntimeError(f"Registering instance on hub failed:\n{result}")
     else:
         logger.save(f"instance registered: https://lamin.ai/{isettings.identifier}")
+        isettings._id = UUID(result).hex
+        isettings._persist()
