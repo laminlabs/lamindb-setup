@@ -62,6 +62,7 @@ def test_init_instance_postgres_default_name(get_hub_client):
     assert instance["db_port"] == 5432
     assert instance["db_database"] == "pgtest"
     # client checks
+    assert ln_setup.settings.instance._id == instance["id"]
     assert ln_setup.settings.instance.name == "pgtest"
     assert not ln_setup.settings.instance.storage.is_cloud
     assert ln_setup.settings.instance.owner == ln_setup.settings.user.handle
@@ -143,6 +144,7 @@ def test_init_instance_sqlite():
         name=ln_setup.settings.instance.name,
         supabase_client=hub,
     )
+    assert ln_setup.settings.instance._id == instance["id"]
     assert ln_setup.settings.instance.name == "local-sqlite-instance"
     assert not ln_setup.settings.instance.storage.is_cloud
     assert ln_setup.settings.instance.owner == ln_setup.settings.user.handle
