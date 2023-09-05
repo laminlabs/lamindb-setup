@@ -38,23 +38,23 @@ def save_settings(
                     value = "null"
                 else:
                     value = type(value)
-                f.write(f"{store_key}={value}\n")
+                f.write(f"lamin_user_{store_key}={value}\n")
 
 
 def save_instance_settings(settings: Any, settings_file: Path):
     with open(settings_file, "w") as f:
-        f.write(f"owner={settings.owner}\n")
-        f.write(f"name={settings.name}\n")
-        f.write(f"storage_root={str(settings.storage.root)}\n")
+        f.write(f"lamindb_instance_owner={settings.owner}\n")
+        f.write(f"lamindb_instance_name={settings.name}\n")
+        f.write(f"lamindb_instance_storage_root={str(settings.storage.root)}\n")
         storage_region = (
             settings.storage.region if settings.storage.region is not None else "null"
         )
-        f.write(f"storage_region={storage_region}\n")
+        f.write(f"lamindb_instance_storage_region={storage_region}\n")
         db = settings._db if settings._db is not None else "null"
-        f.write(f"db={db}\n")
+        f.write(f"lamindb_instance_db={db}\n")
         schema_str = (
             settings._schema_str if settings._schema_str is not None else "null"
         )
-        f.write(f"schema_str={schema_str}\n")
+        f.write(f"lamindb_instance_schema_str={schema_str}\n")
         id = settings._id if settings._id is not None else "null"
-        f.write(f"id={id}\n")
+        f.write(f"lamindb_instance_id={id}\n")

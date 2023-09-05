@@ -61,5 +61,5 @@ class UserSettingsStore(BaseSettings):
     name: str
 
     class Config:
-        env_prefix = "lamin_"
+        env_prefix = "lamin_user_"
         env_file = ".env"
