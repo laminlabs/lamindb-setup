@@ -4,6 +4,8 @@ from uuid import UUID, uuid4
 from lamin_utils import logger
 from postgrest.exceptions import APIError
 
+from lamindb_setup import settings
+
 from ._hub_client import connect_hub, connect_hub_with_auth, get_lamin_site_base_url
 from ._hub_crud import (
     sb_insert_collaborator,
@@ -11,10 +13,12 @@ from ._hub_crud import (
     sb_insert_instance,
     sb_insert_storage,
     sb_select_account_by_handle,
+    sb_select_collaborator,
     sb_select_db_user_by_instance,
     sb_select_instance_by_name,
     sb_select_storage,
     sb_select_storage_by_root,
+    sb_update_collaborator,
 )
 from ._hub_utils import (
     LaminDsn,
@@ -144,6 +148,7 @@ def init_instance(
                 hub,
             )
 
+            # TODO: make it secure
             db_user = sb_insert_db_user(  # noqa
                 {
                     "id": db_user_id,
@@ -198,38 +203,29 @@ def load_instance(
     _email: Optional[str] = None,
     _password: Optional[str] = None,
     _access_token: Optional[str] = None,
+    _db_user_name: Optional[str] = None,
+    _db_user_password: Optional[str] = None,
 ) -> Union[Tuple[dict, dict], str]:
     hub = connect_hub_with_auth(
         email=_email, password=_password, access_token=_access_token
     )
     try:
-        # get account
-        account = sb_select_account_by_handle(owner, hub)
-        if account is None:
+        # Retrieve instance owner account
+        instance_owner_account = sb_select_account_by_handle(owner, hub)
+        if instance_owner_account is None:
             return "account-not-exists"
 
-        instance = sb_select_instance_by_name(account["id"], name, hub)
+        # Retrieve instance
+        instance = sb_select_instance_by_name(instance_owner_account["id"], name, hub)
         if instance is None:
             return "instance-not-reachable"
 
-        if not (instance["db"] is None or instance["db"].startswith("sqlite://")):
-            # get db_account
-            db_user = sb_select_db_user_by_instance(instance["id"], hub)
-            if db_user is None:
-                return "db-user-not-reachable"
+        message, dsn = get_dsn(instance, _db_user_name, _db_user_password, hub)
+        if message is not None:
+            return message
 
-            # construct dsn from instance and db_account fields
-            db_dsn = LaminDsn.build(
-                scheme=instance["db_scheme"],
-                user=db_user["db_user_name"],
-                password=db_user["db_user_password"],
-                host=instance["db_host"],
-                port=str(instance["db_port"]),
-                database=instance["db_database"],
-            )
-
-            # override the db string with the constructed dsn
-            instance["db"] = db_dsn
+        # override the db string with the constructed dsn
+        instance["db"] = dsn
 
         # get default storage
         storage = sb_select_storage(instance["storage_id"], hub)
@@ -241,6 +237,88 @@ def load_instance(
         return "loading-instance-failed"
     finally:
         hub.auth.sign_out()
+
+
+def get_dsn(instance, _db_user_name, _db_user_password, hub):
+    # Retrieve instance collaborator account
+    instance_collaborator_account = sb_select_account_by_handle(
+        settings.user.handle, hub
+    )
+
+    # Optionally create or associate a db user
+    # TODO: make it secure
+    if _db_user_name and _db_user_password:
+        db_user = sb_select_db_user_by_instance(_db_user_name, instance["id"], hub)
+
+        if db_user is not None:
+            if _db_user_password == db_user["db_user_password"]:
+                # Associate a specific db user to a collaborator
+                sb_update_collaborator(
+                    instance["id"],
+                    instance_collaborator_account["id"],
+                    {"db_user_id": db_user["id"]},
+                    hub,
+                )
+            else:
+                return "wrong-db-user-password", None
+
+        else:
+            # Create a db user and associate it to a collaborator
+            db_user_id = uuid4().hex
+            try:
+                db_user = sb_insert_db_user(  # noqa
+                    {
+                        "id": db_user_id,
+                        "instance_id": instance["id"],
+                        "db_user_name": _db_user_name,
+                        "db_user_password": _db_user_password,
+                    },
+                    hub,
+                )
+            except APIError as api_error:
+                violated_rls_message = (
+                    'new row violates row-level security policy for table "db_user"'
+                )
+                if api_error.message == violated_rls_message:
+                    return "create-db-user-failed", None
+                raise api_error
+
+            logger.info(f"Create new db user {_db_user_name}")
+
+            sb_update_collaborator(
+                instance["id"],
+                instance_collaborator_account["id"],
+                {"db_user_id": db_user_id},
+                hub,
+            )
+
+    # Retrieve associated db user
+    if not (instance["db"] is None or instance["db"].startswith("sqlite://")):
+        collaborator = sb_select_collaborator(
+            instance["id"], instance_collaborator_account["id"], hub
+        )
+
+        if collaborator["db_user_id"] is not None:
+            db_user = collaborator["db_user"]
+        else:
+            db_user = None
+
+        if db_user is None:
+            return "db-user-not-reachable", None
+
+        # construct dsn from instance and db_account fields
+        db_dsn = LaminDsn.build(
+            scheme=instance["db_scheme"],
+            user=db_user["db_user_name"],
+            password=db_user["db_user_password"],
+            host=instance["db_host"],
+            port=str(instance["db_port"]),
+            database=instance["db_database"],
+        )
+
+        return None, db_dsn
+
+    return None, None
 
 
 def sign_up_hub(email) -> str:

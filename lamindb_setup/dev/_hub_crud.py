@@ -105,6 +105,40 @@ def sb_insert_collaborator(account_instance_fields: dict, supabase_client: Clien
     )
 
 
+def sb_update_collaborator(
+    instance_id: str,
+    account_id: str,
+    account_instance_fields: dict,
+    supabase_client: Client,
+):
+    try:
+        (
+            supabase_client.table("account_instance")
+            .update(account_instance_fields, returning="minimal")
+            .eq("instance_id", instance_id)
+            .eq("account_id", account_id)
+            .execute()
+            .data
+        )
+    except APIError as api_error:
+        # pk_violation_msg = (
+        #     'duplicate key value violates unique constraint "pk_account_instance"'
+        # )
+        # if api_error.message == pk_violation_msg:
+        #     return "collaborator-exists-already"
+        raise api_error
+    except Exception as e:
+        if str(e) == str("Expecting value: line 1 column 1 (char 0)"):
+            pass
+        else:
+            raise e
+    return sb_select_collaborator(
+        instance_id=instance_id,
+        account_id=account_id,
+        supabase_client=supabase_client,
+    )
+
+
 def sb_select_collaborator(
     instance_id: str,
     account_id: str,
@@ -112,7 +146,7 @@ def sb_select_collaborator(
 ):
     data = (
         supabase_client.table("account_instance")
-        .select("*")
+        .select("*, db_user(db_user_name, db_user_password)")
         .eq("instance_id", instance_id)
         .eq("account_id", account_id)
         .execute()
@@ -146,9 +180,9 @@ def sb_select_storage_by_root(root: str, supabase_client: Client):
 
 
 # --------------- DBUser ----------------------
-def sb_insert_db_user(instance_fields: dict, supabase_client: Client):
+def sb_insert_db_user(db_user_fields: dict, supabase_client: Client):
     try:
-        data = supabase_client.table("db_user").insert(instance_fields).execute().data
+        data = supabase_client.table("db_user").insert(db_user_fields).execute().data
     except Exception as e:
         if str(e) == str("Expecting value: line 1 column 1 (char 0)"):
             pass
@@ -157,7 +191,9 @@ def sb_insert_db_user(instance_fields: dict, supabase_client: Client):
     return data[0]
 
 
-def sb_select_db_user_by_instance(instance_id: str, supabase_client: Client):
+def sb_select_db_user_by_instance(
+    db_user_name: str, instance_id: str, supabase_client: Client
+):
     """Get the DBAccount directly associated with Instance.
 
     By contrast this is not the DBAccount that is linked through the
@@ -166,6 +202,7 @@ def sb_select_db_user_by_instance(instance_id: str, supabase_client: Client):
     data = (
         supabase_client.table("db_user")
         .select("*")
+        .eq("db_user_name", db_user_name)
         .eq("instance_id", instance_id)
         .execute()
         .data

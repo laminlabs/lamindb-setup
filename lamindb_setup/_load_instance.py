@@ -23,6 +23,8 @@ def load(
     _log_error_message: bool = True,
     _access_token: Optional[str] = None,
     _test: bool = False,
+    db_user_name: Optional[str] = None,
+    db_user_password: Optional[str] = None,
 ) -> Optional[str]:
     """Load existing instance.
 
@@ -31,6 +33,10 @@ def load(
             current user), handle/name, or the URL: https://lamin.ai/handle/name.
         storage: `Optional[PathLike] = None` - Load the instance with an
             updated default storage.
+        db_user_name: `Optional[str] = None`- Load the instance with
+            updated database user name.
+        db_user_password: `Optional[str] = None`- Load the instance with
+            updated database user password.
     """
     from ._check_instance_setup import check_instance_setup
 
@@ -52,8 +58,32 @@ def load(
     from .dev._hub_core import load_instance as load_instance_from_hub
 
     hub_result = load_instance_from_hub(
-        owner=owner, name=name, _access_token=_access_token
+        owner=owner,
+        name=name,
+        _access_token=_access_token,
+        _db_user_name=db_user_name,
+        _db_user_password=db_user_password,
     )
+
+    if hub_result == "wrong-db-user-password":
+        if _log_error_message:
+            raise RuntimeError(
+                f'Password authentication failed for user "{db_user_name}".'
+            )
+        return "wrong-db-user-password"
+
+    if hub_result == "create-db-user-failed":
+        if _log_error_message:
+            raise RuntimeError("You must be an admin to provide a new db user.")
+        return "create-db-user-failed"
+
+    if hub_result == "db-user-not-reachable":
+        if _log_error_message:
+            raise RuntimeError(
+                "You have no db user associated to this instance."
+                " Please provide db_user and db_password parameters."
+            )
+        return "db-user-not-reachable"
 
     # if hub_result is not a string, it means it made a request
     # that successfully returned metadata
