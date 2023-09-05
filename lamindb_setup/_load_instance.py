@@ -71,20 +71,20 @@ def load(
     else:
         settings_file = instance_settings_file(name, owner)
         if settings_file.exists():
-            logger.info(f"found cached instance metadata: {settings_file}")
             isettings = load_instance_settings(settings_file)
             if isettings.is_remote:
                 if _log_error_message:
                     raise RuntimeError(
-                        f"remote instance {owner}/{name} not loadable from hub. The"
+                        f"Remote instance {owner}/{name} not loadable from hub. The"
                         " instance might have been deleted or you may have lost"
                         " access."
                     )
                 return "instance-not-reachable"
+            logger.info(f"found cached instance metadata: {settings_file}")
         else:
             if _log_error_message:
                 raise RuntimeError(
-                    f"instance {owner}/{name} neither loadable from hub nor local"
+                    f"Instance {owner}/{name} neither loadable from hub nor local"
                     " cache. check whether instance exists and you have access:"
                     f" https://lamin.ai/{owner}/{name}?tab=collaborators"
                 )
