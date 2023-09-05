@@ -73,6 +73,14 @@ def load(
         if settings_file.exists():
             logger.info(f"found cached instance metadata: {settings_file}")
             isettings = load_instance_settings(settings_file)
+            if isettings.is_remote:
+                if _log_error_message:
+                    raise RuntimeError(
+                        f"remote instance {owner}/{name} not loadable from hub. The"
+                        " instance might have been deleted or you may have lost"
+                        " access."
+                    )
+                return "instance-not-reachable"
         else:
             if _log_error_message:
                 raise RuntimeError(
