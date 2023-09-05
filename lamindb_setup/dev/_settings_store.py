@@ -1,33 +1,12 @@
 import os
-import shutil
 from pathlib import Path
 
-from lamin_utils import logger
 from pydantic import BaseSettings
 
-
-def get_settings_dir():
-    settings_dir = Path.home() / ".lamin"
-    settings_dir.mkdir(parents=True, exist_ok=True)
-    # deal with legacy settings directory
-    legacy_dir = settings_dir.with_name(".lndb")
-    if legacy_dir.exists():
-        if not settings_dir.exists():
-            legacy_dir.rename(settings_dir)
-            logger.info(f"renamed legacy settings dir {legacy_dir} to {settings_dir}")
-        else:
-            for path in legacy_dir.glob("*"):
-                shutil.copy(path, settings_dir)
-            logger.info(
-                f"copied content of legacy settings dir {legacy_dir} to {settings_dir}."
-                f" you can delete {legacy_dir}!"
-            )
-    return settings_dir
-
-
 # user_config_dir in appdirs is weird on MacOS!
-# hence, let's take home/.lndb
-settings_dir = get_settings_dir()
+# hence, let's take home/.lamin
+settings_dir = Path.home() / ".lamin"
+settings_dir.mkdir(parents=True, exist_ok=True)
 
 
 def get_settings_file_name_prefix():
