@@ -48,6 +48,7 @@ class InstanceSettingsStore(BaseSettings):
     id: str  # should be Optional, but we use types for instantiating
 
     class Config:
+        env_prefix = "lamindb_instance_"
         env_file = ".env"
 
 
@@ -60,4 +61,5 @@ class UserSettingsStore(BaseSettings):
     name: str
 
     class Config:
+        env_prefix = "lamin_user_"
         env_file = ".env"
