@@ -32,6 +32,7 @@ def lint(session: nox.Session) -> None:
 )
 def install(session: nox.Session, group: str) -> None:
     if group in {"unit", "docs"}:
+        session.run(*"pip install ./lnhub-rest[server]".split())
         session.run(*"pip install git+https://github.com/laminlabs/bionty".split())
         session.run(
             *"pip install --no-deps git+https://github.com/laminlabs/lnschema-bionty"
