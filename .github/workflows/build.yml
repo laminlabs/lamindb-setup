@@ -48,12 +48,12 @@ jobs:
           python-version: "3.9"
           cache: "pip"
           cache-dependency-path: ".github/workflows/build.yml"
-      - name: checkout lnhub-rest
+      - name: checkout laminhub-rest
         uses: actions/checkout@v4
         with:
-          repository: laminlabs/lnhub-rest
+          repository: laminlabs/laminhub-rest
           token: ${{ secrets.GH_TOKEN_DEPLOY_LAMINAPP }}
-          path: lnhub-rest
+          path: laminhub-rest
           ref: main
       - uses: actions/cache@v3
         with:
@@ -111,12 +111,12 @@ jobs:
     timeout-minutes: 15
     steps:
       - uses: actions/checkout@v4
-      - name: checkout lnhub-rest
+      - name: checkout laminhub-rest
         uses: actions/checkout@v4
         with:
-          repository: laminlabs/lnhub-rest
+          repository: laminlabs/laminhub-rest
           token: ${{ secrets.GH_TOKEN_DEPLOY_LAMINAPP }}
-          path: lnhub-rest
+          path: laminhub-rest
           ref: main
       - uses: actions/setup-python@v4
         with:

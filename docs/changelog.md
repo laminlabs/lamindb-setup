@@ -71,7 +71,7 @@ Name | PR | Developer | Date | Version
 ✅ Try to trigger error | [424](https://github.com/laminlabs/lamindb-setup/pull/424) | [falexwolf](https://github.com/falexwolf) | 2023-06-20 | 0.47.11
 🔧 Back to UTC | [423](https://github.com/laminlabs/lamindb-setup/pull/423) | [falexwolf](https://github.com/falexwolf) | 2023-06-20 |
 ♻️ Simplify schema validation | [422](https://github.com/laminlabs/lamindb-setup/pull/422) | [falexwolf](https://github.com/falexwolf) | 2023-06-18 | 0.47.10
-🎨  Remove `lnhub_rest` from `lamindb_setup` | [421](https://github.com/laminlabs/lamindb-setup/pull/421) | [bpenteado](https://github.com/bpenteado) | 2023-06-16 |
+🎨  Remove `laminhub_rest` from `lamindb_setup` | [421](https://github.com/laminlabs/lamindb-setup/pull/421) | [bpenteado](https://github.com/bpenteado) | 2023-06-16 |
 🍱 Fix legacy data migration | [420](https://github.com/laminlabs/lamindb-setup/pull/420) | [falexwolf](https://github.com/falexwolf) | 2023-06-15 | 0.47.9
 ✨ Add ability to check for migrations | [419](https://github.com/laminlabs/lamindb-setup/pull/419) | [falexwolf](https://github.com/falexwolf) | 2023-06-14 | 0.47.8
 🎨 Updated bionty function imports | [418](https://github.com/laminlabs/lamindb-setup/pull/418) | [sunnyosun](https://github.com/sunnyosun) | 2023-06-14 |
@@ -106,8 +106,8 @@ Name | PR | Developer | Date | Version
 🏗️ Add Django backend | [388](https://github.com/laminlabs/lndb/pull/388) | [falexwolf](https://github.com/falexwolf) | 2023-05-31 | 0.46a1
 ♻️ Refactor CI | [387](https://github.com/laminlabs/lndb/pull/387) | [falexwolf](https://github.com/falexwolf) | 2023-05-30 | 0.45.0
 🐛 Unlock on uncaught exceptions in ipython | [386](https://github.com/laminlabs/lndb/pull/386) | [Koncopd](https://github.com/Koncopd) | 2023-05-30 |
-⬆️ Upgrade to lnhub-rest 0.9.8 | [384](https://github.com/laminlabs/lndb/pull/384) | [falexwolf](https://github.com/falexwolf) | 2023-05-28 | 0.45a4
-⬆️ Upgrade lnhub-rest to 0.9.7 | [383](https://github.com/laminlabs/lndb/pull/383) | [falexwolf](https://github.com/falexwolf) | 2023-05-28 | 0.45a3
+⬆️ Upgrade to laminhub-rest 0.9.8 | [384](https://github.com/laminlabs/lndb/pull/384) | [falexwolf](https://github.com/falexwolf) | 2023-05-28 | 0.45a4
+⬆️ Upgrade laminhub-rest to 0.9.7 | [383](https://github.com/laminlabs/lndb/pull/383) | [falexwolf](https://github.com/falexwolf) | 2023-05-28 | 0.45a3
 📝 Add setup overview from lamindb | [382](https://github.com/laminlabs/lndb/pull/382) | [falexwolf](https://github.com/falexwolf) | 2023-05-27 |
 🔥 Remove schema modules logic from `setup_schema` | [381](https://github.com/laminlabs/lndb/pull/381) | [falexwolf](https://github.com/falexwolf) | 2023-05-26 | 0.45a2
 🏗️ Remove SQL-level schema modules | [380](https://github.com/laminlabs/lndb/pull/380) | [falexwolf](https://github.com/falexwolf) | 2023-05-25 | 0.45a1
@@ -115,20 +115,20 @@ Name | PR | Developer | Date | Version
 📝 Improve migration docs | [379](https://github.com/laminlabs/lndb/pull/379) | [Zethson](https://github.com/Zethson) | 2023-05-22 |
 🔊 Use lamin_logger in test_notebooks.py | [376](https://github.com/laminlabs/lndb/pull/376) | [Koncopd](https://github.com/Koncopd) | 2023-05-04 |
 Add universal_pathlib to dependencies | [375](https://github.com/laminlabs/lndb/pull/375) | [Zethson](https://github.com/Zethson) | 2023-05-02 |
-⬆️ Upgrade lnhub-rest to 0.9.4 | [373](https://github.com/laminlabs/lndb/pull/373) | [sunnyosun](https://github.com/sunnyosun) | 2023-04-28 | 0.44.7
+⬆️ Upgrade laminhub-rest to 0.9.4 | [373](https://github.com/laminlabs/lndb/pull/373) | [sunnyosun](https://github.com/sunnyosun) | 2023-04-28 | 0.44.7
 🚑 Fix load | [372](https://github.com/laminlabs/lndb/pull/372) | [sunnyosun](https://github.com/sunnyosun) | 2023-04-27 | 0.44.6
 ✨ Add `--storage` arg to `lamin load` | [370](https://github.com/laminlabs/lndb/pull/370) | [falexwolf](https://github.com/falexwolf) | 2023-04-27 |
-⬆️ Upgrade lnhub-rest | [369](https://github.com/laminlabs/lndb/pull/369) | [fredericenard](https://github.com/fredericenard) | 2023-04-25 | 0.44.5
+⬆️ Upgrade laminhub-rest | [369](https://github.com/laminlabs/lndb/pull/369) | [fredericenard](https://github.com/fredericenard) | 2023-04-25 | 0.44.5
 ✨ Allow to set additional fsspec kwargs for cloud instances | [366](https://github.com/laminlabs/lndb/pull/366) | [Koncopd](https://github.com/Koncopd) | 2023-04-23 | 0.44.4
-⬆️ Upgrade lnhub-rest to 0.8.2 | [365](https://github.com/laminlabs/lndb/pull/365) | [falexwolf](https://github.com/falexwolf) | 2023-04-22 | 0.44.2
+⬆️ Upgrade laminhub-rest to 0.8.2 | [365](https://github.com/laminlabs/lndb/pull/365) | [falexwolf](https://github.com/falexwolf) | 2023-04-22 | 0.44.2
 🚸 New migration deployment logic that also factors in migration ids | [364](https://github.com/laminlabs/lndb/pull/364) | [falexwolf](https://github.com/falexwolf) | 2023-04-21 |
 🚸 Mute warning about DB not reachable in init | [363](https://github.com/laminlabs/lndb/pull/363) | [falexwolf](https://github.com/falexwolf) | 2023-04-21 |
 🚸 Allow registering local postgres instances on the hub | [361](https://github.com/laminlabs/lndb/pull/361) | [falexwolf](https://github.com/falexwolf) | 2023-04-21 | 0.43.0
 🚸 Add a `is_db_setup()` check after init and make it more robust | [362](https://github.com/laminlabs/lndb/pull/362) | [falexwolf](https://github.com/falexwolf) | 2023-04-20 |
-👷 Remove lnhub-rest CI calls | [360](https://github.com/laminlabs/lndb/pull/360) | [falexwolf](https://github.com/falexwolf) | 2023-04-20 |
+👷 Remove laminhub-rest CI calls | [360](https://github.com/laminlabs/lndb/pull/360) | [falexwolf](https://github.com/falexwolf) | 2023-04-20 |
 🚸 Enable non-owner to set storage | [358](https://github.com/laminlabs/lndb/pull/358) | [falexwolf](https://github.com/falexwolf) | 2023-04-19 |
 ♻️ Restructure hub imports | [357](https://github.com/laminlabs/lndb/pull/357) | [falexwolf](https://github.com/falexwolf) | 2023-04-18 |
-⬆️ Upgrade to lnhub_rest 0.8.1 | [356](https://github.com/laminlabs/lndb/pull/356) | [falexwolf](https://github.com/falexwolf) | 2023-04-18 | 0.42.0
+⬆️ Upgrade to laminhub_rest 0.8.1 | [356](https://github.com/laminlabs/lndb/pull/356) | [falexwolf](https://github.com/falexwolf) | 2023-04-18 | 0.42.0
 ✅ Use nbproject-test directly | [355](https://github.com/laminlabs/lndb/pull/355) | [Koncopd](https://github.com/Koncopd) | 2023-04-18 |
 🔊 Clarify access based on locally cached instance metadata | [354](https://github.com/laminlabs/lndb/pull/354) | [falexwolf](https://github.com/falexwolf) | 2023-04-11 | 0.41.0
 🎨 Move setup checks from lamindb here | [352](https://github.com/laminlabs/lndb/pull/352) | [falexwolf](https://github.com/falexwolf) | 2023-04-08 | 0.41rc1
@@ -140,7 +140,7 @@ Add universal_pathlib to dependencies | [375](https://github.com/laminlabs/lndb/
 ♻️ Move storage related code to lndb_storage | [338](https://github.com/laminlabs/lndb/pull/338) | [Koncopd](https://github.com/Koncopd) | 2023-04-05 |
 ♻️ Refactor migrations | [346](https://github.com/laminlabs/lndb/pull/346) | [falexwolf](https://github.com/falexwolf) | 2023-04-04 |
 🧑‍💻 Enable to load instance from hub using access token | [343](https://github.com/laminlabs/lndb/pull/343) | [fredericenard](https://github.com/fredericenard) | 2023-04-03 | 0.39.2
-⬆️ Upgrade lnhub-rest to 0.7.2 | [341](https://github.com/laminlabs/lndb/pull/341) | [falexwolf](https://github.com/falexwolf) | 2023-03-31 | 0.39.1
+⬆️ Upgrade laminhub-rest to 0.7.2 | [341](https://github.com/laminlabs/lndb/pull/341) | [falexwolf](https://github.com/falexwolf) | 2023-03-31 | 0.39.1
 💚 Try to fix CI | [342](https://github.com/laminlabs/lndb/pull/342) | [falexwolf](https://github.com/falexwolf) | 2023-03-30 |
 🚸 Check schema version upon init | [340](https://github.com/laminlabs/lndb/pull/340) | [falexwolf](https://github.com/falexwolf) | 2023-03-30 | 0.39.0
 🚸 Enforce order of schema modules for migration | [339](https://github.com/laminlabs/lndb/pull/339) | [falexwolf](https://github.com/falexwolf) | 2023-03-27 | 0.38.1
@@ -156,14 +156,14 @@ Add universal_pathlib to dependencies | [375](https://github.com/laminlabs/lndb/
 ⬆️ Migrate to bionty 0.9 | [328](https://github.com/laminlabs/lndb/pull/328) | [sunnyosun](https://github.com/sunnyosun) | 2023-03-20 | 0.37.5rc1
 🚸  Handle instance permissions during `load` | [327](https://github.com/laminlabs/lndb/pull/327) | [bpenteado](https://github.com/bpenteado) | 2023-03-14 |
 🐛 Fix `._current.yaml` | [326](https://github.com/laminlabs/lndb/pull/326) | [sunnyosun](https://github.com/sunnyosun) | 2023-03-09 | 0.37.4
-⬆️ Upgrade to lnhub_rest 0.6.1 | [325](https://github.com/laminlabs/lndb/pull/325) | [falexwolf](https://github.com/falexwolf) | 2023-03-09 | 0.37.3
+⬆️ Upgrade to laminhub_rest 0.6.1 | [325](https://github.com/laminlabs/lndb/pull/325) | [falexwolf](https://github.com/falexwolf) | 2023-03-09 | 0.37.3
 ⬆️ Upgrade lnschema-bionty | [318](https://github.com/laminlabs/lndb/pull/318) | [sunnyosun](https://github.com/sunnyosun) | 2023-03-09 | 0.37.2
 ✅ Test lamindb_setup in staging environment | [324](https://github.com/laminlabs/lndb/pull/324) | [fredericenard](https://github.com/fredericenard) | 2023-03-08 |
 👷 Enable testing using a specific environment | [323](https://github.com/laminlabs/lndb/pull/323) | [fredericenard](https://github.com/fredericenard) | 2023-03-07 |
-⬆️ Upgrade lnhub-rest | [322](https://github.com/laminlabs/lndb/pull/322) | [fredericenard](https://github.com/fredericenard) | 2023-03-07 |
+⬆️ Upgrade laminhub-rest | [322](https://github.com/laminlabs/lndb/pull/322) | [fredericenard](https://github.com/fredericenard) | 2023-03-07 |
 ⬆️ Upgrade lamindb | [321](https://github.com/laminlabs/lndb/pull/321) | [fredericenard](https://github.com/fredericenard) | 2023-03-07 |
 ⬆️ Upgrade lamindb | [320](https://github.com/laminlabs/lndb/pull/320) | [fredericenard](https://github.com/fredericenard) | 2023-03-07 | 0.37.1
-📌 Pin lnhub-rest | [319](https://github.com/laminlabs/lndb/pull/319) | [fredericenard](https://github.com/fredericenard) | 2023-03-07 |
+📌 Pin laminhub-rest | [319](https://github.com/laminlabs/lndb/pull/319) | [fredericenard](https://github.com/fredericenard) | 2023-03-07 |
 📝 Reduce visual noise in migrate guide | [317](https://github.com/laminlabs/lndb/pull/317) | [falexwolf](https://github.com/falexwolf) | 2023-03-06 | 0.37.0
 📝 Fix docs build | [315](https://github.com/laminlabs/lndb/pull/315) | [Koncopd](https://github.com/Koncopd) | 2023-03-05 |
 🐛 Fix resolution of storage root paths for local instances | [314](https://github.com/laminlabs/lndb/pull/314) | [Koncopd](https://github.com/Koncopd) | 2023-03-05 |
@@ -203,7 +203,7 @@ Add universal_pathlib to dependencies | [375](https://github.com/laminlabs/lndb/
 💚 Fix test_migrate_clones_postgres | [275](https://github.com/laminlabs/lndb/pull/275) | [sunnyosun](https://github.com/sunnyosun) | 2023-02-14 | 0.32.3
 🚑 Generate all migrate files before migrate | [274](https://github.com/laminlabs/lndb/pull/274) | [sunnyosun](https://github.com/sunnyosun) | 2023-02-14 | 0.32.2
 🚑 Fix import and simplify params | [273](https://github.com/laminlabs/lndb/pull/273) | [sunnyosun](https://github.com/sunnyosun) | 2023-02-14 | 0.32.1
-⬆️ Upgrade `lnhub_rest` to 0.3.2 | [272](https://github.com/laminlabs/lndb/pull/272) | [bpenteado](https://github.com/bpenteado) | 2023-02-13 |
+⬆️ Upgrade `laminhub_rest` to 0.3.2 | [272](https://github.com/laminlabs/lndb/pull/272) | [bpenteado](https://github.com/bpenteado) | 2023-02-13 |
 🚚 Rename package from `lndb_setup` to `lndb` | [270](https://github.com/laminlabs/lndb/pull/270) | [falexwolf](https://github.com/falexwolf) | 2023-02-12 | 0.32.0
 🎨 Enable using the current instance for generating migration script | [271](https://github.com/laminlabs/lndb-setup/pull/271) | [sunnyosun](https://github.com/sunnyosun) | 2023-02-10 | 0.31.0
 🎨 Generate alembic.ini before before check migrate | [269](https://github.com/laminlabs/lndb-setup/pull/269) | [sunnyosun](https://github.com/sunnyosun) | 2023-02-10 |
@@ -219,7 +219,7 @@ Add universal_pathlib to dependencies | [375](https://github.com/laminlabs/lndb/
 ✨ Add rich string representation for InstanceSettings class | [254](https://github.com/laminlabs/lndb-setup/pull/254) | [bpenteado](https://github.com/bpenteado) | 2023-01-31 | 0.30.12
 ✨ Add rich string representation for UserSettings class | [255](https://github.com/laminlabs/lndb-setup/pull/255) | [bpenteado](https://github.com/bpenteado) | 2023-01-31 |
 📌 Pin deps for aiobotocore to fix resolution | [commit](https://github.com/laminlabs/lndb-setup/commit/439898124d09f7cab323a1ef275e72eba072a4d7) | [Koncopd](https://github.com/Koncopd) | 2023-01-27 | 0.30.11
-⬆️ Upgrade lnhub-rest to 0.1.4 | [252](https://github.com/laminlabs/lndb-setup/pull/252) | [fredericenard](https://github.com/fredericenard) | 2023-01-27 |
+⬆️ Upgrade laminhub-rest to 0.1.4 | [252](https://github.com/laminlabs/lndb-setup/pull/252) | [fredericenard](https://github.com/fredericenard) | 2023-01-27 |
 ⬆️ Cleaned up dependencies | [253](https://github.com/laminlabs/lndb-setup/pull/253) | [sunnyosun](https://github.com/sunnyosun) | 2023-01-27 |
 📌 Pin s3fs and gcsfs to the latest versions | [commit](https://github.com/laminlabs/lndb-setup/commit/2aaec804492fd5339c80bfb5b6f8d79ba8117e6e) | [Koncopd](https://github.com/Koncopd) | 2023-01-25 | 0.30.10
 🐛 Use `schema_lookup_name` for SQL level | [250](https://github.com/laminlabs/lndb-setup/pull/250) | [falexwolf](https://github.com/falexwolf) | 2023-01-24 | 0.30.9
@@ -236,9 +236,9 @@ Add universal_pathlib to dependencies | [375](https://github.com/laminlabs/lndb/
 ✅ Test schema modules on postgres | [229](https://github.com/laminlabs/lndb-setup/pull/229) | [falexwolf](https://github.com/falexwolf) | 2023-01-16 |
 🐛 Fix another occurence | [228](https://github.com/laminlabs/lndb-setup/pull/228) | [falexwolf](https://github.com/falexwolf) | 2023-01-16 | 0.30.4
 🔧 Fix nox for testing migrations | [227](https://github.com/laminlabs/lndb-setup/pull/227) | [falexwolf](https://github.com/falexwolf) | 2023-01-16 | 0.30.3
-⬆️ Upgrade lnhub-rest | [225](https://github.com/laminlabs/lndb-setup/pull/225) | [falexwolf](https://github.com/falexwolf) | 2023-01-16 | 0.30.2
+⬆️ Upgrade laminhub-rest | [225](https://github.com/laminlabs/lndb-setup/pull/225) | [falexwolf](https://github.com/falexwolf) | 2023-01-16 | 0.30.2
 🔥 Remove atexit | [224](https://github.com/laminlabs/lndb-setup/pull/224) | [falexwolf](https://github.com/falexwolf) | 2023-01-16 |
-⬆️ Upgrade lnhub_rest | [223](https://github.com/laminlabs/lndb-setup/pull/223) | [falexwolf](https://github.com/falexwolf) | 2023-01-16 | 0.30.1
+⬆️ Upgrade laminhub_rest | [223](https://github.com/laminlabs/lndb-setup/pull/223) | [falexwolf](https://github.com/falexwolf) | 2023-01-16 | 0.30.1
 🏗️ Separate hub components out to turn lndb-setup into pure client | [220](https://github.com/laminlabs/lndb-setup/pull/220) | [falexwolf](https://github.com/falexwolf) | 2023-01-16 | 0.30.0
 🚚 Rename `_setup_instance` to `_init_instance` | [219](https://github.com/laminlabs/lndb-setup/pull/219) | [falexwolf](https://github.com/falexwolf) | 2023-01-14 |
 🐛 Fix hub interaction | [218](https://github.com/laminlabs/lndb-setup/pull/218) | [falexwolf](https://github.com/falexwolf) | 2023-01-14 |
