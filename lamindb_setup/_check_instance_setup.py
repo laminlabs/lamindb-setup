@@ -1,6 +1,6 @@
 from lamin_utils import logger
 
-from ._init_instance import reload_schema_modules
+from ._init_instance import reload_lamindb, reload_schema_modules
 from ._silence_loggers import silence_loggers
 from .dev._settings_store import current_instance_settings_file
 
@@ -31,12 +31,7 @@ def check_instance_setup(from_lamindb: bool = False):
                     setup_django(isettings)
                     reload_schema_modules(isettings)
                     # only now we can import lamindb
-                    import lamindb as ln
-
-                    logger.success(
-                        f"loaded instance: {isettings.identifier} (lamindb"
-                        f" {ln.__version__})"
-                    )
+                    reload_lamindb(isettings)
                 return True
             else:
                 return IS_SETUP
