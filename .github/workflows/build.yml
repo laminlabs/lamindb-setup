@@ -16,7 +16,7 @@ jobs:
       matrix:
         group:
           - "unit"
-          - "docs"
+          - "two-envs"
         lamin_env:
           - "staging"
           - "prod"
@@ -74,6 +74,24 @@ jobs:
           cache-dependency-path: ".github/workflows/build.yml"
       - run: pip install -U laminci
       - run: nox -s "install(group='noaws')"
+      - run: nox -s noaws
+      - uses: actions/upload-artifact@v2
+        with:
+          name: coverage--noaws
+          path: .coverage
+
+  # a test group for testing mere storage access, not parallelized across staging & prod
+  one-env:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - uses: actions/setup-python@v4
+        with:
+          python-version: "3.9"
+          cache: "pip"
+          cache-dependency-path: ".github/workflows/build.yml"
+      - run: pip install -U laminci
+      - run: nox -s "install(group='one-env')"
       - run: nox -s noaws
       - uses: actions/upload-artifact@v2
         with:
