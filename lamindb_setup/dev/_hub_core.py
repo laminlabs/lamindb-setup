@@ -86,7 +86,7 @@ def init_instance(
     _email: Optional[str] = None,
     _password: Optional[str] = None,
     _access_token: Optional[str] = None,
-) -> str:
+) -> Union[str, UUID]:
     hub = connect_hub_with_auth(
         email=_email, password=_password, access_token=_access_token
     )
@@ -123,14 +123,14 @@ def init_instance(
             hub=hub, db=db, storage_id=storage_id, name=name, account=account
         )
 
-        instance_id = uuid4().hex
+        instance_id = uuid4()
         db_user_id = None
 
         if db_dsn is not None:
             db_user_id = uuid4().hex
             instance = sb_insert_instance(  # noqa
                 {
-                    "id": instance_id,
+                    "id": instance_id.hex,
                     "account_id": account["id"],
                     "name": name,
                     "storage_id": storage_id,
@@ -146,10 +146,10 @@ def init_instance(
                 hub,
             )
 
-            db_user = sb_insert_db_user(  # noqa
+            sb_insert_db_user(  # noqa
                 {
                     "id": db_user_id,
-                    "instance_id": instance_id,
+                    "instance_id": instance_id.hex,
                     "db_user_name": db_dsn.db.user,
                     "db_user_password": db_dsn.db.password,
                 },
@@ -158,7 +158,7 @@ def init_instance(
         else:
             sb_insert_instance(
                 {
-                    "id": instance_id,
+                    "id": instance_id.hex,
                     "account_id": account["id"],
                     "name": name,
                     "storage_id": storage_id,
@@ -172,7 +172,7 @@ def init_instance(
 
         sb_insert_collaborator(
             {
-                "instance_id": instance_id,
+                "instance_id": instance_id.hex,
                 "account_id": account["user_id"],
                 "db_user_id": db_user_id,
                 "role": "admin",

@@ -2,6 +2,7 @@ from pathlib import Path
 from typing import Optional
 
 from pydantic.error_wrappers import ValidationError
+from upath import UUID
 
 from ._settings_instance import InstanceSettings
 from ._settings_store import (
@@ -59,7 +60,7 @@ def setup_instance_from_store(store: InstanceSettingsStore) -> InstanceSettings:
         storage_region=store.storage_region if store.storage_region != "null" else None,
         db=store.db if store.db != "null" else None,  # type: ignore
         schema=store.schema_str if store.schema_str != "null" else None,
-        id=store.id if store.id != "null" else None,
+        id=UUID(store.id) if store.id != "null" else None,
     )
 
 
