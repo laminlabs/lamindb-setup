@@ -93,14 +93,11 @@ def login(
         logger.success(f"logged in with handle {user_handle} and id {user_id}")
     else:
         logger.success(f"logged in with email {user_settings.email} and id {user_id}")
-    user_settings = UserSettings(
-        id=user_id,
-        email=user_settings.email,
-        handle=user_handle,
-        name=user_name,
-        uuid=user_uuid,
-        access_token=access_token,
-    )
+    user_settings.id = user_id
+    user_settings.handle = user_handle
+    user_settings.name = user_name
+    user_settings.uuid = user_uuid
+    user_settings.access_token = access_token
     save_user_settings(user_settings)
 
     if check_instance_setup() and settings._instance_exists:

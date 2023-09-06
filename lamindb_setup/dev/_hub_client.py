@@ -3,6 +3,7 @@ from pathlib import Path
 from typing import Any, Dict, Optional
 from urllib.request import urlretrieve
 
+from lamin_utils import logger
 from pydantic import BaseSettings, PostgresDsn
 from supabase import create_client
 from supabase.lib.client_options import ClientOptions
@@ -72,6 +73,11 @@ def get_access_token(email: Optional[str] = None, password: Optional[str] = None
             }
         )
         return auth_response.session.access_token
+    except Exception as e:
+        logger.error(
+            f"Could not authenticate with email {email} and password {password}"
+        )
+        raise e
     finally:
         hub.auth.sign_out()
 
