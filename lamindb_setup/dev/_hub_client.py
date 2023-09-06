@@ -1,10 +1,9 @@
 import os
-from pathlib import Path
-from typing import Any, Dict, Optional
+from typing import Optional
 from urllib.request import urlretrieve
 
 from lamin_utils import logger
-from pydantic import BaseSettings, PostgresDsn
+from pydantic import BaseSettings
 from supabase import create_client
 from supabase.lib.client_options import ClientOptions
 
@@ -14,30 +13,37 @@ class Connector(BaseSettings):
     key: str
 
 
-class Settings(BaseSettings):
-    lamin_env: str = "local"
-    postgres_dsn: Optional[PostgresDsn]
-    supabase_api_url: str
-    supabase_anon_key: str
-    supabase_service_role_key: Optional[str]
+def load_connector() -> Connector:
+    if os.getenv("LAMIN_ENV") == "staging":
+        url = "https://lamin-site-assets.s3.amazonaws.com/connector_staging.env"
+    else:
+        url = "https://lamin-site-assets.s3.amazonaws.com/connector.env"
+    connector_file, _ = urlretrieve(url)
+    connector = Connector(_env_file=connector_file)
+    return connector
 
-    class Config:
-        env_file = (
-            Path(__file__).parents[1] / f"laminhub-rest--{os.environ['LAMIN_ENV']}.env"
-            if os.environ.get("LAMIN_ENV")
-            else None
-        )
 
-        @classmethod
-        def customise_sources(cls, init_settings, env_settings, file_secret_settings):
-            # Following pattern here:
-            # https://docs.pydantic.dev/usage/settings/#customise-settings-sources
-            # in the absence of init and env settings, pull from S3
-            return (init_settings, env_settings, lamindb_client_config_settings)
+class Environment:
+    def __init__(self):
+        lamin_env = os.getenv("LAMIN_ENV")
+        if lamin_env is None:
+            lamin_env = "prod"
+        self.lamin_env: str = lamin_env
+
+        if lamin_env in {"prod", "staging"}:
+            connector = load_connector()
+            supabase_api_url = connector.url
+            supabase_anon_key = connector.key
+        else:
+            supabase_api_url = os.environ["SUPABASE_API_URL"]
+            supabase_anon_key = os.environ["SUPABASE_ANON_KEY"]
+
+        self.supabase_api_url: str = supabase_api_url
+        self.supabase_anon_key: str = supabase_anon_key
 
 
 def connect_hub(client_options: ClientOptions = ClientOptions()):
-    settings = Settings()
+    settings = Environment()
     return create_client(
         settings.supabase_api_url, settings.supabase_anon_key, client_options
     )
@@ -80,17 +86,3 @@ def get_access_token(email: Optional[str] = None, password: Optional[str] = None
         raise e
     finally:
         hub.auth.sign_out()
-
-
-def lamindb_client_config_settings(settings: BaseSettings) -> Dict[str, Any]:
-    if os.getenv("LAMIN_ENV") == "staging":
-        url = "https://lamin-site-assets.s3.amazonaws.com/connector_staging.env"
-    else:
-        url = "https://lamin-site-assets.s3.amazonaws.com/connector.env"
-    connector_file, _ = urlretrieve(url)
-    connector = Connector(_env_file=connector_file)
-    return dict(
-        lamin_env="client",
-        supabase_api_url=connector.url,
-        supabase_anon_key=connector.key,
-    )
