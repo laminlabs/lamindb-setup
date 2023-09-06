@@ -117,7 +117,7 @@ def init_instance(
 
         instance = sb_select_instance_by_name(account["id"], name, hub)
         if instance is not None:
-            return instance["id"]
+            return UUID(instance["id"])
 
         validate_unique_sqlite(
             hub=hub, db=db, storage_id=storage_id, name=name, account=account
