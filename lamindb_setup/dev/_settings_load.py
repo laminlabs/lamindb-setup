@@ -1,8 +1,8 @@
 from pathlib import Path
 from typing import Optional
+from uuid import UUID
 
 from pydantic.error_wrappers import ValidationError
-from upath import UUID
 
 from ._settings_instance import InstanceSettings
 from ._settings_store import (
