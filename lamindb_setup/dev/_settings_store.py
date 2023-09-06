@@ -57,6 +57,7 @@ class UserSettingsStore(BaseSettings):
     password: str
     access_token: str
     id: str
+    uuid: str
     handle: str
     name: str
 

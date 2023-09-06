@@ -1,6 +1,7 @@
 from base64 import b64decode
 from dataclasses import dataclass
 from typing import Union
+from uuid import UUID
 
 
 class user_description:
@@ -22,6 +23,8 @@ class UserSettings:
     access_token: Union[str, None] = None
     """User access token."""
     id: str = "null"
+    """User ID."""
+    uuid: Union[UUID, None] = None
     """User ID."""
     handle: Union[str, None] = None
     "Unique handle."

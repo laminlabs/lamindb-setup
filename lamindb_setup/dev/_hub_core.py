@@ -292,7 +292,9 @@ def sign_up_hub(email) -> str:
         return "user-exists"
 
 
-def sign_in_hub(email, password, handle=None):
+def sign_in_hub(
+    email, password, handle=None
+) -> Union[str, Tuple[UUID, str, str, str, str]]:
     hub = connect_hub()
     try:
         auth_response = hub.auth.sign_in_with_password(
@@ -311,6 +313,7 @@ def sign_in_hub(email, password, handle=None):
         return "could-not-login"
     data = hub.table("account").select("*").eq("id", auth_response.user.id).execute()
     if len(data.data) > 0:  # user is completely registered
+        user_uuid = UUID(data.data[0]["id"])
         user_id = data.data[0]["lnid"]
         user_handle = data.data[0]["handle"]
         user_name = data.data[0]["name"]
@@ -322,4 +325,10 @@ def sign_in_hub(email, password, handle=None):
         logger.error("complete signup on your account page.")
         return "complete-signup"
     hub.auth.sign_out()
-    return user_id, user_handle, user_name, auth_response.session.access_token
+    return (
+        user_uuid,
+        user_id,
+        user_handle,
+        user_name,
+        auth_response.session.access_token,
+    )
