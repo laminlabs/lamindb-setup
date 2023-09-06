@@ -8,23 +8,18 @@ from ._settings import settings
 from .dev._settings_load import load_or_create_user_settings, load_user_settings
 from .dev._settings_save import save_user_settings
 from .dev._settings_store import user_settings_file_email, user_settings_file_handle
+from .dev._settings_user import UserSettings
 
 
 def signup(email: str) -> Union[str, None]:
     """Sign up user."""
     from .dev._hub_core import sign_up_hub
 
-    response = sign_up_hub(email)
-    if response == "handle-exists":  # handle already exists
-        logger.error("the handle already exists: please choose a different one")
-        return "handle-exists"
-    if response == "user-exists":  # user already exists
+    password_or_error = sign_up_hub(email)
+    if password_or_error == "user-exists":  # user already exists
         logger.error("user already exists! please login instead: `lamin login`")
         return "user-exists"
-    user_settings = load_or_create_user_settings()
-    user_settings.email = email
-    save_user_settings(user_settings)
-    user_settings.password = response
+    user_settings = UserSettings(email=email, password=password_or_error)
     save_user_settings(user_settings)
     return None  # user needs to confirm email now
 
