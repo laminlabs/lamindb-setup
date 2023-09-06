@@ -3,6 +3,7 @@
 <!-- prettier-ignore -->
 Name | PR | Developer | Date | Version
 --- | --- | --- | --- | ---
+🚚 Rename lnhub-rest to laminhub-rest | [504](https://github.com/laminlabs/lamindb-setup/pull/504) | [falexwolf](https://github.com/falexwolf) | 2023-09-06 |
 ✅ More tests for signup | [502](https://github.com/laminlabs/lamindb-setup/pull/502) | [falexwolf](https://github.com/falexwolf) | 2023-09-06 |
 ✅ Test logger | [501](https://github.com/laminlabs/lamindb-setup/pull/501) | [falexwolf](https://github.com/falexwolf) | 2023-09-06 |
 👔 Always let permission query from hub override local cache for remote instances | [497](https://github.com/laminlabs/lamindb-setup/pull/497) | [bpenteado](https://github.com/bpenteado) | 2023-09-06 |
