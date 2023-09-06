@@ -28,11 +28,10 @@ def lint(session: nox.Session) -> None:
 @nox.session
 @nox.parametrize(
     "group",
-    ["unit", "hub", "docs", "noaws"],
+    ["hub", "one-env", "two-envs", "noaws"],
 )
 def install(session: nox.Session, group: str) -> None:
-    if group in {"unit", "docs"}:
-        session.run(*"pip install ./lnhub-rest[server]".split())
+    if group in {"two-envs"}:
         session.run(*"pip install git+https://github.com/laminlabs/bionty".split())
         session.run(
             *"pip install --no-deps git+https://github.com/laminlabs/lnschema-bionty"
@@ -45,6 +44,8 @@ def install(session: nox.Session, group: str) -> None:
         session.run(*"pip install -e .[aws,dev]".split())
     elif group == "noaws":
         session.run(*"pip install -e .[aws,dev]".split())
+    elif group == "one-env":
+        session.run(*"pip install -e .[aws,dev]".split())
     elif group == "hub":
         session.run(*"pip install -e .[aws,dev,hub]".split())
         session.run(*"pip install ./lnhub-rest[server]".split())
@@ -55,7 +56,7 @@ def install(session: nox.Session, group: str) -> None:
 @nox.session
 @nox.parametrize(
     "group",
-    ["unit", "hub", "docs"],
+    ["hub", "one-env", "two-envs"],
 )
 @nox.parametrize(
     "lamin_env",
@@ -66,13 +67,18 @@ def build(session: nox.Session, group: str, lamin_env: str):
     if group != "hub":
         login_testuser1(session, env=env)
         login_testuser2(session, env=env)
-    if group == "unit":
+    if group == "one-env":
         session.run(
-            *f"pytest {COVERAGE_ARGS} ./tests/unit".split(),
+            *f"pytest {COVERAGE_ARGS} ./tests/two-envs".split(),
             env=env,
         )
-    elif group == "docs":
-        session.run(*f"pytest -s {COVERAGE_ARGS} ./docs".split(), env=env)
+        session.run(*f"pytest -s {COVERAGE_ARGS} ./docs/one-env".split(), env=env)
+    elif group == "two-envs":
+        session.run(
+            *f"pytest {COVERAGE_ARGS} ./tests/two-envs".split(),
+            env=env,
+        )
+        session.run(*f"pytest -s {COVERAGE_ARGS} ./docs/two-envs".split(), env=env)
     elif group == "hub":
         # only run for local environment
         assert lamin_env == "local"

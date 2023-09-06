@@ -1,10 +1,11 @@
+import os
 from typing import Optional, Tuple, Union
 from uuid import UUID, uuid4
 
 from lamin_utils import logger
 from postgrest.exceptions import APIError
 
-from ._hub_client import connect_hub, connect_hub_with_auth, get_lamin_site_base_url
+from ._hub_client import connect_hub, connect_hub_with_auth
 from ._hub_crud import (
     sb_insert_collaborator,
     sb_insert_db_user,
@@ -28,6 +29,7 @@ from ._hub_utils import (
     validate_storage_root_arg,
     validate_unique_sqlite,
 )
+from ._settings_store import user_settings_file_email
 
 
 def add_storage(
@@ -243,9 +245,16 @@ def load_instance(
         hub.auth.sign_out()
 
 
-def sign_up_hub(email) -> str:
-    from .._settings_store import settings_dir
+def get_lamin_site_base_url():
+    if "LAMIN_ENV" in os.environ:
+        if os.environ["LAMIN_ENV"] == "local":
+            return "http://localhost:3000"
+        elif os.environ["LAMIN_ENV"] == "staging":
+            return "https://staging.lamin.ai"
+    return "https://lamin.ai"
 
+
+def sign_up_hub(email) -> str:
     hub = connect_hub()
     password = secret()  # generate new password
     auth_response = hub.auth.sign_up(
@@ -271,12 +280,11 @@ def sign_up_hub(email) -> str:
                 " link in the confirmation email that you should have received from"
                 " lamin.ai."
             )
-        usettings_file = settings_dir / f"user-{email}.env"
         logger.info(
             "Please *confirm* the sign-up email. After that, login with `lamin login"
             f" {email}`!\n\n"
             f"Generated password: {password}\n"
-            f"Email & password are cached: {usettings_file}\n"  # noqa
+            f"Email & password are cached: {user_settings_file_email(email)}\n"  # noqa
             "Going forward, credentials are auto-loaded! "  # noqa
             "In case of loss, recover your password via email: https://lamin.ai"
         )
