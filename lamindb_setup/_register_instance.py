@@ -21,5 +21,5 @@ def register():
         raise RuntimeError(f"Registering instance on hub failed:\n{result}")
     else:
         logger.save(f"instance registered: https://lamin.ai/{isettings.identifier}")
-        isettings._id = UUID(result)
+        isettings._id = result
         isettings._persist()
