@@ -3,6 +3,7 @@
 <!-- prettier-ignore -->
 Name | PR | Developer | Date | Version
 --- | --- | --- | --- | ---
+✅ Test implicit lamindb load | [503](https://github.com/laminlabs/lamindb-setup/pull/503) | [falexwolf](https://github.com/falexwolf) | 2023-09-06 |
 🚚 Rename lnhub-rest to laminhub-rest | [504](https://github.com/laminlabs/lamindb-setup/pull/504) | [falexwolf](https://github.com/falexwolf) | 2023-09-06 |
 ✅ More tests for signup | [502](https://github.com/laminlabs/lamindb-setup/pull/502) | [falexwolf](https://github.com/falexwolf) | 2023-09-06 |
 ✅ Test logger | [501](https://github.com/laminlabs/lamindb-setup/pull/501) | [falexwolf](https://github.com/falexwolf) | 2023-09-06 |
