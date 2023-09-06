@@ -257,13 +257,12 @@ def get_lamin_site_base_url():
 def sign_up_hub(email) -> str:
     hub = connect_hub()
     password = secret()  # generate new password
-    auth_response = hub.auth.sign_up(
-        {
-            "email": email,
-            "password": password,
-            "options": {"redirect_to": f"{get_lamin_site_base_url()}/signup"},
+    sign_up_kwargs = {"email": email, "password": password}
+    if os.getenv("LAMIN_ENV") != "local":
+        sign_up_kwargs["options"] = {
+            "redirect_to": f"{get_lamin_site_base_url()}/signup"
         }
-    )
+    auth_response = hub.auth.sign_up(sign_up_kwargs)
     user = auth_response.user
     # if user already exists a fake user object without identity is returned
     if auth_response.user.identities:
