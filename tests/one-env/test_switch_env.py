@@ -5,7 +5,7 @@ from lamindb_setup import login, settings
 
 def test_switch_env():
     # testuser1 is defined in prod & staging with the same password
-    assert os.getenv["LAMIN_ENV"] == "prod"
+    assert os.getenv("LAMIN_ENV") == "prod"
 
     # check whether we can log in
     login("static-testuser1@lamin.ai", password="static-testuser1-password")
@@ -16,3 +16,6 @@ def test_switch_env():
 
     login("testuser1.staging@lamin.ai", password="password")
     assert settings.user.email == "testuser1.staging@lamin.ai"
+
+    # back to prod
+    os.environ["LAMIN_ENV"] = "prod"

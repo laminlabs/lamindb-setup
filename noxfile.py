@@ -28,10 +28,10 @@ def lint(session: nox.Session) -> None:
 @nox.session
 @nox.parametrize(
     "group",
-    ["unit", "hub", "one-env", "two-envs", "noaws"],
+    ["hub", "one-env", "two-envs", "noaws"],
 )
 def install(session: nox.Session, group: str) -> None:
-    if group in {"unit", "two-envs"}:
+    if group in {"two-envs"}:
         session.run(*"pip install git+https://github.com/laminlabs/bionty".split())
         session.run(
             *"pip install --no-deps git+https://github.com/laminlabs/lnschema-bionty"
@@ -41,6 +41,7 @@ def install(session: nox.Session, group: str) -> None:
             *"pip install --no-deps git+https://github.com/laminlabs/lnschema-core"
             .split()
         )
+        session.run(*"pip install ./lnhub-rest[server]".split())
         session.run(*"pip install -e .[aws,dev]".split())
     elif group == "noaws":
         session.run(*"pip install -e .[aws,dev]".split())
@@ -69,7 +70,7 @@ def build(session: nox.Session, group: str, lamin_env: str):
         login_testuser2(session, env=env)
     if group == "one-env":
         session.run(
-            *f"pytest {COVERAGE_ARGS} ./tests/two-envs".split(),
+            *f"pytest {COVERAGE_ARGS} ./tests/one-env".split(),
             env=env,
         )
         session.run(*f"pytest -s {COVERAGE_ARGS} ./docs/one-env".split(), env=env)

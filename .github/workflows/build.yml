@@ -42,12 +42,19 @@ jobs:
           - "prod"
     timeout-minutes: 15
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
       - uses: actions/setup-python@v4
         with:
           python-version: "3.9"
           cache: "pip"
           cache-dependency-path: ".github/workflows/build.yml"
+      - name: checkout lnhub-rest
+        uses: actions/checkout@v4
+        with:
+          repository: laminlabs/lnhub-rest
+          token: ${{ secrets.GH_TOKEN_DEPLOY_LAMINAPP }}
+          path: lnhub-rest
+          ref: main
       - uses: actions/cache@v3
         with:
           path: ~/.cache/pre-commit
@@ -84,7 +91,7 @@ jobs:
   noaws:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
       - uses: actions/setup-python@v4
         with:
           python-version: "3.9"
@@ -103,9 +110,9 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 15
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
       - name: checkout lnhub-rest
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
         with:
           repository: laminlabs/lnhub-rest
           token: ${{ secrets.GH_TOKEN_DEPLOY_LAMINAPP }}
@@ -132,7 +139,7 @@ jobs:
     needs: [one-env, two-envs, noaws, hub]
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
       - uses: actions/setup-python@v4
         with:
           python-version: "3.9"
@@ -155,12 +162,12 @@ jobs:
     needs: two-envs
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
         with:
           submodules: recursive
           fetch-depth: 0
       - name: checkout lndocs
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
         with:
           repository: laminlabs/lndocs
           ssh-key: ${{ secrets.READ_LNDOCS }}
