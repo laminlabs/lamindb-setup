@@ -92,10 +92,10 @@ jobs:
           cache-dependency-path: ".github/workflows/build.yml"
       - run: pip install -U laminci
       - run: nox -s "install(group='one-env')"
-      - run: nox -s noaws
+      - run: nox -s one-env
       - uses: actions/upload-artifact@v2
         with:
-          name: coverage--noaws
+          name: coverage--one-env
           path: .coverage
 
   # a test group for testing low-level hub functionality
