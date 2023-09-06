@@ -70,7 +70,7 @@ def build(session: nox.Session, group: str, lamin_env: str):
         login_testuser2(session, env=env)
     if group == "one-env":
         session.run(
-            *f"pytest {COVERAGE_ARGS} ./tests/two-envs".split(),
+            *f"pytest {COVERAGE_ARGS} ./tests/one-env".split(),
             env=env,
         )
         session.run(*f"pytest -s {COVERAGE_ARGS} ./docs/one-env".split(), env=env)
