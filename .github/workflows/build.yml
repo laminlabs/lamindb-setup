@@ -129,7 +129,7 @@ jobs:
           path: .coverage
 
   coverage:
-    needs: [build, noaws, hub]
+    needs: [one-env, two-envs, noaws, hub]
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
