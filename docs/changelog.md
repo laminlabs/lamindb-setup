@@ -3,6 +3,7 @@
 <!-- prettier-ignore -->
 Name | PR | Developer | Date | Version
 --- | --- | --- | --- | ---
+👔 Always let permission query from hub override local cache for remote instances | [497](https://github.com/laminlabs/lamindb-setup/pull/497) | [bpenteado](https://github.com/bpenteado) | 2023-09-06 |
 ♻️ Re-organize unit tests, hub client & fix signup logging | [500](https://github.com/laminlabs/lamindb-setup/pull/500) | [falexwolf](https://github.com/falexwolf) | 2023-09-06 |
 👷 Re-organize tests | [499](https://github.com/laminlabs/lamindb-setup/pull/499) | [falexwolf](https://github.com/falexwolf) | 2023-09-06 |
 🚸 Add env prefix to BaseSettings | [496](https://github.com/laminlabs/lamindb-setup/pull/496) | [falexwolf](https://github.com/falexwolf) | 2023-09-05 |
