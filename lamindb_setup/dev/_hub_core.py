@@ -1,10 +1,11 @@
+import os
 from typing import Optional, Tuple, Union
 from uuid import UUID, uuid4
 
 from lamin_utils import logger
 from postgrest.exceptions import APIError
 
-from ._hub_client import connect_hub, connect_hub_with_auth, get_lamin_site_base_url
+from ._hub_client import connect_hub, connect_hub_with_auth
 from ._hub_crud import (
     sb_insert_collaborator,
     sb_insert_db_user,
@@ -241,6 +242,15 @@ def load_instance(
         return "loading-instance-failed"
     finally:
         hub.auth.sign_out()
+
+
+def get_lamin_site_base_url():
+    if "LAMIN_ENV" in os.environ:
+        if os.environ["LAMIN_ENV"] == "local":
+            return "http://localhost:3000"
+        elif os.environ["LAMIN_ENV"] == "staging":
+            return "https://staging.lamin.ai"
+    return "https://lamin.ai"
 
 
 def sign_up_hub(email) -> str:
