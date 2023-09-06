@@ -3,6 +3,7 @@
 <!-- prettier-ignore -->
 Name | PR | Developer | Date | Version
 --- | --- | --- | --- | ---
+♻️ Type instance id as UUID | [506](https://github.com/laminlabs/lamindb-setup/pull/506) | [falexwolf](https://github.com/falexwolf) | 2023-09-06 |
 ✅ Test implicit lamindb load | [503](https://github.com/laminlabs/lamindb-setup/pull/503) | [falexwolf](https://github.com/falexwolf) | 2023-09-06 |
 🚚 Rename lnhub-rest to laminhub-rest | [504](https://github.com/laminlabs/lamindb-setup/pull/504) | [falexwolf](https://github.com/falexwolf) | 2023-09-06 |
 ✅ More tests for signup | [502](https://github.com/laminlabs/lamindb-setup/pull/502) | [falexwolf](https://github.com/falexwolf) | 2023-09-06 |
