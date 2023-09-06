@@ -3,6 +3,7 @@
 <!-- prettier-ignore -->
 Name | PR | Developer | Date | Version
 --- | --- | --- | --- | ---
+✅ More tests for signup | [502](https://github.com/laminlabs/lamindb-setup/pull/502) | [falexwolf](https://github.com/falexwolf) | 2023-09-06 |
 ✅ Test logger | [501](https://github.com/laminlabs/lamindb-setup/pull/501) | [falexwolf](https://github.com/falexwolf) | 2023-09-06 |
 👔 Always let permission query from hub override local cache for remote instances | [497](https://github.com/laminlabs/lamindb-setup/pull/497) | [bpenteado](https://github.com/bpenteado) | 2023-09-06 |
 ♻️ Re-organize unit tests, hub client & fix signup logging | [500](https://github.com/laminlabs/lamindb-setup/pull/500) | [falexwolf](https://github.com/falexwolf) | 2023-09-06 |
