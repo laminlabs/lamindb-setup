@@ -56,7 +56,7 @@ def install(session: nox.Session, group: str) -> None:
 @nox.session
 @nox.parametrize(
     "group",
-    ["unit", "hub", "one-env", "two-envs"],
+    ["hub", "one-env", "two-envs"],
 )
 @nox.parametrize(
     "lamin_env",
@@ -67,14 +67,17 @@ def build(session: nox.Session, group: str, lamin_env: str):
     if group != "hub":
         login_testuser1(session, env=env)
         login_testuser2(session, env=env)
-    if group == "unit":
+    if group == "one-env":
         session.run(
-            *f"pytest {COVERAGE_ARGS} ./tests/unit".split(),
+            *f"pytest {COVERAGE_ARGS} ./tests/two-envs".split(),
             env=env,
         )
-    elif group == "one-env":
         session.run(*f"pytest -s {COVERAGE_ARGS} ./docs/one-env".split(), env=env)
     elif group == "two-envs":
+        session.run(
+            *f"pytest {COVERAGE_ARGS} ./tests/two-envs".split(),
+            env=env,
+        )
         session.run(*f"pytest -s {COVERAGE_ARGS} ./docs/two-envs".split(), env=env)
     elif group == "hub":
         # only run for local environment
