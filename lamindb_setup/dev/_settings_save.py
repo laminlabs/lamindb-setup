@@ -1,5 +1,6 @@
 from pathlib import Path
 from typing import Any, Dict, get_type_hints
+from uuid import UUID
 
 from ._settings_store import (
     UserSettingsStore,
@@ -36,6 +37,8 @@ def save_settings(
                 value = getattr(settings, settings_key)
                 if value is None:
                     value = "null"
+                elif isinstance(value, UUID):
+                    value = value.hex
                 else:
                     value = type(value)
                 f.write(f"lamin_user_{store_key}={value}\n")
@@ -56,5 +59,5 @@ def save_instance_settings(settings: Any, settings_file: Path):
             settings._schema_str if settings._schema_str is not None else "null"
         )
         f.write(f"lamindb_instance_schema_str={schema_str}\n")
-        id = settings._id if settings._id is not None else "null"
+        id = settings.id.hex if settings._id is not None else "null"
         f.write(f"lamindb_instance_id={id}\n")

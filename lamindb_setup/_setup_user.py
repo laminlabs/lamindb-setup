@@ -82,20 +82,24 @@ def login(
     response = sign_in_hub(
         user_settings.email, user_settings.password, user_settings.handle
     )
-    if response == "could-not-login":
-        return response
-    elif response == "complete-signup":
-        return response
+    if isinstance(response, str):
+        if response == "could-not-login":
+            return response
+        elif response == "complete-signup":
+            return response
     else:
-        user_id, user_handle, user_name, access_token = response
+        user_uuid, user_id, user_handle, user_name, access_token = response
     if handle is None:
         logger.success(f"logged in with handle {user_handle} and id {user_id}")
     else:
         logger.success(f"logged in with email {user_settings.email} and id {user_id}")
-    user_settings.id = user_id
-    user_settings.handle = user_handle
-    user_settings.name = user_name
-    user_settings.access_token = access_token
+    user_settings = UserSettings(
+        id=user_id,
+        handle=user_handle,
+        name=user_name,
+        uuid=user_uuid,
+        access_token=access_token,
+    )
     save_user_settings(user_settings)
 
     if check_instance_setup() and settings._instance_exists:
