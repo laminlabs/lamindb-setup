@@ -1,9 +1,9 @@
 import os
 
 import pytest
-from lnhub_rest.routers.account import get_account_by_handle
-from lnhub_rest.routers.collaborator import delete_collaborator
-from lnhub_rest.routers.instance import add_collaborator
+from laminhub_rest.routers.account import get_account_by_handle
+from laminhub_rest.routers.collaborator import delete_collaborator
+from laminhub_rest.routers.instance import add_collaborator
 
 import lamindb_setup as ln_setup
 

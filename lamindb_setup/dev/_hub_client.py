@@ -22,7 +22,7 @@ class Settings(BaseSettings):
 
     class Config:
         env_file = (
-            Path(__file__).parents[1] / f"lnhub-rest--{os.environ['LAMIN_ENV']}.env"
+            Path(__file__).parents[1] / f"laminhub-rest--{os.environ['LAMIN_ENV']}.env"
             if os.environ.get("LAMIN_ENV")
             else None
         )

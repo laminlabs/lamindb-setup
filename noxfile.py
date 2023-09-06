@@ -8,7 +8,7 @@ nox.options.default_venv_backend = "none"
 COVERAGE_ARGS = "--cov=lamindb_setup --cov-append --cov-report=term-missing"
 
 
-# this function is duplicated across lnhub-rest and lamindb-setup
+# this function is duplicated across laminhub-rest and lamindb-setup
 def get_local_env() -> Dict[str, str]:
     env = {
         "LAMIN_ENV": "local",
@@ -41,7 +41,7 @@ def install(session: nox.Session, group: str) -> None:
             *"pip install --no-deps git+https://github.com/laminlabs/lnschema-core"
             .split()
         )
-        session.run(*"pip install ./lnhub-rest[server]".split())
+        session.run(*"pip install ./laminhub-rest[server]".split())
         session.run(*"pip install -e .[aws,dev]".split())
     elif group == "noaws":
         session.run(*"pip install -e .[aws,dev]".split())
@@ -49,9 +49,9 @@ def install(session: nox.Session, group: str) -> None:
         session.run(*"pip install -e .[aws,dev]".split())
     elif group == "hub":
         session.run(*"pip install -e .[aws,dev,hub]".split())
-        session.run(*"pip install ./lnhub-rest[server]".split())
-        # grab directories & files from lnhub-rest repo
-        session.run(*"cp -r lnhub-rest/supabase .".split())
+        session.run(*"pip install ./laminhub-rest[server]".split())
+        # grab directories & files from laminhub-rest repo
+        session.run(*"cp -r laminhub-rest/supabase .".split())
 
 
 @nox.session
@@ -84,9 +84,9 @@ def build(session: nox.Session, group: str, lamin_env: str):
         # only run for local environment
         assert lamin_env == "local"
         env = get_local_env()
-        with session.chdir("./lnhub-rest"):
+        with session.chdir("./laminhub-rest"):
             session.run(*"lnhub alembic upgrade head".split(), env=env)
-        session.run(*"cp lnhub-rest/tests/conftest.py tests/".split())
+        session.run(*"cp laminhub-rest/tests/conftest.py tests/".split())
         # the -n 1 is to ensure that supabase thread exits properly
         session.run(
             *f"pytest -n 1 {COVERAGE_ARGS} ./tests/hub".split(),
