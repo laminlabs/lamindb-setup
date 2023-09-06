@@ -31,7 +31,7 @@ def lint(session: nox.Session) -> None:
     ["unit", "hub", "one-env", "two-envs", "noaws"],
 )
 def install(session: nox.Session, group: str) -> None:
-    if group in {"unit", "one-env", "two-envs"}:
+    if group in {"unit", "two-envs"}:
         session.run(*"pip install git+https://github.com/laminlabs/bionty".split())
         session.run(
             *"pip install --no-deps git+https://github.com/laminlabs/lnschema-bionty"
@@ -44,7 +44,7 @@ def install(session: nox.Session, group: str) -> None:
         session.run(*"pip install -e .[aws,dev]".split())
     elif group == "noaws":
         session.run(*"pip install -e .[aws,dev]".split())
-    elif group == "prod":
+    elif group == "one-env":
         session.run(*"pip install -e .[aws,dev]".split())
     elif group == "hub":
         session.run(*"pip install -e .[aws,dev,hub]".split())
