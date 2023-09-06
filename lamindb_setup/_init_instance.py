@@ -184,9 +184,9 @@ def init(
             db=db,
             schema=schema,
         )
-        if result.startswith("error-"):
+        if not isinstance(result, UUID):
             raise RuntimeError(f"Registering instance on hub failed:\n{result}")
-        isettings._id = UUID(result).hex
+        isettings._id = result
         logger.save(f"registered instance on hub: https://lamin.ai/{owner}/{name_str}")
 
     if _test:
