@@ -46,6 +46,9 @@ def install(session: nox.Session, group: str) -> None:
     elif group == "noaws":
         session.run(*"pip install -e .[aws,dev]".split())
     elif group == "one-env":
+        session.run(
+            *"pip install git+https://github.com/laminlabs/lnschema-bionty".split()
+        )
         session.run(*"pip install -e .[aws,dev]".split())
     elif group == "hub":
         session.run(*"pip install -e .[aws,dev,hub]".split())
