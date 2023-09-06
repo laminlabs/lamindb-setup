@@ -16,7 +16,7 @@ jobs:
       matrix:
         group:
           - "unit"
-          - "docs"
+          - "two-envs"
         lamin_env:
           - "staging"
           - "prod"
@@ -78,6 +78,29 @@ jobs:
       - uses: actions/upload-artifact@v2
         with:
           name: coverage--noaws
+          path: .coverage
+
+  # a test group for testing mere storage access, not parallelized across staging & prod
+  one-env:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - uses: actions/setup-python@v4
+        with:
+          python-version: "3.9"
+          cache: "pip"
+          cache-dependency-path: ".github/workflows/build.yml"
+      - uses: aws-actions/configure-aws-credentials@v2
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: eu-central-1
+      - run: pip install -U laminci
+      - run: nox -s "install(group='one-env')"
+      - run: nox -s "build(lamin_env='prod', group='one-env')"
+      - uses: actions/upload-artifact@v2
+        with:
+          name: coverage--one-env
           path: .coverage
 
   # a test group for testing low-level hub functionality
