@@ -95,6 +95,7 @@ def login(
         logger.success(f"logged in with email {user_settings.email} and id {user_id}")
     user_settings = UserSettings(
         id=user_id,
+        email=user_settings.email,
         handle=user_handle,
         name=user_name,
         uuid=user_uuid,
