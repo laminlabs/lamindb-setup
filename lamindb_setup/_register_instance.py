@@ -18,7 +18,10 @@ def register():
         schema=isettings._schema_str,
     )
     if not isinstance(result, UUID):
-        raise RuntimeError(f"Registering instance on hub failed:\n{result}")
+        if result == "error-db-already-exists":
+            logger.warning("DB already exists")
+        else:
+            raise RuntimeError(f"Registering instance on hub failed:\n{result}")
     else:
         logger.save(f"instance registered: https://lamin.ai/{isettings.identifier}")
         isettings._id = result

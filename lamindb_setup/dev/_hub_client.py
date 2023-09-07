@@ -1,3 +1,4 @@
+# see the overlap with connector.py in laminhub-rest
 import os
 from typing import Optional
 from urllib.request import urlretrieve
@@ -28,8 +29,6 @@ class Environment:
         lamin_env = os.getenv("LAMIN_ENV")
         if lamin_env is None:
             lamin_env = "prod"
-        self.lamin_env: str = lamin_env
-
         if lamin_env in {"prod", "staging"}:
             connector = load_connector()
             supabase_api_url = connector.url
@@ -38,6 +37,7 @@ class Environment:
             supabase_api_url = os.environ["SUPABASE_API_URL"]
             supabase_anon_key = os.environ["SUPABASE_ANON_KEY"]
 
+        self.lamin_env: str = lamin_env
         self.supabase_api_url: str = supabase_api_url
         self.supabase_anon_key: str = supabase_anon_key
 

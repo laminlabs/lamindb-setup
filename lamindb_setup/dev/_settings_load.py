@@ -72,4 +72,5 @@ def setup_user_from_store(store: UserSettingsStore) -> UserSettings:
     settings.id = store.id
     settings.handle = store.handle if store.handle != "null" else None
     settings.name = store.name if store.name != "null" else None
+    settings.uuid = UUID(store.uuid) if store.uuid != "null" else None
     return settings
