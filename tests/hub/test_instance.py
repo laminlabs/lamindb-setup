@@ -53,8 +53,8 @@ def instance_1(signup_testuser1, instance_name_1, s3_bucket_1):
     yield instance
 
 
-def test_connection_string(instance_1, client_current_user):
-    hub = client_current_user
+def test_connection_string(instance_1, signup_testuser1):
+    hub = signup_testuser1
     db_user = sb_select_db_user_by_instance(
         instance_id=instance_1["id"],
         supabase_client=hub,
@@ -74,13 +74,13 @@ def test_connection_string(instance_1, client_current_user):
     assert db_collaborator["db_user_id"] == db_user["id"]
 
 
-def test_load_instance(instance_1, client_current_user):
+def test_load_instance(instance_1, signup_testuser1):
     result = load_instance(
         owner="testuser1",
         name=instance_1["name"],
         _access_token=ln_setup.settings.user.access_token,
     )
-    hub = client_current_user
+    hub = signup_testuser1
     db_user = sb_select_db_user_by_instance(
         instance_id=instance_1["id"],
         supabase_client=hub,
