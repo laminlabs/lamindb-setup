@@ -12,10 +12,8 @@ COVERAGE_ARGS = "--cov=lamindb_setup --cov-append --cov-report=term-missing"
 def get_local_env() -> Dict[str, str]:
     env = {
         "LAMIN_ENV": "local",
-        "POSTGRES_DSN": os.environ["DB_URL"].replace('"', ""),
         "SUPABASE_API_URL": os.environ["API_URL"].replace('"', ""),
         "SUPABASE_ANON_KEY": os.environ["ANON_KEY"].replace('"', ""),
-        "SUPABASE_SERVICE_ROLE_KEY": os.environ["SERVICE_ROLE_KEY"].replace('"', ""),
     }
     return env
 
