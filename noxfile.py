@@ -98,7 +98,7 @@ def hub(session: nox.Session):
     )
     # the -n 1 is to ensure that supabase thread exits properly
     session.run(
-        *f"pytest {COVERAGE_ARGS} ./tests/hub".split(),
+        *f"pytest -n 1 {COVERAGE_ARGS} ./tests/hub".split(),
         env=env,
     )
 
