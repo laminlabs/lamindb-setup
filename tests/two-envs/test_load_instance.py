@@ -1,7 +1,6 @@
 import os
 
 import pytest
-from laminhub_rest.routers.account import get_account_by_handle
 from laminhub_rest.routers.collaborator import delete_collaborator
 from laminhub_rest.routers.instance import add_collaborator
 
@@ -45,11 +44,10 @@ def test_load_after_revoked_access():
             "https://lamin.ai/static-testuser1/static-testinstance1", _test=True
         )
         assert ln_setup.settings.instance.storage.root_as_str == "s3://lndb-setup-ci"
-        account = get_account_by_handle("static-testuser2")
         delete_collaborator(
             "static-testuser1",
             "static-testinstance1",
-            account["id"],
+            ln_setup.user.settings.uuid,
             f"Bearer {admin_token}",
         )
         with pytest.raises(RuntimeError) as error:
