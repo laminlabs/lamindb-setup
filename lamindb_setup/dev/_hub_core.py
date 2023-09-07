@@ -4,7 +4,6 @@ from uuid import UUID, uuid4
 
 from lamin_utils import logger
 from postgrest.exceptions import APIError
-
 from ._hub_client import connect_hub, connect_hub_with_auth
 from ._hub_crud import (
     sb_insert_collaborator,
@@ -75,7 +74,6 @@ def add_storage(
 
 def init_instance(
     *,
-    owner: str,  # owner handle
     name: str,  # instance name
     storage: str,  # storage location on cloud
     db: Optional[str] = None,  # str has to be postgresdsn (use pydantic in the future)
@@ -245,7 +243,12 @@ def sign_up_hub(email) -> Union[str, Tuple[str, str, str]]:
         sign_up_kwargs["options"] = {
             "redirect_to": f"{get_lamin_site_base_url()}/signup"
         }
-    auth_response = hub.auth.sign_up(sign_up_kwargs)
+    try:
+        # the only case we know when this errors is when the user already exists
+        auth_response = hub.auth.sign_up(sign_up_kwargs)
+    except Exception as e:
+        logger.error(e)
+        return "user-exists"
     user = auth_response.user
     # if user already exists a fake user object without identity is returned
     if auth_response.user.identities:
@@ -274,9 +277,10 @@ def sign_up_hub(email) -> Union[str, Tuple[str, str, str]]:
         return (
             password,
             auth_response.session.user.id,
-            auth_response.session.user.access_token,
+            auth_response.session.access_token,
         )
     else:
+        logger.error("user already exists! please login instead: `lamin login`")
         return "user-exists"
 
 

@@ -11,9 +11,10 @@ COVERAGE_ARGS = "--cov=lamindb_setup --cov-append --cov-report=term-missing"
 def get_local_env() -> Dict[str, str]:
     supabase_api_url = "http://localhost:54321"
     with open("anon_key") as f:
-        supabase_anon_key = f.readline()
+        supabase_anon_key = f.readline().strip()
     env = {
         "LAMIN_ENV": "local",
+        "POSTGRES_DSN": "postgresql://postgres:postgres@localhost:54322/postgres",
         "SUPABASE_API_URL": supabase_api_url,
         "SUPABASE_ANON_KEY": supabase_anon_key,
     }
@@ -83,18 +84,23 @@ def build(session: nox.Session, group: str, lamin_env: str):
             env=env,
         )
         session.run(*f"pytest -s {COVERAGE_ARGS} ./docs/two-envs".split(), env=env)
-    elif group == "hub":
-        # only run for local environment
-        assert lamin_env == "local"
-        env = get_local_env()
-        with session.chdir("./laminhub-rest"):
-            session.run(*"lnhub alembic upgrade head".split(), env=env)
-        session.run(*"cp laminhub-rest/tests/conftest.py tests/".split())
-        # the -n 1 is to ensure that supabase thread exits properly
-        session.run(
-            *f"pytest -n 1 {COVERAGE_ARGS} ./tests/hub".split(),
-            env=env,
-        )
+
+
+@nox.session
+def hub(session: nox.Session):
+    # only run for local environment
+    env = get_local_env()
+    laminhub_rest_path = "./"  # locally used /Users/falexwolf/repos/
+    with session.chdir(f"{laminhub_rest_path}laminhub-rest/"):
+        session.run(*"lnhub alembic upgrade head".split(), env=env)
+    session.run(
+        *f"cp {laminhub_rest_path}laminhub-rest/tests/conftest.py tests/".split()
+    )
+    # the -n 1 is to ensure that supabase thread exits properly
+    session.run(
+        *f"pytest {COVERAGE_ARGS} ./tests/hub".split(),
+        env=env,
+    )
 
 
 @nox.session

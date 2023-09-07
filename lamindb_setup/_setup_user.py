@@ -18,7 +18,6 @@ def signup(email: str) -> Union[str, None]:
 
     result_or_error = sign_up_hub(email)
     if result_or_error == "user-exists":  # user already exists
-        logger.error("user already exists! please login instead: `lamin login`")
         return "user-exists"
     user_settings = UserSettings(
         email=email,

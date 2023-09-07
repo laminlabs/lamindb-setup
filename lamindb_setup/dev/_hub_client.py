@@ -35,9 +35,8 @@ class Environment:
             supabase_api_url = connector.url
             supabase_anon_key = connector.key
         else:
-            supabase_api_url = "http://localhost:54321"
-            with open("anon_key") as f:
-                supabase_anon_key = f.readline()
+            supabase_api_url = os.environ["SUPABASE_API_URL"]
+            supabase_anon_key = os.environ["SUPABASE_ANON_KEY"]
 
         self.lamin_env: str = lamin_env
         self.supabase_api_url: str = supabase_api_url
@@ -64,9 +63,7 @@ def connect_hub_with_auth(
 
             email = settings.user.email
             password = settings.user.password
-        access_token = get_access_token(
-            email=settings.user.email, password=settings.user.password
-        )
+        access_token = get_access_token(email=email, password=password)
     hub.postgrest.auth(access_token)
     return hub
 

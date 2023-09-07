@@ -178,7 +178,6 @@ def init(
 
     if isettings.is_remote:
         result = init_instance_hub(
-            owner=owner,
             name=name_str,
             storage=str(storage),
             db=db,

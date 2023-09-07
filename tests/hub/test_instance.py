@@ -22,37 +22,29 @@ def s3_bucket_1():
 
 @pytest.fixture(scope="session")
 def signup_testuser1():
-    email, password = "testuser1@gmail.com", "password"
+    email = "testuser1@gmail.com"
     ln_setup.signup(email)
+    account_id = ln_setup.settings.user.uuid.hex
     account = {
-        "handle": "testuser1",
-        "email": email,
-        "password": ln_setup.settings.user.password,
-        "id": ln_setup.settings.user.uuid,
+        "id": account_id,
+        "user_id": account_id,
         "lnid": base62(8),
+        "handle": "testuser1",
     }
-    hub = connect_hub_with_auth(email=email, password=password)
-    try:
-        hub.table("account").insert(account).execute()
-    finally:
-        hub.auth.sign_out()
-
-
-@pytest.fixture()
-def client_current_user():
-    hub = connect_hub_with_auth(ln_setup.settings.user.access_token)
+    hub = connect_hub_with_auth(access_token=ln_setup.settings.user.access_token)
+    hub.table("account").insert(account).execute()
     yield hub
     hub.auth.sign_out()
 
 
 @pytest.fixture(scope="session")
-def instance_1(signup_testuser1, instance_name_1, s3_bucket_1, client_current_user):
+def instance_1(signup_testuser1, instance_name_1, s3_bucket_1):
     init_instance(
         name=instance_name_1,
         storage=f"s3://{s3_bucket_1}",
         db=db_name(instance_name_1),
     )
-    hub = client_current_user
+    hub = signup_testuser1
     instance = sb_select_instance_by_name(
         account_id=ln_setup.settings.user.uuid,
         name=instance_name_1,
@@ -64,7 +56,7 @@ def instance_1(signup_testuser1, instance_name_1, s3_bucket_1, client_current_us
 def test_connection_string(instance_1, client_current_user):
     hub = client_current_user
     db_user = sb_select_db_user_by_instance(
-        instance_id=ln_setup.settings.user.uuid,
+        instance_id=instance_1["id"],
         supabase_client=hub,
     )
     assert instance_1["db_scheme"] == "postgresql"
