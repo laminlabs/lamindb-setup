@@ -136,7 +136,6 @@ jobs:
           # locally, I cannot exclude kong & inbucket
           # supabase status -o env >> $GITHUB_ENV keeps failing when excluding most containers as done above
       - run: nox -s hub
-      - run: ls /var/lib/docker
       - uses: actions/upload-artifact@v2
         with:
           name: coverage--hub
