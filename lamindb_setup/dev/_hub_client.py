@@ -5,8 +5,9 @@ from urllib.request import urlretrieve
 
 from lamin_utils import logger
 from pydantic import BaseSettings
-from supabase import create_client
 from supabase.lib.client_options import ClientOptions
+
+from supabase import create_client
 
 
 class Connector(BaseSettings):
@@ -34,8 +35,9 @@ class Environment:
             supabase_api_url = connector.url
             supabase_anon_key = connector.key
         else:
-            supabase_api_url = os.environ["SUPABASE_API_URL"]
-            supabase_anon_key = os.environ["SUPABASE_ANON_KEY"]
+            supabase_api_url = "http://localhost:54321"
+            with open("anon_key") as f:
+                supabase_anon_key = f.readline()
 
         self.lamin_env: str = lamin_env
         self.supabase_api_url: str = supabase_api_url
