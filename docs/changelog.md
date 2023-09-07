@@ -3,6 +3,7 @@
 <!-- prettier-ignore -->
 Name | PR | Developer | Date | Version
 --- | --- | --- | --- | ---
+♻️ Refactor hub client | [508](https://github.com/laminlabs/lamindb-setup/pull/508) | [falexwolf](https://github.com/falexwolf) | 2023-09-07 |
 ♻️ Cache user UUID | [507](https://github.com/laminlabs/lamindb-setup/pull/507) | [falexwolf](https://github.com/falexwolf) | 2023-09-06 |
 ♻️ Type instance id as UUID | [506](https://github.com/laminlabs/lamindb-setup/pull/506) | [falexwolf](https://github.com/falexwolf) | 2023-09-06 |
 ✅ Test implicit lamindb load | [503](https://github.com/laminlabs/lamindb-setup/pull/503) | [falexwolf](https://github.com/falexwolf) | 2023-09-06 |
