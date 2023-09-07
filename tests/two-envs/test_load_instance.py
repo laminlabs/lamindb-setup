@@ -47,7 +47,7 @@ def test_load_after_revoked_access():
         delete_collaborator(
             "static-testuser1",
             "static-testinstance1",
-            ln_setup.user.settings.uuid,
+            ln_setup.settings.user.uuid,
             f"Bearer {admin_token}",
         )
         with pytest.raises(RuntimeError) as error:
