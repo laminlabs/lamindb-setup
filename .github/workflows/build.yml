@@ -127,7 +127,7 @@ jobs:
       - run: nox -s "install(group='hub')"
       - uses: supabase/setup-cli@v1
       - run: |
-          supabase start -x realtime,storage-api,imgproxy,inbucket,pgadmin-schema-diff,migra,postgres-meta,studio,edge-runtime,logflare,vector,pgbouncer
+          supabase start -x realtime,storage-api,imgproxy,pgadmin-schema-diff,migra,postgres-meta,studio,edge-runtime,logflare,vector,pgbouncer
           echo "$(supabase status -o env)" >> $GITHUB_ENV
       - run: nox -s "build(lamin_env='local', group='hub')"
       - uses: actions/upload-artifact@v2
