@@ -80,8 +80,6 @@ def init_instance(
     storage: str,  # storage location on cloud
     db: Optional[str] = None,  # str has to be postgresdsn (use pydantic in the future)
     schema: Optional[str] = None,  # comma-separated list of schema names
-    description: Optional[str] = None,
-    public: Optional[bool] = None,
     # replace with token-based approach!
     _email: Optional[str] = None,
     _password: Optional[str] = None,
@@ -140,8 +138,7 @@ def init_instance(
                     "db_port": db_dsn.db.port,
                     "db_database": db_dsn.db.database,
                     "schema_str": schema_str,
-                    "public": False if public is None else public,
-                    "description": description,
+                    "public": False,
                 },
                 hub,
             )
@@ -162,10 +159,8 @@ def init_instance(
                     "account_id": account["id"],
                     "name": name,
                     "storage_id": storage_id,
-                    "db": db,
                     "schema_str": schema_str,
-                    "public": False if public is None else public,
-                    "description": description,
+                    "public": False,
                 },
                 hub,
             )
