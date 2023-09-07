@@ -132,9 +132,9 @@ jobs:
           key: cache-supabase
       - uses: supabase/setup-cli@v1
       - run: |
-          # locally, I cannot exclude kong & inbucket
           supabase start -x realtime,storage-api,imgproxy,kong,inbucket,pgadmin-schema-diff,migra,postgres-meta,studio,edge-runtime,logflare,vector,pgbouncer | grep 'anon key'|cut -f2 -d ":" | sed -e 's/^[[:space:]]*//' > anon_key
-          # supabase status keeps failing when excluding most containers
+          # locally, I cannot exclude kong & inbucket
+          # supabase status -o env >> $GITHUB_ENV keeps failing when excluding most containers as done above
       - run: nox -s "build(lamin_env='local', group='hub')"
       - uses: actions/upload-artifact@v2
         with:

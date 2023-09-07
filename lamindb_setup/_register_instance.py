@@ -11,7 +11,6 @@ def register():
 
     isettings = settings.instance
     result = init_instance_hub(
-        owner=isettings.owner,
         name=isettings.name,
         storage=isettings.storage.root_as_str,
         db=isettings.db if isettings.dialect != "sqlite" else None,
