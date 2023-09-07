@@ -23,11 +23,11 @@ def s3_bucket_1():
 @pytest.fixture(scope="session")
 def signup_testuser1():
     email, password = "testuser1@gmail.com", "password"
-    ln_setup.signup(email, password=password)
+    ln_setup.signup(email)
     account = {
         "handle": "testuser1",
         "email": email,
-        "password": password,
+        "password": ln_setup.settings.user.password,
         "id": ln_setup.settings.user.uuid,
         "lnid": base62(8),
     }
