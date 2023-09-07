@@ -4,7 +4,6 @@ from uuid import UUID, uuid4
 
 from lamin_utils import logger
 from postgrest.exceptions import APIError
-
 from ._hub_client import connect_hub, connect_hub_with_auth
 from ._hub_crud import (
     sb_insert_collaborator,
@@ -33,16 +32,13 @@ from ._settings_store import user_settings_file_email
 
 
 def add_storage(
-    root: str, account_handle: str, _access_token: Optional[str] = None
+    root: str, account_id: UUID, _access_token: Optional[str] = None
 ) -> Tuple[Optional[UUID], Optional[str]]:
     from botocore.exceptions import ClientError
 
     hub = connect_hub_with_auth(access_token=_access_token)
     try:
         validate_storage_root_arg(root)
-        # get account
-        account = sb_select_account_by_handle(account_handle, hub)
-
         # check if storage exists already
         storage = sb_select_storage_by_root(root, hub)
         if storage is not None:
@@ -54,7 +50,7 @@ def add_storage(
             {
                 "id": uuid4().hex,
                 "lnid": base62(8),
-                "created_by": account["id"],
+                "created_by": account_id.hex,
                 "root": root,
                 "region": storage_region,
                 "type": storage_type,
@@ -75,13 +71,10 @@ def add_storage(
 
 def init_instance(
     *,
-    owner: str,  # owner handle
     name: str,  # instance name
     storage: str,  # storage location on cloud
     db: Optional[str] = None,  # str has to be postgresdsn (use pydantic in the future)
     schema: Optional[str] = None,  # comma-separated list of schema names
-    description: Optional[str] = None,
-    public: Optional[bool] = None,
     # replace with token-based approach!
     _email: Optional[str] = None,
     _password: Optional[str] = None,
@@ -90,48 +83,50 @@ def init_instance(
     hub = connect_hub_with_auth(
         email=_email, password=_password, access_token=_access_token
     )
+    from .._settings import settings
+
+    usettings = settings.user
     try:
         # validate input arguments
         schema_str = validate_schema_arg(schema)
         # storage is validated in add_storage
         validate_db_arg(db)
 
-        if db is not None:
-            db_dsn = LaminDsnModel(db=db)
-        else:
-            db_dsn = None
-
-        # get account
-        account = sb_select_account_by_handle(owner, hub)
-        if account is None:
-            return "error-account-not-exists"
-
         # get storage and add if not yet there
         storage_root = storage.rstrip("/")  # current fix because of upath migration
         storage_id, message = add_storage(
-            storage_root, account_handle=account["handle"], _access_token=_access_token
+            storage_root, account_id=usettings.uuid, _access_token=_access_token
         )
         if message is not None:
             return "error-" + message
         assert storage_id is not None
 
-        instance = sb_select_instance_by_name(account["id"], name, hub)
+        instance = sb_select_instance_by_name(usettings.uuid, name, hub)
         if instance is not None:
             return UUID(instance["id"])
 
-        validate_unique_sqlite(
-            hub=hub, db=db, storage_id=storage_id, name=name, account=account
-        )
-
         instance_id = uuid4()
         db_user_id = None
-
-        if db_dsn is not None:
-            db_user_id = uuid4().hex
-            instance = sb_insert_instance(  # noqa
+        if db is None:
+            validate_unique_sqlite(hub=hub, storage_id=storage_id, name=name)
+            sb_insert_instance(
                 {
                     "id": instance_id.hex,
-                    "account_id": account["id"],
+                    "account_id": usettings.uuid.hex,
+                    "name": name,
+                    "storage_id": storage_id,
+                    "schema_str": schema_str,
+                    "public": False,
+                },
+                hub,
+            )
+        else:
+            db_dsn = LaminDsnModel(db=db)
+            db_user_id = uuid4().hex
+            sb_insert_instance(
+                {
+                    "id": instance_id.hex,
+                    "account_id": usettings.uuid.hex,
                     "name": name,
                     "storage_id": storage_id,
                     "db": db,
@@ -140,13 +135,11 @@ def init_instance(
                     "db_port": db_dsn.db.port,
                     "db_database": db_dsn.db.database,
                     "schema_str": schema_str,
-                    "public": False if public is None else public,
-                    "description": description,
+                    "public": False,
                 },
                 hub,
             )
-
-            sb_insert_db_user(  # noqa
+            sb_insert_db_user(
                 {
                     "id": db_user_id,
                     "instance_id": instance_id.hex,
@@ -155,25 +148,10 @@ def init_instance(
                 },
                 hub,
             )
-        else:
-            sb_insert_instance(
-                {
-                    "id": instance_id.hex,
-                    "account_id": account["id"],
-                    "name": name,
-                    "storage_id": storage_id,
-                    "db": db,
-                    "schema_str": schema_str,
-                    "public": False if public is None else public,
-                    "description": description,
-                },
-                hub,
-            )
-
         sb_insert_collaborator(
             {
                 "instance_id": instance_id.hex,
-                "account_id": account["user_id"],
+                "account_id": usettings.uuid.hex,
                 "db_user_id": db_user_id,
                 "role": "admin",
             },
@@ -254,7 +232,7 @@ def get_lamin_site_base_url():
     return "https://lamin.ai"
 
 
-def sign_up_hub(email) -> str:
+def sign_up_hub(email) -> Union[str, Tuple[str, str, str]]:
     hub = connect_hub()
     password = secret()  # generate new password
     sign_up_kwargs = {"email": email, "password": password}
@@ -262,7 +240,12 @@ def sign_up_hub(email) -> str:
         sign_up_kwargs["options"] = {
             "redirect_to": f"{get_lamin_site_base_url()}/signup"
         }
-    auth_response = hub.auth.sign_up(sign_up_kwargs)
+    try:
+        # the only case we know when this errors is when the user already exists
+        auth_response = hub.auth.sign_up(sign_up_kwargs)
+    except Exception as e:
+        logger.error(e)
+        return "user-exists"
     user = auth_response.user
     # if user already exists a fake user object without identity is returned
     if auth_response.user.identities:
@@ -270,15 +253,16 @@ def sign_up_hub(email) -> str:
         # the user has an identity with a wrong ID
         # we can check for it by comparing time stamps
         # see design note uL8Sjht0y4qg
-        diff = user.confirmation_sent_at - user.identities[0].last_sign_in_at
-        if (
-            diff.total_seconds() > 0.1
-        ):  # the first time, this is on the order of microseconds
-            raise RuntimeError(
-                "It seems you already signed up with this email. Please click on the"
-                " link in the confirmation email that you should have received from"
-                " lamin.ai."
-            )
+        if user.confirmation_sent_at is not None:  # is None in local client
+            diff = user.confirmation_sent_at - user.identities[0].last_sign_in_at
+            if (
+                diff.total_seconds() > 0.1
+            ):  # the first time, this is on the order of microseconds
+                raise RuntimeError(
+                    "It seems you already signed up with this email. Please click on"
+                    " the link in the confirmation email that you should have received"
+                    " from lamin.ai."
+                )
         logger.info(
             "Please *confirm* the sign-up email. After that, login with `lamin login"
             f" {email}`!\n\n"
@@ -287,8 +271,13 @@ def sign_up_hub(email) -> str:
             "Going forward, credentials are auto-loaded! "  # noqa
             "In case of loss, recover your password via email: https://lamin.ai"
         )
-        return password
+        return (
+            password,
+            auth_response.session.user.id,
+            auth_response.session.access_token,
+        )
     else:
+        logger.error("user already exists! please login instead: `lamin login`")
         return "user-exists"
 
 

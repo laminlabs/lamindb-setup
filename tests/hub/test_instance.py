@@ -1,12 +1,14 @@
 import pytest
 
+import lamindb_setup as ln_setup
+from lamindb_setup.dev._hub_client import connect_hub_with_auth
 from lamindb_setup.dev._hub_core import init_instance, load_instance
 from lamindb_setup.dev._hub_crud import (
     sb_select_collaborator,
     sb_select_db_user_by_instance,
     sb_select_instance_by_name,
 )
-from lamindb_setup.dev._hub_utils import LaminDsn
+from lamindb_setup.dev._hub_utils import LaminDsn, base62
 
 
 def db_name(test_instance_name):
@@ -19,51 +21,69 @@ def s3_bucket_1():
 
 
 @pytest.fixture(scope="session")
-def instance_1(auth_1, instance_name_1, user_account_1, account_hub_1, s3_bucket_1):
+def signup_testuser1():
+    email = "testuser1@gmail.com"
+    ln_setup.signup(email)
+    account_id = ln_setup.settings.user.uuid.hex
+    account = {
+        "id": account_id,
+        "user_id": account_id,
+        "lnid": base62(8),
+        "handle": "testuser1",
+    }
+    hub = connect_hub_with_auth(access_token=ln_setup.settings.user.access_token)
+    hub.table("account").insert(account).execute()
+    yield hub
+    hub.auth.sign_out()
+
+
+@pytest.fixture(scope="session")
+def instance_1(signup_testuser1, instance_name_1, s3_bucket_1):
     init_instance(
-        owner=auth_1["handle"],
         name=instance_name_1,
         storage=f"s3://{s3_bucket_1}",
         db=db_name(instance_name_1),
-        _access_token=auth_1["access_token"],
     )
+    hub = signup_testuser1
     instance = sb_select_instance_by_name(
-        account_id=user_account_1["id"],
+        account_id=ln_setup.settings.user.uuid,
         name=instance_name_1,
-        supabase_client=account_hub_1,
+        supabase_client=hub,
     )
-    return instance
+    yield instance
 
 
-def test_connection_string(account_hub_1, instance_1, instance_name_1, user_account_1):
+def test_connection_string(instance_1, signup_testuser1):
+    hub = signup_testuser1
     db_user = sb_select_db_user_by_instance(
         instance_id=instance_1["id"],
-        supabase_client=account_hub_1,
+        supabase_client=hub,
     )
     assert instance_1["db_scheme"] == "postgresql"
     assert instance_1["db_host"] == "fakeserver.xyz"
     assert instance_1["db_port"] == 5432
-    assert instance_1["db_database"] == instance_name_1
+    assert instance_1["db_database"] == instance_1["name"]
     assert db_user["db_user_name"] == "postgres"
     assert db_user["db_user_password"] == "pwd"
 
     db_collaborator = sb_select_collaborator(
         instance_id=instance_1["id"],
-        account_id=user_account_1["id"],
-        supabase_client=account_hub_1,
+        account_id=ln_setup.settings.user.uuid.hex,
+        supabase_client=hub,
     )
     assert db_collaborator["db_user_id"] == db_user["id"]
 
 
-def test_load_instance(auth_1, instance_1, account_hub_1):
+def test_load_instance(instance_1, signup_testuser1):
     result = load_instance(
-        owner=auth_1["handle"],
+        owner="testuser1",
         name=instance_1["name"],
-        _access_token=auth_1["access_token"],
+        _access_token=ln_setup.settings.user.access_token,
     )
+    hub = signup_testuser1
     db_user = sb_select_db_user_by_instance(
         instance_id=instance_1["id"],
-        supabase_client=account_hub_1,
+        supabase_client=hub,
     )
     expected_dsn = LaminDsn.build(
         scheme=instance_1["db_scheme"],

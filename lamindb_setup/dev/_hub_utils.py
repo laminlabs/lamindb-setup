@@ -1,7 +1,7 @@
 import secrets
 import string
 from pathlib import Path
-from typing import Mapping, Optional, Union
+from typing import Optional, Union
 from uuid import UUID
 
 from pydantic import BaseModel, validator
@@ -37,34 +37,37 @@ def validate_db_arg(db: Optional[str]) -> None:
 
 
 def validate_unique_sqlite(
-    *, hub, db: Optional[str], storage_id: UUID, name: str, account: Mapping
+    *,
+    hub,
+    storage_id: UUID,
+    name: str,
 ) -> None:
     # if a remote sqlite instance, make sure there is no other instance
     # that has the same name and storage location
-    if db is None:  # remote sqlite instance
-        instances = (
-            hub.table("instance")
+    instances = (
+        hub.table("instance")
+        .select("*")
+        .eq("storage_id", storage_id)
+        .eq("name", name)
+        .execute()
+        .data
+    )
+    if len(instances) > 0:
+        # retrieve account owning the first instance
+        accounts = (
+            hub.table("account")
             .select("*")
-            .eq("storage_id", storage_id)
-            .eq("name", name)
+            .eq("id", instances[0]["account_id"])
             .execute()
             .data
         )
-        if len(instances) > 0:
-            # retrieve account owning the first instance
-            accounts = (
-                hub.table("account")
-                .select("*")
-                .eq("id", instances[0]["account_id"])
-                .execute()
-                .data
-            )
-            raise RuntimeError(
-                "\nThere is already an sqlite instance with the same name and storage"
-                f" location from account {accounts[0]['handle']}\nTwo sqlite instances"
-                " with the same name and the same storage cannot exist\nFix: "
-                f"Choose another name or load instance {accounts[0]['handle']}/{name}\n"
-            )
+        raise RuntimeError(
+            "\nThere is already an sqlite instance with the same name and storage"
+            f" location from account {accounts[0]['handle']}\nTwo sqlite instances with"
+            " the same name and the same storage cannot exist\nFix: Choose another"
+            f" name or load instance {accounts[0]['handle']}/{name}\nFor reference: the"
+            f" instances with the same storage and name are {instances}"
+        )
 
 
 def get_storage_region(storage_root: Union[str, Path, UPath]) -> Optional[str]:

@@ -11,7 +11,7 @@ def s3_bucket_1():
 def test_add_storage(user_account_1, auth_1, s3_bucket_1):
     storage_id, message = add_storage(
         root=f"s3://{s3_bucket_1}",
-        account_handle=user_account_1["handle"],
+        account_id=user_account_1["id"],
         _access_token=auth_1["access_token"],
     )
 
@@ -25,7 +25,7 @@ def test_add_storage_with_non_existing_bucket(auth_1):
 
     storage_id, message = add_storage(
         root=non_existing_storage_root,
-        account_handle=auth_1["handle"],
+        account_id=auth_1["id"],
         _access_token=auth_1["access_token"],
     )
     assert storage_id is None

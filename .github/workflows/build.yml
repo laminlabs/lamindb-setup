@@ -125,11 +125,17 @@ jobs:
           cache-dependency-path: ".github/workflows/build.yml"
       - run: pip install -U laminci
       - run: nox -s "install(group='hub')"
+      - id: cache-supabase
+        uses: actions/cache@v3
+        with:
+          path: /var/lib/docker
+          key: cache-supabase
       - uses: supabase/setup-cli@v1
       - run: |
-          supabase start
-          echo "$(supabase status -o env)" >> $GITHUB_ENV
-      - run: nox -s "build(lamin_env='local', group='hub')"
+          supabase start -x realtime,storage-api,imgproxy,pgadmin-schema-diff,migra,postgres-meta,studio,edge-runtime,logflare,vector,pgbouncer | grep 'anon key'|cut -f2 -d ":" | sed -e 's/^[[:space:]]*//' > anon_key
+          # locally, I cannot exclude kong & inbucket
+          # supabase status -o env >> $GITHUB_ENV keeps failing when excluding most containers as done above
+      - run: nox -s hub
       - uses: actions/upload-artifact@v2
         with:
           name: coverage--hub

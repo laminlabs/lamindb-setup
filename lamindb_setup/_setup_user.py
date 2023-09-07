@@ -1,4 +1,5 @@
 from typing import Union
+from uuid import UUID
 
 from lamin_utils import logger
 
@@ -15,11 +16,15 @@ def signup(email: str) -> Union[str, None]:
     """Sign up user."""
     from .dev._hub_core import sign_up_hub
 
-    password_or_error = sign_up_hub(email)
-    if password_or_error == "user-exists":  # user already exists
-        logger.error("user already exists! please login instead: `lamin login`")
+    result_or_error = sign_up_hub(email)
+    if result_or_error == "user-exists":  # user already exists
         return "user-exists"
-    user_settings = UserSettings(email=email, password=password_or_error)
+    user_settings = UserSettings(
+        email=email,
+        password=result_or_error[0],
+        uuid=UUID(result_or_error[1]),
+        access_token=result_or_error[2],
+    )
     save_user_settings(user_settings)
     return None  # user needs to confirm email now
 

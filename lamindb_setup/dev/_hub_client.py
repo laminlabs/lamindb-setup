@@ -5,8 +5,9 @@ from urllib.request import urlretrieve
 
 from lamin_utils import logger
 from pydantic import BaseSettings
-from supabase import create_client
 from supabase.lib.client_options import ClientOptions
+
+from supabase import create_client
 
 
 class Connector(BaseSettings):
@@ -62,9 +63,7 @@ def connect_hub_with_auth(
 
             email = settings.user.email
             password = settings.user.password
-        access_token = get_access_token(
-            email=settings.user.email, password=settings.user.password
-        )
+        access_token = get_access_token(email=email, password=password)
     hub.postgrest.auth(access_token)
     return hub
 
