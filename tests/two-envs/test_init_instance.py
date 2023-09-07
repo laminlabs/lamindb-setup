@@ -24,7 +24,7 @@ def get_hub_client():
     hub.auth.sign_out()
 
 
-def get_instance_and_user_from_hub(
+def get_instance_and_dbuser_from_hub(
     instance_name: str, hub: Client
 ) -> Tuple[Optional[Dict[str, str]], Optional[Dict[str, str]]]:
     assert ln_setup.settings.user.handle == "testuser2"
@@ -45,7 +45,7 @@ def get_instance_and_user_from_hub(
 def test_init_instance_postgres_default_name(get_hub_client):
     hub = get_hub_client
     instance_name = "pgtest"
-    instance, db_user = get_instance_and_user_from_hub(instance_name, hub)
+    instance, _ = get_instance_and_dbuser_from_hub(instance_name, hub)
     # if instance exists, delete it
     if instance is not None:
         sb_delete_instance(instance["id"], hub)
@@ -53,7 +53,7 @@ def test_init_instance_postgres_default_name(get_hub_client):
     ln_setup.init(storage="./mydatapg", db=pgurl, _test=True)
     ln_setup.register()
     # and check
-    instance, db_user = get_instance_and_user_from_hub(instance_name, hub)
+    instance, db_user = get_instance_and_dbuser_from_hub(instance_name, hub)
     # hub checks
     assert db_user["db_user_name"] == "postgres"
     assert db_user["db_user_password"] == "pwd"
