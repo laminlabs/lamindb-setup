@@ -1,7 +1,7 @@
 import pytest
 
 import lamindb_setup as ln_setup
-from lamindb_setup._hub_client import connect_hub_with_auth
+from lamindb_setup.dev._hub_client import connect_hub_with_auth
 from lamindb_setup.dev._hub_core import init_instance, load_instance
 from lamindb_setup.dev._hub_crud import (
     sb_select_collaborator,
