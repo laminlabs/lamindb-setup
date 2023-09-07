@@ -32,16 +32,13 @@ from ._settings_store import user_settings_file_email
 
 
 def add_storage(
-    root: str, account_handle: str, _access_token: Optional[str] = None
+    root: str, account_id: UUID, _access_token: Optional[str] = None
 ) -> Tuple[Optional[UUID], Optional[str]]:
     from botocore.exceptions import ClientError
 
     hub = connect_hub_with_auth(access_token=_access_token)
     try:
         validate_storage_root_arg(root)
-        # get account
-        account = sb_select_account_by_handle(account_handle, hub)
-
         # check if storage exists already
         storage = sb_select_storage_by_root(root, hub)
         if storage is not None:
@@ -53,7 +50,7 @@ def add_storage(
             {
                 "id": uuid4().hex,
                 "lnid": base62(8),
-                "created_by": account["id"],
+                "created_by": account_id.hex,
                 "root": root,
                 "region": storage_region,
                 "type": storage_type,
@@ -98,7 +95,7 @@ def init_instance(
         # get storage and add if not yet there
         storage_root = storage.rstrip("/")  # current fix because of upath migration
         storage_id, message = add_storage(
-            storage_root, account_handle=usettings.handle, _access_token=_access_token
+            storage_root, account_id=usettings.uuid, _access_token=_access_token
         )
         if message is not None:
             return "error-" + message
