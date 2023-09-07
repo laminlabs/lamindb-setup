@@ -1,4 +1,3 @@
-import os
 from typing import Dict
 
 import nox
@@ -10,10 +9,13 @@ COVERAGE_ARGS = "--cov=lamindb_setup --cov-append --cov-report=term-missing"
 
 # this function is duplicated across laminhub-rest and lamindb-setup
 def get_local_env() -> Dict[str, str]:
+    supabase_api_url = "http://localhost:54321"
+    with open("anon_key") as f:
+        supabase_anon_key = f.readline()
     env = {
         "LAMIN_ENV": "local",
-        "SUPABASE_API_URL": os.environ["API_URL"].replace('"', ""),
-        "SUPABASE_ANON_KEY": os.environ["ANON_KEY"].replace('"', ""),
+        "SUPABASE_API_URL": supabase_api_url,
+        "SUPABASE_ANON_KEY": supabase_anon_key,
     }
     return env
 

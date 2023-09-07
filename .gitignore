@@ -2,7 +2,8 @@
 .DS_Store
 .AppleDouble
 .LSOverride
-
+anon_key
+supabase/
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]
