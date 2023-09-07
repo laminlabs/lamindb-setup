@@ -125,9 +125,14 @@ jobs:
           cache-dependency-path: ".github/workflows/build.yml"
       - run: pip install -U laminci
       - run: nox -s "install(group='hub')"
+      - id: cache-supabase
+        uses: actions/cache@v3
+        with:
+          path: /var/lib/docker
+          key: cache-supabase
       - uses: supabase/setup-cli@v1
       - run: |
-          supabase start -x realtime,storage-api,imgproxy,pgadmin-schema-diff,migra,postgres-meta,studio,edge-runtime,logflare,vector,pgbouncer
+          supabase start -x storage-api,imgproxy,pgadmin-schema-diff,migra,postgres-meta,studio,edge-runtime,logflare,vector,pgbouncer
           echo "$(supabase status -o env)" >> $GITHUB_ENV
       - run: nox -s "build(lamin_env='local', group='hub')"
       - uses: actions/upload-artifact@v2
