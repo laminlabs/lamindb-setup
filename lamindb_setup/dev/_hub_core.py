@@ -237,7 +237,7 @@ def get_lamin_site_base_url():
     return "https://lamin.ai"
 
 
-def sign_up_hub(email) -> str:
+def sign_up_hub(email) -> Union[str, Tuple[str, str, str]]:
     hub = connect_hub()
     password = secret()  # generate new password
     sign_up_kwargs = {"email": email, "password": password}
@@ -270,7 +270,11 @@ def sign_up_hub(email) -> str:
             "Going forward, credentials are auto-loaded! "  # noqa
             "In case of loss, recover your password via email: https://lamin.ai"
         )
-        return password
+        return (
+            password,
+            auth_response.session.user.id,
+            auth_response.session.user.access_token,
+        )
     else:
         return "user-exists"
 
