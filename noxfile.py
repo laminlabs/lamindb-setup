@@ -13,10 +13,10 @@ def lint(session: nox.Session) -> None:
 @nox.session
 @nox.parametrize(
     "group",
-    ["hub-local", "one-env", "two-envs", "noaws"],
+    ["hub-local", "prod-only", "prod-staging", "noaws"],
 )
 def install(session: nox.Session, group: str) -> None:
-    if group in {"two-envs"}:
+    if group in {"prod-staging"}:
         session.run(*"pip install git+https://github.com/laminlabs/bionty".split())
         session.run(
             *"pip install --no-deps git+https://github.com/laminlabs/lnschema-bionty"
@@ -30,7 +30,7 @@ def install(session: nox.Session, group: str) -> None:
         session.run(*"pip install -e .[aws,dev]".split())
     elif group == "noaws":
         session.run(*"pip install -e .[aws,dev]".split())
-    elif group == "one-env":
+    elif group == "prod-only":
         session.run(
             *"pip install git+https://github.com/laminlabs/lnschema-bionty".split()
         )
@@ -45,7 +45,7 @@ def install(session: nox.Session, group: str) -> None:
 @nox.session
 @nox.parametrize(
     "group",
-    ["one-env", "two-envs"],
+    ["prod-only", "prod-staging"],
 )
 @nox.parametrize(
     "lamin_env",
@@ -55,18 +55,18 @@ def build(session: nox.Session, group: str, lamin_env: str):
     env = {"LAMIN_ENV": lamin_env}
     login_testuser1(session, env=env)
     login_testuser2(session, env=env)
-    if group == "one-env":
+    if group == "prod-only":
         session.run(
-            *f"pytest {COVERAGE_ARGS} ./tests/one-env".split(),
+            *f"pytest {COVERAGE_ARGS} ./tests/prod-only".split(),
             env=env,
         )
-        session.run(*f"pytest -s {COVERAGE_ARGS} ./docs/one-env".split(), env=env)
-    elif group == "two-envs":
+        session.run(*f"pytest -s {COVERAGE_ARGS} ./docs/prod-only".split(), env=env)
+    elif group == "prod-staging":
         session.run(
-            *f"pytest {COVERAGE_ARGS} ./tests/two-envs".split(),
+            *f"pytest {COVERAGE_ARGS} ./tests/prod-staging".split(),
             env=env,
         )
-        session.run(*f"pytest -s {COVERAGE_ARGS} ./docs/two-envs".split(), env=env)
+        session.run(*f"pytest -s {COVERAGE_ARGS} ./docs/prod-staging".split(), env=env)
 
 
 @nox.session

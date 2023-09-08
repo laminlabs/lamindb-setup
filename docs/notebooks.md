@@ -3,15 +3,15 @@
 ```{toctree}
 :maxdepth: 1
 
-two-envs/init-instance
-two-envs/load-instance
-two-envs/set-storage
-two-envs/schema-modules
-two-envs/edge-cases-login-init
-two-envs/multi-session
+prod-staging/init-instance
+prod-staging/load-instance
+prod-staging/set-storage
+prod-staging/schema-modules
+prod-staging/edge-cases-login-init
+prod-staging/multi-session
 
-one-env/edge-cases-login-init
-one-env/test-import-schema
-one-env/test-sqlite-sync
-one-env/test-empty-init
+prod-only/edge-cases-login-init
+prod-only/test-import-schema
+prod-only/test-sqlite-sync
+prod-only/test-empty-init
 ```

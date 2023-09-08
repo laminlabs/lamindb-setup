@@ -8,7 +8,7 @@ on:
 
 jobs:
   # just tests on production
-  one-env:
+  prod-only:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
@@ -24,21 +24,21 @@ jobs:
           aws-region: eu-central-1
       - run: pip install -U laminci
       - run: nox -s lint
-      - run: nox -s "install(group='one-env')"
-      - run: nox -s "build(lamin_env='prod', group='one-env')"
+      - run: nox -s "install(group='prod-only')"
+      - run: nox -s "build(lamin_env='prod', group='prod-only')"
       - uses: actions/upload-artifact@v2
         with:
-          name: coverage--one-env
+          name: coverage--prod-only
           path: .coverage
 
   # tests on both production and staging
-  two-envs:
+  prod-staging:
     runs-on: ubuntu-22.04
     strategy:
       fail-fast: false
       matrix:
         group:
-          - "two-envs"
+          - "prod-staging"
         lamin_env:
           - "staging"
           - "prod"
@@ -140,7 +140,7 @@ jobs:
           path: .coverage
 
   coverage:
-    needs: [one-env, two-envs, noaws, hub-local]
+    needs: [prod-only, prod-staging, noaws, hub-local]
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -163,7 +163,7 @@ jobs:
           token: ${{ secrets.CODECOV_TOKEN }}
 
   docs:
-    needs: two-envs
+    needs: prod-staging
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
