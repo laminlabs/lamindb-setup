@@ -80,10 +80,9 @@ def get_storage_region(storage_root: Union[str, Path, UPath]) -> Optional[str]:
         from botocore.exceptions import ClientError, NoCredentialsError
 
         bucket = storage_root_str.replace("s3://", "")
-
         s3_session = session.get_session()
-
         s3_client = s3_session.create_client("s3")
+        # first attempt of getting bucket metadata
         try:
             response = s3_client.head_bucket(Bucket=bucket)
             exc = None

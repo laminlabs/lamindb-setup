@@ -8,6 +8,7 @@ supabase/
 __pycache__/
 *.py[cod]
 *$py.class
+laminhub-rest/
 
 # C extensions
 *.so
@@ -103,7 +104,6 @@ ENV/
 
 # Lamin
 _build
-docs/lndb_setup.*
 lamin_sphinx
 docs/conf.py
 _docs_tmp*
