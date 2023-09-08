@@ -61,7 +61,7 @@ def create_myinstance(create_testuser1_session):  # -> Dict
         storage="s3://lndb-setup-ci",
         db="postgresql://postgres:pwd@fakeserver.xyz:5432/mydb",
     )
-    client, usettings = create_testuser1_session
+    client, _ = create_testuser1_session
     instance = sb_select_instance_by_name(
         account_id=ln_setup.settings.user.uuid,
         name="myinstance",
@@ -71,7 +71,7 @@ def create_myinstance(create_testuser1_session):  # -> Dict
 
 
 def test_connection_string_decomp(create_myinstance, create_testuser1_session):
-    client, usettings = create_testuser1_session
+    client, _ = create_testuser1_session
     db_user = sb_select_db_user_by_instance(
         instance_id=create_myinstance["id"],
         supabase_client=client,
@@ -97,7 +97,7 @@ def test_load_instance(create_myinstance, create_testuser1_session):
         name=create_myinstance["name"],
         _access_token=ln_setup.settings.user.access_token,
     )
-    client, usettings = create_testuser1_session
+    client, _ = create_testuser1_session
     db_user = sb_select_db_user_by_instance(
         instance_id=create_myinstance["id"],
         supabase_client=client,
@@ -127,13 +127,12 @@ def test_add_storage(create_testuser1_session):
 
 
 def test_add_storage_with_non_existing_bucket(create_testuser1_session):
-    non_existing_storage_root = "s3://non_existing_storage_root"
     _, usettings = create_testuser1_session
     from botocore.exceptions import ClientError
 
     with pytest.raises(ClientError) as error:
         add_storage(
-            root=non_existing_storage_root,
+            root="s3://non_existing_storage_root",
             account_id=usettings.uuid,
             _access_token=usettings.access_token,
         )

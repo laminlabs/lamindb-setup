@@ -90,6 +90,9 @@ def get_storage_region(storage_root: Union[str, Path, UPath]) -> Optional[str]:
         storage_region = response["ResponseMetadata"].get("HTTPHeaders", {})[
             "x-amz-bucket-region"
         ]
+        # if we want to except botcore.exceptions.ClientError to reformat an
+        # error message, this is how to do test for the "NoSuchBucket" error:
+        #     exc.response["Error"]["Code"] == "NoSuchBucket"
     else:
         storage_region = None
     return storage_region
@@ -99,6 +102,7 @@ def validate_storage_root_arg(storage_root: str) -> None:
     if storage_root.endswith("/"):
         raise ValueError("Pass settings.storage.root_as_str rather than path")
     if storage_root.startswith(("gs://", "s3://")):
+        # check for existence happens in get_storage_region
         return None
     else:  # local path
         try:

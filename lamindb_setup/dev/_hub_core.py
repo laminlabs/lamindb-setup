@@ -33,16 +33,18 @@ from ._settings_store import user_settings_file_email
 
 def add_storage(
     root: str, account_id: UUID, _access_token: Optional[str] = None
-) -> Tuple[Optional[UUID], Optional[str]]:
-    from botocore.exceptions import ClientError
-
+) -> UUID:
     hub = connect_hub_with_auth(access_token=_access_token)
     try:
+        # unlike storage keys, storage roots are always stored without the
+        # trailing slash in the SQL database
+        root = root.rstrip("/")
         validate_storage_root_arg(root)
         # check if storage exists already
         storage = sb_select_storage_by_root(root, hub)
         if storage is not None:
-            return storage["id"], None
+            logger.warning("storage exists already")
+            return UUID(storage["id"])
 
         storage_region = get_storage_region(root)
         storage_type = get_storage_type(root)
@@ -57,14 +59,7 @@ def add_storage(
             },
             hub,
         )
-        assert storage is not None
-
-        return storage["id"], None
-    except ClientError as exception:
-        if exception.response["Error"]["Code"] == "NoSuchBucket":
-            return None, "bucket-does-not-exists"
-        else:
-            return None, exception.response["Error"]["Message"]
+        return UUID(storage["id"])
     finally:
         hub.auth.sign_out()
 
@@ -93,14 +88,9 @@ def init_instance(
         validate_db_arg(db)
 
         # get storage and add if not yet there
-        storage_root = storage.rstrip("/")  # current fix because of upath migration
-        storage_id, message = add_storage(
-            storage_root, account_id=usettings.uuid, _access_token=_access_token
+        storage_id = add_storage(
+            storage, account_id=usettings.uuid, _access_token=_access_token
         )
-        if message is not None:
-            return "error-" + message
-        assert storage_id is not None
-
         instance = sb_select_instance_by_name(usettings.uuid, name, hub)
         if instance is not None:
             return UUID(instance["id"])
@@ -114,7 +104,7 @@ def init_instance(
                     "id": instance_id.hex,
                     "account_id": usettings.uuid.hex,
                     "name": name,
-                    "storage_id": storage_id,
+                    "storage_id": storage_id.hex,
                     "schema_str": schema_str,
                     "public": False,
                 },
@@ -128,7 +118,7 @@ def init_instance(
                     "id": instance_id.hex,
                     "account_id": usettings.uuid.hex,
                     "name": name,
-                    "storage_id": storage_id,
+                    "storage_id": storage_id.hex,
                     "db": db,
                     "db_scheme": db_dsn.db.scheme,
                     "db_host": db_dsn.db.host,
