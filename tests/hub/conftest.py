@@ -7,8 +7,9 @@ import os
 #
 def create_and_set_local_supabase_env():
     start_supabase = """supabase start -x realtime,storage-api,imgproxy,pgadmin-schema-diff,migra,postgres-meta,studio,edge-runtime,logflare,vector,pgbouncer"""  # noqa
-    # unfortuantely, supabase status -o env does not work with
-    # a reduced number of containers, hence, we need this ugly regex
+    # unfortunately, supabase status -o env does not work with
+    # a reduced number of containers (running supabase CLI version 1.38.6 & 1.96.4)
+    # hence, we need this ugly regex
     get_anon_key = """grep 'anon key'|cut -f2 -d ":" | sed -e 's/^[[:space:]]*//'"""
     anon_key = getoutput(f"{start_supabase}|{get_anon_key}").split("\n")[-1]
     env = {
@@ -17,14 +18,14 @@ def create_and_set_local_supabase_env():
         "SUPABASE_API_URL": "http://localhost:54321",
         "SUPABASE_ANON_KEY": anon_key,
     }
-    # now, update the environment with these values
-    # this will not overwrite existing environment variables
-    # for the reason detailed below
+    # update environment variables with these values
     for key, value in env.items():
-        # can only set it once because this function might be called several times
-        # leading to differing output (anon_key showing a trivial message)
-        # Alex doesn't understand why it's called several times and logging
-        # doesn't indicate otherwise
+        # the following will not overwrite existing environment variables
+        # the reason is that create_and_set_local_supabase_env seems to be called
+        # multiple times; for any but the 1st time the supabase CLI is called,
+        # we see a trivial output message and cannot parse the anon_key
+        # (Alex doesn't understand why it's called several times and extensive
+        #  debugging with logging didn't yield a conclusion)
         if key not in os.environ:
             os.environ[key] = value
         else:
