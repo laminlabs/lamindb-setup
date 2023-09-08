@@ -106,13 +106,6 @@ parser.add_argument("--version", action="version", version=lamindb_version)
 args = parser.parse_args()
 
 
-def process_result(result):
-    if result in ["migrate-unnecessary", "migrate-success", "migrate-skipped", None]:
-        return None  # is interpreted as success (exit code 0) by shell
-    else:
-        return result
-
-
 def main():
     if args.command == "signup":
         from ._setup_user import signup
@@ -128,21 +121,19 @@ def main():
     elif args.command == "init":
         from ._init_instance import init
 
-        result = init(
+        return init(
             storage=args.storage,
             db=args.db,
             schema=args.schema,
             name=args.name,
         )
-        return process_result(result)
     elif args.command == "load":
         from ._load_instance import load
 
-        result = load(
+        return load(
             identifier=args.instance,
             storage=args.storage,
         )
-        return process_result(result)
     elif args.command == "close":
         from ._close import close
 
@@ -174,7 +165,6 @@ def main():
         from ._notebook import track
 
         track(args.filepath, args.pypackage)
-
     else:
         parser.print_help()
     return -1
