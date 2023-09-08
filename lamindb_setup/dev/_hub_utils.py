@@ -72,49 +72,26 @@ def validate_unique_sqlite(
 
 def get_storage_region(storage_root: Union[str, Path, UPath]) -> Optional[str]:
     storage_root_str = str(storage_root)
-    storage_region = None
-
     if storage_root_str.startswith("s3://"):
         import botocore.session as session
         from botocore.config import Config
-        from botocore.exceptions import ClientError, NoCredentialsError
+        from botocore.exceptions import NoCredentialsError
 
         bucket = storage_root_str.replace("s3://", "")
         s3_session = session.get_session()
         s3_client = s3_session.create_client("s3")
-        # first attempt of getting bucket metadata
         try:
             response = s3_client.head_bucket(Bucket=bucket)
-            exc = None
-        except Exception as e:
-            response = None
-            exc = e
-
-        if isinstance(exc, NoCredentialsError):
+        except NoCredentialsError:  # deal with anonymous access
             s3_client = s3_session.create_client(
                 "s3", config=Config(signature_version=session.UNSIGNED)
             )
-            try:
-                response = s3_client.head_bucket(Bucket=bucket)
-                exc = None
-            except Exception as e:
-                response = None
-                exc = e
-
-        if isinstance(exc, ClientError):
-            response = exc.response
-
-        if response is not None:
-            storage_region = (
-                response["ResponseMetadata"]
-                .get("HTTPHeaders", {})
-                .get("x-amz-bucket-region")
-            )
-            return storage_region
-
-        if exc is not None:
-            raise exc
-
+            response = s3_client.head_bucket(Bucket=bucket)
+        storage_region = response["ResponseMetadata"].get("HTTPHeaders", {})[
+            "x-amz-bucket-region"
+        ]
+    else:
+        storage_region = None
     return storage_region
 
 
