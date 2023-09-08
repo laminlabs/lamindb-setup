@@ -13,7 +13,7 @@ def lint(session: nox.Session) -> None:
 @nox.session
 @nox.parametrize(
     "group",
-    ["hub", "one-env", "two-envs", "noaws"],
+    ["hub-local", "one-env", "two-envs", "noaws"],
 )
 def install(session: nox.Session, group: str) -> None:
     if group in {"two-envs"}:
@@ -35,7 +35,7 @@ def install(session: nox.Session, group: str) -> None:
             *"pip install git+https://github.com/laminlabs/lnschema-bionty".split()
         )
         session.run(*"pip install -e .[aws,dev]".split())
-    elif group == "hub":
+    elif group == "hub-local":
         session.run(*"pip install -e .[aws,dev,hub]".split())
         session.run(*"pip install ./laminhub-rest[server]".split())
         # grab directories & files from laminhub-rest repo
@@ -70,9 +70,9 @@ def build(session: nox.Session, group: str, lamin_env: str):
 
 
 @nox.session
-def hub(session: nox.Session):
+def hub_local(session: nox.Session):
     # the -n 1 is to ensure that supabase thread exits properly
-    session.run(*f"pytest -n 1 {COVERAGE_ARGS} ./tests/hub".split())
+    session.run(*f"pytest -n 1 {COVERAGE_ARGS} ./tests/hub-local".split())
 
 
 @nox.session

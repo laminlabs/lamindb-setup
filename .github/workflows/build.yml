@@ -108,7 +108,7 @@ jobs:
           path: .coverage
 
   # a test group for testing low-level hub functionality
-  hub:
+  hub-local:
     runs-on: ubuntu-latest
     timeout-minutes: 15
     steps:
@@ -126,21 +126,21 @@ jobs:
           cache: "pip"
           cache-dependency-path: ".github/workflows/build.yml"
       - run: pip install -U laminci
-      - run: nox -s "install(group='hub')"
+      - run: nox -s "install(group='hub-local')"
       - id: cache-supabase
         uses: actions/cache@v3
         with:
           path: /var/lib/docker
           key: cache-supabase
       - uses: supabase/setup-cli@v1
-      - run: nox -s hub
+      - run: nox -s hub_local
       - uses: actions/upload-artifact@v2
         with:
-          name: coverage--hub
+          name: coverage--hub-local
           path: .coverage
 
   coverage:
-    needs: [one-env, two-envs, noaws, hub]
+    needs: [one-env, two-envs, noaws, hub-local]
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
