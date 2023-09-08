@@ -1,7 +1,6 @@
-from subprocess import DEVNULL, run
-from subprocess import getoutput
-from pathlib import Path
 import os
+from pathlib import Path
+from subprocess import DEVNULL, getoutput, run
 
 
 # this function is duplicated across laminhub-rest and lamindb-setup

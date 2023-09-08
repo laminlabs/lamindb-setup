@@ -3,9 +3,11 @@ import string
 from pathlib import Path
 from typing import Optional, Union
 from uuid import UUID
-from supabase import Client
+
 from pydantic import BaseModel, validator
 from pydantic.networks import MultiHostDsn
+
+from supabase import Client
 
 from .upath import UPath
 

@@ -1,9 +1,12 @@
 import os
 from typing import Optional, Tuple, Union
 from uuid import UUID, uuid4
-from supabase import Client
+
 from lamin_utils import logger
 from postgrest.exceptions import APIError
+
+from supabase import Client
+
 from ._hub_client import connect_hub, connect_hub_with_auth
 from ._hub_crud import (
     sb_insert_collaborator,
