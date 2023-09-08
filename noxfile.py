@@ -1,26 +1,8 @@
-from typing import Dict
-from subprocess import getoutput
 import nox
 from laminci.nox import build_docs, login_testuser1, login_testuser2, run_pre_commit
 
 nox.options.default_venv_backend = "none"
 COVERAGE_ARGS = "--cov=lamindb_setup --cov-append --cov-report=term-missing"
-
-
-# this function is duplicated across laminhub-rest and lamindb-setup
-def create_local_env() -> Dict[str, str]:
-    start_supabase = """supabase start -x realtime,storage-api,imgproxy,pgadmin-schema-diff,migra,postgres-meta,studio,edge-runtime,logflare,vector,pgbouncer"""  # noqa
-    # unfortuantely, supabase status -o env does not work with
-    # a reduced number of containers
-    get_anon_key = """grep 'anon key'|cut -f2 -d ":" | sed -e 's/^[[:space:]]*//'"""
-    anon_key = getoutput(f"{start_supabase}|{get_anon_key}").split("\n")[-1]
-    env = {
-        "LAMIN_ENV": "local",
-        "POSTGRES_DSN": "postgresql://postgres:postgres@localhost:54322/postgres",
-        "SUPABASE_API_URL": "http://localhost:54321",
-        "SUPABASE_ANON_KEY": anon_key,
-    }
-    return env
 
 
 @nox.session
@@ -90,15 +72,8 @@ def build(session: nox.Session, group: str, lamin_env: str):
 
 @nox.session
 def hub(session: nox.Session):
-    # only run for local environment
-    env = create_local_env()
-    with session.chdir("./laminhub-rest/"):
-        session.run(*"lnhub alembic upgrade head".split(), env=env)
     # the -n 1 is to ensure that supabase thread exits properly
-    session.run(
-        *f"pytest -n 1 {COVERAGE_ARGS} ./tests/hub".split(),
-        env=env,
-    )
+    session.run(*f"pytest -n 1 {COVERAGE_ARGS} ./tests/hub".split())
 
 
 @nox.session
