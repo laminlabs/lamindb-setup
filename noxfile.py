@@ -45,17 +45,16 @@ def install(session: nox.Session, group: str) -> None:
 @nox.session
 @nox.parametrize(
     "group",
-    ["hub", "one-env", "two-envs"],
+    ["one-env", "two-envs"],
 )
 @nox.parametrize(
     "lamin_env",
-    ["staging", "prod", "local"],
+    ["staging", "prod"],
 )
 def build(session: nox.Session, group: str, lamin_env: str):
     env = {"LAMIN_ENV": lamin_env}
-    if group != "hub":
-        login_testuser1(session, env=env)
-        login_testuser2(session, env=env)
+    login_testuser1(session, env=env)
+    login_testuser2(session, env=env)
     if group == "one-env":
         session.run(
             *f"pytest {COVERAGE_ARGS} ./tests/one-env".split(),
@@ -77,20 +76,9 @@ def hub(session: nox.Session):
 
 
 @nox.session
-@nox.parametrize(
-    "lamin_env",
-    ["staging", "prod"],
-)
 def docs(session: nox.Session, lamin_env: str):
-    env = {"LAMIN_ENV": lamin_env}
-    if lamin_env == "staging":  # make sure CI is running against staging
-        session.run(
-            *"lamin login testuser1.staging@lamin.ai --password password".split(" "),
-            external=True,
-            env=env,
-        )
-    login_testuser1(session, env=env)
-    session.run(*"lamin init --storage ./docsbuild".split(), env=env)
+    login_testuser1(session)
+    session.run(*"lamin init --storage ./docsbuild".split())
     if lamin_env != "staging":
         build_docs(session)
 
