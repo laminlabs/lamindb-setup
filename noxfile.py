@@ -93,9 +93,6 @@ def hub(session: nox.Session):
     laminhub_rest_path = "./"  # locally used /Users/falexwolf/repos/
     with session.chdir(f"{laminhub_rest_path}laminhub-rest/"):
         session.run(*"lnhub alembic upgrade head".split(), env=env)
-    session.run(
-        *f"cp {laminhub_rest_path}laminhub-rest/tests/conftest.py tests/".split()
-    )
     # the -n 1 is to ensure that supabase thread exits properly
     session.run(
         *f"pytest -n 1 {COVERAGE_ARGS} ./tests/hub".split(),
