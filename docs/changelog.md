@@ -3,6 +3,7 @@
 <!-- prettier-ignore -->
 Name | PR | Developer | Date | Version
 --- | --- | --- | --- | ---
+♻️ Refactor hub tests | [511](https://github.com/laminlabs/lamindb-setup/pull/511) | [falexwolf](https://github.com/falexwolf) | 2023-09-08 |
 ♻️ Streamline hub interactions, speed up hub testing | [510](https://github.com/laminlabs/lamindb-setup/pull/510) | [falexwolf](https://github.com/falexwolf) | 2023-09-07 |
 ✅ Add test for loading instance after private public switch | [509](https://github.com/laminlabs/lamindb-setup/pull/509) | [falexwolf](https://github.com/falexwolf) | 2023-09-07 |
 ♻️ Refactor hub client | [508](https://github.com/laminlabs/lamindb-setup/pull/508) | [falexwolf](https://github.com/falexwolf) | 2023-09-07 |
