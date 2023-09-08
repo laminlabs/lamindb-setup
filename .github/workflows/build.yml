@@ -37,8 +37,6 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        group:
-          - "prod-staging"
         lamin_env:
           - "staging"
           - "prod"
@@ -81,12 +79,12 @@ jobs:
       #   with:
       #     credentials_json: "${{ secrets.GCP_CREDENTIALS }}"
       # - uses: "google-github-actions/setup-gcloud@v0"
-      - run: nox -s "install(group='${{ matrix.group }}')"
-      - run: nox -s "build(lamin_env='${{ matrix.lamin_env }}', group='${{ matrix.group }}')"
+      - run: nox -s "install(group='prod-staging')"
+      - run: nox -s "build(lamin_env='${{ matrix.lamin_env }}', group='prod-staging')"
       - uses: actions/upload-artifact@v2
         if: ${{ matrix.lamin_env == 'prod' }}
         with:
-          name: coverage--${{ matrix.group }}
+          name: coverage--prod-staging
           path: .coverage
 
   # a test group for testing user access to public buckets without AWS credentials
