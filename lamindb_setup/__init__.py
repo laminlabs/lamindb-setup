@@ -72,6 +72,7 @@ from ._setup_user import login, signup  # noqa
 
 _TESTING = False  # used in lamindb tests
 
+
 # hide the supabase error in a thread on windows
 if _os_name == "nt":
     if sys.version_info.minor > 7:

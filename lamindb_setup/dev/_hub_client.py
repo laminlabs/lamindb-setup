@@ -37,7 +37,6 @@ class Environment:
         else:
             supabase_api_url = os.environ["SUPABASE_API_URL"]
             supabase_anon_key = os.environ["SUPABASE_ANON_KEY"]
-
         self.lamin_env: str = lamin_env
         self.supabase_api_url: str = supabase_api_url
         self.supabase_anon_key: str = supabase_anon_key
