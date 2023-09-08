@@ -117,23 +117,23 @@ def test_load_instance(create_myinstance, create_testuser1_session):
 
 
 def test_add_storage(create_testuser1_session):
-    _, usettings = create_testuser1_session
+    client, usettings = create_testuser1_session
     storage_id = add_storage(
         root="s3://lndb-setup-ci",
         account_id=usettings.uuid,
-        _access_token=usettings.access_token,
+        hub=client,
     )
     assert isinstance(storage_id, UUID)
 
 
 def test_add_storage_with_non_existing_bucket(create_testuser1_session):
-    _, usettings = create_testuser1_session
+    client, usettings = create_testuser1_session
     from botocore.exceptions import ClientError
 
     with pytest.raises(ClientError) as error:
         add_storage(
             root="s3://non_existing_storage_root",
             account_id=usettings.uuid,
-            _access_token=usettings.access_token,
+            hub=client,
         )
     assert error.exconly().endswith("Not Found")
