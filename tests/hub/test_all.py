@@ -1,4 +1,5 @@
 import pytest
+from uuid import UUID
 import lamindb_setup as ln_setup
 from lamindb_setup.dev._hub_client import connect_hub_with_auth
 from lamindb_setup.dev._hub_core import (
@@ -117,13 +118,12 @@ def test_load_instance(create_myinstance, create_testuser1_session):
 
 def test_add_storage(create_testuser1_session):
     _, usettings = create_testuser1_session
-    storage_id, message = add_storage(
+    storage_id = add_storage(
         root="s3://lndb-setup-ci",
         account_id=usettings.uuid,
         _access_token=usettings.access_token,
     )
-    assert storage_id is not None
-    assert message is None
+    assert isinstance(storage_id, UUID)
 
 
 def test_add_storage_with_non_existing_bucket(create_testuser1_session):
