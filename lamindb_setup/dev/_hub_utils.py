@@ -7,6 +7,8 @@ from uuid import UUID
 from pydantic import BaseModel, validator
 from pydantic.networks import MultiHostDsn
 
+from supabase import Client
+
 from .upath import UPath
 
 
@@ -38,16 +40,16 @@ def validate_db_arg(db: Optional[str]) -> None:
 
 def validate_unique_sqlite(
     *,
-    hub,
     storage_id: UUID,
     name: str,
+    hub: Client,
 ) -> None:
     # if a remote sqlite instance, make sure there is no other instance
     # that has the same name and storage location
     instances = (
         hub.table("instance")
         .select("*")
-        .eq("storage_id", storage_id)
+        .eq("storage_id", storage_id.hex)
         .eq("name", name)
         .execute()
         .data
@@ -99,8 +101,6 @@ def get_storage_region(storage_root: Union[str, Path, UPath]) -> Optional[str]:
 
 
 def validate_storage_root_arg(storage_root: str) -> None:
-    if storage_root.endswith("/"):
-        raise ValueError("Pass settings.storage.root_as_str rather than path")
     if storage_root.startswith(("gs://", "s3://")):
         # check for existence happens in get_storage_region
         return None

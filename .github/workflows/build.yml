@@ -7,7 +7,8 @@ on:
     branches: [main]
 
 jobs:
-  one-env:
+  # just tests on production
+  prod-only:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
@@ -23,20 +24,19 @@ jobs:
           aws-region: eu-central-1
       - run: pip install -U laminci
       - run: nox -s lint
-      - run: nox -s "install(group='one-env')"
-      - run: nox -s "build(lamin_env='prod', group='one-env')"
+      - run: nox -s "install(group='prod-only')"
+      - run: nox -s "build(lamin_env='prod', group='prod-only')"
       - uses: actions/upload-artifact@v2
         with:
-          name: coverage--one-env
+          name: coverage--prod-only
           path: .coverage
 
-  two-envs:
+  # tests on both production and staging
+  prod-staging:
     runs-on: ubuntu-22.04
     strategy:
       fail-fast: false
       matrix:
-        group:
-          - "two-envs"
         lamin_env:
           - "staging"
           - "prod"
@@ -79,12 +79,12 @@ jobs:
       #   with:
       #     credentials_json: "${{ secrets.GCP_CREDENTIALS }}"
       # - uses: "google-github-actions/setup-gcloud@v0"
-      - run: nox -s "install(group='${{ matrix.group }}')"
-      - run: nox -s "build(lamin_env='${{ matrix.lamin_env }}', group='${{ matrix.group }}')"
+      - run: nox -s "install(group='prod-staging')"
+      - run: nox -s "build(lamin_env='${{ matrix.lamin_env }}', group='prod-staging')"
       - uses: actions/upload-artifact@v2
         if: ${{ matrix.lamin_env == 'prod' }}
         with:
-          name: coverage--${{ matrix.group }}
+          name: coverage--prod-staging
           path: .coverage
 
   # a test group for testing user access to public buckets without AWS credentials
@@ -106,7 +106,7 @@ jobs:
           path: .coverage
 
   # a test group for testing low-level hub functionality
-  hub:
+  hub-local:
     runs-on: ubuntu-latest
     timeout-minutes: 15
     steps:
@@ -124,25 +124,21 @@ jobs:
           cache: "pip"
           cache-dependency-path: ".github/workflows/build.yml"
       - run: pip install -U laminci
-      - run: nox -s "install(group='hub')"
+      - run: nox -s "install(group='hub-local')"
       - id: cache-supabase
         uses: actions/cache@v3
         with:
           path: /var/lib/docker
           key: cache-supabase
       - uses: supabase/setup-cli@v1
-      - run: |
-
-          # locally, I cannot exclude kong & inbucket
-          # supabase status -o env >> $GITHUB_ENV keeps failing when excluding most containers as done above
-      - run: nox -s hub
+      - run: nox -s hub_local
       - uses: actions/upload-artifact@v2
         with:
-          name: coverage--hub
+          name: coverage--hub-local
           path: .coverage
 
   coverage:
-    needs: [one-env, two-envs, noaws, hub]
+    needs: [prod-only, prod-staging, noaws, hub-local]
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -165,7 +161,7 @@ jobs:
           token: ${{ secrets.CODECOV_TOKEN }}
 
   docs:
-    needs: two-envs
+    needs: prod-staging
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4

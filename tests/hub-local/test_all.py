@@ -1,14 +1,21 @@
-import pytest
+import os
 from uuid import UUID
+
+import pytest
+
 import lamindb_setup as ln_setup
-from lamindb_setup.dev._hub_client import connect_hub_with_auth
+from lamindb_setup.dev._hub_client import (
+    Environment,
+    connect_hub_with_auth,
+    load_connector,
+)
 from lamindb_setup.dev._hub_core import (
+    add_storage,
     init_instance,
     load_instance,
-    sign_up_hub,
     sign_in_hub,
+    sign_up_hub,
 )
-from lamindb_setup.dev._hub_core import add_storage
 from lamindb_setup.dev._hub_crud import (
     sb_select_collaborator,
     sb_select_db_user_by_instance,
@@ -19,9 +26,6 @@ from lamindb_setup.dev._hub_crud import (
 # from lamindb.dev import UserSettings
 # from supabase import Client
 from lamindb_setup.dev._hub_utils import LaminDsn, base62
-import os
-
-from lamindb_setup.dev._hub_client import Environment, load_connector
 
 
 def test_runs_locally():
@@ -117,23 +121,23 @@ def test_load_instance(create_myinstance, create_testuser1_session):
 
 
 def test_add_storage(create_testuser1_session):
-    _, usettings = create_testuser1_session
+    client, usettings = create_testuser1_session
     storage_id = add_storage(
         root="s3://lndb-setup-ci",
         account_id=usettings.uuid,
-        _access_token=usettings.access_token,
+        hub=client,
     )
     assert isinstance(storage_id, UUID)
 
 
 def test_add_storage_with_non_existing_bucket(create_testuser1_session):
-    _, usettings = create_testuser1_session
+    client, usettings = create_testuser1_session
     from botocore.exceptions import ClientError
 
     with pytest.raises(ClientError) as error:
         add_storage(
             root="s3://non_existing_storage_root",
             account_id=usettings.uuid,
-            _access_token=usettings.access_token,
+            hub=client,
         )
     assert error.exconly().endswith("Not Found")

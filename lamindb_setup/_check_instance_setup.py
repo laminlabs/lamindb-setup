@@ -18,7 +18,7 @@ def check_instance_setup(from_lamindb: bool = False):
 
             isettings = load_instance_settings()
 
-            from .dev._django import IS_SETUP, setup_django
+            from .dev.django import IS_SETUP, setup_django
 
             # this flag should probably be renamed to `from_user`
             # it will typically be invoked if lamindb is imported for use

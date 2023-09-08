@@ -2,7 +2,7 @@ from lamin_utils import logger
 
 from ._check_instance_setup import check_instance_setup
 from ._settings import settings
-from .dev._django import setup_django
+from .dev.django import setup_django
 
 
 class migrate:
