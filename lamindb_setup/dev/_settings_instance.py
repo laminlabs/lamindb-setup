@@ -149,7 +149,7 @@ class InstanceSettings:
     @property
     def _cloud_sqlite_locker(self):
         # avoid circular import
-        from ._cloud_sqlite_locker import empty_locker, get_locker
+        from .cloud_sqlite_locker import empty_locker, get_locker
 
         if self._is_cloud_sqlite:
             try:
@@ -208,7 +208,7 @@ class InstanceSettings:
         # returns a tuple of status code and message
         if self.dialect == "sqlite" and not self._sqlite_file.exists():
             return False, "SQLite file does not exist"
-        from ._django import setup_django
+        from .django import setup_django
 
         # in order to proceed with the next check, we need the local sqlite
         self._update_local_sqlite_file()

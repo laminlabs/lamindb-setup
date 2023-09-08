@@ -10,7 +10,7 @@ from ._close import close as close_instance
 from ._init_instance import load_from_isettings
 from ._settings import InstanceSettings, settings
 from ._silence_loggers import silence_loggers
-from .dev._django import setup_django
+from .dev.django import setup_django
 from .dev._settings_load import load_instance_settings
 from .dev._settings_storage import StorageSettings
 from .dev._settings_store import instance_settings_file

@@ -6,7 +6,7 @@ from importlib_metadata import version as get_pip_version
 from lamin_utils import logger
 from packaging.requirements import Requirement
 
-from ._django import setup_django
+from .django import setup_django
 from ._settings_instance import InstanceSettings
 
 
