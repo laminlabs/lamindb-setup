@@ -24,6 +24,3 @@ from ._docs import doc_args
 from ._settings_instance import InstanceSettings
 from ._settings_storage import StorageSettings
 from ._settings_user import UserSettings
-
-# below is for backward compat
-Storage = StorageSettings
