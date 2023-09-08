@@ -167,4 +167,4 @@ def main():
         track(args.filepath, args.pypackage)
     else:
         parser.print_help()
-    return -1
+    return 0
