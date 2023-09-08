@@ -1,7 +1,7 @@
 import os
 from typing import Optional, Tuple, Union
 from uuid import UUID, uuid4
-
+from supabase import Client
 from lamin_utils import logger
 from postgrest.exceptions import APIError
 from ._hub_client import connect_hub, connect_hub_with_auth
@@ -31,37 +31,30 @@ from ._hub_utils import (
 from ._settings_store import user_settings_file_email
 
 
-def add_storage(
-    root: str, account_id: UUID, _access_token: Optional[str] = None
-) -> UUID:
-    hub = connect_hub_with_auth(access_token=_access_token)
-    try:
-        # unlike storage keys, storage roots are always stored without the
-        # trailing slash in the SQL database
-        root = root.rstrip("/")
-        validate_storage_root_arg(root)
-        # check if storage exists already
-        storage = sb_select_storage_by_root(root, hub)
-        if storage is not None:
-            logger.warning("storage exists already")
-            return UUID(storage["id"])
-
-        storage_region = get_storage_region(root)
-        storage_type = get_storage_type(root)
-        storage = sb_insert_storage(
-            {
-                "id": uuid4().hex,
-                "lnid": base62(8),
-                "created_by": account_id.hex,
-                "root": root,
-                "region": storage_region,
-                "type": storage_type,
-            },
-            hub,
-        )
+def add_storage(root: str, account_id: UUID, hub: Client) -> UUID:
+    # unlike storage keys, storage roots are always stored without the
+    # trailing slash in the SQL database
+    root = root.rstrip("/")
+    validate_storage_root_arg(root)
+    # check if storage exists already
+    storage = sb_select_storage_by_root(root, hub)
+    if storage is not None:
+        logger.warning("storage exists already")
         return UUID(storage["id"])
-    finally:
-        hub.auth.sign_out()
+    storage_region = get_storage_region(root)
+    storage_type = get_storage_type(root)
+    storage = sb_insert_storage(
+        {
+            "id": uuid4().hex,
+            "lnid": base62(8),
+            "created_by": account_id.hex,
+            "root": root,
+            "region": storage_region,
+            "type": storage_type,
+        },
+        hub,
+    )
+    return UUID(storage["id"])
 
 
 def init_instance(
@@ -70,14 +63,8 @@ def init_instance(
     storage: str,  # storage location on cloud
     db: Optional[str] = None,  # str has to be postgresdsn (use pydantic in the future)
     schema: Optional[str] = None,  # comma-separated list of schema names
-    # replace with token-based approach!
-    _email: Optional[str] = None,
-    _password: Optional[str] = None,
-    _access_token: Optional[str] = None,
 ) -> Union[str, UUID]:
-    hub = connect_hub_with_auth(
-        email=_email, password=_password, access_token=_access_token
-    )
+    hub = connect_hub_with_auth()
     from .._settings import settings
 
     usettings = settings.user
@@ -89,7 +76,9 @@ def init_instance(
 
         # get storage and add if not yet there
         storage_id = add_storage(
-            storage, account_id=usettings.uuid, _access_token=_access_token
+            storage,
+            account_id=usettings.uuid,
+            hub=hub,
         )
         instance = sb_select_instance_by_name(usettings.uuid, name, hub)
         if instance is not None:
@@ -98,7 +87,7 @@ def init_instance(
         instance_id = uuid4()
         db_user_id = None
         if db is None:
-            validate_unique_sqlite(hub=hub, storage_id=storage_id, name=name)
+            validate_unique_sqlite(storage_id=storage_id, name=name, hub=hub)
             sb_insert_instance(
                 {
                     "id": instance_id.hex,
