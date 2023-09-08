@@ -3,6 +3,7 @@
 <!-- prettier-ignore -->
 Name | PR | Developer | Date | Version
 --- | --- | --- | --- | ---
+♻️ Do not hard-code laminhub-rest path | [513](https://github.com/laminlabs/lamindb-setup/pull/513) | [falexwolf](https://github.com/falexwolf) | 2023-09-08 |
 ♻️ Move supabase docker from nox to conftest | [512](https://github.com/laminlabs/lamindb-setup/pull/512) | [falexwolf](https://github.com/falexwolf) | 2023-09-08 |
 ♻️ Refactor hub tests | [511](https://github.com/laminlabs/lamindb-setup/pull/511) | [falexwolf](https://github.com/falexwolf) | 2023-09-08 |
 ♻️ Streamline hub interactions, speed up hub testing | [510](https://github.com/laminlabs/lamindb-setup/pull/510) | [falexwolf](https://github.com/falexwolf) | 2023-09-07 |
