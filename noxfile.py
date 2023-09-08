@@ -76,11 +76,10 @@ def hub(session: nox.Session):
 
 
 @nox.session
-def docs(session: nox.Session, lamin_env: str):
+def docs(session: nox.Session):
     login_testuser1(session)
     session.run(*"lamin init --storage ./docsbuild".split())
-    if lamin_env != "staging":
-        build_docs(session)
+    build_docs(session)
 
 
 @nox.session
