@@ -14,6 +14,8 @@ from .dev._settings_load import load_instance_settings
 from .dev._settings_storage import StorageSettings
 from .dev._settings_store import instance_settings_file
 from .dev.django import setup_django
+from .dev._hub_client import connect_hub
+from .dev._hub_crud import sb_select_account_name_handle_by_lnid
 
 
 def load(
@@ -117,7 +119,19 @@ def load(
     # at this point the lock should be already initialized
     if not isettings._cloud_sqlite_locker.has_lock:
         locked_by = isettings._cloud_sqlite_locker._locked_by
-        raise RuntimeError(f"Can't load the instance, it is locked by {locked_by}.")
+        lock_msg = "Can not load the instance, it is locked by "
+        try:
+            supabase_client = connect_hub()
+            name, handle = sb_select_account_name_handle_by_lnid(
+                locked_by, supabase_client
+            )
+            if name is not None:
+                lock_msg += f"{name}(handle: {handle})."
+            else:
+                lock_msg += f"{handle}(id: {locked_by})."
+        except Exception:
+            lock_msg += f"{locked_by}."
+        raise RuntimeError(lock_msg)
 
     # need to set up Django here because we query the storage table
     setup_django(isettings, configure_only=True)

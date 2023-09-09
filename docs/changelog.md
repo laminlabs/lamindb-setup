@@ -3,6 +3,7 @@
 <!-- prettier-ignore -->
 Name | PR | Developer | Date | Version
 --- | --- | --- | --- | ---
+🔊 Show more info about the locking user | [515](https://github.com/laminlabs/lamindb-setup/pull/515) | [Koncopd](https://github.com/Koncopd) | 2023-09-09 |
 ♻️ Make two dev modules public, clean up workflow, noxfile, test session names | [514](https://github.com/laminlabs/lamindb-setup/pull/514) | [falexwolf](https://github.com/falexwolf) | 2023-09-08 | 0.52.0
 ♻️ Do not hard-code laminhub-rest path | [513](https://github.com/laminlabs/lamindb-setup/pull/513) | [falexwolf](https://github.com/falexwolf) | 2023-09-08 |
 ♻️ Move supabase docker from nox to conftest | [512](https://github.com/laminlabs/lamindb-setup/pull/512) | [falexwolf](https://github.com/falexwolf) | 2023-09-08 |
