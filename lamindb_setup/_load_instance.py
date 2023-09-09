@@ -28,9 +28,9 @@ def load(
     """Load existing instance.
 
     Args:
-        identifier: `str` - The instance identifier `handle/name`.
-            You can also pass the URL: `https://lamin.ai/handle/name`.
-            If the instance is registered with your handle,
+        identifier: `str` - The instance identifier `owner/name`.
+            You can also pass the URL: `https://lamin.ai/owner/name`.
+            If the instance is owned by you,
             it suffices to pass the instance name.
         storage: `Optional[PathLike] = None` - Load the instance with an
             updated default storage.
@@ -38,7 +38,7 @@ def load(
     from ._check_instance_setup import check_instance_setup
     from .dev._hub_core import load_instance as load_instance_from_hub
 
-    handle, name = get_handle_name_from_identifier(identifier)
+    owner, name = get_owner_name_from_identifier(identifier)
 
     if check_instance_setup() and not _test:
         raise RuntimeError(
@@ -49,18 +49,18 @@ def load(
         # compare normalized identifier with a potentially previously loaded identifier
         if (
             settings._instance_exists
-            and f"{handle}/{name}" != settings.instance.identifier
+            and f"{owner}/{name}" != settings.instance.identifier
         ):
             close_instance(mute=True)
 
-    hub_result = load_instance_from_hub(handle=handle, name=name)
+    hub_result = load_instance_from_hub(owner=owner, name=name)
 
     # if hub_result is not a string, it means it made a request
     # that successfully returned metadata
     if not isinstance(hub_result, str):
         instance_result, storage_result = hub_result
         isettings = InstanceSettings(
-            owner=handle,
+            owner=owner,
             name=name,
             storage_root=storage_result["root"],
             storage_region=storage_result["region"],
@@ -69,13 +69,13 @@ def load(
             id=UUID(instance_result["id"]),
         )
     else:
-        settings_file = instance_settings_file(name, handle)
+        settings_file = instance_settings_file(name, owner)
         if settings_file.exists():
             isettings = load_instance_settings(settings_file)
             if isettings.is_remote:
                 if _log_error_message:
                     raise RuntimeError(
-                        f"Remote instance {handle}/{name} not loadable from hub. The"
+                        f"Remote instance {owner}/{name} not loadable from hub. The"
                         " instance might have been deleted or you may have lost"
                         " access."
                     )
@@ -84,9 +84,9 @@ def load(
         else:
             if _log_error_message:
                 raise RuntimeError(
-                    f"Instance {handle}/{name} neither loadable from hub nor local"
+                    f"Instance {owner}/{name} neither loadable from hub nor local"
                     " cache. check whether instance exists and you have access:"
-                    f" https://lamin.ai/{handle}/{name}?tab=collaborators"
+                    f" https://lamin.ai/{owner}/{name}?tab=collaborators"
                 )
             return "instance-not-reachable"
 
@@ -141,7 +141,7 @@ def load(
     return None
 
 
-def get_handle_name_from_identifier(identifier: str):
+def get_owner_name_from_identifier(identifier: str):
     if "/" in identifier:
         if identifier.startswith("https://lamin.ai/"):
             identifier = identifier.replace("https://lamin.ai/", "")
