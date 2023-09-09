@@ -100,7 +100,6 @@ def test_load_instance(create_myinstance, create_testuser1_session):
     result = load_instance(
         owner="testuser1",
         name=create_myinstance["name"],
-        _access_token=ln_setup.settings.user.access_token,
     )
     client, _ = create_testuser1_session
     db_user = sb_select_db_user_by_instance(

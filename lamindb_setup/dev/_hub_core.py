@@ -155,18 +155,13 @@ def init_instance(
 
 def load_instance(
     *,
-    owner: str,  # owner handle
-    name: str,  # instance name
-    _email: Optional[str] = None,
-    _password: Optional[str] = None,
-    _access_token: Optional[str] = None,
+    handle: str,  # account_handle
+    name: str,  # instance_name
 ) -> Union[Tuple[dict, dict], str]:
-    hub = connect_hub_with_auth(
-        email=_email, password=_password, access_token=_access_token
-    )
+    hub = connect_hub_with_auth()
     try:
         # get account
-        account = sb_select_account_by_handle(owner, hub)
+        account = sb_select_account_by_handle(handle, hub)
         if account is None:
             return "account-not-exists"
 
