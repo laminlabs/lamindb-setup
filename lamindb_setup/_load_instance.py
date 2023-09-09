@@ -15,6 +15,7 @@ from .dev._settings_storage import StorageSettings
 from .dev._settings_store import instance_settings_file
 from .dev.django import setup_django
 from .dev._hub_client import connect_hub
+from .dev._hub_crud import sb_select_account_name_handle_by_lnid
 
 
 def load(
@@ -123,14 +124,9 @@ def load(
         lock_msg = "Can not load the instance, it is locked by "
         try:
             supabase_client = connect_hub()
-            user_info = (
-                supabase_client.table("account")
-                .select("name, handle")
-                .eq("lnid", locked_by)
-                .execute()
-                .data[0]
+            name, handle = sb_select_account_name_handle_by_lnid(
+                locked_by, supabase_client
             )
-            name, handle = user_info["name"], user_info["handle"]
             if name is not None:
                 lock_msg += f"{name}(handle: {handle})."
             else:
