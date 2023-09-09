@@ -14,4 +14,5 @@ prod-only/edge-cases-login-init
 prod-only/test-import-schema
 prod-only/test-sqlite-sync
 prod-only/test-empty-init
+prod-only/test-load-lock
 ```
