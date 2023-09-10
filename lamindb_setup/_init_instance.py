@@ -229,7 +229,16 @@ def load_from_isettings(
     from .dev._setup_bionty_sources import load_bionty_sources, write_bionty_sources
 
     load_schema(isettings, init=init)
-    register_user_and_storage(isettings, settings.user)
+    if init:
+        # during init both user and storage need to be registered
+        register_user_and_storage(isettings, settings.user)
+    else:
+        # when loading, only register user if the instance is loaded
+        # for the first time in an environment
+        # this is our best proxy for that the user might not be
+        # yet be registered
+        if not isettings._get_settings_file().exists():
+            register_user(settings.user)
     if init and also_init_bionty:
         write_bionty_sources(isettings)
     else:

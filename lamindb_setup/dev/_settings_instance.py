@@ -187,12 +187,15 @@ class InstanceSettings:
         # and remote postgres
         return True
 
+    def _get_settings_file(self) -> Path:
+        return instance_settings_file(self.name, self.owner)
+
     def _persist(self) -> None:
         assert self.name is not None
         if self.storage.type == "local":
             self.storage.root.mkdir(parents=True, exist_ok=True)
 
-        filepath = instance_settings_file(self.name, self.owner)
+        filepath = self._get_settings_file()
         # persist under filepath for later reference
         save_instance_settings(self, filepath)
         # persist under current file for auto load
