@@ -1,28 +1,10 @@
 # see the overlap with connector.py in laminhub-rest
 import os
 from typing import Optional
-from urllib.request import urlretrieve
-
 from lamin_utils import logger
-from pydantic import BaseSettings
 from supabase.lib.client_options import ClientOptions
 
 from supabase import create_client, Client
-
-
-class Connector(BaseSettings):
-    url: str
-    key: str
-
-
-def load_connector() -> Connector:
-    if os.getenv("LAMIN_ENV") == "staging":
-        url = "https://lamin-site-assets.s3.amazonaws.com/connector_staging.env"
-    else:
-        url = "https://lamin-site-assets.s3.amazonaws.com/connector.env"
-    connector_file, _ = urlretrieve(url)
-    connector = Connector(_env_file=connector_file)
-    return connector
 
 
 class Environment:
@@ -30,24 +12,24 @@ class Environment:
         lamin_env = os.getenv("LAMIN_ENV")
         if lamin_env is None:
             lamin_env = "prod"
-        if lamin_env in {"prod", "staging"}:
-            connector = load_connector()
-            supabase_api_url = connector.url
-            supabase_anon_key = connector.key
+        # set public key
+        if lamin_env == "prod":
+            url = "https://laesaummdydllppgfchu.supabase.co"
+            key = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImxhZXNhdW1tZHlkbGxwcGdmY2h1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE2NTY4NDA1NTEsImV4cCI6MTk3MjQxNjU1MX0.WUeCRiun0ExUxKIv5-CtjF6878H8u26t0JmCWx3_2-c"  # noqa
+        elif lamin_env == "prod":
+            url = "https://amvrvdwndlqdzgedrqdv.supabase.co"
+            key = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImFtdnJ2ZHduZGxxZHpnZWRycWR2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE2NzcxNTcxMzMsImV4cCI6MTk5MjczMzEzM30.Gelt3dQEi8tT4j-JA36RbaZuUvxRnczvRr3iyRtzjY0"  # noqa
         else:
-            supabase_api_url = os.environ["SUPABASE_API_URL"]
-            supabase_anon_key = os.environ["SUPABASE_ANON_KEY"]
-
+            url = os.environ["SUPABASE_API_URL"]
+            key = os.environ["SUPABASE_ANON_KEY"]
         self.lamin_env: str = lamin_env
-        self.supabase_api_url: str = supabase_api_url
-        self.supabase_anon_key: str = supabase_anon_key
+        self.supabase_api_url: str = url
+        self.supabase_anon_key: str = key
 
 
 def connect_hub(client_options: ClientOptions = ClientOptions()) -> Client:
-    settings = Environment()
-    return create_client(
-        settings.supabase_api_url, settings.supabase_anon_key, client_options
-    )
+    env = Environment()
+    return create_client(env.supabase_api_url, env.supabase_anon_key, client_options)
 
 
 def connect_hub_with_auth() -> Client:
