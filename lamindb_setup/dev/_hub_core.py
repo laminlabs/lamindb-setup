@@ -168,11 +168,10 @@ def load_instance(
         if instance is None:
             return "instance-not-reachable"
         if instance["db"] is not None:
-            # get db_account
+            # get db_user
             db_user = sb_select_db_user_by_instance(instance["id"], hub)
             if db_user is None:
                 return "db-user-not-reachable"
-
             # construct dsn from instance and db_account fields
             db_dsn = LaminDsn.build(
                 scheme=instance["db_scheme"],
@@ -182,15 +181,12 @@ def load_instance(
                 port=str(instance["db_port"]),
                 database=instance["db_database"],
             )
-
             # override the db string with the constructed dsn
             instance["db"] = db_dsn
-
         # get default storage
         storage = sb_select_storage(instance["storage_id"], hub)
         if storage is None:
             return "storage-does-not-exist-on-hub"
-
         return instance, storage
     except Exception:
         return "loading-instance-failed"
