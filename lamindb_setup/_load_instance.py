@@ -13,7 +13,6 @@ from ._silence_loggers import silence_loggers
 from .dev._settings_load import load_instance_settings
 from .dev._settings_storage import StorageSettings
 from .dev._settings_store import instance_settings_file
-from .dev.django import setup_django
 from .dev._hub_client import connect_hub
 from .dev._hub_crud import sb_select_account_name_handle_by_lnid
 
@@ -95,9 +94,7 @@ def load(
     if _test:
         isettings._persist()  # this is to test the settings
         return None
-
     silence_loggers()
-
     check, msg = isettings._is_db_setup()  # this also updates local SQLite
     if not check:
         local_db = isettings._is_cloud_sqlite and isettings._sqlite_file_local.exists()
@@ -115,7 +112,6 @@ def load(
                 " Re-initializing the DB."
             )
             return "instance-not-reachable"
-
     # at this point the lock should be already initialized
     if not isettings._cloud_sqlite_locker.has_lock:
         locked_by = isettings._cloud_sqlite_locker._locked_by
@@ -132,9 +128,6 @@ def load(
         except Exception:
             lock_msg += f"{locked_by}."
         raise RuntimeError(lock_msg)
-
-    # need to set up Django here because we query the storage table
-    setup_django(isettings, configure_only=True)
     if storage is not None and isettings.dialect == "sqlite":
         update_root_field_in_default_storage(isettings)
     load_from_isettings(isettings)

@@ -8,7 +8,6 @@ from lamin_utils import logger
 from pydantic import PostgresDsn
 
 from lamindb_setup.dev.upath import LocalPathClasses, UPath
-
 from ._close import close as close_instance
 from ._docstrings import instance_description as description
 from ._settings import settings
@@ -16,8 +15,11 @@ from ._silence_loggers import silence_loggers
 from .dev import InstanceSettings
 from .dev._docs import doc_args
 from .dev._settings_storage import StorageSettings
-from .dev._setup_schema import get_schema_module_name, load_schema
 from .dev.upath import create_path
+
+
+def get_schema_module_name(schema_name) -> str:
+    return f"lnschema_{schema_name.replace('-', '_')}"
 
 
 def register_storage(ssettings: StorageSettings):
@@ -194,15 +196,15 @@ def init(
 
     silence_loggers()
 
-    also_init_bionty = True
-    if isettings._is_db_setup()[0]:
+    init_bionty = True
+    if isettings._is_db_setup(init=True)[0]:
         logger.warning(
             "your instance DB already has content, but couldn't find settings,"
             " proceeding with setup"
         )
         # do not write the bionty tables again
-        also_init_bionty = False
-    load_from_isettings(isettings, init=True, also_init_bionty=also_init_bionty)
+        init_bionty = False
+    load_from_isettings(isettings, init=True, init_bionty=init_bionty)
     if isettings._is_cloud_sqlite:
         isettings._cloud_sqlite_locker.lock()
         logger.warning(
@@ -224,22 +226,22 @@ def load_from_isettings(
     isettings: InstanceSettings,
     *,
     init: bool = False,
-    also_init_bionty: bool = True,
+    init_bionty: bool = True,
 ) -> None:
     from .dev._setup_bionty_sources import load_bionty_sources, write_bionty_sources
 
-    load_schema(isettings, init=init)
     if init:
         # during init both user and storage need to be registered
         register_user_and_storage(isettings, settings.user)
     else:
-        # when loading, only register user if the instance is loaded
+        # when loading, django is already set up
+        # only register user if the instance is loaded
         # for the first time in an environment
         # this is our best proxy for that the user might not be
         # yet be registered
         if not isettings._get_settings_file().exists():
             register_user(settings.user)
-    if init and also_init_bionty:
+    if init_bionty:
         write_bionty_sources(isettings)
     else:
         load_bionty_sources(isettings)
