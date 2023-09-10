@@ -226,7 +226,7 @@ def load_from_isettings(
     isettings: InstanceSettings,
     *,
     init: bool = False,
-    init_bionty: bool = True,
+    init_bionty: bool = False,
 ) -> None:
     from .dev._setup_bionty_sources import load_bionty_sources, write_bionty_sources
 
