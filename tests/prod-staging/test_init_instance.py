@@ -19,7 +19,7 @@ pgurl = "postgresql://postgres:pwd@0.0.0.0:5432/pgtest"
 
 @pytest.fixture
 def get_hub_client():
-    hub = connect_hub_with_auth(access_token=ln_setup.settings.user.access_token)
+    hub = connect_hub_with_auth()
     yield hub
     hub.auth.sign_out()
 
@@ -93,7 +93,7 @@ def test_init_instance_postgres_custom_name():
 
 def test_init_instance_cloud_aws_us():
     ln_setup.init(storage="s3://lndb-setup-ci", _test=True)
-    hub = connect_hub_with_auth(access_token=ln_setup.settings.user.access_token)
+    hub = connect_hub_with_auth()
     account = sb_select_account_by_handle(
         handle=ln_setup.settings.instance.owner, supabase_client=hub
     )
@@ -136,7 +136,7 @@ def test_init_instance_sqlite():
         _test=True,
     )
     ln_setup.register()
-    hub = connect_hub_with_auth(access_token=ln_setup.settings.user.access_token)
+    hub = connect_hub_with_auth()
     account = sb_select_account_by_handle(
         handle=ln_setup.settings.instance.owner, supabase_client=hub
     )
