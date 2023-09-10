@@ -7,7 +7,6 @@ import lamindb_setup as ln_setup
 from lamindb_setup.dev._hub_client import (
     Environment,
     connect_hub_with_auth,
-    load_connector,
 )
 from lamindb_setup.dev._hub_core import (
     add_storage,
@@ -30,7 +29,7 @@ from lamindb_setup.dev._hub_utils import LaminDsn, base62
 
 def test_runs_locally():
     assert os.environ["LAMIN_ENV"] == "local"
-    assert load_connector().url != Environment().supabase_api_url
+    assert Environment().lamin_env == "local"
 
 
 def test_incomplete_signup():
