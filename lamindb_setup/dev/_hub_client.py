@@ -7,7 +7,7 @@ from lamin_utils import logger
 from pydantic import BaseSettings
 from supabase.lib.client_options import ClientOptions
 
-from supabase import create_client
+from supabase import create_client, Client
 
 
 class Connector(BaseSettings):
@@ -43,29 +43,28 @@ class Environment:
         self.supabase_anon_key: str = supabase_anon_key
 
 
-def connect_hub(client_options: ClientOptions = ClientOptions()):
+def connect_hub(client_options: ClientOptions = ClientOptions()) -> Client:
     settings = Environment()
     return create_client(
         settings.supabase_api_url, settings.supabase_anon_key, client_options
     )
 
 
-def connect_hub_with_auth(
-    *,
-    email: Optional[str] = None,
-    password: Optional[str] = None,
-    access_token: Optional[str] = None,
-):
-    hub = connect_hub()
-    if access_token is None:
-        if email is None or password is None:
-            from lamindb_setup import settings
+def connect_hub_with_auth() -> Client:
+    from lamindb_setup import settings
 
-            email = settings.user.email
-            password = settings.user.password
-        access_token = get_access_token(email=email, password=password)
-    hub.postgrest.auth(access_token)
-    return hub
+    hub = connect_hub()
+    access_token = settings.user.access_token
+    try:
+        # token might be expired, hence, try-except
+        hub.postgrest.auth(access_token)
+        return hub
+    except Exception:
+        access_token = get_access_token(
+            email=settings.user.email, password=settings.user.password
+        )
+        hub.postgrest.auth(access_token)
+        return hub
 
 
 def get_access_token(email: Optional[str] = None, password: Optional[str] = None):

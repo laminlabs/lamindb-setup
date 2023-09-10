@@ -164,12 +164,10 @@ def load_instance(
         account = sb_select_account_by_handle(owner, hub)
         if account is None:
             return "account-not-exists"
-
         instance = sb_select_instance_by_name(account["id"], name, hub)
         if instance is None:
             return "instance-not-reachable"
-
-        if not (instance["db"] is None or instance["db"].startswith("sqlite://")):
+        if instance["db"] is not None:
             # get db_account
             db_user = sb_select_db_user_by_instance(instance["id"], hub)
             if db_user is None:

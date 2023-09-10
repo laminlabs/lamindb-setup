@@ -15,6 +15,17 @@ def sb_select_account_by_handle(
     return data[0]
 
 
+def sb_select_account_name_handle_by_lnid(lnid: str, supabase_client: Client):
+    account_info = (
+        supabase_client.table("account")
+        .select("name, handle")
+        .eq("lnid", lnid)
+        .execute()
+        .data[0]
+    )
+    return account_info["name"], account_info["handle"]
+
+
 # --------------- INSTANCE ----------------------
 def sb_insert_instance(instance_fields: dict, supabase_client: Client):
     try:
@@ -173,14 +184,3 @@ def sb_select_db_user_by_instance(instance_id: str, supabase_client: Client):
     if len(data) == 0:
         return None
     return data[0]
-
-
-def sb_select_account_name_handle_by_lnid(lnid: str, supabase_client: Client):
-    account_info = (
-        supabase_client.table("account")
-        .select("name, handle")
-        .eq("lnid", lnid)
-        .execute()
-        .data[0]
-    )
-    return account_info["name"], account_info["handle"]
