@@ -32,21 +32,16 @@ def connect_hub(client_options: ClientOptions = ClientOptions()) -> Client:
     return create_client(env.supabase_api_url, env.supabase_anon_key, client_options)
 
 
-def connect_hub_with_auth() -> Client:
+def connect_hub_with_auth(renew_token: bool = False) -> Client:
     from lamindb_setup import settings
 
     hub = connect_hub()
-    access_token = settings.user.access_token
-    try:
-        # token might be expired, hence, try-except
-        hub.postgrest.auth(access_token)
-        return hub
-    except Exception:
-        access_token = get_access_token(
-            email=settings.user.email, password=settings.user.password
+    if renew_token:
+        settings.user.access_token = get_access_token(
+            settings.user.email, settings.user.password
         )
-        hub.postgrest.auth(access_token)
-        return hub
+    hub.postgrest.auth(settings.user.access_token)
+    return hub
 
 
 def get_access_token(email: Optional[str] = None, password: Optional[str] = None):

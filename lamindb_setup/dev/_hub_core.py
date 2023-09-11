@@ -1,7 +1,7 @@
 import os
 from typing import Optional, Tuple, Union
 from uuid import UUID, uuid4
-
+from postgrest import APIError as PostgrestAPIError
 from lamin_utils import logger
 from postgrest.exceptions import APIError
 
@@ -157,8 +157,9 @@ def load_instance(
     *,
     owner: str,  # account_handle
     name: str,  # instance_name
+    _attempt_with_new_token: bool = False,
 ) -> Union[Tuple[dict, dict], str]:
-    hub = connect_hub_with_auth()
+    hub = connect_hub_with_auth(renew_token=_attempt_with_new_token)
     try:
         # get account
         account = sb_select_account_by_handle(owner, hub)
@@ -188,6 +189,13 @@ def load_instance(
         if storage is None:
             return "storage-does-not-exist-on-hub"
         return instance, storage
+    except PostgrestAPIError as e:
+        if _attempt_with_new_token:
+            raise e
+        else:
+            # likely, the token is expired or corrupted
+            # generate a new one and try again
+            return load_instance(owner=owner, name=name, _attempt_with_new_token=True)
     finally:
         hub.auth.sign_out()
 
