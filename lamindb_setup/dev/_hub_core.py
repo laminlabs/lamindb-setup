@@ -188,8 +188,6 @@ def load_instance(
         if storage is None:
             return "storage-does-not-exist-on-hub"
         return instance, storage
-    except Exception:
-        return "loading-instance-failed"
     finally:
         hub.auth.sign_out()
 

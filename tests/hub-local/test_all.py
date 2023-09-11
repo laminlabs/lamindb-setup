@@ -2,7 +2,7 @@ import os
 from uuid import UUID
 
 import pytest
-
+from postgrest import APIError as PostgrestAPIError
 import lamindb_setup as ln_setup
 from lamindb_setup.dev._hub_client import (
     Environment,
@@ -117,6 +117,29 @@ def test_load_instance(create_myinstance, create_testuser1_session):
     loaded_instance, _ = result
     assert loaded_instance["name"] == create_myinstance["name"]
     assert loaded_instance["db"] == expected_dsn
+
+
+def test_load_instance_corrupted_or_expired_credentials(
+    create_myinstance, create_testuser1_session
+):
+    # assume token & password are corrupted or expired
+    ln_setup.settings.user.access_token = "corrupted_or_expired_token"
+    correct_password = ln_setup.settings.user.password
+    ln_setup.settings.user.password = "corrupted_password"
+    with pytest.raises(PostgrestAPIError):
+        load_instance(
+            owner="testuser1",
+            name=create_myinstance["name"],
+        )
+    # now, let's assume only the token is expired or corrupted
+    # re-creating the auth client triggers a re-generated token because it
+    # excepts the error assuming the token is expired
+    ln_setup.settings.user.access_token = "corrupted_or_expired_token"
+    ln_setup.settings.user.password = correct_password
+    load_instance(
+        owner="testuser1",
+        name=create_myinstance["name"],
+    )
 
 
 def test_add_storage(create_testuser1_session):

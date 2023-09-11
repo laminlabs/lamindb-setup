@@ -52,6 +52,8 @@ def load(
         ):
             close_instance(mute=True)
 
+    # the following will return a string if the instance does not exist
+    # on the hub
     hub_result = load_instance_from_hub(owner=owner, name=name)
 
     # if hub_result is not a string, it means it made a request
