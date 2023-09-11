@@ -15,7 +15,7 @@ from lamindb_setup.dev._hub_crud import (
 def test_load_persistent_instance():
     assert ln_setup.dev.upath.AWS_CREDENTIALS_PRESENT is None
     ln_setup.load("testuser1/lamin-site-assets")
-    hub = connect_hub_with_auth(access_token=ln_setup.settings.user.access_token)
+    hub = connect_hub_with_auth()
     account = sb_select_account_by_handle(
         handle=ln_setup.settings.instance.owner, supabase_client=hub
     )

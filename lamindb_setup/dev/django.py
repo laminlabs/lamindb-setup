@@ -59,7 +59,7 @@ def setup_django(
         DATABASES = {
             "default": default_db,
         }
-        from ._setup_schema import get_schema_module_name
+        from .._init_instance import get_schema_module_name
 
         schema_names = ["core"] + list(isettings.schema)
         schema_module_names = [get_schema_module_name(n) for n in schema_names]
@@ -81,6 +81,7 @@ def setup_django(
         call_command("makemigrations")
         return None
 
+    # check that migrations have been deployed
     missing_migrations = get_migrations_to_sync()
     if len(missing_migrations) > 0:
         if deploy_migrations:

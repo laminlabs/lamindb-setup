@@ -2,12 +2,11 @@ import os
 from uuid import UUID
 
 import pytest
-
+from gotrue.errors import AuthApiError
 import lamindb_setup as ln_setup
 from lamindb_setup.dev._hub_client import (
     Environment,
     connect_hub_with_auth,
-    load_connector,
 )
 from lamindb_setup.dev._hub_core import (
     add_storage,
@@ -30,7 +29,7 @@ from lamindb_setup.dev._hub_utils import LaminDsn, base62
 
 def test_runs_locally():
     assert os.environ["LAMIN_ENV"] == "local"
-    assert load_connector().url != Environment().supabase_api_url
+    assert Environment().lamin_env == "local"
 
 
 def test_incomplete_signup():
@@ -53,7 +52,8 @@ def create_testuser1_session():  # -> Tuple[Client, UserSettings]
         "lnid": base62(8),
         "handle": "testuser1",
     }
-    client = connect_hub_with_auth(access_token=ln_setup.settings.user.access_token)
+    # uses ln_setup.settings.user.access_token
+    client = connect_hub_with_auth()
     client.table("account").insert(account).execute()
     yield client, ln_setup.settings.user
     client.auth.sign_out()
@@ -100,7 +100,6 @@ def test_load_instance(create_myinstance, create_testuser1_session):
     result = load_instance(
         owner="testuser1",
         name=create_myinstance["name"],
-        _access_token=ln_setup.settings.user.access_token,
     )
     client, _ = create_testuser1_session
     db_user = sb_select_db_user_by_instance(
@@ -118,6 +117,29 @@ def test_load_instance(create_myinstance, create_testuser1_session):
     loaded_instance, _ = result
     assert loaded_instance["name"] == create_myinstance["name"]
     assert loaded_instance["db"] == expected_dsn
+
+
+def test_load_instance_corrupted_or_expired_credentials(
+    create_myinstance, create_testuser1_session
+):
+    # assume token & password are corrupted or expired
+    ln_setup.settings.user.access_token = "corrupted_or_expired_token"
+    correct_password = ln_setup.settings.user.password
+    ln_setup.settings.user.password = "corrupted_password"
+    with pytest.raises(AuthApiError):
+        load_instance(
+            owner="testuser1",
+            name=create_myinstance["name"],
+        )
+    # now, let's assume only the token is expired or corrupted
+    # re-creating the auth client triggers a re-generated token because it
+    # excepts the error assuming the token is expired
+    ln_setup.settings.user.access_token = "corrupted_or_expired_token"
+    ln_setup.settings.user.password = correct_password
+    load_instance(
+        owner="testuser1",
+        name=create_myinstance["name"],
+    )
 
 
 def test_add_storage(create_testuser1_session):

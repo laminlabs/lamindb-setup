@@ -140,7 +140,7 @@ class Locker:
                 self._has_lock = False
                 self._locked_by = user
                 self.mapper[f"numbers/{self.user}"] = b"0"
-                logger.warning(f"the instance is already locked by the user {user}.")
+                logger.warning(f"instance is locked by user with id {user}")
                 return None
 
     def lock(self):

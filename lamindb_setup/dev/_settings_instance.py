@@ -187,12 +187,15 @@ class InstanceSettings:
         # and remote postgres
         return True
 
+    def _get_settings_file(self) -> Path:
+        return instance_settings_file(self.name, self.owner)
+
     def _persist(self) -> None:
         assert self.name is not None
         if self.storage.type == "local":
             self.storage.root.mkdir(parents=True, exist_ok=True)
 
-        filepath = instance_settings_file(self.name, self.owner)
+        filepath = self._get_settings_file()
         # persist under filepath for later reference
         save_instance_settings(self, filepath)
         # persist under current file for auto load
@@ -203,29 +206,22 @@ class InstanceSettings:
 
         settings._instance_settings = self
 
-    def _is_db_setup(self) -> Tuple[bool, str]:
+    def _init_db(self):
+        from .django import setup_django
+
+        setup_django(self, deploy_migrations=True, init=True)
+
+    def _load_db(self) -> Tuple[bool, str]:
         # Is the database available and initialized as LaminDB?
         # returns a tuple of status code and message
         if self.dialect == "sqlite" and not self._sqlite_file.exists():
             return False, "SQLite file does not exist"
         from .django import setup_django
 
-        # in order to proceed with the next check, we need the local sqlite
+        # we need the local sqlite to setup django
         self._update_local_sqlite_file()
-
-        setup_django(self, configure_only=True)
-
-        from django.db import connection
-
-        with connection.cursor() as cursor:
-            try:
-                cursor.execute("select * from lnschema_core_user")
-                result = cursor.fetchone()
-            except Exception as e:
-                return False, f"Your DB is not initialized: {e}"
-            if result is None:
-                return (
-                    False,
-                    "Your DB is not initialized: lnschema_core_user has no row",
-                )
+        # setting up django also performs a check for migrations & prints them
+        # as warnings
+        # this should fail, e.g., if the db is not reachable
+        setup_django(self)
         return True, ""

@@ -71,9 +71,7 @@ def test_load_after_private_public_switch():
         ln_setup.load(
             "https://lamin.ai/static-testuser1/static-testinstance1", _test=True
         )
-        admin_hub = connect_hub_with_auth(
-            access_token=ln_setup.settings.user.access_token
-        )
+        admin_hub = connect_hub_with_auth()
         # make the instance public
         sb_update_instance(
             instance_id=ln_setup.settings.instance.id,

@@ -1,7 +1,7 @@
 import os
 from typing import Optional, Tuple, Union
 from uuid import UUID, uuid4
-
+from postgrest import APIError as PostgrestAPIError
 from lamin_utils import logger
 from postgrest.exceptions import APIError
 
@@ -155,31 +155,24 @@ def init_instance(
 
 def load_instance(
     *,
-    owner: str,  # owner handle
-    name: str,  # instance name
-    _email: Optional[str] = None,
-    _password: Optional[str] = None,
-    _access_token: Optional[str] = None,
+    owner: str,  # account_handle
+    name: str,  # instance_name
+    _attempt_with_new_token: bool = False,
 ) -> Union[Tuple[dict, dict], str]:
-    hub = connect_hub_with_auth(
-        email=_email, password=_password, access_token=_access_token
-    )
+    hub = connect_hub_with_auth(renew_token=_attempt_with_new_token)
     try:
         # get account
         account = sb_select_account_by_handle(owner, hub)
         if account is None:
             return "account-not-exists"
-
         instance = sb_select_instance_by_name(account["id"], name, hub)
         if instance is None:
             return "instance-not-reachable"
-
-        if not (instance["db"] is None or instance["db"].startswith("sqlite://")):
-            # get db_account
+        if instance["db"] is not None:
+            # get db_user
             db_user = sb_select_db_user_by_instance(instance["id"], hub)
             if db_user is None:
                 return "db-user-not-reachable"
-
             # construct dsn from instance and db_account fields
             db_dsn = LaminDsn.build(
                 scheme=instance["db_scheme"],
@@ -189,18 +182,20 @@ def load_instance(
                 port=str(instance["db_port"]),
                 database=instance["db_database"],
             )
-
             # override the db string with the constructed dsn
             instance["db"] = db_dsn
-
         # get default storage
         storage = sb_select_storage(instance["storage_id"], hub)
         if storage is None:
             return "storage-does-not-exist-on-hub"
-
         return instance, storage
-    except Exception:
-        return "loading-instance-failed"
+    except PostgrestAPIError as e:
+        if _attempt_with_new_token:
+            raise e
+        else:
+            # likely, the token is expired or corrupted
+            # generate a new one and try again
+            return load_instance(owner=owner, name=name, _attempt_with_new_token=True)
     finally:
         hub.auth.sign_out()
 
