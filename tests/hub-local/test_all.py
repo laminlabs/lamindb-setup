@@ -52,7 +52,8 @@ def create_testuser1_session():  # -> Tuple[Client, UserSettings]
         "lnid": base62(8),
         "handle": "testuser1",
     }
-    client = connect_hub_with_auth(access_token=ln_setup.settings.user.access_token)
+    # uses ln_setup.settings.user.access_token
+    client = connect_hub_with_auth()
     client.table("account").insert(account).execute()
     yield client, ln_setup.settings.user
     client.auth.sign_out()
