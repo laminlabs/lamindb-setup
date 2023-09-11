@@ -21,7 +21,7 @@ def load(
     identifier: str,
     *,
     storage: Optional[Union[str, Path, UPath]] = None,
-    _log_error_message: bool = True,
+    _raise_not_reachable_error: bool = True,
     _test: bool = False,
 ) -> Optional[str]:
     """Load existing instance.
@@ -74,7 +74,7 @@ def load(
         if settings_file.exists():
             isettings = load_instance_settings(settings_file)
             if isettings.is_remote:
-                if _log_error_message:
+                if _raise_not_reachable_error:
                     raise RuntimeError(
                         f"Remote instance {owner}/{name} not loadable from hub. The"
                         " instance might have been deleted or you may have lost"
@@ -83,7 +83,7 @@ def load(
                 return "instance-not-reachable"
             logger.info(f"found cached instance metadata: {settings_file}")
         else:
-            if _log_error_message:
+            if _raise_not_reachable_error:
                 raise RuntimeError(
                     f"Instance {owner}/{name} neither loadable from hub nor local"
                     " cache. check whether instance exists and you have access:"
@@ -106,7 +106,7 @@ def load(
                 f" {isettings._sqlite_file_local}\nTo push the file to the cloud, call:"
                 " lamin close"
             )
-        elif _log_error_message:
+        elif _raise_not_reachable_error:
             raise RuntimeError(msg)
         else:
             logger.warning(

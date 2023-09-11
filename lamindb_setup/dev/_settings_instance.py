@@ -222,9 +222,6 @@ class InstanceSettings:
         self._update_local_sqlite_file()
         # setting up django also performs a check for migrations & prints them
         # as warnings
-        try:
-            # this should fail, e.g., if the db is not reachable
-            setup_django(self)
-        except Exception as e:
-            return False, f"{e}"
+        # this should fail, e.g., if the db is not reachable
+        setup_django(self)
         return True, ""

@@ -154,7 +154,9 @@ def init(
 
     name_str = infer_instance_name(storage=storage, name=name, db=db)
     # test whether instance exists by trying to load it
-    response = load(f"{owner}/{name_str}", _log_error_message=False, _test=_test)
+    response = load(
+        f"{owner}/{name_str}", _raise_not_reachable_error=False, _test=_test
+    )
     if response is None:
         return None  # successful load!
 
