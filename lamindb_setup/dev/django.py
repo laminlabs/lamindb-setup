@@ -81,6 +81,7 @@ def setup_django(
         call_command("makemigrations")
         return None
 
+    # check that migrations have been deployed
     missing_migrations = get_migrations_to_sync()
     if len(missing_migrations) > 0:
         if deploy_migrations:

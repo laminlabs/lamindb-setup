@@ -196,15 +196,8 @@ def init(
 
     silence_loggers()
 
-    init_bionty = True
-    if isettings._is_db_setup(init=True)[0]:
-        logger.warning(
-            "your instance DB already has content, but couldn't find settings,"
-            " proceeding with setup"
-        )
-        # do not write the bionty tables again
-        init_bionty = False
-    load_from_isettings(isettings, init=True, init_bionty=init_bionty)
+    isettings._init_db()
+    load_from_isettings(isettings, init=True)
     if isettings._is_cloud_sqlite:
         isettings._cloud_sqlite_locker.lock()
         logger.warning(
@@ -226,13 +219,13 @@ def load_from_isettings(
     isettings: InstanceSettings,
     *,
     init: bool = False,
-    init_bionty: bool = False,
 ) -> None:
     from .dev._setup_bionty_sources import load_bionty_sources, write_bionty_sources
 
     if init:
         # during init both user and storage need to be registered
         register_user_and_storage(isettings, settings.user)
+        write_bionty_sources(isettings)
     else:
         # when loading, django is already set up
         # only register user if the instance is loaded
@@ -241,9 +234,6 @@ def load_from_isettings(
         # yet be registered
         if not isettings._get_settings_file().exists():
             register_user(settings.user)
-    if init_bionty:
-        write_bionty_sources(isettings)
-    else:
         load_bionty_sources(isettings)
     isettings._persist()
     reload_lamindb(isettings)

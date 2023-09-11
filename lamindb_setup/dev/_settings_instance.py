@@ -206,26 +206,25 @@ class InstanceSettings:
 
         settings._instance_settings = self
 
-    def _is_db_setup(self, init=False) -> Tuple[bool, str]:
+    def _init_db(self):
+        from .django import setup_django
+
+        setup_django(self, deploy_migrations=True, init=True)
+
+    def _load_db(self) -> Tuple[bool, str]:
         # Is the database available and initialized as LaminDB?
         # returns a tuple of status code and message
         if self.dialect == "sqlite" and not self._sqlite_file.exists():
             return False, "SQLite file does not exist"
         from .django import setup_django
-        from django.db import connection
 
-        # in order to proceed with the next check, we need the local sqlite
+        # we need the local sqlite to setup django
         self._update_local_sqlite_file()
-        setup_django(self, deploy_migrations=init, init=init)
-        with connection.cursor() as cursor:
-            try:
-                cursor.execute("select * from lnschema_core_user")
-                result = cursor.fetchone()
-            except Exception as e:
-                return False, f"Your DB is not initialized: {e}"
-            if result is None:
-                return (
-                    False,
-                    "Your DB is not initialized: lnschema_core_user has no row",
-                )
+        # setting up django also performs a check for migrations & prints them
+        # as warnings
+        try:
+            # this should fail, e.g., if the db is not reachable
+            setup_django(self)
+        except Exception as e:
+            return False, f"{e}"
         return True, ""
