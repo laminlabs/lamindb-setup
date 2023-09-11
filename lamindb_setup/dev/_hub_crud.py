@@ -1,5 +1,24 @@
 from postgrest.exceptions import APIError
 from supabase.client import Client
+from typing import Optional, Dict
+
+
+def select_instance_by_owner_name(
+    owner: str,
+    name: str,
+    supabase_client: Client,
+) -> Optional[Dict]:
+    data = (
+        supabase_client.table("instance")
+        .select("*, account!inner!fk_instance_account_id_account(*)")
+        .eq("account.handle", owner)
+        .eq("name", name)
+        .execute()
+        .data
+    )
+    if len(data) == 0:
+        return None
+    return data[0]
 
 
 # --------------- ACCOUNT ----------------------

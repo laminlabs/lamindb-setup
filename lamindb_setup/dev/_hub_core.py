@@ -9,6 +9,7 @@ from supabase import Client
 
 from ._hub_client import connect_hub, connect_hub_with_auth
 from ._hub_crud import (
+    select_instance_by_owner_name,
     sb_insert_collaborator,
     sb_insert_db_user,
     sb_insert_instance,
@@ -161,13 +162,17 @@ def load_instance(
 ) -> Union[Tuple[dict, dict], str]:
     hub = connect_hub_with_auth(renew_token=_attempt_with_new_token)
     try:
-        # get account
-        account = sb_select_account_by_handle(owner, hub)
-        if account is None:
-            return "account-not-exists"
-        instance = sb_select_instance_by_name(account["id"], name, hub)
-        if instance is None:
-            return "instance-not-reachable"
+        instance_account = select_instance_by_owner_name(owner, name, hub)
+        if instance_account is None:
+            account = sb_select_account_by_handle(owner, hub)
+            if account is None:
+                return "account-not-exists"
+            instance = sb_select_instance_by_name(account["id"], name, hub)
+            if instance is None:
+                return "instance-not-reachable"
+        else:
+            account = instance_account.pop("account")
+            instance = instance_account
         if instance["db"] is not None:
             # get db_user
             db_user = sb_select_db_user_by_instance(instance["id"], hub)
