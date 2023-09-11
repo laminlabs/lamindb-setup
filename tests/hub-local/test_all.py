@@ -97,6 +97,17 @@ def test_connection_string_decomp(create_myinstance, create_testuser1_session):
 
 
 def test_load_instance(create_myinstance, create_testuser1_session):
+    # trigger return for inexistent handle
+    assert "account-not-exists" == load_instance(
+        owner="testusr1",  # testuser1 with a typo
+        name=create_myinstance["name"],
+    )
+    # trigger misspelled name
+    assert "instance-not-reachable" == load_instance(
+        owner="testuser1",
+        name="inexistent-name",  # inexistent name
+    )
+    # now supply correct data
     result = load_instance(
         owner="testuser1",
         name=create_myinstance["name"],
