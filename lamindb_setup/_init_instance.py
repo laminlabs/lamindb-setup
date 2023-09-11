@@ -41,16 +41,17 @@ def register_storage(ssettings: StorageSettings):
 def register_user(usettings):
     from lnschema_core.models import User
 
-    user, created = User.objects.update_or_create(
-        id=usettings.id,
-        defaults=dict(
-            handle=usettings.handle,
-            name=usettings.name,
-            email=usettings.email,
-        ),
-    )
-    if created:
-        logger.save(f"saved: {user}")
+    if usettings.handle != "laminapp-admin":
+        user, created = User.objects.update_or_create(
+            id=usettings.id,
+            defaults=dict(
+                handle=usettings.handle,
+                name=usettings.name,
+                email=usettings.email,
+            ),
+        )
+        if created:
+            logger.save(f"saved: {user}")
 
 
 def register_user_and_storage(isettings: InstanceSettings, usettings):
