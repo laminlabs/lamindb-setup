@@ -3,6 +3,7 @@
 <!-- prettier-ignore -->
 Name | PR | Developer | Date | Version
 --- | --- | --- | --- | ---
+⚡️ Speed up query for instance retrieval | [518](https://github.com/laminlabs/lamindb-setup/pull/518) | [falexwolf](https://github.com/falexwolf) | 2023-09-11 |
 🎨 Do not add laminapp-admin to the instance user table | [517](https://github.com/laminlabs/lamindb-setup/pull/517) | [falexwolf](https://github.com/falexwolf) | 2023-09-11 |
 ♻️ Simplify & speed up load instance | [516](https://github.com/laminlabs/lamindb-setup/pull/516) | [falexwolf](https://github.com/falexwolf) | 2023-09-11 |
 🔊 Show more info about the locking user | [515](https://github.com/laminlabs/lamindb-setup/pull/515) | [Koncopd](https://github.com/Koncopd) | 2023-09-09 |
