@@ -12,7 +12,7 @@ settings_dir.mkdir(parents=True, exist_ok=True)
 def get_settings_file_name_prefix():
     if "LAMIN_ENV" in os.environ:
         if os.environ["LAMIN_ENV"] != "prod":
-            return f"{os.environ['LAMIN_ENV']}-"
+            return f"{os.environ['LAMIN_ENV']}--"
     return ""
 
 
