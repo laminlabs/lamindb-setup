@@ -46,5 +46,5 @@ def pytest_configure():
 
 
 def pytest_unconfigure():
-    print(" tear down supabase")
+    print("tear down supabase")
     run("supabase stop", shell=True, stdout=DEVNULL)

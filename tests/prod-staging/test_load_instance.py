@@ -76,7 +76,7 @@ def test_load_after_private_public_switch():
         sb_update_instance(
             instance_id=ln_setup.settings.instance.id,
             instance_fields={"public": False},
-            supabase_client=admin_hub,
+            client=admin_hub,
         )
         # attempt to load instance with non-collaborator user
         ln_setup.login("testuser2")
@@ -88,7 +88,7 @@ def test_load_after_private_public_switch():
         sb_update_instance(
             instance_id=ln_setup.settings.instance.id,
             instance_fields={"public": True},
-            supabase_client=admin_hub,
+            client=admin_hub,
         )
         # load instance with non-collaborator user, should work now
         ln_setup.load(
@@ -98,5 +98,5 @@ def test_load_after_private_public_switch():
         sb_update_instance(
             instance_id=ln_setup.settings.instance.id,
             instance_fields={"public": False},
-            supabase_client=admin_hub,
+            client=admin_hub,
         )

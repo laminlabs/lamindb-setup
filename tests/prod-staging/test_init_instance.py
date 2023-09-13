@@ -28,17 +28,15 @@ def get_instance_and_dbuser_from_hub(
     instance_name: str, hub: Client
 ) -> Tuple[Optional[Dict[str, str]], Optional[Dict[str, str]]]:
     assert ln_setup.settings.user.handle == "testuser2"
-    account = sb_select_account_by_handle(handle="testuser2", supabase_client=hub)
+    account = sb_select_account_by_handle(handle="testuser2", client=hub)
     instance = sb_select_instance_by_name(
         account_id=account["id"],
         name=instance_name,
-        supabase_client=hub,
+        client=hub,
     )
     if instance is None:
         return None, None
-    db_user = sb_select_db_user_by_instance(
-        instance_id=instance["id"], supabase_client=hub
-    )
+    db_user = sb_select_db_user_by_instance(instance_id=instance["id"], client=hub)
     return instance, db_user
 
 
@@ -95,12 +93,12 @@ def test_init_instance_cloud_aws_us():
     ln_setup.init(storage="s3://lndb-setup-ci", _test=True)
     hub = connect_hub_with_auth()
     account = sb_select_account_by_handle(
-        handle=ln_setup.settings.instance.owner, supabase_client=hub
+        handle=ln_setup.settings.instance.owner, client=hub
     )
     instance = sb_select_instance_by_name(
         account_id=account["id"],
         name=ln_setup.settings.instance.name,
-        supabase_client=hub,
+        client=hub,
     )
     assert ln_setup.settings.instance.id == UUID(instance["id"])
     assert ln_setup.settings.storage.is_cloud
@@ -138,12 +136,12 @@ def test_init_instance_sqlite():
     ln_setup.register()
     hub = connect_hub_with_auth()
     account = sb_select_account_by_handle(
-        handle=ln_setup.settings.instance.owner, supabase_client=hub
+        handle=ln_setup.settings.instance.owner, client=hub
     )
     instance = sb_select_instance_by_name(
         account_id=account["id"],
         name=ln_setup.settings.instance.name,
-        supabase_client=hub,
+        client=hub,
     )
     assert ln_setup.settings.instance.id == UUID(instance["id"])
     assert ln_setup.settings.instance.name == "local-sqlite-instance"

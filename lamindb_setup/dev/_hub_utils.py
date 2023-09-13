@@ -42,12 +42,12 @@ def validate_unique_sqlite(
     *,
     storage_id: UUID,
     name: str,
-    hub: Client,
+    client: Client,
 ) -> None:
     # if a remote sqlite instance, make sure there is no other instance
     # that has the same name and storage location
     instances = (
-        hub.table("instance")
+        client.table("instance")
         .select("*")
         .eq("storage_id", storage_id.hex)
         .eq("name", name)
@@ -57,7 +57,7 @@ def validate_unique_sqlite(
     if len(instances) > 0:
         # retrieve account owning the first instance
         accounts = (
-            hub.table("account")
+            client.table("account")
             .select("*")
             .eq("id", instances[0]["account_id"])
             .execute()

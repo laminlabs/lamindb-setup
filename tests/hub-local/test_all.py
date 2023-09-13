@@ -70,7 +70,7 @@ def create_myinstance(create_testuser1_session):  # -> Dict
     instance = sb_select_instance_by_name(
         account_id=ln_setup.settings.user.uuid,
         name="myinstance",
-        supabase_client=client,
+        client=client,
     )
     yield instance
 
@@ -79,7 +79,7 @@ def test_connection_string_decomp(create_myinstance, create_testuser1_session):
     client, _ = create_testuser1_session
     db_user = sb_select_db_user_by_instance(
         instance_id=create_myinstance["id"],
-        supabase_client=client,
+        client=client,
     )
     assert create_myinstance["db_scheme"] == "postgresql"
     assert create_myinstance["db_host"] == "fakeserver.xyz"
@@ -91,7 +91,7 @@ def test_connection_string_decomp(create_myinstance, create_testuser1_session):
     db_collaborator = sb_select_collaborator(
         instance_id=create_myinstance["id"],
         account_id=ln_setup.settings.user.uuid.hex,
-        supabase_client=client,
+        client=client,
     )
     assert db_collaborator["db_user_id"] == db_user["id"]
 
@@ -115,7 +115,7 @@ def test_load_instance(create_myinstance, create_testuser1_session):
     client, _ = create_testuser1_session
     db_user = sb_select_db_user_by_instance(
         instance_id=create_myinstance["id"],
-        supabase_client=client,
+        client=client,
     )
     expected_dsn = LaminDsn.build(
         scheme=create_myinstance["db_scheme"],

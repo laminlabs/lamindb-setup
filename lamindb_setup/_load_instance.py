@@ -5,7 +5,6 @@ from uuid import UUID
 from lamin_utils import logger
 
 from lamindb_setup.dev.upath import UPath
-
 from ._close import close as close_instance
 from ._init_instance import load_from_isettings
 from ._settings import InstanceSettings, settings
@@ -13,8 +12,8 @@ from ._silence_loggers import silence_loggers
 from .dev._settings_load import load_instance_settings
 from .dev._settings_storage import StorageSettings
 from .dev._settings_store import instance_settings_file
-from .dev._hub_client import connect_hub
-from .dev._hub_crud import sb_select_account_name_handle_by_lnid
+from .dev._hub_client import call_with_fallback
+from .dev._hub_crud import sb_select_account_handle_name_by_lnid
 
 
 def load(
@@ -117,18 +116,18 @@ def load(
     # at this point the lock should be already initialized
     if not isettings._cloud_sqlite_locker.has_lock:
         locked_by = isettings._cloud_sqlite_locker._locked_by
-        lock_msg = "Can not load the instance, it is locked by "
-        try:
-            supabase_client = connect_hub()
-            name, handle = sb_select_account_name_handle_by_lnid(
-                locked_by, supabase_client
+        lock_msg = "Cannot load the instance, it is locked by "
+        user_info = call_with_fallback(
+            sb_select_account_handle_name_by_lnid,
+            lnid=locked_by,
+        )
+        if user_info is None:
+            lock_msg += "id: '{locked_by}'."
+        else:
+            lock_msg += (
+                f"'{user_info['handle']}' (id: '{locked_by}', name:"
+                f" '{user_info['name']}')."
             )
-            if name is not None:
-                lock_msg += f"{name}(handle: {handle})."
-            else:
-                lock_msg += f"{handle}(id: {locked_by})."
-        except Exception:
-            lock_msg += f"{locked_by}."
         raise RuntimeError(lock_msg)
     if storage is not None and isettings.dialect == "sqlite":
         update_root_field_in_default_storage(isettings)
