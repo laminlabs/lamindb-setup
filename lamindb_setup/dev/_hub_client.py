@@ -51,6 +51,7 @@ class Environment:
         self.supabase_anon_key: str = key
 
 
+# runs ~0.5s
 def connect_hub(
     fallback_env: bool = False, client_options: ClientOptions = ClientOptions()
 ) -> Client:
@@ -72,6 +73,7 @@ def connect_hub_with_auth(
     return hub
 
 
+# runs ~0.5s
 def get_access_token(email: Optional[str] = None, password: Optional[str] = None):
     hub = connect_hub()
     try:
@@ -101,6 +103,7 @@ def call_with_fallback_auth(
                 renew_token=renew_token, fallback_env=fallback_env
             )
             result = callable(**kwargs, client=client)
+            break
         except (PostgrestAPIError, AuthUnknownError) as e:
             if fallback_env:
                 raise e
@@ -117,6 +120,7 @@ def call_with_fallback(
         try:
             client = connect_hub(fallback_env=fallback_env)
             result = callable(**kwargs, client=client)
+            break
         except AuthUnknownError as e:
             if fallback_env:
                 raise e
