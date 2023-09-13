@@ -262,18 +262,18 @@ def sign_up_hub(email) -> Union[str, Tuple[str, str, str]]:
 
 
 def _sign_in_hub(email: str, password: str, handle: Optional[str], client: Client):
-    auth_response = client.auth.sign_in_with_password(
+    auth = client.auth.sign_in_with_password(
         {
             "email": email,
             "password": password,
         }
     )
-    data = client.table("account").select("*").eq("id", auth_response.user.id).execute()
-    if len(data.data) > 0:  # user is completely registered
-        user_uuid = UUID(data.data[0]["id"])
-        user_id = data.data[0]["lnid"]
-        user_handle = data.data[0]["handle"]
-        user_name = data.data[0]["name"]
+    data = client.table("account").select("*").eq("id", auth.user.id).execute().data
+    if data:  # sync data from hub to local cache in case it was updated on the hub
+        user_uuid = UUID(data[0]["id"])
+        user_id = data[0]["lnid"]
+        user_handle = data[0]["handle"]
+        user_name = data[0]["name"]
         if handle is not None and handle != user_handle:
             logger.warning(
                 f"using account handle {user_handle} (cached handle was {handle})"
@@ -286,7 +286,7 @@ def _sign_in_hub(email: str, password: str, handle: Optional[str], client: Clien
         user_id,
         user_handle,
         user_name,
-        auth_response.session.access_token,
+        auth.session.access_token,
     )
 
 
