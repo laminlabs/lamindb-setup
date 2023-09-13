@@ -2,6 +2,7 @@ import os
 from typing import Optional, Tuple, Union
 from uuid import UUID, uuid4
 from postgrest import APIError as PostgrestAPIError
+from gotrue.errors import AuthUnknownError
 from lamin_utils import logger
 from postgrest.exceptions import APIError
 
@@ -158,51 +159,60 @@ def load_instance(
     *,
     owner: str,  # account_handle
     name: str,  # instance_name
-    _attempt_with_new_token: bool = False,
 ) -> Union[Tuple[dict, dict], str]:
-    hub = connect_hub_with_auth(renew_token=_attempt_with_new_token)
-    try:
-        instance_account = select_instance_by_owner_name(owner, name, hub)
-        if instance_account is None:
-            account = sb_select_account_by_handle(owner, hub)
-            if account is None:
-                return "account-not-exists"
-            instance = sb_select_instance_by_name(account["id"], name, hub)
-            if instance is None:
-                return "instance-not-reachable"
-        else:
-            account = instance_account.pop("account")
-            instance = instance_account
-        if instance["db"] is not None:
-            # get db_user
-            db_user = sb_select_db_user_by_instance(instance["id"], hub)
-            if db_user is None:
-                return "db-user-not-reachable"
-            # construct dsn from instance and db_account fields
-            db_dsn = LaminDsn.build(
-                scheme=instance["db_scheme"],
-                user=db_user["db_user_name"],
-                password=db_user["db_user_password"],
-                host=instance["db_host"],
-                port=str(instance["db_port"]),
-                database=instance["db_database"],
+    renew_token, fallback_env = False, False
+    for renew_token, fallback_env in [(False, False), (True, False), (False, True)]:
+        try:
+            client = connect_hub_with_auth(
+                renew_token=renew_token, fallback_env=fallback_env
             )
-            # override the db string with the constructed dsn
-            instance["db"] = db_dsn
-        # get default storage
-        storage = sb_select_storage(instance["storage_id"], hub)
-        if storage is None:
-            return "storage-does-not-exist-on-hub"
-        return instance, storage
-    except PostgrestAPIError as e:
-        if _attempt_with_new_token:
-            raise e
-        else:
-            # likely, the token is expired or corrupted
-            # generate a new one and try again
-            return load_instance(owner=owner, name=name, _attempt_with_new_token=True)
-    finally:
-        hub.auth.sign_out()
+            result = _load_instance(owner=owner, name=name, client=client)
+        except (PostgrestAPIError, AuthUnknownError) as e:
+            if fallback_env:
+                raise e
+        finally:
+            client.auth.sign_out()
+    return result
+
+
+def _load_instance(
+    *,
+    owner: str,  # account_handle
+    name: str,  # instance_name
+    client: Client,
+) -> Union[Tuple[dict, dict], str]:
+    instance_account = select_instance_by_owner_name(owner, name, client)
+    if instance_account is None:
+        account = sb_select_account_by_handle(owner, client)
+        if account is None:
+            return "account-not-exists"
+        instance = sb_select_instance_by_name(account["id"], name, client)
+        if instance is None:
+            return "instance-not-reachable"
+    else:
+        account = instance_account.pop("account")
+        instance = instance_account
+    if instance["db"] is not None:
+        # get db_user
+        db_user = sb_select_db_user_by_instance(instance["id"], client)
+        if db_user is None:
+            return "db-user-not-reachable"
+        # construct dsn from instance and db_account fields
+        db_dsn = LaminDsn.build(
+            scheme=instance["db_scheme"],
+            user=db_user["db_user_name"],
+            password=db_user["db_user_password"],
+            host=instance["db_host"],
+            port=str(instance["db_port"]),
+            database=instance["db_database"],
+        )
+        # override the db string with the constructed dsn
+        instance["db"] = db_dsn
+    # get default storage
+    storage = sb_select_storage(instance["storage_id"], client)
+    if storage is None:
+        return "storage-does-not-exist-on-hub"
+    return instance, storage
 
 
 def get_lamin_site_base_url():
