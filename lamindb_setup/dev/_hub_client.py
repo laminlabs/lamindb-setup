@@ -6,6 +6,8 @@ from supabase.lib.client_options import ClientOptions
 from urllib.request import urlretrieve
 from supabase import create_client, Client
 from pydantic import BaseSettings
+from postgrest import APIError as PostgrestAPIError
+from gotrue.errors import AuthUnknownError
 
 
 class Connector(BaseSettings):
@@ -87,3 +89,35 @@ def get_access_token(email: Optional[str] = None, password: Optional[str] = None
         raise e
     finally:
         hub.auth.sign_out()
+
+
+def call_with_fallback_auth(
+    callable,
+    **kwargs,
+):
+    for renew_token, fallback_env in [(False, False), (True, False), (False, True)]:
+        try:
+            client = connect_hub_with_auth(
+                renew_token=renew_token, fallback_env=fallback_env
+            )
+            result = callable(**kwargs, client=client)
+        except (PostgrestAPIError, AuthUnknownError) as e:
+            if fallback_env:
+                raise e
+        finally:
+            client.auth.sign_out()
+    return result
+
+
+def call_with_fallback(
+    callable,
+    **kwargs,
+):
+    for fallback_env in [False, True]:
+        try:
+            client = connect_hub(fallback_env=fallback_env)
+            result = callable(**kwargs, client=client)
+        except AuthUnknownError as e:
+            if fallback_env:
+                raise e
+    return result, client

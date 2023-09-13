@@ -5,6 +5,7 @@ from gotrue.errors import AuthUnknownError
 from lamindb_setup import login, settings
 from lamindb_setup.dev._hub_core import (
     load_instance,
+    sign_in_hub,
 )
 
 
@@ -33,6 +34,12 @@ def test_load_instance_fallbacks():
     )
     with pytest.raises(AuthUnknownError):
         ln_setup.dev._hub_client.connect_hub_with_auth(renew_token=True)
+    assert not isinstance(
+        sign_in_hub(
+            email="static-testuser1@lamin.ai", password="static-testuser1-password"
+        ),
+        str,
+    )
     load_instance(
         owner="static-testuser1",
         name="static-testinstance1",
