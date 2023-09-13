@@ -106,7 +106,7 @@ def _init_instance(
         instance_id = uuid4()
         db_user_id = None
         if db is None:
-            validate_unique_sqlite(storage_id=storage_id, name=name, hub=client)
+            validate_unique_sqlite(storage_id=storage_id, name=name, client=client)
             sb_insert_instance(
                 {
                     "id": instance_id.hex,
