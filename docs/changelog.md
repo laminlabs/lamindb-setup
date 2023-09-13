@@ -3,6 +3,7 @@
 <!-- prettier-ignore -->
 Name | PR | Developer | Date | Version
 --- | --- | --- | --- | ---
+🎨 Use a fallback for the hub API in case we move the endpoint | [519](https://github.com/laminlabs/lamindb-setup/pull/519) | [falexwolf](https://github.com/falexwolf) | 2023-09-13 |
 ✨ Enable to prefix settings in any env | [520](https://github.com/laminlabs/lamindb-setup/pull/520) | [fredericenard](https://github.com/fredericenard) | 2023-09-12 |
 ⚡️ Speed up query for instance retrieval | [518](https://github.com/laminlabs/lamindb-setup/pull/518) | [falexwolf](https://github.com/falexwolf) | 2023-09-11 |
 🎨 Do not add laminapp-admin to the instance user table | [517](https://github.com/laminlabs/lamindb-setup/pull/517) | [falexwolf](https://github.com/falexwolf) | 2023-09-11 |
