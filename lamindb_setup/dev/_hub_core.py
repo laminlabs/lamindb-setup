@@ -273,7 +273,7 @@ def sign_up_hub(email) -> Union[str, Tuple[str, str, str]]:
         return "user-exists"
 
 
-def _sign_in_hub(email: str, password: str, handle: str, client: Client):
+def _sign_in_hub(email: str, password: str, handle: Optional[str], client: Client):
     auth_response = client.auth.sign_in_with_password(
         {
             "email": email,
@@ -303,7 +303,7 @@ def _sign_in_hub(email: str, password: str, handle: str, client: Client):
 
 
 def sign_in_hub(
-    email: str, password: str, handle: str
+    email: str, password: str, handle: Optional[str] = None
 ) -> Union[str, Tuple[UUID, str, str, str, str]]:
     try:
         result = call_with_fallback(
