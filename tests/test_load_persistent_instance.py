@@ -17,12 +17,12 @@ def test_load_persistent_instance():
     ln_setup.load("testuser1/lamin-site-assets")
     hub = connect_hub_with_auth()
     account = sb_select_account_by_handle(
-        handle=ln_setup.settings.instance.owner, supabase_client=hub
+        handle=ln_setup.settings.instance.owner, client=hub
     )
     instance = sb_select_instance_by_name(
         account_id=account["id"],
         name=ln_setup.settings.instance.name,
-        supabase_client=hub,
+        client=hub,
     )
     assert ln_setup.settings.instance.id == UUID(instance["id"])
     assert not ln_setup.dev.upath.AWS_CREDENTIALS_PRESENT
