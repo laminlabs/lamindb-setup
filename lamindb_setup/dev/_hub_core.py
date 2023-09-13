@@ -160,13 +160,20 @@ def load_instance(
     owner: str,  # account_handle
     name: str,  # instance_name
 ) -> Union[Tuple[dict, dict], str]:
+    return call_with_fallbacks(_load_instance, owner=owner, name=name)
+
+
+def call_with_fallbacks(
+    callable,
+    **kwargs,
+):
     renew_token, fallback_env = False, False
     for renew_token, fallback_env in [(False, False), (True, False), (False, True)]:
         try:
             client = connect_hub_with_auth(
                 renew_token=renew_token, fallback_env=fallback_env
             )
-            result = _load_instance(owner=owner, name=name, client=client)
+            result = callable(**kwargs, client=client)
         except (PostgrestAPIError, AuthUnknownError) as e:
             if fallback_env:
                 raise e
