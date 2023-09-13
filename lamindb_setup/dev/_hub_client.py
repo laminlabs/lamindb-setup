@@ -120,4 +120,7 @@ def call_with_fallback(
         except AuthUnknownError as e:
             if fallback_env:
                 raise e
-    return result, client
+        finally:
+            # in case there was sign in
+            client.auth.sign_out()
+    return result

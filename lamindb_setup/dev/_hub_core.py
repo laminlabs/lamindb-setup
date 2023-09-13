@@ -273,50 +273,26 @@ def sign_up_hub(email) -> Union[str, Tuple[str, str, str]]:
         return "user-exists"
 
 
-def _sign_in_hub(email: str, password: str, client: Client):
+def _sign_in_hub(email: str, password: str, handle: str, client: Client):
     auth_response = client.auth.sign_in_with_password(
         {
             "email": email,
             "password": password,
         }
     )
-    return auth_response
-
-
-def sign_in_hub(
-    email: str, password: str, handle: str = None
-) -> Union[str, Tuple[UUID, str, str, str, str]]:
-    try:
-        auth_response, client = call_with_fallback(
-            _sign_in_hub, email=email, password=password
-        )
-        data = (
-            client.table("account")
-            .select("*")
-            .eq("id", auth_response.user.id)
-            .execute()
-        )
-        if len(data.data) > 0:  # user is completely registered
-            user_uuid = UUID(data.data[0]["id"])
-            user_id = data.data[0]["lnid"]
-            user_handle = data.data[0]["handle"]
-            user_name = data.data[0]["name"]
-            if handle is not None and handle != user_handle:
-                logger.warning(
-                    f"using account handle {user_handle} (cached handle was {handle})"
-                )
-        else:  # user did not complete signup as usermeta has no matching row
-            logger.error("complete signup on your account page.")
-            return "complete-signup"
-    except Exception as exception:  # this is bad, but I don't find APIError right now
-        logger.error(exception)
-        logger.error(
-            "Could not login. probably your password is wrong or you didn't complete"
-            " signup."
-        )
-        return "could-not-login"
-    finally:
-        client.auth.sign_out()
+    data = client.table("account").select("*").eq("id", auth_response.user.id).execute()
+    if len(data.data) > 0:  # user is completely registered
+        user_uuid = UUID(data.data[0]["id"])
+        user_id = data.data[0]["lnid"]
+        user_handle = data.data[0]["handle"]
+        user_name = data.data[0]["name"]
+        if handle is not None and handle != user_handle:
+            logger.warning(
+                f"using account handle {user_handle} (cached handle was {handle})"
+            )
+    else:  # user did not complete signup as usermeta has no matching row
+        logger.error("complete signup on your account page.")
+        return "complete-signup"
     return (
         user_uuid,
         user_id,
@@ -324,3 +300,20 @@ def sign_in_hub(
         user_name,
         auth_response.session.access_token,
     )
+
+
+def sign_in_hub(
+    email: str, password: str, handle: str
+) -> Union[str, Tuple[UUID, str, str, str, str]]:
+    try:
+        result = call_with_fallback(
+            _sign_in_hub, email=email, password=password, handle=handle
+        )
+    except Exception as exception:  # this is bad, but I don't find APIError right now
+        logger.error(exception)
+        logger.error(
+            "Could not login. probably your password is wrong or you didn't complete"
+            " signup."
+        )
+        return "could-not-login"
+    return result
