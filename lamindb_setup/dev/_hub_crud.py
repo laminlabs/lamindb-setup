@@ -32,15 +32,13 @@ def sb_select_account_by_handle(
     return data[0]
 
 
-def sb_select_account_name_handle_by_lnid(lnid: str, client: Client):
-    account_info = (
-        client.table("account")
-        .select("name, handle")
-        .eq("lnid", lnid)
-        .execute()
-        .data[0]
+def sb_select_account_handle_name_by_lnid(lnid: str, client: Client):
+    data = (
+        client.table("account").select("handle, name").eq("lnid", lnid).execute().data
     )
-    return account_info["name"], account_info["handle"]
+    if not data:
+        return None
+    return data[0]
 
 
 # --------------- INSTANCE ----------------------
