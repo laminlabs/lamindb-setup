@@ -117,17 +117,11 @@ def load(
     if not isettings._cloud_sqlite_locker.has_lock:
         locked_by = isettings._cloud_sqlite_locker._locked_by
         lock_msg = "Can not load the instance, it is locked by "
-        try:
-            name, handle = call_with_fallback(
-                sb_select_account_name_handle_by_lnid,
-                lnid=locked_by,
-            )
-            if name is not None:
-                lock_msg += f"{name}(handle: {handle})."
-            else:
-                lock_msg += f"{handle}(id: {locked_by})."
-        except Exception:
-            lock_msg += f"{locked_by}."
+        name, handle = call_with_fallback(
+            sb_select_account_name_handle_by_lnid,
+            lnid=locked_by,
+        )
+        lock_msg += f"{handle}(id: {locked_by}, name: {name})."
         raise RuntimeError(lock_msg)
     if storage is not None and isettings.dialect == "sqlite":
         update_root_field_in_default_storage(isettings)

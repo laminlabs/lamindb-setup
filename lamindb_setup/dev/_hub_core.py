@@ -2,8 +2,6 @@ import os
 from typing import Optional, Tuple, Union
 from uuid import UUID, uuid4
 from lamin_utils import logger
-from postgrest.exceptions import APIError
-
 from supabase import Client
 
 from ._hub_client import (
@@ -87,84 +85,74 @@ def _init_instance(
     from .._settings import settings
 
     usettings = settings.user
-    try:
-        # validate input arguments
-        schema_str = validate_schema_arg(schema)
-        # storage is validated in add_storage
-        validate_db_arg(db)
+    # validate input arguments
+    schema_str = validate_schema_arg(schema)
+    # storage is validated in add_storage
+    validate_db_arg(db)
 
-        # get storage and add if not yet there
-        storage_id = add_storage(
-            storage,
-            account_id=usettings.uuid,
-            hub=client,
-        )
-        instance = sb_select_instance_by_name(usettings.uuid, name, client)
-        if instance is not None:
-            return UUID(instance["id"])
+    # get storage and add if not yet there
+    storage_id = add_storage(
+        storage,
+        account_id=usettings.uuid,
+        hub=client,
+    )
+    instance = sb_select_instance_by_name(usettings.uuid, name, client)
+    if instance is not None:
+        return UUID(instance["id"])
 
-        instance_id = uuid4()
-        db_user_id = None
-        if db is None:
-            validate_unique_sqlite(storage_id=storage_id, name=name, client=client)
-            sb_insert_instance(
-                {
-                    "id": instance_id.hex,
-                    "account_id": usettings.uuid.hex,
-                    "name": name,
-                    "storage_id": storage_id.hex,
-                    "schema_str": schema_str,
-                    "public": False,
-                },
-                client,
-            )
-        else:
-            db_dsn = LaminDsnModel(db=db)
-            db_user_id = uuid4().hex
-            sb_insert_instance(
-                {
-                    "id": instance_id.hex,
-                    "account_id": usettings.uuid.hex,
-                    "name": name,
-                    "storage_id": storage_id.hex,
-                    "db": db,
-                    "db_scheme": db_dsn.db.scheme,
-                    "db_host": db_dsn.db.host,
-                    "db_port": db_dsn.db.port,
-                    "db_database": db_dsn.db.database,
-                    "schema_str": schema_str,
-                    "public": False,
-                },
-                client,
-            )
-            sb_insert_db_user(
-                {
-                    "id": db_user_id,
-                    "instance_id": instance_id.hex,
-                    "db_user_name": db_dsn.db.user,
-                    "db_user_password": db_dsn.db.password,
-                },
-                client,
-            )
-        sb_insert_collaborator(
+    instance_id = uuid4()
+    db_user_id = None
+    if db is None:
+        validate_unique_sqlite(storage_id=storage_id, name=name, client=client)
+        sb_insert_instance(
             {
-                "instance_id": instance_id.hex,
+                "id": instance_id.hex,
                 "account_id": usettings.uuid.hex,
-                "db_user_id": db_user_id,
-                "role": "admin",
+                "name": name,
+                "storage_id": storage_id.hex,
+                "schema_str": schema_str,
+                "public": False,
             },
             client,
         )
-        return instance_id
-    except APIError as api_error:
-        uq_instance_db_error = (
-            'duplicate key value violates unique constraint "uq_instance_db"'
+    else:
+        db_dsn = LaminDsnModel(db=db)
+        db_user_id = uuid4().hex
+        sb_insert_instance(
+            {
+                "id": instance_id.hex,
+                "account_id": usettings.uuid.hex,
+                "name": name,
+                "storage_id": storage_id.hex,
+                "db": db,
+                "db_scheme": db_dsn.db.scheme,
+                "db_host": db_dsn.db.host,
+                "db_port": db_dsn.db.port,
+                "db_database": db_dsn.db.database,
+                "schema_str": schema_str,
+                "public": False,
+            },
+            client,
         )
-        if api_error.message == uq_instance_db_error:
-            return "error-db-already-exists"
-        raise api_error
-    except Exception as e:
-        raise e
+        sb_insert_db_user(
+            {
+                "id": db_user_id,
+                "instance_id": instance_id.hex,
+                "db_user_name": db_dsn.db.user,
+                "db_user_password": db_dsn.db.password,
+            },
+            client,
+        )
+    sb_insert_collaborator(
+        {
+            "instance_id": instance_id.hex,
+            "account_id": usettings.uuid.hex,
+            "db_user_id": db_user_id,
+            "role": "admin",
+        },
+        client,
+    )
+    return instance_id
 
 
 def load_instance(
