@@ -3,6 +3,7 @@
 <!-- prettier-ignore -->
 Name | PR | Developer | Date | Version
 --- | --- | --- | --- | ---
+🚚 Migrate to new hub prod URL | [524](https://github.com/laminlabs/lamindb-setup/pull/524) | [falexwolf](https://github.com/falexwolf) | 2023-09-17 |
 👷 Dispatch tests | [522](https://github.com/laminlabs/lamindb-setup/pull/522) | [falexwolf](https://github.com/falexwolf) | 2023-09-15 | 0.53.0
 🎨 Streamline login | [521](https://github.com/laminlabs/lamindb-setup/pull/521) | [falexwolf](https://github.com/falexwolf) | 2023-09-14 |
 🎨 Use a fallback for the hub API in case we move the endpoint | [519](https://github.com/laminlabs/lamindb-setup/pull/519) | [falexwolf](https://github.com/falexwolf) | 2023-09-13 |
