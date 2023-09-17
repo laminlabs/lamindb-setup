@@ -14,10 +14,13 @@ from .dev._settings_storage import StorageSettings
 from .dev._settings_store import instance_settings_file
 from .dev._hub_client import call_with_fallback
 from .dev._hub_crud import sb_select_account_handle_name_by_lnid
-from .dev.cloud_sqlite_locker import InstanceLockedException, unlock_on_exception
+from .dev.cloud_sqlite_locker import (
+    InstanceLockedException,
+    unlock_cloud_sqlite_upon_exception,
+)
 
 
-@unlock_on_exception
+@unlock_cloud_sqlite_upon_exception(ignore_prev_locker=True)
 def load(
     identifier: str,
     *,

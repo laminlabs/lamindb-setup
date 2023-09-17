@@ -16,7 +16,7 @@ MAX_MSG_COUNTER = 100  # print the msg after this number of iterations
 
 
 # raise if an instance is already locked
-# ignored by unlock_on_exception
+# ignored by unlock_cloud_sqlite_upon_exception
 class InstanceLockedException(Exception):
     pass
 
@@ -200,23 +200,31 @@ def get_locker(isettings: InstanceSettings) -> Locker:
 
 
 # decorator
-def unlock_on_exception(func):
-    # https://stackoverflow.com/questions/1782843/python-decorator-handling-docstrings
-    @wraps(func)
-    def wrapper(*args, **kwargs):
-        try:
-            return func(*args, **kwargs)
-        except Exception as exc:
-            if isinstance(exc, InstanceLockedException):
-                raise exc
-            # this is ugly but i don't see any other way to do it properly
-            # this is ignored because if not then the current instance could be unlocked
-            # during the try of loading a new instance
-            elif isinstance(exc, RuntimeError):
-                if str(exc).startswith("Currently don't support init or load"):
-                    raise exc
-            if _locker is not None and _locker._has_lock:
-                _locker.unlock()
-            raise exc
+def unlock_cloud_sqlite_upon_exception(ignore_prev_locker: bool = False):
+    """Decorator to unlock a cloud sqlite instance upon an exception.
 
-    return wrapper
+    Ignores `InstanceLockedException`.
+
+    Args:
+        ignore_prev_locker: `bool` - Do not unlock if locker hasn't changed.
+    """
+
+    def wrap_with_args(func):
+        # https://stackoverflow.com/questions/1782843/python-decorator-handling-docstrings
+        @wraps(func)
+        def wrapper(*args, **kwargs):
+            prev_locker = _locker
+            try:
+                return func(*args, **kwargs)
+            except Exception as exc:
+                if isinstance(exc, InstanceLockedException):
+                    raise exc
+                if ignore_prev_locker and _locker is prev_locker:
+                    raise exc
+                if _locker is not None and _locker._has_lock:
+                    _locker.unlock()
+                raise exc
+
+        return wrapper
+
+    return wrap_with_args
