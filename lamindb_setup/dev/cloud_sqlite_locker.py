@@ -1,6 +1,7 @@
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Optional, Union
+from functools import wraps
 
 import fsspec
 from dateutil.parser import isoparse  # type: ignore
@@ -12,6 +13,12 @@ from .upath import UPath, infer_filesystem
 EXPIRATION_TIME = 7 * 24 * 60 * 60  # 1 week
 
 MAX_MSG_COUNTER = 100  # print the msg after this number of iterations
+
+
+# raise if an instance is already locked
+# ignored by unlock_on_exception
+class InstanceLockedException(Exception):
+    pass
 
 
 class empty_locker:
@@ -190,3 +197,26 @@ def get_locker(isettings: InstanceSettings) -> Locker:
         _locker = Locker(user_id, storage_root, instance_name)
 
     return _locker
+
+
+# decorator
+def unlock_on_exception(func):
+    # https://stackoverflow.com/questions/1782843/python-decorator-handling-docstrings
+    @wraps(func)
+    def wrapper(*args, **kwargs):
+        try:
+            return func(*args, **kwargs)
+        except Exception as exc:
+            if isinstance(exc, InstanceLockedException):
+                raise exc
+            # this is ugly but i don't see any other way to do it properly
+            # this is ignored because if not then the current instance could be unlocked
+            # during the try of loading a new instance
+            elif isinstance(exc, RuntimeError):
+                if str(exc).startswith("Currently don't support init or load"):
+                    raise exc
+            if _locker is not None and _locker._has_lock:
+                _locker.unlock()
+            raise exc
+
+    return wrapper

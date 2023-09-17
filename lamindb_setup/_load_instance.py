@@ -14,8 +14,10 @@ from .dev._settings_storage import StorageSettings
 from .dev._settings_store import instance_settings_file
 from .dev._hub_client import call_with_fallback
 from .dev._hub_crud import sb_select_account_handle_name_by_lnid
+from .dev.cloud_sqlite_locker import InstanceLockedException, unlock_on_exception
 
 
+@unlock_on_exception
 def load(
     identifier: str,
     *,
@@ -128,7 +130,7 @@ def load(
                 f"'{user_info['handle']}' (id: '{locked_by}', name:"
                 f" '{user_info['name']}')."
             )
-        raise RuntimeError(lock_msg)
+        raise InstanceLockedException(lock_msg)
     if storage is not None and isettings.dialect == "sqlite":
         update_root_field_in_default_storage(isettings)
     load_from_isettings(isettings)
