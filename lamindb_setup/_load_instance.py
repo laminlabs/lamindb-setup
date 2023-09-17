@@ -17,6 +17,7 @@ from .dev._hub_crud import sb_select_account_handle_name_by_lnid
 from .dev.cloud_sqlite_locker import (
     InstanceLockedException,
     unlock_cloud_sqlite_upon_exception,
+    EXPIRATION_TIME,
 )
 
 
@@ -132,12 +133,16 @@ def load(
             lnid=locked_by,
         )
         if user_info is None:
-            lock_msg += "id: '{locked_by}'."
+            lock_msg += f"id: '{locked_by}'."
         else:
             lock_msg += (
                 f"'{user_info['handle']}' (id: '{locked_by}', name:"
                 f" '{user_info['name']}')."
             )
+        lock_msg += (
+            "The instance will be automatically unlocked after"
+            f" {int(EXPIRATION_TIME/3600)}h if no activity."
+        )
         raise InstanceLockedException(lock_msg)
 
     # this is for testing purposes only
