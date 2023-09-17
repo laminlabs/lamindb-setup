@@ -199,6 +199,12 @@ def get_locker(isettings: InstanceSettings) -> Locker:
     return _locker
 
 
+def clear_locker():
+    global _locker
+
+    _locker = None
+
+
 # decorator
 def unlock_cloud_sqlite_upon_exception(ignore_prev_locker: bool = False):
     """Decorator to unlock a cloud sqlite instance upon an exception.
