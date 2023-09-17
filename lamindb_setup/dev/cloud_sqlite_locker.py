@@ -1,6 +1,7 @@
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Optional, Union
+from functools import wraps
 
 import fsspec
 from dateutil.parser import isoparse  # type: ignore
@@ -12,6 +13,12 @@ from .upath import UPath, infer_filesystem
 EXPIRATION_TIME = 7 * 24 * 60 * 60  # 1 week
 
 MAX_MSG_COUNTER = 100  # print the msg after this number of iterations
+
+
+# raise if an instance is already locked
+# ignored by unlock_cloud_sqlite_upon_exception
+class InstanceLockedException(Exception):
+    pass
 
 
 class empty_locker:
@@ -190,3 +197,40 @@ def get_locker(isettings: InstanceSettings) -> Locker:
         _locker = Locker(user_id, storage_root, instance_name)
 
     return _locker
+
+
+def clear_locker():
+    global _locker
+
+    _locker = None
+
+
+# decorator
+def unlock_cloud_sqlite_upon_exception(ignore_prev_locker: bool = False):
+    """Decorator to unlock a cloud sqlite instance upon an exception.
+
+    Ignores `InstanceLockedException`.
+
+    Args:
+        ignore_prev_locker: `bool` - Do not unlock if locker hasn't changed.
+    """
+
+    def wrap_with_args(func):
+        # https://stackoverflow.com/questions/1782843/python-decorator-handling-docstrings
+        @wraps(func)
+        def wrapper(*args, **kwargs):
+            prev_locker = _locker
+            try:
+                return func(*args, **kwargs)
+            except Exception as exc:
+                if isinstance(exc, InstanceLockedException):
+                    raise exc
+                if ignore_prev_locker and _locker is prev_locker:
+                    raise exc
+                if _locker is not None and _locker._has_lock:
+                    _locker.unlock()
+                raise exc
+
+        return wrapper
+
+    return wrap_with_args
