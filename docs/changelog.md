@@ -3,6 +3,7 @@
 <!-- prettier-ignore -->
 Name | PR | Developer | Date | Version
 --- | --- | --- | --- | ---
+🐛 Unlock load on error | [523](https://github.com/laminlabs/lamindb-setup/pull/523) | [Koncopd](https://github.com/Koncopd) | 2023-09-17 |
 🚚 Migrate to new hub prod URL | [524](https://github.com/laminlabs/lamindb-setup/pull/524) | [falexwolf](https://github.com/falexwolf) | 2023-09-17 |
 👷 Dispatch tests | [522](https://github.com/laminlabs/lamindb-setup/pull/522) | [falexwolf](https://github.com/falexwolf) | 2023-09-15 | 0.53.0
 🎨 Streamline login | [521](https://github.com/laminlabs/lamindb-setup/pull/521) | [falexwolf](https://github.com/falexwolf) | 2023-09-14 |
