@@ -19,7 +19,7 @@ class classproperty(object):
 
 
 class settings:
-    """Settings access.
+    """Settings.
 
     - :class:`~lamindb_setup.dev.InstanceSettings`
     - :class:`~lamindb_setup.dev.StorageSettings`

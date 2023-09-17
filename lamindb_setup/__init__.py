@@ -1,40 +1,27 @@
-"""LaminDB setup.
+"""Setup & configure LaminDB.
 
-Every function in the API below matches a command in the `lamin` CLI.
+Every function in the API matches a command in the `lamin` CLI.
 
-Setup user account:
+Setup:
 
 .. autosummary::
    :toctree:
 
-   signup
    login
-
-Setup instance:
-
-.. autosummary::
-   :toctree:
-
    init
    load
+   close
+   delete
 
 More instance operations:
 
 .. autosummary::
    :toctree:
 
-   close
-   delete
    info
    set
-   register
-
-Manage creating and testing migrations (deployment is automatic):
-
-.. autosummary::
-   :toctree:
-
    migrate
+   register
 
 Settings:
 
