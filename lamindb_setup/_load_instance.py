@@ -141,7 +141,7 @@ def load(
             )
         lock_msg += (
             "The instance will be automatically unlocked after"
-            f" {int(EXPIRATION_TIME/3600)}h if no activity."
+            f" {int(EXPIRATION_TIME/3600)}h of no activity."
         )
         raise InstanceLockedException(lock_msg)
 
