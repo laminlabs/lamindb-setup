@@ -82,13 +82,13 @@ def reload_lamindb(isettings: InstanceSettings):
         import lamindb
 
         importlib.reload(lamindb)
-        logger.success(
+        logger.important(
             f"loaded instance: {isettings.identifier} (lamindb {lamindb.__version__})"
         )
     else:
         # only log if we're outside lamindb
         # lamindb itself logs upon import!
-        logger.success(f"loaded instance: {isettings.owner}/{isettings.name}")
+        logger.important(f"loaded instance: {isettings.owner}/{isettings.name}")
 
 
 ERROR_SQLITE_CACHE = """
