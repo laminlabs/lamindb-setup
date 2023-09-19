@@ -2,6 +2,8 @@
 
 Every function in the API matches a command in the `lamin` CLI.
 
+Guide: :doc:`docs:setup`.
+
 Setup:
 
 .. autosummary::
