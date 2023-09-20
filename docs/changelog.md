@@ -3,6 +3,7 @@
 <!-- prettier-ignore -->
 Name | PR | Developer | Date | Version
 --- | --- | --- | --- | ---
+💚 Try to fix noaws test | [528](https://github.com/laminlabs/lamindb-setup/pull/528) | [falexwolf](https://github.com/falexwolf) | 2023-09-20 |
 📝 Fix loading message of lamindb | [526](https://github.com/laminlabs/lamindb-setup/pull/526) | [falexwolf](https://github.com/falexwolf) | 2023-09-17 | 0.53.1
 🔐 Change lock expiration time to 1 day | [525](https://github.com/laminlabs/lamindb-setup/pull/525) | [Koncopd](https://github.com/Koncopd) | 2023-09-17 |
 🐛 Unlock load on error | [523](https://github.com/laminlabs/lamindb-setup/pull/523) | [Koncopd](https://github.com/Koncopd) | 2023-09-17 |
