@@ -17,7 +17,7 @@ Settings:
    StorageSettings
 
 """
-from . import _django, upath
+from . import upath, django
 from ._deprecated import deprecated
 from ._docs import doc_args
 from ._settings_instance import InstanceSettings

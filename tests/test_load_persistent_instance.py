@@ -6,24 +6,20 @@ from uuid import UUID
 
 import lamindb_setup as ln_setup
 from lamindb_setup.dev._hub_client import connect_hub_with_auth
-from lamindb_setup.dev._hub_crud import (
-    sb_select_account_by_handle,
-    sb_select_instance_by_name,
-)
+from lamindb_setup.dev._hub_crud import select_instance_by_owner_name
 
 
 def test_load_persistent_instance():
     assert ln_setup.dev.upath.AWS_CREDENTIALS_PRESENT is None
-    ln_setup.load("testuser1/lamin-site-assets")
+    ln_setup.login("static-testuser1@lamin.ai", password="static-testuser1-password")
+    ln_setup.load("static-testuser1/static-testinstance1")
     hub = connect_hub_with_auth()
-    account = sb_select_account_by_handle(
-        handle=ln_setup.settings.instance.owner, client=hub
-    )
-    instance = sb_select_instance_by_name(
-        account_id=account["id"],
+    instance = select_instance_by_owner_name(
+        owner=ln_setup.settings.instance.owner,
         name=ln_setup.settings.instance.name,
         client=hub,
     )
+    hub.auth.sign_out()
     assert ln_setup.settings.instance.id == UUID(instance["id"])
     assert not ln_setup.dev.upath.AWS_CREDENTIALS_PRESENT
     ln_setup.close()

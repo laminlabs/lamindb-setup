@@ -1,4 +1,4 @@
-from lamindb_setup.dev._django import get_migrations_to_sync  # backward compat version
+from lamindb_setup.dev.django import get_migrations_to_sync
 
 
 def test_get_migrations_to_sync():
