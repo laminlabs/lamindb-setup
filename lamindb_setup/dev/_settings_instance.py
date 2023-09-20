@@ -3,8 +3,8 @@ import shutil
 from pathlib import Path
 from typing import Literal, Optional, Set, Tuple, Union
 from uuid import UUID
-from .dev._hub_client import call_with_fallback
-from .dev._hub_crud import sb_select_account_handle_name_by_lnid
+from ._hub_client import call_with_fallback
+from ._hub_crud import sb_select_account_handle_name_by_lnid
 from lamin_utils import logger
 from .cloud_sqlite_locker import (
     InstanceLockedException,
