@@ -7,7 +7,6 @@ import fsspec
 from dateutil.parser import isoparse  # type: ignore
 from lamin_utils import logger
 
-from ._settings_instance import InstanceSettings
 from .upath import UPath, infer_filesystem
 
 EXPIRATION_TIME = 24 * 60 * 60 * 7  # 7 days
@@ -178,7 +177,7 @@ class Locker:
 _locker: Optional[Locker] = None
 
 
-def get_locker(isettings: InstanceSettings) -> Locker:
+def get_locker(isettings) -> Locker:
     from .._settings import settings
 
     global _locker
