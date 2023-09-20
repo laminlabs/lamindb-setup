@@ -120,7 +120,6 @@ def load(
                 " Re-initializing the DB."
             )
             return "instance-not-reachable"
-    isettings._check_sqlite_lock()
     # this is for testing purposes only
     if _TEST_FAILED_LOAD:
         raise RuntimeError("Technical testing error.")
