@@ -12,12 +12,8 @@ from ._silence_loggers import silence_loggers
 from .dev._settings_load import load_instance_settings
 from .dev._settings_storage import StorageSettings
 from .dev._settings_store import instance_settings_file
-from .dev._hub_client import call_with_fallback
-from .dev._hub_crud import sb_select_account_handle_name_by_lnid
 from .dev.cloud_sqlite_locker import (
-    InstanceLockedException,
     unlock_cloud_sqlite_upon_exception,
-    EXPIRATION_TIME,
 )
 
 
@@ -124,27 +120,6 @@ def load(
                 " Re-initializing the DB."
             )
             return "instance-not-reachable"
-    # at this point the lock should be already initialized
-    if not isettings._cloud_sqlite_locker.has_lock:
-        locked_by = isettings._cloud_sqlite_locker._locked_by
-        lock_msg = "Cannot load the instance, it is locked by "
-        user_info = call_with_fallback(
-            sb_select_account_handle_name_by_lnid,
-            lnid=locked_by,
-        )
-        if user_info is None:
-            lock_msg += f"id: '{locked_by}'."
-        else:
-            lock_msg += (
-                f"'{user_info['handle']}' (id: '{locked_by}', name:"
-                f" '{user_info['name']}')."
-            )
-        lock_msg += (
-            "The instance will be automatically unlocked after"
-            f" {int(EXPIRATION_TIME/3600)}h of no activity."
-        )
-        raise InstanceLockedException(lock_msg)
-
     # this is for testing purposes only
     if _TEST_FAILED_LOAD:
         raise RuntimeError("Technical testing error.")
