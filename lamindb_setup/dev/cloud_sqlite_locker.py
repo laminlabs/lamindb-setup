@@ -10,7 +10,7 @@ from lamin_utils import logger
 from ._settings_instance import InstanceSettings
 from .upath import UPath, infer_filesystem
 
-EXPIRATION_TIME = 24 * 60 * 60  # 1 day
+EXPIRATION_TIME = 24 * 60 * 60 * 7  # 7 days
 
 MAX_MSG_COUNTER = 100  # print the msg after this number of iterations
 
@@ -147,7 +147,6 @@ class Locker:
                 self._has_lock = False
                 self._locked_by = user
                 self.mapper[f"numbers/{self.user}"] = b"0"
-                logger.warning(f"instance is locked by user with id {user}")
                 return None
 
     def lock(self):

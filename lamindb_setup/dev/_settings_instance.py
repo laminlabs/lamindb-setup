@@ -3,9 +3,13 @@ import shutil
 from pathlib import Path
 from typing import Literal, Optional, Set, Tuple, Union
 from uuid import UUID
-
+from .dev._hub_client import call_with_fallback
+from .dev._hub_crud import sb_select_account_handle_name_by_lnid
 from lamin_utils import logger
-
+from .cloud_sqlite_locker import (
+    InstanceLockedException,
+    EXPIRATION_TIME,
+)
 from ._settings_save import save_instance_settings
 from ._settings_storage import StorageSettings
 from ._settings_store import current_instance_settings_file, instance_settings_file
@@ -115,6 +119,27 @@ class InstanceSettings:
             cache_file = self.storage.cloud_to_local_no_update(sqlite_file)
             sqlite_file.synchronize(cache_file)  # type: ignore
             self._cloud_sqlite_locker.lock()
+
+    def _check_sqlite_lock(self):
+        if not self._cloud_sqlite_locker.has_lock:
+            locked_by = self._cloud_sqlite_locker._locked_by
+            lock_msg = "Cannot load the instance, it is locked by "
+            user_info = call_with_fallback(
+                sb_select_account_handle_name_by_lnid,
+                lnid=locked_by,
+            )
+            if user_info is None:
+                lock_msg += f"id: '{locked_by}'."
+            else:
+                lock_msg += (
+                    f"'{user_info['handle']}' (id: '{locked_by}', name:"
+                    f" '{user_info['name']}')."
+                )
+            lock_msg += (
+                "The instance will be automatically unlocked after"
+                f" {int(EXPIRATION_TIME/3600/24)}d of no activity."
+            )
+            raise InstanceLockedException(lock_msg)
 
     @property
     def db(self) -> str:
