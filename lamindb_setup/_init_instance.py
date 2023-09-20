@@ -229,6 +229,7 @@ def load_from_isettings(
         # during init both user and storage need to be registered
         register_user_and_storage(isettings, settings.user)
         write_bionty_sources(isettings)
+        isettings._update_cloud_sqlite_file()
     else:
         # when loading, django is already set up
         # only register user if the instance is loaded
