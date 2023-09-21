@@ -108,15 +108,23 @@ class InstanceSettings:
             os.utime(cache_file, times=(cloud_mtime, cloud_mtime))
             self._cloud_sqlite_locker.unlock()
 
-    def _update_local_sqlite_file(self) -> None:
+    def _update_local_sqlite_file(self, exclude_laminapp_admin: bool = False) -> None:
         """Download the cloud sqlite file if it is newer than local."""
+        import lamindb_setup as ln_setup
+
         if self._is_cloud_sqlite:
             logger.warning(
                 "updating local SQLite & locking cloud SQLite (sync back & unlock:"
                 " lamin close)"
             )
-            self._cloud_sqlite_locker.lock()
-            self._check_sqlite_lock()
+            # lock in all cases except if exclude_laminapp_admin is True and
+            # user is `laminapp-admin`
+            if not (
+                exclude_laminapp_admin
+                and ln_setup.settings.user.handle == "laminapp-admin"
+            ):
+                self._cloud_sqlite_locker.lock()
+                self._check_sqlite_lock()
             sqlite_file = self._sqlite_file
             cache_file = self.storage.cloud_to_local_no_update(sqlite_file)
             sqlite_file.synchronize(cache_file)  # type: ignore
@@ -245,7 +253,7 @@ class InstanceSettings:
         from .django import setup_django
 
         # we need the local sqlite to setup django
-        self._update_local_sqlite_file()
+        self._update_local_sqlite_file(exclude_laminapp_admin=True)
         # setting up django also performs a check for migrations & prints them
         # as warnings
         # this should fail, e.g., if the db is not reachable
