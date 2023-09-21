@@ -3,7 +3,7 @@
 <!-- prettier-ignore -->
 Name | PR | Developer | Date | Version
 --- | --- | --- | --- | ---
-♻️ Do not lock instance on load for laminapp-admin | [532](https://github.com/laminlabs/lamindb-setup/pull/532) | [falexwolf](https://github.com/falexwolf) | 2023-09-21 |
+♻️ Do not lock instance on load for laminapp-admin | [532](https://github.com/laminlabs/lamindb-setup/pull/532) | [falexwolf](https://github.com/falexwolf) | 2023-09-21 | 0.53.2
 ♻️ Refactor lock | [530](https://github.com/laminlabs/lamindb-setup/pull/530) | [falexwolf](https://github.com/falexwolf) | 2023-09-20 |
 💚 Try to fix noaws test | [528](https://github.com/laminlabs/lamindb-setup/pull/528) | [falexwolf](https://github.com/falexwolf) | 2023-09-20 |
 📝 Fix loading message of lamindb | [526](https://github.com/laminlabs/lamindb-setup/pull/526) | [falexwolf](https://github.com/falexwolf) | 2023-09-17 | 0.53.1
