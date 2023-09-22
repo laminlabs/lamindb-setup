@@ -25,7 +25,9 @@ def load_fallback_connector() -> Connector:
 PROD_URL = "https://hub.lamin.ai"
 PROD_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImxhZXNhdW1tZHlkbGxwcGdmY2h1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE2NTY4NDA1NTEsImV4cCI6MTk3MjQxNjU1MX0.WUeCRiun0ExUxKIv5-CtjF6878H8u26t0JmCWx3_2-c"  # noqa
 # "https://laminhub-rest-cloud-run-prod-xv4y7p4gqa-uc.a.run.app"
-PROD_HUB_REST_SERVER_URL = "http://localhost:8000"
+PROD_HUB_REST_SERVER_URL = (
+    "https://laminhub-rest-cloud-run-staging-test-xv4y7p4gqa-uc.a.run.app"
+)
 
 
 class Environment:
