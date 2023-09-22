@@ -34,6 +34,12 @@ aa("--storage", type=str, metavar="s", help=instance.storage_root)
 aa("--db", type=str, metavar="d", default=None, help=instance.db)
 aa("--schema", type=str, metavar="schema", default=None, help=instance.schema)
 aa("--name", type=str, metavar="n", default=None, help=instance.name)
+aa(
+    "--vault",
+    default=False,
+    action="store_true",
+    help="Use vault to manage credentials.",
+)
 
 # load instance
 load = subparsers.add_parser("load", help=load_help)
@@ -126,6 +132,7 @@ def main():
             db=args.db,
             schema=args.schema,
             name=args.name,
+            _vault=args.vault,
         )
     elif args.command == "load":
         from ._load_instance import load

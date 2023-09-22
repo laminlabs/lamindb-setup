@@ -4,10 +4,11 @@ from uuid import UUID
 
 from lamin_utils import logger
 
-from lamindb_setup.dev._vault import (
-    get_db_from_vault,
+from lamin_vault.client.postgres._get_db_from_vault import get_db_from_vault
+from lamin_vault.client.postgres._connection_config_db_exists import (
     connection_config_db_exists,
 )
+from lamin_vault.client._create_vault_client import create_vault_authenticated_client
 from lamindb_setup.dev.upath import UPath
 from ._close import close as close_instance
 from ._init_instance import load_from_isettings
@@ -70,24 +71,12 @@ def load(
     # that successfully returned metadata
     if not isinstance(hub_result, str):
         instance_result, storage_result = hub_result
-
-        if connection_config_db_exists(instance_result["id"]):
-            db = get_db_from_vault(
-                scheme=instance_result["db_scheme"],
-                host=instance_result["db_host"],
-                port=instance_result["db_port"],
-                name=instance_result["db_database"],
-                role=f'{instance_result["id"]}-{settings.user.uuid}-db',
-            )
-        else:
-            db = instance_result["db"]
-
         isettings = InstanceSettings(
             owner=owner,
             name=name,
             storage_root=storage_result["root"],
             storage_region=storage_result["region"],
-            db=db,
+            db=get_db(instance_result),
             schema=instance_result["schema_str"],
             id=UUID(instance_result["id"]),
         )
@@ -144,6 +133,24 @@ def load(
         update_root_field_in_default_storage(isettings)
     load_from_isettings(isettings)
     return None
+
+
+def get_db(instance_result):
+    vault_client = create_vault_authenticated_client(
+        access_token=settings.user.access_token,
+    )
+    config_db_exists = connection_config_db_exists(vault_client, instance_result["id"])
+    if config_db_exists:
+        return get_db_from_vault(
+            vault_client=vault_client,
+            scheme=instance_result["db_scheme"],
+            host=instance_result["db_host"],
+            port=instance_result["db_port"],
+            name=instance_result["db_database"],
+            role=f'{instance_result["id"]}-{settings.user.uuid}-db',
+        )
+    else:
+        return instance_result["db"]
 
 
 def get_owner_name_from_identifier(identifier: str):

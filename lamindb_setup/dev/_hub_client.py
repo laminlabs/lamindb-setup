@@ -1,13 +1,14 @@
 # see the overlap with connector.py in laminhub-rest
 import os
 from typing import Optional
-from lamin_utils import logger
-from supabase.lib.client_options import ClientOptions
 from urllib.request import urlretrieve
-from supabase import create_client, Client
-from pydantic import BaseSettings
-from postgrest import APIError as PostgrestAPIError
+
 from gotrue.errors import AuthUnknownError
+from lamin_utils import logger
+from postgrest import APIError as PostgrestAPIError
+from pydantic import BaseSettings
+from supabase import Client, create_client
+from supabase.lib.client_options import ClientOptions
 
 
 class Connector(BaseSettings):
@@ -25,9 +26,6 @@ def load_fallback_connector() -> Connector:
 PROD_URL = "https://hub.lamin.ai"
 PROD_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImxhZXNhdW1tZHlkbGxwcGdmY2h1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE2NTY4NDA1NTEsImV4cCI6MTk3MjQxNjU1MX0.WUeCRiun0ExUxKIv5-CtjF6878H8u26t0JmCWx3_2-c"  # noqa
 # "https://laminhub-rest-cloud-run-prod-xv4y7p4gqa-uc.a.run.app"
-PROD_HUB_REST_SERVER_URL = (
-    "https://laminhub-rest-cloud-run-staging-test-xv4y7p4gqa-uc.a.run.app"
-)
 
 
 class Environment:
@@ -44,15 +42,12 @@ class Environment:
                 connector = load_fallback_connector()
                 url = connector.url
                 key = connector.key
-            hub_rest_server_url = PROD_HUB_REST_SERVER_URL
         else:
             url = os.environ["SUPABASE_API_URL"]
             key = os.environ["SUPABASE_ANON_KEY"]
-            hub_rest_server_url = os.environ["LAMIN_HUB_REST_SERVER_URL"]
         self.lamin_env: str = lamin_env
         self.supabase_api_url: str = url
         self.supabase_anon_key: str = key
-        self.hub_rest_server_url: str = hub_rest_server_url
 
 
 # runs ~0.5s
