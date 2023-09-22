@@ -5,7 +5,7 @@ from uuid import UUID
 from lamin_utils import logger
 
 from lamindb_setup.dev._vault import (
-    get_db_postgres_connection_string,
+    get_db_from_vault,
     connection_config_db_exists,
 )
 from lamindb_setup.dev.upath import UPath
@@ -72,7 +72,7 @@ def load(
         instance_result, storage_result = hub_result
 
         if connection_config_db_exists(instance_result["id"]):
-            db = get_db_postgres_connection_string(
+            db = get_db_from_vault(
                 scheme=instance_result["db_scheme"],
                 host=instance_result["db_host"],
                 port=instance_result["db_port"],

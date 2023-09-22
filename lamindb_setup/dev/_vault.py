@@ -5,6 +5,75 @@ from lamindb_setup.dev._hub_client import Environment
 
 from ._hub_utils import LaminDsn
 
+# Init instance vault
+
+
+def init_instance_vault(
+    instance_id,
+    admin_account_id,
+    db_host,
+    db_port,
+    db_name,
+    vault_db_username,
+    vault_db_password,
+):
+    vault_admin_client = create_vault_admin_client(instance_id)
+
+    create_or_update_connection_config_db(
+        vault_admin_client=vault_admin_client,
+        instance_id=instance_id,
+        db_host=db_host,
+        db_port=db_port,
+        db_name=db_name,
+        vault_db_username=vault_db_username,
+        vault_db_password=vault_db_password,
+    )
+
+    admin_role_creation_statements = [
+        "CREATE ROLE \"{{name}}\" WITH LOGIN PASSWORD '{{password}}' VALID UNTIL"
+        " '{{expiration}}';",
+        'GRANT SELECT ON ALL TABLES IN SCHEMA public TO "{{name}}";',
+    ]
+
+    create_or_update_role_and_policy_db(
+        vault_admin_client=vault_admin_client,
+        instance_id=instance_id,
+        account_id=admin_account_id,
+        creation_statements=admin_role_creation_statements,
+    )
+
+
+# Generate credential for db
+
+
+def generate_db_credentials(vault_client, role_name):
+    credentials = vault_client.secrets.database.generate_credentials(
+        name=role_name, mount_point="database"
+    )
+
+    username = credentials["data"]["username"]
+    password = credentials["data"]["password"]
+
+    return username, password
+
+
+def get_db_from_vault(scheme, host, port, name, role):
+    vault_client = create_vault_client()
+
+    # TODO: Fetch a user role id for postgres to replace "read"
+    # something like f"{account_id}-{instance_id}-db-credentials"
+    username, password = generate_db_credentials(vault_client, role)
+
+    return LaminDsn.build(
+        scheme=scheme,
+        user=username,
+        password=password,
+        host=host,
+        port=str(port),
+        database=name,
+    )
+
+
 # Create vault client
 
 
@@ -102,73 +171,4 @@ def create_or_update_role_and_policy_db(
     vault_admin_client.write(
         connection_config_path,
         allowed_roles=list(allowed_roles),
-    )
-
-
-# Init instance vault
-
-
-def init_instance_vault(
-    instance_id,
-    admin_account_id,
-    db_host,
-    db_port,
-    db_name,
-    vault_db_username,
-    vault_db_password,
-):
-    vault_admin_client = create_vault_admin_client(instance_id)
-
-    create_or_update_connection_config_db(
-        vault_admin_client=vault_admin_client,
-        instance_id=instance_id,
-        db_host=db_host,
-        db_port=db_port,
-        db_name=db_name,
-        vault_db_username=vault_db_username,
-        vault_db_password=vault_db_password,
-    )
-
-    admin_role_creation_statements = [
-        "CREATE ROLE \"{{name}}\" WITH LOGIN PASSWORD '{{password}}' VALID UNTIL"
-        " '{{expiration}}';",
-        'GRANT SELECT ON ALL TABLES IN SCHEMA public TO "{{name}}";',
-    ]
-
-    create_or_update_role_and_policy_db(
-        vault_admin_client=vault_admin_client,
-        instance_id=instance_id,
-        account_id=admin_account_id,
-        creation_statements=admin_role_creation_statements,
-    )
-
-
-# Generate credential for db
-
-
-def generate_db_postgres_credentials(vault_client, role_name):
-    credentials = vault_client.secrets.database.generate_credentials(
-        name=role_name, mount_point="database"
-    )
-
-    username = credentials["data"]["username"]
-    password = credentials["data"]["password"]
-
-    return username, password
-
-
-def get_db_postgres_connection_string(scheme, host, port, name, role):
-    vault_client = create_vault_client()
-
-    # TODO: Fetch a user role id for postgres to replace "read"
-    # something like f"{account_id}-{instance_id}-db-credentials"
-    username, password = generate_db_postgres_credentials(vault_client, role)
-
-    return LaminDsn.build(
-        scheme=scheme,
-        user=username,
-        password=password,
-        host=host,
-        port=str(port),
-        database=name,
     )
