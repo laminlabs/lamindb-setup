@@ -46,3 +46,11 @@ class migrate:
             )
             return False
         return True
+
+    @classmethod
+    def squashmigrations(cls, *args) -> None:
+        """Squash migrations."""
+        from django.core.management import call_command
+
+        setup_django(settings.instance)
+        call_command("squashmigrations", *args)
