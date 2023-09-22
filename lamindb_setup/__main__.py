@@ -68,7 +68,14 @@ subparsers.add_parser("register", help=register_help)
 # migrate
 migr = subparsers.add_parser("migrate", help=migr_help)
 aa = migr.add_argument
-aa("action", choices=["create", "deploy"], help="Manage migrations.")
+aa(
+    "action",
+    choices=["create", "deploy", "squash"],
+    help="Manage migrations.",
+)
+aa("--package-name", type=str, default=None)
+aa("--end-number", type=str, default=None)
+aa("--start-number", type=str, default=None)
 
 # track a notebook (init nbproject metadata)
 track_parser = subparsers.add_parser("track", help=track_help)
@@ -161,6 +168,12 @@ def main():
             return migrate.create()
         elif args.action == "deploy":
             return migrate.deploy()
+        elif args.action == "squash":
+            return migrate.squash(
+                package_name=args.package_name,
+                migration_nr=args.end_number,
+                start_migration_nr=args.start_number,
+            )
     elif args.command == "track":
         from ._notebook import track
 
