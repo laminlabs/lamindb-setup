@@ -16,6 +16,8 @@ from .dev import InstanceSettings
 from .dev._docs import doc_args
 from .dev._settings_storage import StorageSettings
 from .dev.upath import create_path
+from .dev._vault import init_instance_vault
+from .dev._hub_utils import LaminDsnModel
 
 
 def get_schema_module_name(schema_name) -> str:
@@ -192,6 +194,18 @@ def init(
             raise RuntimeError(f"Registering instance on hub failed:\n{result}")
         isettings._id = result
         logger.save(f"registered instance on hub: https://lamin.ai/{owner}/{name_str}")
+
+        if db is not None:
+            db_dsn = LaminDsnModel(db=db)
+            init_instance_vault(
+                instance_id=result,
+                admin_account_id=settings.user.uuid,
+                db_host=db_dsn.db.host,
+                db_port=db_dsn.db.port,
+                db_name=db_dsn.db.database,
+                vault_db_username=db_dsn.db.user,
+                vault_db_password=db_dsn.db.password,
+            )
 
     if _test:
         isettings._persist()

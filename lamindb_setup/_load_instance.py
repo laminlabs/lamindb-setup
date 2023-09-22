@@ -4,6 +4,10 @@ from uuid import UUID
 
 from lamin_utils import logger
 
+from lamindb_setup.dev._vault import (
+    get_db_postgres_connection_string,
+    connection_config_db_exists,
+)
 from lamindb_setup.dev.upath import UPath
 from ._close import close as close_instance
 from ._init_instance import load_from_isettings
@@ -66,12 +70,24 @@ def load(
     # that successfully returned metadata
     if not isinstance(hub_result, str):
         instance_result, storage_result = hub_result
+
+        if connection_config_db_exists(instance_result["id"]):
+            db = get_db_postgres_connection_string(
+                scheme=instance_result["db_scheme"],
+                host=instance_result["db_host"],
+                port=instance_result["db_port"],
+                name=instance_result["db_database"],
+                role=f'{instance_result["id"]}-{settings.user.uuid}-db',
+            )
+        else:
+            db = instance_result["db"]
+
         isettings = InstanceSettings(
             owner=owner,
             name=name,
             storage_root=storage_result["root"],
             storage_region=storage_result["region"],
-            db=instance_result["db"],
+            db=db,
             schema=instance_result["schema_str"],
             id=UUID(instance_result["id"]),
         )
