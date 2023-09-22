@@ -12,5 +12,5 @@ def test_migrate_create():
 
 
 def test_migrate_squash():
-    exit_status = os.system("y | lamin migrate squash lnschema_core 0019")
+    exit_status = os.system("yes | lamin migrate squash lnschema_core 0019")
     assert exit_status == 0
