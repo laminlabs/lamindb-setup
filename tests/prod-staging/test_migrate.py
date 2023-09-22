@@ -19,3 +19,7 @@ def setup_instance():
 
 def test_migrate_check(setup_instance):
     assert ln_setup.migrate.check()
+
+
+def test_migrate_squash(setup_instance):
+    ln_setup.migrate.squash(package_name="lnschema_core", migration_nr="0019")
