@@ -9,3 +9,8 @@ def test_entrypoint():
 def test_migrate_create():
     exit_status = os.system("lamin migrate create")
     assert exit_status == 0
+
+
+def test_migrate_squash():
+    exit_status = os.system("y | lamin migrate squash lnschema_core 0019")
+    assert exit_status == 0
