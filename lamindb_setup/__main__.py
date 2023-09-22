@@ -73,9 +73,9 @@ aa(
     choices=["create", "deploy", "squash"],
     help="Manage migrations.",
 )
-aa("package_name", type=str)
-aa("migration_nr", type=str)
-aa("--start_migration_nr", type=str, default=None)
+aa("--package-name", type=str, default=None)
+aa("--end-number", type=str, default=None)
+aa("--start-number", type=str, default=None)
 
 # track a notebook (init nbproject metadata)
 track_parser = subparsers.add_parser("track", help=track_help)
@@ -171,8 +171,8 @@ def main():
         elif args.action == "squash":
             return migrate.squash(
                 package_name=args.package_name,
-                migration_nr=args.migration_nr,
-                start_migration_nr=args.start_migration_nr,
+                migration_nr=args.end_number,
+                start_migration_nr=args.start_number,
             )
     elif args.command == "track":
         from ._notebook import track
