@@ -1,3 +1,4 @@
+from typing import Optional
 from lamin_utils import logger
 
 from ._check_instance_setup import check_instance_setup
@@ -48,9 +49,16 @@ class migrate:
         return True
 
     @classmethod
-    def squashmigrations(cls, *args) -> None:
+    def squash(
+        cls, package_name, migration_nr, start_migration_nr: Optional[str] = None
+    ) -> None:
         """Squash migrations."""
         from django.core.management import call_command
 
         setup_django(settings.instance)
-        call_command("squashmigrations", *args)
+        if start_migration_nr is not None:
+            call_command(
+                "squashmigrations", package_name, start_migration_nr, migration_nr
+            )
+        else:
+            call_command("squashmigrations", package_name, migration_nr)
