@@ -92,7 +92,7 @@ class InstanceSettings:
         """Local SQLite file."""
         return self.storage.cloud_to_local_no_update(self._sqlite_file)
 
-    def _update_cloud_sqlite_file(self) -> None:
+    def _update_cloud_sqlite_file(self, unlock_cloud_sqlite: bool = True) -> None:
         """Upload the local sqlite file to the cloud file."""
         if self._is_cloud_sqlite:
             sqlite_file = self._sqlite_file
@@ -106,25 +106,17 @@ class InstanceSettings:
             # this seems to work even if there is an open connection
             # to the cache file
             os.utime(cache_file, times=(cloud_mtime, cloud_mtime))
-            self._cloud_sqlite_locker.unlock()
+            if unlock_cloud_sqlite:
+                self._cloud_sqlite_locker.unlock()
 
-    def _update_local_sqlite_file(
-        self, do_not_lock_for_laminapp_admin: bool = False
-    ) -> None:
+    def _update_local_sqlite_file(self, lock_cloud_sqlite: bool = True) -> None:
         """Download the cloud sqlite file if it is newer than local."""
-        import lamindb_setup as ln_setup
-
         if self._is_cloud_sqlite:
             logger.warning(
                 "updating local SQLite & locking cloud SQLite (sync back & unlock:"
                 " lamin close)"
             )
-            # lock in all cases except if do_not_lock_for_laminapp_admin is True and
-            # user is `laminapp-admin`
-            if not (
-                do_not_lock_for_laminapp_admin
-                and ln_setup.settings.user.handle == "laminapp-admin"
-            ):
+            if lock_cloud_sqlite:
                 self._cloud_sqlite_locker.lock()
                 self._check_sqlite_lock()
             sqlite_file = self._sqlite_file
@@ -247,15 +239,26 @@ class InstanceSettings:
 
         setup_django(self, deploy_migrations=True, init=True)
 
-    def _load_db(self) -> Tuple[bool, str]:
+    def _load_db(
+        self, do_not_lock_for_laminapp_admin: bool = False
+    ) -> Tuple[bool, str]:
         # Is the database available and initialized as LaminDB?
         # returns a tuple of status code and message
         if self.dialect == "sqlite" and not self._sqlite_file.exists():
             return False, "SQLite file does not exist"
+        from lamindb_setup import settings  # to check user
         from .django import setup_django
 
+        # lock in all cases except if do_not_lock_for_laminapp_admin is True and
+        # user is `laminapp-admin`
+        # value doesn't matter if not a cloud sqlite instance
+        lock_cloud_sqlite = (
+            self._is_cloud_sqlite
+            and not do_not_lock_for_laminapp_admin
+            and settings.user.handle == "laminapp-admin"
+        )
         # we need the local sqlite to setup django
-        self._update_local_sqlite_file(do_not_lock_for_laminapp_admin=True)
+        self._update_local_sqlite_file(lock_cloud_sqlite=lock_cloud_sqlite)
         # setting up django also performs a check for migrations & prints them
         # as warnings
         # this should fail, e.g., if the db is not reachable
