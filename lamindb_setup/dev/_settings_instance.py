@@ -252,10 +252,9 @@ class InstanceSettings:
         # lock in all cases except if do_not_lock_for_laminapp_admin is True and
         # user is `laminapp-admin`
         # value doesn't matter if not a cloud sqlite instance
-        lock_cloud_sqlite = (
-            self._is_cloud_sqlite
-            and not do_not_lock_for_laminapp_admin
-            and settings.user.handle == "laminapp-admin"
+        lock_cloud_sqlite = self._is_cloud_sqlite and (
+            not do_not_lock_for_laminapp_admin
+            or settings.user.handle != "laminapp-admin"
         )
         # we need the local sqlite to setup django
         self._update_local_sqlite_file(lock_cloud_sqlite=lock_cloud_sqlite)
