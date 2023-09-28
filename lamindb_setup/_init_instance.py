@@ -16,7 +16,7 @@ from .dev import InstanceSettings
 from .dev._docs import doc_args
 from .dev._settings_storage import StorageSettings
 from .dev.upath import create_path
-from ._init_instance_vault import _init_vault
+from ._init_vault import _init_vault
 
 
 def get_schema_module_name(schema_name) -> str:

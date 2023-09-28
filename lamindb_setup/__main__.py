@@ -148,7 +148,7 @@ def main():
         )
 
     elif args.command == "init-vault":
-        from ._init_instance_vault import init_vault
+        from ._init_vault import init_vault
 
         return init_vault(
             db=args.db,
