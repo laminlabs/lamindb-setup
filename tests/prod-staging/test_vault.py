@@ -12,6 +12,7 @@ from lamin_vault.client.postgres._connection_config_db_exists import (
 from lamin_vault.client.postgres._role_and_policy_exist import role_and_policy_exist
 from lamin_vault.utils._lamin_dsn import LaminDsn
 from lamindb_setup._delete import delete
+from lamindb_setup._load_instance import load
 from lamindb_setup._init_instance import init
 from lamindb_setup._init_vault import init_vault
 from lamindb_setup._settings import settings
@@ -155,14 +156,14 @@ def test_init_vault(db_url, db_name):
         # Verify connection configuration does not exist
         assert not connection_config_db_exists(
             vault_client=vault_client_test, instance_id=instance_id
-        ), "Connection configuration should exist in vault."
+        ), "Connection configuration should not exist in vault."
 
         # Verify connection admin role and policy do not exist
         assert not role_and_policy_exist(
             vault_client=vault_client_test,
             instance_id=instance_id,
             account_id=admin_account_id,
-        ), "Admin role and policy should exist in vault."
+        ), "Admin role and policy should not exist in vault."
 
         init_vault(db=settings.instance.db)
 
@@ -177,6 +178,53 @@ def test_init_vault(db_url, db_name):
             instance_id=instance_id,
             account_id=admin_account_id,
         ), "Admin role and policy should exist in vault."
+
+    finally:
+        if instance_id is not None:
+            # Delete the created resources
+            role_name = f"{instance_id}-{admin_account_id}-db"
+            policy_name = f"{role_name}-policy"
+            connection_config_path = f"database/config/{instance_id}"
+            vault_admin_client_test = create_vault_admin_client(
+                access_token=settings.user.access_token, instance_id=instance_id
+            )
+
+            vault_admin_client_test.secrets.database.delete_role(name=role_name)
+            vault_admin_client_test.sys.delete_policy(name=policy_name)
+            vault_admin_client_test.delete(connection_config_path)
+
+            delete(instance_name=instance_name, force=True)
+
+
+def test_load_with_vault(db_url, db_name):
+    instance_name = db_name + "_3"
+    try:
+        init(
+            name=instance_name,
+            storage="s3://lamindata",
+            db=db_url,
+            _vault=True,
+            _test=True,
+        )
+        instance_id = settings.instance.id
+        admin_account_id = settings.user.uuid
+
+        load(instance_name=instance_name)
+
+        # Verify generated db credentails exist
+        assert (
+            settings.instance._db_from_vault is not None
+        ), "Generated db credentials should exist."
+
+        # Verify generated db credentails are used
+        assert (
+            settings.instance._db_from_vault == settings.instance.db
+        ), "Generated db credentials should be used."
+
+        # Verify admin connection string is still stored in settings
+        assert (
+            settings.instance._db == db_url
+        ), "Admin connection string should be stored in settings."
 
     finally:
         if instance_id is not None:
