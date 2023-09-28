@@ -120,19 +120,20 @@ def test_init_instance_with_vault(db_url, db_name):
         ), "Admin role and policy should exist in vault."
 
     finally:
-        # Delete the created resources
-        role_name = f"{instance_id}-{admin_account_id}-db"
-        policy_name = f"{role_name}-policy"
-        connection_config_path = f"database/config/{instance_id}"
-        vault_admin_client_test = create_vault_admin_client(
-            access_token=settings.user.access_token, instance_id=instance_id
-        )
+        if instance_id is not None:
+            # Delete the created resources
+            role_name = f"{instance_id}-{admin_account_id}-db"
+            policy_name = f"{role_name}-policy"
+            connection_config_path = f"database/config/{instance_id}"
+            vault_admin_client_test = create_vault_admin_client(
+                access_token=settings.user.access_token, instance_id=instance_id
+            )
 
-        vault_admin_client_test.secrets.database.delete_role(name=role_name)
-        vault_admin_client_test.sys.delete_policy(name=policy_name)
-        vault_admin_client_test.delete(connection_config_path)
+            vault_admin_client_test.secrets.database.delete_role(name=role_name)
+            vault_admin_client_test.sys.delete_policy(name=policy_name)
+            vault_admin_client_test.delete(connection_config_path)
 
-        delete(instance_name=instance_name, force=True)
+            delete(instance_name=instance_name, force=True)
 
 
 def test_init_vault(db_url, db_name):
@@ -178,16 +179,17 @@ def test_init_vault(db_url, db_name):
         ), "Admin role and policy should exist in vault."
 
     finally:
-        # Delete the created resources
-        role_name = f"{instance_id}-{admin_account_id}-db"
-        policy_name = f"{role_name}-policy"
-        connection_config_path = f"database/config/{instance_id}"
-        vault_admin_client_test = create_vault_admin_client(
-            access_token=settings.user.access_token, instance_id=instance_id
-        )
+        if instance_id is not None:
+            # Delete the created resources
+            role_name = f"{instance_id}-{admin_account_id}-db"
+            policy_name = f"{role_name}-policy"
+            connection_config_path = f"database/config/{instance_id}"
+            vault_admin_client_test = create_vault_admin_client(
+                access_token=settings.user.access_token, instance_id=instance_id
+            )
 
-        vault_admin_client_test.secrets.database.delete_role(name=role_name)
-        vault_admin_client_test.sys.delete_policy(name=policy_name)
-        vault_admin_client_test.delete(connection_config_path)
+            vault_admin_client_test.secrets.database.delete_role(name=role_name)
+            vault_admin_client_test.sys.delete_policy(name=policy_name)
+            vault_admin_client_test.delete(connection_config_path)
 
-        delete(instance_name=instance_name, force=True)
+            delete(instance_name=instance_name, force=True)
