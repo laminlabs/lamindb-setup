@@ -30,6 +30,8 @@ def install(session: nox.Session, group: str) -> None:
         session.run(*"pip install -e .[aws,dev]".split())
     elif group == "noaws":
         session.run(*"pip install -e .[aws,dev]".split())
+    elif group == "vault":
+        session.run(*"pip install -e .[aws,dev]".split())
     elif group == "prod-only":
         session.run(
             *"pip install git+https://github.com/laminlabs/lnschema-bionty".split()
@@ -90,12 +92,7 @@ def noaws(session: nox.Session):
     )
 
 
-@nox.parametrize(
-    "lamin_env",
-    ["staging", "prod"],
-)
 @nox.session
-def vault(session: nox.Session, lamin_env: str):
-    env = {"LAMIN_ENV": lamin_env}
-    login_testuser1(session, env=env)
+def vault(session: nox.Session):
+    login_testuser1(session)
     session.run(*f"pytest {COVERAGE_ARGS} ./tests/test_vault.py".split())
