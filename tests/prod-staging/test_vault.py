@@ -11,7 +11,6 @@ from lamin_vault.client.postgres._connection_config_db_exists import (
 )
 from lamin_vault.client.postgres._role_and_policy_exist import role_and_policy_exist
 from lamin_vault.utils._lamin_dsn import LaminDsn
-from lamindb_setup._delete import delete
 from lamindb_setup._load_instance import load
 from lamindb_setup._init_instance import init
 from lamindb_setup._init_vault import init_vault
@@ -19,6 +18,10 @@ from lamindb_setup._settings import settings
 from psycopg2 import sql
 from psycopg2.extensions import ISOLATION_LEVEL_AUTOCOMMIT
 from sqlalchemy import create_engine
+from lamindb_setup.dev._hub_crud import sb_delete_instance
+from lamindb_setup.dev._hub_client import connect_hub_with_auth
+
+hub = connect_hub_with_auth()
 
 
 def base62(n_char: int) -> str:
@@ -134,8 +137,7 @@ def test_init_instance_with_vault(db_url, db_name):
             vault_admin_client_test.secrets.database.delete_role(name=role_name)
             vault_admin_client_test.sys.delete_policy(name=policy_name)
             vault_admin_client_test.delete(connection_config_path)
-
-            delete(instance_name=instance_name, force=True)
+            sb_delete_instance(instance_id, hub)
 
 
 def test_init_vault(db_url, db_name):
@@ -195,7 +197,7 @@ def test_init_vault(db_url, db_name):
             vault_admin_client_test.sys.delete_policy(name=policy_name)
             vault_admin_client_test.delete(connection_config_path)
 
-            delete(instance_name=instance_name, force=True)
+            sb_delete_instance(instance_id, hub)
 
 
 def test_load_with_vault(db_url, db_name):
@@ -212,7 +214,7 @@ def test_load_with_vault(db_url, db_name):
         instance_id = settings.instance.id
         admin_account_id = settings.user.uuid
 
-        load(instance_name=instance_name)
+        load(identifier=instance_name, _test=True)
 
         # Verify generated db credentails exist
         assert (
@@ -243,4 +245,4 @@ def test_load_with_vault(db_url, db_name):
             vault_admin_client_test.sys.delete_policy(name=policy_name)
             vault_admin_client_test.delete(connection_config_path)
 
-            delete(instance_name=instance_name, force=True)
+            sb_delete_instance(instance_id, hub)
