@@ -113,7 +113,7 @@ def init(
     db: Optional[PostgresDsn] = None,
     schema: Optional[str] = None,
     _test: bool = False,
-    _vault: bool,
+    _vault: bool = False,
 ) -> None:
     """Creating and loading a LaminDB instance.
 
