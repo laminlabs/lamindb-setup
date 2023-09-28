@@ -13,7 +13,7 @@ def lint(session: nox.Session) -> None:
 @nox.session
 @nox.parametrize(
     "group",
-    ["hub-local", "prod-only", "prod-staging", "noaws"],
+    ["hub-local", "prod-only", "prod-staging", "noaws", "vault"],
 )
 def install(session: nox.Session, group: str) -> None:
     if group in {"prod-staging"}:
