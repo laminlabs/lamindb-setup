@@ -196,7 +196,6 @@ def test_init_vault(db_url, db_name):
             vault_admin_client_test.secrets.database.delete_role(name=role_name)
             vault_admin_client_test.sys.delete_policy(name=policy_name)
             vault_admin_client_test.delete(connection_config_path)
-
             sb_delete_instance(instance_id, hub)
 
 
@@ -244,5 +243,4 @@ def test_load_with_vault(db_url, db_name):
             vault_admin_client_test.secrets.database.delete_role(name=role_name)
             vault_admin_client_test.sys.delete_policy(name=policy_name)
             vault_admin_client_test.delete(connection_config_path)
-
             sb_delete_instance(instance_id, hub)

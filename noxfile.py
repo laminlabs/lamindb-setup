@@ -88,3 +88,14 @@ def noaws(session: nox.Session):
     session.run(
         *f"pytest {COVERAGE_ARGS} ./tests/test_load_persistent_instance.py".split()
     )
+
+
+@nox.parametrize(
+    "lamin_env",
+    ["staging", "prod"],
+)
+@nox.session
+def vault(session: nox.Session, lamin_env: str):
+    env = {"LAMIN_ENV": lamin_env}
+    login_testuser1(session, env=env)
+    session.run(*f"pytest {COVERAGE_ARGS} ./tests/test_vault.py".split())
