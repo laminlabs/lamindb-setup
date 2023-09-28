@@ -41,6 +41,11 @@ aa(
     help="Use vault to manage credentials.",
 )
 
+# init instance vault
+init = subparsers.add_parser("init-vault", help=init_help)
+aa = init.add_argument
+aa("--db", type=str, metavar="d", default=None, help=instance.db)
+
 # load instance
 load = subparsers.add_parser("load", help=load_help)
 aa = load.add_argument
@@ -141,6 +146,14 @@ def main():
             name=args.name,
             _vault=args.vault,
         )
+
+    elif args.command == "init-vault":
+        from ._init_instance_vault import init_vault
+
+        return init_vault(
+            db=args.db,
+        )
+
     elif args.command == "load":
         from ._load_instance import load
 

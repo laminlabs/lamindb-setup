@@ -16,9 +16,7 @@ from .dev import InstanceSettings
 from .dev._docs import doc_args
 from .dev._settings_storage import StorageSettings
 from .dev.upath import create_path
-from .dev._hub_utils import LaminDsnModel
-from lamin_vault.client._init_instance_vault import init_instance_vault
-from lamin_vault.client._create_vault_client import create_vault_admin_client
+from ._init_instance_vault import _init_vault
 
 
 def get_schema_module_name(schema_name) -> str:
@@ -198,7 +196,7 @@ def init(
         logger.save(f"registered instance on hub: https://lamin.ai/{owner}/{name_str}")
 
         if db is not None and _vault:
-            init_vault(db=db, instance_id=result)
+            _init_vault(db=db, instance_id=result)
 
     if _test:
         isettings._persist()
@@ -223,23 +221,6 @@ def init(
         )
         logger.set_verbosity(verbosity)
     return None
-
-
-def init_vault(db, instance_id):
-    db_dsn = LaminDsnModel(db=db)
-    vault_admin_client = create_vault_admin_client(
-        access_token=settings.user.access_token, instance_id=instance_id
-    )
-    init_instance_vault(
-        vault_admin_client=vault_admin_client,
-        instance_id=instance_id,
-        admin_account_id=settings.user.uuid,
-        db_host=db_dsn.db.host,
-        db_port=db_dsn.db.port,
-        db_name=db_dsn.db.database,
-        vault_db_username=db_dsn.db.user,
-        vault_db_password=db_dsn.db.password,
-    )
 
 
 def load_from_isettings(
