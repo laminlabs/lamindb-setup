@@ -144,24 +144,19 @@ def get_db_from_vault(instance_result):
         create_vault_authenticated_client,
     )
 
-    try:
-        vault_client = create_vault_authenticated_client(
-            access_token=settings.user.access_token,
+    vault_client = create_vault_authenticated_client(
+        access_token=settings.user.access_token,
+    )
+    config_db_exists = connection_config_db_exists(vault_client, instance_result["id"])
+    if config_db_exists:
+        return get_db_from_vault_base(
+            vault_client=vault_client,
+            scheme=instance_result["db_scheme"],
+            host=instance_result["db_host"],
+            port=instance_result["db_port"],
+            name=instance_result["db_database"],
+            role=f'{instance_result["id"]}-{settings.user.uuid}-db',
         )
-        config_db_exists = connection_config_db_exists(
-            vault_client, instance_result["id"]
-        )
-        if config_db_exists:
-            return get_db_from_vault_base(
-                vault_client=vault_client,
-                scheme=instance_result["db_scheme"],
-                host=instance_result["db_host"],
-                port=instance_result["db_port"],
-                name=instance_result["db_database"],
-                role=f'{instance_result["id"]}-{settings.user.uuid}-db',
-            )
-    except Exception:
-        pass
     return None
 
 
