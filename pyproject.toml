@@ -42,10 +42,6 @@ dev = [
 hub = [
     "faker",
 ]
-vault = [
-    "sqlalchemy",
-]
-
 
 [project.scripts]
 lamin = "lamindb_setup.__main__:main"

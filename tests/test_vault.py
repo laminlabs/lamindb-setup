@@ -11,15 +11,14 @@ from lamin_vault.client.postgres._connection_config_db_exists import (
 )
 from lamin_vault.client.postgres._role_and_policy_exist import role_and_policy_exist
 from lamin_vault.utils._lamin_dsn import LaminDsn
-from lamindb_setup._load_instance import load
 from lamindb_setup._init_instance import init
 from lamindb_setup._init_vault import init_vault
+from lamindb_setup._load_instance import load
 from lamindb_setup._settings import settings
-from psycopg2 import sql
-from psycopg2.extensions import ISOLATION_LEVEL_AUTOCOMMIT
-from sqlalchemy import create_engine
-from lamindb_setup.dev._hub_crud import sb_delete_instance
 from lamindb_setup.dev._hub_client import connect_hub_with_auth
+from lamindb_setup.dev._hub_crud import sb_delete_instance
+from psycopg2 import connect, sql
+from psycopg2.extensions import ISOLATION_LEVEL_AUTOCOMMIT
 
 hub = connect_hub_with_auth()
 
@@ -50,17 +49,13 @@ def db_url(db_name):
     port = "5432"
 
     try:
-        # Connect to the default database to create a new temporary one
-        connection_url = LaminDsn.build(
-            scheme="postgresql",
+        connection = connect(
             user=user,
             password=password,
             host=host,
-            database="postgres",
+            dbname="postgres",
         )
 
-        engine = create_engine(connection_url)
-        connection = engine.raw_connection()
         connection.set_isolation_level(ISOLATION_LEVEL_AUTOCOMMIT)
         cursor = connection.cursor()
 
