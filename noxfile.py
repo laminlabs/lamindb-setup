@@ -13,7 +13,7 @@ def lint(session: nox.Session) -> None:
 @nox.session
 @nox.parametrize(
     "group",
-    ["hub-local", "prod-only", "prod-staging", "noaws"],
+    ["hub-local", "prod-only", "prod-staging", "noaws", "vault"],
 )
 def install(session: nox.Session, group: str) -> None:
     if group in {"prod-staging"}:
@@ -29,6 +29,8 @@ def install(session: nox.Session, group: str) -> None:
         session.run(*"pip install ./laminhub-rest[server]".split())
         session.run(*"pip install -e .[aws,dev]".split())
     elif group == "noaws":
+        session.run(*"pip install -e .[aws,dev]".split())
+    elif group == "vault":
         session.run(*"pip install -e .[aws,dev]".split())
     elif group == "prod-only":
         session.run(
@@ -88,3 +90,9 @@ def noaws(session: nox.Session):
     session.run(
         *f"pytest {COVERAGE_ARGS} ./tests/test_load_persistent_instance.py".split()
     )
+
+
+@nox.session
+def vault(session: nox.Session):
+    login_testuser1(session)
+    session.run(*f"pytest {COVERAGE_ARGS} ./tests/test_vault.py".split())
