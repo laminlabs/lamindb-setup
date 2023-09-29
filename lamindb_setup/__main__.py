@@ -8,6 +8,7 @@ from .dev._settings_user import user_description as user
 signup_help = "First time sign up."
 login_help = "Log in an already-signed-up user."
 init_help = "Init & config instance with db & storage."
+deploy_server_help = "Deploy laminapp-rest server."
 load_help = "Load instance by name."
 set_storage_help = "Set storage used by an instance."
 load_storage_help = "Load the instance with an updated default storage."
@@ -34,6 +35,9 @@ aa("--storage", type=str, metavar="s", help=instance.storage_root)
 aa("--db", type=str, metavar="d", default=None, help=instance.db)
 aa("--schema", type=str, metavar="schema", default=None, help=instance.schema)
 aa("--name", type=str, metavar="n", default=None, help=instance.name)
+
+# Deploy server
+deploy_server = subparsers.add_parser("deploy-server", help=deploy_server_help)
 
 # load instance
 load = subparsers.add_parser("load", help=load_help)
@@ -134,6 +138,10 @@ def main():
             schema=args.schema,
             name=args.name,
         )
+    elif args.command == "deploy-server":
+        from ._deploy_server import deploy_server
+
+        return deploy_server()
     elif args.command == "load":
         from ._load_instance import load
 
