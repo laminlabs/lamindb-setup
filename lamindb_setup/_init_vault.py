@@ -4,10 +4,8 @@ from pydantic import PostgresDsn
 
 from ._settings import settings
 from .dev._hub_utils import LaminDsnModel
-from .dev.cloud_sqlite_locker import unlock_cloud_sqlite_upon_exception
 
 
-@unlock_cloud_sqlite_upon_exception(ignore_prev_locker=True)
 def init_vault(
     *,
     db: Optional[PostgresDsn] = None,
