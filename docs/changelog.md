@@ -3,6 +3,7 @@
 <!-- prettier-ignore -->
 Name | PR | Developer | Date | Version
 --- | --- | --- | --- | ---
+✨ Enabling server deployment from CLI | [536](https://github.com/laminlabs/lamindb-setup/pull/536) | [fredericenard](https://github.com/fredericenard) | 2023-09-30 |
 ✨ Manage db connection with vault | [533](https://github.com/laminlabs/lamindb-setup/pull/533) | [fredericenard](https://github.com/fredericenard) | 2023-09-29 |
 ♻️ Refactor optional cloud sqlite locking and unlocking | [535](https://github.com/laminlabs/lamindb-setup/pull/535) | [Koncopd](https://github.com/Koncopd) | 2023-09-23 |
 ✨ Add squashmigrations | [534](https://github.com/laminlabs/lamindb-setup/pull/534) | [sunnyosun](https://github.com/sunnyosun) | 2023-09-22 |
