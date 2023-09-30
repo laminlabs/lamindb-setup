@@ -16,6 +16,7 @@ from .dev import InstanceSettings
 from .dev._docs import doc_args
 from .dev._settings_storage import StorageSettings
 from .dev.upath import create_path
+from ._init_vault import _init_vault
 
 
 def get_schema_module_name(schema_name) -> str:
@@ -110,6 +111,7 @@ def init(
     db: Optional[PostgresDsn] = None,
     schema: Optional[str] = None,
     _test: bool = False,
+    _vault: bool = False,
 ) -> None:
     """Creating and loading a LaminDB instance.
 
@@ -192,6 +194,9 @@ def init(
             raise RuntimeError(f"Registering instance on hub failed:\n{result}")
         isettings._id = result
         logger.save(f"registered instance on hub: https://lamin.ai/{owner}/{name_str}")
+
+        if db is not None and _vault:
+            _init_vault(db=db, instance_id=result)
 
     if _test:
         isettings._persist()

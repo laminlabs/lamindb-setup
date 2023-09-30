@@ -4,6 +4,12 @@ from uuid import UUID
 
 from lamin_utils import logger
 
+from lamin_vault.client.postgres._get_db_from_vault import (
+    get_db_from_vault as get_db_from_vault_base,
+)
+from lamin_vault.client.postgres._connection_config_db_exists import (
+    connection_config_db_exists,
+)
 from lamindb_setup.dev.upath import UPath
 from ._close import close as close_instance
 from ._init_instance import load_from_isettings
@@ -75,6 +81,7 @@ def load(
             schema=instance_result["schema_str"],
             id=UUID(instance_result["id"]),
         )
+        isettings._db_from_vault = get_db_from_vault(instance_result)
     else:
         settings_file = instance_settings_file(name, owner)
         if settings_file.exists():
@@ -129,6 +136,32 @@ def load(
     if storage is not None and isettings.dialect == "sqlite":
         update_root_field_in_default_storage(isettings)
     load_from_isettings(isettings)
+    return None
+
+
+def get_db_from_vault(instance_result):
+    from lamin_vault.client._create_vault_client import (
+        create_vault_authenticated_client,
+    )
+
+    try:
+        vault_client = create_vault_authenticated_client(
+            access_token=settings.user.access_token,
+        )
+        config_db_exists = connection_config_db_exists(
+            vault_client, instance_result["id"]
+        )
+        if config_db_exists:
+            return get_db_from_vault_base(
+                vault_client=vault_client,
+                scheme=instance_result["db_scheme"],
+                host=instance_result["db_host"],
+                port=instance_result["db_port"],
+                name=instance_result["db_database"],
+                role=f'{instance_result["id"]}-{settings.user.uuid}-db',
+            )
+    except Exception:
+        logger.warning("Failed to connect to vault!")
     return None
 
 
