@@ -1,4 +1,4 @@
-from typing import Optional, Dict
+from typing import Optional
 import lamindb_setup
 import subprocess
 from lamin_utils import logger, colors
@@ -56,7 +56,7 @@ def track(notebook_path: str, pypackage: Optional[str] = None) -> None:
     return None
 
 
-def save(notebook_path: str, kwargs: Dict):
+def save(notebook_path: str, **kwargs) -> Optional[str]:
     try:
         from nbproject.dev import (
             read_notebook,
@@ -156,3 +156,4 @@ def save(notebook_path: str, kwargs: Dict):
     transform.latest_report = report_file
     transform.save()
     logger.success("saved notebook and wrote source_file and html report")
+    return None

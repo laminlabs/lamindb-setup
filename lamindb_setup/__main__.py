@@ -214,7 +214,7 @@ def main():
     elif args.command == "save":
         from ._notebook import save
 
-        save(args.filepath)
+        return save(args.filepath)
     else:
         parser.print_help()
     return 0
