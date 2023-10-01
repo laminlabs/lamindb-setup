@@ -3,6 +3,7 @@
 <!-- prettier-ignore -->
 Name | PR | Developer | Date | Version
 --- | --- | --- | --- | ---
+✨ Add notebook save functionality | [537](https://github.com/laminlabs/lamindb-setup/pull/537) | [falexwolf](https://github.com/falexwolf) | 2023-10-01 |
 ✨ Enabling server deployment from CLI | [536](https://github.com/laminlabs/lamindb-setup/pull/536) | [fredericenard](https://github.com/fredericenard) | 2023-09-30 |
 ✨ Manage db connection with vault | [533](https://github.com/laminlabs/lamindb-setup/pull/533) | [fredericenard](https://github.com/fredericenard) | 2023-09-29 |
 ♻️ Refactor optional cloud sqlite locking and unlocking | [535](https://github.com/laminlabs/lamindb-setup/pull/535) | [Koncopd](https://github.com/Koncopd) | 2023-09-23 |
