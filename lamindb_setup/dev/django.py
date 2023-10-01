@@ -1,7 +1,7 @@
 # flake8: noqa
 import builtins
 import os
-
+from pathlib import Path
 from lamin_utils import logger
 
 from ._settings_instance import InstanceSettings
@@ -40,6 +40,7 @@ def setup_django(
     create_migrations: bool = False,
     configure_only: bool = False,
     init: bool = False,
+    view_schema: bool = False,
 ):
     if IS_RUN_FROM_IPYTHON:
         os.environ["DJANGO_ALLOW_ASYNC_UNSAFE"] = "true"
@@ -62,15 +63,36 @@ def setup_django(
         from .._init_instance import get_schema_module_name
 
         schema_names = ["core"] + list(isettings.schema)
-        schema_module_names = [get_schema_module_name(n) for n in schema_names]
+        installed_apps = [get_schema_module_name(n) for n in schema_names]
+        if view_schema:
+            installed_apps = installed_apps[::-1]  # to fix how apps appear
+            installed_apps += ["schema_graph", "django.contrib.staticfiles"]
 
-        settings.configure(
-            INSTALLED_APPS=schema_module_names,
+        kwargs = dict(
+            INSTALLED_APPS=installed_apps,
             DATABASES=DATABASES,
             DEFAULT_AUTO_FIELD="django.db.models.BigAutoField",
             TIME_ZONE="UTC",
             USE_TZ=True,
         )
+        if view_schema:
+            kwargs.update(
+                DEBUG=True,
+                ROOT_URLCONF="lamindb_setup._schema",
+                SECRET_KEY="dummy",
+                TEMPLATES=[
+                    {
+                        "BACKEND": "django.template.backends.django.DjangoTemplates",
+                        "APP_DIRS": True,
+                    },
+                ],
+                STATIC_ROOT=f"{Path.home().as_posix()}/.lamin/",
+                STATICFILES_FINDERS=[
+                    "django.contrib.staticfiles.finders.AppDirectoriesFinder",
+                ],
+                STATIC_URL="static/",
+            )
+        settings.configure(**kwargs)
         django.setup(set_prefix=False)
 
     if configure_only:

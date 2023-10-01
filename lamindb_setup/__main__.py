@@ -5,7 +5,6 @@ from importlib.metadata import PackageNotFoundError, version
 from ._docstrings import instance_description as instance
 from .dev._settings_user import user_description as user
 
-signup_help = "First time sign up."
 login_help = "Log in an already-signed-up user."
 init_help = "Init & config instance with db & storage."
 deploy_server_help = "Deploy laminapp-rest server."
@@ -16,6 +15,7 @@ info_help = "Show current instance information."
 close_help = "Close instance."
 migr_help = "Manage migrations."
 delete_help = "Delete an instance."
+schema_help = "View schema."
 register_help = (
     "Register instance on hub (local instances are not automatically registered)."
 )
@@ -93,6 +93,15 @@ aa("--package-name", type=str, default=None)
 aa("--end-number", type=str, default=None)
 aa("--start-number", type=str, default=None)
 
+# schema
+schema_parser = subparsers.add_parser("schema", help=schema_help)
+aa = schema_parser.add_argument
+aa(
+    "action",
+    choices=["view"],
+    help="Manage migrations.",
+)
+
 # track a notebook (init nbproject metadata)
 track_parser = subparsers.add_parser("track", help=track_help)
 aa = track_parser.add_argument
@@ -106,11 +115,6 @@ save_parser = subparsers.add_parser("save", help=save_help)
 aa = save_parser.add_argument
 filepath_help = "A path to the notebook."
 aa("filepath", type=str, metavar="filepath", help=filepath_help)
-
-# signup user
-signup = subparsers.add_parser("signup", help=signup_help)
-aa = signup.add_argument
-aa("email", type=str, metavar="email", help=user.email)
 
 # login user
 login = subparsers.add_parser("login", help=login_help)
@@ -136,10 +140,6 @@ args = parser.parse_args()
 
 
 def main():
-    if args.command == "signup":
-        from ._setup_user import signup
-
-        return signup(email=args.email)
     if args.command == "login":
         from ._setup_user import login
 
@@ -207,6 +207,11 @@ def main():
                 migration_nr=args.end_number,
                 start_migration_nr=args.start_number,
             )
+    elif args.command == "schema":
+        from ._schema import view
+
+        if args.action == "view":
+            return view()
     elif args.command == "track":
         from ._notebook import track
 
