@@ -12,4 +12,5 @@ def test_track():
         env=env,
     )
     assert result.returncode == 0
+    # see lamindb_setup/_notebooks.py::update_notebook_metadata
     assert "updated notebook metadata" in result.stdout.decode()

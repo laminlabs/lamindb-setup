@@ -34,7 +34,7 @@ def install(session: nox.Session, group: str) -> None:
         session.run(*"pip install -e .[aws,dev]".split())
     elif group == "notebooks":
         session.run(*"pip install -e .[aws,dev]".split())
-        session.run(*"pip install lamindb[jupyter] nbstripout")
+        session.run(*"pip install lamindb[jupyter] nbstripout".split())
     elif group == "prod-only":
         session.run(
             *"pip install git+https://github.com/laminlabs/lnschema-bionty".split()
@@ -104,4 +104,4 @@ def vault(session: nox.Session):
 @nox.session
 def notebooks(session: nox.Session):
     login_testuser1(session)
-    session.run(*f"pytest {COVERAGE_ARGS} ./tests/notebooks/test_notebooks.py".split())
+    session.run(*f"pytest {COVERAGE_ARGS} ./tests/notebooks/test.py".split())
