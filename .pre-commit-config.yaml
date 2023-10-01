@@ -53,7 +53,8 @@ repos:
       - id: mypy
         exclude: |
           (?x)(
-              tests/hub-local/conftest.py
+              tests/hub-local/conftest.py|
+              tests/notebooks/conftest.py
           )
   - repo: https://github.com/pycqa/pydocstyle
     rev: 6.1.1
