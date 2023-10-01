@@ -34,7 +34,7 @@ def install(session: nox.Session, group: str) -> None:
         session.run(*"pip install -e .[aws,dev]".split())
     elif group == "notebooks":
         session.run(*"pip install -e .[aws,dev]".split())
-        session.run(*"pip install lamindb[jupyter] nbstripout".split())
+        session.run(*"pip install lamindb[jupyter] nbstripout nbconvert".split())
     elif group == "prod-only":
         session.run(
             *"pip install git+https://github.com/laminlabs/lnschema-bionty".split()
