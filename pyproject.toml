@@ -19,8 +19,6 @@ dependencies = [
     "universal_pathlib==0.1.1",  # is still experimental, need pinning
     "botocore<2.0.0",
     "supabase==1.0.3",
-    "pyjwt<3.0.0",
-    "lamin_vault",
 ]
 
 [project.urls]
@@ -34,6 +32,8 @@ erdiagram = [
     "django-schema-graph",
 ]
 dev = [
+    "lamin_vault",
+    "pyjwt<3.0.0",
     "psycopg2-binary",
     "python-dotenv",
     "nox",
