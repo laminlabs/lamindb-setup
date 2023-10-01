@@ -56,7 +56,7 @@ def track(notebook_path: str, pypackage: Optional[str] = None) -> None:
     return None
 
 
-def save(notebook_path: str, **kwargs) -> Optional[str]:
+def save(notebook_path: str) -> Optional[str]:
     try:
         from nbproject.dev import (
             read_notebook,
@@ -64,7 +64,6 @@ def save(notebook_path: str, **kwargs) -> Optional[str]:
             check_consecutiveness,
             MetaContainer,
         )
-        from nbproject._meta import meta
         from nbproject.dev._meta_live import get_title
         import nbstripout  # noqa
     except ImportError:
@@ -74,15 +73,13 @@ def save(notebook_path: str, **kwargs) -> Optional[str]:
     nb_meta = nb.metadata
     is_consecutive = check_consecutiveness(nb)
     if not is_consecutive:
-        if "proceed_consecutiveness" in kwargs:
-            decide = kwargs["proceed_consecutiveness"]
-        elif meta.env == "test":
-            decide = "y"
-        else:
+        if os.getenv("LAMIN_TESTING") is None:
             decide = input("   Do you still want to proceed with publishing? (y/n) ")
+        else:
+            decide = "n"
         if decide != "y":
-            logger.error("Aborted!")
-            return "aborted"
+            logger.error("Aborted (non-consecutive)!")
+            return "aborted-non-consecutive"
     if get_title(nb) is None:
         logger.error(
             f"No title! Update & {colors.bold('save')} your notebook with a title '# My"
