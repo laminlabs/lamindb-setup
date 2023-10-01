@@ -4,6 +4,7 @@ import subprocess
 from lamin_utils import logger, colors
 import shutil
 import os
+from pathlib import Path
 
 
 # also see lamindb.dev._run_context.reinitialize_notebook for related code
@@ -89,16 +90,21 @@ def save(notebook_path: str) -> Optional[str]:
     if nb_meta is not None and "nbproject" in nb_meta:
         meta_container = MetaContainer(**nb_meta["nbproject"])
     else:
-        empty = "not initialized"
-        meta_container = MetaContainer(id=empty, time_init=empty, version=empty)
+        logger.error("notebook isn't initialized, run lamin track <notebook_path>")
+        return "not-initialized"
 
     meta_store = MetaStore(meta_container, notebook_path)
     import lamindb as ln
 
-    #
+    ln.settings.verbosity = "success"
     transform_version = meta_store.version
     # the corresponding transform family in the transform table
     transform_family = ln.Transform.filter(id__startswith=meta_store.id).all()
+    if len(transform_family) == 0:
+        logger.error(
+            "didn't find notebook in transform registry, did you run ln.track() in it?"
+        )
+        return "not-tracked-in-transform-registry"
     # the specific version
     transform = transform_family.filter(version=transform_version).one()
     # latest run of this transform by user
@@ -112,13 +118,13 @@ def save(notebook_path: str) -> Optional[str]:
     # convert the notebook file to html
     notebook_path_html = notebook_path.replace(".ipynb", ".html")
     logger.info(f"exporting notebook as html {notebook_path_html}")
-    result = subprocess.run(f"jupyter nbconvert --to html {notebook_path}")
+    result = subprocess.run(f"jupyter nbconvert --to html {notebook_path}", shell=True)
     assert result.returncode == 0
     # copy the notebook file to a temporary file
-    notebook_path_tmp = notebook_path.replace(".ipynb", "_tmp.ipynb")
-    shutil.copy2(notebook_path, notebook_path_tmp)
+    notebook_path_stripped = notebook_path.replace(".ipynb", "_stripped.ipynb")
+    shutil.copy2(notebook_path, notebook_path_stripped)
     logger.info("stripping output of {notebook_path_tmp}")
-    result = subprocess.run(f"nbstripout {notebook_path_tmp}")
+    result = subprocess.run(f"nbstripout {notebook_path_stripped}", shell=True)
     assert result.returncode == 0
     # register the html report
     initial_report = None
@@ -143,7 +149,7 @@ def save(notebook_path: str) -> Optional[str]:
     run.save()
     # register the source code
     source_file = ln.File(
-        notebook_path_tmp,
+        notebook_path_stripped,
         description=f"Source of transform {transform.id}",
         version=transform_version,
         is_new_version_of=initial_source,
@@ -152,5 +158,7 @@ def save(notebook_path: str) -> Optional[str]:
     transform.source_file = source_file
     transform.latest_report = report_file
     transform.save()
+    Path(notebook_path_stripped).unlink()
+    Path(notebook_path_html).unlink()
     logger.success("saved notebook and wrote source_file and html report")
     return None
