@@ -13,6 +13,6 @@ def view():
     from django.core.management import call_command
 
     if check_instance_setup():
-        raise RuntimeError("Restart Python session to create migration or use CLI!")
+        raise RuntimeError("Restart Python session or use CLI!")
     setup_django(settings.instance, view_schema=True)
     call_command("runserver")
