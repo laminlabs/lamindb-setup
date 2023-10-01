@@ -46,6 +46,7 @@ class InstanceSettingsStore(BaseSettings):
     db: str  # should be Optional, but we use types for instantiating
     schema_str: str  # should be Optional, but we use types for instantiating
     id: str  # should be Optional, but we use types for instantiating
+    cache_dir: str  # should be Optional, but we use types for instantiating
 
     class Config:
         env_prefix = "lamindb_instance_"

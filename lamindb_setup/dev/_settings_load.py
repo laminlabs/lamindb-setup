@@ -61,6 +61,7 @@ def setup_instance_from_store(store: InstanceSettingsStore) -> InstanceSettings:
         db=store.db if store.db != "null" else None,  # type: ignore
         schema=store.schema_str if store.schema_str != "null" else None,
         id=UUID(store.id) if store.id != "null" else None,
+        cache_dir=store.cache_dir if store.cache_dir != "null" else None,
     )
 
 

@@ -43,7 +43,7 @@ def create_path(pathlike: Union[str, Path, UPath]) -> UPath:
     elif isinstance(pathlike, Path):
         path = UPath(str(pathlike))  # UPath applied on Path gives Path back
     else:
-        raise ValueError("pathlike should be of type Union[str, Path, UPath]")
+        raise ValueError("pathlike should be of type Union[str, Path, UPath].")
 
     if isinstance(path, S3Path):
         path = UPath(path, cache_regions=True)

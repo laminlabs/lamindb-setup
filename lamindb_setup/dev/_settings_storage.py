@@ -8,6 +8,15 @@ from .upath import LocalPathClasses, UPath, create_path
 DIRS = AppDirs("lamindb", "laminlabs")
 
 
+def _process_cache_path(cache_path: Union[str, Path, UPath, None]):
+    if cache_path is None:
+        return None
+    cache_dir = UPath(cache_path)
+    if not isinstance(cache_dir, LocalPathClasses):
+        raise ValueError("cache dir should be a local path.")
+    return cache_dir
+
+
 class StorageSettings:
     """Manage cloud or local storage settings."""
 
@@ -15,6 +24,7 @@ class StorageSettings:
         self,
         root: Union[str, Path, UPath],
         region: Optional[str] = None,
+        cache_dir: Optional[Union[str, Path, UPath]] = None,
     ):
         root_path = create_path(root)
         # root_path is either Path or UPath at this point
@@ -26,6 +36,7 @@ class StorageSettings:
         self._region = region
         # would prefer to type below as Registry, but need to think through import order
         self._record: Optional[Any] = None
+        self._cache_dir = _process_cache_path(cache_dir)
 
     @property
     def id(self) -> str:
@@ -65,13 +76,33 @@ class StorageSettings:
         return self.root.as_posix().rstrip("/")
 
     @property
-    def cache_dir(
-        self,
-    ) -> Path:
+    def cache_dir(self) -> UPath:
         """Cache root, a local directory to cache cloud files."""
-        cache_dir = UPath(DIRS.user_cache_dir)
+        if self._cache_dir is None:
+            cache_dir = UPath(DIRS.user_cache_dir)
+        else:
+            cache_dir = self._cache_dir
         cache_dir.mkdir(parents=True, exist_ok=True)
         return cache_dir
+
+    @cache_dir.setter
+    def cache_dir(self, cache_dir: Union[str, Path, UPath]):
+        """Set cache root."""
+        from lamindb_setup import settings
+
+        if settings.instance._is_cloud_sqlite:
+            src_sqlite_file = settings.instance._sqlite_file_local
+        else:
+            src_sqlite_file = None
+
+        self._cache_dir = _process_cache_path(cache_dir)
+
+        if src_sqlite_file is not None:
+            dst_sqlite_file = settings.instance._sqlite_file_local
+            dst_sqlite_file.parent.mkdir(parents=True, exist_ok=True)
+            src_sqlite_file.rename(dst_sqlite_file)
+
+        settings.instance._persist()
 
     @property
     def is_cloud(self) -> bool:

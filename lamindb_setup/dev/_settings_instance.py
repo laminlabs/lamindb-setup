@@ -27,12 +27,13 @@ class InstanceSettings:
         storage_region: Optional[str] = None,
         db: Optional[str] = None,  # DB URI
         schema: Optional[str] = None,  # comma-separated string of schema names
-        id: Optional[UUID] = None,  # instance id
+        id: Optional[UUID] = None,  # instance id,
+        cache_dir: Optional[Union[str, Path, UPath]] = None,
     ):
         self._owner: str = owner
         self._name: str = name
         self._storage: StorageSettings = StorageSettings(
-            storage_root, region=storage_region
+            storage_root, region=storage_region, cache_dir=cache_dir
         )
         self._db: Optional[str] = db
         self._schema_str: Optional[str] = schema

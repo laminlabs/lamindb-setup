@@ -61,3 +61,6 @@ def save_instance_settings(settings: Any, settings_file: Path):
         f.write(f"lamindb_instance_schema_str={schema_str}\n")
         id = settings.id.hex if settings._id is not None else "null"
         f.write(f"lamindb_instance_id={id}\n")
+        cache_dir = settings.storage._cache_dir
+        cache_dir = "null" if cache_dir is None else cache_dir.as_posix()
+        f.write(f"lamindb_instance_cache_dir={cache_dir}\n")
