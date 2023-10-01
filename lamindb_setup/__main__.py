@@ -19,7 +19,8 @@ delete_help = "Delete an instance."
 register_help = (
     "Register instance on hub (local instances are not automatically registered)."
 )
-track_help = "Track a notebook (init metadata)."
+track_help = "Track a notebook (init notebook metadata)."
+save_help = "Save a notebook."
 version_help = "Show the version and exit."
 
 description_cli = "Configure LaminDB and perform simple actions."
@@ -95,10 +96,16 @@ aa("--start-number", type=str, default=None)
 # track a notebook (init nbproject metadata)
 track_parser = subparsers.add_parser("track", help=track_help)
 aa = track_parser.add_argument
-filepath_help = "A path to the notebook to track."
+filepath_help = "A path to the notebook."
 aa("filepath", type=str, metavar="filepath", help=filepath_help)
 pypackage_help = "One or more (delimited by ',') python packages to track."
 aa("--pypackage", type=str, metavar="pypackage", default=None, help=pypackage_help)
+
+# save a notebook (in the future, any file)
+save_parser = subparsers.add_parser("save", help=save_help)
+aa = save_parser.add_argument
+filepath_help = "A path to the notebook."
+aa("filepath", type=str, metavar="filepath", help=filepath_help)
 
 # signup user
 signup = subparsers.add_parser("signup", help=signup_help)
@@ -204,6 +211,10 @@ def main():
         from ._notebook import track
 
         track(args.filepath, args.pypackage)
+    elif args.command == "save":
+        from ._notebook import save
+
+        return save(args.filepath)
     else:
         parser.print_help()
     return 0
