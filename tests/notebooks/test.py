@@ -4,7 +4,20 @@ import nbproject_test
 from pathlib import Path
 
 
-def test_track():
+def test_track_not_initialized():
+    env = os.environ
+    env["LAMIN_TESTING"] = "true"
+    result = subprocess.run(
+        "lamin track ./tests/notebooks/test-notebooks/not-initialized.ipynb",
+        shell=True,
+        capture_output=True,
+        env=env,
+    )
+    assert result.returncode == 0
+    assert "attached notebook id to ipynb file" in result.stdout.decode()
+
+
+def test_track_no_title():
     env = os.environ
     env["LAMIN_TESTING"] = "true"
     result = subprocess.run(
