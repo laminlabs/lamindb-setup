@@ -129,10 +129,8 @@ def save(notebook_path: str) -> Optional[str]:
     # register the html report
     initial_report = None
     initial_source = None
-    transform_versions = []
     if len(transform_family) > 0:
         for transform in transform_family.order_by("-created_at"):
-            transform_versions.append(transform.version)
             # check for id to avoid query
             if transform.latest_report_id is not None:
                 # any previous latest report of this transform is OK!
@@ -145,7 +143,7 @@ def save(notebook_path: str) -> Optional[str]:
     ):  # can remove this from next release on
         ln.settings.silence_file_run_transform_warning = True
     # register the source code
-    if transform_version in transform_versions:
+    if transform.source_file is not None:
         # this if condition is relevant if we already wrote the source code for
         # this transform version previously
         source_file = ln.File(

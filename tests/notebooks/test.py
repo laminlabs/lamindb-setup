@@ -71,7 +71,9 @@ def test_save_consecutive():
         capture_output=True,
         env=env,
     )
+    print(result.stdout)
+    print(result.stderr)
     assert result.returncode == 0
     assert (
-        "saved notebook and wrote source_file and html report" in result.stdout.decode()
+        "saved notebook and wrote source file and html report" in result.stdout.decode()
     )
