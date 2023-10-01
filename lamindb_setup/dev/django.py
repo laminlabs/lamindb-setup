@@ -1,7 +1,7 @@
 # flake8: noqa
 import builtins
 import os
-
+from pathlib import Path
 from lamin_utils import logger
 
 from ._settings_instance import InstanceSettings
@@ -64,12 +64,9 @@ def setup_django(
 
         schema_names = ["core"] + list(isettings.schema)
         installed_apps = [get_schema_module_name(n) for n in schema_names]
-        try:
-            import schema_graph  # noqa
-
-            installed_apps.insert(0, "schema_graph")
-        except ImportError:
-            pass
+        if view_schema:
+            installed_apps = installed_apps[::-1]  # to fix how apps appear
+            installed_apps += ["schema_graph", "django.contrib.staticfiles"]
 
         kwargs = dict(
             INSTALLED_APPS=installed_apps,
@@ -83,6 +80,17 @@ def setup_django(
                 DEBUG=True,
                 ROOT_URLCONF="lamindb_setup._schema",
                 SECRET_KEY="dummy",
+                TEMPLATES=[
+                    {
+                        "BACKEND": "django.template.backends.django.DjangoTemplates",
+                        "APP_DIRS": True,
+                    },
+                ],
+                STATIC_ROOT=f"{Path.home().as_posix()}/.lamin/",
+                STATICFILES_FINDERS=[
+                    "django.contrib.staticfiles.finders.AppDirectoriesFinder",
+                ],
+                STATIC_URL="static/",
             )
         settings.configure(**kwargs)
         django.setup(set_prefix=False)

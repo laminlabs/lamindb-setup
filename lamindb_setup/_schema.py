@@ -1,5 +1,11 @@
 from django.urls import path
-from schema_graph.views import Schema
+from lamin_utils import logger
+
+try:
+    from schema_graph.views import Schema
+except ImportError:
+    logger.error("to view the schema: pip install django-schema-graph")
+
 
 urlpatterns = [
     path("schema/", Schema.as_view()),

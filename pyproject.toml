@@ -20,7 +20,7 @@ dependencies = [
     "botocore<2.0.0",
     "supabase==1.0.3",
     "pyjwt<3.0.0",
-    "lamin_vault"
+    "lamin_vault",
 ]
 
 [project.urls]
@@ -29,6 +29,9 @@ Home = "https://github.com/laminlabs/lamindb-setup"
 [project.optional-dependencies]
 aws = [
     "s3fs",
+]
+erdiagram = [
+    "django-schema-graph",
 ]
 dev = [
     "psycopg2-binary",
