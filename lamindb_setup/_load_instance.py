@@ -4,12 +4,6 @@ from uuid import UUID
 
 from lamin_utils import logger
 
-from lamin_vault.client.postgres._get_db_from_vault import (
-    get_db_from_vault as get_db_from_vault_base,
-)
-from lamin_vault.client.postgres._connection_config_db_exists import (
-    connection_config_db_exists,
-)
 from lamindb_setup.dev.upath import UPath
 from ._close import close as close_instance
 from ._init_instance import load_from_isettings
@@ -140,11 +134,17 @@ def load(
 
 
 def get_db_from_vault(instance_result):
-    from lamin_vault.client._create_vault_client import (
-        create_vault_authenticated_client,
-    )
-
     try:
+        from lamin_vault.client._create_vault_client import (
+            create_vault_authenticated_client,
+        )
+        from lamin_vault.client.postgres._get_db_from_vault import (
+            get_db_from_vault as get_db_from_vault_base,
+        )
+        from lamin_vault.client.postgres._connection_config_db_exists import (
+            connection_config_db_exists,
+        )
+
         vault_client = create_vault_authenticated_client(
             access_token=settings.user.access_token,
         )
