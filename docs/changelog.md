@@ -3,6 +3,7 @@
 <!-- prettier-ignore -->
 Name | PR | Developer | Date | Version
 --- | --- | --- | --- | ---
+♻️ Move dependencies to dev | [540](https://github.com/laminlabs/lamindb-setup/pull/540) | [falexwolf](https://github.com/falexwolf) | 2023-10-01 |
 ✨ View schema interactively | [539](https://github.com/laminlabs/lamindb-setup/pull/539) | [falexwolf](https://github.com/falexwolf) | 2023-10-01 |
 ✨ Add notebook save functionality | [537](https://github.com/laminlabs/lamindb-setup/pull/537) | [falexwolf](https://github.com/falexwolf) | 2023-10-01 |
 ✨ Enabling server deployment from CLI | [536](https://github.com/laminlabs/lamindb-setup/pull/536) | [fredericenard](https://github.com/fredericenard) | 2023-09-30 |
