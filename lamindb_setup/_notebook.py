@@ -129,8 +129,10 @@ def save(notebook_path: str) -> Optional[str]:
     # register the html report
     initial_report = None
     initial_source = None
+    transform_versions = []
     if len(transform_family) > 0:
         for transform in transform_family.order_by("-created_at"):
+            transform_versions.append(transform.version)
             # check for id to avoid query
             if transform.latest_report_id is not None:
                 # any previous latest report of this transform is OK!
@@ -138,27 +140,71 @@ def save(notebook_path: str) -> Optional[str]:
             if transform.source_file_id is not None:
                 # any previous source file id is OK!
                 initial_source = transform.source_file
+    if hasattr(
+        ln.settings, "silence_file_run_transform_warning"
+    ):  # can remove this from next release on
+        ln.settings.silence_file_run_transform_warning = True
+    # register the source code
+    if transform_version in transform_versions:
+        # this if condition is relevant if we already wrote the source code for
+        # this transform version previously
+        source_file = ln.File(
+            notebook_path_stripped,
+            description=f"Source of transform {transform.id}",
+        )
+        # if the hash of the notebook file matches, we're trying to overwrite
+        if source_file._state.adding:
+            # this part of the if condition is currently not tested in an auto-mated way
+            # will add this soon!
+            response = input(
+                "You're trying to save new notebook source code with the same version;"
+                " do you want to replace the existing source code? (y/n)"
+            )
+            if response == "y":
+                source_file = ln.File.filter(
+                    version=transform_version, initial_version=initial_source
+                ).one_or_none()
+                if source_file is None:
+                    # account for the very first version in the family
+                    source_file = ln.File.filter(
+                        version=transform_version, id=initial_source.id  # type: ignore
+                    ).one_or_none()
+                source_file.replace(notebook_path_stripped)
+                source_file.save()
+            else:
+                logger.warning(
+                    "Please create a new version of the notebook via `lamin track"
+                    " <notebook_path>` and re-run the notebook"
+                )
+                return "rerun-the-notebook"
+    else:
+        source_file = ln.File(
+            notebook_path_stripped,
+            description=f"Source of transform {transform.id}",
+            version=transform_version,
+            is_new_version_of=initial_source,
+        )
+        source_file.save()
+    # save report file
     report_file = ln.File(
         notebook_path_html,
         description=f"Report of transform {transform.id}",
-        version=transform_version,
         is_new_version_of=initial_report,
     )
     report_file.save()
     run.report = report_file
     run.save()
-    # register the source code
-    source_file = ln.File(
-        notebook_path_stripped,
-        description=f"Source of transform {transform.id}",
-        version=transform_version,
-        is_new_version_of=initial_source,
-    )
-    source_file.save()
+    # annotate transform
     transform.source_file = source_file
     transform.latest_report = report_file
     transform.save()
+    # clean up
     Path(notebook_path_stripped).unlink()
     Path(notebook_path_html).unlink()
-    logger.success("saved notebook and wrote source_file and html report")
+    msg = "saved notebook and wrote source file and html report"
+    msg += (
+        f"\n{transform}\ntransform.source_file: {source_file}\ntransform.latest_report:"
+        f" {report_file}"
+    )
+    logger.success(msg)
     return None

@@ -64,14 +64,13 @@ def test_save_consecutive():
     )
     # now, re-run this notebook
     nbproject_test.execute_notebooks(notebook_path)
+    # and save again
     result = subprocess.run(
         f"lamin save {str(notebook_path)}",
         shell=True,
         capture_output=True,
         env=env,
     )
-    print(result.stderr)
-    print(result.stdout)
     assert result.returncode == 0
     assert (
         "saved notebook and wrote source_file and html report" in result.stdout.decode()
