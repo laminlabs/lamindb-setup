@@ -154,10 +154,13 @@ def save(notebook_path: str) -> Optional[str]:
         if source_file._state.adding:
             # this part of the if condition is currently not tested in an auto-mated way
             # will add this soon!
-            response = input(
-                "You're trying to save new notebook source code with the same version;"
-                " do you want to replace the existing source code? (y/n)"
-            )
+            if os.getenv("LAMIN_TESTING") is None:
+                response = input(
+                    "You're trying to save new notebook source code with the same"
+                    " version; do you want to replace the existing source code? (y/n)"
+                )
+            else:
+                response = "y"
             if response == "y":
                 source_file = ln.File.filter(
                     version=transform_version, initial_version=initial_source
