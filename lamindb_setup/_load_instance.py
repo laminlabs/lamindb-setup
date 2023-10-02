@@ -75,7 +75,9 @@ def load(
             schema=instance_result["schema_str"],
             id=UUID(instance_result["id"]),
         )
-        isettings._db_from_vault = get_db_from_vault(instance_result)
+        # we don't need to use the vault for sqlite instances
+        if instance_result["db"] is not None:
+            isettings._db_from_vault = get_db_from_vault(instance_result)
     else:
         settings_file = instance_settings_file(name, owner)
         if settings_file.exists():
