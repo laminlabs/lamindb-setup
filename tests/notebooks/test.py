@@ -64,6 +64,9 @@ def test_save_consecutive():
     )
     env = os.environ
     env["LAMIN_TESTING"] = "true"
+
+    # let's try to save a notebook for which `ln.track()` was never run
+    # it's going to fail
     result = subprocess.run(
         f"lamin save {str(notebook_path)}",
         shell=True,
@@ -75,9 +78,33 @@ def test_save_consecutive():
         "didn't find notebook in transform registry, did you run ln.track() in it?"
         in result.stdout.decode()
     )
-    # now, re-run this notebook
+
+    # now, let's re-run this notebook so that ln.track() is actually run
     nbproject_test.execute_notebooks(notebook_path)
     # and save again
+    result = subprocess.run(
+        f"lamin save {str(notebook_path)}",
+        shell=True,
+        capture_output=True,
+        env=env,
+    )
+    print(result.stdout)
+    print(result.stderr)
+    assert result.returncode == 0
+    assert (
+        "saved notebook and wrote source file and html report" in result.stdout.decode()
+    )
+
+    # now, assume the user modifies the notebook and saves
+    # it without changing id or version
+    from nbproject.dev import read_notebook, write_notebook
+
+    nb = read_notebook(notebook_path)
+    # duplicate last cell
+    new_cell = nb.cells[-1].copy()
+    new_cell["execution_count"] += 1
+    nb.cells.append(new_cell)
+    write_notebook(nb, notebook_path)
     result = subprocess.run(
         f"lamin save {str(notebook_path)}",
         shell=True,
