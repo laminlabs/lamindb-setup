@@ -14,6 +14,8 @@ def _process_cache_path(cache_path: Union[str, Path, UPath, None]):
     cache_dir = UPath(cache_path)
     if not isinstance(cache_dir, LocalPathClasses):
         raise ValueError("cache dir should be a local path.")
+    if not cache_dir.is_dir():
+        raise ValueError("cache dir should be a directory.")
     return cache_dir
 
 

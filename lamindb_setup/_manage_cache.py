@@ -20,3 +20,4 @@ def set_cache_dir(cache_dir: str):
     from lamindb_setup import settings
 
     settings.storage.cache_dir = cache_dir
+    logger.info(f"The cache dir was set to {settings.storage.cache_dir.as_posix()}.")  # type: ignore # noqa
