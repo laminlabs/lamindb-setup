@@ -149,10 +149,10 @@ def get_db_from_vault(instance_result):
         )
 
         vault_client = create_vault_authenticated_client(
-            access_token=settings.user.access_token,
+            access_token=settings.user.access_token, instance_id=instance_result["id"]
         )
         config_db_exists = connection_config_db_exists(
-            vault_client, instance_result["id"]
+            vault_client=vault_client, instance_result=instance_result["id"]
         )
         if config_db_exists:
             return get_db_from_vault_base(
