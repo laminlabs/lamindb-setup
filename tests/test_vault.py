@@ -208,7 +208,7 @@ def test_load_with_vault(db_url, db_name):
         instance_id = settings.instance.id
         admin_account_id = settings.user.uuid
 
-        load(identifier=instance_name, _test=True)
+        load(identifier=instance_name, _vault=True, _test=True)
 
         # Verify generated db credentails exist
         assert (
