@@ -48,7 +48,7 @@ init = subparsers.add_parser("init-vault", help=init_help)
 aa = init.add_argument
 aa("--db", type=str, metavar="d", default=None, help=instance.db)
 
-# Deploy server
+# deploy server
 deploy_server = subparsers.add_parser("deploy-server", help=deploy_server_help)
 
 # load instance
@@ -59,6 +59,12 @@ The instance identifier can the instance name (owner is
 current user), handle/name, or the URL: https://lamin.ai/handle/name."""
 aa("instance", type=str, metavar="i", default=None, help=instance_help)
 aa("--storage", type=str, metavar="s", default=None, help=load_storage_help)
+aa(
+    "--vault",
+    default=False,
+    action="store_true",
+    help="Use vault to manage credentials.",
+)
 
 # delete instance
 delete_parser = subparsers.add_parser("delete", help=delete_help)
@@ -173,6 +179,7 @@ def main():
         return load(
             identifier=args.instance,
             storage=args.storage,
+            _vault=args.vault,
         )
     elif args.command == "close":
         from ._close import close
