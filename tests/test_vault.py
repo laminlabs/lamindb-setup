@@ -94,7 +94,7 @@ def test_init_instance_with_vault(db_url, db_name):
     instance_name = db_name + "_1"
     instance_id = None
     vault_client_test = create_vault_authenticated_client(
-        access_token=settings.user.access_token
+        access_token=settings.user.access_token, instance_id=instance_id
     )
     try:
         init(
@@ -139,7 +139,7 @@ def test_init_vault(db_url, db_name):
     instance_name = db_name + "_2"
     instance_id = None
     vault_client_test = create_vault_authenticated_client(
-        access_token=settings.user.access_token
+        access_token=settings.user.access_token, instance_id=instance_id
     )
     try:
         init(
