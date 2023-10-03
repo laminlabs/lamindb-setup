@@ -37,6 +37,7 @@ def register_storage(ssettings: StorageSettings):
     )
     if created:
         logger.save(f"saved: {storage}")
+    return storage
 
 
 def register_user(usettings):
