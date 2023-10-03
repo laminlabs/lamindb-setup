@@ -3,8 +3,8 @@ from typing import Optional, Union
 from uuid import UUID
 
 from lamin_utils import logger
-
 from lamindb_setup.dev.upath import UPath
+
 from ._close import close as close_instance
 from ._init_instance import load_from_isettings
 from ._settings import InstanceSettings, settings
@@ -12,10 +12,7 @@ from ._silence_loggers import silence_loggers
 from .dev._settings_load import load_instance_settings
 from .dev._settings_storage import StorageSettings
 from .dev._settings_store import instance_settings_file
-from .dev.cloud_sqlite_locker import (
-    unlock_cloud_sqlite_upon_exception,
-)
-
+from .dev.cloud_sqlite_locker import unlock_cloud_sqlite_upon_exception
 
 # this is for testing purposes only
 # set to True only to test failed load
@@ -144,25 +141,19 @@ def get_db_from_vault(instance_result):
         from lamin_vault.client.postgres._get_db_from_vault import (
             get_db_from_vault as get_db_from_vault_base,
         )
-        from lamin_vault.client.postgres._connection_config_db_exists import (
-            connection_config_db_exists,
-        )
 
         vault_client = create_vault_authenticated_client(
             access_token=settings.user.access_token, instance_id=instance_result["id"]
         )
-        config_db_exists = connection_config_db_exists(
-            vault_client=vault_client, instance_result=instance_result["id"]
+        return get_db_from_vault_base(
+            vault_client=vault_client,
+            scheme=instance_result["db_scheme"],
+            host=instance_result["db_host"],
+            port=instance_result["db_port"],
+            name=instance_result["db_database"],
+            role=f'{instance_result["id"]}-{settings.user.uuid}-db',
         )
-        if config_db_exists:
-            return get_db_from_vault_base(
-                vault_client=vault_client,
-                scheme=instance_result["db_scheme"],
-                host=instance_result["db_host"],
-                port=instance_result["db_port"],
-                name=instance_result["db_database"],
-                role=f'{instance_result["id"]}-{settings.user.uuid}-db',
-            )
+
     except Exception:
         logger.warning("Failed to connect to vault!")
     return None
