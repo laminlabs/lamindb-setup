@@ -3,8 +3,8 @@
 <!-- prettier-ignore -->
 Name | PR | Developer | Date | Version
 --- | --- | --- | --- | ---
-🚸 Do not use vault for SQLite instances | [543](https://github.com/laminlabs/lamindb-setup/pull/543) | [falexwolf](https://github.com/falexwolf) | 2023-10-02 |
-✅ Complete notebook tests | [542](https://github.com/laminlabs/lamindb-setup/pull/542) | [falexwolf](https://github.com/falexwolf) | 2023-10-02 |
+🚸 Do not use vault for SQLite instances | [543](https://github.com/laminlabs/lamindb-setup/pull/543) | [falexwolf](https://github.com/falexwolf) | 2023-10-02 | 0.54.2
+✅ Complete notebook tests | [542](https://github.com/laminlabs/lamindb-setup/pull/542) | [falexwolf](https://github.com/falexwolf) | 2023-10-02 | 0.54.1
 🐛 Fix vault import | [541](https://github.com/laminlabs/lamindb-setup/pull/541) | [fredericenard](https://github.com/fredericenard) | 2023-10-01 | 0.54.0
 ♻️ Move dependencies to dev | [540](https://github.com/laminlabs/lamindb-setup/pull/540) | [falexwolf](https://github.com/falexwolf) | 2023-10-01 |
 ✨ View schema interactively | [539](https://github.com/laminlabs/lamindb-setup/pull/539) | [falexwolf](https://github.com/falexwolf) | 2023-10-01 |
