@@ -19,7 +19,7 @@ dependencies = [
     "universal_pathlib==0.1.1",  # is still experimental, need pinning
     "botocore<2.0.0",
     "supabase==1.0.3",
-    "lamin_vault",
+    "lamin_vault==0.0.7",
 ]
 
 [project.urls]
