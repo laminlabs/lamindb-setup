@@ -29,6 +29,7 @@ def load(
     storage: Optional[Union[str, Path, UPath]] = None,
     _raise_not_reachable_error: bool = True,
     _test: bool = False,
+    _vault: bool = False,
 ) -> Optional[str]:
     """Load existing instance.
 
@@ -76,7 +77,7 @@ def load(
             id=UUID(instance_result["id"]),
         )
         # we don't need to use the vault for sqlite instances
-        if instance_result["db"] is not None:
+        if instance_result["db"] is not None and _vault:
             isettings._db_from_vault = get_db_from_vault(instance_result)
     else:
         settings_file = instance_settings_file(name, owner)
