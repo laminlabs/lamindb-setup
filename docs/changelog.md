@@ -3,6 +3,7 @@
 <!-- prettier-ignore -->
 Name | PR | Developer | Date | Version
 --- | --- | --- | --- | ---
+🐛 Prevent using vault by default when loading an instance | [544](https://github.com/laminlabs/lamindb-setup/pull/544) | [fredericenard](https://github.com/fredericenard) | 2023-10-03 |
 🚸 Do not use vault for SQLite instances | [543](https://github.com/laminlabs/lamindb-setup/pull/543) | [falexwolf](https://github.com/falexwolf) | 2023-10-02 | 0.54.2
 ✅ Complete notebook tests | [542](https://github.com/laminlabs/lamindb-setup/pull/542) | [falexwolf](https://github.com/falexwolf) | 2023-10-02 | 0.54.1
 🐛 Fix vault import | [541](https://github.com/laminlabs/lamindb-setup/pull/541) | [fredericenard](https://github.com/fredericenard) | 2023-10-01 | 0.54.0
