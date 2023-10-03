@@ -92,9 +92,6 @@ def db_url(db_name):
 def test_init_instance_with_vault(db_url, db_name):
     instance_name = db_name + "_1"
     instance_id = None
-    vault_admin_client_test = create_vault_admin_client(
-        access_token=settings.user.access_token, instance_id=instance_id
-    )
 
     try:
         init(
@@ -106,6 +103,9 @@ def test_init_instance_with_vault(db_url, db_name):
         )
         instance_id = settings.instance.id
         admin_account_id = settings.user.uuid
+        vault_admin_client_test = create_vault_admin_client(
+            access_token=settings.user.access_token, instance_id=instance_id
+        )
 
         # Verify connection configuration exists
         assert connection_config_db_exists(
@@ -135,9 +135,7 @@ def test_init_instance_with_vault(db_url, db_name):
 def test_init_vault(db_url, db_name):
     instance_name = db_name + "_2"
     instance_id = None
-    vault_admin_client_test = create_vault_admin_client(
-        access_token=settings.user.access_token, instance_id=instance_id
-    )
+
     try:
         init(
             name=instance_name,
@@ -148,6 +146,9 @@ def test_init_vault(db_url, db_name):
         )
         instance_id = settings.instance.id
         admin_account_id = settings.user.uuid
+        vault_admin_client_test = create_vault_admin_client(
+            access_token=settings.user.access_token, instance_id=instance_id
+        )
 
         # Verify connection configuration does not exist
         assert not connection_config_db_exists(
@@ -191,9 +192,6 @@ def test_init_vault(db_url, db_name):
 def test_load_with_vault(db_url, db_name):
     instance_name = db_name + "_3"
     instance_id = None
-    vault_admin_client_test = create_vault_admin_client(
-        access_token=settings.user.access_token, instance_id=instance_id
-    )
 
     try:
         init(
@@ -205,6 +203,9 @@ def test_load_with_vault(db_url, db_name):
         )
         instance_id = settings.instance.id
         admin_account_id = settings.user.uuid
+        vault_admin_client_test = create_vault_admin_client(
+            access_token=settings.user.access_token, instance_id=instance_id
+        )
 
         load(identifier=instance_name, _vault=True, _test=True)
 
