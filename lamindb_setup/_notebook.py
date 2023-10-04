@@ -12,17 +12,22 @@ def update_notebook_metadata(nb, notebook_path):
     from nbproject.dev import write_notebook
     from nbproject.dev._initialize import nbproject_id
 
+    stem_id = nb.metadata["nbproject"]["id"]
+    current_version = nb.metadata["nbproject"]["version"]
+    logger.info(
+        f"the notebook {notebook_path} is already tracked (stem_id='{stem_id}',"
+        f" version: '{current_version}')"
+    )
     updated = False
     # ask for generating new id
     if os.getenv("LAMIN_TESTING") is None:
-        response = input("Do you want to generate a new id? (y/n) ")
+        response = input("Do you want to generate a new id prefix? (y/n) ")
     else:
         response = "y"
     if response == "y":
         nb.metadata["nbproject"]["id"] = nbproject_id()
         updated = True
     else:
-        current_version = nb.metadata["nbproject"]["version"]
         response = input(
             f"The current version is '{current_version}' - do you want to set a new"
             " version? (y/n) "
@@ -52,7 +57,6 @@ def track(notebook_path: str, pypackage: Optional[str] = None) -> None:
         write_notebook(nb, notebook_path)
         logger.success("attached notebook id to ipynb file")
     else:
-        logger.info(f"the notebook {notebook_path} is already tracked")
         update_notebook_metadata(nb, notebook_path)
     return None
 
@@ -102,7 +106,8 @@ def save(notebook_path: str) -> Optional[str]:
     transform_family = ln.Transform.filter(id__startswith=meta_store.id).all()
     if len(transform_family) == 0:
         logger.error(
-            "didn't find notebook in transform registry, did you run ln.track() in it?"
+            f"didn't find notebook with stem_id {meta_store.id} (12 initial characters)"
+            " in transform registry, did you run ln.track() in it?"
         )
         return "not-tracked-in-transform-registry"
     # the specific version
