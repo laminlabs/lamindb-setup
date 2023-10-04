@@ -74,10 +74,7 @@ def test_save_consecutive():
         env=env,
     )
     assert result.returncode == 1
-    assert (
-        "didn't find notebook in transform registry, did you run ln.track() in it?"
-        in result.stdout.decode()
-    )
+    assert "Didn't find notebook with stem_id" in result.stdout.decode()
 
     # now, let's re-run this notebook so that ln.track() is actually run
     nbproject_test.execute_notebooks(notebook_path)
