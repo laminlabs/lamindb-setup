@@ -14,10 +14,20 @@ def clear_cache_dir():
     cache_dir = settings.storage.cache_dir
     shutil.rmtree(cache_dir)
     cache_dir.mkdir()
+    logger.success("The cache directory was cleared.")
+
+
+def get_cache_dir():
+    from lamindb_setup import settings
+
+    return settings.storage.cache_dir.as_posix()
 
 
 def set_cache_dir(cache_dir: str):
     from lamindb_setup import settings
 
     settings.storage.cache_dir = cache_dir
-    logger.info(f"The cache dir was set to {settings.storage.cache_dir.as_posix()}.")  # type: ignore # noqa
+    logger.success(
+        "The cache directory of the current instance was set to"  # type: ignore
+        f" {settings.storage.cache_dir.as_posix()}."
+    )
