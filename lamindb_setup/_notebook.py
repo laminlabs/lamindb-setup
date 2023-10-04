@@ -108,13 +108,14 @@ def save(notebook_path: str) -> Optional[str]:
     # the specific version
     transform = transform_family.filter(version=transform_version).one()
     # latest run of this transform by user
-    run = (
-        ln.Run.filter(
-            transform=transform, created_by__id=lamindb_setup.settings.user.id
+    run = ln.Run.filter(transform=transform).order_by("-run_at").first()
+    if run.created_by.id != lamindb_setup.settings.user.id:
+        response = input(
+            "You are trying to save a notebook created by another user: Source and"
+            " report files will be tagged with *your* user id. Proceed? (y/n)"
         )
-        .order_by("-run_at")
-        .first()
-    )
+        if response != "y":
+            return "aborted-save-notebook-created-by-different-user"
     # convert the notebook file to html
     notebook_path_html = notebook_path.replace(".ipynb", ".html")
     logger.info(f"exporting notebook as html {notebook_path_html}")
