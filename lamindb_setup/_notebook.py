@@ -106,7 +106,8 @@ def save(notebook_path: str) -> Optional[str]:
     transform_family = ln.Transform.filter(id__startswith=meta_store.id).all()
     if len(transform_family) == 0:
         logger.error(
-            "didn't find notebook in transform registry, did you run ln.track() in it?"
+            f"didn't find notebook with stem_id {meta_store.id} (12 initial characters)"
+            " in transform registry, did you run ln.track() in it?"
         )
         return "not-tracked-in-transform-registry"
     # the specific version
