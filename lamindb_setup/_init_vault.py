@@ -38,7 +38,7 @@ def _init_vault(db, instance_id):
         vault_db_password=db_dsn.db.password,
     )
 
-    _set_public_read_db_role(instance_id)
+    _set_public_read_db_role(vault_admin_client, instance_id)
 
 
 def _set_public_read_db_role(vault_admin_client, instance_id):
