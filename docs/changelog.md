@@ -3,6 +3,7 @@
 <!-- prettier-ignore -->
 Name | PR | Developer | Date | Version
 --- | --- | --- | --- | ---
+🔒 Enable to generate public read db connection string | [548](https://github.com/laminlabs/lamindb-setup/pull/548) | [fredericenard](https://github.com/fredericenard) | 2023-10-05 |
 🚸 Allow saving notebooks of other users | [547](https://github.com/laminlabs/lamindb-setup/pull/547) | [falexwolf](https://github.com/falexwolf) | 2023-10-04 | 0.54.3
 🔊 Add more logging | [546](https://github.com/laminlabs/lamindb-setup/pull/546) | [falexwolf](https://github.com/falexwolf) | 2023-10-04 |
 🔒 Enforce compatibility with lamin-vault 0.0.7 | [545](https://github.com/laminlabs/lamindb-setup/pull/545) | [fredericenard](https://github.com/fredericenard) | 2023-10-03 |
