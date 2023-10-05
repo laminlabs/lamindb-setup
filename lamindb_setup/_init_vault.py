@@ -37,3 +37,11 @@ def _init_vault(db, instance_id):
         vault_db_username=db_dsn.db.user,
         vault_db_password=db_dsn.db.password,
     )
+
+    _set_public_read_db_role(instance_id)
+
+
+def _set_public_read_db_role(vault_admin_client, instance_id):
+    from lamin_vault.client.postgres._set_db_role import set_public_read_db_role
+
+    set_public_read_db_role(vault_admin_client, instance_id)
