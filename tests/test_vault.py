@@ -39,6 +39,8 @@ def db_name(run_id):
     return f"instance-ci-{run_id}"
 
 
+# This fixture enable to create a test db in GCP using the following server:
+# https://console.cloud.google.com/sql/instances/lamindb-ci/overview?hl=fr&project=data-totality-352303
 @pytest.fixture(scope="session")
 def db_url(db_name):
     connection = None
