@@ -75,7 +75,13 @@ def load(
         )
         # we don't need to use the vault for sqlite instances
         if instance_result["db"] is not None and _vault:
-            isettings._db_from_vault = get_db_from_vault(instance_result)
+            isettings._db_from_vault = get_db_from_vault(
+                instance_id=instance_result["id"],
+                scheme=instance_result["db_scheme"],
+                host=instance_result["db_host"],
+                port=instance_result["db_port"],
+                name=instance_result["db_database"],
+            )
     else:
         settings_file = instance_settings_file(name, owner)
         if settings_file.exists():
@@ -133,7 +139,7 @@ def load(
     return None
 
 
-def get_db_from_vault(instance_result):
+def get_db_from_vault(instance_id, scheme, host, port, name, role=None):
     try:
         from lamin_vault.client._create_vault_client import (
             create_vault_authenticated_client,
@@ -143,20 +149,40 @@ def get_db_from_vault(instance_result):
         )
 
         vault_client = create_vault_authenticated_client(
-            access_token=settings.user.access_token, instance_id=instance_result["id"]
+            access_token=settings.user.access_token, instance_id=instance_id
         )
+
+        if role is None:
+            role = f"{instance_id}-{settings.user.uuid}-db"
+
         return get_db_from_vault_base(
             vault_client=vault_client,
-            scheme=instance_result["db_scheme"],
-            host=instance_result["db_host"],
-            port=instance_result["db_port"],
-            name=instance_result["db_database"],
-            role=f'{instance_result["id"]}-{settings.user.uuid}-db',
+            scheme=scheme,
+            host=host,
+            port=port,
+            name=name,
+            role=role,
         )
 
     except Exception:
         logger.warning("Failed to connect to vault!")
     return None
+
+
+def get_public_read_db_from_vault(
+    instance_id,
+    scheme,
+    host,
+    port,
+    name,
+):
+    get_db_from_vault(
+        scheme=scheme,
+        host=host,
+        port=port,
+        name=name,
+        role=f"{instance_id}-public-read-db",
+    )
 
 
 def get_owner_name_from_identifier(identifier: str):
