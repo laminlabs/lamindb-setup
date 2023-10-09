@@ -10,6 +10,7 @@ from .cloud_sqlite_locker import (
     InstanceLockedException,
     EXPIRATION_TIME,
 )
+from ._hub_utils import LaminDsnModel, LaminDsn
 from ._settings_save import save_instance_settings
 from ._settings_storage import StorageSettings
 from ._settings_store import current_instance_settings_file, instance_settings_file
@@ -48,6 +49,17 @@ class InstanceSettings:
             if attr == "storage":
                 representation += f"\n- storage root: {value.root_as_str}"
                 representation += f"\n- storage region: {value.region}"
+            elif attr == "db":
+                model = LaminDsnModel(db=value)
+                db_print = LaminDsn.build(
+                    scheme=model.scheme,
+                    user=model.user,
+                    password="***",
+                    host="***",
+                    port=model.host,
+                    database=model.database,
+                )
+                representation += f"\n- {attr}: {db_print}"
             else:
                 representation += f"\n- {attr}: {value}"
         return representation
