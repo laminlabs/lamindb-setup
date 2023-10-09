@@ -53,12 +53,12 @@ class InstanceSettings:
                 if self.dialect != "sqlite":
                     model = LaminDsnModel(db=value)
                     db_print = LaminDsn.build(
-                        scheme=model.scheme,
-                        user=model.user,
+                        scheme=model.db.scheme,
+                        user=model.db.user,
                         password="***",
                         host="***",
-                        port=model.host,
-                        database=model.database,
+                        port=model.db.port,
+                        database=model.db.database,
                     )
                 else:
                     db_print = value
