@@ -25,6 +25,7 @@ def get_schema_module_name(schema_name) -> str:
 
 def register_storage(ssettings: StorageSettings):
     from lnschema_core.models import Storage
+    from lnschema_core.users import current_user_id
 
     storage, created = Storage.objects.update_or_create(
         root=ssettings.root_as_str,
@@ -32,7 +33,7 @@ def register_storage(ssettings: StorageSettings):
             root=ssettings.root_as_str,
             type=ssettings.type,
             region=ssettings.region,
-            created_by_id=settings.user.id,
+            created_by_id=current_user_id(),
         ),
     )
     if created:
@@ -45,7 +46,7 @@ def register_user(usettings):
 
     if usettings.handle != "laminapp-admin":
         user, created = User.objects.update_or_create(
-            id=usettings.id,
+            uid=usettings.uid,
             defaults=dict(
                 handle=usettings.handle,
                 name=usettings.name,
