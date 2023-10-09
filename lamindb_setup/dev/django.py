@@ -71,7 +71,7 @@ def setup_django(
         kwargs = dict(
             INSTALLED_APPS=installed_apps,
             DATABASES=DATABASES,
-            DEFAULT_AUTO_FIELD="django.db.models.AutoField",
+            DEFAULT_AUTO_FIELD="django.db.models.BigAutoField",
             TIME_ZONE="UTC",
             USE_TZ=True,
         )
