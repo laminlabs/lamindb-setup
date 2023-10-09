@@ -50,15 +50,18 @@ class InstanceSettings:
                 representation += f"\n- storage root: {value.root_as_str}"
                 representation += f"\n- storage region: {value.region}"
             elif attr == "db":
-                model = LaminDsnModel(db=value)
-                db_print = LaminDsn.build(
-                    scheme=model.scheme,
-                    user=model.user,
-                    password="***",
-                    host="***",
-                    port=model.host,
-                    database=model.database,
-                )
+                if self.dialect != "sqlite":
+                    model = LaminDsnModel(db=value)
+                    db_print = LaminDsn.build(
+                        scheme=model.scheme,
+                        user=model.user,
+                        password="***",
+                        host="***",
+                        port=model.host,
+                        database=model.database,
+                    )
+                else:
+                    db_print = value
                 representation += f"\n- {attr}: {db_print}"
             else:
                 representation += f"\n- {attr}: {value}"
