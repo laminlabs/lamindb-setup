@@ -3,6 +3,7 @@
 <!-- prettier-ignore -->
 Name | PR | Developer | Date | Version
 --- | --- | --- | --- | ---
+💄 Prettify logging | [550](https://github.com/laminlabs/lamindb-setup/pull/550) | [falexwolf](https://github.com/falexwolf) | 2023-10-09 |
 🚸 Silence loggers in CLI | [551](https://github.com/laminlabs/lamindb-setup/pull/551) | [falexwolf](https://github.com/falexwolf) | 2023-10-09 |
 🔧 Upper bound Django to 4.3 | [549](https://github.com/laminlabs/lamindb-setup/pull/549) | [falexwolf](https://github.com/falexwolf) | 2023-10-09 |
 🔒 Enable to generate public read db connection string | [548](https://github.com/laminlabs/lamindb-setup/pull/548) | [fredericenard](https://github.com/fredericenard) | 2023-10-05 |
