@@ -146,6 +146,9 @@ args = parser.parse_args()
 
 
 def main():
+    from ._silence_loggers import silence_loggers
+
+    silence_loggers()
     if args.command == "login":
         from ._setup_user import login
 
@@ -155,9 +158,6 @@ def main():
         )
     elif args.command == "init":
         from ._init_instance import init
-        from ._silence_loggers import silence_loggers
-
-        silence_loggers()
 
         return init(
             storage=args.storage,
@@ -178,9 +178,6 @@ def main():
         )
     elif args.command == "load":
         from ._load_instance import load
-        from ._silence_loggers import silence_loggers
-
-        silence_loggers()
 
         return load(
             identifier=args.instance,
