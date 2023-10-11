@@ -150,7 +150,7 @@ def init(
         )
         raise ValueError("Invalid instance name: '/' delimiter not allowed.")
 
-    assert settings.user.id  # check user is logged in
+    assert settings.user.uid  # check user is logged in
     owner = settings.user.handle
 
     schema = validate_schema_arg(schema)
