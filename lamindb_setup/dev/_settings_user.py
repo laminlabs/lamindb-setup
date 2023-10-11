@@ -33,7 +33,7 @@ class UserSettings:
     def __repr__(self):
         """Rich string representation."""
         representation = f"Current user: {self.handle}"
-        attrs = ["handle", "email", "id"]
+        attrs = ["handle", "email", "uid"]
         for attr in attrs:
             value = getattr(self, attr)
             representation += f"\n- {attr}: {value}"
