@@ -125,8 +125,8 @@ def load(
             raise RuntimeError(msg)
         else:
             logger.warning(
-                "Instance metadata exists, but DB might have been corrupted or deleted."
-                " Re-initializing the DB."
+                "instance metadata exists, but DB might have been corrupted or deleted:"
+                " re-initializing"
             )
             return "instance-not-reachable"
     # this is for testing purposes only
