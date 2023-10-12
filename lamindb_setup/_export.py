@@ -49,7 +49,7 @@ def export_database(directory):
     def export_registry(registry, directory):
         table_name = registry._meta.db_table
         df = pd.read_sql_table(table_name, ln_setup.settings.instance.db)
-        df.to_parquet(directory / f"{table_name}.parquet")
+        df.to_parquet(directory / f"{table_name}.parquet", compression=None)
 
     # export data to parquet files
     print(f"\nExporting data to parquet files in: {directory}\n")

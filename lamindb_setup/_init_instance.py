@@ -7,6 +7,7 @@ from uuid import UUID
 from lamin_utils import logger
 from pydantic import PostgresDsn
 from django.db.utils import OperationalError
+from django.core.exceptions import FieldError
 from lamindb_setup.dev.upath import LocalPathClasses, UPath
 from ._close import close as close_instance
 from ._docstrings import instance_description as description
@@ -57,7 +58,7 @@ def register_user(usettings):
             )
             if created:
                 logger.save(f"saved: {user}")
-        except OperationalError:
+        except (OperationalError, FieldError):
             pass
 
 
