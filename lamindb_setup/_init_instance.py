@@ -6,7 +6,7 @@ from uuid import UUID
 
 from lamin_utils import logger
 from pydantic import PostgresDsn
-
+from django.db.utils import OperationalError
 from lamindb_setup.dev.upath import LocalPathClasses, UPath
 from ._close import close as close_instance
 from ._docstrings import instance_description as description
@@ -45,16 +45,20 @@ def register_user(usettings):
     from lnschema_core.models import User
 
     if usettings.handle != "laminapp-admin":
-        user, created = User.objects.update_or_create(
-            uid=usettings.uid,
-            defaults=dict(
-                handle=usettings.handle,
-                name=usettings.name,
-                email=usettings.email,
-            ),
-        )
-        if created:
-            logger.save(f"saved: {user}")
+        try:
+            # need to have try except because of integer primary key migration
+            user, created = User.objects.update_or_create(
+                uid=usettings.uid,
+                defaults=dict(
+                    handle=usettings.handle,
+                    name=usettings.name,
+                    email=usettings.email,
+                ),
+            )
+            if created:
+                logger.save(f"saved: {user}")
+        except OperationalError:
+            pass
 
 
 def register_user_and_storage(isettings: InstanceSettings, usettings):

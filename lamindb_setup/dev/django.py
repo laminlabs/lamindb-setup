@@ -104,13 +104,11 @@ def setup_django(
         return None
 
     # check that migrations have been deployed
+    isettings._persist()  # temporarily make settings available to migrations, should probably if fails
     missing_migrations = get_migrations_to_sync()
     if len(missing_migrations) > 0:
         if deploy_migrations:
             verbosity = 0 if init else 2
-            if init:
-                # temporarily make settings available to migrations
-                isettings._persist()
             call_command("migrate", verbosity=verbosity)
             if init:
                 # remove until init is finalized
