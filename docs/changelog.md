@@ -3,7 +3,7 @@
 <!-- prettier-ignore -->
 Name | PR | Developer | Date | Version
 --- | --- | --- | --- | ---
-🚚 Rename `UserSettings.id` to `UserSettings.uid` | [552](https://github.com/laminlabs/lamindb-setup/pull/552) | [falexwolf](https://github.com/falexwolf) | 2023-10-13 |
+🚚 Rename `UserSettings.id` to `UserSettings.uid` | [552](https://github.com/laminlabs/lamindb-setup/pull/552) | [falexwolf](https://github.com/falexwolf) | 2023-10-13 | 0.55.0
 🔇 Silence logger in main | [553](https://github.com/laminlabs/lamindb-setup/pull/553) | [sunnyosun](https://github.com/sunnyosun) | 2023-10-10 |
 💄 Prettify logging | [550](https://github.com/laminlabs/lamindb-setup/pull/550) | [falexwolf](https://github.com/falexwolf) | 2023-10-09 |
 🚸 Silence loggers in CLI | [551](https://github.com/laminlabs/lamindb-setup/pull/551) | [falexwolf](https://github.com/falexwolf) | 2023-10-09 |
