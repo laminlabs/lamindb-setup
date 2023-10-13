@@ -8,7 +8,7 @@ authors = [{name = "Lamin Labs", email = "laminlabs@gmail.com"}]
 readme = "README.md"
 dynamic = ["version", "description"]
 dependencies = [
-    "lnschema_core>=0.35.4",
+    "lnschema_core>=0.51.0",
     "lamin_utils>=0.3.3",
     # External dependencies
     "django>4.2,<4.3.0",
