@@ -21,6 +21,7 @@ register_help = (
 )
 track_help = "Track a notebook (init notebook metadata)."
 save_help = "Save a notebook."
+cache_help = "Manage cache."
 version_help = "Show the version and exit."
 
 description_cli = "Configure LaminDB and perform simple actions."
@@ -105,7 +106,7 @@ aa = schema_parser.add_argument
 aa(
     "action",
     choices=["view"],
-    help="Manage migrations.",
+    help="View schema.",
 )
 
 # track a notebook (init nbproject metadata)
@@ -132,6 +133,19 @@ aa(
     help="Email or user handle. Email is needed at first login.",
 )  # noqa
 aa("--password", type=str, metavar="pw", default=None, help=user.password)
+
+# manage cache
+cache_parser = subparsers.add_parser("cache", help=cache_help)
+cache_subparser = cache_parser.add_subparsers(dest="cache_action")
+clear_parser = cache_subparser.add_parser("clear", help="Clear the cache directory.")
+set_parser = cache_subparser.add_parser("set", help="Set the cache directory.")
+aa = set_parser.add_argument
+aa(
+    "cache_dir",
+    type=str,
+    metavar="cache_dir",
+    help="A new directory for the lamindb cache.",
+)
 
 # show version
 try:
@@ -230,6 +244,15 @@ def main():
         from ._notebook import save
 
         return save(args.filepath)
+    elif args.command == "cache":
+        from ._cache import get_cache_dir, set_cache_dir, clear_cache_dir
+
+        if args.cache_action == "set":
+            set_cache_dir(args.cache_dir)
+        elif args.cache_action == "clear":
+            clear_cache_dir()
+        else:
+            print(f"The cache directory of the current instance is {get_cache_dir()}.")
     else:
         parser.print_help()
     return 0

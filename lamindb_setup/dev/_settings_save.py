@@ -1,5 +1,5 @@
 from pathlib import Path
-from .upath import UPath
+
 from typing import Any, Dict, Union, get_type_hints
 from uuid import UUID
 
@@ -10,6 +10,7 @@ from ._settings_store import (
     user_settings_file_handle,
 )
 from ._settings_user import UserSettings
+from .upath import UPath
 
 
 def save_user_settings(settings: UserSettings):
