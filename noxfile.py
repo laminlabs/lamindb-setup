@@ -34,7 +34,7 @@ def install(session: nox.Session, group: str) -> None:
         session.run(*"pip install -e .[aws,dev]".split())
     elif group == "notebooks":
         # we need lamindb here
-        session.run(*"pip install lamindb[jupyter] nbstripout nbconvert".split())
+        session.run(*"pip install lamindb[jupyter]>=0.56a1".split())
         session.run(
             *"pip install --no-deps git+https://github.com/laminlabs/lnschema-core"
             .split()

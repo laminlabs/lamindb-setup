@@ -38,3 +38,9 @@ class UserSettings:
             value = getattr(self, attr)
             representation += f"\n- {attr}: {value}"
         return representation
+
+    @property
+    def id(self):
+        from lnschema_core.users import current_user_id
+
+        return current_user_id()
