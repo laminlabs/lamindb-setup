@@ -103,7 +103,7 @@ def save(notebook_path: str) -> Optional[str]:
     ln.settings.verbosity = "success"
     transform_version = meta_store.version
     # the corresponding transform family in the transform table
-    transform_family = ln.Transform.filter(id__startswith=meta_store.uid).all()
+    transform_family = ln.Transform.filter(uid__startswith=meta_store.id).all()
     if len(transform_family) == 0:
         logger.error(
             f"Didn't find notebook with stem_id {meta_store.id} (12 initial characters)"
