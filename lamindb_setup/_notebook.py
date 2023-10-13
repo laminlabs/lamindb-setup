@@ -103,7 +103,7 @@ def save(notebook_path: str) -> Optional[str]:
     ln.settings.verbosity = "success"
     transform_version = meta_store.version
     # the corresponding transform family in the transform table
-    transform_family = ln.Transform.filter(id__startswith=meta_store.id).all()
+    transform_family = ln.Transform.filter(id__startswith=meta_store.uid).all()
     if len(transform_family) == 0:
         logger.error(
             f"Didn't find notebook with stem_id {meta_store.id} (12 initial characters)"
@@ -154,7 +154,7 @@ def save(notebook_path: str) -> Optional[str]:
         # this transform version previously
         source_file = ln.File(
             notebook_path_stripped,
-            description=f"Source of transform {transform.id}",
+            description=f"Source of transform {transform.uid}",
         )
         # if the hash of the notebook file matches, we're trying to overwrite
         if source_file._state.adding:
@@ -187,7 +187,7 @@ def save(notebook_path: str) -> Optional[str]:
     else:
         source_file = ln.File(
             notebook_path_stripped,
-            description=f"Source of transform {transform.id}",
+            description=f"Source of transform {transform.uid}",
             version=transform_version,
             is_new_version_of=initial_source,
         )
@@ -195,7 +195,7 @@ def save(notebook_path: str) -> Optional[str]:
     # save report file
     report_file = ln.File(
         notebook_path_html,
-        description=f"Report of transform {transform.id}",
+        description=f"Report of transform {transform.uid}",
         is_new_version_of=initial_report,
     )
     report_file.save()
