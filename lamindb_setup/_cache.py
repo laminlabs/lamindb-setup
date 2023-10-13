@@ -27,7 +27,7 @@ def set_cache_dir(cache_dir: str):
     from lamindb_setup import settings
 
     settings.storage.cache_dir = cache_dir
+    cache_str = settings.storage.cache_dir.as_posix()  # type: ignore
     logger.success(
-        "The cache directory of the current instance was set to"  # type: ignore
-        f" {settings.storage.cache_dir.as_posix()}."
+        f"The cache directory of the current instance was set to {cache_str}."
     )
