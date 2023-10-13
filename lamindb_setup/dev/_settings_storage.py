@@ -2,10 +2,23 @@ from pathlib import Path
 from typing import Any, Optional, Union
 
 from appdirs import AppDirs
+from ._settings_save import save_system_storage_settings
+from ._settings_store import system_storage_settings_file
 
 from .upath import LocalPathClasses, UPath, create_path
 
 DIRS = AppDirs("lamindb", "laminlabs")
+
+
+def _process_cache_path(cache_path: Union[str, Path, UPath, None]):
+    if cache_path is None or cache_path == "null":
+        return None
+    cache_dir = UPath(cache_path)
+    if not isinstance(cache_dir, LocalPathClasses):
+        raise ValueError("cache dir should be a local path.")
+    if cache_dir.exists() and not cache_dir.is_dir():
+        raise ValueError("cache dir should be a directory.")
+    return cache_dir
 
 
 class StorageSettings:
@@ -26,6 +39,17 @@ class StorageSettings:
         self._region = region
         # would prefer to type below as Registry, but need to think through import order
         self._record: Optional[Any] = None
+        # cache settings
+        self._storage_settings_file = system_storage_settings_file()
+        if self._storage_settings_file.exists():
+            from dotenv import dotenv_values
+
+            cache_path = dotenv_values(self._storage_settings_file)[
+                "lamindb_cache_path"
+            ]
+            self._cache_dir = _process_cache_path(cache_path)
+        else:
+            self._cache_dir = None
 
     @property
     def id(self) -> int:
@@ -67,11 +91,40 @@ class StorageSettings:
     @property
     def cache_dir(
         self,
-    ) -> Path:
+    ) -> UPath:
         """Cache root, a local directory to cache cloud files."""
-        cache_dir = UPath(DIRS.user_cache_dir)
+        if self._cache_dir is None:
+            cache_dir = UPath(DIRS.user_cache_dir)
+        else:
+            cache_dir = self._cache_dir
         cache_dir.mkdir(parents=True, exist_ok=True)
         return cache_dir
+
+    @cache_dir.setter
+    def cache_dir(self, cache_dir: Union[str, Path, UPath]):
+        """Set cache root."""
+        from lamindb_setup import settings
+
+        if settings.instance._is_cloud_sqlite:
+            src_sqlite_file = settings.instance._sqlite_file_local
+        else:
+            src_sqlite_file = None
+
+        save_cache_dir = self._cache_dir
+
+        self._cache_dir = _process_cache_path(cache_dir)
+
+        try:
+            if src_sqlite_file is not None:
+                dst_sqlite_file = settings.instance._sqlite_file_local
+                dst_sqlite_file.parent.mkdir(parents=True, exist_ok=True)
+                if dst_sqlite_file.exists():
+                    dst_sqlite_file.unlink()
+                src_sqlite_file.rename(dst_sqlite_file)
+            save_system_storage_settings(self._cache_dir, self._storage_settings_file)
+        except Exception as e:
+            self._cache_dir = save_cache_dir
+            raise e
 
     @property
     def is_cloud(self) -> bool:
