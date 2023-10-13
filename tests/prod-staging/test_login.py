@@ -4,7 +4,7 @@ import lamindb_setup as ln_setup
 def test_login():
     ln_setup.login("testuser1")
     assert ln_setup.settings.user.email == "testuser1@lamin.ai"
-    assert ln_setup.settings.user.id == "DzTjkKse"
+    assert ln_setup.settings.user.uid == "DzTjkKse"
     assert ln_setup.settings.user.handle == "testuser1"
 
     import jwt
