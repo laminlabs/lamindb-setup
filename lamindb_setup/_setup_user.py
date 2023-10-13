@@ -98,7 +98,7 @@ def login(
         logger.success(f"logged in with handle {user_handle} (uid: {user_id})")
     else:
         logger.success(f"logged in with email {user_settings.email} (uid: {user_id})")
-    user_settings.id = user_id
+    user_settings.uid = user_id
     user_settings.handle = user_handle
     user_settings.name = user_name
     user_settings.uuid = user_uuid

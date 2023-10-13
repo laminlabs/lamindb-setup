@@ -1,4 +1,3 @@
-from base64 import b64decode
 from dataclasses import dataclass
 from typing import Union
 from uuid import UUID
@@ -7,7 +6,7 @@ from uuid import UUID
 class user_description:
     email = """User email."""
     password = """User password."""
-    id = """User ID."""
+    uid = """Universal user ID."""
     handle = "Unique handle."
     name = "Full name."
 
@@ -22,23 +21,20 @@ class UserSettings:
     """User password."""
     access_token: Union[str, None] = None
     """User access token."""
-    id: str = "null"
-    """User ID."""
+    uid: str = "null"
+    """Universal user ID."""
     uuid: Union[UUID, None] = None
-    """User ID."""
+    """Lamin's internal universal user ID."""
     handle: Union[str, None] = None
-    "Unique handle."
+    """Unique handle."""
     name: Union[str, None] = None
-    "Full name."
+    """Full name."""
 
     def __repr__(self):
         """Rich string representation."""
         representation = f"Current user: {self.handle}"
-        attrs = ["handle", "email", "id"]
+        attrs = ["handle", "email", "uid"]
         for attr in attrs:
             value = getattr(self, attr)
             representation += f"\n- {attr}: {value}"
         return representation
-
-    def get_id_as_int(self) -> int:
-        return int.from_bytes(b64decode(self.id), "big")

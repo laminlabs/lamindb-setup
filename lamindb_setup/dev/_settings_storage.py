@@ -28,7 +28,7 @@ class StorageSettings:
         self._record: Optional[Any] = None
 
     @property
-    def id(self) -> str:
+    def id(self) -> int:
         """Storage id."""
         return self.record.id
 

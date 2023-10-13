@@ -1,4 +1,5 @@
 from ._settings_instance import InstanceSettings
+from django.db.utils import OperationalError
 
 
 def write_bionty_sources(isettings: InstanceSettings) -> None:
@@ -52,8 +53,12 @@ def load_bionty_sources(isettings: InstanceSettings):
     from bionty.dev._io import write_yaml
     from lnschema_bionty.models import BiontySource
 
-    active_records = BiontySource.objects.filter(currently_used=True).all().values()
-    write_yaml(parse_currently_used_sources(active_records), LAMINDB_SOURCES)
+    try:
+        # need try except because of integer primary key migration
+        active_records = BiontySource.objects.filter(currently_used=True).all().values()
+        write_yaml(parse_currently_used_sources(active_records), LAMINDB_SOURCES)
+    except OperationalError:
+        pass
 
 
 def delete_bionty_sources_yaml():

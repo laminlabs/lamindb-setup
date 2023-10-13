@@ -6,7 +6,8 @@ from uuid import UUID
 
 from lamin_utils import logger
 from pydantic import PostgresDsn
-
+from django.db.utils import OperationalError
+from django.core.exceptions import FieldError
 from lamindb_setup.dev.upath import LocalPathClasses, UPath
 from ._close import close as close_instance
 from ._docstrings import instance_description as description
@@ -25,6 +26,7 @@ def get_schema_module_name(schema_name) -> str:
 
 def register_storage(ssettings: StorageSettings):
     from lnschema_core.models import Storage
+    from lnschema_core.users import current_user_id
 
     storage, created = Storage.objects.update_or_create(
         root=ssettings.root_as_str,
@@ -32,7 +34,7 @@ def register_storage(ssettings: StorageSettings):
             root=ssettings.root_as_str,
             type=ssettings.type,
             region=ssettings.region,
-            created_by_id=settings.user.id,
+            created_by_id=current_user_id(),
         ),
     )
     if created:
@@ -44,16 +46,20 @@ def register_user(usettings):
     from lnschema_core.models import User
 
     if usettings.handle != "laminapp-admin":
-        user, created = User.objects.update_or_create(
-            id=usettings.id,
-            defaults=dict(
-                handle=usettings.handle,
-                name=usettings.name,
-                email=usettings.email,
-            ),
-        )
-        if created:
-            logger.save(f"saved: {user}")
+        try:
+            # need to have try except because of integer primary key migration
+            user, created = User.objects.update_or_create(
+                uid=usettings.uid,
+                defaults=dict(
+                    handle=usettings.handle,
+                    name=usettings.name,
+                    email=usettings.email,
+                ),
+            )
+            if created:
+                logger.save(f"saved: {user}")
+        except (OperationalError, FieldError):
+            pass
 
 
 def register_user_and_storage(isettings: InstanceSettings, usettings):
@@ -149,7 +155,7 @@ def init(
         )
         raise ValueError("Invalid instance name: '/' delimiter not allowed.")
 
-    assert settings.user.id  # check user is logged in
+    assert settings.user.uid  # check user is logged in
     owner = settings.user.handle
 
     schema = validate_schema_arg(schema)
