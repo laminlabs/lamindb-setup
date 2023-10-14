@@ -148,14 +148,14 @@ class InstanceSettings:
                 lnid=locked_by,
             )
             if user_info is None:
-                lock_msg += f"id: '{locked_by}'."
+                lock_msg += f"uid: '{locked_by}'."
             else:
                 lock_msg += (
-                    f"'{user_info['handle']}' (id: '{locked_by}', name:"
+                    f"'{user_info['handle']}' (uid: '{locked_by}', name:"
                     f" '{user_info['name']}')."
                 )
             lock_msg += (
-                "The instance will be automatically unlocked after"
+                " The instance will be automatically unlocked after"
                 f" {int(EXPIRATION_TIME/3600/24)}d of no activity."
             )
             raise InstanceLockedException(lock_msg)
