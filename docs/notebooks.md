@@ -14,5 +14,6 @@ prod-only/test-import-schema
 prod-only/test-insufficient-user-info
 prod-only/test-load-lock
 prod-only/test-sqlite-sync
+prod-only/test-cache-management
 
 ```
