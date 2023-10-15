@@ -3,6 +3,7 @@
 <!-- prettier-ignore -->
 Name | PR | Developer | Date | Version
 --- | --- | --- | --- | ---
+🐛 Fix load after failed load in test-load-lock.ipynb | [556](https://github.com/laminlabs/lamindb-setup/pull/556) | [Koncopd](https://github.com/Koncopd) | 2023-10-15 |
 💚 Fix CI | [555](https://github.com/laminlabs/lamindb-setup/pull/555) | [falexwolf](https://github.com/falexwolf) | 2023-10-13 |
 🚚 Rename `UserSettings.id` to `UserSettings.uid` | [552](https://github.com/laminlabs/lamindb-setup/pull/552) | [falexwolf](https://github.com/falexwolf) | 2023-10-13 | 0.55.0
 🔇 Silence logger in main | [553](https://github.com/laminlabs/lamindb-setup/pull/553) | [sunnyosun](https://github.com/sunnyosun) | 2023-10-10 |
