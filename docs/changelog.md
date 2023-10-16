@@ -3,6 +3,7 @@
 <!-- prettier-ignore -->
 Name | PR | Developer | Date | Version
 --- | --- | --- | --- | ---
+✨ Cache management | [554](https://github.com/laminlabs/lamindb-setup/pull/554) | [Koncopd](https://github.com/Koncopd) | 2023-10-16 |
 🐛 Fix load after failed load in test-load-lock.ipynb | [556](https://github.com/laminlabs/lamindb-setup/pull/556) | [Koncopd](https://github.com/Koncopd) | 2023-10-15 |
 💚 Fix CI | [555](https://github.com/laminlabs/lamindb-setup/pull/555) | [falexwolf](https://github.com/falexwolf) | 2023-10-13 |
 🚚 Rename `UserSettings.id` to `UserSettings.uid` | [552](https://github.com/laminlabs/lamindb-setup/pull/552) | [falexwolf](https://github.com/falexwolf) | 2023-10-13 | 0.55.0
