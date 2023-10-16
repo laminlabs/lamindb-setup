@@ -9,6 +9,7 @@ prod-staging/set-storage
 prod-staging/test-bionty
 prod-staging/test-multi-session
 
+prod-only/test-cache-management
 prod-only/test-empty-init
 prod-only/test-import-schema
 prod-only/test-insufficient-user-info

@@ -38,6 +38,10 @@ def user_settings_file_handle(handle: str):
     return settings_dir / f"{get_settings_file_name_prefix()}user--{handle}.env"
 
 
+def system_storage_settings_file():
+    return settings_dir / "storage.env"
+
+
 class InstanceSettingsStore(BaseSettings):
     owner: str
     name: str

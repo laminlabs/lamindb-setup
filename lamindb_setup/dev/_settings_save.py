@@ -1,5 +1,6 @@
 from pathlib import Path
-from typing import Any, Dict, get_type_hints
+
+from typing import Any, Dict, Union, get_type_hints
 from uuid import UUID
 
 from ._settings_store import (
@@ -9,6 +10,7 @@ from ._settings_store import (
     user_settings_file_handle,
 )
 from ._settings_user import UserSettings
+from .upath import UPath
 
 
 def save_user_settings(settings: UserSettings):
@@ -61,3 +63,13 @@ def save_instance_settings(settings: Any, settings_file: Path):
         f.write(f"lamindb_instance_schema_str={schema_str}\n")
         id = settings.id.hex if settings._id is not None else "null"
         f.write(f"lamindb_instance_id={id}\n")
+
+
+def save_system_storage_settings(
+    cache_path: Union[str, Path, UPath, None], settings_file: Path
+):
+    cache_path = "null" if cache_path is None else cache_path
+    if isinstance(cache_path, Path):  # also True for UPath
+        cache_path = cache_path.as_posix()
+    with open(settings_file, "w") as f:
+        f.write(f"lamindb_cache_path={cache_path}")
