@@ -25,12 +25,12 @@ def write_bionty_sources(isettings: InstanceSettings) -> None:
     currently_used = (
         bt.display_currently_used_sources()
         .reset_index()
-        .set_index(["entity", "species"])
+        .set_index(["entity", "organism"])
     )
 
     all_records = []
     for kwargs in all_sources_dict:
-        act = currently_used.loc[(kwargs["entity"], kwargs["species"])].to_dict()
+        act = currently_used.loc[(kwargs["entity"], kwargs["organism"])].to_dict()
         if (act["source"] == kwargs["source"]) and (
             act["version"] == kwargs["version"]
         ):
