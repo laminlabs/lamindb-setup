@@ -1,6 +1,6 @@
 import os
 from uuid import UUID
-
+from typing import Optional
 import pytest
 from gotrue.errors import AuthApiError
 import lamindb_setup as ln_setup
@@ -25,6 +25,25 @@ from lamindb_setup.dev._hub_crud import (
 # from lamindb.dev import UserSettings
 # from supabase import Client
 from lamindb_setup.dev._hub_utils import LaminDsn, base62
+from lamindb_setup.dev._settings_save import save_user_settings
+from lamindb_setup.dev._settings_user import UserSettings
+
+
+def legacy_signup(email: str) -> Optional[str]:
+    """Sign up user."""
+    from lamindb_setup.dev._hub_core import sign_up_hub
+
+    result_or_error = sign_up_hub(email)
+    if result_or_error == "user-exists":  # user already exists
+        return "user-exists"
+    user_settings = UserSettings(
+        email=email,
+        password=result_or_error[0],
+        uuid=UUID(result_or_error[1]),
+        access_token=result_or_error[2],
+    )
+    save_user_settings(user_settings)
+    return None  # user needs to confirm email now
 
 
 def test_runs_locally():
@@ -43,7 +62,7 @@ def test_incomplete_signup():
 @pytest.fixture(scope="session")
 def create_testuser1_session():  # -> Tuple[Client, UserSettings]
     email = "testuser1@gmail.com"
-    response = ln_setup.signup(email)
+    response = legacy_signup(email)
     assert response is None
     account_id = ln_setup.settings.user.uuid.hex
     account = {
