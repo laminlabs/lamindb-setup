@@ -300,7 +300,7 @@ def sign_in_hub(
     except Exception as exception:  # this is bad, but I don't find APIError right now
         logger.error(exception)
         logger.error(
-            "Could not login. probably your password is wrong or you didn't complete"
+            "Could not login. Probably your password is wrong or you didn't complete"
             " signup."
         )
         return "could-not-login"

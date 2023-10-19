@@ -56,6 +56,7 @@ def register_user(usettings):
                     email=usettings.email,
                 ),
             )
+            print("update or create")
             if created:
                 logger.save(f"saved: {user}")
         except (OperationalError, FieldError):
@@ -247,7 +248,10 @@ def load_from_isettings(
         # only register user if the instance is loaded
         # for the first time in an environment
         # this is our best proxy for that the user might not be
-        # yet be registered
+        # yet registered
+        print("Hello")
+        print(isettings._get_settings_file())
+        print(isettings._get_settings_file().exists())
         if not isettings._get_settings_file().exists():
             register_user(settings.user)
         load_bionty_sources(isettings)
