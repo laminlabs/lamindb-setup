@@ -7,7 +7,6 @@ from .dev._settings_user import user_description as user
 
 login_help = "Log in an already-signed-up user."
 init_help = "Init & config instance with db & storage."
-deploy_server_help = "Deploy laminapp-rest server."
 load_help = "Load instance by name."
 set_storage_help = "Set storage used by an instance."
 load_storage_help = "Load the instance with an updated default storage."
@@ -48,9 +47,6 @@ aa(
 init = subparsers.add_parser("init-vault", help=init_help)
 aa = init.add_argument
 aa("--db", type=str, metavar="d", default=None, help=instance.db)
-
-# deploy server
-deploy_server = subparsers.add_parser("deploy-server", help=deploy_server_help)
 
 # load instance
 load = subparsers.add_parser("load", help=load_help)
@@ -182,10 +178,6 @@ def main():
             name=args.name,
             _vault=args.vault,
         )
-    elif args.command == "deploy-server":
-        from ._deploy_server import deploy_server
-
-        return deploy_server()
     elif args.command == "init-vault":
         from ._init_vault import init_vault
 
