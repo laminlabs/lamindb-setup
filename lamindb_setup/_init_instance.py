@@ -53,7 +53,6 @@ def register_user(usettings):
                 defaults=dict(
                     handle=usettings.handle,
                     name=usettings.name,
-                    email=usettings.email,
                 ),
             )
             if created:
