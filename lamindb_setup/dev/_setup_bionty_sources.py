@@ -22,20 +22,32 @@ def write_bionty_sources(isettings: InstanceSettings) -> None:
     all_sources = parse_sources_yaml(LOCAL_SOURCES)
     all_sources_dict = all_sources.to_dict(orient="records")
 
-    currently_used = (
-        bt.display_currently_used_sources()
-        .reset_index()
-        .set_index(["entity", "species"])
-    )
+    def _get_currently_used(key: str):
+        return (
+            bt.display_currently_used_sources().reset_index().set_index(["entity", key])
+        )
+
+    try:
+        currently_used = _get_currently_used("organism")
+        key = "organism"
+    except KeyError:
+        currently_used = _get_currently_used("species")
+        key = "species"
 
     all_records = []
     for kwargs in all_sources_dict:
-        act = currently_used.loc[(kwargs["entity"], kwargs["species"])].to_dict()
+        act = currently_used.loc[(kwargs["entity"], kwargs[key])].to_dict()
         if (act["source"] == kwargs["source"]) and (
             act["version"] == kwargs["version"]
         ):
             kwargs["currently_used"] = True
 
+        # when the database is not yet migrated but setup is updated
+        # won't need this once lamindb is released with the new pin
+        if hasattr(BiontySource, "species") and "organism" in kwargs:
+            kwargs["species"] = kwargs.pop("organism")
+        elif hasattr(BiontySource, "organism") and "species" in kwargs:
+            kwargs["organism"] = kwargs.pop("species")
         record = BiontySource(**kwargs)
         all_records.append(record)
 
