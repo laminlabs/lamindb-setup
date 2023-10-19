@@ -42,6 +42,8 @@ def write_bionty_sources(isettings: InstanceSettings) -> None:
         ):
             kwargs["currently_used"] = True
 
+        # when the database is not yet migrated but setup is updated
+        # won't need this once lamindb is released with the new pin
         if not hasattr(BiontySource, "Organism") and key == "organism":
             kwargs["species"] = kwargs.pop("organism")
 
