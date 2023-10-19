@@ -3,7 +3,7 @@
 <!-- prettier-ignore -->
 Name | PR | Developer | Date | Version
 --- | --- | --- | --- | ---
-🔥 Remove deploy-server command | [558](https://github.com/laminlabs/lamindb-setup/pull/558) | [falexwolf](https://github.com/falexwolf) | 2023-10-19 |
+🔥 Remove deploy-server command | [558](https://github.com/laminlabs/lamindb-setup/pull/558) | [falexwolf](https://github.com/falexwolf) | 2023-10-19 | 0.55.2
 ♻️ Refactor and introduce API key | [557](https://github.com/laminlabs/lamindb-setup/pull/557) | [falexwolf](https://github.com/falexwolf) | 2023-10-19 |
 ✨ Cache management | [554](https://github.com/laminlabs/lamindb-setup/pull/554) | [Koncopd](https://github.com/Koncopd) | 2023-10-16 | 0.55.1
 🐛 Fix load after failed load in test-load-lock.ipynb | [556](https://github.com/laminlabs/lamindb-setup/pull/556) | [Koncopd](https://github.com/Koncopd) | 2023-10-15 |
