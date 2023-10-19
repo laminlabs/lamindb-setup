@@ -44,11 +44,10 @@ def write_bionty_sources(isettings: InstanceSettings) -> None:
 
         # when the database is not yet migrated but setup is updated
         # won't need this once lamindb is released with the new pin
-        if hasattr(BiontySource, "Species") and key == "organism":
+        if hasattr(BiontySource, "species") and "organism" in kwargs:
             kwargs["species"] = kwargs.pop("organism")
-        elif hasattr(BiontySource, "Organism") and key == "species":
+        elif hasattr(BiontySource, "organism") and "species" in kwargs:
             kwargs["organism"] = kwargs.pop("species")
-
         record = BiontySource(**kwargs)
         all_records.append(record)
 
