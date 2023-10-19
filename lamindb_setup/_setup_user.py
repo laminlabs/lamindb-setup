@@ -1,5 +1,4 @@
-from typing import Union
-from uuid import UUID
+from typing import Union, Optional
 
 from lamin_utils import logger
 
@@ -9,27 +8,11 @@ from ._settings import settings
 from .dev._settings_load import load_or_create_user_settings, load_user_settings
 from .dev._settings_save import save_user_settings
 from .dev._settings_store import user_settings_file_email, user_settings_file_handle
-from .dev._settings_user import UserSettings
 
 
-def signup(email: str) -> Union[str, None]:
-    """Sign up user."""
-    from .dev._hub_core import sign_up_hub
-
-    result_or_error = sign_up_hub(email)
-    if result_or_error == "user-exists":  # user already exists
-        return "user-exists"
-    user_settings = UserSettings(
-        email=email,
-        password=result_or_error[0],
-        uuid=UUID(result_or_error[1]),
-        access_token=result_or_error[2],
-    )
-    save_user_settings(user_settings)
-    return None  # user needs to confirm email now
-
-
-def load_user(email: str = None, handle: str = None) -> Union[str, None]:
+def load_user(
+    email: Optional[str] = None, handle: Optional[str] = None
+) -> Union[str, None]:
     if email is not None:
         settings_file = user_settings_file_email(email)
     if handle is not None:
@@ -59,7 +42,8 @@ def load_user(email: str = None, handle: str = None) -> Union[str, None]:
 def login(
     user: str,
     *,
-    password: Union[str, None] = None,
+    key: Optional[str] = None,
+    password: Optional[str] = None,
 ) -> Union[str, None]:
     """Log in user."""
     if "@" in user:
@@ -70,16 +54,23 @@ def login(
 
     user_settings = load_or_create_user_settings()
 
-    if password:
-        user_settings.password = password
+    if password is not None:
+        logger.warning(
+            "please use --key instead of --password, "
+            "passwords are deprecated and replaced with API keys"
+        )
+        key = password
+
+    if key is not None:
+        # within UserSettings, we still call it "password" for a while
+        user_settings.password = key
 
     if user_settings.email is None:
         raise RuntimeError("No stored user email, please call: lamin login {user}")
 
     if user_settings.password is None:
         raise RuntimeError(
-            "No stored user password, please call: lamin login <your-email>"
-            " --password <your-password>"
+            "No stored API key, please call: lamin login <your-email> --key <API-key>"
         )
 
     from .dev._hub_core import sign_in_hub

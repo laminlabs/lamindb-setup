@@ -132,6 +132,7 @@ aa(
     metavar="user",
     help="Email or user handle. Email is needed at first login.",
 )  # noqa
+aa("--key", type=str, metavar="key", default=None, help=user.password)
 aa("--password", type=str, metavar="pw", default=None, help=user.password)
 
 # manage cache
@@ -168,6 +169,7 @@ def main():
 
         return login(
             args.user,
+            key=args.key,
             password=args.password,
         )
     elif args.command == "init":
