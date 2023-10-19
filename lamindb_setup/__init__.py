@@ -57,7 +57,7 @@ from ._migrate import migrate
 from ._register_instance import register  # noqa
 from ._set import set, set_storage  # noqa
 from ._settings import settings  # noqa
-from ._setup_user import login, signup  # noqa
+from ._setup_user import login  # noqa
 
 _TESTING = False  # used in lamindb tests
 

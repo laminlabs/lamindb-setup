@@ -5,7 +5,7 @@ from uuid import UUID
 
 class user_description:
     email = """User email."""
-    password = """User password."""
+    password = """API key or legacy password."""
     uid = """Universal user ID."""
     handle = "Unique handle."
     name = "Full name."
