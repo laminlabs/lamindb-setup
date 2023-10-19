@@ -22,19 +22,28 @@ def write_bionty_sources(isettings: InstanceSettings) -> None:
     all_sources = parse_sources_yaml(LOCAL_SOURCES)
     all_sources_dict = all_sources.to_dict(orient="records")
 
-    currently_used = (
-        bt.display_currently_used_sources()
-        .reset_index()
-        .set_index(["entity", "organism"])
-    )
+    def _get_currently_used(key: str):
+        return (
+            bt.display_currently_used_sources().reset_index().set_index(["entity", key])
+        )
+
+    try:
+        currently_used = _get_currently_used("organism")
+        key = "organism"
+    except KeyError:
+        currently_used = _get_currently_used("species")
+        key = "species"
 
     all_records = []
     for kwargs in all_sources_dict:
-        act = currently_used.loc[(kwargs["entity"], kwargs["organism"])].to_dict()
+        act = currently_used.loc[(kwargs["entity"], kwargs[key])].to_dict()
         if (act["source"] == kwargs["source"]) and (
             act["version"] == kwargs["version"]
         ):
             kwargs["currently_used"] = True
+
+        if not hasattr(BiontySource, "Organism") and key == "organism":
+            kwargs["species"] = kwargs.pop("organism")
 
         record = BiontySource(**kwargs)
         all_records.append(record)
