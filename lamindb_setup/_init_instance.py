@@ -244,9 +244,10 @@ def load_from_isettings(
         isettings._update_cloud_sqlite_file(unlock_cloud_sqlite=False)
     else:
         # when loading, django is already set up
+        #
         # only register user if the instance is loaded
         # for the first time in an environment
-        # this is our best proxy for that the user might not be
+        # this is our best proxy for that the user might not
         # yet be registered
         if not isettings._get_settings_file().exists():
             register_user(settings.user)

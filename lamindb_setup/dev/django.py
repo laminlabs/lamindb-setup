@@ -2,6 +2,7 @@
 import builtins
 import os
 from pathlib import Path
+import shutil
 from lamin_utils import logger
 from ._settings_store import current_instance_settings_file
 from ._settings_instance import InstanceSettings
@@ -104,16 +105,19 @@ def setup_django(
         return None
 
     # check that migrations have been deployed
+    settings_file_existed = isettings._get_settings_file().exists()
+    # make a temporary copy of the current settings file
+    current_settings_file = current_instance_settings_file()
+    current_settings_file_existed = current_settings_file.exists()
+    if current_settings_file_existed:
+        shutil.copy(current_settings_file, current_settings_file.with_name("_tmp.env"))
     isettings._persist()  # temporarily make settings available to migrations, should probably if fails
     missing_migrations = get_migrations_to_sync()
     if len(missing_migrations) > 0:
         if deploy_migrations:
             verbosity = 0 if init else 2
             call_command("migrate", verbosity=verbosity)
-            if init:
-                # remove until init is finalized
-                current_instance_settings_file().unlink()
-            else:
+            if not init:
                 # only update if called from lamin migrate deploy
                 # if called from load_schema(..., init=True)
                 # no need to update the remote sqlite
@@ -125,6 +129,12 @@ def setup_django(
     else:
         if deploy_migrations:
             logger.success("database already up-to-date with migrations!")
+    # clean up temporary settings files
+    if not settings_file_existed:
+        isettings._get_settings_file().unlink()
+    current_instance_settings_file().unlink()
+    if current_settings_file_existed:
+        shutil.copy(current_settings_file.with_name("_tmp.env"), current_settings_file)
 
     global IS_SETUP
     IS_SETUP = True
