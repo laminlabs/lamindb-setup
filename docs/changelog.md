@@ -3,6 +3,7 @@
 <!-- prettier-ignore -->
 Name | PR | Developer | Date | Version
 --- | --- | --- | --- | ---
+🔇 Remove hint about registering instance | [564](https://github.com/laminlabs/lamindb-setup/pull/564) | [falexwolf](https://github.com/falexwolf) | 2023-10-20 |
 ✨ Add django interface | [563](https://github.com/laminlabs/lamindb-setup/pull/563) | [falexwolf](https://github.com/falexwolf) | 2023-10-20 |
 🔥 Do not populate user email in User registry | [561](https://github.com/laminlabs/lamindb-setup/pull/561) | [falexwolf](https://github.com/falexwolf) | 2023-10-19 | 0.55
 ♻️ Better synching of email address from hub to instance | [560](https://github.com/laminlabs/lamindb-setup/pull/560) | [falexwolf](https://github.com/falexwolf) | 2023-10-19 |
