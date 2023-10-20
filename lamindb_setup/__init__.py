@@ -1,6 +1,8 @@
 """Setup & configure LaminDB.
 
-Every function in the API matches a command in the `lamin` CLI.
+Every function in the API has a matching command in the `lamin` CLI.
+
+Typically, you'll want to use the CLI rather than this API.
 
 Guide: :doc:`docs:setup`.
 
@@ -38,6 +40,7 @@ Developer API.
    :toctree:
 
    dev
+   django
 
 """
 
