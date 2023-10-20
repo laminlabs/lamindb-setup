@@ -3,6 +3,7 @@
 <!-- prettier-ignore -->
 Name | PR | Developer | Date | Version
 --- | --- | --- | --- | ---
+✨ Add django interface | [563](https://github.com/laminlabs/lamindb-setup/pull/563) | [falexwolf](https://github.com/falexwolf) | 2023-10-20 |
 🔥 Do not populate user email in User registry | [561](https://github.com/laminlabs/lamindb-setup/pull/561) | [falexwolf](https://github.com/falexwolf) | 2023-10-19 | 0.55
 ♻️ Better synching of email address from hub to instance | [560](https://github.com/laminlabs/lamindb-setup/pull/560) | [falexwolf](https://github.com/falexwolf) | 2023-10-19 |
 🚚 Rename `Species` to `Organism` | [559](https://github.com/laminlabs/lamindb-setup/pull/559) | [sunnyosun](https://github.com/sunnyosun) | 2023-10-19 | 0.55.4
