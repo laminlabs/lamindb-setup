@@ -19,7 +19,6 @@ dependencies = [
     "universal_pathlib==0.1.1",  # is still experimental, need pinning
     "botocore<2.0.0",
     "supabase==1.0.3",
-    "lamin_vault==0.1.2",
 ]
 
 [project.urls]
@@ -42,6 +41,7 @@ dev = [
     "pytest-xdist",
     "nbproject-test>=0.4.3",
     "pandas",
+    "lamin_vault",
 ]
 hub = [
     "faker",
