@@ -41,7 +41,7 @@ dev = [
     "pytest-xdist",
     "nbproject-test>=0.4.3",
     "pandas",
-    "lamin_vault",    
+    "lamin_vault",
 ]
 hub = [
     "faker",
