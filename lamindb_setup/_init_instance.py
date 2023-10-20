@@ -218,14 +218,6 @@ def init(
             "locked instance (to unlock and push changes to the cloud SQLite file,"
             " call: lamin close)"
         )
-    if not isettings.is_remote:
-        verbosity = logger._verbosity
-        logger.set_verbosity(4)
-        logger.hint(
-            "did not register local instance on hub (if you want, call `lamin"
-            " register`)"
-        )
-        logger.set_verbosity(verbosity)
     return None
 
 
