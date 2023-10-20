@@ -38,6 +38,7 @@ Developer API.
    :toctree:
 
    dev
+
 """
 
 
@@ -58,6 +59,7 @@ from ._register_instance import register  # noqa
 from ._set import set, set_storage  # noqa
 from ._settings import settings  # noqa
 from ._setup_user import login  # noqa
+from ._django import django
 
 _TESTING = False  # used in lamindb tests
 
