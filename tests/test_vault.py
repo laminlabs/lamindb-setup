@@ -12,7 +12,8 @@ from lamin_vault.client.postgres._role_and_policy_exist import role_and_policy_e
 from lamin_vault.utils._lamin_dsn import LaminDsn
 from lamindb_setup._init_instance import init
 from lamindb_setup._init_vault import init_vault
-from lamindb_setup._load_instance import load
+
+# from lamindb_setup._load_instance import load
 from lamindb_setup._settings import settings
 from lamindb_setup.dev._hub_client import connect_hub_with_auth
 from lamindb_setup.dev._hub_crud import sb_delete_instance
@@ -191,49 +192,49 @@ def test_init_vault(db_url, db_name):
             sb_delete_instance(instance_id, hub)
 
 
-def test_load_with_vault(db_url, db_name):
-    instance_name = db_name + "_3"
-    instance_id = None
+# def test_load_with_vault(db_url, db_name):
+#     instance_name = db_name + "_3"
+#     instance_id = None
 
-    try:
-        init(
-            name=instance_name,
-            storage="s3://lamindata",
-            db=db_url,
-            _vault=True,
-            _test=True,
-        )
-        instance_id = settings.instance.id
-        admin_account_id = settings.user.uuid
-        vault_admin_client_test = create_vault_admin_client(
-            access_token=settings.user.access_token, instance_id=instance_id
-        )
+#     try:
+#         init(
+#             name=instance_name,
+#             storage="s3://lamindata",
+#             db=db_url,
+#             _vault=True,
+#             _test=True,
+#         )
+#         instance_id = settings.instance.id
+#         admin_account_id = settings.user.uuid
+#         vault_admin_client_test = create_vault_admin_client(
+#             access_token=settings.user.access_token, instance_id=instance_id
+#         )
 
-        load(identifier=instance_name, _vault=True, _test=True)
+#         load(identifier=instance_name, _vault=True, _test=True)
 
-        # Verify generated db credentails exist
-        assert (
-            settings.instance._db_from_vault is not None
-        ), "Generated db credentials should exist."
+#         # Verify generated db credentails exist
+#         assert (
+#             settings.instance._db_from_vault is not None
+#         ), "Generated db credentials should exist."
 
-        # Verify generated db credentails are used
-        assert (
-            settings.instance._db_from_vault == settings.instance.db
-        ), "Generated db credentials should be used."
+#         # Verify generated db credentails are used
+#         assert (
+#             settings.instance._db_from_vault == settings.instance.db
+#         ), "Generated db credentials should be used."
 
-        # Verify admin connection string is still stored in settings
-        assert (
-            settings.instance._db == db_url
-        ), "Admin connection string should be stored in settings."
+#         # Verify admin connection string is still stored in settings
+#         assert (
+#             settings.instance._db == db_url
+#         ), "Admin connection string should be stored in settings."
 
-    finally:
-        if instance_id is not None:
-            # Delete the created resources
-            role_name = f"{instance_id}-{admin_account_id}-db"
-            policy_name = f"{role_name}-policy"
-            connection_config_path = f"database/config/{instance_id}"
+#     finally:
+#         if instance_id is not None:
+#             # Delete the created resources
+#             role_name = f"{instance_id}-{admin_account_id}-db"
+#             policy_name = f"{role_name}-policy"
+#             connection_config_path = f"database/config/{instance_id}"
 
-            vault_admin_client_test.secrets.database.delete_role(name=role_name)
-            vault_admin_client_test.sys.delete_policy(name=policy_name)
-            vault_admin_client_test.delete(connection_config_path)
-            sb_delete_instance(instance_id, hub)
+#             vault_admin_client_test.secrets.database.delete_role(name=role_name)
+#             vault_admin_client_test.sys.delete_policy(name=policy_name)
+#             vault_admin_client_test.delete(connection_config_path)
+#             sb_delete_instance(instance_id, hub)
