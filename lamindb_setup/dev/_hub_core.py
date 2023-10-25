@@ -180,7 +180,9 @@ def _load_instance(
     else:
         account = instance_account.pop("account")
         instance = instance_account
-    if instance["db"] is not None:
+    # check if is postgres instance
+    # this used to be a check for `instance["db"] is not None` in earlier versions
+    if instance["db_scheme"] is not None:
         # get db_user
         db_user = sb_select_db_user_by_instance(instance["id"], client)
         if db_user is None:
