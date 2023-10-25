@@ -97,7 +97,7 @@ def _init_instance(
         return UUID(instance["id"])
 
     instance_id = uuid4()
-    db_user_id = None
+    # sqlite
     if db is None:
         validate_unique_sqlite(storage_id=storage_id, name=name, client=client)
         sb_insert_instance(
@@ -111,9 +111,9 @@ def _init_instance(
             },
             client,
         )
+    # postgres
     else:
         db_dsn = LaminDsnModel(db=db)
-        db_user_id = uuid4().hex
         sb_insert_instance(
             {
                 "id": instance_id.hex,
@@ -121,6 +121,9 @@ def _init_instance(
                 "name": name,
                 "storage_id": storage_id.hex,
                 "db_scheme": db_dsn.db.scheme,
+                "db_host": db_dsn.db.host,
+                "db_port": db_dsn.db.port,
+                "db_database": db_dsn.db.database,
                 "schema_str": schema_str,
                 "public": False,
             },
@@ -130,7 +133,6 @@ def _init_instance(
         {
             "instance_id": instance_id.hex,
             "account_id": usettings.uuid.hex,
-            "db_user_id": db_user_id,
             "role": "admin",
         },
         client,
