@@ -13,6 +13,8 @@ from ._hub_crud import (
     select_instance_by_owner_name,
     sb_insert_collaborator,
     sb_insert_instance,
+    sb_insert_db_user,
+    sb_update_db_user,
     sb_insert_storage,
     sb_select_account_by_handle,
     sb_select_db_user_by_instance,
@@ -138,6 +140,48 @@ def _init_instance(
         client,
     )
     return instance_id
+
+
+def set_db_user(
+    *,
+    db: str,
+    instance_id: Optional[UUID] = None,
+) -> None:
+    return call_with_fallback_auth(_set_db_user, db=db, instance_id=instance_id)
+
+
+def _set_db_user(
+    *,
+    db: str,
+    instance_id: Optional[UUID] = None,
+    client: Client,
+) -> None:
+    if instance_id is None:
+        from .._settings import settings
+
+        instance_id = settings.instance.id
+    db_dsn = LaminDsnModel(db=db)
+    db_user = sb_select_db_user_by_instance(instance_id.hex, client)
+    if db_user is None:
+        sb_insert_db_user(
+            {
+                "id": uuid4().hex,
+                "instance_id": instance_id.hex,
+                "db_user_name": db_dsn.db.user,
+                "db_user_password": db_dsn.db.password,
+            },
+            client,
+        )
+    else:
+        sb_update_db_user(
+            db_user["id"],
+            {
+                "instance_id": instance_id.hex,
+                "db_user_name": db_dsn.db.user,
+                "db_user_password": db_dsn.db.password,
+            },
+            client,
+        )
 
 
 def load_instance(

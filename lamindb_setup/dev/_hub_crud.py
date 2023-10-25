@@ -151,14 +151,27 @@ def sb_select_storage_by_root(root: str, client: Client):
 
 
 # --------------- DBUser ----------------------
-def sb_insert_db_user(instance_fields: dict, client: Client):
+def sb_insert_db_user(db_user_fields: dict, client: Client):
     try:
-        data = client.table("db_user").insert(instance_fields).execute().data
+        data = client.table("db_user").insert(db_user_fields).execute().data
     except Exception as e:
         if str(e) == str("Expecting value: line 1 column 1 (char 0)"):
             pass
         else:
             raise e
+    return data[0]
+
+
+def sb_update_db_user(db_user_id: str, db_user_fields: dict, client: Client):
+    data = (
+        client.table("db_user")
+        .update(db_user_fields)
+        .eq("id", db_user_id)
+        .execute()
+        .data
+    )
+    if len(data) == 0:
+        return None
     return data[0]
 
 
