@@ -12,7 +12,6 @@ from ._hub_client import (
 from ._hub_crud import (
     select_instance_by_owner_name,
     sb_insert_collaborator,
-    sb_insert_db_user,
     sb_insert_instance,
     sb_insert_storage,
     sb_select_account_by_handle,
@@ -28,7 +27,6 @@ from ._hub_utils import (
     get_storage_region,
     get_storage_type,
     secret,
-    validate_db_arg,
     validate_schema_arg,
     validate_storage_root_arg,
     validate_unique_sqlite,
@@ -87,8 +85,6 @@ def _init_instance(
     usettings = settings.user
     # validate input arguments
     schema_str = validate_schema_arg(schema)
-    # storage is validated in add_storage
-    validate_db_arg(db)
 
     # get storage and add if not yet there
     storage_id = add_storage(
@@ -124,22 +120,9 @@ def _init_instance(
                 "account_id": usettings.uuid.hex,
                 "name": name,
                 "storage_id": storage_id.hex,
-                "db": db,
                 "db_scheme": db_dsn.db.scheme,
-                "db_host": db_dsn.db.host,
-                "db_port": db_dsn.db.port,
-                "db_database": db_dsn.db.database,
                 "schema_str": schema_str,
                 "public": False,
-            },
-            client,
-        )
-        sb_insert_db_user(
-            {
-                "id": db_user_id,
-                "instance_id": instance_id.hex,
-                "db_user_name": db_dsn.db.user,
-                "db_user_password": db_dsn.db.password,
             },
             client,
         )
@@ -182,6 +165,7 @@ def _load_instance(
         instance = instance_account
     # check if is postgres instance
     # this used to be a check for `instance["db"] is not None` in earlier versions
+    # removed this on 2022-10-25 and can remove from the hub probably for lamindb 1.0
     if instance["db_scheme"] is not None:
         # get db_user
         db_user = sb_select_db_user_by_instance(instance["id"], client)
