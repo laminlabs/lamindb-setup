@@ -102,10 +102,11 @@ def noaws(session: nox.Session):
 
 @nox.session
 def vault(session: nox.Session):
-    login_testuser1(session)
+    env = {"LAMIN_ENV": "staging"}
+    login_testuser1(session, env=env)
     session.run(
         *f"pytest {COVERAGE_ARGS} ./tests/test_vault.py".split(),
-        env={"LAMIN_ENV": "staging"},
+        env=env,
     )
 
 
