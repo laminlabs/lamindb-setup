@@ -163,7 +163,7 @@ class LaminDsn(MultiHostDsn):
             user=user,
             password=password,
             host=host,
-            port=port,
+            port=str(port),
             path=f"/{database}",
             query=query,
             fragment=fragment,

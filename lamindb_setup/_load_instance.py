@@ -1,10 +1,13 @@
 from pathlib import Path
-from typing import Optional, Union
+from typing import Optional, Union, Dict
 from uuid import UUID
 
 from lamin_utils import logger
 from lamindb_setup.dev.upath import UPath
-
+from lamindb_setup.dev._hub_utils import (
+    LaminDsn,
+    LaminDsnModel,
+)
 from ._close import close as close_instance
 from ._init_instance import load_from_isettings
 from ._settings import InstanceSettings, settings
@@ -19,10 +22,53 @@ from .dev.cloud_sqlite_locker import unlock_cloud_sqlite_upon_exception
 _TEST_FAILED_LOAD = False
 
 
+def check_db_dsn_equal_up_to_credentials(db_dsn_hub, db_dsn_local):
+    return (
+        db_dsn_hub.scheme == db_dsn_local.scheme
+        and db_dsn_hub.host == db_dsn_local.host
+        and db_dsn_hub.database == db_dsn_local.database
+        and db_dsn_hub.port == db_dsn_local.port
+    )
+
+
+def update_db_using_local(
+    hub_instance_result: Dict[str, str], settings_file: Path, db: Optional[str] = None
+) -> Optional[str]:
+    db_updated = None
+    # check if postgres
+    if hub_instance_result["db_scheme"] == "postgresql":
+        db_dsn_hub = LaminDsnModel(db=hub_instance_result["db"])
+        if db is not None:
+            db_dsn_local = LaminDsnModel(db=db)
+        else:
+            if settings_file.exists():
+                logger.print("loading db URL from local cache")
+                isettings = load_instance_settings(settings_file)
+                db_dsn_local = isettings.db
+            else:
+                db_dsn_local = db_dsn_hub
+        if not check_db_dsn_equal_up_to_credentials(db_dsn_hub, db_dsn_local):
+            raise ValueError(
+                "the db host loaded from the hub and provided locally differ: "
+                "\n 1. did you pass a wrong db URL with --db?"
+                "\n 2. did your database get updated by an admin?"
+            )
+        db_updated = LaminDsn.build(
+            scheme=db_dsn_hub.db.scheme,
+            user=db_dsn_local.db.user,
+            password=db_dsn_local.db.password,
+            host=db_dsn_hub.db.host,
+            port=db_dsn_hub.db.port,
+            database=db_dsn_hub.db.database,
+        )
+    return db_updated
+
+
 @unlock_cloud_sqlite_upon_exception(ignore_prev_locker=True)
 def load(
     identifier: str,
     *,
+    db: Optional[str] = None,
     storage: Optional[Union[str, Path, UPath]] = None,
     _raise_not_reachable_error: bool = True,
     _test: bool = False,
@@ -35,6 +81,7 @@ def load(
             You can also pass the URL: `https://lamin.ai/owner/name`.
             If the instance is owned by you,
             it suffices to pass the instance name.
+        db: Load the instance with an updated database URL.
         storage: `Optional[PathLike] = None` - Load the instance with an
             updated default storage.
     """
@@ -56,6 +103,8 @@ def load(
         ):
             close_instance(mute=True)
 
+    settings_file = instance_settings_file(name, owner)
+
     # the following will return a string if the instance does not exist
     # on the hub
     hub_result = load_instance_from_hub(owner=owner, name=name)
@@ -64,12 +113,13 @@ def load(
     # that successfully returned metadata
     if not isinstance(hub_result, str):
         instance_result, storage_result = hub_result
+        db_updated = update_db_using_local(instance_result, settings_file, db=db)
         isettings = InstanceSettings(
             owner=owner,
             name=name,
             storage_root=storage_result["root"],
             storage_region=storage_result["region"],
-            db=instance_result["db"],
+            db=db_updated,
             schema=instance_result["schema_str"],
             id=UUID(instance_result["id"]),
         )
@@ -83,7 +133,6 @@ def load(
                 name=instance_result["db_database"],
             )
     else:
-        settings_file = instance_settings_file(name, owner)
         if settings_file.exists():
             isettings = load_instance_settings(settings_file)
             if isettings.is_remote:
