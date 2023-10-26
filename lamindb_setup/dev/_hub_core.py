@@ -98,7 +98,12 @@ def _init_instance(
     if instance is not None:
         return UUID(instance["id"])
 
-    instance_id = uuid4()
+    # for internal use when creating instances through CICD
+    instance_id_str = os.getenv("LAMINDB_INSTANCE_ID_INIT")
+    if instance_id_str is None:
+        instance_id = uuid4()
+    else:
+        instance_id = UUID(instance_id_str)
     # sqlite
     if db is None:
         validate_unique_sqlite(storage_id=storage_id, name=name, client=client)
