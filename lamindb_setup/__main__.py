@@ -55,6 +55,7 @@ instance_help = """
 The instance identifier can the instance name (owner is
 current user), handle/name, or the URL: https://lamin.ai/handle/name."""
 aa("instance", type=str, metavar="i", default=None, help=instance_help)
+aa("--db", type=str, metavar="d", default=None, help=instance.db)
 aa("--storage", type=str, metavar="s", default=None, help=load_storage_help)
 aa(
     "--vault",
@@ -189,6 +190,7 @@ def main():
 
         return load(
             identifier=args.instance,
+            db=args.db,
             storage=args.storage,
             _vault=args.vault,
         )
