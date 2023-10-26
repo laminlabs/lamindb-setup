@@ -3,6 +3,7 @@
 <!-- prettier-ignore -->
 Name | PR | Developer | Date | Version
 --- | --- | --- | --- | ---
+✨ Set notebook files to be hidden | [568](https://github.com/laminlabs/lamindb-setup/pull/568) | [sunnyosun](https://github.com/sunnyosun) | 2023-10-26 |
 ✨ Read db URL from local parameters | [567](https://github.com/laminlabs/lamindb-setup/pull/567) | [falexwolf](https://github.com/falexwolf) | 2023-10-26 | 0.56.0
 ♻️ Do no longer store the db connection string in hub | [566](https://github.com/laminlabs/lamindb-setup/pull/566) | [falexwolf](https://github.com/falexwolf) | 2023-10-25 |
 👷 Run vault tests in staging environment | [565](https://github.com/laminlabs/lamindb-setup/pull/565) | [fredericenard](https://github.com/fredericenard) | 2023-10-25 |
