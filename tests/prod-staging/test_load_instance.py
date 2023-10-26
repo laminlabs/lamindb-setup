@@ -100,3 +100,19 @@ def test_load_after_private_public_switch():
             instance_fields={"public": False},
             client=admin_hub,
         )
+
+
+def test_load_with_db_parameter():
+    if os.getenv("LAMIN_ENV") == "prod":
+        ln_setup.login("static-testuser1@lamin.ai", key="static-testuser1-password")
+        ln_setup.load("laminlabs/lamindata", _test=True)
+        assert "public-read" in ln_setup.settings.instance.db
+        db = "postgresql://testuser:testpwd@database2.cmyfs24wugc3.us-east-1.rds.amazonaws.com:5432/db1"  # noqa
+        ln_setup.load("laminlabs/lamindata", db=db, _test=True)
+        assert "testuser" in ln_setup.settings.instance.db
+        db_corrupted = "postgresql://testuser:testpwd@wrongserver:5432/db1"
+        with pytest.raises(ValueError) as error:
+            ln_setup.load("laminlabs/lamindata", db=db_corrupted, _test=True)
+        assert error.exconly().startswith(
+            "ValueError: the local differs from the hub database information"
+        )
