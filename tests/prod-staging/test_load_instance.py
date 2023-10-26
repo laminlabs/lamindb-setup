@@ -112,8 +112,8 @@ def test_load_with_db_parameter():
         db = "postgresql://testuser:testpwd@database2.cmyfs24wugc3.us-east-1.rds.amazonaws.com:5432/db1"  # noqa
         ln_setup.load("laminlabs/lamindata", db=db, _test=True)
         assert "testuser" in ln_setup.settings.instance.db
-        # test load from cache
-        ln_setup.load("laminlabs/lamindata", db=db, _test=True)
+        # test load from cache (no db arg)
+        ln_setup.load("laminlabs/lamindata", _test=True)
         assert "testuser" in ln_setup.settings.instance.db
         # test corrupted input
         db_corrupted = "postgresql://testuser:testpwd@wrongserver:5432/db1"
