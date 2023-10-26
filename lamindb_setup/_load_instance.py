@@ -1,7 +1,7 @@
 from pathlib import Path
 from typing import Optional, Union, Dict
 from uuid import UUID
-
+import os
 from lamin_utils import logger
 from lamindb_setup.dev.upath import UPath
 from lamindb_setup.dev._hub_utils import (
@@ -41,7 +41,12 @@ def update_db_using_local(
         if db is not None:
             db_dsn_local = LaminDsnModel(db=db)
         else:
-            if settings_file.exists():
+            # read directly from the environment
+            if os.getenv("LAMINDB_INSTANCE_DB") is not None:
+                logger.important("loading db URL from env variable LAMINDB_INSTANCE_DB")
+                db_dsn_local = LaminDsnModel(db=os.getenv("LAMINDB_INSTANCE_DB"))
+            # read from a cached settings file
+            elif settings_file.exists():
                 logger.important("loading db URL from local cache")
                 isettings = load_instance_settings(settings_file)
                 db_dsn_local = LaminDsnModel(db=isettings.db)
