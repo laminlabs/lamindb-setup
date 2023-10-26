@@ -114,5 +114,5 @@ def test_load_with_db_parameter():
         with pytest.raises(ValueError) as error:
             ln_setup.load("laminlabs/lamindata", db=db_corrupted, _test=True)
         assert error.exconly().startswith(
-            "ValueError: the local differs from the hub database information"
+            "ValueError: The local differs from the hub database information"
         )

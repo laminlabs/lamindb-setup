@@ -47,11 +47,15 @@ def update_db_using_local(
                 db_dsn_local = LaminDsnModel(db=isettings.db)
             else:
                 # just take the default hub result and ensure there is actually a user
-                assert db_dsn_hub.db.user != "" and db_dsn_hub.db.password != ""
+                if db_dsn_hub.db.user == "none" and db_dsn_hub.db.password == "none":
+                    raise PermissionError(
+                        "No database access, please ask your admin to provide you with"
+                        " a DB URL and pass it via --db <db_url>"
+                    )
                 db_dsn_local = db_dsn_hub
         if not check_db_dsn_equal_up_to_credentials(db_dsn_hub.db, db_dsn_local.db):
             raise ValueError(
-                "the local differs from the hub database information:"
+                "The local differs from the hub database information:"
                 "\n 1. did you pass a wrong db URL with --db?"
                 "\n 2. did your database get updated by an admin?"
             )

@@ -216,8 +216,8 @@ def _load_instance(
         # get db_user
         db_user = sb_select_db_user_by_instance(instance["id"], client)
         if db_user is None:
-            db_user_name = ""
-            db_user_password = ""
+            db_user_name = "none"
+            db_user_password = "none"
         else:
             db_user_name = db_user["db_user_name"]
             db_user_password = db_user["db_user_password"]
