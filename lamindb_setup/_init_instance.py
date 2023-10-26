@@ -6,7 +6,7 @@ from uuid import UUID
 
 from lamin_utils import logger
 from pydantic import PostgresDsn
-from django.db.utils import OperationalError
+from django.db.utils import OperationalError, ProgrammingError
 from django.core.exceptions import FieldError
 from lamindb_setup.dev.upath import LocalPathClasses, UPath
 from ._close import close as close_instance
@@ -57,7 +57,9 @@ def register_user(usettings):
             )
             if created:
                 logger.save(f"saved: {user}")
-        except (OperationalError, FieldError):
+        # for users with only read access, except via ProgrammingError
+        # ProgrammingError: permission denied for table lnschema_core_user
+        except (OperationalError, FieldError, ProgrammingError):
             pass
 
 
