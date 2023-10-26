@@ -53,8 +53,7 @@ def test_init_instance_postgres_default_name(get_hub_client):
     # and check
     instance, db_user = get_instance_and_dbuser_from_hub(instance_name, hub)
     # hub checks
-    assert db_user["db_user_name"] == "postgres"
-    assert db_user["db_user_password"] == "pwd"
+    assert db_user is None
     assert instance["name"] == "pgtest"
     assert instance["db_scheme"] == "postgresql"
     assert instance["db_host"] == "0.0.0.0"

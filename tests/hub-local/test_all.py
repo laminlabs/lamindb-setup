@@ -11,6 +11,7 @@ from lamindb_setup.dev._hub_client import (
 from lamindb_setup.dev._hub_core import (
     add_storage,
     init_instance,
+    set_db_user,
     load_instance,
     sign_in_hub,
     sign_up_hub,
@@ -80,10 +81,19 @@ def create_testuser1_session():  # -> Tuple[Client, UserSettings]
 
 @pytest.fixture(scope="session")
 def create_myinstance(create_testuser1_session):  # -> Dict
-    init_instance(
+    instance_id = init_instance(
         name="myinstance",
         storage="s3://lndb-setup-ci",
         db="postgresql://postgres:pwd@fakeserver.xyz:5432/mydb",
+    )
+    # test loading it
+    with pytest.raises(PermissionError) as error:
+        ln_setup.load("testuser1/myinstance", _test=True)
+    assert error.exconly().startswith(
+        "PermissionError: No database access, please ask your admin"
+    )
+    set_db_user(
+        db="postgresql://postgres:pwd@fakeserver.xyz:5432/mydb", instance_id=instance_id
     )
     client, _ = create_testuser1_session
     instance = sb_select_instance_by_name(
@@ -112,7 +122,7 @@ def test_connection_string_decomp(create_myinstance, create_testuser1_session):
         account_id=ln_setup.settings.user.uuid.hex,
         client=client,
     )
-    assert db_collaborator["db_user_id"] == db_user["id"]
+    assert db_collaborator["db_user_id"] is None
 
 
 def test_load_instance(create_myinstance, create_testuser1_session):

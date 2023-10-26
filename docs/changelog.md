@@ -3,6 +3,9 @@
 <!-- prettier-ignore -->
 Name | PR | Developer | Date | Version
 --- | --- | --- | --- | ---
+✨ Read db URL from local parameters | [567](https://github.com/laminlabs/lamindb-setup/pull/567) | [falexwolf](https://github.com/falexwolf) | 2023-10-26 | 0.56.0
+♻️ Do no longer store the db connection string in hub | [566](https://github.com/laminlabs/lamindb-setup/pull/566) | [falexwolf](https://github.com/falexwolf) | 2023-10-25 |
+👷 Run vault tests in staging environment | [565](https://github.com/laminlabs/lamindb-setup/pull/565) | [fredericenard](https://github.com/fredericenard) | 2023-10-25 |
 📌 Unpin vault and move to dev dependencies | [562](https://github.com/laminlabs/lamindb-setup/pull/562) | [fredericenard](https://github.com/fredericenard) | 2023-10-20 | 0.55.6
 🔇 Remove hint about registering instance | [564](https://github.com/laminlabs/lamindb-setup/pull/564) | [falexwolf](https://github.com/falexwolf) | 2023-10-20 |
 ✨ Add django interface | [563](https://github.com/laminlabs/lamindb-setup/pull/563) | [falexwolf](https://github.com/falexwolf) | 2023-10-20 |

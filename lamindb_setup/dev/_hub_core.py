@@ -12,8 +12,9 @@ from ._hub_client import (
 from ._hub_crud import (
     select_instance_by_owner_name,
     sb_insert_collaborator,
-    sb_insert_db_user,
     sb_insert_instance,
+    sb_insert_db_user,
+    sb_update_db_user,
     sb_insert_storage,
     sb_select_account_by_handle,
     sb_select_db_user_by_instance,
@@ -28,7 +29,6 @@ from ._hub_utils import (
     get_storage_region,
     get_storage_type,
     secret,
-    validate_db_arg,
     validate_schema_arg,
     validate_storage_root_arg,
     validate_unique_sqlite,
@@ -87,8 +87,6 @@ def _init_instance(
     usettings = settings.user
     # validate input arguments
     schema_str = validate_schema_arg(schema)
-    # storage is validated in add_storage
-    validate_db_arg(db)
 
     # get storage and add if not yet there
     storage_id = add_storage(
@@ -101,7 +99,7 @@ def _init_instance(
         return UUID(instance["id"])
 
     instance_id = uuid4()
-    db_user_id = None
+    # sqlite
     if db is None:
         validate_unique_sqlite(storage_id=storage_id, name=name, client=client)
         sb_insert_instance(
@@ -115,16 +113,15 @@ def _init_instance(
             },
             client,
         )
+    # postgres
     else:
         db_dsn = LaminDsnModel(db=db)
-        db_user_id = uuid4().hex
         sb_insert_instance(
             {
                 "id": instance_id.hex,
                 "account_id": usettings.uuid.hex,
                 "name": name,
                 "storage_id": storage_id.hex,
-                "db": db,
                 "db_scheme": db_dsn.db.scheme,
                 "db_host": db_dsn.db.host,
                 "db_port": db_dsn.db.port,
@@ -134,25 +131,57 @@ def _init_instance(
             },
             client,
         )
+    sb_insert_collaborator(
+        {
+            "instance_id": instance_id.hex,
+            "account_id": usettings.uuid.hex,
+            "role": "admin",
+        },
+        client,
+    )
+    return instance_id
+
+
+def set_db_user(
+    *,
+    db: str,
+    instance_id: Optional[UUID] = None,
+) -> None:
+    return call_with_fallback_auth(_set_db_user, db=db, instance_id=instance_id)
+
+
+def _set_db_user(
+    *,
+    db: str,
+    instance_id: Optional[UUID] = None,
+    client: Client,
+) -> None:
+    if instance_id is None:
+        from .._settings import settings
+
+        instance_id = settings.instance.id
+    db_dsn = LaminDsnModel(db=db)
+    db_user = sb_select_db_user_by_instance(instance_id.hex, client)
+    if db_user is None:
         sb_insert_db_user(
             {
-                "id": db_user_id,
+                "id": uuid4().hex,
                 "instance_id": instance_id.hex,
                 "db_user_name": db_dsn.db.user,
                 "db_user_password": db_dsn.db.password,
             },
             client,
         )
-    sb_insert_collaborator(
-        {
-            "instance_id": instance_id.hex,
-            "account_id": usettings.uuid.hex,
-            "db_user_id": db_user_id,
-            "role": "admin",
-        },
-        client,
-    )
-    return instance_id
+    else:
+        sb_update_db_user(
+            db_user["id"],
+            {
+                "instance_id": instance_id.hex,
+                "db_user_name": db_dsn.db.user,
+                "db_user_password": db_dsn.db.password,
+            },
+            client,
+        )
 
 
 def load_instance(
@@ -180,18 +209,25 @@ def _load_instance(
     else:
         account = instance_account.pop("account")
         instance = instance_account
-    if instance["db"] is not None:
+    # check if is postgres instance
+    # this used to be a check for `instance["db"] is not None` in earlier versions
+    # removed this on 2022-10-25 and can remove from the hub probably for lamindb 1.0
+    if instance["db_scheme"] is not None:
         # get db_user
         db_user = sb_select_db_user_by_instance(instance["id"], client)
         if db_user is None:
-            return "db-user-not-reachable"
+            db_user_name = "none"
+            db_user_password = "none"
+        else:
+            db_user_name = db_user["db_user_name"]
+            db_user_password = db_user["db_user_password"]
         # construct dsn from instance and db_account fields
         db_dsn = LaminDsn.build(
             scheme=instance["db_scheme"],
-            user=db_user["db_user_name"],
-            password=db_user["db_user_password"],
+            user=db_user_name,
+            password=db_user_password,
             host=instance["db_host"],
-            port=str(instance["db_port"]),
+            port=instance["db_port"],
             database=instance["db_database"],
         )
         # override the db string with the constructed dsn
