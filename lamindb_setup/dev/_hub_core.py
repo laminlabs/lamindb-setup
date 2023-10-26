@@ -216,14 +216,18 @@ def _load_instance(
         # get db_user
         db_user = sb_select_db_user_by_instance(instance["id"], client)
         if db_user is None:
-            return "db-user-not-reachable"
+            db_user_name = "none"
+            db_user_password = "none"
+        else:
+            db_user_name = db_user["db_user_name"]
+            db_user_password = db_user["db_user_password"]
         # construct dsn from instance and db_account fields
         db_dsn = LaminDsn.build(
             scheme=instance["db_scheme"],
-            user=db_user["db_user_name"],
-            password=db_user["db_user_password"],
+            user=db_user_name,
+            password=db_user_password,
             host=instance["db_host"],
-            port=str(instance["db_port"]),
+            port=instance["db_port"],
             database=instance["db_database"],
         )
         # override the db string with the constructed dsn

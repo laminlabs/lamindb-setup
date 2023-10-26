@@ -86,6 +86,12 @@ def create_myinstance(create_testuser1_session):  # -> Dict
         storage="s3://lndb-setup-ci",
         db="postgresql://postgres:pwd@fakeserver.xyz:5432/mydb",
     )
+    # test loading it
+    with pytest.raises(PermissionError) as error:
+        ln_setup.load("testuser1/myinstance", _test=True)
+    assert error.exconly().startswith(
+        "PermissionError: No database access, please ask your admin"
+    )
     set_db_user(
         db="postgresql://postgres:pwd@fakeserver.xyz:5432/mydb", instance_id=instance_id
     )
