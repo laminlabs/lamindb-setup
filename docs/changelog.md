@@ -3,7 +3,7 @@
 <!-- prettier-ignore -->
 Name | PR | Developer | Date | Version
 --- | --- | --- | --- | ---
-♻️ Enable to pre-define the instance id | [570](https://github.com/laminlabs/lamindb-setup/pull/570) | [falexwolf](https://github.com/falexwolf) | 2023-10-26 |
+♻️ Enable to pre-define the instance id | [570](https://github.com/laminlabs/lamindb-setup/pull/570) | [falexwolf](https://github.com/falexwolf) | 2023-10-26 | 0.56.3
 🐛 Fix read-only access | [569](https://github.com/laminlabs/lamindb-setup/pull/569) | [falexwolf](https://github.com/falexwolf) | 2023-10-26 | 0.56.2
 ✨ Set notebook files to be hidden | [568](https://github.com/laminlabs/lamindb-setup/pull/568) | [sunnyosun](https://github.com/sunnyosun) | 2023-10-26 | 0.56.1
 ✨ Read db URL from local parameters | [567](https://github.com/laminlabs/lamindb-setup/pull/567) | [falexwolf](https://github.com/falexwolf) | 2023-10-26 | 0.56.0
