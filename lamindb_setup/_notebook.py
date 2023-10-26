@@ -155,6 +155,7 @@ def save(notebook_path: str) -> Optional[str]:
         source_file = ln.File(
             notebook_path_stripped,
             description=f"Source of transform {transform.uid}",
+            visibility=1,
         )
         # if the hash of the notebook file matches, we're trying to overwrite
         if source_file._state.adding:
@@ -190,6 +191,7 @@ def save(notebook_path: str) -> Optional[str]:
             description=f"Source of transform {transform.uid}",
             version=transform_version,
             is_new_version_of=initial_source,
+            visibility=1,
         )
         source_file.save()
     # save report file
@@ -197,6 +199,7 @@ def save(notebook_path: str) -> Optional[str]:
         notebook_path_html,
         description=f"Report of transform {transform.uid}",
         is_new_version_of=initial_report,
+        visibility=1,
     )
     report_file.save()
     run.report = report_file
