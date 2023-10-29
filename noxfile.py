@@ -13,7 +13,7 @@ def lint(session: nox.Session) -> None:
 @nox.session
 @nox.parametrize(
     "group",
-    ["hub-local", "prod-only", "prod-staging", "noaws", "vault", "notebooks"],
+    ["hub-local", "prod-only", "prod-staging", "noaws", "vault"],
 )
 def install(session: nox.Session, group: str) -> None:
     if group in {"prod-staging"}:
@@ -31,14 +31,6 @@ def install(session: nox.Session, group: str) -> None:
     elif group == "noaws":
         session.run(*"pip install -e .[aws,dev]".split())
     elif group == "vault":
-        session.run(*"pip install -e .[aws,dev]".split())
-    elif group == "notebooks":
-        # we need lamindb here
-        session.run(*"pip install lamindb[jupyter]>=0.56a1".split())
-        session.run(
-            *"pip install --no-deps git+https://github.com/laminlabs/lnschema-core"
-            .split()
-        )
         session.run(*"pip install -e .[aws,dev]".split())
     elif group == "prod-only":
         session.run(
@@ -108,9 +100,3 @@ def vault(session: nox.Session):
         *f"pytest {COVERAGE_ARGS} ./tests/test_vault.py".split(),
         env=env,
     )
-
-
-@nox.session
-def notebooks(session: nox.Session):
-    login_testuser1(session)
-    session.run(*f"pytest {COVERAGE_ARGS} ./tests/notebooks/test.py".split())
