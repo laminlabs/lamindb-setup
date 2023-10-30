@@ -28,6 +28,9 @@ def install(session: nox.Session, group: str) -> None:
         )
         session.run(*"pip install ./laminhub-rest[server]".split())
         session.run(*"pip install -e .[aws,dev]".split())
+        session.run(
+            "pip install lamindb"
+        )  # need for CLI, but this is bad because it's downstream
     elif group == "noaws":
         session.run(*"pip install -e .[aws,dev]".split())
     elif group == "vault":
@@ -37,6 +40,9 @@ def install(session: nox.Session, group: str) -> None:
             *"pip install git+https://github.com/laminlabs/lnschema-bionty".split()
         )
         session.run(*"pip install -e .[aws,dev]".split())
+        session.run(
+            "pip install lamindb"
+        )  # need for CLI, but this is bad because it's downstream
     elif group == "hub-local":
         session.run(*"pip install -e .[aws,dev,hub]".split())
         session.run(*"pip install ./laminhub-rest[server]".split())
