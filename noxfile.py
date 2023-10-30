@@ -89,8 +89,10 @@ def hub_local(session: nox.Session):
 
 @nox.session
 def docs(session: nox.Session):
+    import lamindb_setup as ln_setup
+
     login_testuser1(session)
-    session.run(*"lamin init --storage ./docsbuild".split())
+    ln_setup.init(storage="./docsbuild")
     build_docs(session)
 
 
