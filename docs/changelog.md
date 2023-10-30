@@ -3,6 +3,7 @@
 <!-- prettier-ignore -->
 Name | PR | Developer | Date | Version
 --- | --- | --- | --- | ---
+🚚 Move CLI to lamindb | [572](https://github.com/laminlabs/lamindb-setup/pull/572) | [falexwolf](https://github.com/falexwolf) | 2023-10-30 |
 ♻️ Also enable to read db from env variable | [571](https://github.com/laminlabs/lamindb-setup/pull/571) | [falexwolf](https://github.com/falexwolf) | 2023-10-26 | 0.56.4
 ♻️ Enable to pre-define the instance id | [570](https://github.com/laminlabs/lamindb-setup/pull/570) | [falexwolf](https://github.com/falexwolf) | 2023-10-26 | 0.56.3
 🐛 Fix read-only access | [569](https://github.com/laminlabs/lamindb-setup/pull/569) | [falexwolf](https://github.com/falexwolf) | 2023-10-26 | 0.56.2
