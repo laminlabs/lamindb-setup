@@ -41,7 +41,7 @@ dev = [
     "pytest-xdist",
     "nbproject-test>=0.4.3",
     "pandas",
-    "sqlmodel=0.0.8",  # try to work around this
+    "sqlmodel==0.0.9",  # try to work around this
     "lamin_vault",
 ]
 hub = [
