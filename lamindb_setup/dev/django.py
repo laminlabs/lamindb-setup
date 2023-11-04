@@ -55,7 +55,9 @@ def setup_django(
     if not settings.configured:
         default_db = dj_database_url.config(
             default=isettings.db,
-            conn_max_age=600,
+            # https://laminlabs.slack.com/archives/C04FPE8V01W/p1698239551460289
+            # assuming postgres terminates a connection after 299s
+            conn_max_age=299,
             conn_health_checks=True,
         )
         DATABASES = {
