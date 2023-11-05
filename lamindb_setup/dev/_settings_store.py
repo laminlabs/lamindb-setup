@@ -3,9 +3,14 @@ from pathlib import Path
 
 from pydantic import BaseSettings
 
-# user_config_dir in appdirs is weird on MacOS!
-# hence, let's take home/.lamin
-settings_dir = Path.home() / ".lamin"
+if "LAMIN_SETTINGS_DIR" in os.environ:
+    # Needed when running with AWS Lambda, as only tmp/ directory has a write access
+    settings_dir = Path(f"{os.environ['LAMIN_SETTINGS_DIR']}/.lamin")
+else:
+    # user_config_dir in appdirs is weird on MacOS!
+    # hence, let's take home/.lamin
+    settings_dir = Path.home() / ".lamin"
+
 settings_dir.mkdir(parents=True, exist_ok=True)
 
 
