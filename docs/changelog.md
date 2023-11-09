@@ -3,7 +3,7 @@
 <!-- prettier-ignore -->
 Name | PR | Developer | Date | Version
 --- | --- | --- | --- | ---
-🎨 Raise exceptions | [575](https://github.com/laminlabs/lamindb-setup/pull/575) | [falexwolf](https://github.com/falexwolf) | 2023-11-09 |
+🎨 Raise exceptions | [575](https://github.com/laminlabs/lamindb-setup/pull/575) | [falexwolf](https://github.com/falexwolf) | 2023-11-09 | 0.57.3
 ✨ Enable using SETTINGS_DIR env variable to use AWS Lambda | [574](https://github.com/laminlabs/lamindb-setup/pull/574) | [fredericenard](https://github.com/fredericenard) | 2023-11-05 | 0.57.2
 🚸 Lower `conn_mag_age` | [573](https://github.com/laminlabs/lamindb-setup/pull/573) | [falexwolf](https://github.com/falexwolf) | 2023-11-04 | 0.57.1
 🚚 Move CLI to lamindb | [572](https://github.com/laminlabs/lamindb-setup/pull/572) | [falexwolf](https://github.com/falexwolf) | 2023-10-30 | 0.57.0
