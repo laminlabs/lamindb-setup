@@ -56,9 +56,10 @@ def test_load_after_revoked_access():
             )
         assert (
             error.exconly()
-            == "RuntimeError: Remote instance static-testuser1/static-testinstance1 not"
-            " loadable from hub. The instance might have been deleted or you may have"
-            " lost access."
+            == "RuntimeError: Instance static-testuser1/static-testinstance1 not"
+            " loadable from hub with response: 'instance-not-reachable'.\nCheck"
+            " whether instance exists and you have access:"
+            " https://lamin.ai/static-testuser1/static-testinstance1?tab=collaborators"
         )
 
 

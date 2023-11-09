@@ -144,24 +144,21 @@ def load(
                 name=instance_result["db_database"],
             )
     else:
+        error_message = (
+            f"Instance {owner}/{name} not loadable from hub with response:"
+            f" '{hub_result}'.\nCheck whether instance exists and you have access:"
+            f" https://lamin.ai/{owner}/{name}?tab=collaborators"
+        )
         if settings_file.exists():
             isettings = load_instance_settings(settings_file)
             if isettings.is_remote:
                 if _raise_not_reachable_error:
-                    raise RuntimeError(
-                        f"Remote instance {owner}/{name} not loadable from hub. The"
-                        " instance might have been deleted or you may have lost"
-                        " access."
-                    )
+                    raise RuntimeError(error_message)
                 return "instance-not-reachable"
             logger.info(f"found cached instance metadata: {settings_file}")
         else:
             if _raise_not_reachable_error:
-                raise RuntimeError(
-                    f"Instance {owner}/{name} neither loadable from hub nor local"
-                    " cache. check whether instance exists and you have access:"
-                    f" https://lamin.ai/{owner}/{name}?tab=collaborators"
-                )
+                raise RuntimeError(error_message)
             return "instance-not-reachable"
 
     if storage is not None:
@@ -269,12 +266,13 @@ def update_isettings_with_storage(
     if ssettings.is_cloud:
         try:  # triggering ssettings.id makes a lookup in the storage table
             logger.success(f"loaded storage: {ssettings.id} / {ssettings.root_as_str}")
-        except RuntimeError:
-            raise RuntimeError(
+        except RuntimeError as e:
+            logger.error(
                 "storage not registered!\n"
                 "load instance without the `storage` arg and register storage root: "
                 f"`lamin set storage --storage {storage}`"
             )
+            raise e
     else:
         # local storage
         # assumption is you want to merely update the storage location

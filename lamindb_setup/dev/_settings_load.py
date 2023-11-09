@@ -22,7 +22,7 @@ def load_instance_settings(instance_settings_file: Optional[Path] = None):
     try:
         settings_store = InstanceSettingsStore(_env_file=instance_settings_file)
     except ValidationError:
-        raise RuntimeError(
+        raise ValidationError(
             "Your instance settings file is invalid, please delete"
             f" {instance_settings_file} and init the instance again."
         )
@@ -44,7 +44,7 @@ def load_user_settings(user_settings_file: Path):
     try:
         settings_store = UserSettingsStore(_env_file=user_settings_file)
     except ValidationError:
-        raise RuntimeError(
+        raise ValidationError(
             "Your user settings file is invalid, please delete"
             f" {user_settings_file} and log in again."
         )

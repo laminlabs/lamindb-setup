@@ -44,7 +44,7 @@ def login(
     *,
     key: Optional[str] = None,
     password: Optional[str] = None,
-) -> Union[str, None]:
+) -> None:
     """Log in user."""
     if "@" in user:
         email, handle = user, None
@@ -78,11 +78,8 @@ def login(
     response = sign_in_hub(
         user_settings.email, user_settings.password, user_settings.handle
     )
-    if isinstance(response, str):
-        if response == "could-not-login":
-            return response
-        elif response == "complete-signup":
-            return response
+    if isinstance(response, Exception):
+        raise response
     else:
         user_uuid, user_id, user_handle, user_name, access_token = response
     if handle is None:
