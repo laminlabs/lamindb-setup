@@ -146,7 +146,7 @@ def load(
     else:
         error_message = (
             f"Instance {owner}/{name} not loadable from hub with response:"
-            f" {hub_result}.\nCheck whether instance exists and you have access:"
+            f" '{hub_result}'.\nCheck whether instance exists and you have access:"
             f" https://lamin.ai/{owner}/{name}?tab=collaborators"
         )
         if settings_file.exists():
