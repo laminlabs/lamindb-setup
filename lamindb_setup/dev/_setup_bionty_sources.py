@@ -1,4 +1,5 @@
 from ._settings_instance import InstanceSettings
+from ._settings_store import settings_dir
 from django.db.utils import OperationalError, ProgrammingError
 
 
@@ -7,19 +8,16 @@ def write_bionty_sources(isettings: InstanceSettings) -> None:
     if "bionty" not in isettings.schema:
         return None
     import shutil
-    from bionty.dev._handle_sources import (
-        CURRENT_SOURCES,
-        LAMINDB_SOURCES,
-        LOCAL_SOURCES,
-        parse_sources_yaml,
-    )
-
-    shutil.copy(CURRENT_SOURCES, LAMINDB_SOURCES)
-
+    from bionty.dev._handle_sources import parse_sources_yaml
+    from bionty import settings as bt_settings
     import bionty as bt
     from lnschema_bionty.models import BiontySource
 
-    all_sources = parse_sources_yaml(LOCAL_SOURCES)
+    bt_settings.versionsdir = settings_dir / "bionty/versions"
+    bt.reset_sources(confirm=True)
+    shutil.copy(bt_settings.current_sources, bt_settings.lamindb_sources)
+
+    all_sources = parse_sources_yaml(bt_settings.local_sources)
     all_sources_dict = all_sources.to_dict(orient="records")
 
     def _get_currently_used(key: str):
@@ -58,17 +56,21 @@ def load_bionty_sources(isettings: InstanceSettings):
     """Write currently_used bionty sources to LAMINDB_VERSIONS_PATH in bionty."""
     if "bionty" not in isettings.schema:
         return None
-    from bionty.dev._handle_sources import (
-        LAMINDB_SOURCES,
-        parse_currently_used_sources,
-    )
+    import bionty as bt
+    from bionty.dev._handle_sources import parse_currently_used_sources
+    from bionty import settings as bt_settings
     from bionty.dev._io import write_yaml
     from lnschema_bionty.models import BiontySource
+
+    bt_settings.versionsdir = settings_dir / "bionty"
+    bt.reset_sources(confirm=True)
 
     try:
         # need try except because of integer primary key migration
         active_records = BiontySource.objects.filter(currently_used=True).all().values()
-        write_yaml(parse_currently_used_sources(active_records), LAMINDB_SOURCES)
+        write_yaml(
+            parse_currently_used_sources(active_records), bt_settings.lamindb_sources
+        )
     except (OperationalError, ProgrammingError):
         pass
 
@@ -76,8 +78,8 @@ def load_bionty_sources(isettings: InstanceSettings):
 def delete_bionty_sources_yaml():
     """Delete LAMINDB_SOURCES_PATH in bionty."""
     try:
-        from bionty.dev._handle_sources import LAMINDB_SOURCES
+        from bionty import settings as bt_settings
 
-        LAMINDB_SOURCES.unlink(missing_ok=True)
+        bt_settings.lamindb_sources.unlink(missing_ok=True)
     except ModuleNotFoundError:
         pass

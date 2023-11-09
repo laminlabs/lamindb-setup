@@ -44,7 +44,7 @@ Developer API.
 
 """
 
-__version__ = "0.57.3"  # denote a release candidate for 0.1.0 with 0.1rc1
+__version__ = "0.57.4"  # denote a release candidate for 0.1.0 with 0.1rc1
 
 import sys
 from os import name as _os_name
