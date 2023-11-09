@@ -10,7 +10,7 @@ from typing import Union, Optional
 from botocore.exceptions import NoCredentialsError
 from dateutil.parser import isoparse  # type: ignore
 from lamin_utils import logger
-from upath import UPath as UPathBase
+from upath import UPath
 from upath.implementations.cloud import CloudPath, S3Path  # noqa
 from upath.implementations.local import LocalPath, PosixUPath, WindowsUPath
 
@@ -30,7 +30,7 @@ def set_aws_credentials_present(path: S3Path) -> None:
         AWS_CREDENTIALS_PRESENT = False
 
 
-def infer_filesystem(path: Union[Path, UPathBase, str]):
+def infer_filesystem(path: Union[Path, UPath, str]):
     import fsspec  # improve cold start
 
     path_str = str(path)
@@ -48,82 +48,83 @@ def infer_filesystem(path: Union[Path, UPathBase, str]):
     return fs, path_str
 
 
-class UPath(UPathBase):
-    def download_to(self, path, **kwargs):
-        """Download to a path."""
-        self.fs.download(str(self), str(path), **kwargs)
+def download_to(self, path, **kwargs):
+    """Download to a path."""
+    self.fs.download(str(self), str(path), **kwargs)
 
-    def upload_from(self, path, **kwargs):
-        """Upload from a path."""
-        self.fs.upload(str(path), str(self), **kwargs)
 
-    def synchronize(self, filepath: Path, **kwargs):
-        """Sync to a local destination path."""
-        if not self.exists():
-            return None
+def upload_from(self, path, **kwargs):
+    """Upload from a path."""
+    self.fs.upload(str(path), str(self), **kwargs)
 
-        if not filepath.exists():
-            filepath.parent.mkdir(parents=True, exist_ok=True)
-            mts = self.modified.timestamp()  # type: ignore
-            self.download_to(filepath, **kwargs)
-            os.utime(filepath, times=(mts, mts))
-            return None
 
-        cloud_mts = self.modified.timestamp()  # type: ignore
-        local_mts = filepath.stat().st_mtime
-        if cloud_mts > local_mts:
-            mts = self.modified.timestamp()  # type: ignore
-            self.download_to(filepath, **kwargs)
-            os.utime(filepath, times=(mts, mts))
-        elif cloud_mts < local_mts:
-            pass
-            # these warnings are out-dated because it can be normal to have a more up-to-date version locally  # noqa
-            # logger.warning(
-            #     f"Local file ({filepath}) for cloud path ({self}) is newer on disk than in cloud.\n"  # noqa
-            #     "It seems you manually updated the database locally and didn't push changes to the cloud.\n"  # noqa
-            #     "This can lead to data loss if somebody else modified the cloud file in"  # noqa
-            #     " the meantime."
-            # )
+def synchronize(self, filepath: Path, **kwargs):
+    """Sync to a local destination path."""
+    if not self.exists():
+        return None
 
-    def modified(self) -> Optional[datetime]:
-        """Return modified time stamp."""
-        path = str(self)
-        if "gcs" not in self.fs.protocol:
-            mtime = self.fs.modified(path)
+    if not filepath.exists():
+        filepath.parent.mkdir(parents=True, exist_ok=True)
+        mts = self.modified.timestamp()  # type: ignore
+        self.download_to(filepath, **kwargs)
+        os.utime(filepath, times=(mts, mts))
+        return None
+
+    cloud_mts = self.modified.timestamp()  # type: ignore
+    local_mts = filepath.stat().st_mtime
+    if cloud_mts > local_mts:
+        mts = self.modified.timestamp()  # type: ignore
+        self.download_to(filepath, **kwargs)
+        os.utime(filepath, times=(mts, mts))
+    elif cloud_mts < local_mts:
+        pass
+        # these warnings are out-dated because it can be normal to have a more up-to-date version locally  # noqa
+        # logger.warning(
+        #     f"Local file ({filepath}) for cloud path ({self}) is newer on disk than in cloud.\n"  # noqa
+        #     "It seems you manually updated the database locally and didn't push changes to the cloud.\n"  # noqa
+        #     "This can lead to data loss if somebody else modified the cloud file in"  # noqa
+        #     " the meantime."
+        # )
+
+
+def modified(self) -> Optional[datetime]:
+    """Return modified time stamp."""
+    path = str(self)
+    if "gcs" not in self.fs.protocol:
+        mtime = self.fs.modified(path)
+    else:
+        stat = self.fs.stat(path)
+        if "updated" in stat:
+            mtime = stat["updated"]
+            mtime = isoparse(mtime)
         else:
-            stat = self.fs.stat(path)
-            if "updated" in stat:
-                mtime = stat["updated"]
-                mtime = isoparse(mtime)
-            else:
-                return None
-        # always convert to the local timezone before returning
-        # assume in utc if the time zone is not specified
-        if mtime.tzinfo is None:
-            mtime = mtime.replace(tzinfo=timezone.utc)
-        return mtime.astimezone().replace(tzinfo=None)
+            return None
+    # always convert to the local timezone before returning
+    # assume in utc if the time zone is not specified
+    if mtime.tzinfo is None:
+        mtime = mtime.replace(tzinfo=timezone.utc)
+    return mtime.astimezone().replace(tzinfo=None)
 
 
-UPath.glob = UPathBase.glob
+# add custom functions
+UPath.modified = modified
+UPath.synchronize = synchronize
+UPath.upload_from = upload_from
+UPath.download_to = download_to
+
+
+# fix docs
 UPath.glob.__doc__ = Path.glob.__doc__
-UPath.rglob = UPathBase.rglob
 UPath.rglob.__doc__ = Path.rglob.__doc__
-UPath.stat = UPathBase.stat
 UPath.stat.__doc__ = Path.stat.__doc__
-UPath.iterdir = UPathBase.iterdir
 UPath.iterdir.__doc__ = Path.iterdir.__doc__
-UPath.resolve = UPathBase.resolve
 UPath.resolve.__doc__ = Path.resolve.__doc__
-UPath.relative_to = UPathBase.relative_to
 UPath.relative_to.__doc__ = Path.relative_to.__doc__
-UPath.exists = UPathBase.exists
 UPath.exists.__doc__ = Path.exists.__doc__
-UPath.is_dir = UPathBase.is_dir
 UPath.is_dir.__doc__ = Path.is_dir.__doc__
-UPath.is_file = UPathBase.is_file
 UPath.is_file.__doc__ = Path.is_file.__doc__
-UPath.unlink = UPathBase.unlink
 UPath.unlink.__doc__ = Path.unlink.__doc__
+UPath.__doc__ = """Paths: key-value store of objects."""
 
 
 def create_path(pathlike: Union[str, Path, UPath]) -> UPath:

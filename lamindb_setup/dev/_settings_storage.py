@@ -173,7 +173,3 @@ class StorageSettings:
     def local_filepath(self, filekey: Union[Path, UPath, str]) -> UPath:
         """Local (cache) filepath from filekey: `local(filepath(...))`."""
         return self.cloud_to_local(self.key_to_filepath(filekey))
-
-
-# below is for backward compat
-Storage = StorageSettings
