@@ -5,8 +5,9 @@ import os
 from datetime import datetime
 from datetime import timezone
 from pathlib import Path
-from typing import Union, Optional
-
+from itertools import islice
+from typing import Union, Optional, Set, Any
+from collections import defaultdict
 from botocore.exceptions import NoCredentialsError
 from dateutil.parser import isoparse  # type: ignore
 from lamin_utils import logger
@@ -18,6 +19,65 @@ LocalPathClasses = (PosixUPath, WindowsUPath, LocalPath)
 
 
 AWS_CREDENTIALS_PRESENT = None
+
+# also see https://gist.github.com/securifera/e7eed730cbe1ce43d0c29d7cd2d582f4
+#    ".gz" is not listed here as it typically occurs with another suffix
+KNOWN_SUFFIXES = {
+    #
+    # without readers
+    #
+    ".fasta",
+    ".fastq",
+    ".jpg",
+    ".mtx",
+    ".obo",
+    ".pdf",
+    ".png",
+    ".tar",
+    ".tiff",
+    ".txt",
+    ".tsv",
+    ".zip",
+    ".xml",
+    #
+    # with readers (see below)
+    #
+    ".h5ad",
+    ".parquet",
+    ".csv",
+    ".fcs",
+    ".xslx",
+    ".zarr",
+    ".zrad",
+}
+
+
+def extract_suffix_from_path(
+    path: Union[UPath, Path], arg_name: Optional[str] = None
+) -> str:
+    if len(path.suffixes) <= 1:
+        return path.suffix
+    else:
+        arg_name = "file" if arg_name is None else arg_name  # for the warning
+        msg = f"{arg_name} has more than one suffix (path.suffixes), "
+        # first check the 2nd-to-last suffix because it might be followed by .gz
+        # or another compression-related suffix
+        # Alex thought about adding logic along the lines of path.suffixes[-1]
+        # in COMPRESSION_SUFFIXES to detect something like .random.gz and then
+        # add ".random.gz" but concluded it's too dangerous it's safer to just
+        # use ".gz" in such a case
+        if path.suffixes[-2] in KNOWN_SUFFIXES:
+            suffix = "".join(path.suffixes[-2:])
+            msg += f"inferring: '{suffix}'"
+        else:
+            suffix = path.suffixes[-1]  # this is equivalent to path.suffix!!!
+            msg += (
+                f"using only last suffix: '{suffix}' - if you want your file format to"
+                " be recognized, make an issue:"
+                " https://github.com/laminlabs/lamindb/issues/new"
+            )
+        logger.warning(msg)
+        return suffix
 
 
 def set_aws_credentials_present(path: S3Path) -> None:
@@ -106,6 +166,119 @@ def modified(self) -> Optional[datetime]:
     return mtime.astimezone().replace(tzinfo=None)
 
 
+# adapted from: https://stackoverflow.com/questions/9727673
+def view_tree(
+    path: Union[str, Path, UPath] = None,
+    *,
+    level: int = -1,
+    limit_to_directories: bool = False,
+    length_limit: int = 1000,
+    include_paths: Optional[Set[Any]] = None,
+) -> None:
+    """Print a visual tree structure of files & directories.
+
+    Examples:
+        >>> dir_path = ln.dev.datasets.generate_cell_ranger_files(
+        >>>     "sample_001", ln.settings.storage
+        >>> )
+        >>> dir_path.name
+        'sample_001'
+        >>> ln.UPath(dir_path).view_tree()
+        3 subdirectories, 15 files
+        sample_001
+        ├── web_summary.html
+        ├── metrics_summary.csv
+        ├── molecule_info.h5
+        ├── filtered_feature_bc_matrix
+        │   ├── features.tsv.gz
+        │   ├── barcodes.tsv.gz
+        │   └── matrix.mtx.gz
+        ├── analysis
+        │   └── analysis.csv
+        ├── raw_feature_bc_matrix
+        │   ├── features.tsv.gz
+        │   ├── barcodes.tsv.gz
+        │   └── matrix.mtx.gz
+        ├── possorted_genome_bam.bam.bai
+        ├── cloupe.cloupe
+        ├── possorted_genome_bam.bam
+        ├── filtered_feature_bc_matrix.h5
+        └── raw_feature_bc_matrix.h5
+    """
+    space = "    "
+    branch = "│   "
+    tee = "├── "
+    last = "└── "
+    max_files_per_dir_per_type = 7
+
+    dir_path = create_path(path)  # returns Path for local
+    n_files = 0
+    n_directories = 0
+
+    # by default only including registered files
+    # need a flag and a proper implementation
+    suffixes = set()
+    include_dirs: Set[Any] = set()
+    if include_paths is not None:
+        include_dirs = {d for p in include_paths for d in p.parents}
+    else:
+        include_paths = set()
+
+    def inner(dir_path: Union[Path, UPath], prefix: str = "", level=-1):
+        nonlocal n_files, n_directories, suffixes
+        if not level:
+            return  # 0, stop iterating
+        stripped_dir_path = dir_path.as_posix().rstrip("/")
+        # do not iterate through zarr directories
+        if stripped_dir_path.endswith((".zarr", ".zrad")):
+            return
+        # this is needed so that the passed folder is not listed
+        contents = [
+            i
+            for i in dir_path.iterdir()
+            if i.as_posix().rstrip("/") != stripped_dir_path
+        ]
+        if limit_to_directories:
+            contents = [d for d in contents if d.is_dir()]
+        pointers = [tee] * (len(contents) - 1) + [last]
+        n_files_per_dir_per_type = defaultdict(lambda: 0)  # type: ignore
+        for pointer, path in zip(pointers, contents):
+            if path.is_dir():
+                if include_dirs and path not in include_dirs:
+                    continue
+                yield prefix + pointer + path.name
+                n_directories += 1
+                n_files_per_dir_per_type = defaultdict(lambda: 0)
+                extension = branch if pointer == tee else space
+                yield from inner(path, prefix=prefix + extension, level=level - 1)
+            elif not limit_to_directories:
+                if include_paths and path not in include_paths:
+                    continue
+                suffix = extract_suffix_from_path(path)
+                suffixes.add(suffix)
+                n_files_per_dir_per_type[suffix] += 1
+                n_files += 1
+                if n_files_per_dir_per_type[suffix] == max_files_per_dir_per_type:
+                    yield prefix + "..."
+                elif n_files_per_dir_per_type[suffix] > max_files_per_dir_per_type:
+                    continue
+                else:
+                    yield prefix + pointer + path.name
+
+    folder_tree = ""
+    iterator = inner(dir_path, level=level)
+    for line in islice(iterator, length_limit):
+        folder_tree += f"\n{line}"
+    if next(iterator, None):
+        folder_tree += f"... length_limit, {length_limit}, reached, counted:"
+    directory_info = "directory" if n_directories == 1 else "directories"
+    display_suffixes = ", ".join([f"{suffix!r}" for suffix in suffixes])
+    logger.print(
+        f"{dir_path.name} ({n_directories} sub-{directory_info} & {n_files} files with"
+        f" suffixes {display_suffixes}): {folder_tree}"
+    )
+
+
 # Why aren't we subclassing?
 #
 # The problem is that UPath defines a type system of paths
@@ -125,6 +298,9 @@ UPath.modified = property(modified)
 UPath.synchronize = synchronize
 UPath.upload_from = upload_from
 UPath.download_to = download_to
+UPath.view_tree = view_tree
+# unfortunately, we also have to do this for the subclasses
+Path.view_tree = view_tree  # type: ignore
 
 
 # fix docs
