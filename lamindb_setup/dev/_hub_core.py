@@ -333,7 +333,7 @@ def _sign_in_hub(email: str, password: str, handle: Optional[str], client: Clien
 
 def sign_in_hub(
     email: str, password: str, handle: Optional[str] = None
-) -> Union[str, Tuple[UUID, str, str, str, str]]:
+) -> Union[Exception, Tuple[UUID, str, str, str, str]]:
     try:
         result = call_with_fallback(
             _sign_in_hub, email=email, password=password, handle=handle
@@ -344,5 +344,5 @@ def sign_in_hub(
             "Could not login. Probably your password is wrong or you didn't complete"
             " signup."
         )
-        return "could-not-login"
+        return exception
     return result

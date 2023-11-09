@@ -269,12 +269,13 @@ def update_isettings_with_storage(
     if ssettings.is_cloud:
         try:  # triggering ssettings.id makes a lookup in the storage table
             logger.success(f"loaded storage: {ssettings.id} / {ssettings.root_as_str}")
-        except RuntimeError:
-            raise RuntimeError(
+        except RuntimeError as e:
+            logger.error(
                 "storage not registered!\n"
                 "load instance without the `storage` arg and register storage root: "
                 f"`lamin set storage --storage {storage}`"
             )
+            raise e
     else:
         # local storage
         # assumption is you want to merely update the storage location

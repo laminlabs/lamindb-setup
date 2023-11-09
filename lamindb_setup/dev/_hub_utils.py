@@ -3,7 +3,7 @@ import string
 from pathlib import Path
 from typing import Optional, Union
 from uuid import UUID
-
+from lamin_utils import logger
 from pydantic import BaseModel, validator
 from pydantic.networks import MultiHostDsn
 
@@ -108,10 +108,11 @@ def validate_storage_root_arg(storage_root: str) -> None:
         try:
             _ = Path(storage_root)
             return None
-        except Exception:
-            raise ValueError(
+        except Exception as e:
+            logger.error(
                 "`storage` is neither a valid local, a Google Cloud nor an S3 path."
             )
+            raise e
 
 
 def get_storage_type(storage_root: str):
