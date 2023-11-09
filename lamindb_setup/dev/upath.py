@@ -1,12 +1,5 @@
-"""Paths & file systems.
-
-.. autosummary::
-   :toctree:
-
-   UPath
-   infer_filesystem
-
-"""
+# we are not documenting UPath here because it's documented at lamindb.UPath
+"""Paths & file systems."""
 
 import os
 from datetime import timezone
@@ -131,4 +124,4 @@ UPath.download_to = _download_to
 UPath.upload_from = _upload_from
 UPath.synchronize = _synchronize
 UPath.modified = property(_modified)
-UPath.__doc__ = "Universal path."
+UPath.__doc__ = "Universal paths."
