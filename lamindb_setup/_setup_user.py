@@ -79,10 +79,7 @@ def login(
         user_settings.email, user_settings.password, user_settings.handle
     )
     if isinstance(response, Exception):
-        if response == "could-not-login":
-            raise response
-        elif response == "complete-signup":
-            raise response
+        raise response
     else:
         user_uuid, user_id, user_handle, user_name, access_token = response
     if handle is None:
