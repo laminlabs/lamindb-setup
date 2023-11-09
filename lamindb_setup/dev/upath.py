@@ -299,7 +299,10 @@ UPath.synchronize = synchronize
 UPath.upload_from = upload_from
 UPath.download_to = download_to
 UPath.view_tree = view_tree
-
+# unfortunately, we also have to do this for the subclasses
+LocalPath.view_tree = view_tree
+PosixUPath.view_tree = view_tree
+WindowsUPath.view_tree = view_tree
 
 # fix docs
 UPath.glob.__doc__ = Path.glob.__doc__
