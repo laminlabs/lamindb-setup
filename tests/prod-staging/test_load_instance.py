@@ -57,7 +57,7 @@ def test_load_after_revoked_access():
         assert (
             error.exconly()
             == "RuntimeError: Instance static-testuser1/static-testinstance1 not"
-            " loadable from hub with response: 'instance-not-reachable'. Check"
+            " loadable from hub with response: 'instance-not-reachable'.\nCheck"
             " whether instance exists and you have access:"
             " https://lamin.ai/static-testuser1/static-testinstance1?tab=collaborators"
         )
