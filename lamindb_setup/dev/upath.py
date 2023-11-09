@@ -138,7 +138,29 @@ UPath.exists.__doc__ = Path.exists.__doc__
 UPath.is_dir.__doc__ = Path.is_dir.__doc__
 UPath.is_file.__doc__ = Path.is_file.__doc__
 UPath.unlink.__doc__ = Path.unlink.__doc__
-UPath.__doc__ = """Paths: key-value store of objects."""
+UPath.__doc__ = """Paths: low-level key-value access to files & objects.
+
+Paths are keys that offer the typical access patterns of file systems and object
+stores. The ``key`` field in the `File` registry is a relative path in the
+storage location of the record.
+
+If you don't care about validating & linking extensive metadata to a file, you
+can store it as a path.
+
+For instance, if you have a folder with 1M images on S3 and you don't want to
+create file records for each of them, create a Dataset object like so:
+
+>>> dataset = Dataset("s3://my-bucket/my-folder", file="s3://my-bucket/meta.parquet")
+
+Passing the ``file`` parameter is optional. This way, you can iterate over path
+objects through
+
+>>> dataset.path
+>>> assert dataset.path.is_dir()
+
+Args:
+    pathlike: A string or Path to a local/cloud file/directory/folder.
+"""
 
 
 def create_path(pathlike: Union[str, Path, UPath]) -> UPath:
