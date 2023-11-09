@@ -152,9 +152,7 @@ class StorageSettings:
         """Cloud or local filepath from filekey."""
         return self.root / filekey
 
-    def cloud_to_local(
-        self, filepath: Union[Path, UPath], **kwargs
-    ) -> Union[Path, UPath]:
+    def cloud_to_local(self, filepath: Union[Path, UPath], **kwargs) -> UPath:
         """Local (cache) filepath from filepath."""
         local_filepath = self.cloud_to_local_no_update(filepath)  # type: ignore
         if isinstance(filepath, UPath) and not isinstance(filepath, LocalPathClasses):
@@ -167,9 +165,7 @@ class StorageSettings:
     # in pure write operations that update the cloud, we don't want this
     # hence, we manually construct the local file path
     # using the `.parts` attribute in the following line
-    def cloud_to_local_no_update(
-        self, filepath: Union[Path, UPath]
-    ) -> Union[Path, UPath]:
+    def cloud_to_local_no_update(self, filepath: UPath) -> UPath:
         if isinstance(filepath, UPath) and not isinstance(filepath, LocalPathClasses):
             return self.cache_dir.joinpath(filepath._url.netloc, *filepath.parts[1:])  # type: ignore # noqa
         return filepath
