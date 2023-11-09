@@ -121,7 +121,7 @@ def modified(self) -> Optional[datetime]:
 
 
 # add custom functions
-UPath.modified = modified
+UPath.modified = property(modified)
 UPath.synchronize = synchronize
 UPath.upload_from = upload_from
 UPath.download_to = download_to
