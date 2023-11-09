@@ -3,6 +3,7 @@
 <!-- prettier-ignore -->
 Name | PR | Developer | Date | Version
 --- | --- | --- | --- | ---
+🚚 Move `view_tree` from lamindb here | [578](https://github.com/laminlabs/lamindb-setup/pull/578) | [falexwolf](https://github.com/falexwolf) | 2023-11-09 |
 ♻️  Refactor UPath | [577](https://github.com/laminlabs/lamindb-setup/pull/577) | [falexwolf](https://github.com/falexwolf) | 2023-11-09 |
 🎨 Set bionty versionsdir according to settings_dir | [576](https://github.com/laminlabs/lamindb-setup/pull/576) | [sunnyosun](https://github.com/sunnyosun) | 2023-11-09 |
 🎨 Raise exceptions | [575](https://github.com/laminlabs/lamindb-setup/pull/575) | [falexwolf](https://github.com/falexwolf) | 2023-11-09 | 0.57.3
