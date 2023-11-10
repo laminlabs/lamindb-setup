@@ -1,5 +1,4 @@
 from ._settings_instance import InstanceSettings
-from ._settings_store import settings_dir
 from django.db.utils import OperationalError, ProgrammingError
 
 
@@ -13,8 +12,6 @@ def write_bionty_sources(isettings: InstanceSettings) -> None:
     import bionty as bt
     from lnschema_bionty.models import BiontySource
 
-    bt_settings.versionsdir = settings_dir / "bionty/versions"
-    bt.reset_sources(confirm=True)
     shutil.copy(bt_settings.current_sources, bt_settings.lamindb_sources)
 
     all_sources = parse_sources_yaml(bt_settings.local_sources)
@@ -56,14 +53,11 @@ def load_bionty_sources(isettings: InstanceSettings):
     """Write currently_used bionty sources to LAMINDB_VERSIONS_PATH in bionty."""
     if "bionty" not in isettings.schema:
         return None
-    import bionty as bt
+
     from bionty.dev._handle_sources import parse_currently_used_sources
     from bionty import settings as bt_settings
     from bionty.dev._io import write_yaml
     from lnschema_bionty.models import BiontySource
-
-    bt_settings.versionsdir = settings_dir / "bionty"
-    bt.reset_sources(confirm=True)
 
     try:
         # need try except because of integer primary key migration
