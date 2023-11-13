@@ -3,6 +3,7 @@
 <!-- prettier-ignore -->
 Name | PR | Developer | Date | Version
 --- | --- | --- | --- | ---
+✨ Added check command for dev | [580](https://github.com/laminlabs/lamindb-setup/pull/580) | [sunnyosun](https://github.com/sunnyosun) | 2023-11-13 |
 ⏪️ Remove reset sources for bionty | [579](https://github.com/laminlabs/lamindb-setup/pull/579) | [sunnyosun](https://github.com/sunnyosun) | 2023-11-10 |
 🚚 Move `view_tree` from lamindb here | [578](https://github.com/laminlabs/lamindb-setup/pull/578) | [falexwolf](https://github.com/falexwolf) | 2023-11-09 | 0.58.0
 ♻️  Refactor `UPath` | [577](https://github.com/laminlabs/lamindb-setup/pull/577) | [falexwolf](https://github.com/falexwolf) | 2023-11-09 |
