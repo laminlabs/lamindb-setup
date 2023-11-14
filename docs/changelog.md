@@ -3,6 +3,7 @@
 <!-- prettier-ignore -->
 Name | PR | Developer | Date | Version
 --- | --- | --- | --- | ---
+🔇 Do not log migrations during init | [583](https://github.com/laminlabs/lamindb-setup/pull/583) | [sunnyosun](https://github.com/sunnyosun) | 2023-11-14 |
 ♻️ Prettify view_tree | [582](https://github.com/laminlabs/lamindb-setup/pull/582) | [falexwolf](https://github.com/falexwolf) | 2023-11-14 |
 🔧 Detect both missing and ahead migrations | [581](https://github.com/laminlabs/lamindb-setup/pull/581) | [sunnyosun](https://github.com/sunnyosun) | 2023-11-14 |
 ✨ Added check command for dev | [580](https://github.com/laminlabs/lamindb-setup/pull/580) | [sunnyosun](https://github.com/sunnyosun) | 2023-11-13 |
