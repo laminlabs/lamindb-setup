@@ -20,18 +20,43 @@ Only if you are an admin and manage migrations manually, deploy them to the data
 
 Otherwise, downgrade your Python library to match the database!
 """
+AHEAD_MIGRATIONS_WARNING = """
+
+Your database is ahead of your installed Python library.
+
+The database has the following additional migrations:
+{ahead_migrations}
+
+Please update your Python library to match the database!
+"""
 
 
 def get_migrations_to_sync():
     from django.db import DEFAULT_DB_ALIAS, connections
     from django.db.migrations.executor import MigrationExecutor
+    from .._migrate import migrate
 
-    connection = connections[DEFAULT_DB_ALIAS]
-    connection.prepare_database()
-    executor = MigrationExecutor(connection)
-    targets = executor.loader.graph.leaf_nodes()
-    missing_migrations = [mig[0] for mig in executor.migration_plan(targets)]
-    return missing_migrations
+    applied_migrations = migrate.applied_migrations()
+    defined_migrations = migrate.defined_migrations()
+    missing_migrations = []
+    ahead_migrations = []
+    for app, defined_migs in defined_migrations.items():
+        defined_migs_set = set(defined_migs)
+        applied_migs_set = set(applied_migrations.get(app, []))
+        if defined_migs_set == applied_migs_set:
+            continue
+        missing = defined_migs_set.difference(applied_migs_set)
+        if len(missing) > 0:
+            missing_migrations += [(app, i) for i in missing]
+            continue
+        ahead = applied_migs_set.difference(defined_migs_set)
+        if len(ahead) > 0:
+            ahead_migrations += [(app, i) for i in ahead]
+    if len(missing_migrations) > 0:
+        return {"missing": missing_migrations}
+    if len(ahead_migrations) > 0:
+        return {"ahead": ahead_migrations}
+    return {}
 
 
 # this bundles set up and migration management
@@ -114,8 +139,8 @@ def setup_django(
     if current_settings_file_existed:
         shutil.copy(current_settings_file, current_settings_file.with_name("_tmp.env"))
     isettings._persist()  # temporarily make settings available to migrations, should probably if fails
-    missing_migrations = get_migrations_to_sync()
-    if len(missing_migrations) > 0:
+    missing_ahead = get_migrations_to_sync()
+    if "missing" in missing_ahead:
         if deploy_migrations:
             verbosity = 0 if init else 2
             call_command("migrate", verbosity=verbosity)
@@ -126,8 +151,14 @@ def setup_django(
                 isettings._update_cloud_sqlite_file()
         else:
             logger.warning(
-                MISSING_MIGRATIONS_WARNING.format(missing_migrations=missing_migrations)
+                MISSING_MIGRATIONS_WARNING.format(
+                    missing_migrations=missing_ahead["missing"]
+                )
             )
+    elif "ahead" in missing_ahead:
+        logger.warning(
+            AHEAD_MIGRATIONS_WARNING.format(ahead_migrations=missing_ahead["ahead"])
+        )
     else:
         if deploy_migrations:
             logger.success("database already up-to-date with migrations!")
