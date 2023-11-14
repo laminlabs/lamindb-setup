@@ -278,10 +278,12 @@ def view_tree(
         folder_tree += f"... length_limit, {length_limit}, reached, counted:"
     directory_info = "directory" if n_directories == 1 else "directories"
     display_suffixes = ", ".join([f"{suffix!r}" for suffix in suffixes])
-    logger.print(
-        f"{dir_path.name} ({n_directories} sub-{directory_info} & {n_files} files with"
-        f" suffixes {display_suffixes}): {folder_tree}"
+    suffix_message = f" with suffixes {display_suffixes}" if n_files > 0 else ""
+    message = (
+        f"{dir_path.name} ({n_directories} sub-{directory_info} &"
+        f" {n_files} files{suffix_message}): {folder_tree}"
     )
+    logger.print(message)
 
 
 # Why aren't we subclassing?
