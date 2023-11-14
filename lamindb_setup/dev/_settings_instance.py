@@ -255,7 +255,7 @@ class InstanceSettings:
     def _init_db(self):
         from .django import setup_django
 
-        setup_django(self, deploy_migrations=True, init=True)
+        setup_django(self, init=True)
 
     def _load_db(
         self, do_not_lock_for_laminapp_admin: bool = False
