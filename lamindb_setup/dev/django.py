@@ -139,29 +139,30 @@ def setup_django(
     if current_settings_file_existed:
         shutil.copy(current_settings_file, current_settings_file.with_name("_tmp.env"))
     isettings._persist()  # temporarily make settings available to migrations, should probably if fails
-    missing_ahead = get_migrations_to_sync()
-    if "missing" in missing_ahead:
-        if deploy_migrations:
-            verbosity = 0 if init else 2
-            call_command("migrate", verbosity=verbosity)
-            if not init:
-                # only update if called from lamin migrate deploy
-                # if called from load_schema(..., init=True)
-                # no need to update the remote sqlite
-                isettings._update_cloud_sqlite_file()
-        else:
-            logger.warning(
-                MISSING_MIGRATIONS_WARNING.format(
-                    missing_migrations=missing_ahead["missing"]
+    if not init:
+        missing_ahead = get_migrations_to_sync()
+        if "missing" in missing_ahead:
+            if deploy_migrations:
+                verbosity = 2
+                call_command("migrate", verbosity=verbosity)
+                if not init:
+                    # only update if called from lamin migrate deploy
+                    # if called from load_schema(..., init=True)
+                    # no need to update the remote sqlite
+                    isettings._update_cloud_sqlite_file()
+            else:
+                logger.warning(
+                    MISSING_MIGRATIONS_WARNING.format(
+                        missing_migrations=missing_ahead["missing"]
+                    )
                 )
+        elif "ahead" in missing_ahead:
+            logger.warning(
+                AHEAD_MIGRATIONS_WARNING.format(ahead_migrations=missing_ahead["ahead"])
             )
-    elif "ahead" in missing_ahead:
-        logger.warning(
-            AHEAD_MIGRATIONS_WARNING.format(ahead_migrations=missing_ahead["ahead"])
-        )
-    else:
-        if deploy_migrations:
-            logger.success("database already up-to-date with migrations!")
+        else:
+            if deploy_migrations:
+                logger.success("database already up-to-date with migrations!")
     # clean up temporary settings files
     if not settings_file_existed:
         isettings._get_settings_file().unlink()
