@@ -171,11 +171,16 @@ def view_tree(
     path: Union[str, Path, UPath] = None,
     *,
     level: int = -1,
-    limit_to_directories: bool = False,
+    only_dirs: bool = False,
     length_limit: int = 1000,
     include_paths: Optional[Set[Any]] = None,
 ) -> None:
     """Print a visual tree structure of files & directories.
+
+    Args:
+        level: If `1`, only iterate through one level, if `2` iterate through 2
+            levels, if `-1` iterate through entire hierarchy.
+        only_dirs: Only iterate through directories.
 
     Examples:
         >>> dir_path = ln.dev.datasets.generate_cell_ranger_files(
@@ -218,16 +223,16 @@ def view_tree(
     # by default only including registered files
     # need a flag and a proper implementation
     suffixes = set()
-    include_dirs: Set[Any] = set()
+    include_dirs = set()
     if include_paths is not None:
         include_dirs = {d for p in include_paths for d in p.parents}
     else:
         include_paths = set()
 
-    def inner(dir_path: Union[Path, UPath], prefix: str = "", level=-1):
+    def inner(dir_path: Union[Path, UPath], prefix: str = "", level: int = -1):
         nonlocal n_files, n_directories, suffixes
-        if not level:
-            return  # 0, stop iterating
+        if level == 0:
+            return
         stripped_dir_path = dir_path.as_posix().rstrip("/")
         # do not iterate through zarr directories
         if stripped_dir_path.endswith((".zarr", ".zrad")):
@@ -238,7 +243,7 @@ def view_tree(
             for i in dir_path.iterdir()
             if i.as_posix().rstrip("/") != stripped_dir_path
         ]
-        if limit_to_directories:
+        if only_dirs:
             contents = [d for d in contents if d.is_dir()]
         pointers = [tee] * (len(contents) - 1) + [last]
         n_files_per_dir_per_type = defaultdict(lambda: 0)  # type: ignore
@@ -251,7 +256,7 @@ def view_tree(
                 n_files_per_dir_per_type = defaultdict(lambda: 0)
                 extension = branch if pointer == tee else space
                 yield from inner(path, prefix=prefix + extension, level=level - 1)
-            elif not limit_to_directories:
+            elif not only_dirs:
                 if include_paths and path not in include_paths:
                     continue
                 suffix = extract_suffix_from_path(path)
@@ -273,10 +278,12 @@ def view_tree(
         folder_tree += f"... length_limit, {length_limit}, reached, counted:"
     directory_info = "directory" if n_directories == 1 else "directories"
     display_suffixes = ", ".join([f"{suffix!r}" for suffix in suffixes])
-    logger.print(
-        f"{dir_path.name} ({n_directories} sub-{directory_info} & {n_files} files with"
-        f" suffixes {display_suffixes}): {folder_tree}"
+    suffix_message = f" with suffixes {display_suffixes}" if n_files > 0 else ""
+    message = (
+        f"{dir_path.name} ({n_directories} sub-{directory_info} &"
+        f" {n_files} files{suffix_message}): {folder_tree}"
     )
+    logger.print(message)
 
 
 # Why aren't we subclassing?
