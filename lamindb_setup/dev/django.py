@@ -13,8 +13,11 @@ MISSING_MIGRATIONS_WARNING = """
 
 Your database is not up to date with your installed Python library.
 
-The database misses the following migrations:
-{missing_migrations}
+Your database has the latest migrations:
+{deployed_latest_migrations}
+
+Your Python library has the latest migrations:
+{defined_latest_migrations}
 
 Only if you are an admin and manage migrations manually, deploy them to the database: lamin migrate deploy
 
@@ -24,39 +27,43 @@ AHEAD_MIGRATIONS_WARNING = """
 
 Your database is ahead of your installed Python library.
 
-The database has the following additional migrations:
-{ahead_migrations}
+Your database has the latest migrations:
+{deployed_latest_migrations}
+
+Your Python library has the latest migrations:
+{defined_latest_migrations}
 
 Please update your Python library to match the database!
 """
 
 
 def get_migrations_to_sync():
-    from django.db import DEFAULT_DB_ALIAS, connections
-    from django.db.migrations.executor import MigrationExecutor
     from .._migrate import migrate
 
-    applied_migrations = migrate.applied_migrations()
-    defined_migrations = migrate.defined_migrations()
-    missing_migrations = []
-    ahead_migrations = []
-    for app, defined_migs in defined_migrations.items():
-        defined_migs_set = set(defined_migs)
-        applied_migs_set = set(applied_migrations.get(app, []))
-        if defined_migs_set == applied_migs_set:
-            continue
-        missing = defined_migs_set.difference(applied_migs_set)
-        if len(missing) > 0:
-            missing_migrations += [(app, i) for i in missing]
-            continue
-        ahead = applied_migs_set.difference(defined_migs_set)
-        if len(ahead) > 0:
-            ahead_migrations += [(app, i) for i in ahead]
-    if len(missing_migrations) > 0:
-        return {"missing": missing_migrations}
-    if len(ahead_migrations) > 0:
-        return {"ahead": ahead_migrations}
-    return {}
+    deployed_latest_migs = migrate.deployed_migrations(latest=True)
+    defined_latest_migs = migrate.defined_migrations(latest=True)
+    status = "synced"
+    latest_migrs = ([], [])
+
+    for app, deployed_latest_mig in deployed_latest_migs.items():
+        deployed_latest_mig_nr = int(deployed_latest_mig.split("_")[0])
+        defined_latest_mig = defined_latest_migs.get(app)
+
+        if defined_latest_mig:
+            defined_latest_mig_nr = int(defined_latest_mig.split("_")[0])
+
+            if deployed_latest_mig_nr != defined_latest_mig_nr:
+                deployed_mig_str = f"{app}.{deployed_latest_mig}"
+                defined_mig_str = f"{app}.{defined_latest_mig}"
+                status = (
+                    "missing"
+                    if deployed_latest_mig_nr < defined_latest_mig_nr
+                    else "ahead"
+                )
+                latest_migrs[0].append(deployed_mig_str)
+                latest_migrs[1].append(defined_mig_str)
+
+    return status, latest_migrs
 
 
 # this bundles set up and migration management
@@ -139,30 +146,35 @@ def setup_django(
     if current_settings_file_existed:
         shutil.copy(current_settings_file, current_settings_file.with_name("_tmp.env"))
     isettings._persist()  # temporarily make settings available to migrations, should probably if fails
-    if not init:
-        missing_ahead = get_migrations_to_sync()
-        if "missing" in missing_ahead:
-            if deploy_migrations:
-                verbosity = 2
-                call_command("migrate", verbosity=verbosity)
-                if not init:
-                    # only update if called from lamin migrate deploy
-                    # if called from load_schema(..., init=True)
-                    # no need to update the remote sqlite
-                    isettings._update_cloud_sqlite_file()
+
+    if deploy_migrations:
+        # deploy migrations
+        call_command("migrate", verbosity=2)
+        # only update if called from lamin migrate deploy
+        # if called from load_schema(..., init=True)
+        # no need to update the remote sqlite
+        isettings._update_cloud_sqlite_file()
+    else:
+        if init:
+            # create migrations
+            call_command("migrate", verbosity=0)
+        else:
+            status, latest_migrs = get_migrations_to_sync()
+            if status == "synced":
+                pass
             else:
+                warning_func = (
+                    MISSING_MIGRATIONS_WARNING
+                    if status == "missing"
+                    else AHEAD_MIGRATIONS_WARNING
+                )
                 logger.warning(
-                    MISSING_MIGRATIONS_WARNING.format(
-                        missing_migrations=missing_ahead["missing"]
+                    warning_func.format(
+                        deployed_latest_migrations=latest_migrs[0],
+                        defined_latest_migrations=latest_migrs[1],
                     )
                 )
-        elif "ahead" in missing_ahead:
-            logger.warning(
-                AHEAD_MIGRATIONS_WARNING.format(ahead_migrations=missing_ahead["ahead"])
-            )
-        else:
-            if deploy_migrations:
-                logger.success("database already up-to-date with migrations!")
+
     # clean up temporary settings files
     if not settings_file_existed:
         isettings._get_settings_file().unlink()

@@ -1,4 +1,4 @@
-from typing import Optional
+from typing import Optional, Dict
 from lamin_utils import logger
 
 from ._check_instance_setup import check_instance_setup
@@ -74,7 +74,7 @@ class migrate:
         call_command("showmigrations")
 
     @classmethod
-    def defined_migrations(cls):
+    def defined_migrations(cls, latest: bool = False):
         from django.core.management import call_command
         from io import StringIO
 
@@ -103,33 +103,58 @@ class migrate:
         call_command("showmigrations", stdout=out)
         out.seek(0)
         output = out.getvalue()
-        return parse_migration_output(output)
+        if latest:
+            return {k: v[-1] for k, v in parse_migration_output(output).items()}
+        else:
+            return parse_migration_output(output)
 
     @classmethod
-    def applied_migrations(cls):
-        """Get the list of applied migrations from Migration table in DB."""
-        # Load all migrations using Django's migration loader
-        loader = MigrationLoader(connection)
-        squashed_replacements = set()
-        for key, migration in loader.disk_migrations.items():
-            if hasattr(migration, "replaces"):
-                squashed_replacements.update(migration.replaces)
-
-        applied_migrations = {}
-        with connection.cursor() as cursor:
-            cursor.execute(
+    def deployed_migrations(cls, latest: bool = False):
+        """Get the list of deployed migrations from Migration table in DB."""
+        if latest:
+            latest_migrations = {}
+            with connection.cursor() as cursor:
+                # query to get the latest migration for each app that is not squashed
+                cursor.execute(
+                    """
+                    SELECT app, name
+                    FROM django_migrations
+                    WHERE id IN (
+                        SELECT MAX(id)
+                        FROM django_migrations
+                        WHERE name NOT LIKE '%%_squashed_%%'
+                        GROUP BY app
+                    )
                 """
-                SELECT app, name, applied
-                FROM django_migrations
-                ORDER BY app, applied DESC
-            """
-            )
-            for app, name, applied in cursor.fetchall():
-                # Skip migrations that are part of a squashed migration
-                if (app, name) in squashed_replacements:
-                    continue
+                )
+                # fetch all the results
+                for app, name in cursor.fetchall():
+                    latest_migrations[app] = name
 
-                if app not in applied_migrations:
-                    applied_migrations[app] = []
-                applied_migrations[app].append(name)
-        return applied_migrations
+            return latest_migrations
+        else:
+            # Load all migrations using Django's migration loader
+            loader = MigrationLoader(connection)
+            squashed_replacements = set()
+            for key, migration in loader.disk_migrations.items():
+                if hasattr(migration, "replaces"):
+                    squashed_replacements.update(migration.replaces)
+
+            deployed_migrations: Dict = {}
+            with connection.cursor() as cursor:
+                cursor.execute(
+                    """
+                    SELECT app, name, deployed
+                    FROM django_migrations
+                    ORDER BY app, deployed DESC
+                """
+                )
+                for app, name, deployed in cursor.fetchall():
+                    # skip migrations that are part of a squashed migration
+                    if (app, name) in squashed_replacements:
+                        continue
+
+                    if app not in deployed_migrations:
+                        deployed_migrations[app] = []
+                    deployed_migrations[app].append(name)
+            return deployed_migrations
