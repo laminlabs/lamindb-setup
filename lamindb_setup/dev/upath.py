@@ -275,7 +275,7 @@ def view_tree(
     for line in islice(iterator, limit):
         folder_tree += f"\n{line}"
     if next(iterator, None):
-        folder_tree += f"... only showing {limit} out of {n_files} files"
+        folder_tree += f"\n... only showing {limit} out of {n_files} files"
     directory_info = "directory" if n_directories == 1 else "directories"
     display_suffixes = ", ".join([f"{suffix!r}" for suffix in suffixes])
     suffix_message = f" with suffixes {display_suffixes}" if n_files > 0 else ""
