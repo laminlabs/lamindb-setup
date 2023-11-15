@@ -29,4 +29,13 @@ def silence_loggers():
             set_stream_logger(name="aiobotocore.credentials", level=logging.WARNING)
         except ImportError:
             pass
+        try:
+            # google also aggressively logs authentication related warnings
+            # in cases where users access public data
+            set_stream_logger(name="google.auth._default", level=logging.ERROR)
+            set_stream_logger(
+                name="google.auth.compute_engine._metadata", level=logging.ERROR
+            )
+        except Exception:
+            pass
     silenced = True
