@@ -3,9 +3,9 @@
 <!-- prettier-ignore -->
 Name | PR | Developer | Date | Version
 --- | --- | --- | --- | ---
-🔊 Polish logging in view_tree() | [584](https://github.com/laminlabs/lamindb-setup/pull/584) | [falexwolf](https://github.com/falexwolf) | 2023-11-15 |
+🔊 Polish logging in view_tree() | [584](https://github.com/laminlabs/lamindb-setup/pull/584) | [falexwolf](https://github.com/falexwolf) | 2023-11-15 | 0.59.1
 🔇 Do not log migrations during init | [583](https://github.com/laminlabs/lamindb-setup/pull/583) | [sunnyosun](https://github.com/sunnyosun) | 2023-11-14 |
-♻️ Prettify view_tree | [582](https://github.com/laminlabs/lamindb-setup/pull/582) | [falexwolf](https://github.com/falexwolf) | 2023-11-14 |
+♻️ Prettify view_tree | [582](https://github.com/laminlabs/lamindb-setup/pull/582) | [falexwolf](https://github.com/falexwolf) | 2023-11-14 | 0.59.0
 🔧 Detect both missing and ahead migrations | [581](https://github.com/laminlabs/lamindb-setup/pull/581) | [sunnyosun](https://github.com/sunnyosun) | 2023-11-14 |
 ✨ Added check command for dev | [580](https://github.com/laminlabs/lamindb-setup/pull/580) | [sunnyosun](https://github.com/sunnyosun) | 2023-11-13 |
 ⏪️ Remove reset sources for bionty | [579](https://github.com/laminlabs/lamindb-setup/pull/579) | [sunnyosun](https://github.com/sunnyosun) | 2023-11-10 |
