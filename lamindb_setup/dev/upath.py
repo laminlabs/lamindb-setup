@@ -172,7 +172,7 @@ def view_tree(
     *,
     level: int = -1,
     only_dirs: bool = False,
-    length_limit: int = 1000,
+    limit: int = 1000,
     include_paths: Optional[Set[Any]] = None,
 ) -> None:
     """Print a visual tree structure of files & directories.
@@ -181,13 +181,13 @@ def view_tree(
         level: If `1`, only iterate through one level, if `2` iterate through 2
             levels, if `-1` iterate through entire hierarchy.
         only_dirs: Only iterate through directories.
+        limit: Display limit. Will only show this many files. Doesn't affect count.
+        include_paths: Restrict to these paths.
 
     Examples:
         >>> dir_path = ln.dev.datasets.generate_cell_ranger_files(
         >>>     "sample_001", ln.settings.storage
         >>> )
-        >>> dir_path.name
-        'sample_001'
         >>> ln.UPath(dir_path).view_tree()
         3 subdirectories, 15 files
         sample_001
@@ -272,10 +272,10 @@ def view_tree(
 
     folder_tree = ""
     iterator = inner(dir_path, level=level)
-    for line in islice(iterator, length_limit):
+    for line in islice(iterator, limit):
         folder_tree += f"\n{line}"
     if next(iterator, None):
-        folder_tree += f"... length_limit, {length_limit}, reached, counted:"
+        folder_tree += f"... only showing {limit} out of {n_files} files"
     directory_info = "directory" if n_directories == 1 else "directories"
     display_suffixes = ", ".join([f"{suffix!r}" for suffix in suffixes])
     suffix_message = f" with suffixes {display_suffixes}" if n_files > 0 else ""
