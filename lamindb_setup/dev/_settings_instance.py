@@ -178,7 +178,7 @@ class InstanceSettings:
         if self._db is None or self._db.startswith("sqlite://"):
             return "sqlite"
         else:
-            assert self._db.startswith("postgresql")
+            assert self._db.startswith("postgresql"), f"Unexpected DB value: {self._db}"
             return "postgresql"
 
     @property
