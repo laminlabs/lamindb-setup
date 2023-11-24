@@ -144,7 +144,7 @@ class ProgressCallback(fsspec.callbacks.Callback):
 def download_to(self, path, **kwargs):
     """Download to a path."""
     if path.suffix not in {".zarr", ".zrad"}:
-        cb = ProgressCallback("uploading")
+        cb = ProgressCallback("downloading")
     else:
         # todo: make proper progress bar for zarr
         cb = fsspec.callbacks.NoOpCallback()
@@ -154,7 +154,7 @@ def download_to(self, path, **kwargs):
 def upload_from(self, path, **kwargs):
     """Upload from a local path."""
     if path.suffix not in {".zarr", ".zrad"}:
-        cb = ProgressCallback("downloading")
+        cb = ProgressCallback("uploading")
     else:
         # todo: make proper progress bar for zarr
         cb = fsspec.callbacks.NoOpCallback()
