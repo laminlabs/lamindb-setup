@@ -5,6 +5,8 @@ import os
 from datetime import datetime
 from datetime import timezone
 from pathlib import Path
+from typing import Literal
+import fsspec
 from itertools import islice
 from typing import Union, Optional, Set, Any
 from collections import defaultdict
@@ -58,6 +60,7 @@ def extract_suffix_from_path(
     if len(path.suffixes) <= 1:
         return path.suffix
     else:
+        print_warning = True
         arg_name = "file" if arg_name is None else arg_name  # for the warning
         msg = f"{arg_name} has more than one suffix (path.suffixes), "
         # first check the 2nd-to-last suffix because it might be followed by .gz
@@ -69,6 +72,9 @@ def extract_suffix_from_path(
         if path.suffixes[-2] in KNOWN_SUFFIXES:
             suffix = "".join(path.suffixes[-2:])
             msg += f"inferring: '{suffix}'"
+            # do not print a warning for things like .tar.gz, .fastq.gz
+            if path.suffixes[-1] == ".gz":
+                print_warning = False
         else:
             suffix = path.suffixes[-1]  # this is equivalent to path.suffix!!!
             msg += (
@@ -76,7 +82,8 @@ def extract_suffix_from_path(
                 " be recognized, make an issue:"
                 " https://github.com/laminlabs/lamindb/issues/new"
             )
-        logger.warning(msg)
+        if print_warning:
+            logger.warning(msg)
         return suffix
 
 
@@ -108,14 +115,50 @@ def infer_filesystem(path: Union[Path, UPath, str]):
     return fs, path_str
 
 
+def print_hook(size: int, value: int, **kwargs):
+    progress_in_percent = (value / size) * 100
+    out = (
+        f"... {kwargs['action']} {Path(kwargs['filepath']).name}:"
+        f" {min(progress_in_percent, 100):4.1f}%"
+    )
+    if progress_in_percent >= 100:
+        out += "\n"
+    if "NBPRJ_TEST_NBPATH" not in os.environ:
+        print(out, end="\r")
+
+
+class ProgressCallback(fsspec.callbacks.Callback):
+    def __init__(self, action: Literal["uploading", "downloading"]):
+        super().__init__()
+        self.action = action
+
+    def branch(self, path_1, path_2, kwargs):
+        kwargs["callback"] = fsspec.callbacks.Callback(
+            hooks=dict(print_hook=print_hook), filepath=path_1, action=self.action
+        )
+
+    def call(self, *args, **kwargs):
+        return None
+
+
 def download_to(self, path, **kwargs):
     """Download to a path."""
-    self.fs.download(str(self), str(path), **kwargs)
+    if path.suffix not in {".zarr", ".zrad"}:
+        cb = ProgressCallback("downloading")
+    else:
+        # todo: make proper progress bar for zarr
+        cb = fsspec.callbacks.NoOpCallback()
+    self.fs.download(str(self), str(path), callback=cb, **kwargs)
 
 
 def upload_from(self, path, **kwargs):
-    """Upload from a path."""
-    self.fs.upload(str(path), str(self), **kwargs)
+    """Upload from a local path."""
+    if path.suffix not in {".zarr", ".zrad"}:
+        cb = ProgressCallback("uploading")
+    else:
+        # todo: make proper progress bar for zarr
+        cb = fsspec.callbacks.NoOpCallback()
+    self.fs.upload(str(path), str(self), callback=cb, **kwargs)
 
 
 def synchronize(self, filepath: Path, **kwargs):
