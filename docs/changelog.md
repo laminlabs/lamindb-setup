@@ -3,6 +3,7 @@
 <!-- prettier-ignore -->
 Name | PR | Developer | Date | Version
 --- | --- | --- | --- | ---
+🚚 Centralize progressbar and convert to percentage | [587](https://github.com/laminlabs/lamindb-setup/pull/587) | [falexwolf](https://github.com/falexwolf) | 2023-11-24 |
 🔊 Log an error when assertion is false | [586](https://github.com/laminlabs/lamindb-setup/pull/586) | [fredericenard](https://github.com/fredericenard) | 2023-11-22 |
 🔊 Polish logging in view_tree() | [584](https://github.com/laminlabs/lamindb-setup/pull/584) | [falexwolf](https://github.com/falexwolf) | 2023-11-15 | 0.59.1
 🔇 Do not log migrations during init | [583](https://github.com/laminlabs/lamindb-setup/pull/583) | [sunnyosun](https://github.com/sunnyosun) | 2023-11-14 |
