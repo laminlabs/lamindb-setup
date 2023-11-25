@@ -1,3 +1,4 @@
+import os
 from pathlib import Path
 from typing import Any, Optional, Union
 
@@ -93,7 +94,9 @@ class StorageSettings:
         self,
     ) -> UPath:
         """Cache root, a local directory to cache cloud files."""
-        if self._cache_dir is None:
+        if "LAMIN_CACHE_DIR" in os.environ:
+            cache_dir = UPath(os.environ["LAMIN_CACHE_DIR"])
+        elif self._cache_dir is None:
             cache_dir = UPath(DIRS.user_cache_dir)
         else:
             cache_dir = self._cache_dir
