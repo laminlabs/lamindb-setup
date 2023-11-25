@@ -3,6 +3,7 @@
 <!-- prettier-ignore -->
 Name | PR | Developer | Date | Version
 --- | --- | --- | --- | ---
+✨ Set cache via LAMIN_CACHE_DIR env variable | [589](https://github.com/laminlabs/lamindb-setup/pull/589) | [Koncopd](https://github.com/Koncopd) | 2023-11-25 |
 🚚 Centralize progressbar and convert to percentage | [587](https://github.com/laminlabs/lamindb-setup/pull/587) | [falexwolf](https://github.com/falexwolf) | 2023-11-24 | 0.60.0
 🔊 Log an error when assertion is false | [586](https://github.com/laminlabs/lamindb-setup/pull/586) | [fredericenard](https://github.com/fredericenard) | 2023-11-22 |
 🔊 Polish logging in view_tree() | [584](https://github.com/laminlabs/lamindb-setup/pull/584) | [falexwolf](https://github.com/falexwolf) | 2023-11-15 | 0.59.1
