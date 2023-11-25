@@ -117,7 +117,7 @@ class InstanceSettings:
                 f" '{self.identifier}'"
             )
             cache_file = self.storage.cloud_to_local_no_update(sqlite_file)
-            sqlite_file.upload_from(cache_file)  # type: ignore
+            sqlite_file.upload_from(cache_file, print_progress=True)  # type: ignore
             cloud_mtime = sqlite_file.modified.timestamp()  # type: ignore
             # this seems to work even if there is an open connection
             # to the cache file
@@ -137,7 +137,7 @@ class InstanceSettings:
                 self._check_sqlite_lock()
             sqlite_file = self._sqlite_file
             cache_file = self.storage.cloud_to_local_no_update(sqlite_file)
-            sqlite_file.synchronize(cache_file)  # type: ignore
+            sqlite_file.synchronize(cache_file, print_progress=True)  # type: ignore
 
     def _check_sqlite_lock(self):
         if not self._cloud_sqlite_locker.has_lock:

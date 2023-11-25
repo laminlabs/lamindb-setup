@@ -141,24 +141,28 @@ class ProgressCallback(fsspec.callbacks.Callback):
         return None
 
 
-def download_to(self, path, **kwargs):
+def download_to(self, path, print_progress: bool = False, **kwargs):
     """Download to a path."""
-    if path.suffix not in {".zarr", ".zrad"}:
-        cb = ProgressCallback("downloading")
-    else:
-        # todo: make proper progress bar for zarr
-        cb = fsspec.callbacks.NoOpCallback()
-    self.fs.download(str(self), str(path), callback=cb, **kwargs)
+    if print_progress:
+        if path.suffix not in {".zarr", ".zrad"}:
+            cb = ProgressCallback("downloading")
+        else:
+            # todo: make proper progress bar for zarr
+            cb = fsspec.callbacks.NoOpCallback()
+        kwargs["callback"] = cb
+    self.fs.download(str(self), str(path), **kwargs)
 
 
-def upload_from(self, path, **kwargs):
+def upload_from(self, path, print_progress: bool = False, **kwargs):
     """Upload from a local path."""
-    if path.suffix not in {".zarr", ".zrad"}:
-        cb = ProgressCallback("uploading")
-    else:
-        # todo: make proper progress bar for zarr
-        cb = fsspec.callbacks.NoOpCallback()
-    self.fs.upload(str(path), str(self), callback=cb, **kwargs)
+    if print_progress:
+        if path.suffix not in {".zarr", ".zrad"}:
+            cb = ProgressCallback("uploading")
+        else:
+            # todo: make proper progress bar for zarr
+            cb = fsspec.callbacks.NoOpCallback()
+        kwargs["callback"] = cb
+    self.fs.upload(str(path), str(self), **kwargs)
 
 
 def synchronize(self, filepath: Path, **kwargs):
