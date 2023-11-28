@@ -287,7 +287,7 @@ def view_tree(
         # this is needed so that the passed folder is not listed
         contents = [
             i
-            for i in UPath(stripped_dir_path).iterdir()
+            for i in dir_path.iterdir()
             if i.as_posix().rstrip("/") != stripped_dir_path
         ]
         if only_dirs:
@@ -401,6 +401,9 @@ def create_path(pathlike: Union[str, Path, UPath]) -> UPath:
         path = UPath(str(pathlike))  # UPath applied on Path gives Path back
     else:
         raise ValueError("pathlike should be of type Union[str, Path, UPath]")
+
+    # ensures there's no trailing slash for directories
+    path = UPath(path.as_posix().rstrip("/"))
 
     if isinstance(path, S3Path):
         path = UPath(path, cache_regions=True)
