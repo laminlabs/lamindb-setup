@@ -283,7 +283,7 @@ def view_tree(
         # this is needed so that the passed folder is not listed
         contents = [
             i
-            for i in dir_path.iterdir()
+            for i in UPath(stripped_dir_path).iterdir()
             if i.as_posix().rstrip("/") != stripped_dir_path
         ]
         if only_dirs:
