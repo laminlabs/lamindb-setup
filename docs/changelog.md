@@ -3,6 +3,7 @@
 <!-- prettier-ignore -->
 Name | PR | Developer | Date | Version
 --- | --- | --- | --- | ---
+🚑️ Proper fix for trailing slash in create_path | [591](https://github.com/laminlabs/lamindb-setup/pull/591) | [sunnyosun](https://github.com/sunnyosun) | 2023-11-28 |
 🚑️ Fix trailing slash for UPath view_tree | [590](https://github.com/laminlabs/lamindb-setup/pull/590) | [sunnyosun](https://github.com/sunnyosun) | 2023-11-28 |
 🔊 Do not print progress by default | [588](https://github.com/laminlabs/lamindb-setup/pull/588) | [Koncopd](https://github.com/Koncopd) | 2023-11-25 |
 ✨ Set cache via LAMIN_CACHE_DIR env variable | [589](https://github.com/laminlabs/lamindb-setup/pull/589) | [Koncopd](https://github.com/Koncopd) | 2023-11-25 |
