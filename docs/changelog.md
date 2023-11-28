@@ -3,7 +3,7 @@
 <!-- prettier-ignore -->
 Name | PR | Developer | Date | Version
 --- | --- | --- | --- | ---
-🚸 Enable schema packages that do not start with lnschema_ | [592](https://github.com/laminlabs/lamindb-setup/pull/592) | [falexwolf](https://github.com/falexwolf) | 2023-11-28 |
+🚸 Enable schema packages that do not start with lnschema_ | [592](https://github.com/laminlabs/lamindb-setup/pull/592) | [falexwolf](https://github.com/falexwolf) | 2023-11-28 | 0.61.0
 🚑️ Proper fix for trailing slash in create_path | [591](https://github.com/laminlabs/lamindb-setup/pull/591) | [sunnyosun](https://github.com/sunnyosun) | 2023-11-28 |
 🚑️ Fix trailing slash for UPath view_tree | [590](https://github.com/laminlabs/lamindb-setup/pull/590) | [sunnyosun](https://github.com/sunnyosun) | 2023-11-28 |
 🔊 Do not print progress by default | [588](https://github.com/laminlabs/lamindb-setup/pull/588) | [Koncopd](https://github.com/Koncopd) | 2023-11-25 |
