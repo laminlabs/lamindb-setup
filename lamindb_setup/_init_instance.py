@@ -21,7 +21,16 @@ from ._init_vault import _init_vault
 
 
 def get_schema_module_name(schema_name) -> str:
-    return f"lnschema_{schema_name.replace('-', '_')}"
+    import importlib.util
+
+    name_attempts = [f"lnschema_{schema_name.replace('-', '_')}", schema_name]
+    for name in name_attempts:
+        module_spec = importlib.util.find_spec(name)
+        if module_spec is not None:
+            return name
+    raise ImportError(
+        f"Python package for {schema_name} is not installed, tried {name_attempts}"
+    )
 
 
 def register_storage(ssettings: StorageSettings):
