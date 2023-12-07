@@ -32,7 +32,7 @@ def test_load_after_revoked_access():
         admin_token = ln_setup.settings.user.access_token
         add_collaborator(
             "static-testuser2",
-            "static-testuser1",
+            "laminlabs",
             "static-testinstance1",
             "write",
             f"Bearer {admin_token}",
@@ -43,7 +43,7 @@ def test_load_after_revoked_access():
         ln_setup.load("https://lamin.ai/laminlabs/static-testinstance1", _test=True)
         assert ln_setup.settings.instance.storage.root_as_str == "s3://lndb-setup-ci"
         delete_collaborator(
-            "static-testuser1",
+            "laminlabs",
             "static-testinstance1",
             ln_setup.settings.user.uuid,
             f"Bearer {admin_token}",
