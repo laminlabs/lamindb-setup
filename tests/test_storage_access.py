@@ -1,5 +1,5 @@
 from uuid import UUID
-
+import pytest
 import lamindb_setup as ln_setup
 from lamindb_setup.dev._hub_client import connect_hub_with_auth
 from lamindb_setup.dev._hub_crud import select_instance_by_owner_name
@@ -30,7 +30,8 @@ def test_load_instance_with_public_storage():
     ln_setup.close()
 
 
-def test_load_instance_with_private_storage():
+def test_load_instance_with_private_storage_and_no_storage_access():
     ln_setup.login("static-testuser1@lamin.ai", password="static-testuser1-password")
     # this should fail
-    ln_setup.load("static-test-instance-private-sqlite")
+    with pytest.raises(PermissionError):
+        ln_setup.load("static-test-instance-private-sqlite")
