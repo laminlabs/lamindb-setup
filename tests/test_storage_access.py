@@ -13,7 +13,7 @@ def test_load_instance_with_public_storage():
     # with s3:GetObject and s3:ListBucket policies enabled for all
     # the bucket is s3://lamin-site-assets
     ln_setup.login("testuser1@lamin.ai")
-    ln_setup.load("laminlabs/static-test-instance-private-sqlite")
+    ln_setup.load("laminlabs/static-testinstance1")
     # upon load, it's determined that AWS_CREDENTIALS_PRESENT is False (because
     # this is run in an environment that doesn't have them)
     # Alex doesn't fully understand why we're testing the load from hub, here, but OK
