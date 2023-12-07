@@ -7,19 +7,19 @@ from lamindb_setup.dev._hub_crud import select_instance_by_owner_name
 
 
 def test_load_instance_with_public_storage():
-    ln_setup.login("testuser1@lamin.ai")
+    # start out by having AWS_CREDENTIALS_PRESENT be undetermined
+    assert ln_setup.dev.upath.AWS_CREDENTIALS_PRESENT is None
     # this loads a persistent instance created with a public s3 bucket
     # with s3:GetObject and s3:ListBucket policies enabled for all
     # the bucket is s3://lamin-site-assets
-
-    # start out by having AWS_CREDENTIALS_PRESENT be undetermined
-    assert ln_setup.dev.upath.AWS_CREDENTIALS_PRESENT is None
+    ln_setup.login("testuser1@lamin.ai")
+    ln_setup.load("laminlabs/static-test-instance-private-sqlite")
     # upon load, it's determined that AWS_CREDENTIALS_PRESENT is False (because
     # this is run in an environment that doesn't have them)
     # Alex doesn't fully understand why we're testing the load from hub, here, but OK
     hub = connect_hub_with_auth()
     instance = select_instance_by_owner_name(
-        owner=ln_setup.settings.instance.owner,
+        owner="laminlabs",
         name=ln_setup.settings.instance.name,
         client=hub,
     )
@@ -34,9 +34,9 @@ def test_load_instance_with_private_storage_and_no_storage_access():
     ln_setup.login("testuser1@lamin.ai")
     # this should fail
     with pytest.raises(PermissionError):
-        ln_setup.load("static-test-instance-private-sqlite")
+        ln_setup.load("laminlabs/static-test-instance-private-sqlite")
     # this should work
     ln_setup.load(
-        "laminlabs/static-test-instance-private-sqlite",
+        "laminlabs/test-instance-private-postgres",
         db=os.environ["TEST_INSTANCE_PRIVATE_POSTGRES"],
     )
