@@ -1,3 +1,4 @@
+import os
 from uuid import UUID
 import pytest
 import lamindb_setup as ln_setup
@@ -6,6 +7,7 @@ from lamindb_setup.dev._hub_crud import select_instance_by_owner_name
 
 
 def test_load_instance_with_public_storage():
+    ln_setup.login("testuser1@lamin.ai")
     # this loads a persistent instance created with a public s3 bucket
     # with s3:GetObject and s3:ListBucket policies enabled for all
     # the bucket is s3://lamin-site-assets
@@ -31,7 +33,12 @@ def test_load_instance_with_public_storage():
 
 
 def test_load_instance_with_private_storage_and_no_storage_access():
-    ln_setup.login("static-testuser1@lamin.ai", password="static-testuser1-password")
+    ln_setup.login("testuser1@lamin.ai")
     # this should fail
     with pytest.raises(PermissionError):
         ln_setup.load("static-test-instance-private-sqlite")
+    # this should work
+    ln_setup.load(
+        "laminlabs/static-test-instance-private-sqlite",
+        db=os.environ["TEST_INSTANCE_PRIVATE_POSTGRES"],
+    )
