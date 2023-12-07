@@ -35,8 +35,11 @@ def test_load_instance_with_private_storage_and_no_storage_access():
     # this should fail
     with pytest.raises(PermissionError):
         ln_setup.load("laminlabs/static-test-instance-private-sqlite")
-    # this should work
+    # loading a postgres instance should work:
     ln_setup.load(
         "laminlabs/test-instance-private-postgres",
         db=os.environ["TEST_INSTANCE_PRIVATE_POSTGRES"],
     )
+    # accessing storage in the instance should fail:
+    with pytest.raises(PermissionError):
+        ln_setup.settings.storage.root.exists()
