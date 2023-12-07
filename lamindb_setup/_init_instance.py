@@ -170,6 +170,8 @@ def init(
     schema = validate_schema_arg(schema)
     validate_storage_root_arg(str(storage))
     validate_db_arg(db)
+    if storage is None:
+        raise ValueError("Pass storage argument")
 
     name_str = infer_instance_name(storage=storage, name=name, db=db)
     # test whether instance exists by trying to load it

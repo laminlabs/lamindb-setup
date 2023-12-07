@@ -89,8 +89,8 @@ jobs:
           name: coverage--prod-staging
           path: .coverage
 
-  # a test group for testing user access to public buckets without AWS credentials
-  noaws:
+  # a test group for testing user access to storage
+  storage:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -100,11 +100,13 @@ jobs:
           cache: "pip"
           cache-dependency-path: ".github/workflows/build.yml"
       - run: pip install -U laminci
-      - run: nox -s "install(group='noaws')"
-      - run: nox -s noaws
+      - run: nox -s "install(group='storage')"
+      - run: nox -s storage
+        env:
+          TEST_INSTANCE_PRIVATE_POSTGRES: ${{ secrets.TEST_INSTANCE_PRIVATE_POSTGRES }}
       - uses: actions/upload-artifact@v2
         with:
-          name: coverage--noaws
+          name: coverage--storage
           path: .coverage
 
   # a test group for testing vault
@@ -158,7 +160,7 @@ jobs:
           path: .coverage
 
   coverage:
-    needs: [prod-only, prod-staging, noaws, hub-local]
+    needs: [prod-only, prod-staging, storage, hub-local]
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -201,7 +203,7 @@ jobs:
           cache: "pip"
           cache-dependency-path: ".github/workflows/build.yml"
       - run: pip install -U laminci
-      - run: nox -s "install(group='noaws')"
+      - run: nox -s "install(group='storage')"
       - uses: actions/download-artifact@v2
       - run: nox -s docs
       - uses: nwtgck/actions-netlify@v1.2

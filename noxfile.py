@@ -13,7 +13,7 @@ def lint(session: nox.Session) -> None:
 @nox.session
 @nox.parametrize(
     "group",
-    ["hub-local", "prod-only", "prod-staging", "noaws", "vault"],
+    ["hub-local", "prod-only", "prod-staging", "storage", "vault"],
 )
 def install(session: nox.Session, group: str) -> None:
     if group in {"prod-staging"}:
@@ -31,7 +31,7 @@ def install(session: nox.Session, group: str) -> None:
         # need for CLI, but this is bad because it's downstream
         session.run(*"git clone https://github.com/laminlabs/lamin-cli".split())
         session.run(*"pip install lamin-cli".split())
-    elif group == "noaws":
+    elif group == "storage":
         session.run(*"pip install -e .[aws,dev]".split())
     elif group == "vault":
         session.run(*"pip install -e .[aws,dev]".split())
@@ -93,11 +93,9 @@ def docs(session: nox.Session):
 
 
 @nox.session
-def noaws(session: nox.Session):
+def storage(session: nox.Session):
     login_testuser1(session)
-    session.run(
-        *f"pytest {COVERAGE_ARGS} ./tests/test_load_persistent_instance.py".split()
-    )
+    session.run(*f"pytest {COVERAGE_ARGS} ./tests/test_storage_access.py".split())
 
 
 @nox.session

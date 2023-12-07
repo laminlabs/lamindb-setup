@@ -32,7 +32,7 @@ def test_load_after_revoked_access():
         admin_token = ln_setup.settings.user.access_token
         add_collaborator(
             "static-testuser2",
-            "static-testuser1",
+            "laminlabs",
             "static-testinstance1",
             "write",
             f"Bearer {admin_token}",
@@ -40,26 +40,22 @@ def test_load_after_revoked_access():
         ln_setup.login(
             "static-testuser2@lamin.ai", password="static-testuser2-password"
         )
-        ln_setup.load(
-            "https://lamin.ai/static-testuser1/static-testinstance1", _test=True
-        )
+        ln_setup.load("https://lamin.ai/laminlabs/static-testinstance1", _test=True)
         assert ln_setup.settings.instance.storage.root_as_str == "s3://lndb-setup-ci"
         delete_collaborator(
-            "static-testuser1",
+            "laminlabs",
             "static-testinstance1",
             ln_setup.settings.user.uuid,
             f"Bearer {admin_token}",
         )
         with pytest.raises(RuntimeError) as error:
-            ln_setup.load(
-                "https://lamin.ai/static-testuser1/static-testinstance1", _test=True
-            )
+            ln_setup.load("https://lamin.ai/laminlabs/static-testinstance1", _test=True)
         assert (
             error.exconly()
-            == "RuntimeError: Instance static-testuser1/static-testinstance1 not"
+            == "RuntimeError: Instance laminlabs/static-testinstance1 not"
             " loadable from hub with response: 'instance-not-reachable'.\nCheck"
             " whether instance exists and you have access:"
-            " https://lamin.ai/static-testuser1/static-testinstance1?tab=collaborators"
+            " https://lamin.ai/laminlabs/static-testinstance1?tab=collaborators"
         )
 
 
@@ -69,9 +65,7 @@ def test_load_after_private_public_switch():
         ln_setup.login(
             "static-testuser1@lamin.ai", password="static-testuser1-password"
         )
-        ln_setup.load(
-            "https://lamin.ai/static-testuser1/static-testinstance1", _test=True
-        )
+        ln_setup.load("https://lamin.ai/laminlabs/static-testinstance1", _test=True)
         admin_hub = connect_hub_with_auth()
         # make the instance public
         sb_update_instance(
@@ -82,9 +76,7 @@ def test_load_after_private_public_switch():
         # attempt to load instance with non-collaborator user
         ln_setup.login("testuser2")
         with pytest.raises(RuntimeError):
-            ln_setup.load(
-                "https://lamin.ai/static-testuser1/static-testinstance1", _test=True
-            )
+            ln_setup.load("https://lamin.ai/laminlabs/static-testinstance1", _test=True)
         # make the instance public
         sb_update_instance(
             instance_id=ln_setup.settings.instance.id,
@@ -92,9 +84,7 @@ def test_load_after_private_public_switch():
             client=admin_hub,
         )
         # load instance with non-collaborator user, should work now
-        ln_setup.load(
-            "https://lamin.ai/static-testuser1/static-testinstance1", _test=True
-        )
+        ln_setup.load("https://lamin.ai/laminlabs/static-testinstance1", _test=True)
         # make the instance private again
         sb_update_instance(
             instance_id=ln_setup.settings.instance.id,
