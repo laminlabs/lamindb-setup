@@ -4,7 +4,6 @@ import pytest
 import lamindb_setup as ln_setup
 from lamindb_setup.dev._hub_client import connect_hub_with_auth
 from lamindb_setup.dev._hub_crud import select_instance_by_owner_name
-from botocore.exceptions import NoCredentialsError
 
 
 def test_load_instance_with_public_storage():
@@ -42,6 +41,6 @@ def test_load_instance_with_private_storage_and_no_storage_access():
         db=os.environ["TEST_INSTANCE_PRIVATE_POSTGRES"],
     )
     # accessing storage in the instance should fail:
-    with pytest.raises(NoCredentialsError):
+    with pytest.raises(PermissionError):
         path = ln_setup.settings.storage.root
         path.fs.call_s3("head_bucket", Bucket=path._url.netloc)
