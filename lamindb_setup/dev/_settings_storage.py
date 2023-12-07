@@ -30,13 +30,8 @@ class StorageSettings:
         root: Union[str, Path, UPath],
         region: Optional[str] = None,
     ):
-        root_path = create_path(root)
-        # root_path is either Path or UPath at this point
-        if isinstance(root_path, LocalPathClasses):  # local paths
-            # resolve fails for nonexisting dir
-            root_path.mkdir(parents=True, exist_ok=True)
-            root_path = root_path.resolve()
-        self._root = root_path
+        self._root_init = root
+        self._root = None
         self._region = region
         # would prefer to type below as Registry, but need to think through import order
         self._record: Optional[Any] = None
@@ -70,6 +65,14 @@ class StorageSettings:
     @property
     def root(self) -> UPath:
         """Root storage location."""
+        if self._root is None:
+            root_path = create_path(self._root_init)
+            # root_path is either Path or UPath at this point
+            if isinstance(root_path, LocalPathClasses):  # local paths
+                # resolve fails for nonexisting dir
+                root_path.mkdir(parents=True, exist_ok=True)
+                root_path = root_path.resolve()
+            self._root = root_path
         return self._root
 
     def _set_fs_kwargs(self, **kwargs):
