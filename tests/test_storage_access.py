@@ -14,10 +14,8 @@ def test_load_instance_with_public_storage():
 
     # start out by having AWS_CREDENTIALS_PRESENT be undetermined
     assert ln_setup.dev.upath.AWS_CREDENTIALS_PRESENT is None
-    ln_setup.login("static-testuser1@lamin.ai", password="static-testuser1-password")
     # upon load, it's determined that AWS_CREDENTIALS_PRESENT is False (because
     # this is run in an environment that doesn't have them)
-    ln_setup.load("static-testinstance1")
     # Alex doesn't fully understand why we're testing the load from hub, here, but OK
     hub = connect_hub_with_auth()
     instance = select_instance_by_owner_name(
