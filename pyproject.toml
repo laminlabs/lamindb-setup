@@ -18,7 +18,7 @@ dependencies = [
     "python-dateutil<3.0.0",
     "universal_pathlib==0.1.4",  # is still experimental, need pinning
     "botocore<2.0.0",
-    "supabase==1.0.3",
+    "supabase==2.2.1",
 ]
 
 [project.urls]
