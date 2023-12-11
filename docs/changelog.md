@@ -3,7 +3,7 @@
 <!-- prettier-ignore -->
 Name | PR | Developer | Date | Version
 --- | --- | --- | --- | ---
-⬆️ Bump supabase to latest version | [594](https://github.com/laminlabs/lamindb-setup/pull/594) | [falexwolf](https://github.com/falexwolf) | 2023-12-11 |
+⬆️ Bump supabase to latest version | [594](https://github.com/laminlabs/lamindb-setup/pull/594) | [falexwolf](https://github.com/falexwolf) | 2023-12-11 | 0.61.2
 ♻️ Defer storage API access to actual access | [593](https://github.com/laminlabs/lamindb-setup/pull/593) | [falexwolf](https://github.com/falexwolf) | 2023-12-07 | 0.61.1
 🚸 Enable schema packages that do not start with lnschema_ | [592](https://github.com/laminlabs/lamindb-setup/pull/592) | [falexwolf](https://github.com/falexwolf) | 2023-11-28 | 0.61.0
 🚑️ Proper fix for trailing slash in create_path | [591](https://github.com/laminlabs/lamindb-setup/pull/591) | [sunnyosun](https://github.com/sunnyosun) | 2023-11-28 |
