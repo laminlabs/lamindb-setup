@@ -22,6 +22,7 @@ def silence_loggers():
         set_stream_logger(name="botocore.utils", level=logging.WARNING)
         set_stream_logger(name="botocore.auth", level=logging.WARNING)
         set_stream_logger(name="botocore.endpoint", level=logging.WARNING)
+        set_stream_logger(name="httpx", level=logging.WARNING)
         try:
             import aiobotocore  # noqa
 
