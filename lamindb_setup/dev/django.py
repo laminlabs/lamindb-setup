@@ -42,6 +42,13 @@ def get_migrations_to_sync():
 
     deployed_latest_migs = migrate.deployed_migrations(latest=True)
     defined_latest_migs = migrate.defined_migrations(latest=True)
+
+    # in case a new app was added in the defined migrations,
+    # reflect this with a dummy migration "0000_"
+    for app in defined_latest_migs.keys():
+        if app not in deployed_latest_migs:
+            deployed_latest_migs[app] = "0000_"
+
     status = "synced"
     latest_migrs = ([], [])
 
