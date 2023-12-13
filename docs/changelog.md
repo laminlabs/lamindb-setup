@@ -3,6 +3,7 @@
 <!-- prettier-ignore -->
 Name | PR | Developer | Date | Version
 --- | --- | --- | --- | ---
+🚸 Detect new schema modules | [596](https://github.com/laminlabs/lamindb-setup/pull/596) | [falexwolf](https://github.com/falexwolf) | 2023-12-13 |
 ⬆️ Bump supabase to latest version | [594](https://github.com/laminlabs/lamindb-setup/pull/594) | [falexwolf](https://github.com/falexwolf) | 2023-12-11 | 0.61.2
 ♻️ Defer storage API access to actual access | [593](https://github.com/laminlabs/lamindb-setup/pull/593) | [falexwolf](https://github.com/falexwolf) | 2023-12-07 | 0.61.1
 🚸 Enable schema packages that do not start with lnschema_ | [592](https://github.com/laminlabs/lamindb-setup/pull/592) | [falexwolf](https://github.com/falexwolf) | 2023-11-28 | 0.61.0
