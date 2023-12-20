@@ -168,15 +168,16 @@ def upload_from(self, path, print_progress: bool = False, **kwargs):
 def synchronize(self, filepath: Path, **kwargs):
     """Sync to a local destination path."""
     if not self.exists():
-        warn_str = f"The original path {self} does not exist anymore"
+        warn_or_error = f"The original path {self} does not exist anymore."
         if filepath.exists():
-            warn_str += (
-                f". However, the local path {filepath} still exists, you might want to"
+            warn_or_error += (
+                f"\nHowever, the local path {filepath} still exists, you might want to"
                 " reupload the object back."
             )
+            logger.warning(warn_or_error)
         else:
-            warn_str += ", it is not possible to synchronize."
-        logger.warning(warn_str)
+            warn_or_error += "\nIt is not possible to synchronize."
+            raise FileNotFoundError(warn_or_error)
         return None
 
     if not filepath.exists():
