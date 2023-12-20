@@ -166,7 +166,9 @@ class InstanceSettings:
         if self._db is None:
             # here, we want the updated sqlite file
             # hence, we don't use self._sqlite_file_local()
-            return f"sqlite:///{self.storage.cloud_to_local(self._sqlite_file)}"
+            # error_no_origin=False because on instance init
+            # the sqlite file is not yet in the cloud
+            return f"sqlite:///{self.storage.cloud_to_local(self._sqlite_file, error_no_origin=False)}"  # noqa
         else:
             if self._db_from_vault is not None:
                 return self._db_from_vault

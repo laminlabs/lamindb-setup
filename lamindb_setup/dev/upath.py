@@ -165,7 +165,7 @@ def upload_from(self, path, print_progress: bool = False, **kwargs):
     self.fs.upload(str(path), str(self), **kwargs)
 
 
-def synchronize(self, filepath: Path, **kwargs):
+def synchronize(self, filepath: Path, error_no_origin: bool = True, **kwargs):
     """Sync to a local destination path."""
     if not self.exists():
         warn_or_error = f"The original path {self} does not exist anymore."
@@ -175,7 +175,7 @@ def synchronize(self, filepath: Path, **kwargs):
                 " reupload the object back."
             )
             logger.warning(warn_or_error)
-        else:
+        elif error_no_origin:
             warn_or_error += "\nIt is not possible to synchronize."
             raise FileNotFoundError(warn_or_error)
         return None
