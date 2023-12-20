@@ -160,7 +160,7 @@ def setup_django(
         # only update if called from lamin migrate deploy
         # if called from load_schema(..., init=True)
         # no need to update the remote sqlite
-        isettings._update_cloud_sqlite_file()
+        isettings._update_cloud_sqlite_file(unlock_cloud_sqlite=False)
     else:
         if init:
             # create migrations
