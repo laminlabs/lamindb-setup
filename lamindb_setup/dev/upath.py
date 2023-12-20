@@ -177,6 +177,7 @@ def synchronize(self, filepath: Path, **kwargs):
         else:
             warn_str += ", it is not possible to synchronize."
         logger.warning(warn_str)
+        return None
 
     if not filepath.exists():
         filepath.parent.mkdir(parents=True, exist_ok=True)
