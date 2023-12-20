@@ -168,7 +168,15 @@ def upload_from(self, path, print_progress: bool = False, **kwargs):
 def synchronize(self, filepath: Path, **kwargs):
     """Sync to a local destination path."""
     if not self.exists():
-        return None
+        warn_str = f"The original path {self} does not exist anymore"
+        if filepath.exists():
+            warn_str += (
+                f". However, the local path {filepath} still exists, you might want to"
+                " reupload the object back."
+            )
+        else:
+            warn_str += ", it is not possible to synchronize."
+        logger.warning(warn_str)
 
     if not filepath.exists():
         filepath.parent.mkdir(parents=True, exist_ok=True)
