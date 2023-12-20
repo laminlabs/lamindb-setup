@@ -3,6 +3,7 @@
 <!-- prettier-ignore -->
 Name | PR | Developer | Date | Version
 --- | --- | --- | --- | ---
+🔊 Warn on sync of non-existing paths | [598](https://github.com/laminlabs/lamindb-setup/pull/598) | [Koncopd](https://github.com/Koncopd) | 2023-12-20 |
 🚸 Silence httpx logger | [597](https://github.com/laminlabs/lamindb-setup/pull/597) | [falexwolf](https://github.com/falexwolf) | 2023-12-13 | 0.61.4
 🚸 Detect new schema modules | [596](https://github.com/laminlabs/lamindb-setup/pull/596) | [falexwolf](https://github.com/falexwolf) | 2023-12-13 | 0.61.3
 ⬆️ Bump supabase to latest version | [594](https://github.com/laminlabs/lamindb-setup/pull/594) | [falexwolf](https://github.com/falexwolf) | 2023-12-11 | 0.61.2
