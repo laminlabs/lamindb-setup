@@ -126,13 +126,13 @@ def load(
         instance_result, storage_result = hub_result
         db_updated = update_db_using_local(instance_result, settings_file, db=db)
         isettings = InstanceSettings(
+            id=UUID(instance_result["id"]),
             owner=owner,
             name=name,
             storage_root=storage_result["root"],
             storage_region=storage_result["region"],
             db=db_updated,
             schema=instance_result["schema_str"],
-            id=UUID(instance_result["id"]),
         )
         # we don't need to use the vault for sqlite instances
         if instance_result["db"] is not None and _vault:

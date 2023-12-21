@@ -268,7 +268,7 @@ class InstanceSettings:
         # Is the database available and initialized as LaminDB?
         # returns a tuple of status code and message
         if self.dialect == "sqlite" and not self._sqlite_file.exists():
-            legacy_file = self.storage.key_to_filepath(f"{self.id.hex}.lndb")
+            legacy_file = self.storage.key_to_filepath(f"{self.name}.lndb")
             if legacy_file.exists():
                 raise RuntimeError(
                     "The SQLite file has been renamed!\nPlease rename your SQLite file"
