@@ -48,7 +48,7 @@ class Locker:
         self.root = storage_root
         self.fs, _ = infer_filesystem(storage_root)
 
-        exclusion_path = storage_root / f".lamindb/exclusion/{instance_id.hex}"
+        exclusion_path = storage_root / f".lamindb/_exclusion/{instance_id.hex}"
         self.mapper = fsspec.FSMap(str(exclusion_path), self.fs, create=True)
 
         priorities_path = str(exclusion_path / "priorities")
