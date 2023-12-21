@@ -1,5 +1,5 @@
 import os
-from uuid import UUID
+from uuid import UUID, uuid4
 from typing import Optional
 import pytest
 from gotrue.errors import AuthApiError
@@ -82,6 +82,7 @@ def create_testuser1_session():  # -> Tuple[Client, UserSettings]
 @pytest.fixture(scope="session")
 def create_myinstance(create_testuser1_session):  # -> Dict
     instance_id = init_instance(
+        id=uuid4(),
         name="myinstance",
         storage="s3://lndb-setup-ci",
         db="postgresql://postgres:pwd@fakeserver.xyz:5432/mydb",
