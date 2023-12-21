@@ -54,13 +54,13 @@ def load_user_settings(user_settings_file: Path):
 
 def setup_instance_from_store(store: InstanceSettingsStore) -> InstanceSettings:
     return InstanceSettings(
+        id=UUID(store.id),
         owner=store.owner,
         name=store.name,
         storage_root=store.storage_root,
         storage_region=store.storage_region if store.storage_region != "null" else None,
         db=store.db if store.db != "null" else None,  # type: ignore
         schema=store.schema_str if store.schema_str != "null" else None,
-        id=UUID(store.id) if store.id != "null" else None,
     )
 
 

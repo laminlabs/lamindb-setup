@@ -22,14 +22,15 @@ class InstanceSettings:
 
     def __init__(
         self,
+        id: UUID,  # instance id
         owner: str,  # owner handle
         name: str,  # instance name
         storage_root: Union[str, Path, UPath],  # storage location on cloud
         storage_region: Optional[str] = None,
         db: Optional[str] = None,  # DB URI
         schema: Optional[str] = None,  # comma-separated string of schema names
-        id: Optional[UUID] = None,  # instance id
     ):
+        self._id: UUID = id
         self._owner: str = owner
         self._name: str = name
         self._storage: StorageSettings = StorageSettings(
@@ -37,7 +38,6 @@ class InstanceSettings:
         )
         self._db: Optional[str] = db
         self._schema_str: Optional[str] = schema
-        self._id: Optional[UUID] = id
         self._db_from_vault = None
 
     def __repr__(self):
@@ -86,7 +86,7 @@ class InstanceSettings:
         return f"{self.owner}/{self.name}"
 
     @property
-    def id(self) -> Optional[UUID]:
+    def id(self) -> UUID:
         """The instance id."""
         return self._id
 
@@ -101,7 +101,7 @@ class InstanceSettings:
     @property
     def _sqlite_file(self) -> UPath:
         """SQLite file."""
-        return self.storage.key_to_filepath(f"{self.name}.lndb")
+        return self.storage.key_to_filepath(f"{self.id.hex}.lndb")
 
     @property
     def _sqlite_file_local(self) -> Path:

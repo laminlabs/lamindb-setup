@@ -2,8 +2,8 @@ import importlib
 import sys
 from pathlib import Path
 from typing import Optional, Union
-from uuid import UUID
-
+from uuid import UUID, uuid4
+import os
 from lamin_utils import logger
 from pydantic import PostgresDsn
 from django.db.utils import OperationalError, ProgrammingError
@@ -181,7 +181,15 @@ def init(
     if response is None:
         return None  # successful load!
 
+    # for internal use when creating instances through CICD
+    instance_id_str = os.getenv("LAMINDB_INSTANCE_ID_INIT")
+    if instance_id_str is None:
+        instance_id = uuid4()
+    else:
+        instance_id = UUID(instance_id_str)
+
     isettings = InstanceSettings(
+        id=instance_id,
         owner=owner,
         name=name_str,
         storage_root=storage,
@@ -203,6 +211,7 @@ def init(
 
     if isettings.is_remote:
         result = init_instance_hub(
+            id=instance_id,
             name=name_str,
             storage=str(storage),
             db=db,
