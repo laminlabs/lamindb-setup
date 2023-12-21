@@ -106,7 +106,7 @@ def test_init_instance_cloud_aws_us():
     assert ln_setup.settings.storage.region == "us-east-1"
     assert (
         str(ln_setup.settings.instance._sqlite_file)
-        == "s3://lndb-setup-ci/lndb-setup-ci.lndb"
+        == f"s3://lndb-setup-ci/{ln_setup.settings.instance.id.hex}.lndb"
     )
 
 
@@ -122,7 +122,7 @@ def test_init_instance_cloud_aws_europe():
     assert ln_setup.settings.instance.name == "lndb-setup-ci-europe"
     assert (
         str(ln_setup.settings.instance._sqlite_file)
-        == "s3://lndb-setup-ci-eu-central-1/lndb-setup-ci-europe.lndb"
+        == f"s3://lndb-setup-ci-eu-central-1/{ln_setup.settings.instance.id.hex}.lndb"
     )
 
 

@@ -64,18 +64,20 @@ def add_storage(root: str, account_id: UUID, hub: Client) -> UUID:
 
 def init_instance(
     *,
+    id: UUID,
     name: str,  # instance name
     storage: str,  # storage location on cloud
     db: Optional[str] = None,  # str has to be postgresdsn (use pydantic in the future)
     schema: Optional[str] = None,  # comma-separated list of schema names
 ) -> Union[str, UUID]:
     return call_with_fallback_auth(
-        _init_instance, name=name, storage=storage, db=db, schema=schema
+        _init_instance, id=id, name=name, storage=storage, db=db, schema=schema
     )
 
 
 def _init_instance(
     *,
+    id: UUID,
     name: str,  # instance name
     storage: str,  # storage location on cloud
     db: Optional[str] = None,  # str has to be postgresdsn (use pydantic in the future)
@@ -97,19 +99,12 @@ def _init_instance(
     instance = sb_select_instance_by_name(usettings.uuid, name, client)
     if instance is not None:
         return UUID(instance["id"])
-
-    # for internal use when creating instances through CICD
-    instance_id_str = os.getenv("LAMINDB_INSTANCE_ID_INIT")
-    if instance_id_str is None:
-        instance_id = uuid4()
-    else:
-        instance_id = UUID(instance_id_str)
     # sqlite
     if db is None:
         validate_unique_sqlite(storage_id=storage_id, name=name, client=client)
         sb_insert_instance(
             {
-                "id": instance_id.hex,
+                "id": id.hex,
                 "account_id": usettings.uuid.hex,
                 "name": name,
                 "storage_id": storage_id.hex,
@@ -123,7 +118,7 @@ def _init_instance(
         db_dsn = LaminDsnModel(db=db)
         sb_insert_instance(
             {
-                "id": instance_id.hex,
+                "id": id.hex,
                 "account_id": usettings.uuid.hex,
                 "name": name,
                 "storage_id": storage_id.hex,
@@ -138,13 +133,13 @@ def _init_instance(
         )
     sb_insert_collaborator(
         {
-            "instance_id": instance_id.hex,
+            "instance_id": id.hex,
             "account_id": usettings.uuid.hex,
             "role": "admin",
         },
         client,
     )
-    return instance_id
+    return id
 
 
 def set_db_user(

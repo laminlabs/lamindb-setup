@@ -19,7 +19,7 @@ def test_load_remote_instance():
     assert ln_setup.settings.instance.storage.root_as_str == "s3://lndb-setup-ci"
     assert (
         ln_setup.settings.instance._sqlite_file.as_posix()
-        == "s3://lndb-setup-ci/lndb-setup-ci.lndb"
+        == f"s3://lndb-setup-ci/{ln_setup.settings.instance.id.hex}.lndb"
     )
 
 
