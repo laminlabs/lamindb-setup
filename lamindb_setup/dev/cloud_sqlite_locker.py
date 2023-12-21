@@ -2,7 +2,7 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Optional, Union
 from functools import wraps
-
+from uuid import UUID
 import fsspec
 from dateutil.parser import isoparse  # type: ignore
 from lamin_utils import logger
@@ -33,18 +33,22 @@ class empty_locker:
 
 
 class Locker:
-    def __init__(self, user_id: str, storage_root: Union[UPath, Path], name: str):
-        logger.debug(f"init cloud sqlite locker: {user_id}, {storage_root}, {name}.")
+    def __init__(
+        self, user_uid: str, storage_root: Union[UPath, Path], instance_id: UUID
+    ):
+        logger.debug(
+            f"init cloud sqlite locker: {user_uid}, {storage_root}, {instance_id}."
+        )
 
         self._counter = 0
 
-        self.user = user_id
-        self.name = name
+        self.user = user_uid
+        self.instance_id = instance_id
 
         self.root = storage_root
         self.fs, _ = infer_filesystem(storage_root)
 
-        exclusion_path = storage_root / f"exclusion/{name}"
+        exclusion_path = storage_root / f".lamindb/exclusion/{instance_id.hex}"
         self.mapper = fsspec.FSMap(str(exclusion_path), self.fs, create=True)
 
         priorities_path = str(exclusion_path / "priorities")
@@ -184,15 +188,14 @@ def get_locker(isettings) -> Locker:
 
     user_uid = settings.user.uid
     storage_root = isettings.storage.root
-    instance_name = isettings.name
 
     if (
         _locker is None
         or _locker.user != user_uid
         or _locker.root is not storage_root
-        or _locker.name != instance_name
+        or _locker.instance_id != isettings.id
     ):
-        _locker = Locker(user_uid, storage_root, instance_name)
+        _locker = Locker(user_uid, storage_root, isettings.id)
 
     return _locker
 
