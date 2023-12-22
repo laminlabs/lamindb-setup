@@ -3,6 +3,7 @@
 <!-- prettier-ignore -->
 Name | PR | Developer | Date | Version
 --- | --- | --- | --- | ---
+🐛 Fix bionty settings | [602](https://github.com/laminlabs/lamindb-setup/pull/602) | [falexwolf](https://github.com/falexwolf) | 2023-12-22 |
 ♻️ Adopt SQLite locker to id naming and move `exclusion/` inside `.lamindb/` | [601](https://github.com/laminlabs/lamindb-setup/pull/601) | [falexwolf](https://github.com/falexwolf) | 2023-12-21 | 0.62.0
 🎨 Name `.lndb` files by instance id | [600](https://github.com/laminlabs/lamindb-setup/pull/600) | [falexwolf](https://github.com/falexwolf) | 2023-12-21 |
 🐛 Do not unlock cloud sqlite instance on migrate deploy | [599](https://github.com/laminlabs/lamindb-setup/pull/599) | [Koncopd](https://github.com/Koncopd) | 2023-12-20 |
