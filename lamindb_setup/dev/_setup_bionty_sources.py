@@ -8,13 +8,12 @@ def write_bionty_sources(isettings: InstanceSettings) -> None:
         return None
     import shutil
     from bionty.dev._handle_sources import parse_sources_yaml
-    from bionty import settings as bt_settings
     import bionty as bt
     from lnschema_bionty.models import BiontySource
 
-    shutil.copy(bt_settings.current_sources, bt_settings.lamindb_sources)
+    shutil.copy(bt.settings.current_sources, bt.settings.lamindb_sources)
 
-    all_sources = parse_sources_yaml(bt_settings.local_sources)
+    all_sources = parse_sources_yaml(bt.settings.local_sources)
     all_sources_dict = all_sources.to_dict(orient="records")
 
     def _get_currently_used(key: str):
@@ -54,8 +53,8 @@ def load_bionty_sources(isettings: InstanceSettings):
     if "bionty" not in isettings.schema:
         return None
 
+    import bionty as bt
     from bionty.dev._handle_sources import parse_currently_used_sources
-    from bionty import settings as bt_settings
     from bionty.dev._io import write_yaml
     from lnschema_bionty.models import BiontySource
 
@@ -63,7 +62,7 @@ def load_bionty_sources(isettings: InstanceSettings):
         # need try except because of integer primary key migration
         active_records = BiontySource.objects.filter(currently_used=True).all().values()
         write_yaml(
-            parse_currently_used_sources(active_records), bt_settings.lamindb_sources
+            parse_currently_used_sources(active_records), bt.settings.lamindb_sources
         )
     except (OperationalError, ProgrammingError):
         pass
@@ -72,8 +71,8 @@ def load_bionty_sources(isettings: InstanceSettings):
 def delete_bionty_sources_yaml():
     """Delete LAMINDB_SOURCES_PATH in bionty."""
     try:
-        from bionty import settings as bt_settings
+        import bionty as bt
 
-        bt_settings.lamindb_sources.unlink(missing_ok=True)
+        bt.settings.lamindb_sources.unlink(missing_ok=True)
     except ModuleNotFoundError:
         pass
