@@ -1,6 +1,6 @@
 from pathlib import Path
 from typing import Optional
-from uuid import UUID
+from uuid import UUID, uuid4
 
 from pydantic.error_wrappers import ValidationError
 
@@ -25,6 +25,11 @@ def load_instance_settings(instance_settings_file: Optional[Path] = None):
         raise ValidationError(
             "Your instance settings file is invalid, please delete"
             f" {instance_settings_file} and init the instance again."
+        )
+    if settings_store.id == "null":
+        raise ValueError(
+            "Your instance.id is undefined, please either load your instance from the"
+            f" hub or update {instance_settings_file} with a new id: {uuid4().hex}"
         )
     isettings = setup_instance_from_store(settings_store)
     return isettings
