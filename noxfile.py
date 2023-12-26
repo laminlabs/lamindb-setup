@@ -37,6 +37,9 @@ def install(session: nox.Session, group: str) -> None:
         session.run(*"pip install -e .[aws,dev]".split())
     elif group == "prod-only":
         session.run(
+            *"pip install git+https://github.com/laminlabs/lnschema-core".split()
+        )
+        session.run(
             *"pip install git+https://github.com/laminlabs/lnschema-bionty".split()
         )
         session.run(*"pip install -e .[aws,dev]".split())
