@@ -209,7 +209,7 @@ def init(
                 )
             )
 
-    if isettings.is_remote:
+    if isettings.is_remote and response != "instance-corrupted-or-deleted":
         result = init_instance_hub(
             id=instance_id,
             name=name_str,
@@ -219,7 +219,6 @@ def init(
         )
         if not isinstance(result, UUID):
             raise RuntimeError(f"Registering instance on hub failed:\n{result}")
-        isettings._id = result
         logger.save(f"registered instance on hub: https://lamin.ai/{owner}/{name_str}")
 
         if db is not None and _vault:

@@ -185,7 +185,7 @@ def load(
                 "instance metadata exists, but DB might have been corrupted or deleted:"
                 " re-initializing"
             )
-            return "instance-not-reachable"
+            return "instance-corrupted-or-deleted"
     # this is for testing purposes only
     if _TEST_FAILED_LOAD:
         raise RuntimeError("Technical testing error.")
