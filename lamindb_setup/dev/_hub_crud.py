@@ -70,13 +70,11 @@ def sb_select_instance_by_name(
 
 
 def sb_update_instance(instance_id: str, instance_fields: dict, client: Client):
-    data = (
-        client.table("instance")
-        .update(instance_fields)
-        .eq("id", instance_id)
-        .execute()
-        .data
+    # print(instance_fields, instance_id)
+    response = (
+        client.table("instance").update(instance_fields).eq("id", instance_id).execute()
     )
+    data = response.data
     if len(data) == 0:
         return None
     return data[0]

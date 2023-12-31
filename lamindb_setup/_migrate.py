@@ -43,6 +43,7 @@ class migrate:
         from lamindb_setup.dev._hub_client import call_with_fallback_auth
 
         # this populates the hub
+        logger.important(f"updating lamindb version in hub: {lamindb.__version__}")
         call_with_fallback_auth(
             sb_update_instance,
             instance_id=settings.instance.id.hex,
