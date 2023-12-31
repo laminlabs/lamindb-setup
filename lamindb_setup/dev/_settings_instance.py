@@ -274,7 +274,7 @@ class InstanceSettings:
                     "The SQLite file has been renamed!\nPlease rename your SQLite file"
                     f" {legacy_file} to {self._sqlite_file}"
                 )
-            return False, "SQLite file does not exist"
+            return False, f"SQLite file {self._sqlite_file} does not exist"
         from lamindb_setup import settings  # to check user
         from .django import setup_django
 

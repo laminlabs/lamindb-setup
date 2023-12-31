@@ -182,11 +182,16 @@ def init(
         return None  # successful load!
 
     # for internal use when creating instances through CICD
-    instance_id_str = os.getenv("LAMINDB_INSTANCE_ID_INIT")
-    if instance_id_str is None:
-        instance_id = uuid4()
+    if isinstance(response, tuple) and response[0] == "instance-corrupted-or-deleted":
+        response = response[0]
+        hub_result = response[1]
+        instance_id = UUID(hub_result["id"])
     else:
-        instance_id = UUID(instance_id_str)
+        instance_id_str = os.getenv("LAMINDB_INSTANCE_ID_INIT")
+        if instance_id_str is None:
+            instance_id = uuid4()
+        else:
+            instance_id = UUID(instance_id_str)
 
     isettings = InstanceSettings(
         id=instance_id,
