@@ -31,7 +31,6 @@ from ._hub_utils import (
     secret,
     validate_schema_arg,
     validate_storage_root_arg,
-    validate_unique_sqlite,
 )
 from ._settings_store import user_settings_file_email
 
@@ -101,7 +100,6 @@ def _init_instance(
         return UUID(instance["id"])
     # sqlite
     if db is None:
-        validate_unique_sqlite(storage_id=storage_id, name=name, client=client)
         sb_insert_instance(
             {
                 "id": id.hex,

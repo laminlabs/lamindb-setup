@@ -2,13 +2,9 @@ import secrets
 import string
 from pathlib import Path
 from typing import Optional, Union
-from uuid import UUID
 from lamin_utils import logger
 from pydantic import BaseModel, validator
 from pydantic.networks import MultiHostDsn
-
-from supabase import Client
-
 from .upath import UPath
 
 
@@ -36,40 +32,6 @@ def validate_schema_arg(schema: Optional[str] = None) -> str:
 def validate_db_arg(db: Optional[str]) -> None:
     if db:
         LaminDsnModel(db=db)
-
-
-def validate_unique_sqlite(
-    *,
-    storage_id: UUID,
-    name: str,
-    client: Client,
-) -> None:
-    # if a remote sqlite instance, make sure there is no other instance
-    # that has the same name and storage location
-    instances = (
-        client.table("instance")
-        .select("*")
-        .eq("storage_id", storage_id.hex)
-        .eq("name", name)
-        .execute()
-        .data
-    )
-    if len(instances) > 0:
-        # retrieve account owning the first instance
-        accounts = (
-            client.table("account")
-            .select("*")
-            .eq("id", instances[0]["account_id"])
-            .execute()
-            .data
-        )
-        raise RuntimeError(
-            "\nThere is already an sqlite instance with the same name and storage"
-            f" location from account {accounts[0]['handle']}\nTwo sqlite instances with"
-            " the same name and the same storage cannot exist\nFix: Choose another"
-            f" name or load instance {accounts[0]['handle']}/{name}\nFor reference: the"
-            f" instances with the same storage and name are {instances}"
-        )
 
 
 def get_storage_region(storage_root: Union[str, Path, UPath]) -> Optional[str]:
