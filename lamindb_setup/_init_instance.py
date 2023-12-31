@@ -183,8 +183,8 @@ def init(
 
     # for internal use when creating instances through CICD
     if isinstance(response, tuple) and response[0] == "instance-corrupted-or-deleted":
-        response = response[0]
         hub_result = response[1]
+        response = response[0]
         instance_id = UUID(hub_result["id"])
     else:
         instance_id_str = os.getenv("LAMINDB_INSTANCE_ID_INIT")
