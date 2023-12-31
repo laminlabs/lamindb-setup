@@ -8,6 +8,7 @@ from django.db import connection
 from django.db.migrations.loader import MigrationLoader
 
 
+# for tests, see lamin-cli
 class migrate:
     """Manage migrations.
 
