@@ -32,7 +32,21 @@ class migrate:
         """Deploy a migration."""
         if check_instance_setup():
             raise RuntimeError("Restart Python session to migrate or use CLI!")
+        # we need lamindb to be installed, otherwise we can't populate the version
+        # information in the hub
+        import lamindb
+
+        # this sets up django and deploys the migrations
         setup_django(settings.instance, deploy_migrations=True)
+        from lamindb_setup.dev._hub_crud import sb_update_instance
+        from lamindb_setup.dev._hub_client import call_with_fallback_auth
+
+        # this populates the hub
+        call_with_fallback_auth(
+            sb_update_instance,
+            instance_id=settings.instance.id.hex,
+            instance_fields=dict(lamindb_version=lamindb.__version__),
+        )
 
     @classmethod
     def check(cls) -> bool:
