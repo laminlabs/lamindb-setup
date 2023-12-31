@@ -185,7 +185,7 @@ def load(
                 f"instance exists with id {isettings.id.hex}, but database is not"
                 " loadable: re-initializing"
             )
-            return "instance-corrupted-or-deleted", hub_result
+            return "instance-corrupted-or-deleted", instance_result
     # this is for testing purposes only
     if _TEST_FAILED_LOAD:
         raise RuntimeError("Technical testing error.")
