@@ -74,6 +74,8 @@ def sb_select_instance_by_id(
     client: Client,
 ):
     response = client.table("instance").select("*").eq("id", instance_id).execute()
+    if len(response.data) == 0:
+        return None
     return response.data[0]
 
 
