@@ -53,7 +53,7 @@ class migrate:
                 instance_id=instance_id_str,
                 account_id=settings.user.uuid,
             )
-            if collaborator["permission"] != "admin":
+            if collaborator["role"] != "admin":
                 raise PermissionError("Only admins can deploy migrations")
             # we need lamindb to be installed, otherwise we can't populate the version
             # information in the hub
