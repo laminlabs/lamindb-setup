@@ -182,11 +182,16 @@ def init(
         return None  # successful load!
 
     # for internal use when creating instances through CICD
-    instance_id_str = os.getenv("LAMINDB_INSTANCE_ID_INIT")
-    if instance_id_str is None:
-        instance_id = uuid4()
+    if isinstance(response, tuple) and response[0] == "instance-corrupted-or-deleted":
+        hub_result = response[1]
+        response = response[0]
+        instance_id = UUID(hub_result["id"])
     else:
-        instance_id = UUID(instance_id_str)
+        instance_id_str = os.getenv("LAMINDB_INSTANCE_ID_INIT")
+        if instance_id_str is None:
+            instance_id = uuid4()
+        else:
+            instance_id = UUID(instance_id_str)
 
     isettings = InstanceSettings(
         id=instance_id,
@@ -209,17 +214,23 @@ def init(
                 )
             )
 
-    if isettings.is_remote:
+    if isettings.is_remote and response != "instance-corrupted-or-deleted":
+        from importlib import metadata
+
+        try:
+            lamindb_version = metadata.version("lamindb")
+        except metadata.PackageNotFoundError:
+            lamindb_version = None
         result = init_instance_hub(
             id=instance_id,
             name=name_str,
             storage=str(storage),
             db=db,
             schema=schema,
+            lamindb_version=lamindb_version,
         )
         if not isinstance(result, UUID):
             raise RuntimeError(f"Registering instance on hub failed:\n{result}")
-        isettings._id = result
         logger.save(f"registered instance on hub: https://lamin.ai/{owner}/{name_str}")
 
         if db is not None and _vault:

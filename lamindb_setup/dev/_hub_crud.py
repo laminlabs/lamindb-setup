@@ -69,17 +69,26 @@ def sb_select_instance_by_name(
     return data[0]
 
 
-def sb_update_instance(instance_id: str, instance_fields: dict, client: Client):
-    data = (
-        client.table("instance")
-        .update(instance_fields)
-        .eq("id", instance_id)
-        .execute()
-        .data
-    )
-    if len(data) == 0:
+def sb_select_instance_by_id(
+    instance_id: str,
+    client: Client,
+):
+    response = client.table("instance").select("*").eq("id", instance_id).execute()
+    if len(response.data) == 0:
         return None
-    return data[0]
+    return response.data[0]
+
+
+def sb_update_instance(instance_id: str, instance_fields: dict, client: Client):
+    response = (
+        client.table("instance").update(instance_fields).eq("id", instance_id).execute()
+    )
+    if len(response.data) == 0:
+        raise RuntimeError(
+            f"Update of instance with {instance_id} was not successful. Probably, you"
+            " don't have sufficient permissions."
+        )
+    return response.data[0]
 
 
 def sb_delete_instance(

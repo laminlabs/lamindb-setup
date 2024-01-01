@@ -1,5 +1,5 @@
 from pathlib import Path
-from typing import Optional, Union, Dict
+from typing import Optional, Union, Dict, Tuple
 from uuid import UUID
 import os
 from lamin_utils import logger
@@ -84,7 +84,7 @@ def load(
     _raise_not_reachable_error: bool = True,
     _test: bool = False,
     _vault: bool = False,
-) -> Optional[str]:
+) -> Optional[Union[str, Tuple]]:
     """Load existing instance.
 
     Args:
@@ -182,10 +182,10 @@ def load(
             raise RuntimeError(msg)
         else:
             logger.warning(
-                "instance metadata exists, but DB might have been corrupted or deleted:"
-                " re-initializing"
+                f"instance exists with id {isettings.id.hex}, but database is not"
+                " loadable: re-initializing"
             )
-            return "instance-not-reachable"
+            return "instance-corrupted-or-deleted", instance_result
     # this is for testing purposes only
     if _TEST_FAILED_LOAD:
         raise RuntimeError("Technical testing error.")

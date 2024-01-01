@@ -68,9 +68,16 @@ def init_instance(
     storage: str,  # storage location on cloud
     db: Optional[str] = None,  # str has to be postgresdsn (use pydantic in the future)
     schema: Optional[str] = None,  # comma-separated list of schema names
+    lamindb_version: Optional[str] = None,  # the installed lamindb version, optional
 ) -> Union[str, UUID]:
     return call_with_fallback_auth(
-        _init_instance, id=id, name=name, storage=storage, db=db, schema=schema
+        _init_instance,
+        id=id,
+        name=name,
+        storage=storage,
+        db=db,
+        schema=schema,
+        lamindb_version=lamindb_version,
     )
 
 
@@ -82,6 +89,7 @@ def _init_instance(
     db: Optional[str] = None,  # str has to be postgresdsn (use pydantic in the future)
     schema: Optional[str] = None,  # comma-separated list of schema names
     client: Client,
+    lamindb_version: Optional[str] = None,
 ) -> Union[str, UUID]:
     from .._settings import settings
 
@@ -99,36 +107,32 @@ def _init_instance(
     if instance is not None:
         return UUID(instance["id"])
     # sqlite
+    common_fields = {
+        "id": id.hex,
+        "account_id": usettings.uuid.hex,
+        "name": name,
+        "storage_id": storage_id.hex,
+        "schema_str": schema_str,
+        "lamindb_version": lamindb_version,
+        "public": False,
+    }
     if db is None:
         sb_insert_instance(
-            {
-                "id": id.hex,
-                "account_id": usettings.uuid.hex,
-                "name": name,
-                "storage_id": storage_id.hex,
-                "schema_str": schema_str,
-                "public": False,
-            },
+            common_fields,
             client,
         )
     # postgres
     else:
         db_dsn = LaminDsnModel(db=db)
-        sb_insert_instance(
+        common_fields.update(
             {
-                "id": id.hex,
-                "account_id": usettings.uuid.hex,
-                "name": name,
-                "storage_id": storage_id.hex,
                 "db_scheme": db_dsn.db.scheme,
                 "db_host": db_dsn.db.host,
                 "db_port": db_dsn.db.port,
                 "db_database": db_dsn.db.database,
-                "schema_str": schema_str,
-                "public": False,
-            },
-            client,
+            }
         )
+        sb_insert_instance(common_fields, client)
     sb_insert_collaborator(
         {
             "instance_id": id.hex,

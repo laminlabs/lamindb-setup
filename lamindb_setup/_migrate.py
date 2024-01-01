@@ -8,6 +8,7 @@ from django.db import connection
 from django.db.migrations.loader import MigrationLoader
 
 
+# for tests, see lamin-cli
 class migrate:
     """Manage migrations.
 
@@ -32,7 +33,42 @@ class migrate:
         """Deploy a migration."""
         if check_instance_setup():
             raise RuntimeError("Restart Python session to migrate or use CLI!")
+        from lamindb_setup.dev._hub_crud import (
+            sb_update_instance,
+            sb_select_instance_by_id,
+            sb_select_collaborator,
+        )
+        from lamindb_setup.dev._hub_client import call_with_fallback_auth
+
+        instance_id_str = settings.instance.id.hex
+        instance = call_with_fallback_auth(
+            sb_select_instance_by_id, instance_id=instance_id_str
+        )
+        instance_is_on_hub = instance is not None
+        if instance_is_on_hub:
+            # double check that user is an admin, otherwise will fail below
+            # without idempotence
+            collaborator = call_with_fallback_auth(
+                sb_select_collaborator,
+                instance_id=instance_id_str,
+                account_id=settings.user.uuid,
+            )
+            if collaborator["role"] != "admin":
+                raise PermissionError("Only admins can deploy migrations")
+            # we need lamindb to be installed, otherwise we can't populate the version
+            # information in the hub
+            import lamindb
+
+        # this sets up django and deploys the migrations
         setup_django(settings.instance, deploy_migrations=True)
+        # this populates the hub
+        if instance_is_on_hub:
+            logger.important(f"updating lamindb version in hub: {lamindb.__version__}")
+            call_with_fallback_auth(
+                sb_update_instance,
+                instance_id=settings.instance.id.hex,
+                instance_fields={"lamindb_version": lamindb.__version__},
+            )
 
     @classmethod
     def check(cls) -> bool:
