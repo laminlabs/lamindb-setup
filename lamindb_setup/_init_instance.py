@@ -215,12 +215,19 @@ def init(
             )
 
     if isettings.is_remote and response != "instance-corrupted-or-deleted":
+        from importlib import metadata
+
+        try:
+            lamindb_version = metadata.version("lamindb")
+        except metadata.PackageNotFoundError:
+            lamindb_version = None
         result = init_instance_hub(
             id=instance_id,
             name=name_str,
             storage=str(storage),
             db=db,
             schema=schema,
+            lamindb_version=lamindb_version,
         )
         if not isinstance(result, UUID):
             raise RuntimeError(f"Registering instance on hub failed:\n{result}")

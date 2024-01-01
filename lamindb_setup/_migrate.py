@@ -38,7 +38,7 @@ class migrate:
         import lamindb
 
         # this sets up django and deploys the migrations
-        setup_django(settings.instance, deploy_migrations=True)
+        # setup_django(settings.instance, deploy_migrations=True)
         from lamindb_setup.dev._hub_crud import sb_update_instance
         from lamindb_setup.dev._hub_client import call_with_fallback_auth
 
@@ -47,7 +47,7 @@ class migrate:
         call_with_fallback_auth(
             sb_update_instance,
             instance_id=settings.instance.id.hex,
-            instance_fields=dict(lamindb_version=lamindb.__version__),
+            instance_fields={"lamindb_version": lamindb.__version__},
         )
 
     @classmethod
