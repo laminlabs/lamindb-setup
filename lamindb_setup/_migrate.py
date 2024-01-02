@@ -53,8 +53,11 @@ class migrate:
                 instance_id=instance_id_str,
                 account_id=settings.user.uuid,
             )
-            if collaborator["role"] != "admin":
-                raise PermissionError("Only admins can deploy migrations")
+            if collaborator is None or collaborator["role"] != "admin":
+                raise SystemExit(
+                    "❌ Only admins can deploy migrations, please ensure that you're an"
+                    f" admin: https://lamin.ai/{settings.instance.identifier}/settings"
+                )
             # we need lamindb to be installed, otherwise we can't populate the version
             # information in the hub
             import lamindb
