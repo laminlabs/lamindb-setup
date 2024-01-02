@@ -32,7 +32,6 @@ from ._hub_utils import (
     validate_schema_arg,
     validate_storage_root_arg,
 )
-from ._settings_store import user_settings_file_email
 
 
 def add_storage(root: str, account_id: UUID, hub: Client) -> UUID:
@@ -250,53 +249,18 @@ def get_lamin_site_base_url():
     return "https://lamin.ai"
 
 
-def sign_up_hub(email) -> Union[str, Tuple[str, str, str]]:
-    hub = connect_hub()
+def sign_up_local_hub(email) -> Union[str, Tuple[str, str, str]]:
+    # raises gotrue.errors.AuthApiError: User already registered
     password = secret()  # generate new password
     sign_up_kwargs = {"email": email, "password": password}
-    if os.getenv("LAMIN_ENV") != "local":
-        sign_up_kwargs["options"] = {
-            "redirect_to": f"{get_lamin_site_base_url()}/signup"
-        }
-    try:
-        # the only case we know when this errors is when the user already exists
-        auth_response = hub.auth.sign_up(sign_up_kwargs)
-    except Exception as e:
-        logger.error(e)
-        return "user-exists"
-    user = auth_response.user
-    # if user already exists a fake user object without identity is returned
-    if auth_response.user.identities:
-        # if user had called sign-up before, but not confirmed their email
-        # the user has an identity with a wrong ID
-        # we can check for it by comparing time stamps
-        # see design note uL8Sjht0y4qg
-        if user.confirmation_sent_at is not None:  # is None in local client
-            diff = user.confirmation_sent_at - user.identities[0].last_sign_in_at
-            if (
-                diff.total_seconds() > 0.1
-            ):  # the first time, this is on the order of microseconds
-                raise RuntimeError(
-                    "It seems you already signed up with this email. Please click on"
-                    " the link in the confirmation email that you should have received"
-                    " from lamin.ai."
-                )
-        logger.info(
-            "Please *confirm* the sign-up email. After that, login with `lamin login"
-            f" {email}`!\n\n"
-            f"Generated password: {password}\n"
-            f"Email & password are cached: {user_settings_file_email(email)}\n"  # noqa
-            "Going forward, credentials are auto-loaded! "  # noqa
-            "In case of loss, recover your password via email: https://lamin.ai"
-        )
-        return (
-            password,
-            auth_response.session.user.id,
-            auth_response.session.access_token,
-        )
-    else:
-        logger.error("user already exists! please login instead: `lamin login`")
-        return "user-exists"
+    client = connect_hub()
+    auth_response = client.auth.sign_up(sign_up_kwargs)
+    client.auth.sign_out()
+    return (
+        password,
+        auth_response.session.user.id,
+        auth_response.session.access_token,
+    )
 
 
 def _sign_in_hub(email: str, password: str, handle: Optional[str], client: Client):
