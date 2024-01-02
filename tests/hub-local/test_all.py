@@ -14,7 +14,7 @@ from lamindb_setup.dev._hub_core import (
     set_db_user,
     load_instance,
     sign_in_hub,
-    sign_up_hub,
+    sign_up_local_hub,
 )
 from lamindb_setup.dev._hub_crud import (
     sb_select_collaborator,
@@ -30,11 +30,11 @@ from lamindb_setup.dev._settings_save import save_user_settings
 from lamindb_setup.dev._settings_user import UserSettings
 
 
-def legacy_signup(email: str) -> Optional[str]:
+def sign_up_user(email: str) -> Optional[str]:
     """Sign up user."""
-    from lamindb_setup.dev._hub_core import sign_up_hub
+    from lamindb_setup.dev._hub_core import sign_up_local_hub
 
-    result_or_error = sign_up_hub(email)
+    result_or_error = sign_up_local_hub(email)
     if result_or_error == "user-exists":  # user already exists
         return "user-exists"
     user_settings = UserSettings(
@@ -54,7 +54,7 @@ def test_runs_locally():
 
 def test_incomplete_signup():
     email = "testuser-incomplete-signup@gmail.com"
-    response = sign_up_hub(email)
+    response = sign_up_local_hub(email)
     assert isinstance(response, tuple) and len(response) == 3
     response = sign_in_hub(email, response[0])
     assert response == "complete-signup"
@@ -63,7 +63,7 @@ def test_incomplete_signup():
 @pytest.fixture(scope="session")
 def create_testuser1_session():  # -> Tuple[Client, UserSettings]
     email = "testuser1@gmail.com"
-    response = legacy_signup(email)
+    response = sign_up_user(email)
     assert response is None
     account_id = ln_setup.settings.user.uuid.hex
     account = {
