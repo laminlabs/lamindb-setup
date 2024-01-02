@@ -250,20 +250,17 @@ def get_lamin_site_base_url():
 
 
 def sign_up_local_hub(email) -> Union[str, Tuple[str, str, str]]:
+    # raises gotrue.errors.AuthApiError: User already registered
     password = secret()  # generate new password
     sign_up_kwargs = {"email": email, "password": password}
     client = connect_hub()
     auth_response = client.auth.sign_up(sign_up_kwargs)
     client.auth.sign_out()
-    # if user already exists a fake user object without identity is returned
-    if auth_response.user.identities:
-        return (
-            password,
-            auth_response.session.user.id,
-            auth_response.session.access_token,
-        )
-    else:
-        return "user-exists"
+    return (
+        password,
+        auth_response.session.user.id,
+        auth_response.session.access_token,
+    )
 
 
 def _sign_in_hub(email: str, password: str, handle: Optional[str], client: Client):

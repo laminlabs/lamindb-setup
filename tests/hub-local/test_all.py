@@ -65,6 +65,10 @@ def create_testuser1_session():  # -> Tuple[Client, UserSettings]
     email = "testuser1@gmail.com"
     response = sign_up_user(email)
     assert response is None
+    # test repeated sign up
+    with pytest.raises(AuthApiError):
+        # test error with "User already registered"
+        sign_up_user(email)
     account_id = ln_setup.settings.user.uuid.hex
     account = {
         "id": account_id,
