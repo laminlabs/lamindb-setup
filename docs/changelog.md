@@ -3,7 +3,7 @@
 <!-- prettier-ignore -->
 Name | PR | Developer | Date | Version
 --- | --- | --- | --- | ---
-🎨 Write lamindb version to hub | [603](https://github.com/laminlabs/lamindb-setup/pull/603) | [falexwolf](https://github.com/falexwolf) | 2024-01-01 |
+🎨 Write lamindb version to hub | [603](https://github.com/laminlabs/lamindb-setup/pull/603) | [falexwolf](https://github.com/falexwolf) | 2024-01-01 | 0.63.0
 ♻️ Do no longer validate uniqueness sqlite | [604](https://github.com/laminlabs/lamindb-setup/pull/604) | [falexwolf](https://github.com/falexwolf) | 2023-12-31 |
 🐛 Fix bionty settings | [602](https://github.com/laminlabs/lamindb-setup/pull/602) | [falexwolf](https://github.com/falexwolf) | 2023-12-22 |
 ♻️ Adopt SQLite locker to id naming and move `exclusion/` inside `.lamindb/` | [601](https://github.com/laminlabs/lamindb-setup/pull/601) | [falexwolf](https://github.com/falexwolf) | 2023-12-21 | 0.62.0
