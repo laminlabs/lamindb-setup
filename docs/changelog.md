@@ -3,6 +3,7 @@
 <!-- prettier-ignore -->
 Name | PR | Developer | Date | Version
 --- | --- | --- | --- | ---
+🚚 Migrate foreign key constraint for new hub | [608](https://github.com/laminlabs/lamindb-setup/pull/608) | [falexwolf](https://github.com/falexwolf) | 2024-01-05 |
 💚 Upgrade to Python 3.10 | [607](https://github.com/laminlabs/lamindb-setup/pull/607) | [falexwolf](https://github.com/falexwolf) | 2024-01-05 |
 🚚 Prepare a potential migration of the hub to Django | [606](https://github.com/laminlabs/lamindb-setup/pull/606) | [falexwolf](https://github.com/falexwolf) | 2024-01-05 | 0.63.1
 ♻️ Refactor local sign up | [605](https://github.com/laminlabs/lamindb-setup/pull/605) | [falexwolf](https://github.com/falexwolf) | 2024-01-02 |
