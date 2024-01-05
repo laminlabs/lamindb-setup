@@ -1,5 +1,4 @@
 import os
-from pathlib import Path
 from subprocess import DEVNULL, getoutput, run
 
 
@@ -34,15 +33,7 @@ def create_and_set_local_supabase_env():
 
 def pytest_configure():
     create_and_set_local_supabase_env()
-    import laminhub_rest
-
-    run(
-        "lnhub alembic upgrade head",
-        shell=True,
-        env=os.environ,
-        cwd=Path(laminhub_rest.__file__).parent.parent,
-        check=True,
-    )
+    run("lnhub migrate deploy", shell=True, env=os.environ, check=True)
 
 
 def pytest_unconfigure():
