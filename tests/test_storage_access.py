@@ -3,7 +3,10 @@ from uuid import UUID
 import pytest
 import lamindb_setup as ln_setup
 from lamindb_setup.dev._hub_client import connect_hub_with_auth
-from lamindb_setup.dev._hub_crud import select_instance_by_owner_name
+from lamindb_setup.dev._hub_crud import (
+    sb_select_account_by_handle,
+    sb_select_instance_by_name,
+)
 
 
 def test_load_instance_with_public_storage():
@@ -17,13 +20,12 @@ def test_load_instance_with_public_storage():
     # upon load, it's determined that AWS_CREDENTIALS_PRESENT is False (because
     # this is run in an environment that doesn't have them)
     # Alex doesn't fully understand why we're testing the load from hub, here, but OK
-    hub = connect_hub_with_auth()
-    instance = select_instance_by_owner_name(
-        owner="laminlabs",
-        name=ln_setup.settings.instance.name,
-        client=hub,
+    client = connect_hub_with_auth()
+    account = sb_select_account_by_handle("laminlabs", client)
+    instance = sb_select_instance_by_name(
+        account["id"], ln_setup.settings.instance.name, client
     )
-    hub.auth.sign_out()
+    client.auth.sign_out()
     assert ln_setup.settings.instance.id == UUID(instance["id"])
     # test that AWS credentials are in fact not present
     assert not ln_setup.dev.upath.AWS_CREDENTIALS_PRESENT
