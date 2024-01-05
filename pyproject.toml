@@ -42,7 +42,6 @@ dev = [
     "nbproject-test>=0.4.3",
     "pandas",
     "sqlmodel==0.0.9",  # try to work around this
-    "lamin_vault",
 ]
 hub = [
     "faker",
