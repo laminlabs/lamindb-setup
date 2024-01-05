@@ -33,6 +33,10 @@ repos:
     rev: v2.6.2
     hooks:
       - id: prettier
+        exclude: |
+          (?x)(
+              .github/workflows/build.yml
+          )
   - repo: https://github.com/kynan/nbstripout
     rev: 0.3.9
     hooks:
