@@ -10,7 +10,7 @@ def select_instance_by_owner_name(
 ) -> Optional[Dict]:
     data = (
         client.table("instance")
-        .select("*, account!inner!fk_instance_account_id_account(*)")
+        .select("*, account!inner!instance_account_id_28936e8f_fk_account_id(*)")
         .eq("account.handle", owner)
         .eq("name", name)
         .execute()
