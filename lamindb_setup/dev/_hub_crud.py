@@ -8,14 +8,17 @@ def select_instance_by_owner_name(
     name: str,
     client: Client,
 ) -> Optional[Dict]:
-    data = (
-        client.table("instance")
-        .select("*, account!inner!instance_account_id_28936e8f_fk_account_id(*)")
-        .eq("account.handle", owner)
-        .eq("name", name)
-        .execute()
-        .data
-    )
+    try:
+        data = (
+            client.table("instance")
+            .select("*, account!inner!instance_account_id_28936e8f_fk_account_id(*)")
+            .eq("account.handle", owner)
+            .eq("name", name)
+            .execute()
+            .data
+        )
+    except Exception:
+        return None
     if len(data) == 0:
         return None
     return data[0]
