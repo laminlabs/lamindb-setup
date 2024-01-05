@@ -66,6 +66,7 @@ class settings:
         try:
             cls.instance
             return True
+        # this is implicit logic that catches if no instance is loaded
         except SystemExit:
             return False
 
