@@ -66,7 +66,7 @@ class settings:
         try:
             cls.instance
             return True
-        except RuntimeError:
+        except SystemExit:
             return False
 
 
