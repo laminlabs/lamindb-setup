@@ -1,7 +1,7 @@
 from pathlib import Path
 from typing import Optional
 from uuid import UUID, uuid4
-
+from lamin_utils import logger
 from pydantic.error_wrappers import ValidationError
 
 from ._settings_instance import InstanceSettings
@@ -35,14 +35,18 @@ def load_instance_settings(instance_settings_file: Optional[Path] = None):
     return isettings
 
 
-def load_or_create_user_settings():
+def load_or_create_user_settings() -> UserSettings:
     """Return current user settings."""
-    if not current_user_settings_file().exists():
-        global UserSettings
-        return UserSettings()
+    current_user_settings = current_user_settings_file()
+    if not current_user_settings.exists():
+        logger.warning("using anonymous user (to identify, call: lamin login)")
+        usettings = UserSettings(handle="anonymous", uid="00000000")
+        from ._settings_save import save_user_settings
+
+        save_user_settings(usettings)
     else:
-        settings = load_user_settings(current_user_settings_file())
-        return settings
+        usettings = load_user_settings(current_user_settings)
+    return usettings
 
 
 def load_user_settings(user_settings_file: Path):

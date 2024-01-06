@@ -44,6 +44,11 @@ jobs:
           - 'prod'
     timeout-minutes: 15
     steps:
+      - uses: aws-actions/configure-aws-credentials@v2
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: eu-central-1
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v4
         with:
@@ -104,6 +109,8 @@ jobs:
       - run: nox -s storage
         env:
           TEST_INSTANCE_PRIVATE_POSTGRES: ${{ secrets.TEST_INSTANCE_PRIVATE_POSTGRES }}
+          TMP_AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          TMP_AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
       - uses: actions/upload-artifact@v2
         with:
           name: coverage--storage
@@ -168,6 +175,11 @@ jobs:
     needs: prod-staging
     runs-on: ubuntu-latest
     steps:
+      - uses: aws-actions/configure-aws-credentials@v2
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: eu-central-1
       - uses: actions/checkout@v4
         with:
           submodules: recursive

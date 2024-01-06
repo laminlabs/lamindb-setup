@@ -1,4 +1,5 @@
 import nox
+import os
 from laminci.nox import build_docs, login_testuser1, login_testuser2, run_pre_commit
 
 nox.options.default_venv_backend = "none"
@@ -41,6 +42,9 @@ def install(session: nox.Session, group: str) -> None:
         )
         session.run(
             *"pip install git+https://github.com/laminlabs/lnschema-bionty".split()
+        )
+        session.run(
+            *"pip install git+https://github.com/laminlabs/lnschema-lamin1".split()
         )
         session.run(*"pip install -e .[aws,dev]".split())
         # need for CLI, but this is bad because it's downstream
@@ -97,8 +101,18 @@ def docs(session: nox.Session):
 
 @nox.session
 def storage(session: nox.Session):
+    # we need AWS to retrieve credentials for testuser1, but want to eliminate
+    # them after that
+    os.environ["AWS_ACCESS_KEY_ID"] = os.environ["TMP_AWS_ACCESS_KEY_ID"]
+    os.environ["AWS_SECRET_ACCESS_KEY"] = os.environ["TMP_AWS_SECRET_ACCESS_KEY"]
     login_testuser1(session)
-    session.run(*f"pytest {COVERAGE_ARGS} ./tests/test_storage_access.py".split())
+    # mimic anonymous access
+    del os.environ["AWS_ACCESS_KEY_ID"]
+    del os.environ["AWS_SECRET_ACCESS_KEY"]
+    session.run(
+        *f"pytest {COVERAGE_ARGS} ./tests/test_storage_access.py".split(),
+        env=os.environ,
+    )
 
 
 @nox.session
