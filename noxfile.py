@@ -1,4 +1,5 @@
 import nox
+import os
 from laminci.nox import build_docs, login_testuser1, login_testuser2, run_pre_commit
 
 nox.options.default_venv_backend = "none"
@@ -101,6 +102,9 @@ def docs(session: nox.Session):
 @nox.session
 def storage(session: nox.Session):
     login_testuser1(session)
+    # mimic anonymous access
+    del os.environ["AWS_ACCESS_KEY_ID"]
+    del os.environ["AWS_SECRET_ACCESS_KEY"]
     session.run(*f"pytest {COVERAGE_ARGS} ./tests/test_storage_access.py".split())
 
 
