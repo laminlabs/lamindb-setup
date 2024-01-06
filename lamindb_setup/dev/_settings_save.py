@@ -14,7 +14,6 @@ from .upath import UPath
 
 
 def save_user_settings(settings: UserSettings):
-    assert settings.email is not None
     type_hints = get_type_hints(UserSettingsStore)
     save_settings(settings, current_user_settings_file(), type_hints)
     if settings.email is not None:
