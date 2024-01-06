@@ -39,7 +39,7 @@ def load_or_create_user_settings() -> UserSettings:
     """Return current user settings."""
     current_user_settings = current_user_settings_file()
     if not current_user_settings.exists():
-        logger.warning("using anonymous user identity (log in to identify)")
+        logger.warning("using anonymous user (to identify: lamin login)")
         usettings = UserSettings(handle="anonymous", uid="00000000")
         from ._settings_save import save_user_settings
 
