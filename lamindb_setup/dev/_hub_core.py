@@ -190,7 +190,12 @@ def load_instance(
     owner: str,  # account_handle
     name: str,  # instance_name
 ) -> Union[Tuple[dict, dict], str]:
-    return call_with_fallback_auth(_load_instance, owner=owner, name=name)
+    from .._settings import settings
+
+    if settings.user.handle != "anonymous":
+        return call_with_fallback_auth(_load_instance, owner=owner, name=name)
+    else:
+        return call_with_fallback(_load_instance, owner=owner, name=name)
 
 
 def _load_instance(

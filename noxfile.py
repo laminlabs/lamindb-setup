@@ -97,7 +97,6 @@ def docs(session: nox.Session):
 
 @nox.session
 def storage(session: nox.Session):
-    login_testuser1(session)
     session.run(*f"pytest {COVERAGE_ARGS} ./tests/test_storage_access.py".split())
 
 

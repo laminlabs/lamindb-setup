@@ -47,7 +47,6 @@ def update_db_using_local(
                 db_dsn_local = LaminDsnModel(db=os.getenv("LAMINDB_INSTANCE_DB"))
             # read from a cached settings file
             elif settings_file.exists():
-                logger.important("loading db URL from local cache")
                 isettings = load_instance_settings(settings_file)
                 db_dsn_local = LaminDsnModel(db=isettings.db)
             else:
