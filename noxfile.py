@@ -105,7 +105,10 @@ def storage(session: nox.Session):
     # mimic anonymous access
     del os.environ["AWS_ACCESS_KEY_ID"]
     del os.environ["AWS_SECRET_ACCESS_KEY"]
-    session.run(*f"pytest {COVERAGE_ARGS} ./tests/test_storage_access.py".split())
+    session.run(
+        *f"pytest {COVERAGE_ARGS} ./tests/test_storage_access.py".split(),
+        env=os.environ,
+    )
 
 
 @nox.session
