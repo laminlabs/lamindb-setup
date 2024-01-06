@@ -43,9 +43,15 @@ def login(
     user: str,
     *,
     key: Optional[str] = None,
-    password: Optional[str] = None,
+    password: Optional[str] = None,  # for backward compat
 ) -> None:
-    """Log in user."""
+    """Log in user.
+
+    Args:
+        user: handle or email
+        key: API key or legacy passward
+        password: Backward compat, will be removed
+    """
     if "@" in user:
         email, handle = user, None
     else:

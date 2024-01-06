@@ -1,5 +1,5 @@
 from dataclasses import dataclass
-from typing import Union
+from typing import Optional
 from uuid import UUID
 
 
@@ -17,17 +17,17 @@ class UserSettings:
 
     email: str = None  # type: ignore
     """User email."""
-    password: Union[str, None] = None
-    """User password."""
-    access_token: Union[str, None] = None
+    password: Optional[str] = None
+    """API key or legacy password."""
+    access_token: Optional[str] = None
     """User access token."""
     uid: str = "null"
     """Universal user ID."""
-    uuid: Union[UUID, None] = None
+    uuid: Optional[UUID] = None
     """Lamin's internal universal user ID."""
-    handle: Union[str, None] = None
+    handle: Optional[str] = None
     """Unique handle."""
-    name: Union[str, None] = None
+    name: Optional[str] = None
     """Full name."""
 
     def __repr__(self):
@@ -41,6 +41,7 @@ class UserSettings:
 
     @property
     def id(self):
+        """Integer id valid in current intance."""
         from lnschema_core.users import current_user_id
 
         return current_user_id()
