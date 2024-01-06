@@ -7,7 +7,11 @@ from ._init_instance import register_user
 from ._settings import settings
 from .dev._settings_load import load_or_create_user_settings, load_user_settings
 from .dev._settings_save import save_user_settings
-from .dev._settings_store import user_settings_file_email, user_settings_file_handle
+from .dev._settings_store import (
+    user_settings_file_email,
+    user_settings_file_handle,
+    current_user_settings_file,
+)
 
 
 def load_user(
@@ -104,3 +108,11 @@ def login(
 
     settings._user_settings = None
     return None
+
+
+def logout():
+    if current_user_settings_file().exists():
+        current_user_settings_file().unlink()
+        logger.success("logged out")
+    else:
+        logger.important("already logged out")
