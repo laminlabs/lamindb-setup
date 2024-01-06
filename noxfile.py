@@ -101,6 +101,10 @@ def docs(session: nox.Session):
 
 @nox.session
 def storage(session: nox.Session):
+    # we need AWS to retrieve credentials for testuser1, but want to eliminate
+    # them after that
+    os.environ["AWS_ACCESS_KEY_ID"] = os.environ["TMP_AWS_ACCESS_KEY_ID"]
+    os.environ["AWS_SECRET_ACCESS_KEY"] = os.environ["TMP_AWS_SECRET_ACCESS_KEY"]
     login_testuser1(session)
     # mimic anonymous access
     del os.environ["AWS_ACCESS_KEY_ID"]
