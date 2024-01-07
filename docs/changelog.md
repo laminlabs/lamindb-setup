@@ -3,7 +3,7 @@
 <!-- prettier-ignore -->
 Name | PR | Developer | Date | Version
 --- | --- | --- | --- | ---
-🚸 Add anonymous access (now works without login) | [610](https://github.com/laminlabs/lamindb-setup/pull/610) | [falexwolf](https://github.com/falexwolf) | 2024-01-06 |
+🚸 Add anonymous access (now works without login) | [610](https://github.com/laminlabs/lamindb-setup/pull/610) | [falexwolf](https://github.com/falexwolf) | 2024-01-06 | 0.64.0
 💚 Fix tests in local hub | [609](https://github.com/laminlabs/lamindb-setup/pull/609) | [falexwolf](https://github.com/falexwolf) | 2024-01-05 |
 🚚 Migrate foreign key constraint for new hub | [608](https://github.com/laminlabs/lamindb-setup/pull/608) | [falexwolf](https://github.com/falexwolf) | 2024-01-05 |
 💚 Upgrade to Python 3.10 | [607](https://github.com/laminlabs/lamindb-setup/pull/607) | [falexwolf](https://github.com/falexwolf) | 2024-01-05 |
