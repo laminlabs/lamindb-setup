@@ -159,6 +159,8 @@ def load(
             if _raise_not_reachable_error:
                 raise RuntimeError(error_message)
             return "instance-not-reachable"
+        # mimic instance_result from hub
+        instance_result = {"id": isettings.id.hex}
 
     if storage is not None:
         update_isettings_with_storage(isettings, storage)
