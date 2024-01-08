@@ -100,13 +100,13 @@ def setup_django(
     from django.core.management import call_command
 
     # configuration
+    default_db = dj_database_url.config(
+        default=isettings.db,
+        # see comment next to patching BaseDatabaseWrapper below
+        conn_max_age=CONN_MAX_AGE,
+        conn_health_checks=True,
+    )
     if not settings.configured:
-        default_db = dj_database_url.config(
-            default=isettings.db,
-            # see comment next to patching BaseDatabaseWrapper below
-            conn_max_age=CONN_MAX_AGE,
-            conn_health_checks=True,
-        )
         DATABASES = {
             "default": default_db,
         }
@@ -144,10 +144,16 @@ def setup_django(
             )
         settings.configure(**kwargs)
         django.setup(set_prefix=False)
-        # https://laminlabs.slack.com/archives/C04FPE8V01W/p1698239551460289
-        from django.db.backends.base.base import BaseDatabaseWrapper
+    else:
+        from django.db import connections
 
-        BaseDatabaseWrapper.close_if_health_check_failed = close_if_health_check_failed
+        # compare this with add_db_connection in lamindb._registry
+        connections.settings["default"] = default_db
+
+    # https://laminlabs.slack.com/archives/C04FPE8V01W/p1698239551460289
+    from django.db.backends.base.base import BaseDatabaseWrapper
+
+    BaseDatabaseWrapper.close_if_health_check_failed = close_if_health_check_failed
 
     if configure_only:
         return None
