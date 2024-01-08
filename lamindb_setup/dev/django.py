@@ -78,7 +78,7 @@ def get_migrations_to_sync():
 def close_if_health_check_failed(self) -> None:
     if self.close_at is not None and time.monotonic() >= self.close_at:
         self.close()
-        self.close_at = time.monotonic() + CONN_MAX_AGE
+    self.close_at = time.monotonic() + CONN_MAX_AGE
 
 
 # this bundles set up and migration management
