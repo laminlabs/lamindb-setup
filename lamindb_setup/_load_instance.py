@@ -100,8 +100,12 @@ def load(
     owner, name = get_owner_name_from_identifier(identifier)
 
     # compare normalized identifier with a potentially previously loaded identifier
-    if settings._instance_exists and f"{owner}/{name}" != settings.instance.identifier:
-        close_instance(mute=True)
+    if settings._instance_exists:
+        if f"{owner}/{name}" == settings.instance.identifier:
+            logger.important(f"instance already loaded: {settings.instance.identifier}")
+            return None
+        else:
+            close_instance()
 
     settings_file = instance_settings_file(name, owner)
 

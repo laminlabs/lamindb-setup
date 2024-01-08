@@ -182,7 +182,7 @@ def setup_django(
     else:
         if init:
             # create migrations
-            call_command("migrate", verbosity=0)
+            call_command("migrate", verbosity=2)
         else:
             status, latest_migrs = get_migrations_to_sync()
             if status == "synced":
@@ -206,6 +206,7 @@ def setup_django(
     current_instance_settings_file().unlink()
     if current_settings_file_existed:
         shutil.copy(current_settings_file.with_name("_tmp.env"), current_settings_file)
+        current_settings_file.with_name("_tmp.env").unlink()
 
     global IS_SETUP
     IS_SETUP = True
