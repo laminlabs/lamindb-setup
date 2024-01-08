@@ -3,12 +3,14 @@ import builtins
 import os
 from pathlib import Path
 import shutil
+import time
 from lamin_utils import logger
 from ._settings_store import current_instance_settings_file
 from ._settings_instance import InstanceSettings
 
 IS_RUN_FROM_IPYTHON = getattr(builtins, "__IPYTHON__", False)
 IS_SETUP = False
+CONN_MAX_AGE = 299
 MISSING_MIGRATIONS_WARNING = """
 
 Your database is not up to date with your installed Python library.
@@ -73,6 +75,12 @@ def get_migrations_to_sync():
     return status, latest_migrs
 
 
+def close_if_health_check_failed(self) -> None:
+    if self.close_at is not None and time.monotonic() >= self.close_at:
+        self.close()
+        self.close_at = time.monotonic() + CONN_MAX_AGE
+
+
 # this bundles set up and migration management
 def setup_django(
     isettings: InstanceSettings,
@@ -94,9 +102,8 @@ def setup_django(
     if not settings.configured:
         default_db = dj_database_url.config(
             default=isettings.db,
-            # https://laminlabs.slack.com/archives/C04FPE8V01W/p1698239551460289
-            # assuming postgres terminates a connection after 299s
-            conn_max_age=299,
+            # see comment next to patching BaseDatabaseWrapper below
+            conn_max_age=CONN_MAX_AGE,
             conn_health_checks=True,
         )
         DATABASES = {
@@ -136,6 +143,10 @@ def setup_django(
             )
         settings.configure(**kwargs)
         django.setup(set_prefix=False)
+        # https://laminlabs.slack.com/archives/C04FPE8V01W/p1698239551460289
+        from django.db.backends.base.base import BaseDatabaseWrapper
+
+        BaseDatabaseWrapper.close_if_health_check_failed = close_if_health_check_failed
 
     if configure_only:
         return None
