@@ -29,7 +29,7 @@ MODELS = {
         "ExperimentalFactor": False,
         "DevelopmentalStage": False,
         "Ethnicity": False,
-        "PublicSource": False,
+        "BiontySource": False,
     },
     "lamin1": {
         "ExperimentType": False,
