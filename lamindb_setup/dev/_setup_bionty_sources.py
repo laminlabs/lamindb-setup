@@ -3,13 +3,13 @@ from django.db.utils import OperationalError, ProgrammingError
 
 
 def write_bionty_sources(isettings: InstanceSettings) -> None:
-    """Write bionty sources to PublicSource table."""
+    """Write bionty sources to BiontySource table."""
     if "bionty" not in isettings.schema:
         return None
     import shutil
     from bionty.dev._handle_sources import parse_sources_yaml
     import bionty as bt
-    from lnschema_bionty.models import PublicSource
+    from lnschema_bionty.models import BiontySource
 
     shutil.copy(bt.settings.current_sources, bt.settings.lamindb_sources)
 
@@ -38,14 +38,14 @@ def write_bionty_sources(isettings: InstanceSettings) -> None:
 
         # when the database is not yet migrated but setup is updated
         # won't need this once lamindb is released with the new pin
-        if hasattr(PublicSource, "species") and "organism" in kwargs:
+        if hasattr(BiontySource, "species") and "organism" in kwargs:
             kwargs["species"] = kwargs.pop("organism")
-        elif hasattr(PublicSource, "organism") and "species" in kwargs:
+        elif hasattr(BiontySource, "organism") and "species" in kwargs:
             kwargs["organism"] = kwargs.pop("species")
-        record = PublicSource(**kwargs)
+        record = BiontySource(**kwargs)
         all_records.append(record)
 
-    PublicSource.objects.bulk_create(all_records, ignore_conflicts=True)
+    BiontySource.objects.bulk_create(all_records, ignore_conflicts=True)
 
 
 def load_bionty_sources(isettings: InstanceSettings):
@@ -56,11 +56,11 @@ def load_bionty_sources(isettings: InstanceSettings):
     import bionty as bt
     from bionty.dev._handle_sources import parse_currently_used_sources
     from bionty.dev._io import write_yaml
-    from lnschema_bionty.models import PublicSource
+    from lnschema_bionty.models import BiontySource
 
     try:
         # need try except because of integer primary key migration
-        active_records = PublicSource.objects.filter(currently_used=True).all().values()
+        active_records = BiontySource.objects.filter(currently_used=True).all().values()
         write_yaml(
             parse_currently_used_sources(active_records), bt.settings.lamindb_sources
         )
