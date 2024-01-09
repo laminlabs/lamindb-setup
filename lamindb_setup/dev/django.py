@@ -181,11 +181,7 @@ def setup_django(
         isettings._update_cloud_sqlite_file(unlock_cloud_sqlite=False)
     else:
         if init:
-            # create migrations
-            from django.db.migrations.executor import MigrationExecutor
-
-            MigrationExecutor(connections["default"]).loader.applied_migrations = {}
-            call_command("migrate", verbosity=2)
+            call_command("migrate", verbosity=0)
         else:
             status, latest_migrs = get_migrations_to_sync()
             if status == "synced":
