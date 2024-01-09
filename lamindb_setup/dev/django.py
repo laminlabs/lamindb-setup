@@ -96,6 +96,7 @@ def setup_django(
 
     import dj_database_url
     import django
+    from django.db import connections
     from django.conf import settings
     from django.core.management import call_command
 
@@ -144,11 +145,10 @@ def setup_django(
             )
         settings.configure(**kwargs)
         django.setup(set_prefix=False)
-    else:
-        from django.db import connections
 
-        # compare this with add_db_connection in lamindb._registry
-        connections.settings["default"] = default_db
+    # compare this with add_db_connection in lamindb._registry
+    # is used to update the default connection string
+    connections.settings["default"] = default_db
 
     # https://laminlabs.slack.com/archives/C04FPE8V01W/p1698239551460289
     from django.db.backends.base.base import BaseDatabaseWrapper
@@ -182,6 +182,9 @@ def setup_django(
     else:
         if init:
             # create migrations
+            from django.db.migrations.executor import MigrationExecutor
+
+            MigrationExecutor(connections["default"]).loader.applied_migrations = {}
             call_command("migrate", verbosity=2)
         else:
             status, latest_migrs = get_migrations_to_sync()
