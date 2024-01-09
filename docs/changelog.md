@@ -3,6 +3,7 @@
 <!-- prettier-ignore -->
 Name | PR | Developer | Date | Version
 --- | --- | --- | --- | ---
+Revert "🚚 Rename .bionty to .public" | [614](https://github.com/laminlabs/lamindb-setup/pull/614) | [falexwolf](https://github.com/falexwolf) | 2024-01-09 |
 🚚 Rename .bionty to .public | [613](https://github.com/laminlabs/lamindb-setup/pull/613) | [sunnyosun](https://github.com/sunnyosun) | 2024-01-09 |
 🚸 Fix connection timeout | [611](https://github.com/laminlabs/lamindb-setup/pull/611) | [falexwolf](https://github.com/falexwolf) | 2024-01-08 |
 🚸 Add anonymous access (now works without login) | [610](https://github.com/laminlabs/lamindb-setup/pull/610) | [falexwolf](https://github.com/falexwolf) | 2024-01-06 | 0.64.0
