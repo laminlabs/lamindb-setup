@@ -1,8 +1,8 @@
 import os
 
 import pytest
-from laminhub_rest.routers.collaborator import delete_collaborator
-from laminhub_rest.routers.instance import add_collaborator
+from laminhub_rest.core.collaborator._add_collaborator import add_collaborator
+from laminhub_rest.core.collaborator._delete_collaborator import delete_collaborator
 
 import lamindb_setup as ln_setup
 from lamindb_setup.dev._hub_client import connect_hub_with_auth
@@ -29,13 +29,13 @@ def test_load_after_revoked_access():
         ln_setup.login(
             "static-testuser1@lamin.ai", password="static-testuser1-password"
         )
-        admin_token = ln_setup.settings.user.access_token
+        admin_hub = connect_hub_with_auth()
         add_collaborator(
             "static-testuser2",
             "laminlabs",
             "static-testinstance1",
             "write",
-            f"Bearer {admin_token}",
+            admin_hub,
         )
         ln_setup.login(
             "static-testuser2@lamin.ai", password="static-testuser2-password"
@@ -46,7 +46,7 @@ def test_load_after_revoked_access():
             "laminlabs",
             "static-testinstance1",
             ln_setup.settings.user.uuid,
-            f"Bearer {admin_token}",
+            admin_hub,
         )
         with pytest.raises(RuntimeError) as error:
             ln_setup.load("https://lamin.ai/laminlabs/static-testinstance1", _test=True)
