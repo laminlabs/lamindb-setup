@@ -412,8 +412,9 @@ def create_path(pathlike: Union[str, Path, UPath]) -> UPath:
     else:
         raise ValueError("pathlike should be of type Union[str, Path, UPath]")
 
-    # ensures there's no trailing slash for directories
-    path = UPath(path.as_posix().rstrip("/"))
+    # remove trailing slash
+    if path._parts[-1] == "":
+        path._parts = path._parts[:-1]
 
     if isinstance(path, S3Path):
         path = UPath(path, cache_regions=True)
