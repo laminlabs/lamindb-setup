@@ -3,6 +3,7 @@
 <!-- prettier-ignore -->
 Name | PR | Developer | Date | Version
 --- | --- | --- | --- | ---
+🐛 Fix option inheritance in create_path and add tests | [617](https://github.com/laminlabs/lamindb-setup/pull/617) | [Koncopd](https://github.com/Koncopd) | 2024-01-12 |
 ✅ Update tests relying on laminhub-rest | [616](https://github.com/laminlabs/lamindb-setup/pull/616) | [fredericenard](https://github.com/fredericenard) | 2024-01-12 |
 🚚 Rename .bionty to .public | [615](https://github.com/laminlabs/lamindb-setup/pull/615) | [sunnyosun](https://github.com/sunnyosun) | 2024-01-10 | 0.64.2
 🚸 Fix connection timeout | [611](https://github.com/laminlabs/lamindb-setup/pull/611) | [falexwolf](https://github.com/falexwolf) | 2024-01-08 | 0.64.1
