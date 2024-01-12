@@ -3,6 +3,7 @@
 <!-- prettier-ignore -->
 Name | PR | Developer | Date | Version
 --- | --- | --- | --- | ---
+✅ Update tests relying on laminhub-rest | [616](https://github.com/laminlabs/lamindb-setup/pull/616) | [fredericenard](https://github.com/fredericenard) | 2024-01-12 |
 🚚 Rename .bionty to .public | [615](https://github.com/laminlabs/lamindb-setup/pull/615) | [sunnyosun](https://github.com/sunnyosun) | 2024-01-10 | 0.64.2
 🚸 Fix connection timeout | [611](https://github.com/laminlabs/lamindb-setup/pull/611) | [falexwolf](https://github.com/falexwolf) | 2024-01-08 | 0.64.1
 🚸 Add anonymous access (now works without login) | [610](https://github.com/laminlabs/lamindb-setup/pull/610) | [falexwolf](https://github.com/falexwolf) | 2024-01-06 | 0.64.0
