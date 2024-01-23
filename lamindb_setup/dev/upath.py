@@ -225,7 +225,7 @@ def modified(self) -> Optional[datetime]:
 
 # adapted from: https://stackoverflow.com/questions/9727673
 def view_tree(
-    path: Union[str, Path, UPath] = None,
+    path: Path,
     *,
     level: int = -1,
     only_dirs: bool = False,
@@ -273,7 +273,6 @@ def view_tree(
     last = "└── "
     max_files_per_dir_per_type = 7
 
-    dir_path = create_path(path)  # returns Path for local
     n_files = 0
     n_directories = 0
 
@@ -304,19 +303,19 @@ def view_tree(
             contents = [d for d in contents if d.is_dir()]
         pointers = [tee] * (len(contents) - 1) + [last]
         n_files_per_dir_per_type = defaultdict(lambda: 0)  # type: ignore
-        for pointer, path in zip(pointers, contents):
-            if path.is_dir():
-                if include_dirs and path not in include_dirs:
+        for pointer, child_path in zip(pointers, contents):
+            if child_path.is_dir():
+                if include_dirs and child_path not in include_dirs:
                     continue
-                yield prefix + pointer + path.name
+                yield prefix + pointer + child_path.name
                 n_directories += 1
                 n_files_per_dir_per_type = defaultdict(lambda: 0)
                 extension = branch if pointer == tee else space
-                yield from inner(path, prefix=prefix + extension, level=level - 1)
+                yield from inner(child_path, prefix=prefix + extension, level=level - 1)
             elif not only_dirs:
-                if include_paths and path not in include_paths:
+                if include_paths and child_path not in include_paths:
                     continue
-                suffix = extract_suffix_from_path(path)
+                suffix = extract_suffix_from_path(child_path)
                 suffixes.add(suffix)
                 n_files_per_dir_per_type[suffix] += 1
                 n_files += 1
@@ -325,10 +324,10 @@ def view_tree(
                 elif n_files_per_dir_per_type[suffix] > max_files_per_dir_per_type:
                     continue
                 else:
-                    yield prefix + pointer + path.name
+                    yield prefix + pointer + child_path.name
 
     folder_tree = ""
-    iterator = inner(dir_path, level=level)
+    iterator = inner(path, level=level)
     for line in islice(iterator, limit):
         folder_tree += f"\n{line}"
     if next(iterator, None):
@@ -337,7 +336,7 @@ def view_tree(
     display_suffixes = ", ".join([f"{suffix!r}" for suffix in suffixes])
     suffix_message = f" with suffixes {display_suffixes}" if n_files > 0 else ""
     message = (
-        f"{dir_path.name} ({n_directories} sub-{directory_info} &"
+        f"{path.name} ({n_directories} sub-{directory_info} &"
         f" {n_files} files{suffix_message}): {folder_tree}"
     )
     logger.print(message)
