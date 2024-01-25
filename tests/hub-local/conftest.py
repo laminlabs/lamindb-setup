@@ -1,9 +1,9 @@
 import os
 from subprocess import DEVNULL, getoutput, run
+import lamindb_setup
 
 
 # this function is duplicated across laminhub-rest and lamindb-setup
-#
 def create_and_set_local_supabase_env():
     start_supabase = """supabase start -x realtime,storage-api,imgproxy,pgadmin-schema-diff,migra,postgres-meta,studio,edge-runtime,logflare,vector,pgbouncer"""  # noqa
     # unfortunately, supabase status -o env does not work with
@@ -41,6 +41,7 @@ def create_and_set_local_supabase_env():
 def pytest_configure():
     create_and_set_local_supabase_env()
     run("lnhub migrate deploy", shell=True, env=os.environ, check=True)
+    lamindb_setup._TESTING = True
 
 
 def pytest_unconfigure():

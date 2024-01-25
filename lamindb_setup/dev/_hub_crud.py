@@ -2,6 +2,7 @@ from postgrest.exceptions import APIError
 from supabase.client import Client
 from supafunc.errors import FunctionsRelayError, FunctionsHttpError
 from typing import Optional, Dict
+import lamindb_setup
 from lamin_utils import logger
 import os
 
@@ -9,7 +10,7 @@ import os
 def access_aws(client: Client):
     response = None
     try:
-        response = client.functions.invoke("hello-world")
+        response = client.functions.invoke("access-aws")
     except (FunctionsRelayError, FunctionsHttpError) as exception:
         err = exception.to_dict()
         logger.warning(err.get("message"))
@@ -18,6 +19,8 @@ def access_aws(client: Client):
         os.environ["AWS_ACCESS_KEY_ID"] = credentials["AccessKeyId"]
         os.environ["AWS_SECRET_ACCESS_KEY"] = credentials["SecretAccessKey"]
         os.environ["AWS_SESSION_TOKEN"] = credentials["SessionToken"]
+    elif lamindb_setup._TESTING:
+        raise RuntimeError("access-aws errored")
 
 
 def select_instance_by_owner_name(
