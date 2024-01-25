@@ -5,7 +5,7 @@ import lamindb_setup
 
 # this function is duplicated across laminhub-rest and lamindb-setup
 def create_and_set_local_supabase_env():
-    start_supabase = """supabase start -x realtime,storage-api,imgproxy,pgadmin-schema-diff,migra,postgres-meta,studio,edge-runtime,logflare,vector,pgbouncer"""  # noqa
+    start_supabase = """supabase start -x realtime,storage-api,imgproxy,pgadmin-schema-diff,migra,postgres-meta,studio,logflare,vector,pgbouncer"""  # noqa
     # unfortunately, supabase status -o env does not work with
     # a reduced number of containers (running supabase CLI version 1.38.6 & 1.96.4)
     # hence, we need this ugly regex
