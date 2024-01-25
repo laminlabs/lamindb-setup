@@ -2,19 +2,22 @@ from postgrest.exceptions import APIError
 from supabase.client import Client
 from supafunc.errors import FunctionsRelayError, FunctionsHttpError
 from typing import Optional, Dict
+from lamin_utils import logger
 import os
 
 
 def access_aws(client: Client):
+    response = None
     try:
         response = client.functions.invoke("hello-world")
     except (FunctionsRelayError, FunctionsHttpError) as exception:
         err = exception.to_dict()
-        print(err.get("message"))
-    credentials = response["Credentials"]
-    os.environ["AWS_ACCESS_KEY_ID"] = credentials["AccessKeyId"]
-    os.environ["AWS_SECRET_ACCESS_KEY"] = credentials["SecretAccessKey"]
-    os.environ["AWS_SESSION_TOKEN"] = credentials["SessionToken"]
+        logger.warning(err.get("message"))
+    if response is not None:
+        credentials = response["Credentials"]
+        os.environ["AWS_ACCESS_KEY_ID"] = credentials["AccessKeyId"]
+        os.environ["AWS_SECRET_ACCESS_KEY"] = credentials["SecretAccessKey"]
+        os.environ["AWS_SESSION_TOKEN"] = credentials["SessionToken"]
 
 
 def select_instance_by_owner_name(

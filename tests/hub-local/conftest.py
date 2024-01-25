@@ -30,6 +30,13 @@ def create_and_set_local_supabase_env():
         else:
             print(f"WARNING: env variable {key} is already set to {os.environ[key]}")
 
+    run(
+        "supabase functions serve access-aws --env-file ./supabase/.env.local &",
+        shell=True,
+        env=os.environ,
+        check=True,
+    )
+
 
 def pytest_configure():
     create_and_set_local_supabase_env()
