@@ -10,6 +10,7 @@ from ._hub_client import (
     call_with_fallback,
 )
 from ._hub_crud import (
+    access_aws,
     select_instance_by_owner_name,
     sb_insert_collaborator,
     sb_insert_instance,
@@ -140,6 +141,7 @@ def _init_instance(
         },
         client,
     )
+    access_aws(client)
     return id
 
 
@@ -240,6 +242,7 @@ def _load_instance(
         instance["db"] = db_dsn
     # get default storage
     storage = sb_select_storage(instance["storage_id"], client)
+    access_aws(client)
     if storage is None:
         return "storage-does-not-exist-on-hub"
     return instance, storage
