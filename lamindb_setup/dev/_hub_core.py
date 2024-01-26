@@ -101,7 +101,7 @@ def _init_instance(
     # get storage and add if not yet there
     storage_id = add_storage(
         storage=storage,
-        account_id=usettings.uuid.hex,
+        account_id=usettings.uuid,
         hub=client,
     )
     instance = sb_select_instance_by_name(usettings.uuid, name, client)
