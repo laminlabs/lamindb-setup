@@ -36,15 +36,18 @@ def register_storage(ssettings: StorageSettings):
     from lnschema_core.models import Storage
     from lnschema_core.users import current_user_id
 
+    defaults = dict(
+        root=ssettings.root_as_str,
+        type=ssettings.type,
+        region=ssettings.region,
+        created_by_id=current_user_id(),
+    )
+    if ssettings._uid is not None:
+        defaults["uid"] = ssettings._uid
+
     storage, created = Storage.objects.update_or_create(
         root=ssettings.root_as_str,
-        defaults=dict(
-            uid=ssettings._uid,  # we want to pass None here
-            root=ssettings.root_as_str,
-            type=ssettings.type,
-            region=ssettings.region,
-            created_by_id=current_user_id(),
-        ),
+        defaults=defaults,
     )
     if created:
         logger.save(f"saved: {storage}")
