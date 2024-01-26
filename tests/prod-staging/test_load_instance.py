@@ -11,69 +11,72 @@ from lamindb_setup.dev._hub_crud import sb_update_instance
 
 def test_load_remote_instance():
     ln_setup.login("testuser1")
-    ln_setup.delete("lndb-setup-ci", force=True)
-    ln_setup.init(storage="s3://lndb-setup-ci", _test=True)
-    ln_setup.load("testuser1/lndb-setup-ci", _test=True)
+    ln_setup.delete("load_remote_instance", force=True)
+    ln_setup.init(storage="s3://lamindb-ci/load_remote_instance", _test=True)
+    ln_setup.load("testuser1/lamindb-ci", _test=True)
     assert ln_setup.settings.instance.id is not None
     assert ln_setup.settings.instance.storage.is_cloud
-    assert ln_setup.settings.instance.storage.root_as_str == "s3://lndb-setup-ci"
+    assert (
+        ln_setup.settings.instance.storage.root_as_str
+        == "s3://lamindb-ci/load_remote_instance"
+    )
     assert (
         ln_setup.settings.instance._sqlite_file.as_posix()
-        == f"s3://lndb-setup-ci/{ln_setup.settings.instance.id.hex}.lndb"
+        == f"s3://lamindb-ci/load_remote_instance/{ln_setup.settings.instance.id.hex}.lndb"  # noqa
     )
 
 
 def test_load_after_revoked_access():
     # can't currently test this on staging as I'm missing the accounts
     if os.getenv("LAMIN_ENV") == "prod":
-        try:
-            ln_setup.login(
-                "static-testuser1@lamin.ai", password="static-testuser1-password"
+        ln_setup.login("testuser1@lamin.ai")
+        admin_hub = connect_hub_with_auth()
+        add_collaborator(
+            "testuser2",
+            "laminlabs",
+            "static-test-instance-private-sqlite",
+            "write",
+            admin_hub,
+        )
+        ln_setup.login("testuser2@lamin.ai")
+        ln_setup.load(
+            "https://lamin.ai/laminlabs/static-test-instance-private-sqlite", _test=True
+        )
+        assert (
+            ln_setup.settings.instance.storage.root_as_str
+            == "s3://lamindb-setup-private-bucket"
+        )
+        delete_collaborator(
+            "laminlabs",
+            "static-test-instance-private-sqlite",
+            ln_setup.settings.user.uuid,
+            admin_hub,
+        )
+        # make the instance private
+        with pytest.raises(RuntimeError) as error:
+            ln_setup.load(
+                "https://lamin.ai/laminlabs/static-test-instance-private-sqlite",
+                _test=True,
             )
-            admin_hub = connect_hub_with_auth()
-            add_collaborator(
-                "static-testuser2",
-                "laminlabs",
-                "static-testinstance1",
-                "write",
-                admin_hub,
-            )
-            ln_setup.login(
-                "static-testuser2@lamin.ai", password="static-testuser2-password"
-            )
-            ln_setup.load("https://lamin.ai/laminlabs/static-testinstance1", _test=True)
-            assert (
-                ln_setup.settings.instance.storage.root_as_str == "s3://lndb-setup-ci"
-            )
-        finally:
-            delete_collaborator(
-                "laminlabs",
-                "static-testinstance1",
-                ln_setup.settings.user.uuid,
-                admin_hub,
-            )
-            with pytest.raises(RuntimeError) as error:
-                ln_setup.load(
-                    "https://lamin.ai/laminlabs/static-testinstance1", _test=True
-                )
-            assert (
-                error.exconly()
-                == "RuntimeError: Instance laminlabs/static-testinstance1 not"
-                " loadable from hub with response: 'instance-not-reachable'.\nCheck"
-                " whether instance exists and you have access:"
-                " https://lamin.ai/laminlabs/static-testinstance1?tab=collaborators"
-            )
+        assert (
+            error.exconly() == "RuntimeError: Instance"
+            " laminlabs/static-test-instance-private-sqlite not"
+            " loadable from hub with response: 'instance-not-reachable'.\nCheck"
+            " whether instance exists and you have access:"
+            " https://lamin.ai/laminlabs/static-test-instance-private-sqlite?tab=collaborators"  # noqa
+        )
 
 
 def test_load_after_private_public_switch():
     # can't currently test this on staging as I'm missing the accounts
     if os.getenv("LAMIN_ENV") == "prod":
-        ln_setup.login(
-            "static-testuser1@lamin.ai", password="static-testuser1-password"
+        # this assumes that testuser1 is an admin of static-test-instance-private-sqlite
+        ln_setup.login("testuser1@lamin.ai")
+        ln_setup.load(
+            "https://lamin.ai/laminlabs/static-test-instance-private-sqlite", _test=True
         )
-        ln_setup.load("https://lamin.ai/laminlabs/static-testinstance1", _test=True)
         admin_hub = connect_hub_with_auth()
-        # make the instance public
+        # make the instance private
         sb_update_instance(
             instance_id=ln_setup.settings.instance.id,
             instance_fields={"public": False},
@@ -82,7 +85,10 @@ def test_load_after_private_public_switch():
         # attempt to load instance with non-collaborator user
         ln_setup.login("testuser2")
         with pytest.raises(RuntimeError):
-            ln_setup.load("https://lamin.ai/laminlabs/static-testinstance1", _test=True)
+            ln_setup.load(
+                "https://lamin.ai/laminlabs/static-test-instance-private-sqlite",
+                _test=True,
+            )
         # make the instance public
         sb_update_instance(
             instance_id=ln_setup.settings.instance.id,
@@ -90,7 +96,9 @@ def test_load_after_private_public_switch():
             client=admin_hub,
         )
         # load instance with non-collaborator user, should work now
-        ln_setup.load("https://lamin.ai/laminlabs/static-testinstance1", _test=True)
+        ln_setup.load(
+            "https://lamin.ai/laminlabs/static-test-instance-private-sqlite", _test=True
+        )
         # make the instance private again
         sb_update_instance(
             instance_id=ln_setup.settings.instance.id,

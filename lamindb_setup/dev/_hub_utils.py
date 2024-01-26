@@ -41,7 +41,8 @@ def get_storage_region(storage_root: Union[str, Path, UPath]) -> Optional[str]:
         from botocore.config import Config
         from botocore.exceptions import NoCredentialsError
 
-        bucket = storage_root_str.replace("s3://", "")
+        # strip the prefix and any suffixes of the bucket name
+        bucket = storage_root_str.replace("s3://", "").split("/")[0]
         s3_session = session.get_session()
         s3_client = s3_session.create_client("s3")
         try:

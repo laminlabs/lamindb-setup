@@ -89,7 +89,7 @@ def test_init_instance_postgres_custom_name():
 
 
 def test_init_instance_cloud_aws_us():
-    ln_setup.init(storage="s3://lndb-setup-ci", _test=True)
+    ln_setup.init(storage="s3://lamindb-ci/init_instance_cloud_aws_us", _test=True)
     hub = connect_hub_with_auth()
     account = sb_select_account_by_handle(
         handle=ln_setup.settings.instance.owner, client=hub
@@ -101,12 +101,18 @@ def test_init_instance_cloud_aws_us():
     )
     assert ln_setup.settings.instance.id == UUID(instance["id"])
     assert ln_setup.settings.storage.is_cloud
-    assert str(ln_setup.settings.storage.root) == "s3://lndb-setup-ci/"
-    assert ln_setup.settings.storage.root_as_str == "s3://lndb-setup-ci"
-    assert ln_setup.settings.storage.region == "us-east-1"
+    assert (
+        str(ln_setup.settings.storage.root)
+        == "s3://lamindb-ci/init_instance_cloud_aws_us"
+    )
+    assert (
+        ln_setup.settings.storage.root_as_str
+        == "s3://lamindb-ci/init_instance_cloud_aws_us"
+    )
+    assert ln_setup.settings.storage.region == "us-west-1"
     assert (
         str(ln_setup.settings.instance._sqlite_file)
-        == f"s3://lndb-setup-ci/{ln_setup.settings.instance.id.hex}.lndb"
+        == f"s3://lamindb-ci/init_instance_cloud_aws_us/{ln_setup.settings.instance.id.hex}.lndb"  # noqa
     )
 
 
@@ -114,12 +120,12 @@ def test_init_instance_cloud_aws_europe():
     # do the same for an S3 bucket in Europe
     ln_setup.init(
         storage="s3://lndb-setup-ci-eu-central-1",
-        name="lndb-setup-ci-europe",
+        name="lamindb-ci-europe",
         _test=True,
     )
     assert ln_setup.settings.instance._id is not None
     assert ln_setup.settings.storage.region == "eu-central-1"
-    assert ln_setup.settings.instance.name == "lndb-setup-ci-europe"
+    assert ln_setup.settings.instance.name == "lamindb-ci-europe"
     assert (
         str(ln_setup.settings.instance._sqlite_file)
         == f"s3://lndb-setup-ci-eu-central-1/{ln_setup.settings.instance.id.hex}.lndb"
@@ -168,7 +174,7 @@ def test_init_invalid_name():
 
 # #     with pytest.raises(RuntimeError):
 # #         ln_setup.init(
-# #             storage="s3://lndb-setup-ci",
+# #             storage="s3://lamindb-ci",
 # #             schema="retro, bionty",
 # #             db="postgresql://batman:robin@35.222.187.204:5432/retro",
 # #         )
