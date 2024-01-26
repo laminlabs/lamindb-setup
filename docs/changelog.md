@@ -3,6 +3,7 @@
 <!-- prettier-ignore -->
 Name | PR | Developer | Date | Version
 --- | --- | --- | --- | ---
+🎨 Remove call to `create_path` inside `path.view_tree` | [618](https://github.com/laminlabs/lamindb-setup/pull/618) | [mukund109](https://github.com/mukund109) | 2024-01-26 |
 🐛 Fix option inheritance in create_path and add tests | [617](https://github.com/laminlabs/lamindb-setup/pull/617) | [Koncopd](https://github.com/Koncopd) | 2024-01-12 |
 ✅ Update tests relying on laminhub-rest | [616](https://github.com/laminlabs/lamindb-setup/pull/616) | [fredericenard](https://github.com/fredericenard) | 2024-01-12 |
 🚚 Rename .bionty to .public | [615](https://github.com/laminlabs/lamindb-setup/pull/615) | [sunnyosun](https://github.com/sunnyosun) | 2024-01-10 | 0.64.2
