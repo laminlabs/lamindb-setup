@@ -124,12 +124,16 @@ def load(
     if not isinstance(hub_result, str):
         instance_result, storage_result = hub_result
         db_updated = update_db_using_local(instance_result, settings_file, db=db)
+        ssettings = StorageSettings(
+            root=storage_result["root"],
+            region=storage_result["region"],
+            uid=storage_result["uid"],
+        )
         isettings = InstanceSettings(
             id=UUID(instance_result["id"]),
             owner=owner,
             name=name,
-            storage_root=storage_result["root"],
-            storage_region=storage_result["region"],
+            storage=ssettings,
             db=db_updated,
             schema=instance_result["schema_str"],
         )

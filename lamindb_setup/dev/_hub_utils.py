@@ -6,6 +6,8 @@ from lamin_utils import logger
 from pydantic import BaseModel, validator
 from pydantic.networks import MultiHostDsn
 from .upath import UPath
+from ._closest_aws_region import find_closest_aws_region
+from ._settings_storage import StorageSettings
 
 
 def base62(n_char: int) -> str:
@@ -63,25 +65,32 @@ def get_storage_region(storage_root: Union[str, Path, UPath]) -> Optional[str]:
     return storage_region
 
 
-def validate_storage_root_arg(storage_root: str) -> None:
-    if storage_root.startswith(("gs://", "s3://")):
+def process_storage_arg(storage: Union[str, Path, UPath]) -> StorageSettings:
+    storage = str(storage)  # ensure we have a string
+    uid = base62(8)
+    region = None
+    if storage == "create-s3":
+        region = find_closest_aws_region()
+        storage = f"s3://lamin-{region}/{uid}"
+    elif storage.startswith(("gs://", "s3://")):
         # check for existence happens in get_storage_region
-        return None
+        pass
     else:  # local path
         try:
-            _ = Path(storage_root)
-            return None
+            _ = Path(storage)
         except Exception as e:
             logger.error(
                 "`storage` is neither a valid local, a Google Cloud nor an S3 path."
             )
             raise e
+    ssettings = StorageSettings(uid=uid, root=storage, region=region)
+    return ssettings
 
 
-def get_storage_type(storage_root: str):
-    if str(storage_root).startswith("s3://"):
+def get_storage_type(root: str):
+    if str(root).startswith("s3://"):
         return "s3"
-    elif str(storage_root).startswith("gs://"):
+    elif str(root).startswith("gs://"):
         return "gs"
     else:
         return "local"

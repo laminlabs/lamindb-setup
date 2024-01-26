@@ -41,6 +41,7 @@ def register_storage(ssettings: StorageSettings):
     storage, created = Storage.objects.update_or_create(
         root=ssettings.root_as_str,
         defaults=dict(
+            uid=ssettings.uid,
             root=ssettings.root_as_str,
             type=ssettings.type,
             region=ssettings.region,
@@ -151,10 +152,9 @@ def init(
     from ._load_instance import load
     from .dev._hub_core import init_instance as init_instance_hub
     from .dev._hub_utils import (
-        get_storage_region,
         validate_db_arg,
         validate_schema_arg,
-        validate_storage_root_arg,
+        process_storage_arg,
     )
 
     #
@@ -168,7 +168,7 @@ def init(
     owner = settings.user.handle
 
     schema = validate_schema_arg(schema)
-    validate_storage_root_arg(str(storage))
+    ssettings = process_storage_arg(storage)
     validate_db_arg(db)
     if storage is None:
         raise ValueError("Pass storage argument")
@@ -197,8 +197,7 @@ def init(
         id=instance_id,
         owner=owner,
         name=name_str,
-        storage_root=storage,
-        storage_region=get_storage_region(storage),  # type: ignore
+        storage=ssettings,
         db=db,
         schema=schema,
     )
@@ -224,7 +223,7 @@ def init(
         result = init_instance_hub(
             id=instance_id,
             name=name_str,
-            storage=str(storage),
+            storage=ssettings,
             db=db,
             schema=schema,
             lamindb_version=lamindb_version,

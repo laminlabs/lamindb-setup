@@ -5,7 +5,7 @@ from typing import Any, Optional, Union
 from appdirs import AppDirs
 from ._settings_save import save_system_storage_settings
 from ._settings_store import system_storage_settings_file
-
+from ._hub_utils import get_storage_region
 from .upath import LocalPathClasses, UPath, create_path
 
 DIRS = AppDirs("lamindb", "laminlabs")
@@ -29,9 +29,13 @@ class StorageSettings:
         self,
         root: Union[str, Path, UPath],
         region: Optional[str] = None,
+        uid: Optional[str] = None,
     ):
+        self._uid = uid
         self._root_init = root
         self._root = None
+        if region is None:
+            region = get_storage_region(root)
         self._region = region
         # would prefer to type below as Registry, but need to think through import order
         self._record: Optional[Any] = None
@@ -51,6 +55,13 @@ class StorageSettings:
     def id(self) -> int:
         """Storage id."""
         return self.record.id
+
+    @property
+    def uid(self) -> Optional[str]:
+        """Storage id."""
+        if self._uid is None:
+            self._uid = self.record.uid
+        return self._uid
 
     @property
     def record(self) -> Any:

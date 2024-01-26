@@ -1,7 +1,7 @@
 import os
 import shutil
 from pathlib import Path
-from typing import Literal, Optional, Set, Tuple, Union
+from typing import Literal, Optional, Set, Tuple
 from uuid import UUID
 from ._hub_client import call_with_fallback
 from ._hub_crud import sb_select_account_handle_name_by_lnid
@@ -25,17 +25,14 @@ class InstanceSettings:
         id: UUID,  # instance id
         owner: str,  # owner handle
         name: str,  # instance name
-        storage_root: Union[str, Path, UPath],  # storage location on cloud
-        storage_region: Optional[str] = None,
+        storage: StorageSettings,  # storage location on cloud
         db: Optional[str] = None,  # DB URI
         schema: Optional[str] = None,  # comma-separated string of schema names
     ):
         self._id: UUID = id
         self._owner: str = owner
         self._name: str = name
-        self._storage: StorageSettings = StorageSettings(
-            storage_root, region=storage_region
-        )
+        self._storage: StorageSettings = storage
         self._db: Optional[str] = db
         self._schema_str: Optional[str] = schema
         self._db_from_vault = None
