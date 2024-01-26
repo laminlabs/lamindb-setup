@@ -220,6 +220,8 @@ class StorageSettings:
     @property
     def region(self) -> Optional[str]:
         """Storage region."""
+        if self._region is None:
+            self._region = get_storage_region(self.root_as_str)
         return self._region
 
     @property

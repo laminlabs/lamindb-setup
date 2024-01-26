@@ -32,7 +32,6 @@ from ._hub_utils import (
     LaminDsnModel,
     validate_schema_arg,
 )
-from ._settings_storage import get_storage_region
 
 
 def add_storage(storage: StorageSettings, account_id: UUID, hub: Client) -> UUID:
@@ -44,17 +43,13 @@ def add_storage(storage: StorageSettings, account_id: UUID, hub: Client) -> UUID
     if storage_result is not None:
         logger.warning("storage exists already")
         return UUID(storage_result["id"])
-    if storage.region is None:
-        region = get_storage_region(root)
-    else:
-        region = storage.region
     storage_result = sb_insert_storage(
         {
             "id": uuid4().hex,
             "lnid": storage.uid,
             "created_by": account_id.hex,
             "root": root,
-            "region": region,
+            "region": storage.region,
             "type": storage.type,
         },
         hub,
