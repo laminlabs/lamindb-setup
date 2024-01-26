@@ -39,7 +39,7 @@ def register_storage(ssettings: StorageSettings):
     storage, created = Storage.objects.update_or_create(
         root=ssettings.root_as_str,
         defaults=dict(
-            uid=ssettings.uid,
+            uid=ssettings._uid,  # we want to pass None here
             root=ssettings.root_as_str,
             type=ssettings.type,
             region=ssettings.region,
