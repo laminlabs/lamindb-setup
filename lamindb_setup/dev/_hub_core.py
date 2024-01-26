@@ -6,7 +6,7 @@ from supabase import Client
 from supafunc.errors import FunctionsRelayError, FunctionsHttpError
 import lamindb_setup
 import json
-from ._settings_storage import StorageSettings
+from ._settings_storage import StorageSettings, base62
 
 
 from ._hub_client import (
@@ -30,11 +30,9 @@ from ._hub_crud import (
 from ._hub_utils import (
     LaminDsn,
     LaminDsnModel,
-    get_storage_region,
-    get_storage_type,
-    secret,
     validate_schema_arg,
 )
+from ._settings_storage import get_storage_region
 
 
 def add_storage(storage: StorageSettings, account_id: UUID, hub: Client) -> UUID:
@@ -50,7 +48,6 @@ def add_storage(storage: StorageSettings, account_id: UUID, hub: Client) -> UUID
         region = get_storage_region(root)
     else:
         region = storage.region
-    storage_type = get_storage_type(root)
     storage_result = sb_insert_storage(
         {
             "id": uuid4().hex,
@@ -58,7 +55,7 @@ def add_storage(storage: StorageSettings, account_id: UUID, hub: Client) -> UUID
             "created_by": account_id.hex,
             "root": root,
             "region": region,
-            "type": storage_type,
+            "type": storage.type,
         },
         hub,
     )
@@ -286,7 +283,7 @@ def get_lamin_site_base_url():
 
 def sign_up_local_hub(email) -> Union[str, Tuple[str, str, str]]:
     # raises gotrue.errors.AuthApiError: User already registered
-    password = secret()  # generate new password
+    password = base62(40)  # generate new password
     sign_up_kwargs = {"email": email, "password": password}
     client = connect_hub()
     auth_response = client.auth.sign_up(sign_up_kwargs)

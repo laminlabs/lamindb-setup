@@ -15,7 +15,7 @@ from ._settings import settings
 from ._silence_loggers import silence_loggers
 from .dev import InstanceSettings
 from .dev._docs import doc_args
-from .dev._settings_storage import StorageSettings
+from .dev._settings_storage import StorageSettings, process_storage_arg
 from .dev.upath import create_path
 from ._init_vault import _init_vault
 
@@ -154,7 +154,6 @@ def init(
     from .dev._hub_utils import (
         validate_db_arg,
         validate_schema_arg,
-        process_storage_arg,
     )
 
     #
