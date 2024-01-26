@@ -10,11 +10,9 @@ from django.db.utils import OperationalError, ProgrammingError
 from django.core.exceptions import FieldError
 from lamindb_setup.dev.upath import LocalPathClasses, UPath
 from ._close import close as close_instance
-from ._docstrings import instance_description as description
 from ._settings import settings
 from ._silence_loggers import silence_loggers
 from .dev import InstanceSettings
-from .dev._docs import doc_args
 from .dev._settings_storage import StorageSettings, process_storage_arg
 from .dev.upath import create_path
 from ._init_vault import _init_vault
@@ -115,12 +113,6 @@ Either delete your cache ({}) or add it back to the cloud (if delete was acciden
 """
 
 
-@doc_args(
-    description.storage_root,
-    description.name,
-    description.db,
-    description.schema,
-)
 def init(
     *,
     storage: Union[str, Path, UPath],
@@ -133,10 +125,11 @@ def init(
     """Creating and loading a LaminDB instance.
 
     Args:
-        storage: {}
-        name: {}
-        db: {}
-        schema: {}
+        storage: Either ``"create-s3"``, local or
+            remote folder (``"s3://..."`` or ``"gs://..."``).
+        name: Instance name.
+        db: Database connection url, do not pass for SQLite.
+        schema: Comma-separated string of schema modules. None if not set.
     """
     from ._check_instance_setup import check_instance_setup
 
