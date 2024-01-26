@@ -88,7 +88,7 @@ def create_myinstance(create_testuser1_session):  # -> Dict
     instance_id = init_instance(
         id=uuid4(),
         name="myinstance",
-        storage="s3://lndb-setup-ci",
+        storage="s3://lamindb-ci/myinstance",
         db="postgresql://postgres:pwd@fakeserver.xyz:5432/mydb",
     )
     # test loading it
@@ -190,7 +190,7 @@ def test_load_instance_corrupted_or_expired_credentials(
 def test_add_storage(create_testuser1_session):
     client, usettings = create_testuser1_session
     storage_id = add_storage(
-        root="s3://lndb-setup-ci",
+        root="s3://lamindb-ci/myinstance",
         account_id=usettings.uuid,
         hub=client,
     )

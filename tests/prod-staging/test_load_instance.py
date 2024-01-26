@@ -11,15 +11,18 @@ from lamindb_setup.dev._hub_crud import sb_update_instance
 
 def test_load_remote_instance():
     ln_setup.login("testuser1")
-    ln_setup.delete("lndb-setup-ci", force=True)
-    ln_setup.init(storage="s3://lndb-setup-ci", _test=True)
-    ln_setup.load("testuser1/lndb-setup-ci", _test=True)
+    ln_setup.delete("load_remote_instance", force=True)
+    ln_setup.init(storage="s3://lamindb-ci/load_remote_instance", _test=True)
+    ln_setup.load("testuser1/lamindb-ci", _test=True)
     assert ln_setup.settings.instance.id is not None
     assert ln_setup.settings.instance.storage.is_cloud
-    assert ln_setup.settings.instance.storage.root_as_str == "s3://lndb-setup-ci"
+    assert (
+        ln_setup.settings.instance.storage.root_as_str
+        == "s3://lamindb-ci/load_remote_instance"
+    )
     assert (
         ln_setup.settings.instance._sqlite_file.as_posix()
-        == f"s3://lndb-setup-ci/{ln_setup.settings.instance.id.hex}.lndb"
+        == f"s3://lamindb-ci/load_remote_instance/{ln_setup.settings.instance.id.hex}.lndb"  # noqa
     )
 
 
@@ -41,7 +44,7 @@ def test_load_after_revoked_access():
             "static-testuser2@lamin.ai", password="static-testuser2-password"
         )
         ln_setup.load("https://lamin.ai/laminlabs/static-testinstance1", _test=True)
-        assert ln_setup.settings.instance.storage.root_as_str == "s3://lndb-setup-ci"
+        assert ln_setup.settings.instance.storage.root_as_str == "s3://lamindb-ci"
         delete_collaborator(
             "laminlabs",
             "static-testinstance1",
