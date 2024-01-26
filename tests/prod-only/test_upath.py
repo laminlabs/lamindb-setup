@@ -2,7 +2,7 @@ from lamindb_setup.dev.upath import UPath, create_path
 
 
 def test_create_path():
-    upath = UPath("s3://lndb-setup-ci/xyz/", default_fill_cache=False)
+    upath = UPath("s3://lamindb-ci/xyz/", default_fill_cache=False)
     assert "default_fill_cache" in upath._kwargs
 
     upath = create_path(upath)
@@ -13,6 +13,6 @@ def test_create_path():
     # test removal of training slash
     assert upath.as_posix()[-1] != "/"
     assert (
-        UPath("s3://lndb-setup-ci/xyz").as_posix()
-        == create_path("s3://lndb-setup-ci/xyz/").as_posix()
+        UPath("s3://lamindb-ci/xyz").as_posix()
+        == create_path("s3://lamindb-ci/xyz/").as_posix()
     )
