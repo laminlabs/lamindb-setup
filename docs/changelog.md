@@ -3,6 +3,7 @@
 <!-- prettier-ignore -->
 Name | PR | Developer | Date | Version
 --- | --- | --- | --- | ---
+✨ Introduce create storage | [624](https://github.com/laminlabs/lamindb-setup/pull/624) | [falexwolf](https://github.com/falexwolf) | 2024-01-26 |
 ✨ Add storage client | [621](https://github.com/laminlabs/lamindb-setup/pull/621) | [falexwolf](https://github.com/falexwolf) | 2024-01-26 |
 💚 Fix tests | [623](https://github.com/laminlabs/lamindb-setup/pull/623) | [falexwolf](https://github.com/falexwolf) | 2024-01-26 |
 🎨 Move default storages to folders | [622](https://github.com/laminlabs/lamindb-setup/pull/622) | [falexwolf](https://github.com/falexwolf) | 2024-01-26 |
