@@ -107,7 +107,7 @@ def test_init_instance_cloud_aws_us():
     )
     assert (
         ln_setup.settings.storage.root_as_str
-        == "s3://lamindb-ci/init_instance_cloud_aws_us"
+        == "s3://lamindb-ci/init_instance_cloud_aws_us/"
     )
     assert ln_setup.settings.storage.region == "us-east-1"
     assert (
@@ -119,7 +119,7 @@ def test_init_instance_cloud_aws_us():
 def test_init_instance_cloud_aws_europe():
     # do the same for an S3 bucket in Europe
     ln_setup.init(
-        storage="s3://lamindb-ci-eu-central-1",
+        storage="s3://lndb-setup-ci-eu-central-1",
         name="lamindb-ci-europe",
         _test=True,
     )
