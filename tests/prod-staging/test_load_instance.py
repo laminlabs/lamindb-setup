@@ -26,37 +26,43 @@ def test_load_remote_instance():
 def test_load_after_revoked_access():
     # can't currently test this on staging as I'm missing the accounts
     if os.getenv("LAMIN_ENV") == "prod":
-        ln_setup.login(
-            "static-testuser1@lamin.ai", password="static-testuser1-password"
-        )
-        admin_hub = connect_hub_with_auth()
-        add_collaborator(
-            "static-testuser2",
-            "laminlabs",
-            "static-testinstance1",
-            "write",
-            admin_hub,
-        )
-        ln_setup.login(
-            "static-testuser2@lamin.ai", password="static-testuser2-password"
-        )
-        ln_setup.load("https://lamin.ai/laminlabs/static-testinstance1", _test=True)
-        assert ln_setup.settings.instance.storage.root_as_str == "s3://lndb-setup-ci"
-        delete_collaborator(
-            "laminlabs",
-            "static-testinstance1",
-            ln_setup.settings.user.uuid,
-            admin_hub,
-        )
-        with pytest.raises(RuntimeError) as error:
+        try:
+            ln_setup.login(
+                "static-testuser1@lamin.ai", password="static-testuser1-password"
+            )
+            admin_hub = connect_hub_with_auth()
+            add_collaborator(
+                "static-testuser2",
+                "laminlabs",
+                "static-testinstance1",
+                "write",
+                admin_hub,
+            )
+            ln_setup.login(
+                "static-testuser2@lamin.ai", password="static-testuser2-password"
+            )
             ln_setup.load("https://lamin.ai/laminlabs/static-testinstance1", _test=True)
-        assert (
-            error.exconly()
-            == "RuntimeError: Instance laminlabs/static-testinstance1 not"
-            " loadable from hub with response: 'instance-not-reachable'.\nCheck"
-            " whether instance exists and you have access:"
-            " https://lamin.ai/laminlabs/static-testinstance1?tab=collaborators"
-        )
+            assert (
+                ln_setup.settings.instance.storage.root_as_str == "s3://lndb-setup-ci"
+            )
+        finally:
+            delete_collaborator(
+                "laminlabs",
+                "static-testinstance1",
+                ln_setup.settings.user.uuid,
+                admin_hub,
+            )
+            with pytest.raises(RuntimeError) as error:
+                ln_setup.load(
+                    "https://lamin.ai/laminlabs/static-testinstance1", _test=True
+                )
+            assert (
+                error.exconly()
+                == "RuntimeError: Instance laminlabs/static-testinstance1 not"
+                " loadable from hub with response: 'instance-not-reachable'.\nCheck"
+                " whether instance exists and you have access:"
+                " https://lamin.ai/laminlabs/static-testinstance1?tab=collaborators"
+            )
 
 
 def test_load_after_private_public_switch():
