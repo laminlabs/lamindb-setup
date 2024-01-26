@@ -103,7 +103,7 @@ def test_init_instance_cloud_aws_us():
     assert ln_setup.settings.storage.is_cloud
     assert (
         str(ln_setup.settings.storage.root)
-        == "s3://lamindb-ci/init_instance_cloud_aws_us/"
+        == "s3://lamindb-ci/init_instance_cloud_aws_us"
     )
     assert (
         ln_setup.settings.storage.root_as_str
@@ -128,7 +128,7 @@ def test_init_instance_cloud_aws_europe():
     assert ln_setup.settings.instance.name == "lamindb-ci-europe"
     assert (
         str(ln_setup.settings.instance._sqlite_file)
-        == f"s3://lamindb-ci-eu-central-1/{ln_setup.settings.instance.id.hex}.lndb"
+        == f"s3://lndb-setup-ci-eu-central-1/{ln_setup.settings.instance.id.hex}.lndb"
     )
 
 
