@@ -1,11 +1,11 @@
 import os
 from subprocess import DEVNULL, getoutput, run
+import lamindb_setup
 
 
 # this function is duplicated across laminhub-rest and lamindb-setup
-#
 def create_and_set_local_supabase_env():
-    start_supabase = """supabase start -x realtime,storage-api,imgproxy,pgadmin-schema-diff,migra,postgres-meta,studio,edge-runtime,logflare,vector,pgbouncer"""  # noqa
+    start_supabase = """supabase start -x realtime,storage-api,imgproxy,pgadmin-schema-diff,migra,postgres-meta,studio,logflare,vector,pgbouncer"""  # noqa
     # unfortunately, supabase status -o env does not work with
     # a reduced number of containers (running supabase CLI version 1.38.6 & 1.96.4)
     # hence, we need this ugly regex
@@ -30,10 +30,18 @@ def create_and_set_local_supabase_env():
         else:
             print(f"WARNING: env variable {key} is already set to {os.environ[key]}")
 
+    run(
+        "supabase functions serve access-aws --env-file ./supabase/.env.local &",
+        shell=True,
+        env=os.environ,
+        check=True,
+    )
+
 
 def pytest_configure():
     create_and_set_local_supabase_env()
     run("lnhub migrate deploy", shell=True, env=os.environ, check=True)
+    lamindb_setup._TESTING = True
 
 
 def pytest_unconfigure():

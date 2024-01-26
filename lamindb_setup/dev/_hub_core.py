@@ -3,6 +3,10 @@ from typing import Optional, Tuple, Union
 from uuid import UUID, uuid4
 from lamin_utils import logger
 from supabase import Client
+from supafunc.errors import FunctionsRelayError, FunctionsHttpError
+import lamindb_setup
+import json
+
 
 from ._hub_client import (
     connect_hub,
@@ -243,6 +247,31 @@ def _load_instance(
     if storage is None:
         return "storage-does-not-exist-on-hub"
     return instance, storage
+
+
+def access_aws() -> None:
+    from .._settings import settings
+
+    if settings.user.handle != "anonymous":
+        return call_with_fallback_auth(_access_aws)
+    else:
+        raise RuntimeError("Can only get access to AWS if authenticated.")
+
+
+def _access_aws(client: Client):
+    response = None
+    try:
+        response = client.functions.invoke("access-aws")
+    except (FunctionsRelayError, FunctionsHttpError) as exception:
+        err = exception.to_dict()
+        logger.warning(err.get("message"))
+    if response is not None:
+        credentials = json.loads(response)["Credentials"]
+        os.environ["AWS_ACCESS_KEY_ID"] = credentials["AccessKeyId"]
+        os.environ["AWS_SECRET_ACCESS_KEY"] = credentials["SecretAccessKey"]
+        os.environ["AWS_SESSION_TOKEN"] = credentials["SessionToken"]
+    elif lamindb_setup._TESTING:
+        raise RuntimeError(f"access-aws errored: {response}")
 
 
 def get_lamin_site_base_url():
