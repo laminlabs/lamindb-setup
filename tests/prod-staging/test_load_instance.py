@@ -29,48 +29,50 @@ def test_load_remote_instance():
 def test_load_after_revoked_access():
     # can't currently test this on staging as I'm missing the accounts
     if os.getenv("LAMIN_ENV") == "prod":
-        ln_setup.login(
-            "static-testuser1@lamin.ai", password="static-testuser1-password"
-        )
+        ln_setup.login("testuser1@lamin.ai")
         admin_hub = connect_hub_with_auth()
         add_collaborator(
             "static-testuser2",
             "laminlabs",
-            "static-testinstance1",
+            "test-instance-private-postgres",
             "write",
             admin_hub,
         )
-        ln_setup.login(
-            "static-testuser2@lamin.ai", password="static-testuser2-password"
+        ln_setup.login("testuser2@lamin.ai")
+        ln_setup.load(
+            "https://lamin.ai/laminlabs/test-instance-private-postgres", _test=True
         )
-        ln_setup.load("https://lamin.ai/laminlabs/static-testinstance1", _test=True)
         assert ln_setup.settings.instance.storage.root_as_str == "s3://lamindb-ci"
         delete_collaborator(
             "laminlabs",
-            "static-testinstance1",
+            "test-instance-private-postgres",
             ln_setup.settings.user.uuid,
             admin_hub,
         )
+        # make the instance private
         with pytest.raises(RuntimeError) as error:
-            ln_setup.load("https://lamin.ai/laminlabs/static-testinstance1", _test=True)
+            ln_setup.load(
+                "https://lamin.ai/laminlabs/test-instance-private-postgres", _test=True
+            )
         assert (
             error.exconly()
-            == "RuntimeError: Instance laminlabs/static-testinstance1 not"
+            == "RuntimeError: Instance laminlabs/test-instance-private-postgres not"
             " loadable from hub with response: 'instance-not-reachable'.\nCheck"
             " whether instance exists and you have access:"
-            " https://lamin.ai/laminlabs/static-testinstance1?tab=collaborators"
+            " https://lamin.ai/laminlabs/test-instance-private-postgres?tab=collaborators"  # noqa
         )
 
 
 def test_load_after_private_public_switch():
     # can't currently test this on staging as I'm missing the accounts
     if os.getenv("LAMIN_ENV") == "prod":
-        ln_setup.login(
-            "static-testuser1@lamin.ai", password="static-testuser1-password"
+        # this assumes that testuser1 is an admin of test-instance-private-postgres!
+        ln_setup.login("testuser1@lamin.ai")
+        ln_setup.load(
+            "https://lamin.ai/laminlabs/test-instance-private-postgres", _test=True
         )
-        ln_setup.load("https://lamin.ai/laminlabs/static-testinstance1", _test=True)
         admin_hub = connect_hub_with_auth()
-        # make the instance public
+        # make the instance private
         sb_update_instance(
             instance_id=ln_setup.settings.instance.id,
             instance_fields={"public": False},
@@ -79,7 +81,9 @@ def test_load_after_private_public_switch():
         # attempt to load instance with non-collaborator user
         ln_setup.login("testuser2")
         with pytest.raises(RuntimeError):
-            ln_setup.load("https://lamin.ai/laminlabs/static-testinstance1", _test=True)
+            ln_setup.load(
+                "https://lamin.ai/laminlabs/test-instance-private-postgres", _test=True
+            )
         # make the instance public
         sb_update_instance(
             instance_id=ln_setup.settings.instance.id,
@@ -87,7 +91,9 @@ def test_load_after_private_public_switch():
             client=admin_hub,
         )
         # load instance with non-collaborator user, should work now
-        ln_setup.load("https://lamin.ai/laminlabs/static-testinstance1", _test=True)
+        ln_setup.load(
+            "https://lamin.ai/laminlabs/test-instance-private-postgres", _test=True
+        )
         # make the instance private again
         sb_update_instance(
             instance_id=ln_setup.settings.instance.id,
