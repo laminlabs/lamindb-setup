@@ -109,7 +109,7 @@ def test_init_instance_cloud_aws_us():
         ln_setup.settings.storage.root_as_str
         == "s3://lamindb-ci/init_instance_cloud_aws_us"
     )
-    assert ln_setup.settings.storage.region == "us-east-1"
+    assert ln_setup.settings.storage.region == "us-west-1"
     assert (
         str(ln_setup.settings.instance._sqlite_file)
         == f"s3://lamindb-ci/init_instance_cloud_aws_us/{ln_setup.settings.instance.id.hex}.lndb"  # noqa
