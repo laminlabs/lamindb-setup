@@ -10,11 +10,10 @@ def register():
     from .dev._hub_core import init_instance as init_instance_hub
 
     isettings = settings.instance
-    ssettings = settings.storage
     result = init_instance_hub(
         id=isettings.id,
         name=isettings.name,
-        storage=ssettings.storage,
+        storage=isettings.storage,
         db=isettings.db if isettings.dialect != "sqlite" else None,
         schema=isettings._schema_str,
     )
