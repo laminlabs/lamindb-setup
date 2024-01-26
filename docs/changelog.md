@@ -3,6 +3,7 @@
 <!-- prettier-ignore -->
 Name | PR | Developer | Date | Version
 --- | --- | --- | --- | ---
+💚 Fix tests | [623](https://github.com/laminlabs/lamindb-setup/pull/623) | [falexwolf](https://github.com/falexwolf) | 2024-01-26 |
 🎨 Move default storages to folders | [622](https://github.com/laminlabs/lamindb-setup/pull/622) | [falexwolf](https://github.com/falexwolf) | 2024-01-26 |
 🎨 Remove call to `create_path` inside `path.view_tree` | [618](https://github.com/laminlabs/lamindb-setup/pull/618) | [mukund109](https://github.com/mukund109) | 2024-01-26 |
 🐛 Fix option inheritance in create_path and add tests | [617](https://github.com/laminlabs/lamindb-setup/pull/617) | [Koncopd](https://github.com/Koncopd) | 2024-01-12 |
