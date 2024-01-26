@@ -1,15 +1,14 @@
-import requests  # type: ignore
-import math
-import botocore.session
-
-
 def get_location(ip="ipinfo.io"):
+    import requests  # type: ignore
+
     response = requests.get(f"http://{ip}/json").json()
     loc = response["loc"].split(",")
     return {"latitude": float(loc[0]), "longitude": float(loc[1])}
 
 
 def haversine(lat1: float, lon1: float, lat2: float, lon2: float) -> float:
+    import math
+
     R = 6371  # Radius of the Earth in kilometers
     dLat = math.radians(lat2 - lat1)
     dLon = math.radians(lon2 - lon1)
@@ -22,6 +21,8 @@ def haversine(lat1: float, lon1: float, lat2: float, lon2: float) -> float:
 
 
 def get_aws_regions(service_name="s3") -> str:
+    import botocore.session
+
     session = botocore.session.get_session()
     s3 = session.create_client(service_name)
     return s3.meta.region_name
