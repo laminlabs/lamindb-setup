@@ -10,12 +10,10 @@ from django.db.utils import OperationalError, ProgrammingError
 from django.core.exceptions import FieldError
 from lamindb_setup.dev.upath import LocalPathClasses, UPath
 from ._close import close as close_instance
-from ._docstrings import instance_description as description
 from ._settings import settings
 from ._silence_loggers import silence_loggers
 from .dev import InstanceSettings
-from .dev._docs import doc_args
-from .dev._settings_storage import StorageSettings
+from .dev._settings_storage import StorageSettings, process_storage_arg
 from .dev.upath import create_path
 from ._init_vault import _init_vault
 
@@ -38,14 +36,18 @@ def register_storage(ssettings: StorageSettings):
     from lnschema_core.models import Storage
     from lnschema_core.users import current_user_id
 
+    defaults = dict(
+        root=ssettings.root_as_str,
+        type=ssettings.type,
+        region=ssettings.region,
+        created_by_id=current_user_id(),
+    )
+    if ssettings._uid is not None:
+        defaults["uid"] = ssettings._uid
+
     storage, created = Storage.objects.update_or_create(
         root=ssettings.root_as_str,
-        defaults=dict(
-            root=ssettings.root_as_str,
-            type=ssettings.type,
-            region=ssettings.region,
-            created_by_id=current_user_id(),
-        ),
+        defaults=defaults,
     )
     if created:
         logger.save(f"saved: {storage}")
@@ -114,12 +116,6 @@ Either delete your cache ({}) or add it back to the cloud (if delete was acciden
 """
 
 
-@doc_args(
-    description.storage_root,
-    description.name,
-    description.db,
-    description.schema,
-)
 def init(
     *,
     storage: Union[str, Path, UPath],
@@ -132,10 +128,11 @@ def init(
     """Creating and loading a LaminDB instance.
 
     Args:
-        storage: {}
-        name: {}
-        db: {}
-        schema: {}
+        storage: Either ``"create-s3"``, local or
+            remote folder (``"s3://..."`` or ``"gs://..."``).
+        name: Instance name.
+        db: Database connection url, do not pass for SQLite.
+        schema: Comma-separated string of schema modules. None if not set.
     """
     from ._check_instance_setup import check_instance_setup
 
@@ -151,10 +148,8 @@ def init(
     from ._load_instance import load
     from .dev._hub_core import init_instance as init_instance_hub
     from .dev._hub_utils import (
-        get_storage_region,
         validate_db_arg,
         validate_schema_arg,
-        validate_storage_root_arg,
     )
 
     #
@@ -168,7 +163,7 @@ def init(
     owner = settings.user.handle
 
     schema = validate_schema_arg(schema)
-    validate_storage_root_arg(str(storage))
+    ssettings = process_storage_arg(storage)
     validate_db_arg(db)
     if storage is None:
         raise ValueError("Pass storage argument")
@@ -197,8 +192,7 @@ def init(
         id=instance_id,
         owner=owner,
         name=name_str,
-        storage_root=storage,
-        storage_region=get_storage_region(storage),  # type: ignore
+        storage=ssettings,
         db=db,
         schema=schema,
     )
@@ -224,7 +218,7 @@ def init(
         result = init_instance_hub(
             id=instance_id,
             name=name_str,
-            storage=str(storage),
+            storage=ssettings,
             db=db,
             schema=schema,
             lamindb_version=lamindb_version,

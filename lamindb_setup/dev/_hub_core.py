@@ -6,6 +6,7 @@ from supabase import Client
 from supafunc.errors import FunctionsRelayError, FunctionsHttpError
 import lamindb_setup
 import json
+from ._settings_storage import StorageSettings, base62
 
 
 from ._hub_client import (
@@ -29,46 +30,38 @@ from ._hub_crud import (
 from ._hub_utils import (
     LaminDsn,
     LaminDsnModel,
-    base62,
-    get_storage_region,
-    get_storage_type,
-    secret,
     validate_schema_arg,
-    validate_storage_root_arg,
 )
 
 
-def add_storage(root: str, account_id: UUID, hub: Client) -> UUID:
+def add_storage(storage: StorageSettings, account_id: UUID, hub: Client) -> UUID:
     # unlike storage keys, storage roots are always stored without the
     # trailing slash in the SQL database
-    root = root.rstrip("/")
-    validate_storage_root_arg(root)
+    root = storage.root_as_str
     # check if storage exists already
-    storage = sb_select_storage_by_root(root, hub)
-    if storage is not None:
+    storage_result = sb_select_storage_by_root(root, hub)
+    if storage_result is not None:
         logger.warning("storage exists already")
-        return UUID(storage["id"])
-    storage_region = get_storage_region(root)
-    storage_type = get_storage_type(root)
-    storage = sb_insert_storage(
+        return UUID(storage_result["id"])
+    storage_result = sb_insert_storage(
         {
             "id": uuid4().hex,
-            "lnid": base62(8),
+            "lnid": storage.uid,
             "created_by": account_id.hex,
             "root": root,
-            "region": storage_region,
-            "type": storage_type,
+            "region": storage.region,
+            "type": storage.type,
         },
         hub,
     )
-    return UUID(storage["id"])
+    return UUID(storage_result["id"])
 
 
 def init_instance(
     *,
     id: UUID,
     name: str,  # instance name
-    storage: str,  # storage location on cloud
+    storage: StorageSettings,  # storage location on cloud
     db: Optional[str] = None,  # str has to be postgresdsn (use pydantic in the future)
     schema: Optional[str] = None,  # comma-separated list of schema names
     lamindb_version: Optional[str] = None,  # the installed lamindb version, optional
@@ -88,7 +81,7 @@ def _init_instance(
     *,
     id: UUID,
     name: str,  # instance name
-    storage: str,  # storage location on cloud
+    storage: StorageSettings,  # storage location on cloud
     db: Optional[str] = None,  # str has to be postgresdsn (use pydantic in the future)
     schema: Optional[str] = None,  # comma-separated list of schema names
     client: Client,
@@ -102,7 +95,7 @@ def _init_instance(
 
     # get storage and add if not yet there
     storage_id = add_storage(
-        storage,
+        storage=storage,
         account_id=usettings.uuid,
         hub=client,
     )
@@ -285,7 +278,7 @@ def get_lamin_site_base_url():
 
 def sign_up_local_hub(email) -> Union[str, Tuple[str, str, str]]:
     # raises gotrue.errors.AuthApiError: User already registered
-    password = secret()  # generate new password
+    password = base62(40)  # generate new password
     sign_up_kwargs = {"email": email, "password": password}
     client = connect_hub()
     auth_response = client.auth.sign_up(sign_up_kwargs)

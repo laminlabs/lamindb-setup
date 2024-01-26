@@ -5,6 +5,7 @@ from lamin_utils import logger
 from pydantic.error_wrappers import ValidationError
 
 from ._settings_instance import InstanceSettings
+from ._settings_storage import StorageSettings
 from ._settings_store import (
     InstanceSettingsStore,
     UserSettingsStore,
@@ -62,12 +63,15 @@ def load_user_settings(user_settings_file: Path):
 
 
 def setup_instance_from_store(store: InstanceSettingsStore) -> InstanceSettings:
+    ssettings = StorageSettings(
+        root=store.storage_root,
+        region=store.storage_region if store.storage_region != "null" else None,
+    )
     return InstanceSettings(
         id=UUID(store.id),
         owner=store.owner,
         name=store.name,
-        storage_root=store.storage_root,
-        storage_region=store.storage_region if store.storage_region != "null" else None,
+        storage=ssettings,
         db=store.db if store.db != "null" else None,  # type: ignore
         schema=store.schema_str if store.schema_str != "null" else None,
     )

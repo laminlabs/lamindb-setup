@@ -9,6 +9,7 @@ from ._init_instance import register_user_and_storage
 from ._settings import settings
 from .dev import deprecated
 from .dev._settings_instance import InstanceSettings
+from .dev._settings_storage import StorageSettings
 
 
 class set:
@@ -30,17 +31,16 @@ class set:
         >>>     cache_regions=True # fsspec arg for s3
         >>> )
         """
-        from .dev._hub_utils import get_storage_region
-
         if settings.instance.dialect == "sqlite":
             logger.error("can't set storage for sqlite instances.")
             return "set-storage-failed"
 
+        ssettings = StorageSettings(root=root)
+
         new_isettings = InstanceSettings(
             owner=settings.instance.owner,
             name=settings.instance.name,
-            storage_root=root,
-            storage_region=get_storage_region(root),
+            storage=ssettings,
             db=settings.instance.db,
             schema=settings.instance._schema_str,
             id=settings.instance._id,

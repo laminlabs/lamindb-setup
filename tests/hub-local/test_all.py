@@ -25,7 +25,11 @@ from lamindb_setup.dev._hub_crud import (
 # typing
 # from lamindb.dev import UserSettings
 # from supabase import Client
-from lamindb_setup.dev._hub_utils import LaminDsn, base62
+from lamindb_setup.dev._hub_utils import LaminDsn
+from lamindb_setup.dev._settings_storage import (
+    base62,
+    process_storage_arg,
+)
 from lamindb_setup.dev._settings_save import save_user_settings
 from lamindb_setup.dev._settings_user import UserSettings
 
@@ -88,7 +92,7 @@ def create_myinstance(create_testuser1_session):  # -> Dict
     instance_id = init_instance(
         id=uuid4(),
         name="myinstance",
-        storage="s3://lamindb-ci/myinstance",
+        storage=process_storage_arg("s3://lamindb-ci/myinstance"),
         db="postgresql://postgres:pwd@fakeserver.xyz:5432/mydb",
     )
     # test loading it
@@ -190,7 +194,7 @@ def test_load_instance_corrupted_or_expired_credentials(
 def test_add_storage(create_testuser1_session):
     client, usettings = create_testuser1_session
     storage_id = add_storage(
-        root="s3://lamindb-ci/myinstance",
+        storage=process_storage_arg("s3://lamindb-ci/myinstance"),
         account_id=usettings.uuid,
         hub=client,
     )
@@ -203,7 +207,7 @@ def test_add_storage_with_non_existing_bucket(create_testuser1_session):
 
     with pytest.raises(ClientError) as error:
         add_storage(
-            root="s3://non_existing_storage_root",
+            storage=process_storage_arg("s3://non_existing_storage_root"),
             account_id=usettings.uuid,
             hub=client,
         )

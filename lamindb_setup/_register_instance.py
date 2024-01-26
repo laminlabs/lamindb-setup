@@ -13,7 +13,7 @@ def register():
     result = init_instance_hub(
         id=isettings.id,
         name=isettings.name,
-        storage=isettings.storage.root_as_str,
+        storage=isettings.storage,
         db=isettings.db if isettings.dialect != "sqlite" else None,
         schema=isettings._schema_str,
     )
