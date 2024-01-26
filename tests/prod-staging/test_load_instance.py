@@ -42,7 +42,10 @@ def test_load_after_revoked_access():
         ln_setup.load(
             "https://lamin.ai/laminlabs/static-test-instance-private-sqlite", _test=True
         )
-        assert ln_setup.settings.instance.storage.root_as_str == "s3://lamindb-ci"
+        assert (
+            ln_setup.settings.instance.storage.root_as_str
+            == "s3://lamindb-setup-private-bucket"
+        )
         delete_collaborator(
             "laminlabs",
             "static-test-instance-private-sqlite",
