@@ -35,7 +35,6 @@ class InstanceSettings:
         self._storage: StorageSettings = storage
         self._db: Optional[str] = db
         self._schema_str: Optional[str] = schema
-        self._db_from_vault = None
 
     def __repr__(self):
         """Rich string representation."""
@@ -170,8 +169,6 @@ class InstanceSettings:
             )
             return f"sqlite:///{sqlite_filepath}"
         else:
-            if self._db_from_vault is not None:
-                return self._db_from_vault
             return self._db
 
     @property
