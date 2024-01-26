@@ -32,7 +32,7 @@ def test_load_after_revoked_access():
         ln_setup.login("testuser1@lamin.ai")
         admin_hub = connect_hub_with_auth()
         add_collaborator(
-            "static-testuser2",
+            "testuser2",
             "laminlabs",
             "static-test-instance-private-sqlite",
             "write",
