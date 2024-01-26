@@ -25,7 +25,8 @@ from lamindb_setup.dev._hub_crud import (
 # typing
 # from lamindb.dev import UserSettings
 # from supabase import Client
-from lamindb_setup.dev._hub_utils import LaminDsn, base62
+from lamindb_setup.dev._hub_utils import LaminDsn
+from lamindb_setup.dev._settings_storage import base62
 from lamindb_setup.dev._settings_save import save_user_settings
 from lamindb_setup.dev._settings_user import UserSettings
 

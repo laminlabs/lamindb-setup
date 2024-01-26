@@ -11,14 +11,14 @@ import string
 import secrets
 
 
+DIRS = AppDirs("lamindb", "laminlabs")
+
+
 def base62(n_char: int) -> str:
     """Like nanoid without hyphen and underscore."""
     alphabet = string.digits + string.ascii_letters.swapcase()
     id = "".join(secrets.choice(alphabet) for i in range(n_char))
     return id
-
-
-DIRS = AppDirs("lamindb", "laminlabs")
 
 
 def get_storage_region(storage_root: Union[str, Path, UPath]) -> Optional[str]:
