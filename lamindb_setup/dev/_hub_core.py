@@ -1,11 +1,14 @@
 import os
 from typing import Optional, Tuple, Union
+import uuid
 from uuid import UUID, uuid4
 from lamin_utils import logger
 from supabase import Client
 from supafunc.errors import FunctionsRelayError, FunctionsHttpError
 import lamindb_setup
 import json
+from importlib import metadata
+from ._settings_instance import InstanceSettings
 from ._settings_storage import StorageSettings, base62
 
 
@@ -16,111 +19,102 @@ from ._hub_client import (
 )
 from ._hub_crud import (
     select_instance_by_owner_name,
-    sb_insert_collaborator,
-    sb_insert_instance,
     sb_insert_db_user,
     sb_update_db_user,
-    sb_insert_storage,
     sb_select_account_by_handle,
     sb_select_db_user_by_instance,
     sb_select_instance_by_name,
     sb_select_storage,
-    sb_select_storage_by_root,
 )
 from ._hub_utils import (
     LaminDsn,
     LaminDsnModel,
-    validate_schema_arg,
 )
 
 
-def add_storage(storage: StorageSettings, account_id: UUID, hub: Client) -> UUID:
-    # unlike storage keys, storage roots are always stored without the
-    # trailing slash in the SQL database
-    root = storage.root_as_str
-    # check if storage exists already
-    storage_result = sb_select_storage_by_root(root, hub)
-    if storage_result is not None:
-        logger.warning("storage exists already")
-        return UUID(storage_result["id"])
-    storage_result = sb_insert_storage(
-        {
-            "id": uuid4().hex,
-            "lnid": storage.uid,
-            "created_by": account_id.hex,
-            "root": root,
-            "region": storage.region,
-            "type": storage.type,
-        },
-        hub,
-    )
-    return UUID(storage_result["id"])
-
-
-def init_instance(
-    *,
-    id: UUID,
-    name: str,  # instance name
-    storage: StorageSettings,  # storage location on cloud
-    db: Optional[str] = None,  # str has to be postgresdsn (use pydantic in the future)
-    schema: Optional[str] = None,  # comma-separated list of schema names
-    lamindb_version: Optional[str] = None,  # the installed lamindb version, optional
-) -> Union[str, UUID]:
+def delete_storage(
+    ssettings: StorageSettings,
+) -> None:
     return call_with_fallback_auth(
-        _init_instance,
-        id=id,
-        name=name,
-        storage=storage,
-        db=db,
-        schema=schema,
-        lamindb_version=lamindb_version,
+        _delete_storage,
+        ssettings=ssettings,
     )
 
 
-def _init_instance(
-    *,
-    id: UUID,
-    name: str,  # instance name
-    storage: StorageSettings,  # storage location on cloud
-    db: Optional[str] = None,  # str has to be postgresdsn (use pydantic in the future)
-    schema: Optional[str] = None,  # comma-separated list of schema names
-    client: Client,
-    lamindb_version: Optional[str] = None,
-) -> Union[str, UUID]:
+def _delete_storage(ssettings: StorageSettings, client: Client) -> None:
+    if ssettings.uuid is None:
+        return None
+    logger.important(f"deleting storage {ssettings.root_as_str}")
+    client.table("storage").delete().eq("id", ssettings.uuid.hex).execute()
+
+
+def init_storage(
+    ssettings: StorageSettings,
+) -> UUID:
+    return call_with_fallback_auth(
+        _init_storage,
+        ssettings=ssettings,
+    )
+
+
+def _init_storage(ssettings: StorageSettings, client: Client) -> UUID:
+    from lamindb_setup import settings
+
+    # storage roots are always stored without the trailing slash in the SQL
+    # database
+    root = ssettings.root_as_str
+    # in the future, we could also encode a prefix to model local storage
+    # locations
+    # f"{prefix}{root}"
+    id = uuid.uuid5(uuid.NAMESPACE_URL, root)
+    fields = dict(
+        id=id.hex,
+        lnid=ssettings.uid,
+        created_by=settings.user.uuid.hex,
+        root=root,
+        region=ssettings.region,
+        type=ssettings.type,
+    )
+    client.table("storage").upsert(fields).execute()
+    return id
+
+
+def delete_instance(
+    isettings: InstanceSettings,
+) -> None:
+    return call_with_fallback_auth(
+        _delete_instance,
+        isettings=isettings,
+    )
+
+
+def _delete_instance(isettings: InstanceSettings, client: Client) -> None:
+    client.table("instance").delete().eq("id", isettings.id.hex).execute()
+
+
+def init_instance(isettings: InstanceSettings) -> Union[str, UUID]:
+    return call_with_fallback_auth(_init_instance, isettings=isettings)
+
+
+def _init_instance(isettings: InstanceSettings, client: Client) -> None:
     from .._settings import settings
 
-    usettings = settings.user
-    # validate input arguments
-    schema_str = validate_schema_arg(schema)
-
-    # get storage and add if not yet there
-    storage_id = add_storage(
-        storage=storage,
-        account_id=usettings.uuid,
-        hub=client,
+    try:
+        lamindb_version = metadata.version("lamindb")
+    except metadata.PackageNotFoundError:
+        lamindb_version = None
+    fields = dict(
+        id=isettings.id.hex,
+        account_id=settings.user.uuid.hex,
+        name=isettings.name,
+        storage_id=isettings.storage.uuid.hex,  # type: ignore
+        schema_str=isettings._schema_str,
+        lamindb_version=lamindb_version,
+        public=False,
     )
-    instance = sb_select_instance_by_name(usettings.uuid, name, client)
-    if instance is not None:
-        return UUID(instance["id"])
-    # sqlite
-    common_fields = {
-        "id": id.hex,
-        "account_id": usettings.uuid.hex,
-        "name": name,
-        "storage_id": storage_id.hex,
-        "schema_str": schema_str,
-        "lamindb_version": lamindb_version,
-        "public": False,
-    }
-    if db is None:
-        sb_insert_instance(
-            common_fields,
-            client,
-        )
-    # postgres
-    else:
-        db_dsn = LaminDsnModel(db=db)
-        common_fields.update(
+    if isettings.dialect != "sqlite":
+        db_dsn = LaminDsnModel(db=isettings.db)
+        fields.update(
             {
                 "db_scheme": db_dsn.db.scheme,
                 "db_host": db_dsn.db.host,
@@ -128,16 +122,7 @@ def _init_instance(
                 "db_database": db_dsn.db.database,
             }
         )
-        sb_insert_instance(common_fields, client)
-    sb_insert_collaborator(
-        {
-            "instance_id": id.hex,
-            "account_id": usettings.uuid.hex,
-            "role": "admin",
-        },
-        client,
-    )
-    return id
+    client.table("instance").upsert(fields).execute()
 
 
 def set_db_user(

@@ -7,6 +7,7 @@ from appdirs import AppDirs
 from ._settings_save import save_system_storage_settings
 from ._settings_store import system_storage_settings_file
 from .upath import LocalPathClasses, UPath, create_path
+from uuid import UUID
 import string
 import secrets
 
@@ -50,25 +51,39 @@ def get_storage_region(storage_root: Union[str, Path, UPath]) -> Optional[str]:
     return storage_region
 
 
-def process_storage_arg(storage: Union[str, Path, UPath]) -> "StorageSettings":
-    storage = str(storage)  # ensure we have a string
+def init_storage(storage: Union[str, Path, UPath]) -> "StorageSettings":
+    if storage is None:
+        raise ValueError("storage argument can't be `None`")
+    root = str(storage)  # ensure we have a string
     uid = base62(8)
     region = None
-    if storage == "create-s3":
+    if root == "create-s3":
         region = find_closest_aws_region()
-        storage = f"s3://lamin-{region}/{uid}"
-    elif storage.startswith(("gs://", "s3://")):
+        root = f"s3://lamin-{region}/{uid}"
+    elif root.startswith(("gs://", "s3://")):
         # check for existence happens in get_storage_region
         pass
     else:  # local path
         try:
-            _ = Path(storage)
+            _ = Path(root)
         except Exception as e:
             logger.error(
                 "`storage` is neither a valid local, a Google Cloud nor an S3 path."
             )
             raise e
-    ssettings = StorageSettings(uid=uid, root=storage, region=region)
+    ssettings = StorageSettings(uid=uid, root=root, region=region)
+    if ssettings.is_cloud:
+        from ._hub_core import init_storage as init_storage_hub
+        from ._hub_core import access_aws
+
+        uuid = init_storage_hub(ssettings)
+        logger.important(f"registered storage: {ssettings.root_as_str}")
+        ssettings._uuid = uuid
+        if storage == "create-s3":
+            access_aws()
+            logger.important(
+                "exported AWS credentials as env variables, valid for 12 hours"
+            )
     return ssettings
 
 
@@ -100,8 +115,10 @@ class StorageSettings:
         root: Union[str, Path, UPath],
         region: Optional[str] = None,
         uid: Optional[str] = None,
+        uuid: Optional[UUID] = None,
     ):
         self._uid = uid
+        self._uuid = uuid
         self._root_init = root
         self._root = None
         # we don't yet infer region here to make init fast
@@ -124,6 +141,11 @@ class StorageSettings:
     def id(self) -> int:
         """Storage id."""
         return self.record.id
+
+    @property
+    def uuid(self) -> Optional[UUID]:
+        """Storage uuid."""
+        return self._uuid
 
     @property
     def uid(self) -> Optional[str]:
@@ -215,7 +237,11 @@ class StorageSettings:
     @property
     def is_cloud(self) -> bool:
         """`True` if `storage_root` is in cloud, `False` otherwise."""
-        return not isinstance(self.root, LocalPathClasses)
+        # if we use the following, we make a network request because of
+        # accessing self.root:
+        #     not isinstance(self.root, LocalPathClasses)
+        # hence, we do a string-based check on self._root_init:
+        return str(self._root_init).startswith(("s3://", "gs://"))
 
     @property
     def region(self) -> Optional[str]:

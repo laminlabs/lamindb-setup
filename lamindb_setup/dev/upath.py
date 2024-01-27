@@ -410,16 +410,15 @@ def create_path(pathlike: Union[str, Path, UPath]) -> UPath:
         path = UPath(str(pathlike))  # UPath applied on Path gives Path back
     else:
         raise ValueError("pathlike should be of type Union[str, Path, UPath]")
-
     # remove trailing slash
     if path._parts[-1] == "":
         path._parts = path._parts[:-1]
 
-    if isinstance(path, S3Path):
-        path = UPath(path, cache_regions=True)
-        if AWS_CREDENTIALS_PRESENT is None:
-            set_aws_credentials_present(path)
-        if not AWS_CREDENTIALS_PRESENT:
-            path = UPath(path, anon=True)
+    # if isinstance(path, S3Path):
+    #     path = UPath(path, cache_regions=True)
+    #     if AWS_CREDENTIALS_PRESENT is None:
+    #         set_aws_credentials_present(path)
+    #     if not AWS_CREDENTIALS_PRESENT:
+    #         path = UPath(path, anon=True)
 
     return path

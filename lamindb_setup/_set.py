@@ -51,7 +51,7 @@ class set:
         # we are not doing this for now because of difficulties to define the right RLS policy  # noqa
         # https://laminlabs.slack.com/archives/C04FPE8V01W/p1687948324601929?thread_ts=1687531921.394119&cid=C04FPE8V01W
         # if settings.instance.is_remote:
-        #     add_storage_hub(
+        #     init_storage_hub(
         #         root, account_handle=settings.instance.owner  # type: ignore
         #     )
 

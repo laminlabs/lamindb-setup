@@ -1,3 +1,6 @@
+from lamin_utils import logger
+
+
 def get_location(ip="ipinfo.io"):
     import requests  # type: ignore
 
@@ -20,39 +23,24 @@ def haversine(lat1: float, lon1: float, lat2: float, lon2: float) -> float:
     return distance
 
 
-def get_aws_regions(service_name="s3") -> str:
-    import botocore.session
-
-    session = botocore.session.get_session()
-    s3 = session.create_client(service_name)
-    return s3.meta.region_name
-
-
-def find_closest_aws_region():
+def find_closest_aws_region() -> str:
+    aws_region_locations = {
+        # 'us-east-1': {'latitude': 39.0, 'longitude': -77.0},  # Northern Virginia
+        "us-west-2": {"latitude": 45.52, "longitude": -122.68},  # Oregon
+        "eu-central-1": {"latitude": 50.11, "longitude": 8.68},  # Frankfurt
+    }
     your_location = get_location()
-    aws_regions = get_aws_regions()
-    closest_region = None
+    closest_region = ""
     min_distance = float("inf")
-    for region in aws_regions:
-        # Approximate latitudes and longitudes for AWS regions
-        region_locations = {
-            # 'us-east-1': {'latitude': 39.0, 'longitude': -77.0},  # Northern Virginia
-            "us-west-2": {"latitude": 45.52, "longitude": -122.68},  # Oregon
-            "eu-central-1": {
-                "latitude": 50.11,
-                "longitude": 8.68,
-            },  # Frankfurt, Germany
-            # Add other regions here
-        }
-        if region in region_locations:
-            region_location = region_locations[region]
-            distance = haversine(
-                your_location["latitude"],
-                your_location["longitude"],
-                region_location["latitude"],
-                region_location["longitude"],
-            )
-            if distance < min_distance:
-                min_distance = distance
-                closest_region = region
+    for region in aws_region_locations:
+        region_location = aws_region_locations[region]
+        distance = haversine(
+            your_location["latitude"],
+            your_location["longitude"],
+            region_location["latitude"],
+            region_location["longitude"],
+        )
+        if distance < min_distance:
+            closest_region, min_distance = region, distance
+    logger.important(f"creating storage in AWS region {closest_region}")
     return closest_region
