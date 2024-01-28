@@ -89,10 +89,11 @@ def delete_instance(
 
 
 def _delete_instance(isettings: InstanceSettings, client: Client) -> None:
+    logger.important(f"deleting instance {isettings.id}")
     client.table("instance").delete().eq("id", isettings.id.hex).execute()
 
 
-def init_instance(isettings: InstanceSettings) -> Union[str, UUID]:
+def init_instance(isettings: InstanceSettings) -> None:
     return call_with_fallback_auth(_init_instance, isettings=isettings)
 
 
@@ -122,7 +123,7 @@ def _init_instance(isettings: InstanceSettings, client: Client) -> None:
                 "db_database": db_dsn.db.database,
             }
         )
-    client.table("instance").insert(fields).execute()
+    client.table("instance").upsert(fields).execute()
 
 
 def set_db_user(
