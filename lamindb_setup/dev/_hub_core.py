@@ -122,13 +122,13 @@ def _init_instance(isettings: InstanceSettings, client: Client) -> None:
                 "db_database": db_dsn.db.database,
             }
         )
-    client.table("instance").upsert(fields).execute()
+    client.table("instance").insert(fields).execute()
 
 
 def set_db_user(
     *,
     db: str,
-    instance_id: Optional[UUID] = None,
+    instance_id: UUID,
 ) -> None:
     return call_with_fallback_auth(_set_db_user, db=db, instance_id=instance_id)
 
@@ -136,13 +136,9 @@ def set_db_user(
 def _set_db_user(
     *,
     db: str,
-    instance_id: Optional[UUID] = None,
+    instance_id: UUID,
     client: Client,
 ) -> None:
-    if instance_id is None:
-        from .._settings import settings
-
-        instance_id = settings.instance.id
     db_dsn = LaminDsnModel(db=db)
     db_user = sb_select_db_user_by_instance(instance_id.hex, client)
     if db_user is None:

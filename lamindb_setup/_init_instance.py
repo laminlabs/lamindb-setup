@@ -188,12 +188,20 @@ def init(
             db=db,
             schema=schema,
         )
-        validate_sqlite_state(isettings)
         if isettings.is_remote and response != "instance-corrupted-or-deleted":
             result = init_instance_hub(isettings)
             if not isinstance(result, UUID):
                 raise RuntimeError(f"Registering instance on hub failed:\n{result}")
             logger.save(f"browse to: https://lamin.ai/{owner}/{name_str}")
+        validate_sqlite_state(isettings)
+        # assign permissions after init_storage to account for AWS latency
+        if ssettings.is_cloud and storage == "create-s3":
+            from ._hub_core import access_aws
+
+            access_aws()
+            logger.important(
+                "exported AWS credentials as env variables, valid for 12 hours"
+            )
         if _test:
             isettings._persist()
             return None

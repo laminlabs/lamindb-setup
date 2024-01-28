@@ -74,16 +74,9 @@ def init_storage(storage: Union[str, Path, UPath]) -> "StorageSettings":
     ssettings = StorageSettings(uid=uid, root=root, region=region)
     if ssettings.is_cloud:
         from ._hub_core import init_storage as init_storage_hub
-        from ._hub_core import access_aws
 
-        uuid = init_storage_hub(ssettings)
+        ssettings._uuid = init_storage_hub(ssettings)
         logger.important(f"registered storage: {ssettings.root_as_str}")
-        ssettings._uuid = uuid
-        if storage == "create-s3":
-            access_aws()
-            logger.important(
-                "exported AWS credentials as env variables, valid for 12 hours"
-            )
     return ssettings
 
 

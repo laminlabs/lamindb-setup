@@ -4,6 +4,7 @@ from typing import Optional
 import pytest
 from gotrue.errors import AuthApiError
 import lamindb_setup as ln_setup
+from lamindb_setup.dev._settings_instance import InstanceSettings
 from lamindb_setup.dev._hub_client import (
     Environment,
     connect_hub_with_auth,
@@ -27,7 +28,7 @@ from lamindb_setup.dev._hub_crud import (
 # from supabase import Client
 from lamindb_setup.dev._hub_utils import LaminDsn
 from lamindb_setup.dev._settings_storage import base62
-from lamindb_setup.dev._setting_storage import init_storage as init_storage_base
+from lamindb_setup.dev._settings_storage import init_storage as init_storage_base
 from lamindb_setup.dev._settings_save import save_user_settings
 from lamindb_setup.dev._settings_user import UserSettings
 
@@ -87,12 +88,16 @@ def create_testuser1_session():  # -> Tuple[Client, UserSettings]
 
 @pytest.fixture(scope="session")
 def create_myinstance(create_testuser1_session):  # -> Dict
-    instance_id = init_instance(
-        id=uuid4(),
+    _, usettings = create_testuser1_session
+    instance_id = uuid4()
+    isettings = InstanceSettings(
+        id=instance_id,
+        owner=usettings.handle,
         name="myinstance",
         storage=init_storage_base("s3://lamindb-ci/myinstance"),
         db="postgresql://postgres:pwd@fakeserver.xyz:5432/mydb",
     )
+    init_instance(isettings)
     # test loading it
     with pytest.raises(PermissionError) as error:
         ln_setup.load("testuser1/myinstance", _test=True)
@@ -190,23 +195,14 @@ def test_load_instance_corrupted_or_expired_credentials(
 
 
 def test_init_storage(create_testuser1_session):
-    client, usettings = create_testuser1_session
-    storage_id = init_storage(
-        storage=init_storage_base("s3://lamindb-ci/myinstance"),
-        account_id=usettings.uuid,
-        hub=client,
-    )
+    client, _ = create_testuser1_session
+    storage_id = init_storage(ssettings=init_storage_base("s3://lamindb-ci/myinstance"))
     assert isinstance(storage_id, UUID)
 
 
 def test_init_storage_with_non_existing_bucket(create_testuser1_session):
-    client, usettings = create_testuser1_session
     from botocore.exceptions import ClientError
 
     with pytest.raises(ClientError) as error:
-        init_storage(
-            storage=init_storage_base("s3://non_existing_storage_root"),
-            account_id=usettings.uuid,
-            hub=client,
-        )
+        init_storage(ssettings=init_storage_base("s3://non_existing_storage_root"))
     assert error.exconly().endswith("Not Found")
