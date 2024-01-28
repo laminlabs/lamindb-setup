@@ -13,7 +13,7 @@ def validate_schema_arg(schema: Optional[str] = None) -> str:
 
 
 def validate_db_arg(db: Optional[str]) -> None:
-    if db:
+    if db is not None:
         LaminDsnModel(db=db)
 
 

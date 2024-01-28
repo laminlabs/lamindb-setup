@@ -123,7 +123,10 @@ def _init_instance(isettings: InstanceSettings, client: Client) -> None:
                 "db_database": db_dsn.db.database,
             }
         )
-    client.table("instance").upsert(fields).execute()
+    # I'd like the following to be an upsert, but this seems to violate RLS
+    # Similarly, if we don't specify `returning="minimal"`, we'll violate RLS
+    # Hence, to make this idempotent, we'll use an insert and catch the erro
+    client.table("instance").insert(fields, returning="minimal").execute()
 
 
 def set_db_user(
@@ -234,19 +237,27 @@ def access_aws() -> None:
 
 
 def _access_aws(client: Client):
+    from time import sleep
+
     response = None
-    try:
-        response = client.functions.invoke("access-aws")
-    except (FunctionsRelayError, FunctionsHttpError) as exception:
-        err = exception.to_dict()
-        logger.warning(err.get("message"))
-    if response is not None:
-        credentials = json.loads(response)["Credentials"]
-        os.environ["AWS_ACCESS_KEY_ID"] = credentials["AccessKeyId"]
-        os.environ["AWS_SECRET_ACCESS_KEY"] = credentials["SecretAccessKey"]
-        os.environ["AWS_SESSION_TOKEN"] = credentials["SessionToken"]
-    elif lamindb_setup._TESTING:
-        raise RuntimeError(f"access-aws errored: {response}")
+    max_retries = 5
+    for retry in range(max_retries):
+        try:
+            response = client.functions.invoke("access-aws")
+        except (FunctionsRelayError, FunctionsHttpError, json.JSONDecodeError) as error:
+            print("no valid response, retry", response)
+            sleep(1)
+            if retry == max_retries - 1:
+                raise error
+            else:
+                continue
+        if response is not None:
+            credentials = json.loads(response)["Credentials"]
+            os.environ["AWS_ACCESS_KEY_ID"] = credentials["AccessKeyId"]
+            os.environ["AWS_SECRET_ACCESS_KEY"] = credentials["SecretAccessKey"]
+            os.environ["AWS_SESSION_TOKEN"] = credentials["SessionToken"]
+        elif lamindb_setup._TESTING:
+            raise RuntimeError(f"access-aws errored: {response}")
 
 
 def get_lamin_site_base_url():

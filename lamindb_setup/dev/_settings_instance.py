@@ -29,10 +29,13 @@ class InstanceSettings:
         db: Optional[str] = None,  # DB URI
         schema: Optional[str] = None,  # comma-separated string of schema names
     ):
+        from ._hub_utils import validate_db_arg
+
         self._id: UUID = id
         self._owner: str = owner
         self._name: str = name
         self._storage: StorageSettings = storage
+        validate_db_arg(db)
         self._db: Optional[str] = db
         self._schema_str: Optional[str] = schema
 
