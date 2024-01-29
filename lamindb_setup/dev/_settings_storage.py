@@ -66,6 +66,7 @@ def create_path_with_credentials(path: UPath) -> UPath:
     try:
         path.fs.call_s3("head_bucket", Bucket=path._url.netloc)
         upath.AWS_CREDENTIALS_PRESENT = True  # type: ignore
+        return path
     except NoCredentialsError:
         # we don't have any credentials at all
         # for legacy reasons, we store information that no credentials
