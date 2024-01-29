@@ -171,11 +171,6 @@ class StorageSettings:
             # below also makes network requests to get credentials
             # right
             root_path = create_path(self._root_init)
-            # root_path is either Path or UPath at this point
-            if isinstance(root_path, LocalPathClasses):  # local paths
-                # resolve fails for nonexisting dir
-                root_path.mkdir(parents=True, exist_ok=True)
-                root_path = root_path.resolve()
             self._root = root_path
         return self._root
 

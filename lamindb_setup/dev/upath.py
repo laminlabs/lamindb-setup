@@ -394,6 +394,10 @@ def convert_pathlike(pathlike: Union[str, Path, UPath]) -> UPath:
     # remove trailing slash
     if path._parts[-1] == "":
         path._parts = path._parts[:-1]
+    if isinstance(path, LocalPathClasses):  # local paths
+        # resolve fails for nonexisting dir
+        path.mkdir(parents=True, exist_ok=True)
+        path = path.resolve()
     return path
 
 

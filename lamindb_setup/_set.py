@@ -7,7 +7,6 @@ from lamindb_setup.dev.upath import UPath
 
 from ._init_instance import register_user_and_storage
 from ._settings import settings
-from .dev import deprecated
 from .dev._settings_instance import InstanceSettings
 from .dev._settings_storage import StorageSettings
 
@@ -34,16 +33,14 @@ class set:
         if settings.instance.dialect == "sqlite":
             logger.error("can't set storage for sqlite instances.")
             return "set-storage-failed"
-
         ssettings = StorageSettings(root=root)
-
         new_isettings = InstanceSettings(
             owner=settings.instance.owner,
             name=settings.instance.name,
             storage=ssettings,
             db=settings.instance.db,
             schema=settings.instance._schema_str,
-            id=settings.instance._id,
+            id=settings.instance.id,
         )
 
         new_isettings._persist()  # this also updates the settings object
@@ -58,9 +55,3 @@ class set:
         settings.storage._set_fs_kwargs(**fs_kwargs)
 
         logger.save(f"set storage {root}")
-
-
-@deprecated("lamindb_setup.set.storage()")
-def set_storage(storage: Union[str, Path, UPath]):
-    """Deprecated in favor of `set.storage`."""
-    set.storage(storage)

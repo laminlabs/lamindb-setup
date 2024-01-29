@@ -59,7 +59,7 @@ from ._init_instance import init  # noqa
 from ._load_instance import load  # noqa
 from ._migrate import migrate
 from ._register_instance import register  # noqa
-from ._set import set, set_storage  # noqa
+from ._set import set  # noqa
 from ._settings import settings  # noqa
 from ._setup_user import login, logout  # noqa
 from ._django import django
