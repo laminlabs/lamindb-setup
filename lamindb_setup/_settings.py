@@ -1,6 +1,5 @@
 import os
 from typing import Union
-
 from lamindb_setup.dev import InstanceSettings, StorageSettings, UserSettings
 from lamindb_setup.dev._settings_load import (
     load_instance_settings,

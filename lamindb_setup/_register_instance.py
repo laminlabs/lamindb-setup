@@ -1,5 +1,6 @@
 from .dev.django import setup_django
 from ._settings import settings
+from .dev._settings_storage import base62
 
 
 def register(_test: bool = False):
@@ -9,16 +10,13 @@ def register(_test: bool = False):
     from ._check_instance_setup import check_instance_setup
 
     isettings = settings.instance
-
     if not check_instance_setup() and not _test:
         setup_django(isettings)
 
-    isettings = settings.instance
     ssettings = settings.instance.storage
-    if ssettings.uid is None:
-        from lnschema_core.models import Storage
-
-        ssettings._uid = Storage.objects.filter(root=ssettings.root_as_str).get()
+    if ssettings._uid is None and _test:
+        # because django isn't up, we can't get it from the database
+        ssettings._uid = base62(8)
     ssettings._uuid = init_storage_hub(ssettings)
     init_instance_hub(isettings)
     isettings._persist()
