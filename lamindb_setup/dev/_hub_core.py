@@ -262,6 +262,7 @@ def _access_aws(client: Client):
             os.environ["AWS_ACCESS_KEY_ID"] = credentials["AccessKeyId"]
             os.environ["AWS_SECRET_ACCESS_KEY"] = credentials["SecretAccessKey"]
             os.environ["AWS_SESSION_TOKEN"] = credentials["SessionToken"]
+            break
         elif lamindb_setup._TESTING:
             raise RuntimeError(f"access-aws errored: {response}")
 

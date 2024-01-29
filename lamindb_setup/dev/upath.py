@@ -6,12 +6,10 @@ from datetime import datetime
 from datetime import timezone
 from pathlib import Path
 from typing import Literal
-from functools import wraps
 import fsspec
 from itertools import islice
 from typing import Union, Optional, Set, Any
 from collections import defaultdict
-from botocore.exceptions import NoCredentialsError
 from dateutil.parser import isoparse  # type: ignore
 from lamin_utils import logger
 from upath import UPath
@@ -86,16 +84,6 @@ def extract_suffix_from_path(
         if print_warning:
             logger.warning(msg)
         return suffix
-
-
-def set_aws_credentials_present(path: S3Path) -> None:
-    global AWS_CREDENTIALS_PRESENT
-    try:
-        path.fs.call_s3("head_bucket", Bucket=path._url.netloc)
-        AWS_CREDENTIALS_PRESENT = True
-    except NoCredentialsError:
-        logger.debug("did not find aws credentials, using anonymous")
-        AWS_CREDENTIALS_PRESENT = False
 
 
 def infer_filesystem(path: Union[Path, UPath, str]):
@@ -359,8 +347,6 @@ UPath.view_tree = view_tree
 # unfortunately, we also have to do this for the subclasses
 Path.view_tree = view_tree  # type: ignore
 
-
-# fix docs
 UPath.glob.__doc__ = Path.glob.__doc__
 UPath.rglob.__doc__ = Path.rglob.__doc__
 UPath.stat.__doc__ = Path.stat.__doc__
@@ -394,30 +380,6 @@ objects through
 Args:
     pathlike: A string or Path to a local/cloud file/directory/folder.
 """
-
-
-def retry_access_aws():
-    """Decorator to retry AWS S3 access in case of exception."""
-
-    def wrap_with_args(func):
-        # https://stackoverflow.com/questions/1782843/python-decorator-handling-docstrings
-        @wraps(func)
-        def wrapper(*args, **kwargs):
-            try:
-                return func(*args, **kwargs)
-            except Exception as exc:
-                if isinstance(args[0], S3Path):
-                    path = UPath(args[0], cache_regions=True)
-                    if AWS_CREDENTIALS_PRESENT is None:
-                        set_aws_credentials_present(path)
-                    if not AWS_CREDENTIALS_PRESENT:
-                        args[0] = UPath(path, anon=True)
-                        return func(*args, **kwargs)
-                raise exc
-
-        return wrapper
-
-    return wrap_with_args
 
 
 def create_path(pathlike: Union[str, Path, UPath]) -> UPath:

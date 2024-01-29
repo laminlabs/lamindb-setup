@@ -6,7 +6,9 @@ from ._aws_storage import find_closest_aws_region, get_aws_account_id
 from appdirs import AppDirs
 from ._settings_save import save_system_storage_settings
 from ._settings_store import system_storage_settings_file
-from .upath import LocalPathClasses, UPath, create_path
+from . import upath
+from botocore.exceptions import NoCredentialsError
+from .upath import LocalPathClasses, UPath, create_path, S3Path
 from uuid import UUID
 import string
 import secrets
@@ -49,6 +51,43 @@ def get_storage_region(storage_root: Union[str, Path, UPath]) -> Optional[str]:
     else:
         storage_region = None
     return storage_region
+
+
+def create_path_with_credentials(path: UPath) -> UPath:
+    if not isinstance(path, S3Path):
+        return path
+    # the below is problematic, because it will assume that all subsequent
+    # requests will then be treated as anon, and we'll never try something else
+    # if isinstance(path, S3Path) and not upath.AWS_CREDENTIALS_PRESENT:
+    #     # if we already know we don't have AWS credentials
+    #     # let's make an anon request from the get-go
+    #     return UPath(path, anon=True)
+    try:
+        path.fs.call_s3("head_bucket", Bucket=path._url.netloc)
+        upath.AWS_CREDENTIALS_PRESENT = True  # type: ignore
+    except NoCredentialsError:
+        # we don't have any credentials at all
+        # for legacy reasons, we store information that no credentials
+        # are present
+        upath.AWS_CREDENTIALS_PRESENT = False  # type: ignore
+        return UPath(path, anon=True)
+    except Exception:
+        # we have credentials but they're wrong
+        # either,
+        # we try to access a public bucket in a different AWS account
+        # or we have the credentials for the wrong AWS acount
+        # or we have expired credentials
+        from ._hub_core import access_aws
+
+        access_aws()
+        # the env variables aren't recognized if previously
+        # another .fs.session._credentials object was already created
+        return UPath(
+            path,
+            key=os.environ["AWS_ACCESS_KEY_ID"],
+            secret=os.environ["AWS_SECRET_ACCESS_KEY"],
+            token=os.environ["AWS_SESSION_TOKEN"],
+        )
 
 
 def init_storage(storage: Union[str, Path, UPath]) -> "StorageSettings":
@@ -117,7 +156,7 @@ class StorageSettings:
     ):
         self._uid = uid
         self._uuid = uuid
-        self._root_init = root
+        self._root_init = create_path(root)
         self._root = None
         self._aws_account_id: Optional[int] = None
         self._description: Optional[str] = None
@@ -168,7 +207,7 @@ class StorageSettings:
     def root(self) -> UPath:
         """Root storage location."""
         if self._root is None:
-            root_path = create_path(self._root_init)
+            root_path = create_path_with_credentials(self._root_init)
             # root_path is either Path or UPath at this point
             if isinstance(root_path, LocalPathClasses):  # local paths
                 # resolve fails for nonexisting dir
@@ -192,7 +231,7 @@ class StorageSettings:
     @property
     def root_as_str(self) -> str:
         """Formatted root string."""
-        return self.root.as_posix().rstrip("/")
+        return self._root_init.as_posix().rstrip("/")
 
     @property
     def cache_dir(
