@@ -3,6 +3,7 @@
 <!-- prettier-ignore -->
 Name | PR | Developer | Date | Version
 --- | --- | --- | --- | ---
+💚 Fix register calls | [628](https://github.com/laminlabs/lamindb-setup/pull/628) | [falexwolf](https://github.com/falexwolf) | 2024-01-29 |
 🔥 Remove vault | [625](https://github.com/laminlabs/lamindb-setup/pull/625) | [falexwolf](https://github.com/falexwolf) | 2024-01-26 |
 ✨ Introduce create storage | [624](https://github.com/laminlabs/lamindb-setup/pull/624) | [falexwolf](https://github.com/falexwolf) | 2024-01-26 |
 ✨ Add storage client | [621](https://github.com/laminlabs/lamindb-setup/pull/621) | [falexwolf](https://github.com/falexwolf) | 2024-01-26 |
