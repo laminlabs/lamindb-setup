@@ -150,7 +150,7 @@ def validate_init_args(
     _test: bool = False,
 ) -> Tuple[
     str,
-    UUID,
+    Optional[UUID],
     Literal[
         "loaded",
         "instance-corrupted-or-deleted",
@@ -174,6 +174,7 @@ def validate_init_args(
         "account-not-exists",
         "instance-not-reachable",
     ] = "loaded"
+    instance_id = None
     if response is not None:
         instance_id, instance_state = process_load_response(
             response, instance_identifier
@@ -225,7 +226,7 @@ def init(
             return None
         ssettings = init_storage(storage)
         isettings = InstanceSettings(
-            id=instance_id,
+            id=instance_id,  # type: ignore
             owner=settings.user.handle,
             name=name_str,
             storage=ssettings,
