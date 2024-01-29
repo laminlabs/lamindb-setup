@@ -10,10 +10,10 @@ import fsspec
 from itertools import islice
 from typing import Union, Optional, Set, Any
 from collections import defaultdict
-from botocore.exceptions import NoCredentialsError
 from dateutil.parser import isoparse  # type: ignore
 from lamin_utils import logger
 from upath import UPath
+from botocore.exceptions import NoCredentialsError
 from upath.implementations.cloud import CloudPath, S3Path  # noqa
 from upath.implementations.local import LocalPath, PosixUPath, WindowsUPath
 
@@ -85,16 +85,6 @@ def extract_suffix_from_path(
         if print_warning:
             logger.warning(msg)
         return suffix
-
-
-def set_aws_credentials_present(path: S3Path) -> None:
-    global AWS_CREDENTIALS_PRESENT
-    try:
-        path.fs.call_s3("head_bucket", Bucket=path._url.netloc)
-        AWS_CREDENTIALS_PRESENT = True
-    except NoCredentialsError:
-        logger.debug("did not find aws credentials, using anonymous")
-        AWS_CREDENTIALS_PRESENT = False
 
 
 def infer_filesystem(path: Union[Path, UPath, str]):
@@ -195,13 +185,6 @@ def synchronize(self, filepath: Path, error_no_origin: bool = True, **kwargs):
         os.utime(filepath, times=(mts, mts))
     elif cloud_mts < local_mts:
         pass
-        # these warnings are out-dated because it can be normal to have a more up-to-date version locally  # noqa
-        # logger.warning(
-        #     f"Local file ({filepath}) for cloud path ({self}) is newer on disk than in cloud.\n"  # noqa
-        #     "It seems you manually updated the database locally and didn't push changes to the cloud.\n"  # noqa
-        #     "This can lead to data loss if somebody else modified the cloud file in"  # noqa
-        #     " the meantime."
-        # )
 
 
 def modified(self) -> Optional[datetime]:
@@ -365,8 +348,6 @@ UPath.view_tree = view_tree
 # unfortunately, we also have to do this for the subclasses
 Path.view_tree = view_tree  # type: ignore
 
-
-# fix docs
 UPath.glob.__doc__ = Path.glob.__doc__
 UPath.rglob.__doc__ = Path.rglob.__doc__
 UPath.stat.__doc__ = Path.stat.__doc__
@@ -402,7 +383,7 @@ Args:
 """
 
 
-def create_path(pathlike: Union[str, Path, UPath]) -> UPath:
+def convert_pathlike(pathlike: Union[str, Path, UPath]) -> UPath:
     """Convert pathlike to Path or UPath inheriting options from root."""
     if isinstance(pathlike, (str, UPath)):
         path = UPath(pathlike)
@@ -410,16 +391,53 @@ def create_path(pathlike: Union[str, Path, UPath]) -> UPath:
         path = UPath(str(pathlike))  # UPath applied on Path gives Path back
     else:
         raise ValueError("pathlike should be of type Union[str, Path, UPath]")
-
     # remove trailing slash
     if path._parts[-1] == "":
         path._parts = path._parts[:-1]
-
-    if isinstance(path, S3Path):
-        path = UPath(path, cache_regions=True)
-        if AWS_CREDENTIALS_PRESENT is None:
-            set_aws_credentials_present(path)
-        if not AWS_CREDENTIALS_PRESENT:
-            path = UPath(path, anon=True)
-
+    if isinstance(path, LocalPathClasses):  # local paths
+        # resolve fails for nonexisting dir
+        path.mkdir(parents=True, exist_ok=True)
+        path = path.resolve()
     return path
+
+
+def create_path(path: UPath) -> UPath:
+    global AWS_CREDENTIALS_PRESENT
+
+    path = convert_pathlike(path)
+    if not isinstance(path, S3Path):
+        return path
+    path = UPath(path, cache_regions=True)
+    # the below is problematic, because it will assume that all subsequent
+    # requests will then be treated as anon, and we'll never try something else
+    # if isinstance(path, S3Path) and not upath.AWS_CREDENTIALS_PRESENT:
+    #     # if we already know we don't have AWS credentials
+    #     # let's make an anon request from the get-go
+    #     return UPath(path, anon=True)
+    try:
+        path.fs.call_s3("head_bucket", Bucket=path._url.netloc)
+        AWS_CREDENTIALS_PRESENT = True  # type: ignore
+        return path
+    except NoCredentialsError:
+        # we don't have any credentials at all
+        # for legacy reasons, we store information that no credentials
+        # are present
+        AWS_CREDENTIALS_PRESENT = False  # type: ignore
+        return UPath(path, anon=True)
+    except Exception:
+        # we have credentials but they're wrong
+        # either,
+        # we try to access a public bucket in a different AWS account
+        # or we have the credentials for the wrong AWS acount
+        # or we have expired credentials
+        from ._hub_core import access_aws
+
+        access_aws()
+        # the env variables aren't recognized if previously
+        # another .fs.session._credentials object was already created
+        return UPath(
+            path,
+            key=os.environ["AWS_ACCESS_KEY_ID"],
+            secret=os.environ["AWS_SECRET_ACCESS_KEY"],
+            token=os.environ["AWS_SESSION_TOKEN"],
+        )

@@ -53,9 +53,9 @@ def load_bionty_sources(isettings: InstanceSettings):
     if "bionty" not in isettings.schema:
         return None
 
-    import bionty as bt
-    from bionty.dev._handle_sources import parse_currently_used_sources
-    from bionty.dev._io import write_yaml
+    import bionty_base as bt
+    from bionty_base.dev._handle_sources import parse_currently_used_sources
+    from bionty_base.dev._io import write_yaml
     from lnschema_bionty.models import PublicSource
 
     try:
@@ -71,7 +71,7 @@ def load_bionty_sources(isettings: InstanceSettings):
 def delete_bionty_sources_yaml():
     """Delete LAMINDB_SOURCES_PATH in bionty."""
     try:
-        import bionty as bt
+        import bionty_base as bt
 
         bt.settings.lamindb_sources.unlink(missing_ok=True)
     except ModuleNotFoundError:

@@ -47,6 +47,7 @@ def test_init_instance_postgres_default_name(get_hub_client):
     # if instance exists, delete it
     if instance is not None:
         sb_delete_instance(instance["id"], hub)
+    ln_setup.delete("pgtest", force=True)
     # now, run init
     ln_setup.init(storage="./mydatapg", db=pgurl, _test=True)
     ln_setup.register(_test=True)

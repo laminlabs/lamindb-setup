@@ -2,9 +2,11 @@ import importlib
 import sys
 from pathlib import Path
 from typing import Optional, Union
-from uuid import UUID, uuid4
+import uuid
+from uuid import UUID
 import os
 from lamin_utils import logger
+from typing import Tuple, Literal
 from pydantic import PostgresDsn
 from django.db.utils import OperationalError, ProgrammingError
 from django.core.exceptions import FieldError
@@ -13,8 +15,9 @@ from ._close import close as close_instance
 from ._settings import settings
 from ._silence_loggers import silence_loggers
 from .dev import InstanceSettings
-from .dev._settings_storage import StorageSettings, process_storage_arg
+from .dev._settings_storage import StorageSettings, init_storage
 from .dev.upath import create_path
+from .dev._hub_core import access_aws
 
 
 def get_schema_module_name(schema_name) -> str:
@@ -115,6 +118,71 @@ Either delete your cache ({}) or add it back to the cloud (if delete was acciden
 """
 
 
+def process_load_response(
+    response: Union[Tuple, str], instance_identifier: str
+) -> Tuple[
+    UUID,
+    Literal[
+        "instance-corrupted-or-deleted", "account-not-exists", "instance-not-reachable"
+    ],
+]:
+    # for internal use when creating instances through CICD
+    if isinstance(response, tuple) and response[0] == "instance-corrupted-or-deleted":
+        hub_result = response[1]
+        instance_state = response[0]
+        instance_id = UUID(hub_result["id"])
+    else:
+        instance_id_str = os.getenv("LAMINDB_INSTANCE_ID_INIT")
+        if instance_id_str is None:
+            instance_id = uuid.uuid5(uuid.NAMESPACE_URL, instance_identifier)
+        else:
+            instance_id = UUID(instance_id_str)
+        instance_state = response
+    return instance_id, instance_state
+
+
+def validate_init_args(
+    *,
+    storage: Union[str, Path, UPath],
+    name: Optional[str] = None,
+    db: Optional[PostgresDsn] = None,
+    schema: Optional[str] = None,
+    _test: bool = False,
+) -> Tuple[
+    str,
+    Optional[UUID],
+    Literal[
+        "loaded",
+        "instance-corrupted-or-deleted",
+        "account-not-exists",
+        "instance-not-reachable",
+    ],
+]:
+    from ._load_instance import load
+    from .dev._hub_utils import (
+        validate_schema_arg,
+    )
+
+    # should be called as the first thing
+    name_str = infer_instance_name(storage=storage, name=name, db=db)
+    # test whether instance exists by trying to load it
+    instance_identifier = f"{settings.user.handle}/{name_str}"
+    response = load(instance_identifier, _raise_not_reachable_error=False, _test=_test)
+    instance_state: Literal[
+        "loaded",
+        "instance-corrupted-or-deleted",
+        "account-not-exists",
+        "instance-not-reachable",
+    ] = "loaded"
+    instance_id = None
+    if response is not None:
+        instance_id, instance_state = process_load_response(
+            response, instance_identifier
+        )
+    schema = validate_schema_arg(schema)
+    return name_str, instance_id, instance_state
+
+
 def init(
     *,
     storage: Union[str, Path, UPath],
@@ -123,7 +191,7 @@ def init(
     schema: Optional[str] = None,
     _test: bool = False,
 ) -> None:
-    """Creating and loading a LaminDB instance.
+    """Create and load a LaminDB instance.
 
     Args:
         storage: Either ``"create-s3"``, local or
@@ -132,118 +200,68 @@ def init(
         db: Database connection url, do not pass for SQLite.
         schema: Comma-separated string of schema modules. None if not set.
     """
-    from ._check_instance_setup import check_instance_setup
+    isettings = None
+    ssettings = None
+    try:
+        silence_loggers()
+        from ._check_instance_setup import check_instance_setup
 
-    if check_instance_setup() and not _test:
-        raise RuntimeError(
-            "Currently don't support init or load of multiple instances in the same"
-            " Python session. We will bring this feature back at some point."
-        )
-    else:
-        close_instance(mute=True)
-    # clean up in next refactor
-    # avoid circular import
-    from ._load_instance import load
-    from .dev._hub_core import init_instance as init_instance_hub
-    from .dev._hub_utils import (
-        validate_db_arg,
-        validate_schema_arg,
-    )
-
-    #
-    if name is not None and "/" in name:
-        logger.warning(
-            "Please provide a valid instance name: '/' delimiter not allowed."
-        )
-        raise ValueError("Invalid instance name: '/' delimiter not allowed.")
-
-    assert settings.user.uid  # check user is logged in
-    owner = settings.user.handle
-
-    schema = validate_schema_arg(schema)
-    ssettings = process_storage_arg(storage)
-    validate_db_arg(db)
-    if storage is None:
-        raise ValueError("Pass storage argument")
-
-    name_str = infer_instance_name(storage=storage, name=name, db=db)
-    # test whether instance exists by trying to load it
-    response = load(
-        f"{owner}/{name_str}", _raise_not_reachable_error=False, _test=_test
-    )
-    if response is None:
-        return None  # successful load!
-
-    # for internal use when creating instances through CICD
-    if isinstance(response, tuple) and response[0] == "instance-corrupted-or-deleted":
-        hub_result = response[1]
-        response = response[0]
-        instance_id = UUID(hub_result["id"])
-    else:
-        instance_id_str = os.getenv("LAMINDB_INSTANCE_ID_INIT")
-        if instance_id_str is None:
-            instance_id = uuid4()
-        else:
-            instance_id = UUID(instance_id_str)
-
-    isettings = InstanceSettings(
-        id=instance_id,
-        owner=owner,
-        name=name_str,
-        storage=ssettings,
-        db=db,
-        schema=schema,
-    )
-
-    if isettings._is_cloud_sqlite:
-        if (
-            not isettings._sqlite_file.exists()
-            and isettings._sqlite_file_local.exists()
-        ):
+        if check_instance_setup() and not _test:
             raise RuntimeError(
-                ERROR_SQLITE_CACHE.format(
-                    isettings._sqlite_file, isettings._sqlite_file_local
-                )
+                "Currently don't support init or load of multiple instances in the same"
+                " Python session. We will bring this feature back at some point."
             )
+        else:
+            close_instance(mute=True)
+        from .dev._hub_core import init_instance as init_instance_hub
 
-    if isettings.is_remote and response != "instance-corrupted-or-deleted":
-        from importlib import metadata
-
-        try:
-            lamindb_version = metadata.version("lamindb")
-        except metadata.PackageNotFoundError:
-            lamindb_version = None
-        result = init_instance_hub(
-            id=instance_id,
+        name_str, instance_id, instance_state = validate_init_args(
+            storage=storage,
+            name=name,
+            db=db,
+            schema=schema,
+            _test=_test,
+        )
+        if instance_state == "loaded":
+            logger.important("loaded instance instead without creating it")
+            return None
+        ssettings = init_storage(storage)
+        isettings = InstanceSettings(
+            id=instance_id,  # type: ignore
+            owner=settings.user.handle,
             name=name_str,
             storage=ssettings,
             db=db,
             schema=schema,
-            lamindb_version=lamindb_version,
+            uid=ssettings.uid,
         )
-        if not isinstance(result, UUID):
-            raise RuntimeError(f"Registering instance on hub failed:\n{result}")
-        logger.save(f"registered instance on hub: https://lamin.ai/{owner}/{name_str}")
+        if isettings.is_remote and instance_state != "instance-corrupted-or-deleted":
+            init_instance_hub(isettings)
+        validate_sqlite_state(isettings)
+        # assign permissions after init_storage to account for AWS latency
+        if ssettings.is_cloud and storage == "create-s3":
+            access_aws()
+        if _test:
+            isettings._persist()
+            return None
+        isettings._init_db()
+        load_from_isettings(isettings, init=True)
+        if isettings._is_cloud_sqlite:
+            isettings._cloud_sqlite_locker.lock()
+            logger.warning(
+                "locked instance (to unlock and push changes to the cloud SQLite file,"
+                " call: lamin close)"
+            )
+        if not isettings.is_remote:
+            logger.important("did not register local instance on lamin.ai")
+    except Exception as e:
+        from .dev._hub_core import delete_storage, delete_instance
 
-    if _test:
-        isettings._persist()
-        return None
-
-    silence_loggers()
-
-    isettings._init_db()
-    load_from_isettings(isettings, init=True)
-    if isettings._is_cloud_sqlite:
-        isettings._cloud_sqlite_locker.lock()
-        logger.warning(
-            "locked instance (to unlock and push changes to the cloud SQLite file,"
-            " call: lamin close)"
-        )
-    if not isettings.is_remote:
-        verbosity = logger._verbosity
-        logger.set_verbosity(4)
-        logger.info("did not register local instance on hub")
-        logger.set_verbosity(verbosity)
+        if isettings is not None:
+            delete_instance(isettings)
+        if ssettings is not None:
+            delete_storage(ssettings)
+        raise e
     return None
 
 
@@ -273,23 +291,43 @@ def load_from_isettings(
     reload_lamindb(isettings)
 
 
+def validate_sqlite_state(isettings: InstanceSettings) -> None:
+    if isettings._is_cloud_sqlite:
+        if (
+            # it's important to first evaluate the existence check
+            # for the local sqlite file because it doesn't need a network
+            # request
+            isettings._sqlite_file_local.exists()
+            and not isettings._sqlite_file.exists()
+        ):
+            raise RuntimeError(
+                ERROR_SQLITE_CACHE.format(
+                    isettings._sqlite_file, isettings._sqlite_file_local
+                )
+            )
+
+
 def infer_instance_name(
     *,
     storage: Union[str, Path, UPath],
     name: Optional[str] = None,
     db: Optional[PostgresDsn] = None,
-):
+) -> str:
     if name is not None:
+        if "/" in name:
+            raise ValueError("Invalid instance name: '/' delimiter not allowed.")
         return name
     if db is not None:
-        # better way of accessing the database name?
+        logger.warning("using the sql database name for the instance name")
+        # this isn't a great way to access the db name
+        # could use LaminDsn instead
         return str(db).split("/")[-1]
-
+    if storage == "create-s3":
+        raise ValueError("pass name to init if storage = 'create-s3'")
     storage_path = create_path(storage)
     if isinstance(storage_path, LocalPathClasses):
         name = storage_path.stem
     else:
         name = storage_path._url.netloc
     name = name.lower()
-
     return name

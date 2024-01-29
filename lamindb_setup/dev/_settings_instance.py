@@ -22,17 +22,22 @@ class InstanceSettings:
 
     def __init__(
         self,
-        id: UUID,  # instance id
+        id: UUID,  # instance id/uuid
         owner: str,  # owner handle
         name: str,  # instance name
         storage: StorageSettings,  # storage location on cloud
+        uid: Optional[str] = None,  # instance uid/lnid
         db: Optional[str] = None,  # DB URI
         schema: Optional[str] = None,  # comma-separated string of schema names
     ):
+        from ._hub_utils import validate_db_arg
+
         self._id: UUID = id
         self._owner: str = owner
         self._name: str = name
         self._storage: StorageSettings = storage
+        self._uid: Optional[str] = uid
+        validate_db_arg(db)
         self._db: Optional[str] = db
         self._schema_str: Optional[str] = schema
 
@@ -83,8 +88,13 @@ class InstanceSettings:
 
     @property
     def id(self) -> UUID:
-        """The instance id."""
+        """The internal instance id."""
         return self._id
+
+    @property
+    def uid(self) -> Optional[str]:
+        """The user-facing instance id."""
+        return self._uid
 
     @property
     def schema(self) -> Set[str]:
@@ -237,8 +247,6 @@ class InstanceSettings:
 
     def _persist(self) -> None:
         assert self.name is not None
-        if self.storage.type == "local":
-            self.storage.root.mkdir(parents=True, exist_ok=True)
 
         filepath = self._get_settings_file()
         # persist under filepath for later reference

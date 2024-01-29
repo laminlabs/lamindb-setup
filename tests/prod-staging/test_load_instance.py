@@ -1,5 +1,5 @@
 import os
-
+from postgrest.exceptions import APIError
 import pytest
 from laminhub_rest.core.collaborator._add_collaborator import add_collaborator
 from laminhub_rest.core.collaborator._delete_collaborator import delete_collaborator
@@ -31,13 +31,18 @@ def test_load_after_revoked_access():
     if os.getenv("LAMIN_ENV") == "prod":
         ln_setup.login("testuser1@lamin.ai")
         admin_hub = connect_hub_with_auth()
-        add_collaborator(
-            "testuser2",
-            "laminlabs",
-            "static-test-instance-private-sqlite",
-            "write",
-            admin_hub,
-        )
+        try:
+            # if a previous test run failed, this will
+            # error with a violation of a unique constraint
+            add_collaborator(
+                "testuser2",
+                "laminlabs",
+                "static-test-instance-private-sqlite",
+                "write",
+                admin_hub,
+            )
+        except APIError:
+            pass
         ln_setup.login("testuser2@lamin.ai")
         ln_setup.load(
             "https://lamin.ai/laminlabs/static-test-instance-private-sqlite", _test=True
