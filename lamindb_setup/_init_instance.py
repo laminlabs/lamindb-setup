@@ -223,6 +223,7 @@ def init(
             _test=_test,
         )
         if instance_state == "loaded":
+            logger.important("loaded instance instead without creating it")
             return None
         ssettings = init_storage(storage)
         isettings = InstanceSettings(

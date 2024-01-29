@@ -119,8 +119,8 @@ def init_storage(storage: Union[str, Path, UPath]) -> "StorageSettings":
             ssettings._aws_account_id = 767398070972
         elif root.startswith("s3://"):
             ssettings._aws_account_id = get_aws_account_id()
-        ssettings._uuid = init_storage_hub(ssettings)
         ssettings._description = f"Created as default storage for instance {uid}"
+        ssettings._uuid = init_storage_hub(ssettings)
         logger.important(f"registered storage: {ssettings.root_as_str}")
     return ssettings
 
