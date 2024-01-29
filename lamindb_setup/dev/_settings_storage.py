@@ -118,6 +118,9 @@ class StorageSettings:
         self._uid = uid
         self._uuid = uuid
         self._root_init = convert_pathlike(root)
+        if isinstance(self._root_init, LocalPathClasses):  # local paths
+            self._root_init.mkdir(parents=True, exist_ok=True)
+            self._root_init = self._root_init.resolve()
         self._root = None
         self._aws_account_id: Optional[int] = None
         self._description: Optional[str] = None
