@@ -1,7 +1,7 @@
 from uuid import UUID
 
 from lamin_utils import logger
-
+from .dev.django import setup_django
 from ._settings import settings
 
 
@@ -10,9 +10,11 @@ def register():
     from .dev._hub_core import init_instance as init_instance_hub
     from ._check_instance_setup import check_instance_setup
 
-    check_instance_setup()
-
     isettings = settings.instance
+
+    if not check_instance_setup():
+        setup_django(isettings)
+
     result = init_instance_hub(
         id=isettings.id,
         name=isettings.name,
