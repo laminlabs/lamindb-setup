@@ -49,7 +49,7 @@ def test_init_instance_postgres_default_name(get_hub_client):
         sb_delete_instance(instance["id"], hub)
     # now, run init
     ln_setup.init(storage="./mydatapg", db=pgurl, _test=True)
-    ln_setup.register()
+    ln_setup.register(_test=True)
     # and check
     instance, db_user = get_instance_and_dbuser_from_hub(instance_name, hub)
     # hub checks
@@ -138,7 +138,7 @@ def test_init_instance_sqlite():
         name="local-sqlite-instance",
         _test=True,
     )
-    ln_setup.register()
+    ln_setup.register(_test=True)
     hub = connect_hub_with_auth()
     account = sb_select_account_by_handle(
         handle=ln_setup.settings.instance.owner, client=hub
