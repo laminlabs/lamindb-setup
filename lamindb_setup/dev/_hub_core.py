@@ -74,6 +74,8 @@ def _init_storage(ssettings: StorageSettings, client: Client) -> UUID:
         root=root,
         region=ssettings.region,
         type=ssettings.type,
+        aws_account_id=ssettings._aws_account_id,
+        description=ssettings._description,
     )
     client.table("storage").upsert(fields).execute()
     return id
@@ -127,6 +129,7 @@ def _init_instance(isettings: InstanceSettings, client: Client) -> None:
     # Similarly, if we don't specify `returning="minimal"`, we'll violate RLS
     # Hence, to make this idempotent, we'll use an insert and catch the erro
     client.table("instance").insert(fields, returning="minimal").execute()
+    logger.save(f"browse to: https://lamin.ai/{isettings.owner}/{isettings.name}")
 
 
 def set_db_user(
@@ -231,7 +234,10 @@ def access_aws() -> None:
     from .._settings import settings
 
     if settings.user.handle != "anonymous":
-        return call_with_fallback_auth(_access_aws)
+        call_with_fallback_auth(_access_aws)
+        logger.important(
+            "exported AWS credentials as env variables, valid for 12 hours"
+        )
     else:
         raise RuntimeError("Can only get access to AWS if authenticated.")
 

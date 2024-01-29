@@ -1,4 +1,21 @@
+from typing import Optional
 from lamin_utils import logger
+import botocore.session
+
+
+def get_aws_account_id() -> Optional[int]:
+    session = botocore.session.get_session()
+    sts_client = session.create_client("sts")
+    try:
+        account_id = sts_client.get_caller_identity()["Account"]
+        logger.important(f"storing AWS account ID: {account_id}")
+        return int(account_id)
+    except botocore.exceptions.NoCredentialsError:
+        logger.warning("No AWS credentials found")
+        return None
+    except botocore.exceptions.ClientError as error:
+        logger.warning(f"An error occurred: {error}")
+        return None
 
 
 def get_location(ip="ipinfo.io"):

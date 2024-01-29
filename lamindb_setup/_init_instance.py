@@ -6,7 +6,7 @@ import uuid
 from uuid import UUID
 import os
 from lamin_utils import logger
-from typing import Tuple
+from typing import Tuple, Literal
 from pydantic import PostgresDsn
 from django.db.utils import OperationalError, ProgrammingError
 from django.core.exceptions import FieldError
@@ -120,11 +120,16 @@ Either delete your cache ({}) or add it back to the cloud (if delete was acciden
 
 def process_load_response(
     response: Union[Tuple, str], instance_identifier: str
-) -> UUID:
+) -> Tuple[
+    UUID,
+    Literal[
+        "instance-corrupted-or-deleted", "account-not-exists", "instance-not-reachable"
+    ],
+]:
     # for internal use when creating instances through CICD
     if isinstance(response, tuple) and response[0] == "instance-corrupted-or-deleted":
         hub_result = response[1]
-        response = response[0]
+        instance_state = response[0]
         instance_id = UUID(hub_result["id"])
     else:
         instance_id_str = os.getenv("LAMINDB_INSTANCE_ID_INIT")
@@ -132,7 +137,49 @@ def process_load_response(
             instance_id = uuid.uuid5(uuid.NAMESPACE_URL, instance_identifier)
         else:
             instance_id = UUID(instance_id_str)
-    return instance_id
+        instance_state = response
+    return instance_id, instance_state
+
+
+def validate_init_args(
+    *,
+    storage: Union[str, Path, UPath],
+    name: Optional[str] = None,
+    db: Optional[PostgresDsn] = None,
+    schema: Optional[str] = None,
+    _test: bool = False,
+) -> Tuple[
+    str,
+    UUID,
+    Literal[
+        "loaded",
+        "instance-corrupted-or-deleted",
+        "account-not-exists",
+        "instance-not-reachable",
+    ],
+]:
+    from ._load_instance import load
+    from .dev._hub_utils import (
+        validate_schema_arg,
+    )
+
+    # should be called as the first thing
+    name_str = infer_instance_name(storage=storage, name=name, db=db)
+    # test whether instance exists by trying to load it
+    instance_identifier = f"{settings.user.handle}/{name_str}"
+    response = load(instance_identifier, _raise_not_reachable_error=False, _test=_test)
+    instance_state: Literal[
+        "loaded",
+        "instance-corrupted-or-deleted",
+        "account-not-exists",
+        "instance-not-reachable",
+    ] = "loaded"
+    if response is not None:
+        instance_id, instance_state = process_load_response(
+            response, instance_identifier
+        )
+    schema = validate_schema_arg(schema)
+    return name_str, instance_id, instance_state
 
 
 def init(
@@ -165,44 +212,33 @@ def init(
             )
         else:
             close_instance(mute=True)
-        from ._load_instance import load
         from .dev._hub_core import init_instance as init_instance_hub
-        from .dev._hub_utils import (
-            validate_schema_arg,
-        )
 
-        # should be called as the first thing
-        name_str = infer_instance_name(storage=storage, name=name, db=db)
-        owner = settings.user.handle
-        # test whether instance exists by trying to load it
-        instance_identifier = f"{owner}/{name_str}"
-        response = load(
-            instance_identifier, _raise_not_reachable_error=False, _test=_test
+        name_str, instance_id, instance_state = validate_init_args(
+            storage=storage,
+            name=name,
+            db=db,
+            schema=schema,
+            _test=_test,
         )
-        if response is None:
-            return None  # successful load!
-        else:
-            instance_id = process_load_response(response, instance_identifier)
-        schema = validate_schema_arg(schema)
+        if instance_state == "loaded":
+            return None
         ssettings = init_storage(storage)
         isettings = InstanceSettings(
             id=instance_id,
-            owner=owner,
+            owner=settings.user.handle,
             name=name_str,
             storage=ssettings,
             db=db,
             schema=schema,
+            uid=ssettings.uid,
         )
-        if isettings.is_remote and response != "instance-corrupted-or-deleted":
+        if isettings.is_remote and instance_state != "instance-corrupted-or-deleted":
             init_instance_hub(isettings)
-            logger.save(f"browse to: https://lamin.ai/{owner}/{name_str}")
         validate_sqlite_state(isettings)
         # assign permissions after init_storage to account for AWS latency
         if ssettings.is_cloud and storage == "create-s3":
             access_aws()
-            logger.important(
-                "exported AWS credentials as env variables, valid for 12 hours"
-            )
         if _test:
             isettings._persist()
             return None

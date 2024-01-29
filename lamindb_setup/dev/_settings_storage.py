@@ -2,7 +2,7 @@ import os
 from lamin_utils import logger
 from pathlib import Path
 from typing import Any, Optional, Union
-from ._closest_aws_region import find_closest_aws_region
+from ._aws_storage import find_closest_aws_region, get_aws_account_id
 from appdirs import AppDirs
 from ._settings_save import save_system_storage_settings
 from ._settings_store import system_storage_settings_file
@@ -59,7 +59,7 @@ def init_storage(storage: Union[str, Path, UPath]) -> "StorageSettings":
     region = None
     if root == "create-s3":
         region = find_closest_aws_region()
-        root = f"s3://lamin-hosted-{region}/{uid}"
+        root = f"s3://lamin-{region}/{uid}"
     elif root.startswith(("gs://", "s3://")):
         # check for existence happens in get_storage_region
         pass
@@ -75,7 +75,12 @@ def init_storage(storage: Union[str, Path, UPath]) -> "StorageSettings":
     if ssettings.is_cloud:
         from ._hub_core import init_storage as init_storage_hub
 
+        if storage == "create-s3":
+            ssettings._aws_account_id = 767398070972
+        elif root.startswith("s3://"):
+            ssettings._aws_account_id = get_aws_account_id()
         ssettings._uuid = init_storage_hub(ssettings)
+        ssettings._description = f"Created as default storage for instance {uid}"
         logger.important(f"registered storage: {ssettings.root_as_str}")
     return ssettings
 
@@ -114,6 +119,8 @@ class StorageSettings:
         self._uuid = uuid
         self._root_init = root
         self._root = None
+        self._aws_account_id: Optional[int] = None
+        self._description: Optional[str] = None
         # we don't yet infer region here to make init fast
         self._region = region
         # would prefer to type below as Registry, but need to think through import order
