@@ -19,7 +19,7 @@ def lint(session: nox.Session) -> None:
 def install(session: nox.Session, group: str) -> None:
     if group in {"prod-staging"}:
         # TODO: get rid of the bionty duplication asap
-        session.run(*"pip install bionty")
+        session.run(*"pip install bionty".split())
         session.run(*"pip install git+https://github.com/laminlabs/bionty-base".split())
         session.run(
             *"pip install --no-deps git+https://github.com/laminlabs/lnschema-bionty"
@@ -40,7 +40,7 @@ def install(session: nox.Session, group: str) -> None:
         session.run(*"pip install -e .[aws,dev]".split())
     elif group == "prod-only":
         # TODO: get rid of the bionty duplication asap
-        session.run(*"pip install bionty")
+        session.run(*"pip install bionty".split())
         session.run(*"pip install git+https://github.com/laminlabs/bionty-base".split())
         session.run(
             *"pip install git+https://github.com/laminlabs/lnschema-core".split()
