@@ -56,6 +56,7 @@ def get_storage_region(storage_root: Union[str, Path, UPath]) -> Optional[str]:
 def create_path_with_credentials(path: UPath) -> UPath:
     if not isinstance(path, S3Path):
         return path
+    path = UPath(path, cache_regions=True)
     # the below is problematic, because it will assume that all subsequent
     # requests will then be treated as anon, and we'll never try something else
     # if isinstance(path, S3Path) and not upath.AWS_CREDENTIALS_PRESENT:
