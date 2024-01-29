@@ -8,6 +8,9 @@ from ._settings import settings
 def register():
     """Register an instance on the hub."""
     from .dev._hub_core import init_instance as init_instance_hub
+    from ._check_instance_setup import check_instance_setup
+
+    check_instance_setup()
 
     isettings = settings.instance
     result = init_instance_hub(
