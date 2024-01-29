@@ -6,6 +6,7 @@ from datetime import datetime
 from datetime import timezone
 from pathlib import Path
 from typing import Literal
+from functools import wraps
 import fsspec
 from itertools import islice
 from typing import Union, Optional, Set, Any
@@ -195,13 +196,6 @@ def synchronize(self, filepath: Path, error_no_origin: bool = True, **kwargs):
         os.utime(filepath, times=(mts, mts))
     elif cloud_mts < local_mts:
         pass
-        # these warnings are out-dated because it can be normal to have a more up-to-date version locally  # noqa
-        # logger.warning(
-        #     f"Local file ({filepath}) for cloud path ({self}) is newer on disk than in cloud.\n"  # noqa
-        #     "It seems you manually updated the database locally and didn't push changes to the cloud.\n"  # noqa
-        #     "This can lead to data loss if somebody else modified the cloud file in"  # noqa
-        #     " the meantime."
-        # )
 
 
 def modified(self) -> Optional[datetime]:
@@ -402,6 +396,30 @@ Args:
 """
 
 
+def retry_access_aws():
+    """Decorator to retry AWS S3 access in case of exception."""
+
+    def wrap_with_args(func):
+        # https://stackoverflow.com/questions/1782843/python-decorator-handling-docstrings
+        @wraps(func)
+        def wrapper(*args, **kwargs):
+            try:
+                return func(*args, **kwargs)
+            except Exception as exc:
+                if isinstance(args[0], S3Path):
+                    path = UPath(args[0], cache_regions=True)
+                    if AWS_CREDENTIALS_PRESENT is None:
+                        set_aws_credentials_present(path)
+                    if not AWS_CREDENTIALS_PRESENT:
+                        args[0] = UPath(path, anon=True)
+                        return func(*args, **kwargs)
+                raise exc
+
+        return wrapper
+
+    return wrap_with_args
+
+
 def create_path(pathlike: Union[str, Path, UPath]) -> UPath:
     """Convert pathlike to Path or UPath inheriting options from root."""
     if isinstance(pathlike, (str, UPath)):
@@ -413,12 +431,4 @@ def create_path(pathlike: Union[str, Path, UPath]) -> UPath:
     # remove trailing slash
     if path._parts[-1] == "":
         path._parts = path._parts[:-1]
-
-    # if isinstance(path, S3Path):
-    #     path = UPath(path, cache_regions=True)
-    #     if AWS_CREDENTIALS_PRESENT is None:
-    #         set_aws_credentials_present(path)
-    #     if not AWS_CREDENTIALS_PRESENT:
-    #         path = UPath(path, anon=True)
-
     return path
