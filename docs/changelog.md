@@ -3,6 +3,7 @@
 <!-- prettier-ignore -->
 Name | PR | Developer | Date | Version
 --- | --- | --- | --- | ---
+♻️ Add using key | [633](https://github.com/laminlabs/lamindb-setup/pull/633) | [falexwolf](https://github.com/falexwolf) | 2024-01-30 |
 ✨ Enable multiple instances | [632](https://github.com/laminlabs/lamindb-setup/pull/632) | [falexwolf](https://github.com/falexwolf) | 2024-01-30 |
 🐛 Fix import bionty-base | [631](https://github.com/laminlabs/lamindb-setup/pull/631) | [sunnyosun](https://github.com/sunnyosun) | 2024-01-30 |
 💚 Fixes for lamindb | [630](https://github.com/laminlabs/lamindb-setup/pull/630) | [falexwolf](https://github.com/falexwolf) | 2024-01-29 |
