@@ -1,5 +1,5 @@
 from lamin_utils import logger
-
+import os
 from ._init_instance import reload_lamindb, reload_schema_modules
 from ._silence_loggers import silence_loggers
 from .dev._settings_store import current_instance_settings_file
@@ -10,6 +10,11 @@ You haven't yet setup an instance: Please call `ln.setup.init()` or `ln.setup.lo
 
 
 def check_instance_setup(from_lamindb: bool = False):
+    # silence_loggers is called twice within the if conditions for latency
+    # reasons
+    if os.environ.get("LAMINDB_MULTI_INSTANCE") == "true":
+        silence_loggers()
+        return True
     if current_instance_settings_file().exists():
         silence_loggers()
         try:
