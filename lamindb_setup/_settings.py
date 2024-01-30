@@ -1,5 +1,5 @@
 import os
-from typing import Union
+from typing import Union, Optional
 from lamindb_setup.dev import InstanceSettings, StorageSettings, UserSettings
 from lamindb_setup.dev._settings_load import (
     load_instance_settings,
@@ -24,6 +24,8 @@ class settings:
     - :class:`~lamindb_setup.dev.StorageSettings`
     - :class:`~lamindb_setup.dev.UserSettings`
     """
+
+    _using_key: Optional[str] = None  # set through lamindb.settings
 
     _user_settings: Union[UserSettings, None] = None
     _instance_settings: Union[InstanceSettings, None] = None
