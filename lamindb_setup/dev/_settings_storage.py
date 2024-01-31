@@ -195,7 +195,7 @@ class StorageSettings:
     @property
     def root_as_str(self) -> str:
         """Formatted root string."""
-        return self._root_init.as_posix()
+        return self._root_init.as_posix().rstrip("/")
 
     @property
     def cache_dir(
