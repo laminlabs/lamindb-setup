@@ -13,9 +13,9 @@ from collections import defaultdict
 from dateutil.parser import isoparse  # type: ignore
 from lamin_utils import logger
 from upath import UPath
-from botocore.exceptions import NoCredentialsError
 from upath.implementations.cloud import CloudPath, S3Path  # noqa
 from upath.implementations.local import LocalPath, PosixUPath, WindowsUPath
+from ._s3access import s3Access
 
 LocalPathClasses = (PosixUPath, WindowsUPath, LocalPath)
 
@@ -397,43 +397,10 @@ def convert_pathlike(pathlike: Union[str, Path, UPath]) -> UPath:
     return path
 
 
-def create_path(path: UPath) -> UPath:
-    global AWS_CREDENTIALS_PRESENT
+def create_path(path: Union[str, Path, UPath]) -> UPath:
+    path: UPath = convert_pathlike(path)  # type: ignore
 
-    path = convert_pathlike(path)
-    if not isinstance(path, S3Path):
-        return path
-    path = UPath(path, cache_regions=True)
-    # the below is problematic, because it will assume that all subsequent
-    # requests will then be treated as anon, and we'll never try something else
-    # if isinstance(path, S3Path) and not upath.AWS_CREDENTIALS_PRESENT:
-    #     # if we already know we don't have AWS credentials
-    #     # let's make an anon request from the get-go
-    #     return UPath(path, anon=True)
-    try:
-        path.fs.call_s3("head_bucket", Bucket=path._url.netloc)
-        AWS_CREDENTIALS_PRESENT = True  # type: ignore
-        return path
-    except NoCredentialsError:
-        # we don't have any credentials at all
-        # for legacy reasons, we store information that no credentials
-        # are present
-        AWS_CREDENTIALS_PRESENT = False  # type: ignore
-        return UPath(path, anon=True)
-    except Exception:
-        # we have credentials but they're wrong
-        # either,
-        # we try to access a public bucket in a different AWS account
-        # or we have the credentials for the wrong AWS acount
-        # or we have expired credentials
-        from ._hub_core import access_aws
+    if isinstance(path, S3Path) and s3Access.initialized:
+        path = s3Access.process_path(path)
 
-        access_aws()
-        # the env variables aren't recognized if previously
-        # another .fs.session._credentials object was already created
-        return UPath(
-            path,
-            key=os.environ["AWS_ACCESS_KEY_ID"],
-            secret=os.environ["AWS_SECRET_ACCESS_KEY"],
-            token=os.environ["AWS_SESSION_TOKEN"],
-        )
+    return path

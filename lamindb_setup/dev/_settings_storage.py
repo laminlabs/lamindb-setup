@@ -6,10 +6,11 @@ from ._aws_storage import find_closest_aws_region, get_aws_account_id
 from appdirs import AppDirs
 from ._settings_save import save_system_storage_settings
 from ._settings_store import system_storage_settings_file
-from .upath import LocalPathClasses, UPath, create_path, convert_pathlike
+from .upath import LocalPathClasses, UPath, S3Path, convert_pathlike
 from uuid import UUID
 import string
 import secrets
+from ._s3access import s3Access
 
 
 DIRS = AppDirs("lamindb", "laminlabs")
@@ -176,7 +177,10 @@ class StorageSettings:
         if self._root is None:
             # below also makes network requests to get credentials
             # right
-            root_path = create_path(self._root_init)
+            if isinstance(self._root_init, S3Path):
+                root_path = s3Access.initialize(self._root_init)
+            else:
+                root_path = self._root_init
             self._root = root_path
         return self._root
 
