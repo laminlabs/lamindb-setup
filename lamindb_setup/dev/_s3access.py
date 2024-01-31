@@ -4,6 +4,7 @@ import os
 
 
 class s3Access:
+    # no checks happen for buckets in this dict
     buckets_options: dict = dict()
     default_options: dict = dict(cache_regions=True)
 
@@ -13,6 +14,7 @@ class s3Access:
 
     # this implements anon fallback
     # does only one check request for a bucket
+    # this runs an access check for a bucket only once
     @classmethod
     def process_path(cls, path: UPath):
         assert cls.initialized
@@ -28,6 +30,7 @@ class s3Access:
             path = cls.try_access(path)
         return path
 
+    # check anon access
     @classmethod
     def try_access(cls, path: UPath):
         bucket = path._url.netloc
