@@ -117,7 +117,7 @@ class StorageSettings:
     ):
         self._uid = uid
         self._uuid = uuid
-        self._root_init = convert_pathlike(root)
+        self._root_init: UPath = convert_pathlike(root)
         if isinstance(self._root_init, LocalPathClasses):  # local paths
             self._root_init.mkdir(parents=True, exist_ok=True)
             self._root_init = self._root_init.resolve()
@@ -195,7 +195,7 @@ class StorageSettings:
     @property
     def root_as_str(self) -> str:
         """Formatted root string."""
-        return self._root_init.as_posix().rstrip("/")
+        return self._root_init.as_posix()
 
     @property
     def cache_dir(
