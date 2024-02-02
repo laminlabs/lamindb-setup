@@ -85,15 +85,6 @@ def init_storage(storage: Union[str, Path, UPath]) -> "StorageSettings":
     return ssettings
 
 
-def get_storage_type(root: str):
-    if str(root).startswith("s3://"):
-        return "s3"
-    elif str(root).startswith("gs://"):
-        return "gs"
-    else:
-        return "local"
-
-
 def _process_cache_path(cache_path: Union[str, Path, UPath, None]):
     if cache_path is None or cache_path == "null":
         return None
