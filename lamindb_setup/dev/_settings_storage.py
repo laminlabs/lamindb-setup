@@ -262,7 +262,7 @@ class StorageSettings:
         import fsspec
 
         convert = {"file": "local"}
-        protocol = fsspec.utils.get_protocol(str(self.root))
+        protocol = fsspec.utils.get_protocol(self.root_as_str)
         return convert.get(protocol, protocol)
 
     def key_to_filepath(self, filekey: Union[Path, UPath, str]) -> UPath:

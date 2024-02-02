@@ -50,7 +50,7 @@ def save_instance_settings(settings: Any, settings_file: Path):
     with open(settings_file, "w") as f:
         f.write(f"lamindb_instance_owner={settings.owner}\n")
         f.write(f"lamindb_instance_name={settings.name}\n")
-        f.write(f"lamindb_instance_storage_root={str(settings.storage.root)}\n")
+        f.write(f"lamindb_instance_storage_root={settings.storage.root_as_str}\n")
         storage_region = (
             settings.storage.region if settings.storage.region is not None else "null"
         )
