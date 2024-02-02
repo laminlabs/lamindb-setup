@@ -229,8 +229,11 @@ def _load_instance(
     # check if is postgres instance
     # this used to be a check for `instance["db"] is not None` in earlier versions
     # removed this on 2022-10-25 and can remove from the hub probably for lamindb 1.0
-    if instance["public"] and instance["db_scheme"] is not None:
-        db_user = sb_select_db_user_by_instance(instance["id"], client)
+    if instance["db_scheme"] is not None:
+        db_user = None
+        if instance["public"]:
+            # attempt to query db credentials from hub
+            db_user = sb_select_db_user_by_instance(instance["id"], client)
         if db_user is None:
             name, password = "none", "none"
         else:
