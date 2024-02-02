@@ -16,6 +16,7 @@ prod-only/test-empty-init
 prod-only/test-import-schema
 prod-only/test-invalid-schema
 prod-only/test-insufficient-user-info
+prod-only/test-load-anonymously
 prod-only/test-load-lock
 prod-only/test-sqlite-sync
 
