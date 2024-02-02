@@ -82,6 +82,20 @@ def _init_storage(ssettings: StorageSettings, client: Client) -> UUID:
     return id
 
 
+def delete_instance_storage(instance_identifier: str) -> None:
+    owner, name = instance_identifier.split("/")
+    instance_account = call_with_fallback_auth(
+        select_instance_by_owner_name,
+        owner=owner,
+        name=name,
+    )
+    if instance_account is not None:
+        instance_account.pop("account")
+        instance = instance_account
+        delete_instance(UUID(instance["id"]))
+        delete_storage(UUID(instance["storage_id"]))
+
+
 def delete_instance(
     instance_id: UUID,
 ) -> None:
