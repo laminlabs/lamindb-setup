@@ -231,11 +231,7 @@ class StorageSettings:
     @property
     def is_cloud(self) -> bool:
         """`True` if `storage_root` is in cloud, `False` otherwise."""
-        # if we use the following, we make a network request because of
-        # accessing self.root:
-        #     not isinstance(self.root, LocalPathClasses)
-        # hence, we do a string-based check on self._root_init:
-        return str(self._root_init).startswith(("s3://", "gs://"))
+        return self.type != "local"
 
     @property
     def region(self) -> Optional[str]:
