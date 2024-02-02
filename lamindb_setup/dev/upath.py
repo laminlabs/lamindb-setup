@@ -391,10 +391,14 @@ def convert_pathlike(pathlike: Union[str, Path, UPath]) -> UPath:
     return path
 
 
-hosted_buckets = (
-    "s3://lamin-eu-central-1",
-    "s3://lamin-us-west-2",
-)
+lamin_env = os.getenv("LAMIN_ENV")
+if lamin_env is None or lamin_env == "prod":
+    hosted_buckets = (
+        "s3://lamin-eu-central-1",
+        "s3://lamin-us-west-2",
+    )
+else:
+    hosted_buckets = ("s3://lamin-hosted-test",)  # type: ignore
 credentials_cache: Dict[str, Dict[str, str]] = {}
 
 
