@@ -400,7 +400,7 @@ def create_path(path: UPath) -> UPath:
     path = convert_pathlike(path)
     if not isinstance(path, S3Path):
         return path
-    path = UPath(path)
+    path = UPath(path, cache_regions=True)
     # the below is problematic, because it will assume that all subsequent
     # requests will then be treated as anon, and we'll never try something else
     # if isinstance(path, S3Path) and not upath.AWS_CREDENTIALS_PRESENT:
