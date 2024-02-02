@@ -3,6 +3,7 @@
 <!-- prettier-ignore -->
 Name | PR | Developer | Date | Version
 --- | --- | --- | --- | ---
+♻️ Low-latency storage permission management | [639](https://github.com/laminlabs/lamindb-setup/pull/639) | [falexwolf](https://github.com/falexwolf) | 2024-02-02 |
 ✅ Implement proper integration tests for hosted storage | [638](https://github.com/laminlabs/lamindb-setup/pull/638) | [falexwolf](https://github.com/falexwolf) | 2024-02-02 |
 🐛 Fix permission error for init of hosted instances | [636](https://github.com/laminlabs/lamindb-setup/pull/636) | [Koncopd](https://github.com/Koncopd) | 2024-02-02 |
 📝 Add examples to `Upath.rename` | [637](https://github.com/laminlabs/lamindb-setup/pull/637) | [sunnyosun](https://github.com/sunnyosun) | 2024-02-02 |
