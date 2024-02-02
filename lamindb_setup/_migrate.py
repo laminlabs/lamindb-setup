@@ -34,22 +34,22 @@ class migrate:
         if check_instance_setup():
             raise RuntimeError("Restart Python session to migrate or use CLI!")
         from lamindb_setup.dev._hub_crud import (
-            sb_update_instance,
-            sb_select_instance_by_id,
-            sb_select_collaborator,
+            update_instance,
+            select_instance_by_id,
+            select_collaborator,
         )
         from lamindb_setup.dev._hub_client import call_with_fallback_auth
 
         instance_id_str = settings.instance.id.hex
         instance = call_with_fallback_auth(
-            sb_select_instance_by_id, instance_id=instance_id_str
+            select_instance_by_id, instance_id=instance_id_str
         )
         instance_is_on_hub = instance is not None
         if instance_is_on_hub:
             # double check that user is an admin, otherwise will fail below
             # without idempotence
             collaborator = call_with_fallback_auth(
-                sb_select_collaborator,
+                select_collaborator,
                 instance_id=instance_id_str,
                 account_id=settings.user.uuid,
             )
@@ -68,7 +68,7 @@ class migrate:
         if instance_is_on_hub:
             logger.important(f"updating lamindb version in hub: {lamindb.__version__}")
             call_with_fallback_auth(
-                sb_update_instance,
+                update_instance,
                 instance_id=settings.instance.id.hex,
                 instance_fields={"lamindb_version": lamindb.__version__},
             )

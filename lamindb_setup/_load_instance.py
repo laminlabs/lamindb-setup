@@ -138,20 +138,20 @@ def load(
         )
     else:
         error_message = (
-            f"Instance {owner}/{name} not loadable from hub with response:"
-            f" '{hub_result}'.\nCheck whether instance exists and you have access:"
+            f"'{owner}/{name}' not loadable:"
+            f" '{hub_result}'\nCheck your permissions:"
             f" https://lamin.ai/{owner}/{name}?tab=collaborators"
         )
         if settings_file.exists():
             isettings = load_instance_settings(settings_file)
             if isettings.is_remote:
                 if _raise_not_reachable_error:
-                    raise RuntimeError(error_message)
+                    raise SystemExit(error_message)
                 return "instance-not-reachable"
             logger.info(f"found cached instance metadata: {settings_file}")
         else:
             if _raise_not_reachable_error:
-                raise RuntimeError(error_message)
+                raise SystemExit(error_message)
             return "instance-not-reachable"
         # mimic instance_result from hub
         instance_result = {"id": isettings.id.hex}
@@ -174,7 +174,7 @@ def load(
                 " lamin close"
             )
         elif _raise_not_reachable_error:
-            raise RuntimeError(msg)
+            raise SystemExit(msg)
         else:
             logger.warning(
                 f"instance exists with id {isettings.id.hex}, but database is not"

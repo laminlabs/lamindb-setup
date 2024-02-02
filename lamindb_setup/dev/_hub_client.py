@@ -23,10 +23,7 @@ def load_fallback_connector() -> Connector:
 
 
 PROD_URL = "https://hub.lamin.ai"
-PROD_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImxhZXNhdW1tZHlkbGxwcGdmY2h1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE2NTY4NDA1NTEsImV4cCI6MTk3MjQxNjU1MX0.WUeCRiun0ExUxKIv5-CtjF6878H8u26t0JmCWx3_2-c"  # noqa
-PROD_HUB_REST_SERVER_URL = (
-    "https://laminhub-rest-cloud-run-prod-xv4y7p4gqa-uc.a.run.app"
-)
+PROD_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImxhZXNhdW1tZHlkbGxwcGdmY2h1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE2NTY4NDA1NTEsImV4cCI6MTk3MjQxNjU1MX0.WUeCRiun0ExUxKIv5-CtjF6878H8u26t0JmCWx3_2-c"  # noqa
 
 
 class Environment:
@@ -38,26 +35,20 @@ class Environment:
         if lamin_env == "prod":
             if not fallback:
                 url = PROD_URL
-                key = PROD_KEY
+                key = PROD_ANON_KEY
             else:
                 connector = load_fallback_connector()
                 url = connector.url
                 key = connector.key
-            hub_rest_server_url = PROD_HUB_REST_SERVER_URL
         elif lamin_env == "staging":
             url = "https://amvrvdwndlqdzgedrqdv.supabase.co"
             key = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImFtdnJ2ZHduZGxxZHpnZWRycWR2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE2NzcxNTcxMzMsImV4cCI6MTk5MjczMzEzM30.Gelt3dQEi8tT4j-JA36RbaZuUvxRnczvRr3iyRtzjY0"  # noqa
-            hub_rest_server_url = (
-                "https://laminhub-rest-cloud-run-staging-xv4y7p4gqa-uc.a.run.app"
-            )
         else:
             url = os.environ["SUPABASE_API_URL"]
             key = os.environ["SUPABASE_ANON_KEY"]
-            hub_rest_server_url = os.environ.get("LAMIN_HUB_REST_SERVER_URL", None)  # type: ignore  # noqa
         self.lamin_env: str = lamin_env
         self.supabase_api_url: str = url
         self.supabase_anon_key: str = key
-        self.hub_rest_server_url: str = hub_rest_server_url
 
 
 # runs ~0.5s

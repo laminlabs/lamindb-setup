@@ -1,13 +1,13 @@
 import os
 from typing import Optional, Tuple, Union, Dict
 import uuid
-from uuid import UUID, uuid4
+from postgrest.exceptions import APIError
+from uuid import UUID
 from lamin_utils import logger
 from supabase import Client
 from supafunc.errors import FunctionsRelayError, FunctionsHttpError
 import lamindb_setup
 import json
-from postgrest.exceptions import APIError
 from importlib import metadata
 from ._settings_instance import InstanceSettings
 from ._settings_storage import StorageSettings, base62
@@ -20,12 +20,10 @@ from ._hub_client import (
 )
 from ._hub_crud import (
     select_instance_by_owner_name,
-    sb_insert_db_user,
-    sb_update_db_user,
-    sb_select_account_by_handle,
-    sb_select_db_user_by_instance,
-    sb_select_instance_by_name,
-    sb_select_storage,
+    select_account_by_handle,
+    select_db_user_by_instance,
+    select_instance_by_name,
+    select_storage,
 )
 from ._hub_utils import (
     LaminDsn,
@@ -152,44 +150,6 @@ def _init_instance(isettings: InstanceSettings, client: Client) -> None:
     logger.save(f"browse to: https://lamin.ai/{isettings.owner}/{isettings.name}")
 
 
-def set_db_user(
-    *,
-    db: str,
-    instance_id: UUID,
-) -> None:
-    return call_with_fallback_auth(_set_db_user, db=db, instance_id=instance_id)
-
-
-def _set_db_user(
-    *,
-    db: str,
-    instance_id: UUID,
-    client: Client,
-) -> None:
-    db_dsn = LaminDsnModel(db=db)
-    db_user = sb_select_db_user_by_instance(instance_id.hex, client)
-    if db_user is None:
-        sb_insert_db_user(
-            {
-                "id": uuid4().hex,
-                "instance_id": instance_id.hex,
-                "db_user_name": db_dsn.db.user,
-                "db_user_password": db_dsn.db.password,
-            },
-            client,
-        )
-    else:
-        sb_update_db_user(
-            db_user["id"],
-            {
-                "instance_id": instance_id.hex,
-                "db_user_name": db_dsn.db.user,
-                "db_user_password": db_dsn.db.password,
-            },
-            client,
-        )
-
-
 def load_instance(
     *,
     owner: str,  # account_handle
@@ -209,44 +169,45 @@ def _load_instance(
     name: str,  # instance_name
     client: Client,
 ) -> Union[Tuple[dict, dict], str]:
-    instance_account = select_instance_by_owner_name(owner, name, client)
-    if instance_account is None:
-        account = sb_select_account_by_handle(owner, client)
+    instance_account_storage = select_instance_by_owner_name(owner, name, client)
+    if instance_account_storage is None:
+        # try the via single requests, will take more time
+        account = select_account_by_handle(owner, client)
         if account is None:
             return "account-not-exists"
-        instance = sb_select_instance_by_name(account["id"], name, client)
+        instance = select_instance_by_name(account["id"], name, client)
         if instance is None:
             return "instance-not-reachable"
+        # get default storage
+        storage = select_storage(instance["storage_id"], client)
+        if storage is None:
+            return "storage-does-not-exist-on-hub"
     else:
-        account = instance_account.pop("account")
-        instance = instance_account
+        account = instance_account_storage.pop("account")
+        storage = instance_account_storage.pop("storage")
+        instance = instance_account_storage
     # check if is postgres instance
     # this used to be a check for `instance["db"] is not None` in earlier versions
     # removed this on 2022-10-25 and can remove from the hub probably for lamindb 1.0
     if instance["db_scheme"] is not None:
-        # get db_user
-        db_user = sb_select_db_user_by_instance(instance["id"], client)
+        db_user = None
+        if instance["public"]:
+            # attempt to query db credentials from hub
+            db_user = select_db_user_by_instance(instance["id"], client)
         if db_user is None:
-            db_user_name = "none"
-            db_user_password = "none"
+            name, password = "none", "none"
         else:
-            db_user_name = db_user["db_user_name"]
-            db_user_password = db_user["db_user_password"]
+            name, password = db_user["db_user_name"], db_user["db_user_password"]
         # construct dsn from instance and db_account fields
         db_dsn = LaminDsn.build(
             scheme=instance["db_scheme"],
-            user=db_user_name,
-            password=db_user_password,
+            user=name,
+            password=password,
             host=instance["db_host"],
             port=instance["db_port"],
             database=instance["db_database"],
         )
-        # override the db string with the constructed dsn
         instance["db"] = db_dsn
-    # get default storage
-    storage = sb_select_storage(instance["storage_id"], client)
-    if storage is None:
-        return "storage-does-not-exist-on-hub"
     return instance, storage
 
 
