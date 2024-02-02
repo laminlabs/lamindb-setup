@@ -189,8 +189,8 @@ class StorageSettings:
         >>>    profile="some_profile", cache_regions=True
         >>> )
         """
-        if not isinstance(self._root, LocalPathClasses):
-            self._root = UPath(self._root, **kwargs)
+        if not isinstance(self._root, LocalPathClasses) and kwargs != {}:
+            self._root = UPath(self.root, **kwargs)
 
     @property
     def root_as_str(self) -> str:
