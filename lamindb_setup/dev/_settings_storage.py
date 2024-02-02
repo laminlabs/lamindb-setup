@@ -176,6 +176,7 @@ class StorageSettings:
         if self._root is None:
             # below also makes network requests to get credentials
             # right
+            print("init root")
             root_path = create_path(self._root_init)
             self._root = root_path
         return self._root

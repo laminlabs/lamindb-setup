@@ -258,9 +258,9 @@ def init(
         from .dev._hub_core import delete_storage, delete_instance
 
         if isettings is not None:
-            delete_instance(isettings)
+            delete_instance(isettings.id)
         if ssettings is not None:
-            delete_storage(ssettings)
+            delete_storage(ssettings.uuid)  # type: ignore
         raise e
     return None
 

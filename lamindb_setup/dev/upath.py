@@ -157,6 +157,8 @@ def upload_from(self, path, print_progress: bool = False, **kwargs):
 
 def synchronize(self, filepath: Path, error_no_origin: bool = True, **kwargs):
     """Sync to a local destination path."""
+    print(self)
+    print(self._kwargs)
     if not self.exists():
         warn_or_error = f"The original path {self} does not exist anymore."
         if filepath.exists():
@@ -400,10 +402,11 @@ def convert_pathlike(pathlike: Union[str, Path, UPath]) -> UPath:
 def create_path(path: UPath) -> UPath:
     global AWS_CREDENTIALS_PRESENT
 
+    print(f"create path: {path}")
     path = convert_pathlike(path)
     if not isinstance(path, S3Path):
         return path
-    path = UPath(path, cache_regions=True)
+    path = UPath(path)
     # the below is problematic, because it will assume that all subsequent
     # requests will then be treated as anon, and we'll never try something else
     # if isinstance(path, S3Path) and not upath.AWS_CREDENTIALS_PRESENT:

@@ -7,6 +7,7 @@ from supabase import Client
 from supafunc.errors import FunctionsRelayError, FunctionsHttpError
 import lamindb_setup
 import json
+from postgrest.exceptions import APIError
 from importlib import metadata
 from ._settings_instance import InstanceSettings
 from ._settings_storage import StorageSettings, base62
@@ -33,19 +34,19 @@ from ._hub_utils import (
 
 
 def delete_storage(
-    ssettings: StorageSettings,
+    storage_uuid: UUID,
 ) -> None:
     return call_with_fallback_auth(
         _delete_storage,
-        ssettings=ssettings,
+        storage_uuid=storage_uuid,
     )
 
 
-def _delete_storage(ssettings: StorageSettings, client: Client) -> None:
-    if ssettings.uuid is None:
+def _delete_storage(storage_uuid: UUID, client: Client) -> None:
+    if storage_uuid is None:
         return None
-    logger.important(f"deleting storage {ssettings.root_as_str}")
-    client.table("storage").delete().eq("id", ssettings.uuid.hex).execute()
+    logger.important(f"deleting storage {storage_uuid.hex}")
+    client.table("storage").delete().eq("id", storage_uuid.hex).execute()
 
 
 def init_storage(
@@ -82,17 +83,17 @@ def _init_storage(ssettings: StorageSettings, client: Client) -> UUID:
 
 
 def delete_instance(
-    isettings: InstanceSettings,
+    instance_id: UUID,
 ) -> None:
     return call_with_fallback_auth(
         _delete_instance,
-        isettings=isettings,
+        instance_id=instance_id,
     )
 
 
-def _delete_instance(isettings: InstanceSettings, client: Client) -> None:
-    logger.important(f"deleting instance {isettings.id}")
-    client.table("instance").delete().eq("id", isettings.id.hex).execute()
+def _delete_instance(instance_id: UUID, client: Client) -> None:
+    logger.important(f"deleting instance {instance_id.hex}")
+    client.table("instance").delete().eq("id", instance_id.hex).execute()
 
 
 def init_instance(isettings: InstanceSettings) -> None:
@@ -127,8 +128,13 @@ def _init_instance(isettings: InstanceSettings, client: Client) -> None:
         )
     # I'd like the following to be an upsert, but this seems to violate RLS
     # Similarly, if we don't specify `returning="minimal"`, we'll violate RLS
-    # Hence, to make this idempotent, we'll use an insert and catch the erro
-    client.table("instance").insert(fields, returning="minimal").execute()
+    # we could make this idempotent by catching an error, but this seems dangerous
+    # as then init_instance is no longer idempotent
+    try:
+        client.table("instance").insert(fields, returning="minimal").execute()
+    except APIError as e:
+        logger.warning("instance likely already exists")
+        raise e
     logger.save(f"browse to: https://lamin.ai/{isettings.owner}/{isettings.name}")
 
 
@@ -259,6 +265,7 @@ def _access_aws(client: Client):
                 continue
         if response is not None:
             credentials = json.loads(response)["Credentials"]
+            print(credentials)
             os.environ["AWS_ACCESS_KEY_ID"] = credentials["AccessKeyId"]
             os.environ["AWS_SECRET_ACCESS_KEY"] = credentials["SecretAccessKey"]
             os.environ["AWS_SESSION_TOKEN"] = credentials["SessionToken"]
