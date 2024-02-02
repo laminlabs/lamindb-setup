@@ -17,7 +17,6 @@ from ._silence_loggers import silence_loggers
 from .dev import InstanceSettings
 from .dev._settings_storage import StorageSettings, init_storage
 from .dev.upath import convert_pathlike
-from .dev._hub_core import access_aws
 
 
 def get_schema_module_name(schema_name) -> str:
@@ -238,9 +237,6 @@ def init(
         if isettings.is_remote and instance_state != "instance-corrupted-or-deleted":
             init_instance_hub(isettings)
         validate_sqlite_state(isettings)
-        # assign permissions after init_storage to account for AWS latency
-        if ssettings.is_cloud and storage == "create-s3":
-            access_aws()
         if _test:
             isettings._persist()
             return None

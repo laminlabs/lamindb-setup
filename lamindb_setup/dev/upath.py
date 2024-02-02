@@ -4,8 +4,9 @@
 import os
 from datetime import datetime
 from datetime import timezone
+import botocore
 from pathlib import Path
-from typing import Literal
+from typing import Literal, Dict
 import fsspec
 from itertools import islice
 from typing import Union, Optional, Set, Any
@@ -13,14 +14,10 @@ from collections import defaultdict
 from dateutil.parser import isoparse  # type: ignore
 from lamin_utils import logger
 from upath import UPath
-from botocore.exceptions import NoCredentialsError
 from upath.implementations.cloud import CloudPath, S3Path  # noqa
 from upath.implementations.local import LocalPath, PosixUPath, WindowsUPath
 
 LocalPathClasses = (PosixUPath, WindowsUPath, LocalPath)
-
-
-AWS_CREDENTIALS_PRESENT = None
 
 # also see https://gist.github.com/securifera/e7eed730cbe1ce43d0c29d7cd2d582f4
 #    ".gz" is not listed here as it typically occurs with another suffix
@@ -389,48 +386,49 @@ def convert_pathlike(pathlike: Union[str, Path, UPath]) -> UPath:
     else:
         raise ValueError("pathlike should be of type Union[str, Path, UPath]")
     # remove trailing slash
-    if path._parts[-1] == "":
+    if path._parts and path._parts[-1] == "":
         path._parts = path._parts[:-1]
     return path
 
 
-def create_path(path: UPath) -> UPath:
-    global AWS_CREDENTIALS_PRESENT
+hosted_buckets = (
+    "s3://lamin-eu-central-1",
+    "s3://lamin-us-west-2",
+)
+credentials_cache: Dict[str, Dict[str, str]] = {}
 
+
+def create_path(path: UPath) -> UPath:
     path = convert_pathlike(path)
+    # test whether we have an AWS S3 path
     if not isinstance(path, S3Path):
         return path
-    path = UPath(path, cache_regions=True)
-    # the below is problematic, because it will assume that all subsequent
-    # requests will then be treated as anon, and we'll never try something else
-    # if isinstance(path, S3Path) and not upath.AWS_CREDENTIALS_PRESENT:
-    #     # if we already know we don't have AWS credentials
-    #     # let's make an anon request from the get-go
-    #     return UPath(path, anon=True)
-    try:
-        path.fs.call_s3("head_bucket", Bucket=path._url.netloc)
-        AWS_CREDENTIALS_PRESENT = True  # type: ignore
-        return path
-    except NoCredentialsError:
-        # we don't have any credentials at all
-        # for legacy reasons, we store information that no credentials
-        # are present
-        AWS_CREDENTIALS_PRESENT = False  # type: ignore
-        return UPath(path, anon=True)
-    except Exception:
-        # we have credentials but they're wrong
-        # either,
-        # we try to access a public bucket in a different AWS account
-        # or we have the credentials for the wrong AWS acount
-        # or we have expired credentials
-        from ._hub_core import access_aws
+    # test whether AWS credentials are present
+    session = botocore.session.get_session()
+    credentials = session.get_credentials()
+    if credentials is None or credentials.access_key is None:
+        anon = True
+    else:
+        anon = False
+    # test whether we are on hosted storage or not
+    path_str = path.as_posix()
+    is_hosted_storage = path_str.startswith(hosted_buckets)
 
-        access_aws()
-        # the env variables aren't recognized if previously
-        # another .fs.session._credentials object was already created
+    if not is_hosted_storage:
+        # make anon request if no credentials present
+        return UPath(path, cache_regions=True, anon=anon)
+    else:
+        root_folder = path_str.replace("s3://", "").split("/")[0]
+        if root_folder in credentials_cache:
+            credentials = credentials_cache[root_folder]
+        else:
+            from ._hub_core import access_aws
+
+            credentials = access_aws()
+            credentials_cache[root_folder] = credentials
         return UPath(
             path,
-            key=os.environ["AWS_ACCESS_KEY_ID"],
-            secret=os.environ["AWS_SECRET_ACCESS_KEY"],
-            token=os.environ["AWS_SESSION_TOKEN"],
+            key=credentials["key"],
+            secret=credentials["secret"],
+            token=credentials["token"],
         )
