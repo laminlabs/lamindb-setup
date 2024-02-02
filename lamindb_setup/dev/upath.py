@@ -400,6 +400,7 @@ if lamin_env is None or lamin_env == "prod":
 else:
     hosted_buckets = ("s3://lamin-hosted-test",)  # type: ignore
 credentials_cache: Dict[str, Dict[str, str]] = {}
+AWS_CREDENTIALS_PRESENT = None
 
 
 def create_path(path: UPath) -> UPath:
@@ -414,6 +415,9 @@ def create_path(path: UPath) -> UPath:
         anon = True
     else:
         anon = False
+    # cache this information
+    global AWS_CREDENTIALS_PRESENT
+    AWS_CREDENTIALS_PRESENT = anon
     # test whether we are on hosted storage or not
     path_str = path.as_posix()
     is_hosted_storage = path_str.startswith(hosted_buckets)
