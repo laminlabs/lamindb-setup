@@ -13,6 +13,10 @@ def check_instance_setup(from_lamindb: bool = False):
     # silence_loggers is called twice within the if conditions for latency
     # reasons
     if os.environ.get("LAMINDB_MULTI_INSTANCE") == "true":
+        logger.warning(
+            "running LaminDB in multi-instance mode; you'll experience "
+            "errors in regular lamindb usage"
+        )
         silence_loggers()
         return True
     if current_instance_settings_file().exists():

@@ -360,25 +360,22 @@ UPath.exists.__doc__ = Path.exists.__doc__
 UPath.is_dir.__doc__ = Path.is_dir.__doc__
 UPath.is_file.__doc__ = Path.is_file.__doc__
 UPath.unlink.__doc__ = Path.unlink.__doc__
-UPath.__doc__ = """Paths: low-level key-value access to files & objects.
+UPath.rename.__doc__ = """Move file, see fsspec.AbstractFileSystem.mv.
 
-Paths are keys that offer the typical access patterns of file systems and object
-stores. The ``key`` field in the `File` registry is a relative path in the
-storage location of the record.
+>>> upath = Upath("s3://my-bucket/my-file")
+>>> upath.rename(UPath("s3://my-bucket/my-file-renamed"))
+>>> upath.rename("my-file-renamed")
 
-If you don't care about validating & linking extensive metadata to a file, you
-can store it as a path.
+>>> upath = Upath("local-folder/my-file")
+>>> upath.rename("local-folder/my-file-renamed")
+"""
+UPath.__doc__ = """Paths: low-level key-value access to artifacts & objects.
 
-For instance, if you have a folder with 1M images on S3 and you don't want to
-create file records for each of them, create a Dataset object like so:
+Paths are based on keys that offer the typical access patterns of file systems
+ and object stores.
 
->>> dataset = Dataset("s3://my-bucket/my-folder", file="s3://my-bucket/meta.parquet")
-
-Passing the ``file`` parameter is optional. This way, you can iterate over path
-objects through
-
->>> dataset.path
->>> assert dataset.path.is_dir()
+>>> upath = Upath("s3://my-bucket/my-folder")
+>>> upath.exists()
 
 Args:
     pathlike: A string or Path to a local/cloud file/directory/folder.

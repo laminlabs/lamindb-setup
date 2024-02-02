@@ -85,15 +85,6 @@ def init_storage(storage: Union[str, Path, UPath]) -> "StorageSettings":
     return ssettings
 
 
-def get_storage_type(root: str):
-    if str(root).startswith("s3://"):
-        return "s3"
-    elif str(root).startswith("gs://"):
-        return "gs"
-    else:
-        return "local"
-
-
 def _process_cache_path(cache_path: Union[str, Path, UPath, None]):
     if cache_path is None or cache_path == "null":
         return None
@@ -190,8 +181,8 @@ class StorageSettings:
         >>>    profile="some_profile", cache_regions=True
         >>> )
         """
-        if not isinstance(self._root, LocalPathClasses):
-            self._root = UPath(self._root, **kwargs)
+        if not isinstance(self._root, LocalPathClasses) and kwargs != {}:
+            self._root = UPath(self.root, **kwargs)
 
     @property
     def root_as_str(self) -> str:
@@ -241,11 +232,7 @@ class StorageSettings:
     @property
     def is_cloud(self) -> bool:
         """`True` if `storage_root` is in cloud, `False` otherwise."""
-        # if we use the following, we make a network request because of
-        # accessing self.root:
-        #     not isinstance(self.root, LocalPathClasses)
-        # hence, we do a string-based check on self._root_init:
-        return str(self._root_init).startswith(("s3://", "gs://"))
+        return self.type != "local"
 
     @property
     def region(self) -> Optional[str]:
@@ -263,7 +250,7 @@ class StorageSettings:
         import fsspec
 
         convert = {"file": "local"}
-        protocol = fsspec.utils.get_protocol(str(self.root))
+        protocol = fsspec.utils.get_protocol(self.root_as_str)
         return convert.get(protocol, protocol)
 
     def key_to_filepath(self, filekey: Union[Path, UPath, str]) -> UPath:

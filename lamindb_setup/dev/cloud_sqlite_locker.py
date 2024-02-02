@@ -32,6 +32,14 @@ class empty_locker:
         pass
 
 
+# this is needed to avoid CreateBucket permission
+class S3FSMap(fsspec.FSMap):
+    def __setitem__(self, key, value):
+        """Store value in key."""
+        key = self._key_to_str(key)
+        self.fs.pipe_file(key, fsspec.mapping.maybe_convert(value))
+
+
 class Locker:
     def __init__(
         self, user_uid: str, storage_root: Union[UPath, Path], instance_id: UUID
@@ -46,10 +54,14 @@ class Locker:
         self.instance_id = instance_id
 
         self.root = storage_root
-        self.fs, _ = infer_filesystem(storage_root)
+        self.fs, root_str = infer_filesystem(storage_root)
 
         exclusion_path = storage_root / f".lamindb/_exclusion/{instance_id.hex}"
-        self.mapper = fsspec.FSMap(str(exclusion_path), self.fs, create=True)
+
+        if fsspec.utils.get_protocol(root_str) == "s3":
+            self.mapper = S3FSMap(str(exclusion_path), self.fs, create=False)
+        else:
+            self.mapper = fsspec.FSMap(str(exclusion_path), self.fs, create=True)
 
         priorities_path = str(exclusion_path / "priorities")
         if self.fs.exists(priorities_path):
