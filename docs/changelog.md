@@ -3,6 +3,7 @@
 <!-- prettier-ignore -->
 Name | PR | Developer | Date | Version
 --- | --- | --- | --- | ---
+🐛 Fix permission error for init of hosted instances | [636](https://github.com/laminlabs/lamindb-setup/pull/636) | [Koncopd](https://github.com/Koncopd) | 2024-02-02 |
 📝 Add examples to `Upath.rename` | [637](https://github.com/laminlabs/lamindb-setup/pull/637) | [sunnyosun](https://github.com/sunnyosun) | 2024-02-02 |
 ♻️ Add using key | [633](https://github.com/laminlabs/lamindb-setup/pull/633) | [falexwolf](https://github.com/falexwolf) | 2024-01-30 | 0.65.0
 ✨ Enable multiple instances | [632](https://github.com/laminlabs/lamindb-setup/pull/632) | [falexwolf](https://github.com/falexwolf) | 2024-01-30 |
