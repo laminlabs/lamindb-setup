@@ -11,7 +11,10 @@ def select_instance_by_owner_name(
     try:
         data = (
             client.table("instance")
-            .select("*, account!inner!instance_account_id_28936e8f_fk_account_id(*)")
+            .select(
+                "*, account!inner!instance_account_id_28936e8f_fk_account_id(*),"
+                " storage(*)"
+            )
             .eq("account.handle", owner)
             .eq("name", name)
             .execute()

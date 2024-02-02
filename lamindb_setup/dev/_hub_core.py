@@ -209,44 +209,42 @@ def _load_instance(
     name: str,  # instance_name
     client: Client,
 ) -> Union[Tuple[dict, dict], str]:
-    instance_account = select_instance_by_owner_name(owner, name, client)
-    if instance_account is None:
+    instance_account_storage = select_instance_by_owner_name(owner, name, client)
+    if instance_account_storage is None:
+        # try the via single requests, will take more time
         account = sb_select_account_by_handle(owner, client)
         if account is None:
             return "account-not-exists"
         instance = sb_select_instance_by_name(account["id"], name, client)
         if instance is None:
             return "instance-not-reachable"
+        # get default storage
+        storage = sb_select_storage(instance["storage_id"], client)
+        if storage is None:
+            return "storage-does-not-exist-on-hub"
     else:
-        account = instance_account.pop("account")
-        instance = instance_account
+        account = instance_account_storage.pop("account")
+        storage = instance_account_storage.pop("storage")
+        instance = instance_account_storage
     # check if is postgres instance
     # this used to be a check for `instance["db"] is not None` in earlier versions
     # removed this on 2022-10-25 and can remove from the hub probably for lamindb 1.0
-    if instance["db_scheme"] is not None:
-        # get db_user
+    if instance["public"] and instance["db_scheme"] is not None:
         db_user = sb_select_db_user_by_instance(instance["id"], client)
         if db_user is None:
-            db_user_name = "none"
-            db_user_password = "none"
+            name, password = "none", "none"
         else:
-            db_user_name = db_user["db_user_name"]
-            db_user_password = db_user["db_user_password"]
+            name, password = db_user["db_user_name"], db_user["db_user_password"]
         # construct dsn from instance and db_account fields
         db_dsn = LaminDsn.build(
             scheme=instance["db_scheme"],
-            user=db_user_name,
-            password=db_user_password,
+            user=name,
+            password=password,
             host=instance["db_host"],
             port=instance["db_port"],
             database=instance["db_database"],
         )
-        # override the db string with the constructed dsn
         instance["db"] = db_dsn
-    # get default storage
-    storage = sb_select_storage(instance["storage_id"], client)
-    if storage is None:
-        return "storage-does-not-exist-on-hub"
     return instance, storage
 
 

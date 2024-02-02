@@ -58,7 +58,7 @@ def test_load_after_revoked_access():
             admin_hub,
         )
         # make the instance private
-        with pytest.raises(RuntimeError) as error:
+        with pytest.raises(SystemExit) as error:
             ln_setup.load(
                 "https://lamin.ai/laminlabs/static-test-instance-private-sqlite",
                 _test=True,
@@ -89,7 +89,7 @@ def test_load_after_private_public_switch():
         )
         # attempt to load instance with non-collaborator user
         ln_setup.login("testuser2")
-        with pytest.raises(RuntimeError):
+        with pytest.raises(SystemExit):
             ln_setup.load(
                 "https://lamin.ai/laminlabs/static-test-instance-private-sqlite",
                 _test=True,
