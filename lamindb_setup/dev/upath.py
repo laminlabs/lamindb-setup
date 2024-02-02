@@ -386,7 +386,7 @@ def convert_pathlike(pathlike: Union[str, Path, UPath]) -> UPath:
     else:
         raise ValueError("pathlike should be of type Union[str, Path, UPath]")
     # remove trailing slash
-    if path._parts[-1] == "":
+    if path._parts and path._parts[-1] == "":
         path._parts = path._parts[:-1]
     return path
 
