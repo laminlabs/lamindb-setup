@@ -2,25 +2,28 @@ import os
 from uuid import UUID, uuid4
 from typing import Optional
 import pytest
+from supabase import Client
+from lamindb_setup.dev._hub_utils import LaminDsnModel
 from gotrue.errors import AuthApiError
 import lamindb_setup as ln_setup
 from lamindb_setup.dev._settings_instance import InstanceSettings
 from lamindb_setup.dev._hub_client import (
     Environment,
     connect_hub_with_auth,
+    call_with_fallback_auth,
 )
 from lamindb_setup.dev._hub_core import (
     init_storage,
     init_instance,
-    set_db_user,
     load_instance,
     sign_in_hub,
     sign_up_local_hub,
 )
 from lamindb_setup.dev._hub_crud import (
-    sb_select_collaborator,
-    sb_select_db_user_by_instance,
-    sb_select_instance_by_name,
+    select_collaborator,
+    select_db_user_by_instance,
+    select_instance_by_name,
+    update_instance,
 )
 
 # typing
@@ -31,6 +34,68 @@ from lamindb_setup.dev._settings_storage import base62
 from lamindb_setup.dev._settings_storage import init_storage as init_storage_base
 from lamindb_setup.dev._settings_save import save_user_settings
 from lamindb_setup.dev._settings_user import UserSettings
+
+
+def insert_db_user(db_user_fields: dict, client: Client):
+    try:
+        data = client.table("db_user").insert(db_user_fields).execute().data
+    except Exception as e:
+        if str(e) == str("Expecting value: line 1 column 1 (char 0)"):
+            pass
+        else:
+            raise e
+    return data[0]
+
+
+def update_db_user(db_user_id: str, db_user_fields: dict, client: Client):
+    data = (
+        client.table("db_user")
+        .update(db_user_fields)
+        .eq("id", db_user_id)
+        .execute()
+        .data
+    )
+    if len(data) == 0:
+        return None
+    return data[0]
+
+
+def set_db_user(
+    *,
+    db: str,
+    instance_id: UUID,
+) -> None:
+    return call_with_fallback_auth(_set_db_user, db=db, instance_id=instance_id)
+
+
+def _set_db_user(
+    *,
+    db: str,
+    instance_id: UUID,
+    client: Client,
+) -> None:
+    db_dsn = LaminDsnModel(db=db)
+    db_user = select_db_user_by_instance(instance_id.hex, client)
+    if db_user is None:
+        insert_db_user(
+            {
+                "id": uuid4().hex,
+                "instance_id": instance_id.hex,
+                "db_user_name": db_dsn.db.user,
+                "db_user_password": db_dsn.db.password,
+            },
+            client,
+        )
+    else:
+        update_db_user(
+            db_user["id"],
+            {
+                "instance_id": instance_id.hex,
+                "db_user_name": db_dsn.db.user,
+                "db_user_password": db_dsn.db.password,
+            },
+            client,
+        )
 
 
 def sign_up_user(email: str) -> Optional[str]:
@@ -108,7 +173,7 @@ def create_myinstance(create_testuser1_session):  # -> Dict
         db="postgresql://postgres:pwd@fakeserver.xyz:5432/mydb", instance_id=instance_id
     )
     client, _ = create_testuser1_session
-    instance = sb_select_instance_by_name(
+    instance = select_instance_by_name(
         account_id=ln_setup.settings.user.uuid,
         name="myinstance",
         client=client,
@@ -118,7 +183,7 @@ def create_myinstance(create_testuser1_session):  # -> Dict
 
 def test_connection_string_decomp(create_myinstance, create_testuser1_session):
     client, _ = create_testuser1_session
-    db_user = sb_select_db_user_by_instance(
+    db_user = select_db_user_by_instance(
         instance_id=create_myinstance["id"],
         client=client,
     )
@@ -129,7 +194,7 @@ def test_connection_string_decomp(create_myinstance, create_testuser1_session):
     assert db_user["db_user_name"] == "postgres"
     assert db_user["db_user_password"] == "pwd"
 
-    db_collaborator = sb_select_collaborator(
+    db_collaborator = select_collaborator(
         instance_id=create_myinstance["id"],
         account_id=ln_setup.settings.user.uuid.hex,
         client=client,
@@ -148,13 +213,19 @@ def test_load_instance(create_myinstance, create_testuser1_session):
         owner="testuser1",
         name="inexistent-name",  # inexistent name
     )
-    # now supply correct data
+    # make instance public so that we can also test connection string
+    client, _ = create_testuser1_session
+    update_instance(
+        instance_id=create_myinstance["id"],
+        instance_fields={"public": True},
+        client=client,
+    )
+    # now supply correct data and make instance public
     result = load_instance(
         owner="testuser1",
         name=create_myinstance["name"],
     )
-    client, _ = create_testuser1_session
-    db_user = sb_select_db_user_by_instance(
+    db_user = select_db_user_by_instance(
         instance_id=create_myinstance["id"],
         client=client,
     )
@@ -169,6 +240,12 @@ def test_load_instance(create_myinstance, create_testuser1_session):
     loaded_instance, _ = result
     assert loaded_instance["name"] == create_myinstance["name"]
     assert loaded_instance["db"] == expected_dsn
+    # make instance private again
+    update_instance(
+        instance_id=create_myinstance["id"],
+        instance_fields={"public": False},
+        client=client,
+    )
 
 
 def test_load_instance_corrupted_or_expired_credentials(

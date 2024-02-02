@@ -3,10 +3,12 @@
 ```{toctree}
 :maxdepth: 1
 
-prod-staging/init-instance
-prod-staging/load-instance
+prod-staging/init-on-prem-instance
+prod-staging/load-on-prem-instance
 prod-staging/set-storage
 prod-staging/test-bionty
+prod-staging/init-hosted-instance
+prod-staging/load-hosted-instance
 prod-staging/test-multi-session
 
 prod-only/test-cache-management
