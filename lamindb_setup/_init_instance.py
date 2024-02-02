@@ -16,7 +16,7 @@ from ._settings import settings
 from ._silence_loggers import silence_loggers
 from .dev import InstanceSettings
 from .dev._settings_storage import StorageSettings, init_storage
-from .dev.upath import create_path
+from .dev.upath import convert_pathlike
 from .dev._hub_core import access_aws
 
 
@@ -324,7 +324,7 @@ def infer_instance_name(
         return str(db).split("/")[-1]
     if storage == "create-s3":
         raise ValueError("pass name to init if storage = 'create-s3'")
-    storage_path = create_path(storage)
+    storage_path = convert_pathlike(storage)
     if isinstance(storage_path, LocalPathClasses):
         name = storage_path.stem
     else:

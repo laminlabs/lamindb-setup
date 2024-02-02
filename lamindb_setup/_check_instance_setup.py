@@ -14,7 +14,8 @@ def check_instance_setup(from_lamindb: bool = False):
     # reasons
     if os.environ.get("LAMINDB_MULTI_INSTANCE") == "true":
         logger.warning(
-            "running LaminDB in multi-instance mode; you'll experience errors in regular lamindb usage"
+            "running LaminDB in multi-instance mode; you'll experience "
+            "errors in regular lamindb usage"
         )
         silence_loggers()
         return True
