@@ -59,7 +59,11 @@ def init_storage(storage: Union[str, Path, UPath]) -> "StorageSettings":
     region = None
     if root == "create-s3":
         region = find_closest_aws_region()
-        root = f"s3://lamin-{region}/{uid}"
+        lamin_env = os.getenv("LAMIN_ENV")
+        if lamin_env is None or lamin_env == "prod":
+            root = f"s3://lamin-{region}/{uid}"
+        else:
+            root = f"s3://lamin-hosted-test/{uid}"
     elif root.startswith(("gs://", "s3://")):
         # check for existence happens in get_storage_region
         pass
