@@ -6,7 +6,7 @@ from laminhub_rest.core.collaborator._delete_collaborator import delete_collabor
 
 import lamindb_setup as ln_setup
 from lamindb_setup.dev._hub_client import connect_hub_with_auth
-from lamindb_setup.dev._hub_crud import sb_update_instance
+from lamindb_setup.dev._hub_crud import update_instance
 
 
 def test_load_remote_instance():
@@ -64,10 +64,10 @@ def test_load_after_revoked_access():
                 _test=True,
             )
         assert (
-            error.exconly() == "RuntimeError: Instance"
-            " laminlabs/static-test-instance-private-sqlite not"
-            " loadable from hub with response: 'instance-not-reachable'.\nCheck"
-            " whether instance exists and you have access:"
+            error.exconly()
+            == "SystemExit: 'laminlabs/static-test-instance-private-sqlite' not"
+            " loadable: 'instance-not-reachable'\n"
+            "Check your permissions:"
             " https://lamin.ai/laminlabs/static-test-instance-private-sqlite?tab=collaborators"  # noqa
         )
 
@@ -82,7 +82,7 @@ def test_load_after_private_public_switch():
         )
         admin_hub = connect_hub_with_auth()
         # make the instance private
-        sb_update_instance(
+        update_instance(
             instance_id=ln_setup.settings.instance.id,
             instance_fields={"public": False},
             client=admin_hub,
@@ -95,7 +95,7 @@ def test_load_after_private_public_switch():
                 _test=True,
             )
         # make the instance public
-        sb_update_instance(
+        update_instance(
             instance_id=ln_setup.settings.instance.id,
             instance_fields={"public": True},
             client=admin_hub,
@@ -105,7 +105,7 @@ def test_load_after_private_public_switch():
             "https://lamin.ai/laminlabs/static-test-instance-private-sqlite", _test=True
         )
         # make the instance private again
-        sb_update_instance(
+        update_instance(
             instance_id=ln_setup.settings.instance.id,
             instance_fields={"public": False},
             client=admin_hub,

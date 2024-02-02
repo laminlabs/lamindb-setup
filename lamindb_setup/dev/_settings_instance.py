@@ -4,7 +4,7 @@ from pathlib import Path
 from typing import Literal, Optional, Set, Tuple
 from uuid import UUID
 from ._hub_client import call_with_fallback
-from ._hub_crud import sb_select_account_handle_name_by_lnid
+from ._hub_crud import select_account_handle_name_by_lnid
 from lamin_utils import logger
 from .cloud_sqlite_locker import (
     InstanceLockedException,
@@ -150,7 +150,7 @@ class InstanceSettings:
             locked_by = self._cloud_sqlite_locker._locked_by
             lock_msg = "Cannot load the instance, it is locked by "
             user_info = call_with_fallback(
-                sb_select_account_handle_name_by_lnid,
+                select_account_handle_name_by_lnid,
                 lnid=locked_by,
             )
             if user_info is None:
