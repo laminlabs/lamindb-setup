@@ -14,6 +14,10 @@ repos:
     rev: 22.6.0
     hooks:
       - id: black-jupyter
+        exclude: |
+          (?x)(
+              _check_instance_setup.py
+          )
   - repo: https://github.com/pycqa/flake8
     rev: 4.0.1
     hooks:
@@ -27,8 +31,7 @@ repos:
           - --ignore=E203,W503,BLK100,TYP001
         exclude: |
           (?x)(
-              __init__.py|
-              lamindb_setup/_check_instance_setup.py
+              __init__.py
           )
   - repo: https://github.com/pre-commit/mirrors-prettier
     rev: v2.6.2
