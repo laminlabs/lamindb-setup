@@ -1,5 +1,5 @@
 import os
-from typing import Optional, Tuple, Union
+from typing import Optional, Tuple, Union, Dict
 import uuid
 from uuid import UUID, uuid4
 from lamin_utils import logger
@@ -250,19 +250,18 @@ def _load_instance(
     return instance, storage
 
 
-def access_aws() -> None:
+def access_aws() -> Dict[str, str]:
     from .._settings import settings
 
     if settings.user.handle != "anonymous":
-        call_with_fallback_auth(_access_aws)
-        logger.important(
-            "exported AWS credentials as env variables, valid for 12 hours"
-        )
+        credentials = call_with_fallback_auth(_access_aws)
+        logger.important("loaded AWS credentials")
+        return credentials
     else:
         raise RuntimeError("Can only get access to AWS if authenticated.")
 
 
-def _access_aws(client: Client):
+def _access_aws(client: Client) -> Dict[str, str]:
     from time import sleep
 
     response = None
@@ -278,13 +277,15 @@ def _access_aws(client: Client):
             else:
                 continue
         if response is not None:
-            credentials = json.loads(response)["Credentials"]
-            os.environ["AWS_ACCESS_KEY_ID"] = credentials["AccessKeyId"]
-            os.environ["AWS_SECRET_ACCESS_KEY"] = credentials["SecretAccessKey"]
-            os.environ["AWS_SESSION_TOKEN"] = credentials["SessionToken"]
-            break
+            loaded_credentials = json.loads(response)["Credentials"]
+            credentials = {}
+            credentials["key"] = loaded_credentials["AccessKeyId"]
+            credentials["secret"] = loaded_credentials["SecretAccessKey"]
+            credentials["token"] = loaded_credentials["SessionToken"]
+            return credentials
         elif lamindb_setup._TESTING:
             raise RuntimeError(f"access-aws errored: {response}")
+    return {}
 
 
 def get_lamin_site_base_url():
