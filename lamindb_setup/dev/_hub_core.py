@@ -265,7 +265,6 @@ def _access_aws(client: Client):
                 continue
         if response is not None:
             credentials = json.loads(response)["Credentials"]
-            print(credentials)
             os.environ["AWS_ACCESS_KEY_ID"] = credentials["AccessKeyId"]
             os.environ["AWS_SECRET_ACCESS_KEY"] = credentials["SecretAccessKey"]
             os.environ["AWS_SESSION_TOKEN"] = credentials["SessionToken"]
