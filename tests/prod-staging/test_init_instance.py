@@ -8,13 +8,22 @@ import lamindb_setup as ln_setup
 from lamindb_setup.dev._hub_client import connect_hub_with_auth
 from lamindb_setup.dev._hub_crud import (
     Client,
-    sb_delete_instance,
-    sb_select_account_by_handle,
-    sb_select_db_user_by_instance,
-    sb_select_instance_by_name,
+    select_account_by_handle,
+    select_db_user_by_instance,
+    select_instance_by_name,
 )
 
 pgurl = "postgresql://postgres:pwd@0.0.0.0:5432/pgtest"
+
+
+def delete_instance(
+    id: str,
+    client: Client,
+):
+    data = client.table("instance").delete().eq("id", id).execute().data
+    if len(data) == 0:
+        return None
+    return data[0]
 
 
 @pytest.fixture
@@ -28,15 +37,15 @@ def get_instance_and_dbuser_from_hub(
     instance_name: str, hub: Client
 ) -> Tuple[Optional[Dict[str, str]], Optional[Dict[str, str]]]:
     assert ln_setup.settings.user.handle == "testuser2"
-    account = sb_select_account_by_handle(handle="testuser2", client=hub)
-    instance = sb_select_instance_by_name(
+    account = select_account_by_handle(handle="testuser2", client=hub)
+    instance = select_instance_by_name(
         account_id=account["id"],
         name=instance_name,
         client=hub,
     )
     if instance is None:
         return None, None
-    db_user = sb_select_db_user_by_instance(instance_id=instance["id"], client=hub)
+    db_user = select_db_user_by_instance(instance_id=instance["id"], client=hub)
     return instance, db_user
 
 
@@ -46,7 +55,7 @@ def test_init_instance_postgres_default_name(get_hub_client):
     instance, _ = get_instance_and_dbuser_from_hub(instance_name, hub)
     # if instance exists, delete it
     if instance is not None:
-        sb_delete_instance(instance["id"], hub)
+        delete_instance(instance["id"], hub)
     ln_setup.delete("pgtest", force=True)
     # now, run init
     ln_setup.init(storage="./mydatapg", db=pgurl, _test=True)
@@ -71,7 +80,7 @@ def test_init_instance_postgres_default_name(get_hub_client):
         ln_setup.settings.instance.storage.root.as_posix()
         == Path("mydatapg").absolute().as_posix()
     )
-    sb_delete_instance(instance["id"], hub)
+    delete_instance(instance["id"], hub)
     ln_setup.delete("pgtest", force=True)
 
 
@@ -92,10 +101,10 @@ def test_init_instance_postgres_custom_name():
 def test_init_instance_cloud_aws_us():
     ln_setup.init(storage="s3://lamindb-ci/init_instance_cloud_aws_us", _test=True)
     hub = connect_hub_with_auth()
-    account = sb_select_account_by_handle(
+    account = select_account_by_handle(
         handle=ln_setup.settings.instance.owner, client=hub
     )
-    instance = sb_select_instance_by_name(
+    instance = select_instance_by_name(
         account_id=account["id"],
         name=ln_setup.settings.instance.name,
         client=hub,
@@ -141,10 +150,10 @@ def test_init_instance_sqlite():
     )
     ln_setup.register(_test=True)
     hub = connect_hub_with_auth()
-    account = sb_select_account_by_handle(
+    account = select_account_by_handle(
         handle=ln_setup.settings.instance.owner, client=hub
     )
-    instance = sb_select_instance_by_name(
+    instance = select_instance_by_name(
         account_id=account["id"],
         name=ln_setup.settings.instance.name,
         client=hub,
@@ -155,7 +164,7 @@ def test_init_instance_sqlite():
     assert ln_setup.settings.instance.owner == ln_setup.settings.user.handle
     assert ln_setup.settings.instance.dialect == "sqlite"
     ln_setup.delete("local-sqlite-instance", force=True)
-    sb_delete_instance(instance["id"], hub)
+    delete_instance(instance["id"], hub)
 
 
 def test_init_invalid_name():
