@@ -3,6 +3,7 @@
 <!-- prettier-ignore -->
 Name | PR | Developer | Date | Version
 --- | --- | --- | --- | ---
+⚡️ Speed up lamindb import & loading time | [643](https://github.com/laminlabs/lamindb-setup/pull/643) | [falexwolf](https://github.com/falexwolf) | 2024-02-03 |
 ♻️ Iterate on importdb and exportdb | [642](https://github.com/laminlabs/lamindb-setup/pull/642) | [falexwolf](https://github.com/falexwolf) | 2024-02-03 |
 ♻️ Add backward compat for delete_instance call | [641](https://github.com/laminlabs/lamindb-setup/pull/641) | [falexwolf](https://github.com/falexwolf) | 2024-02-03 |
 ♻️ Refactor loading instances and add test for loading hosted instance | [640](https://github.com/laminlabs/lamindb-setup/pull/640) | [falexwolf](https://github.com/falexwolf) | 2024-02-02 | 0.65.1
