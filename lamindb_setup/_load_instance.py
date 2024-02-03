@@ -136,6 +136,16 @@ def load(
             db=db_updated,
             schema=instance_result["schema_str"],
         )
+        from importlib import metadata
+
+        try:
+            lamindb_version = metadata.version("lamindb")
+        except metadata.PackageNotFoundError:
+            lamindb_version = None
+        logger.important(
+            f"last migration: lamindb=={instance_result['lamindb_version']} <> your"
+            f" env: lamindb=={lamindb_version}"
+        )
     else:
         error_message = (
             f"'{owner}/{name}' not loadable:"

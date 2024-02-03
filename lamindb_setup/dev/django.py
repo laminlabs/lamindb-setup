@@ -177,22 +177,26 @@ def setup_django(
         if init:
             # create migrations
             call_command("migrate", verbosity=0)
-        else:
-            status, latest_migrs = get_migrations_to_sync()
-            if status == "synced":
-                pass
-            else:
-                warning_func = (
-                    MISSING_MIGRATIONS_WARNING
-                    if status == "missing"
-                    else AHEAD_MIGRATIONS_WARNING
-                )
-                logger.warning(
-                    warning_func.format(
-                        deployed_latest_migrations=latest_migrs[0],
-                        defined_latest_migrations=latest_migrs[1],
-                    )
-                )
+        # the check below got replaced with printing the lamindb version
+        # of the last migration stored in the hub
+        # not running the migration check brings down lamindb import time
+        # from around 2.4s to 1.4s
+        # else:
+        #     status, latest_migrs = get_migrations_to_sync()
+        #     if status == "synced":
+        #         pass
+        #     else:
+        #         warning_func = (
+        #             MISSING_MIGRATIONS_WARNING
+        #             if status == "missing"
+        #             else AHEAD_MIGRATIONS_WARNING
+        #         )
+        #         logger.warning(
+        #             warning_func.format(
+        #                 deployed_latest_migrations=latest_migrs[0],
+        #                 defined_latest_migrations=latest_migrs[1],
+        #             )
+        #         )
 
     # clean up temporary settings files
     if not settings_file_existed:
