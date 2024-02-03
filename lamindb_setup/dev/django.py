@@ -178,9 +178,9 @@ def setup_django(
             # create migrations
             call_command("migrate", verbosity=0)
         # the check below got replaced with printing the lamindb version
-        # of the last migratio stored in the hub
+        # of the last migration stored in the hub
         # not running the migration check brings down lamindb import time
-        # from around 2.5s to 1.5s
+        # from around 2.4s to 1.4s
         # else:
         #     status, latest_migrs = get_migrations_to_sync()
         #     if status == "synced":
