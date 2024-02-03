@@ -1,5 +1,7 @@
 from supabase.client import Client
 from typing import Optional, Dict
+from lamin_utils import logger
+from uuid import UUID
 
 
 def select_instance_by_owner_name(
@@ -137,3 +139,13 @@ def select_db_user_by_instance(instance_id: str, client: Client):
     if len(data) == 0:
         return None
     return data[0]
+
+
+def _delete_instance(instance_id: UUID, client: Client) -> None:
+    if not isinstance(instance_id, UUID):
+        instance_id = UUID(instance_id)
+    logger.important(f"deleting instance {instance_id.hex}")
+    client.table("instance").delete().eq("id", instance_id.hex).execute()
+
+
+sb_delete_instance = _delete_instance
