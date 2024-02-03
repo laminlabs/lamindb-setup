@@ -137,7 +137,7 @@ def load(
             schema=instance_result["schema_str"],
         )
         logger.important(
-            f"last migration: lamindb={instance_result['lamindb_version']}"
+            f"last migration: lamindb=={instance_result['lamindb_version']}"
         )
     else:
         error_message = (
