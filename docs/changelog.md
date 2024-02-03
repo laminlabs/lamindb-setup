@@ -3,6 +3,7 @@
 <!-- prettier-ignore -->
 Name | PR | Developer | Date | Version
 --- | --- | --- | --- | ---
+♻️ Add backward compat for delete_instance call | [641](https://github.com/laminlabs/lamindb-setup/pull/641) | [falexwolf](https://github.com/falexwolf) | 2024-02-03 |
 ♻️ Refactor loading instances and add test for loading hosted instance | [640](https://github.com/laminlabs/lamindb-setup/pull/640) | [falexwolf](https://github.com/falexwolf) | 2024-02-02 | 0.65.1
 ♻️ Low-latency storage permission management | [639](https://github.com/laminlabs/lamindb-setup/pull/639) | [falexwolf](https://github.com/falexwolf) | 2024-02-02 |
 ✅ Implement proper integration tests for hosted storage | [638](https://github.com/laminlabs/lamindb-setup/pull/638) | [falexwolf](https://github.com/falexwolf) | 2024-02-02 |
