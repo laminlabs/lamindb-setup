@@ -24,6 +24,7 @@ from ._hub_crud import (
     select_db_user_by_instance,
     select_instance_by_name,
     select_storage,
+    _delete_instance,
 )
 from ._hub_utils import (
     LaminDsn,
@@ -101,11 +102,6 @@ def delete_instance(
         _delete_instance,
         instance_id=instance_id,
     )
-
-
-def _delete_instance(instance_id: UUID, client: Client) -> None:
-    logger.important(f"deleting instance {instance_id.hex}")
-    client.table("instance").delete().eq("id", instance_id.hex).execute()
 
 
 def init_instance(isettings: InstanceSettings) -> None:
