@@ -4,7 +4,7 @@
 import os
 from datetime import datetime
 from datetime import timezone
-import botocore
+import botocore.session
 from pathlib import Path
 from typing import Literal, Dict
 import fsspec
@@ -409,15 +409,26 @@ def create_path(path: UPath) -> UPath:
     if not isinstance(path, S3Path):
         return path
     # test whether AWS credentials are present
-    session = botocore.session.get_session()
-    credentials = session.get_credentials()
-    if credentials is None or credentials.access_key is None:
-        anon = True
-    else:
-        anon = False
-    # cache this information
     global AWS_CREDENTIALS_PRESENT
-    AWS_CREDENTIALS_PRESENT = anon
+
+    if AWS_CREDENTIALS_PRESENT is not None:
+        anon = AWS_CREDENTIALS_PRESENT
+    else:
+        if path.fs.key is not None and path.fs.secret is not None:
+            anon = False
+        else:
+            # we can do
+            # path.fs.connect()
+            # and check path.fs.session._credentials, but it is slower
+            session = botocore.session.get_session()
+            credentials = session.get_credentials()
+            if credentials is None or credentials.access_key is None:
+                anon = True
+            else:
+                anon = False
+            # cache credentials and reuse further
+            AWS_CREDENTIALS_PRESENT = anon
+
     # test whether we are on hosted storage or not
     path_str = path.as_posix()
     is_hosted_storage = path_str.startswith(hosted_buckets)
