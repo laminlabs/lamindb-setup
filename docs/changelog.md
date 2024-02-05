@@ -3,6 +3,7 @@
 <!-- prettier-ignore -->
 Name | PR | Developer | Date | Version
 --- | --- | --- | --- | ---
+♻️ Check manual credentials in path.fs, actually reuse anon | [644](https://github.com/laminlabs/lamindb-setup/pull/644) | [Koncopd](https://github.com/Koncopd) | 2024-02-05 |
 ⚡️ Speed up lamindb import & loading time | [643](https://github.com/laminlabs/lamindb-setup/pull/643) | [falexwolf](https://github.com/falexwolf) | 2024-02-03 |
 ♻️ Iterate on importdb and exportdb | [642](https://github.com/laminlabs/lamindb-setup/pull/642) | [falexwolf](https://github.com/falexwolf) | 2024-02-03 |
 ♻️ Add backward compat for delete_instance call | [641](https://github.com/laminlabs/lamindb-setup/pull/641) | [falexwolf](https://github.com/falexwolf) | 2024-02-03 |
