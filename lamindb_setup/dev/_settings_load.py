@@ -22,7 +22,7 @@ def load_instance_settings(instance_settings_file: Optional[Path] = None):
         raise SystemExit("No instance is loaded! Call `lamin init` or `lamin load`")
     try:
         settings_store = InstanceSettingsStore(_env_file=instance_settings_file)
-    except ValidationError:
+    except (ValidationError, TypeError):
         raise ValidationError(
             "Your instance settings file is invalid, please delete"
             f" {instance_settings_file} and init the instance again."
@@ -53,11 +53,13 @@ def load_or_create_user_settings() -> UserSettings:
 def load_user_settings(user_settings_file: Path):
     try:
         settings_store = UserSettingsStore(_env_file=user_settings_file)
-    except ValidationError:
-        raise ValidationError(
+    except (ValidationError, TypeError):
+        msg = (
             "Your user settings file is invalid, please delete"
             f" {user_settings_file} and log in again."
         )
+        print(msg)
+        raise ValidationError(msg)
     settings = setup_user_from_store(settings_store)
     return settings
 
