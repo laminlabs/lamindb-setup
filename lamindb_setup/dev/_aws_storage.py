@@ -42,9 +42,12 @@ def haversine(lat1: float, lon1: float, lat2: float, lon2: float) -> float:
 
 def find_closest_aws_region() -> str:
     aws_region_locations = {
-        # 'us-east-1': {'latitude': 39.0, 'longitude': -77.0},  # Northern Virginia
+        "us-east-1": {"latitude": 39.0, "longitude": -77.0},  # Northern Virginia
+        "us-east-2": {"latitude": 40.0, "longitude": -83.0},  # Ohio
+        "us-west-1": {"latitude": 37.77, "longitude": -122.41},  # Northern California
         "us-west-2": {"latitude": 45.52, "longitude": -122.68},  # Oregon
         "eu-central-1": {"latitude": 50.11, "longitude": 8.68},  # Frankfurt
+        "eu-west-2": {"latitude": 51.51, "longitude": -0.13},  # London, UK
     }
     your_location = get_location()
     closest_region = ""
@@ -59,5 +62,4 @@ def find_closest_aws_region() -> str:
         )
         if distance < min_distance:
             closest_region, min_distance = region, distance
-    logger.important(f"creating storage in AWS region {closest_region}")
     return closest_region

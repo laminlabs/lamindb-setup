@@ -171,6 +171,13 @@ class StorageSettings:
             )
         return self._record
 
+    def __repr__(self):
+        """String rep."""
+        s = f"root='{self.root_as_str}', uid='{self.uid}'"
+        if self.uuid is not None:
+            s += f", uuid='{self.uuid.hex}'"
+        return f"StorageSettings({s})"
+
     @property
     def root(self) -> UPath:
         """Root storage location."""
