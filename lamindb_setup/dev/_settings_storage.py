@@ -10,6 +10,7 @@ from .upath import LocalPathClasses, UPath, create_path, convert_pathlike
 from uuid import UUID
 import string
 import secrets
+from .upath import hosted_regions
 
 
 DIRS = AppDirs("lamindb", "laminlabs")
@@ -51,14 +52,19 @@ def get_storage_region(storage_root: Union[str, Path, UPath]) -> Optional[str]:
     return storage_region
 
 
-def init_storage(storage: Union[str, Path, UPath]) -> "StorageSettings":
+def init_storage(
+    storage: Union[str, Path, UPath], region: Optional[str] = None
+) -> "StorageSettings":
     if storage is None:
         raise ValueError("storage argument can't be `None`")
     root = str(storage)  # ensure we have a string
     uid = base62(8)
-    region = None
     if root == "create-s3":
-        region = find_closest_aws_region()
+        if region is None:
+            region = find_closest_aws_region()
+        else:
+            if region not in hosted_regions:
+                raise ValueError(f"region has to be one of {hosted_regions}")
         lamin_env = os.getenv("LAMIN_ENV")
         if lamin_env is None or lamin_env == "prod":
             root = f"s3://lamin-{region}/{uid}"
