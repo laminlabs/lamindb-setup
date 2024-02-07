@@ -391,15 +391,15 @@ def convert_pathlike(pathlike: Union[str, Path, UPath]) -> UPath:
     return path
 
 
+hosted_regions = [
+    "eu-central-1",
+    "eu-west-2us-east-1",
+    "us-east-2",
+    "us-west-1",
+    "us-west-2",
+]
 lamin_env = os.getenv("LAMIN_ENV")
 if lamin_env is None or lamin_env == "prod":
-    hosted_regions = [
-        "eu-central-1",
-        "eu-west-2us-east-1",
-        "us-east-2",
-        "us-west-1",
-        "us-west-2",
-    ]
     hosted_buckets = tuple([f"s3://lamin-{region}" for region in hosted_regions])
 else:
     hosted_buckets = ("s3://lamin-hosted-test",)  # type: ignore
