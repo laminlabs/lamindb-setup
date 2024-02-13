@@ -62,6 +62,7 @@ def update_db_using_local(
                 "The local differs from the hub database information:"
                 "\n 1. did you pass a wrong db URL with --db?"
                 "\n 2. did your database get updated by an admin?"
+                f"\nConsider deleting your cached database environment:\nrm {settings_file.as_posix()}"
             )
         db_updated = LaminDsn.build(
             scheme=db_dsn_hub.db.scheme,
