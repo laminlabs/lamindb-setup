@@ -3,6 +3,7 @@
 <!-- prettier-ignore -->
 Name | PR | Developer | Date | Version
 --- | --- | --- | --- | ---
+:speaker: Better error message for differing db dsn | [648](https://github.com/laminlabs/lamindb-setup/pull/648) | [falexwolf](https://github.com/falexwolf) | 2024-02-13 |
 ♻️ Add ability to choose region | [647](https://github.com/laminlabs/lamindb-setup/pull/647) | [falexwolf](https://github.com/falexwolf) | 2024-02-07 |
 💄 Prettify hosted storage notebooks | [646](https://github.com/laminlabs/lamindb-setup/pull/646) | [falexwolf](https://github.com/falexwolf) | 2024-02-05 |
 📝 Fix error raising for old deleting env file | [645](https://github.com/laminlabs/lamindb-setup/pull/645) | [sunnyosun](https://github.com/sunnyosun) | 2024-02-05 |
