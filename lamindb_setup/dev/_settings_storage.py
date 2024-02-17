@@ -1,4 +1,5 @@
 import os
+import shutil
 from lamin_utils import logger
 from pathlib import Path
 from typing import Any, Optional, Union
@@ -239,7 +240,7 @@ class StorageSettings:
                 dst_sqlite_file.parent.mkdir(parents=True, exist_ok=True)
                 if dst_sqlite_file.exists():
                     dst_sqlite_file.unlink()
-                src_sqlite_file.rename(dst_sqlite_file)
+                shutil.move(src_sqlite_file, dst_sqlite_file)
             save_system_storage_settings(self._cache_dir, self._storage_settings_file)
         except Exception as e:
             self._cache_dir = save_cache_dir
