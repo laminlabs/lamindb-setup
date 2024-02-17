@@ -17,6 +17,7 @@ from ._hub_client import (
     connect_hub,
     call_with_fallback_auth,
     call_with_fallback,
+    AuthUnknownError,
 )
 from ._hub_crud import (
     select_instance_by_owner_name,
@@ -227,6 +228,8 @@ def _access_aws(client: Client) -> Dict[str, str]:
         try:
             response = client.functions.invoke("access-aws")
         except (FunctionsRelayError, FunctionsHttpError, json.JSONDecodeError) as error:
+            if isinstance(error, json.JSONDecodeError):
+                raise AuthUnknownError(message=str(error), original_error=error)
             print("no valid response, retry", response)
             sleep(1)
             if retry == max_retries - 1:
