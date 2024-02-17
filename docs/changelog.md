@@ -3,6 +3,7 @@
 <!-- prettier-ignore -->
 Name | PR | Developer | Date | Version
 --- | --- | --- | --- | ---
+✏️ pre-commit on all files | [650](https://github.com/laminlabs/lamindb-setup/pull/650) | [Koncopd](https://github.com/Koncopd) | 2024-02-17 |
 🐛 Use shutil.move to move the sqlite file when changing cache folder | [649](https://github.com/laminlabs/lamindb-setup/pull/649) | [Koncopd](https://github.com/Koncopd) | 2024-02-17 |
 :speaker: Better error message for differing db dsn | [648](https://github.com/laminlabs/lamindb-setup/pull/648) | [falexwolf](https://github.com/falexwolf) | 2024-02-13 |
 ♻️ Add ability to choose region | [647](https://github.com/laminlabs/lamindb-setup/pull/647) | [falexwolf](https://github.com/falexwolf) | 2024-02-07 |
