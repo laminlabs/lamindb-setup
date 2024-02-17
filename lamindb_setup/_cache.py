@@ -28,6 +28,4 @@ def set_cache_dir(cache_dir: str):
 
     settings.storage.cache_dir = cache_dir
     cache_str = settings.storage.cache_dir.as_posix()  # type: ignore
-    logger.success(
-        f"The cache directory of the current instance was set to {cache_str}."
-    )
+    logger.success(f"The cache directory was set to {cache_str}.")
