@@ -3,6 +3,7 @@
 <!-- prettier-ignore -->
 Name | PR | Developer | Date | Version
 --- | --- | --- | --- | ---
+✨ Add create_mapper util | [654](https://github.com/laminlabs/lamindb-setup/pull/654) | [Koncopd](https://github.com/Koncopd) | 2024-02-19 |
 🐛 Fix aws_access calls in CLI | [652](https://github.com/laminlabs/lamindb-setup/pull/652) | [Koncopd](https://github.com/Koncopd) | 2024-02-18 |
 ✏️ pre-commit on all files | [650](https://github.com/laminlabs/lamindb-setup/pull/650) | [Koncopd](https://github.com/Koncopd) | 2024-02-17 |
 🐛 Use shutil.move to move the sqlite file when changing cache folder | [649](https://github.com/laminlabs/lamindb-setup/pull/649) | [Koncopd](https://github.com/Koncopd) | 2024-02-17 |
