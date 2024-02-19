@@ -49,7 +49,7 @@ class Locker:
 
         exclusion_path = storage_root / f".lamindb/_exclusion/{instance_id.hex}"
 
-        self.mapper = create_mapper(str(exclusion_path), self.fs, create=True)
+        self.mapper = create_mapper(self.fs, str(exclusion_path), create=True)
 
         priorities_path = str(exclusion_path / "priorities")
         if self.fs.exists(priorities_path):
