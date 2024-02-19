@@ -102,6 +102,31 @@ def infer_filesystem(path: Union[Path, UPath, str]):
     return fs, path_str
 
 
+# this is needed to avoid CreateBucket permission
+class S3FSMap(fsspec.FSMap):
+    def __setitem__(self, key, value):
+        """Store value in key."""
+        key = self._key_to_str(key)
+        self.fs.pipe_file(key, fsspec.mapping.maybe_convert(value))
+
+
+def create_mapper(
+    fs,
+    url="",
+    check=False,
+    create=False,
+    missing_exceptions=None,
+):
+    if fsspec.utils.get_protocol(url) == "s3":
+        return S3FSMap(
+            url, fs, check=check, create=False, missing_exceptions=missing_exceptions
+        )
+    else:
+        return fsspec.FSMap(
+            url, fs, check=check, create=create, missing_exceptions=missing_exceptions
+        )
+
+
 def print_hook(size: int, value: int, **kwargs):
     progress_in_percent = (value / size) * 100
     out = (
