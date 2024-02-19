@@ -103,9 +103,16 @@ def call_with_fallback_auth(
     **kwargs,
 ):
     if "LAMINDB_ACCESS_TOKEN" in os.environ:
-        client = connect_hub_with_auth(access_token=os.environ["LAMINDB_ACCESS_TOKEN"])
-        result = callable(**kwargs, client=client)
-        client.auth.sign_out()
+        try:
+            client = connect_hub_with_auth(
+                access_token=os.environ["LAMINDB_ACCESS_TOKEN"]
+            )
+            result = callable(**kwargs, client=client)
+        finally:
+            try:
+                client.auth.sign_out()
+            except NameError:
+                pass
         return result
 
     for renew_token, fallback_env in [(False, False), (True, False), (False, True)]:
@@ -119,7 +126,10 @@ def call_with_fallback_auth(
             if fallback_env:
                 raise e
         finally:
-            client.auth.sign_out()
+            try:
+                client.auth.sign_out()
+            except NameError:
+                pass
     return result
 
 
