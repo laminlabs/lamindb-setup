@@ -3,11 +3,10 @@ from pathlib import Path
 from typing import Optional, Union
 from functools import wraps
 from uuid import UUID
-import fsspec
 from dateutil.parser import isoparse  # type: ignore
 from lamin_utils import logger
 
-from .upath import UPath, infer_filesystem
+from .upath import UPath, infer_filesystem, create_mapper
 
 EXPIRATION_TIME = 24 * 60 * 60 * 7  # 7 days
 
@@ -32,14 +31,6 @@ class empty_locker:
         pass
 
 
-# this is needed to avoid CreateBucket permission
-class S3FSMap(fsspec.FSMap):
-    def __setitem__(self, key, value):
-        """Store value in key."""
-        key = self._key_to_str(key)
-        self.fs.pipe_file(key, fsspec.mapping.maybe_convert(value))
-
-
 class Locker:
     def __init__(
         self, user_uid: str, storage_root: Union[UPath, Path], instance_id: UUID
@@ -58,10 +49,7 @@ class Locker:
 
         exclusion_path = storage_root / f".lamindb/_exclusion/{instance_id.hex}"
 
-        if fsspec.utils.get_protocol(root_str) == "s3":
-            self.mapper = S3FSMap(str(exclusion_path), self.fs, create=False)
-        else:
-            self.mapper = fsspec.FSMap(str(exclusion_path), self.fs, create=True)
+        self.mapper = create_mapper(self.fs, str(exclusion_path), create=True)
 
         priorities_path = str(exclusion_path / "priorities")
         if self.fs.exists(priorities_path):
