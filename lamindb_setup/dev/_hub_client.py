@@ -60,17 +60,21 @@ def connect_hub(
 
 
 def connect_hub_with_auth(
-    fallback_env: bool = False, renew_token: bool = False
+    fallback_env: bool = False,
+    renew_token: bool = False,
+    access_token: Optional[str] = None,
 ) -> Client:
-    from lamindb_setup import settings
-
     hub = connect_hub(fallback_env=fallback_env)
-    if renew_token:
-        settings.user.access_token = get_access_token(
-            settings.user.email, settings.user.password
-        )
-    hub.postgrest.auth(settings.user.access_token)
-    hub.functions.set_auth(settings.user.access_token)
+    if access_token is None:
+        from lamindb_setup import settings
+
+        if renew_token:
+            settings.user.access_token = get_access_token(
+                settings.user.email, settings.user.password
+            )
+        access_token = settings.user.access_token
+    hub.postgrest.auth(access_token)
+    hub.functions.set_auth(access_token)
     return hub
 
 
@@ -98,6 +102,12 @@ def call_with_fallback_auth(
     callable,
     **kwargs,
 ):
+    if "LAMINDB_ACCESS_TOKEN" in os.environ:
+        client = connect_hub_with_auth(access_token=os.environ["LAMINDB_ACCESS_TOKEN"])
+        result = callable(**kwargs, client=client)
+        client.auth.sign_out()
+        return result
+
     for renew_token, fallback_env in [(False, False), (True, False), (False, True)]:
         try:
             client = connect_hub_with_auth(
