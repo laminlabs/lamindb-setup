@@ -432,7 +432,7 @@ credentials_cache: Dict[str, Dict[str, str]] = {}
 AWS_CREDENTIALS_PRESENT = None
 
 
-def create_path(path: UPath) -> UPath:
+def create_path(path: UPath, access_token: Optional[str] = None) -> UPath:
     path = convert_pathlike(path)
     # test whether we have an AWS S3 path
     if not isinstance(path, S3Path):
@@ -465,18 +465,21 @@ def create_path(path: UPath) -> UPath:
     if not is_hosted_storage:
         # make anon request if no credentials present
         return UPath(path, cache_regions=True, anon=anon)
-    else:
-        root_folder = path_str.replace("s3://", "").split("/")[0]
-        if root_folder in credentials_cache:
-            credentials = credentials_cache[root_folder]
-        else:
-            from ._hub_core import access_aws
 
-            credentials = access_aws()
+    root_folder = path_str.replace("s3://", "").split("/")[0]
+
+    if access_token is None and root_folder in credentials_cache:
+        credentials = credentials_cache[root_folder]
+    else:
+        from ._hub_core import access_aws
+
+        credentials = access_aws(access_token=access_token)
+        if access_token is None:
             credentials_cache[root_folder] = credentials
-        return UPath(
-            path,
-            key=credentials["key"],
-            secret=credentials["secret"],
-            token=credentials["token"],
-        )
+
+    return UPath(
+        path,
+        key=credentials["key"],
+        secret=credentials["secret"],
+        token=credentials["token"],
+    )

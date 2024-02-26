@@ -116,6 +116,7 @@ class StorageSettings:
         region: Optional[str] = None,
         uid: Optional[str] = None,
         uuid: Optional[UUID] = None,
+        access_token: Optional[str] = None,
     ):
         self._uid = uid
         self._uuid = uuid
@@ -141,6 +142,8 @@ class StorageSettings:
             self._cache_dir = _process_cache_path(cache_path)
         else:
             self._cache_dir = None
+        # save access_token here for use in self.root
+        self.access_token = access_token
 
     @property
     def id(self) -> int:
@@ -185,7 +188,7 @@ class StorageSettings:
         if self._root is None:
             # below also makes network requests to get credentials
             # right
-            root_path = create_path(self._root_init)
+            root_path = create_path(self._root_init, access_token=self.access_token)
             self._root = root_path
         return self._root
 
