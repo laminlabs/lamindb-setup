@@ -472,7 +472,7 @@ def create_path(path: UPath) -> UPath:
         else:
             from ._hub_core import access_aws
 
-            credentials = access_aws()
+            credentials = access_aws(storage_root=f"s3://{root_folder}")
             credentials_cache[root_folder] = credentials
         return UPath(
             path,
