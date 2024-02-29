@@ -466,7 +466,7 @@ def create_path(path: UPath) -> UPath:
         # make anon request if no credentials present
         return UPath(path, cache_regions=True, anon=anon)
     else:
-        root_folder = path_str.replace("s3://", "").split("/")[0]
+        root_folder = "/".join(path_str.replace("s3://", "").split("/")[:2])
         if root_folder in credentials_cache:
             credentials = credentials_cache[root_folder]
         else:
