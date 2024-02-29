@@ -466,19 +466,16 @@ def create_path(path: UPath, access_token: Optional[str] = None) -> UPath:
         # make anon request if no credentials present
         return UPath(path, cache_regions=True, anon=anon)
 
-    root_folder = path_str.replace("s3://", "").split("/")[0]
+    root_folder = "/".join(path_str.replace("s3://", "").split("/")[:2])
 
     if access_token is None and root_folder in credentials_cache:
         credentials = credentials_cache[root_folder]
     else:
-        root_folder = "/".join(path_str.replace("s3://", "").split("/")[:2])
-        if root_folder in credentials_cache:
-            credentials = credentials_cache[root_folder]
-        else:
-            from ._hub_core import access_aws
+        from ._hub_core import access_aws
 
-            credentials = access_aws(storage_root=f"s3://{root_folder}", access_token=access_token)
-
+        credentials = access_aws(
+            storage_root=f"s3://{root_folder}", access_token=access_token
+        )
         if access_token is None:
             credentials_cache[root_folder] = credentials
 
