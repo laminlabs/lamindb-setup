@@ -247,7 +247,7 @@ def view_tree(
         include_paths: Restrict to these paths.
 
     Examples:
-        >>> dir_path = ln.dev.datasets.generate_cell_ranger_files(
+        >>> dir_path = ln.core.datasets.generate_cell_ranger_files(
         >>>     "sample_001", ln.settings.storage
         >>> )
         >>> ln.UPath(dir_path).view_tree()
