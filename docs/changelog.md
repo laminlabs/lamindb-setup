@@ -3,6 +3,7 @@
 <!-- prettier-ignore -->
 Name | PR | Developer | Date | Version
 --- | --- | --- | --- | ---
+♻️ Allow passing `access_token` directly | [655](https://github.com/laminlabs/lamindb-setup/pull/655) | [Koncopd](https://github.com/Koncopd) | 2024-02-29 |
 ✨ Add create_mapper util | [654](https://github.com/laminlabs/lamindb-setup/pull/654) | [Koncopd](https://github.com/Koncopd) | 2024-02-19 |
 🐛 Fix aws_access calls in CLI | [652](https://github.com/laminlabs/lamindb-setup/pull/652) | [Koncopd](https://github.com/Koncopd) | 2024-02-18 |
 ✏️ pre-commit on all files | [650](https://github.com/laminlabs/lamindb-setup/pull/650) | [Koncopd](https://github.com/Koncopd) | 2024-02-17 |
