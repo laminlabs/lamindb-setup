@@ -208,11 +208,11 @@ def _load_instance(
     return instance, storage
 
 
-def access_aws() -> Dict[str, str]:
+def access_aws(access_token: Optional[str] = None) -> Dict[str, str]:
     from .._settings import settings
 
-    if settings.user.handle != "anonymous":
-        credentials = call_with_fallback_auth(_access_aws)
+    if settings.user.handle != "anonymous" or access_token is not None:
+        credentials = call_with_fallback_auth(_access_aws, access_token=access_token)
         logger.important("loaded AWS credentials")
         return credentials
     else:
