@@ -208,25 +208,30 @@ def _load_instance(
     return instance, storage
 
 
-def access_aws(access_token: Optional[str] = None) -> Dict[str, str]:
+def access_aws(storage_root: str, access_token: Optional[str] = None) -> Dict[str, str]:
     from .._settings import settings
 
     if settings.user.handle != "anonymous" or access_token is not None:
-        credentials = call_with_fallback_auth(_access_aws, access_token=access_token)
+        credentials = call_with_fallback_auth(
+            _access_aws, storage_root=storage_root, access_token=access_token
+        )
         logger.important("loaded AWS credentials")
         return credentials
     else:
         raise RuntimeError("Can only get access to AWS if authenticated.")
 
 
-def _access_aws(client: Client) -> Dict[str, str]:
+def _access_aws(*, storage_root: str, client: Client) -> Dict[str, str]:
     from time import sleep
 
     response = None
     max_retries = 5
     for retry in range(max_retries):
         try:
-            response = client.functions.invoke("access-aws")
+            response = client.functions.invoke(
+                "access-aws",
+                invoke_options={"body": {"storage_root": storage_root}},
+            )
         except (FunctionsRelayError, FunctionsHttpError, json.JSONDecodeError) as error:
             if isinstance(error, json.JSONDecodeError):
                 raise AuthUnknownError(message=str(error), original_error=error)
@@ -236,7 +241,7 @@ def _access_aws(client: Client) -> Dict[str, str]:
                 raise error
             else:
                 continue
-        if response is not None:
+        if response is not None and response != {}:
             loaded_credentials = json.loads(response)["Credentials"]
             credentials = {}
             credentials["key"] = loaded_credentials["AccessKeyId"]
