@@ -3,6 +3,7 @@
 <!-- prettier-ignore -->
 Name | PR | Developer | Date | Version
 --- | --- | --- | --- | ---
+♻️ Pass `storage_root` to `access_aws` | [656](https://github.com/laminlabs/lamindb-setup/pull/656) | [falexwolf](https://github.com/falexwolf) | 2024-02-29 |
 ♻️ Allow passing `access_token` directly | [655](https://github.com/laminlabs/lamindb-setup/pull/655) | [Koncopd](https://github.com/Koncopd) | 2024-02-29 |
 ✨ Add create_mapper util | [654](https://github.com/laminlabs/lamindb-setup/pull/654) | [Koncopd](https://github.com/Koncopd) | 2024-02-19 |
 🐛 Fix aws_access calls in CLI | [652](https://github.com/laminlabs/lamindb-setup/pull/652) | [Koncopd](https://github.com/Koncopd) | 2024-02-18 |
