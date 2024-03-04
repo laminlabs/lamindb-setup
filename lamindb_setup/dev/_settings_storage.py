@@ -235,7 +235,9 @@ class StorageSettings:
 
         save_cache_dir = self._cache_dir
 
-        self._cache_dir = _process_cache_path(cache_dir)
+        new_cache_dir = _process_cache_path(cache_dir)
+        new_cache_dir.mkdir(parents=True, exist_ok=True)
+        self._cache_dir = new_cache_dir.resolve()
 
         try:
             if src_sqlite_file is not None:
