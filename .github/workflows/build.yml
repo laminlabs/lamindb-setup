@@ -128,7 +128,7 @@ jobs:
           repository: laminlabs/laminapp-ui
           token: ${{ secrets.GH_TOKEN_DEPLOY_LAMINAPP }}
           path: laminhub
-          ref: main
+          ref: setup
       - uses: actions/setup-python@v4
         with:
           python-version: '3.10'
