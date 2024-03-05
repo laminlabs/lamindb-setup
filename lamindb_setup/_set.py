@@ -1,9 +1,6 @@
-from pathlib import Path
-from typing import Union
-
 from lamin_utils import logger
 
-from lamindb_setup.core.upath import UPath
+from lamindb_setup.core.types import UPathStr
 
 from ._init_instance import register_user_and_storage
 from ._settings import settings
@@ -15,11 +12,11 @@ class set:
     """Set properties of current instance."""
 
     @staticmethod
-    def storage(root: Union[str, Path, UPath], **fs_kwargs):
+    def storage(root: UPathStr, **fs_kwargs):
         """Set storage.
 
         Args:
-            root: `Union[str, Path, UPath]` - The new storage root, e.g., an S3 bucket.
+            root: `UPathStr` - The new storage root, e.g., an S3 bucket.
             **fs_kwargs: Additional fsspec arguments for cloud root, e.g., profile.
 
         Example:

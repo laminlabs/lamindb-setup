@@ -1,6 +1,5 @@
 import importlib
 import sys
-from pathlib import Path
 from typing import Optional, Union
 import uuid
 from uuid import UUID
@@ -10,11 +9,12 @@ from typing import Tuple, Literal
 from pydantic import PostgresDsn
 from django.db.utils import OperationalError, ProgrammingError
 from django.core.exceptions import FieldError
-from lamindb_setup.core.upath import LocalPathClasses, UPath
+from lamindb_setup.core.upath import LocalPathClasses
 from ._close import close as close_instance
 from ._settings import settings
 from ._silence_loggers import silence_loggers
 from .core import InstanceSettings
+from .core.types import UPathStr
 from .core._settings_storage import StorageSettings, init_storage
 from .core.upath import convert_pathlike
 
@@ -142,7 +142,7 @@ def process_load_response(
 
 def validate_init_args(
     *,
-    storage: Union[str, Path, UPath],
+    storage: UPathStr,
     name: Optional[str] = None,
     db: Optional[PostgresDsn] = None,
     schema: Optional[str] = None,
@@ -184,7 +184,7 @@ def validate_init_args(
 
 def init(
     *,
-    storage: Union[str, Path, UPath],
+    storage: UPathStr,
     name: Optional[str] = None,
     db: Optional[PostgresDsn] = None,
     schema: Optional[str] = None,
@@ -305,7 +305,7 @@ def validate_sqlite_state(isettings: InstanceSettings) -> None:
 
 def infer_instance_name(
     *,
-    storage: Union[str, Path, UPath],
+    storage: UPathStr,
     name: Optional[str] = None,
     db: Optional[PostgresDsn] = None,
 ) -> str:
