@@ -11,6 +11,7 @@ from .upath import LocalPathClasses, UPath, create_path, convert_pathlike
 from uuid import UUID
 import string
 import secrets
+from .types import UPathStr
 from .upath import hosted_regions
 
 
@@ -24,7 +25,7 @@ def base62(n_char: int) -> str:
     return id
 
 
-def get_storage_region(storage_root: Union[str, Path, UPath]) -> Optional[str]:
+def get_storage_region(storage_root: UPathStr) -> Optional[str]:
     storage_root_str = str(storage_root)
     if storage_root_str.startswith("s3://"):
         import botocore.session as session
@@ -53,9 +54,7 @@ def get_storage_region(storage_root: Union[str, Path, UPath]) -> Optional[str]:
     return storage_region
 
 
-def init_storage(
-    storage: Union[str, Path, UPath], region: Optional[str] = None
-) -> "StorageSettings":
+def init_storage(storage: UPathStr, region: Optional[str] = None) -> "StorageSettings":
     if storage is None:
         raise ValueError("storage argument can't be `None`")
     root = str(storage)  # ensure we have a string
@@ -112,7 +111,7 @@ class StorageSettings:
 
     def __init__(
         self,
-        root: Union[str, Path, UPath],
+        root: UPathStr,
         region: Optional[str] = None,
         uid: Optional[str] = None,
         uuid: Optional[UUID] = None,
@@ -224,7 +223,7 @@ class StorageSettings:
         return cache_dir
 
     @cache_dir.setter
-    def cache_dir(self, cache_dir: Union[str, Path, UPath]):
+    def cache_dir(self, cache_dir: UPathStr):
         """Set cache root."""
         from lamindb_setup import settings
 

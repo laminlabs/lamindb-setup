@@ -9,13 +9,14 @@ from pathlib import Path
 from typing import Literal, Dict
 import fsspec
 from itertools import islice
-from typing import Union, Optional, Set, Any
+from typing import Optional, Set, Any
 from collections import defaultdict
 from dateutil.parser import isoparse  # type: ignore
 from lamin_utils import logger
 from upath import UPath
-from upath.implementations.cloud import CloudPath, S3Path  # noqa
+from upath.implementations.cloud import S3Path  # noqa
 from upath.implementations.local import LocalPath, PosixUPath, WindowsUPath
+from .types import UPathStr
 
 LocalPathClasses = (PosixUPath, WindowsUPath, LocalPath)
 
@@ -51,9 +52,7 @@ KNOWN_SUFFIXES = {
 }
 
 
-def extract_suffix_from_path(
-    path: Union[UPath, Path], arg_name: Optional[str] = None
-) -> str:
+def extract_suffix_from_path(path: Path, arg_name: Optional[str] = None) -> str:
     if len(path.suffixes) <= 1:
         return path.suffix
     else:
@@ -84,7 +83,7 @@ def extract_suffix_from_path(
         return suffix
 
 
-def infer_filesystem(path: Union[Path, UPath, str]):
+def infer_filesystem(path: UPathStr):
     import fsspec  # improve cold start
 
     path_str = str(path)
@@ -290,7 +289,7 @@ def view_tree(
     else:
         include_paths = set()
 
-    def inner(dir_path: Union[Path, UPath], prefix: str = "", level: int = -1):
+    def inner(dir_path: Path, prefix: str = "", level: int = -1):
         nonlocal n_files, n_directories, suffixes
         if level == 0:
             return
@@ -389,12 +388,12 @@ UPath.rename.__doc__ = """Move file, see fsspec.AbstractFileSystem.mv.
 >>> upath = Upath("local-folder/my-file")
 >>> upath.rename("local-folder/my-file-renamed")
 """
-UPath.__doc__ = """Paths: low-level key-value access to artifacts & objects.
+UPath.__doc__ = """Paths: low-level key-value access to files/objects.
 
 Paths are based on keys that offer the typical access patterns of file systems
  and object stores.
 
->>> upath = Upath("s3://my-bucket/my-folder")
+>>> upath = UPath("s3://my-bucket/my-folder")
 >>> upath.exists()
 
 Args:
@@ -402,14 +401,14 @@ Args:
 """
 
 
-def convert_pathlike(pathlike: Union[str, Path, UPath]) -> UPath:
+def convert_pathlike(pathlike: UPathStr) -> UPath:
     """Convert pathlike to Path or UPath inheriting options from root."""
     if isinstance(pathlike, (str, UPath)):
         path = UPath(pathlike)
     elif isinstance(pathlike, Path):
         path = UPath(str(pathlike))  # UPath applied on Path gives Path back
     else:
-        raise ValueError("pathlike should be of type Union[str, Path, UPath]")
+        raise ValueError("pathlike should be of type UPathStr")
     # remove trailing slash
     if path._parts and path._parts[-1] == "":
         path._parts = path._parts[:-1]

@@ -3,8 +3,7 @@ from typing import Optional, Union, Dict, Tuple
 from uuid import UUID
 import os
 from lamin_utils import logger
-from lamindb_setup.core.upath import UPath
-from lamindb_setup.types import UPathStr
+from lamindb_setup.core.types import UPathStr
 from lamindb_setup.core._hub_utils import (
     LaminDsn,
     LaminDsnModel,
@@ -220,7 +219,7 @@ def get_owner_name_from_identifier(identifier: str):
 
 
 def update_isettings_with_storage(
-    isettings: InstanceSettings, storage: Union[str, Path, UPath]
+    isettings: InstanceSettings, storage: UPathStr
 ) -> None:
     ssettings = StorageSettings(storage)
     if ssettings.is_cloud:
