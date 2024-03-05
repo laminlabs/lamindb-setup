@@ -58,6 +58,7 @@ from ._settings import settings  # noqa
 from ._setup_user import login, logout  # noqa
 from ._django import django
 
+dev = core  # backward compat
 _TESTING = False  # used in lamindb tests
 
 # hide the supabase error in a thread on windows
