@@ -28,18 +28,12 @@ More instance operations:
    migrate
    register
 
-Settings:
+Modules & settings:
 
 .. autosummary::
    :toctree:
 
    settings
-
-Developer API.
-
-.. autosummary::
-   :toctree:
-
    core
    django
 
