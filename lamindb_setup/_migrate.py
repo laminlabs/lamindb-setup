@@ -3,7 +3,7 @@ from lamin_utils import logger
 
 from ._check_instance_setup import check_instance_setup
 from ._settings import settings
-from .dev.django import setup_django
+from .core.django import setup_django
 from django.db import connection
 from django.db.migrations.loader import MigrationLoader
 
@@ -33,12 +33,12 @@ class migrate:
         """Deploy a migration."""
         if check_instance_setup():
             raise RuntimeError("Restart Python session to migrate or use CLI!")
-        from lamindb_setup.dev._hub_crud import (
+        from lamindb_setup.core._hub_crud import (
             update_instance,
             select_instance_by_id,
             select_collaborator,
         )
-        from lamindb_setup.dev._hub_client import call_with_fallback_auth
+        from lamindb_setup.core._hub_client import call_with_fallback_auth
 
         instance_id_str = settings.instance.id.hex
         instance = call_with_fallback_auth(

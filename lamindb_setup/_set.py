@@ -3,12 +3,12 @@ from typing import Union
 
 from lamin_utils import logger
 
-from lamindb_setup.dev.upath import UPath
+from lamindb_setup.core.upath import UPath
 
 from ._init_instance import register_user_and_storage
 from ._settings import settings
-from .dev._settings_instance import InstanceSettings
-from .dev._settings_storage import StorageSettings
+from .core._settings_instance import InstanceSettings
+from .core._settings_storage import StorageSettings
 
 
 class set:

@@ -1,4 +1,4 @@
-from lamindb_setup.dev.upath import UPath, create_path
+from lamindb_setup.core.upath import UPath, create_path
 
 
 def test_create_path():

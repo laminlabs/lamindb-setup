@@ -2,7 +2,7 @@ from lamin_utils import logger
 import os
 from ._init_instance import reload_lamindb, reload_schema_modules
 from ._silence_loggers import silence_loggers
-from .dev._settings_store import current_instance_settings_file
+from .core._settings_store import current_instance_settings_file
 
 _INSTANCE_NOT_SETUP_WARNING = """\
 You haven't yet setup an instance: Please call `ln.setup.init()` or `ln.setup.load()`
@@ -23,11 +23,11 @@ def check_instance_setup(from_lamindb: bool = False):
         silence_loggers()
         try:
             # attempt loading the settings file
-            from .dev._settings_load import load_instance_settings
+            from .core._settings_load import load_instance_settings
 
             isettings = load_instance_settings()
 
-            from .dev.django import IS_SETUP, setup_django
+            from .core.django import IS_SETUP, setup_django
 
             # this flag should probably be renamed to `from_user`
             # it will typically be invoked if lamindb is imported for use

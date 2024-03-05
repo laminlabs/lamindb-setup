@@ -10,13 +10,13 @@ from typing import Tuple, Literal
 from pydantic import PostgresDsn
 from django.db.utils import OperationalError, ProgrammingError
 from django.core.exceptions import FieldError
-from lamindb_setup.dev.upath import LocalPathClasses, UPath
+from lamindb_setup.core.upath import LocalPathClasses, UPath
 from ._close import close as close_instance
 from ._settings import settings
 from ._silence_loggers import silence_loggers
-from .dev import InstanceSettings
-from .dev._settings_storage import StorageSettings, init_storage
-from .dev.upath import convert_pathlike
+from .core import InstanceSettings
+from .core._settings_storage import StorageSettings, init_storage
+from .core.upath import convert_pathlike
 
 
 def get_schema_module_name(schema_name) -> str:
@@ -158,7 +158,7 @@ def validate_init_args(
     ],
 ]:
     from ._load_instance import load
-    from .dev._hub_utils import (
+    from .core._hub_utils import (
         validate_schema_arg,
     )
 
@@ -212,7 +212,7 @@ def init(
             )
         else:
             close_instance(mute=True)
-        from .dev._hub_core import init_instance as init_instance_hub
+        from .core._hub_core import init_instance as init_instance_hub
 
         name_str, instance_id, instance_state = validate_init_args(
             storage=storage,
@@ -251,7 +251,7 @@ def init(
         if not isettings.is_remote:
             logger.important("did not register local instance on lamin.ai")
     except Exception as e:
-        from .dev._hub_core import delete_storage, delete_instance
+        from .core._hub_core import delete_storage, delete_instance
 
         if isettings is not None:
             delete_instance(isettings.id)
@@ -266,7 +266,7 @@ def load_from_isettings(
     *,
     init: bool = False,
 ) -> None:
-    from .dev._setup_bionty_sources import load_bionty_sources, write_bionty_sources
+    from .core._setup_bionty_sources import load_bionty_sources, write_bionty_sources
 
     if init:
         # during init both user and storage need to be registered

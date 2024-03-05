@@ -40,7 +40,7 @@ Developer API.
 .. autosummary::
    :toctree:
 
-   dev
+   core
    django
 
 """
@@ -50,7 +50,7 @@ __version__ = "0.65.3"  # denote a release candidate for 0.1.0 with 0.1rc1
 import sys
 from os import name as _os_name
 
-from . import dev
+from . import core
 from ._check_instance_setup import check_instance_setup as _check_instance_setup  # noqa
 from ._close import close  # noqa
 from ._delete import delete  # noqa

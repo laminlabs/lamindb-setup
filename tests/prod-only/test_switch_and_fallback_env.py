@@ -3,7 +3,7 @@ import pytest
 import lamindb_setup as ln_setup
 from gotrue.errors import AuthUnknownError
 from lamindb_setup import login, settings
-from lamindb_setup.dev._hub_core import (
+from lamindb_setup.core._hub_core import (
     load_instance,
     sign_in_hub,
 )

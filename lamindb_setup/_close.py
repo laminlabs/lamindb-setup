@@ -1,9 +1,9 @@
 from lamin_utils import logger
 
 from ._settings import settings
-from .dev._settings_store import current_instance_settings_file
-from .dev._setup_bionty_sources import delete_bionty_sources_yaml
-from .dev.cloud_sqlite_locker import clear_locker
+from .core._settings_store import current_instance_settings_file
+from .core._setup_bionty_sources import delete_bionty_sources_yaml
+from .core.cloud_sqlite_locker import clear_locker
 
 
 def close(mute: bool = False) -> None:

@@ -5,8 +5,8 @@ from lamin_utils import logger
 
 from ._close import close
 from ._settings import settings
-from .dev._settings_load import load_instance_settings
-from .dev._settings_store import instance_settings_file
+from .core._settings_load import load_instance_settings
+from .core._settings_store import instance_settings_file
 
 
 def delete(instance_name: str, force: bool = False):

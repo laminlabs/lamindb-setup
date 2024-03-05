@@ -5,8 +5,8 @@ from uuid import UUID
 import pytest
 
 import lamindb_setup as ln_setup
-from lamindb_setup.dev._hub_client import connect_hub_with_auth
-from lamindb_setup.dev._hub_crud import (
+from lamindb_setup.core._hub_client import connect_hub_with_auth
+from lamindb_setup.core._hub_crud import (
     Client,
     select_account_by_handle,
     select_db_user_by_instance,

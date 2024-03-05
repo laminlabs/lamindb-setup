@@ -1,4 +1,4 @@
-"""Developer API.
+"""Core library.
 
 Paths and file system:
 

@@ -1,6 +1,6 @@
 from typing import Optional
 from ._settings import settings
-from .dev.django import setup_django
+from .core.django import setup_django
 
 
 def django(command: str, package_name: Optional[str] = None, **kwargs):

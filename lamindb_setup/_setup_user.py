@@ -5,9 +5,9 @@ from lamin_utils import logger
 from ._check_instance_setup import check_instance_setup
 from ._init_instance import register_user
 from ._settings import settings
-from .dev._settings_load import load_or_create_user_settings, load_user_settings
-from .dev._settings_save import save_user_settings
-from .dev._settings_store import (
+from .core._settings_load import load_or_create_user_settings, load_user_settings
+from .core._settings_save import save_user_settings
+from .core._settings_store import (
     user_settings_file_email,
     user_settings_file_handle,
     current_user_settings_file,
@@ -83,7 +83,7 @@ def login(
             "No stored API key, please call: lamin login <your-email> --key <API-key>"
         )
 
-    from .dev._hub_core import sign_in_hub
+    from .core._hub_core import sign_in_hub
 
     response = sign_in_hub(
         user_settings.email, user_settings.password, user_settings.handle

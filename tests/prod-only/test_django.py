@@ -1,4 +1,4 @@
-from lamindb_setup.dev.django import get_migrations_to_sync
+from lamindb_setup.core.django import get_migrations_to_sync
 from lamindb_setup import django
 
 

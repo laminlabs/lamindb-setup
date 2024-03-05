@@ -13,7 +13,7 @@ urlpatterns = [
 
 
 def view():
-    from .dev.django import setup_django
+    from .core.django import setup_django
     from ._settings import settings
     from ._check_instance_setup import check_instance_setup
     from django.core.management import call_command

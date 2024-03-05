@@ -3,9 +3,9 @@ from typing import Optional, Union, Dict, Tuple
 from uuid import UUID
 import os
 from lamin_utils import logger
-from lamindb_setup.dev.upath import UPath
+from lamindb_setup.core.upath import UPath
 from lamindb_setup.types import UPathStr
-from lamindb_setup.dev._hub_utils import (
+from lamindb_setup.core._hub_utils import (
     LaminDsn,
     LaminDsnModel,
 )
@@ -13,10 +13,10 @@ from ._close import close as close_instance
 from ._init_instance import load_from_isettings
 from ._settings import InstanceSettings, settings
 from ._silence_loggers import silence_loggers
-from .dev._settings_load import load_instance_settings
-from .dev._settings_storage import StorageSettings
-from .dev._settings_store import instance_settings_file
-from .dev.cloud_sqlite_locker import unlock_cloud_sqlite_upon_exception
+from .core._settings_load import load_instance_settings
+from .core._settings_storage import StorageSettings
+from .core._settings_store import instance_settings_file
+from .core.cloud_sqlite_locker import unlock_cloud_sqlite_upon_exception
 
 # this is for testing purposes only
 # set to True only to test failed load
@@ -96,7 +96,7 @@ def load(
         storage: Load the instance with an updated default storage.
     """
     from ._check_instance_setup import check_instance_setup
-    from .dev._hub_core import load_instance as load_instance_from_hub
+    from .core._hub_core import load_instance as load_instance_from_hub
 
     owner, name = get_owner_name_from_identifier(identifier)
 

@@ -1,12 +1,12 @@
-from .dev.django import setup_django
+from .core.django import setup_django
 from ._settings import settings
-from .dev._settings_storage import base62
+from .core._settings_storage import base62
 
 
 def register(_test: bool = False):
     """Register an instance on the hub."""
-    from .dev._hub_core import init_instance as init_instance_hub
-    from .dev._hub_core import init_storage as init_storage_hub
+    from .core._hub_core import init_instance as init_instance_hub
+    from .core._hub_core import init_storage as init_storage_hub
     from ._check_instance_setup import check_instance_setup
 
     isettings = settings.instance
