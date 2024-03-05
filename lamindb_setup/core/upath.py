@@ -506,7 +506,6 @@ def get_stat_file_cloud(stat: Dict) -> Tuple[int, str, str]:
 
 def get_stat_dir_s3(path: UPath) -> Tuple[int, str, str, int]:
     import boto3
-    from lamindb_setup.core.upath import AWS_CREDENTIALS_PRESENT
 
     if not AWS_CREDENTIALS_PRESENT:
         # passing the following param directly to Session() doesn't
