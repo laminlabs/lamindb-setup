@@ -3,6 +3,7 @@
 <!-- prettier-ignore -->
 Name | PR | Developer | Date | Version
 --- | --- | --- | --- | ---
+🚚 Rename `.dev` to `.core` | [659](https://github.com/laminlabs/lamindb-setup/pull/659) | [falexwolf](https://github.com/falexwolf) | 2024-03-05 |
 ♻️ Add `UPathStr` type | [658](https://github.com/laminlabs/lamindb-setup/pull/658) | [falexwolf](https://github.com/falexwolf) | 2024-03-05 |
 🩹 Resolve cache_dir in the setter | [657](https://github.com/laminlabs/lamindb-setup/pull/657) | [Koncopd](https://github.com/Koncopd) | 2024-03-04 |
 ♻️ Pass `storage_root` to `access_aws` | [656](https://github.com/laminlabs/lamindb-setup/pull/656) | [falexwolf](https://github.com/falexwolf) | 2024-02-29 | 0.65.3
