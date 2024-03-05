@@ -6,6 +6,7 @@ Paths and file system:
    :toctree:
 
    upath
+   types
 
 Settings:
 
@@ -17,6 +18,7 @@ Settings:
    StorageSettings
 
 """
+from . import types
 from . import upath, django
 from ._deprecated import deprecated
 from ._docs import doc_args
