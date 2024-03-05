@@ -1,7 +1,7 @@
 import os
 from typing import Union, Optional
-from lamindb_setup.dev import InstanceSettings, StorageSettings, UserSettings
-from lamindb_setup.dev._settings_load import (
+from lamindb_setup.core import InstanceSettings, StorageSettings, UserSettings
+from lamindb_setup.core._settings_load import (
     load_instance_settings,
     load_or_create_user_settings,
 )
@@ -20,9 +20,9 @@ class classproperty(object):
 class settings:
     """Settings.
 
-    - :class:`~lamindb_setup.dev.InstanceSettings`
-    - :class:`~lamindb_setup.dev.StorageSettings`
-    - :class:`~lamindb_setup.dev.UserSettings`
+    - :class:`~lamindb_setup.core.InstanceSettings`
+    - :class:`~lamindb_setup.core.StorageSettings`
+    - :class:`~lamindb_setup.core.UserSettings`
     """
 
     _using_key: Optional[str] = None  # set through lamindb.settings

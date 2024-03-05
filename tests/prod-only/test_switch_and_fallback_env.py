@@ -3,7 +3,7 @@ import pytest
 import lamindb_setup as ln_setup
 from gotrue.errors import AuthUnknownError
 from lamindb_setup import login, settings
-from lamindb_setup.dev._hub_core import (
+from lamindb_setup.core._hub_core import (
     load_instance,
     sign_in_hub,
 )
@@ -28,12 +28,12 @@ def test_switch_env():
 
 
 def test_load_instance_fallbacks():
-    prod_url = ln_setup.dev._hub_client.PROD_URL
-    ln_setup.dev._hub_client.PROD_URL = (  # deactivated prod url
+    prod_url = ln_setup.core._hub_client.PROD_URL
+    ln_setup.core._hub_client.PROD_URL = (  # deactivated prod url
         "https://inactive.lamin.ai"
     )
     with pytest.raises(AuthUnknownError):
-        ln_setup.dev._hub_client.connect_hub_with_auth(renew_token=True)
+        ln_setup.core._hub_client.connect_hub_with_auth(renew_token=True)
     assert not isinstance(
         sign_in_hub(
             email="static-testuser1@lamin.ai", password="static-testuser1-password"
@@ -44,4 +44,4 @@ def test_load_instance_fallbacks():
         owner="static-testuser1",
         name="static-testinstance1",
     )
-    ln_setup.dev._hub_client.PROD_URL = prod_url
+    ln_setup.core._hub_client.PROD_URL = prod_url

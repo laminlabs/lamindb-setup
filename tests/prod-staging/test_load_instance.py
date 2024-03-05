@@ -5,8 +5,8 @@ from laminhub_rest.core.collaborator._add_collaborator import add_collaborator
 from laminhub_rest.core.collaborator._delete_collaborator import delete_collaborator
 
 import lamindb_setup as ln_setup
-from lamindb_setup.dev._hub_client import connect_hub_with_auth
-from lamindb_setup.dev._hub_crud import update_instance
+from lamindb_setup.core._hub_client import connect_hub_with_auth
+from lamindb_setup.core._hub_crud import update_instance
 
 
 def test_load_remote_instance():

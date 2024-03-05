@@ -3,23 +3,23 @@ from uuid import UUID, uuid4
 from typing import Optional
 import pytest
 from supabase import Client
-from lamindb_setup.dev._hub_utils import LaminDsnModel
+from lamindb_setup.core._hub_utils import LaminDsnModel
 from gotrue.errors import AuthApiError
 import lamindb_setup as ln_setup
-from lamindb_setup.dev._settings_instance import InstanceSettings
-from lamindb_setup.dev._hub_client import (
+from lamindb_setup.core._settings_instance import InstanceSettings
+from lamindb_setup.core._hub_client import (
     Environment,
     connect_hub_with_auth,
     call_with_fallback_auth,
 )
-from lamindb_setup.dev._hub_core import (
+from lamindb_setup.core._hub_core import (
     init_storage,
     init_instance,
     load_instance,
     sign_in_hub,
     sign_up_local_hub,
 )
-from lamindb_setup.dev._hub_crud import (
+from lamindb_setup.core._hub_crud import (
     select_collaborator,
     select_db_user_by_instance,
     select_instance_by_name,
@@ -29,11 +29,11 @@ from lamindb_setup.dev._hub_crud import (
 # typing
 # from lamindb.dev import UserSettings
 # from supabase import Client
-from lamindb_setup.dev._hub_utils import LaminDsn
-from lamindb_setup.dev._settings_storage import base62
-from lamindb_setup.dev._settings_storage import init_storage as init_storage_base
-from lamindb_setup.dev._settings_save import save_user_settings
-from lamindb_setup.dev._settings_user import UserSettings
+from lamindb_setup.core._hub_utils import LaminDsn
+from lamindb_setup.core._settings_storage import base62
+from lamindb_setup.core._settings_storage import init_storage as init_storage_base
+from lamindb_setup.core._settings_save import save_user_settings
+from lamindb_setup.core._settings_user import UserSettings
 
 
 def insert_db_user(db_user_fields: dict, client: Client):
@@ -100,7 +100,7 @@ def _set_db_user(
 
 def sign_up_user(email: str) -> Optional[str]:
     """Sign up user."""
-    from lamindb_setup.dev._hub_core import sign_up_local_hub
+    from lamindb_setup.core._hub_core import sign_up_local_hub
 
     result_or_error = sign_up_local_hub(email)
     if result_or_error == "user-exists":  # user already exists
