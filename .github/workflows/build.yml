@@ -122,12 +122,12 @@ jobs:
     timeout-minutes: 15
     steps:
       - uses: actions/checkout@v4
-      - name: checkout laminhub-rest
+      - name: checkout laminhub
         uses: actions/checkout@v4
         with:
-          repository: laminlabs/laminhub-rest
+          repository: laminlabs/laminapp-ui
           token: ${{ secrets.GH_TOKEN_DEPLOY_LAMINAPP }}
-          path: laminhub-rest
+          path: laminhub
           ref: main
       - uses: actions/setup-python@v4
         with:
