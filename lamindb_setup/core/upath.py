@@ -14,7 +14,7 @@ from collections import defaultdict
 from dateutil.parser import isoparse  # type: ignore
 from lamin_utils import logger
 from upath import UPath
-from upath.implementations.cloud import S3Path  # noqa
+from upath.implementations.cloud import CloudPath, S3Path  # noqa  # keep CloudPath!
 from upath.implementations.local import LocalPath, PosixUPath, WindowsUPath
 from .types import UPathStr
 
