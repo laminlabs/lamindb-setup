@@ -4,6 +4,7 @@ from uuid import UUID
 import os
 from lamin_utils import logger
 from lamindb_setup.dev.upath import UPath
+from lamindb_setup.types import UPathStr
 from lamindb_setup.dev._hub_utils import (
     LaminDsn,
     LaminDsnModel,
@@ -80,7 +81,7 @@ def load(
     identifier: str,
     *,
     db: Optional[str] = None,
-    storage: Optional[Union[str, Path, UPath]] = None,
+    storage: Optional[UPathStr] = None,
     _raise_not_reachable_error: bool = True,
     _test: bool = False,
 ) -> Optional[Union[str, Tuple]]:
@@ -92,8 +93,7 @@ def load(
             If the instance is owned by you,
             it suffices to pass the instance name.
         db: Load the instance with an updated database URL.
-        storage: `Optional[PathLike] = None` - Load the instance with an
-            updated default storage.
+        storage: Load the instance with an updated default storage.
     """
     from ._check_instance_setup import check_instance_setup
     from .dev._hub_core import load_instance as load_instance_from_hub
