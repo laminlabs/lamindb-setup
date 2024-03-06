@@ -123,7 +123,7 @@ def test_runs_locally():
 
 def test_incomplete_signup():
     email = "testuser-incomplete-signup@gmail.com"
-    response = sign_up_local_hub(email, "testuser1")
+    response = sign_up_local_hub(email)
     assert isinstance(response, tuple) and len(response) == 3
     response = sign_in_hub(email, response[0])
     assert response == "complete-signup"
