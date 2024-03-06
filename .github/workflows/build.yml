@@ -10,7 +10,7 @@ on:
 
 jobs:
   # just tests on production
-  prod-only:
+  hub-prod:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
@@ -26,11 +26,11 @@ jobs:
           aws-region: eu-central-1
       - run: pip install -U laminci
       - run: nox -s lint
-      - run: nox -s "install(group='prod-only')"
-      - run: nox -s "build(lamin_env='prod', group='prod-only')"
+      - run: nox -s "install(group='hub-prod')"
+      - run: nox -s "build(lamin_env='prod', group='hub-prod')"
       - uses: actions/upload-artifact@v2
         with:
-          name: coverage--prod-only
+          name: coverage--hub-prod
           path: .coverage
 
   # tests on both production and staging
@@ -149,7 +149,7 @@ jobs:
           path: .coverage
 
   coverage:
-    needs: [prod-only, prod-staging, storage, hub-local]
+    needs: [hub-prod, prod-staging, storage, hub-local]
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4

@@ -11,13 +11,13 @@ prod-staging/init-hosted-instance
 prod-staging/load-hosted-instance
 prod-staging/test-multi-session
 
-prod-only/test-cache-management
-prod-only/test-empty-init
-prod-only/test-import-schema
-prod-only/test-invalid-schema
-prod-only/test-insufficient-user-info
-prod-only/test-load-anonymously
-prod-only/test-load-lock
-prod-only/test-sqlite-sync
+hub-prod/test-cache-management
+hub-prod/test-empty-init
+hub-prod/test-import-schema
+hub-prod/test-invalid-schema
+hub-prod/test-insufficient-user-info
+hub-prod/test-load-anonymously
+hub-prod/test-load-lock
+hub-prod/test-sqlite-sync
 
 ```

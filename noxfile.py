@@ -14,7 +14,7 @@ def lint(session: nox.Session) -> None:
 @nox.session
 @nox.parametrize(
     "group",
-    ["hub-local", "prod-only", "prod-staging", "storage", "vault"],
+    ["hub-local", "hub-prod", "prod-staging", "storage", "vault"],
 )
 def install(session: nox.Session, group: str) -> None:
     if group in {"prod-staging"}:
@@ -38,7 +38,7 @@ def install(session: nox.Session, group: str) -> None:
         session.run(*"pip install -e .[aws,dev]".split())
     elif group == "vault":
         session.run(*"pip install -e .[aws,dev]".split())
-    elif group == "prod-only":
+    elif group == "hub-prod":
         # TODO: get rid of the bionty duplication asap
         session.run(*"pip install bionty".split())
         session.run(*"pip install git+https://github.com/laminlabs/bionty-base".split())
@@ -65,7 +65,7 @@ def install(session: nox.Session, group: str) -> None:
 @nox.session
 @nox.parametrize(
     "group",
-    ["prod-only", "prod-staging"],
+    ["hub-prod", "prod-staging"],
 )
 @nox.parametrize(
     "lamin_env",
@@ -75,12 +75,12 @@ def build(session: nox.Session, group: str, lamin_env: str):
     env = {"LAMIN_ENV": lamin_env}
     login_testuser1(session, env=env)
     login_testuser2(session, env=env)
-    if group == "prod-only":
+    if group == "hub-prod":
         session.run(
-            *f"pytest {COVERAGE_ARGS} ./tests/prod-only".split(),
+            *f"pytest {COVERAGE_ARGS} ./tests/hub-prod".split(),
             env=env,
         )
-        session.run(*f"pytest -s {COVERAGE_ARGS} ./docs/prod-only".split(), env=env)
+        session.run(*f"pytest -s {COVERAGE_ARGS} ./docs/hub-prod".split(), env=env)
     elif group == "prod-staging":
         session.run(
             *f"pytest {COVERAGE_ARGS} ./tests/prod-staging".split(),
