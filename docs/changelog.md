@@ -3,6 +3,7 @@
 <!-- prettier-ignore -->
 Name | PR | Developer | Date | Version
 --- | --- | --- | --- | ---
+♻️ Replace `InstanceSettings.identifier` with `InstanceSettings.slug` | [662](https://github.com/laminlabs/lamindb-setup/pull/662) | [falexwolf](https://github.com/falexwolf) | 2024-03-06 |
 ♻️ Simplify path types & point to hub mono-repo | [660](https://github.com/laminlabs/lamindb-setup/pull/660) | [falexwolf](https://github.com/falexwolf) | 2024-03-05 |
 🚚 Rename `.dev` to `.core` | [659](https://github.com/laminlabs/lamindb-setup/pull/659) | [falexwolf](https://github.com/falexwolf) | 2024-03-05 |
 ♻️ Add `UPathStr` type | [658](https://github.com/laminlabs/lamindb-setup/pull/658) | [falexwolf](https://github.com/falexwolf) | 2024-03-05 |
