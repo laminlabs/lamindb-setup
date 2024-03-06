@@ -9,7 +9,7 @@ on:
     types: [build]
 
 jobs:
-  # just tests on production
+  # tests only on production hub
   hub-prod:
     runs-on: ubuntu-latest
     steps:
@@ -33,7 +33,7 @@ jobs:
           name: coverage--hub-prod
           path: .coverage
 
-  # tests on both production and staging
+  # tests both on production and staging hub
   hub-cloud:
     runs-on: ubuntu-22.04
     strategy:
@@ -55,12 +55,12 @@ jobs:
           python-version: '3.10'
           cache: 'pip'
           cache-dependency-path: '.github/workflows/build.yml'
-      - name: checkout laminhub-rest
+      - name: checkout laminhub
         uses: actions/checkout@v4
         with:
-          repository: laminlabs/laminhub-rest
+          repository: laminlabs/laminapp-ui
           token: ${{ secrets.GH_TOKEN_DEPLOY_LAMINAPP }}
-          path: laminhub-rest
+          path: laminhub
           ref: main
       - uses: actions/cache@v3
         with:
@@ -94,7 +94,7 @@ jobs:
           name: coverage--hub-cloud
           path: .coverage
 
-  # a test group for testing user access to storage
+  # test user access to storage
   storage:
     runs-on: ubuntu-latest
     steps:
@@ -116,7 +116,7 @@ jobs:
           name: coverage--storage
           path: .coverage
 
-  # a test group for testing low-level hub functionality
+  # test low-level hub functionality
   hub-local:
     runs-on: ubuntu-latest
     timeout-minutes: 15
@@ -212,7 +212,7 @@ jobs:
 
   notify:
     if: always()
-    # this here is only for notifying developers of laminhub-rest
+    # this here is only for notifying developers of laminhub
     # hence, it only needs groups hub-local and hub-cloud
     needs: [hub-local, hub-cloud]
     runs-on: ubuntu-latest

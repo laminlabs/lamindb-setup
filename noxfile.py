@@ -29,7 +29,7 @@ def install(session: nox.Session, group: str) -> None:
             *"pip install --no-deps git+https://github.com/laminlabs/lnschema-core"
             .split()
         )
-        session.run(*"pip install ./laminhub-rest[server]".split())
+        session.run(*"pip install ./laminhub/rest-hub".split())
         session.run(*"pip install -e .[aws,dev]".split())
         # need for CLI, but this is bad because it's downstream
         session.run(*"git clone https://github.com/laminlabs/lamin-cli".split())
