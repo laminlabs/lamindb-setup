@@ -85,7 +85,7 @@ def setup_user_from_store(store: UserSettingsStore) -> UserSettings:
     settings.password = store.password if store.password != "null" else None
     settings.access_token = store.access_token
     settings.uid = store.uid
-    settings.handle = store.handle if store.handle != "null" else None
+    settings.handle = store.handle if store.handle != "null" else "anonymous"
     settings.name = store.name if store.name != "null" else None
     settings.uuid = UUID(store.uuid) if store.uuid != "null" else None
     return settings

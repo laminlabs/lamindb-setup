@@ -98,7 +98,7 @@ def _set_db_user(
         )
 
 
-def sign_up_user(email: str) -> Optional[str]:
+def sign_up_user(email: str, handle: str) -> Optional[str]:
     """Sign up user."""
     from lamindb_setup.core._hub_core import sign_up_local_hub
 
@@ -106,6 +106,7 @@ def sign_up_user(email: str) -> Optional[str]:
     if result_or_error == "user-exists":  # user already exists
         return "user-exists"
     user_settings = UserSettings(
+        handle=handle,
         email=email,
         password=result_or_error[0],
         uuid=UUID(result_or_error[1]),
@@ -131,12 +132,12 @@ def test_incomplete_signup():
 @pytest.fixture(scope="session")
 def create_testuser1_session():  # -> Tuple[Client, UserSettings]
     email = "testuser1@gmail.com"
-    response = sign_up_user(email)
+    response = sign_up_user(email, "testuser1")
     assert response is None
     # test repeated sign up
     with pytest.raises(AuthApiError):
         # test error with "User already registered"
-        sign_up_user(email)
+        sign_up_user(email, "testuser1")
     account_id = ln_setup.settings.user.uuid.hex
     account = {
         "id": account_id,

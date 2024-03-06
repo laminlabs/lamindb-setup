@@ -71,7 +71,7 @@ def _init_storage(ssettings: StorageSettings, client: Client) -> UUID:
     fields = dict(
         id=id.hex,
         lnid=ssettings.uid,
-        created_by=settings.user.uuid.hex,
+        created_by=settings.user.uuid.hex,  # type: ignore
         root=root,
         region=ssettings.region,
         type=ssettings.type,
@@ -110,7 +110,7 @@ def init_instance(isettings: InstanceSettings) -> None:
 
 
 def _init_instance(isettings: InstanceSettings, client: Client) -> None:
-    from .._settings import settings
+    from ._settings import settings
 
     try:
         lamindb_version = metadata.version("lamindb")
@@ -118,7 +118,7 @@ def _init_instance(isettings: InstanceSettings, client: Client) -> None:
         lamindb_version = None
     fields = dict(
         id=isettings.id.hex,
-        account_id=settings.user.uuid.hex,
+        account_id=settings.user.uuid.hex,  # type: ignore
         name=isettings.name,
         storage_id=isettings.storage.uuid.hex,  # type: ignore
         schema_str=isettings._schema_str,
@@ -152,7 +152,7 @@ def load_instance(
     owner: str,  # account_handle
     name: str,  # instance_name
 ) -> Union[Tuple[dict, dict], str]:
-    from .._settings import settings
+    from ._settings import settings
 
     if settings.user.handle != "anonymous":
         return call_with_fallback_auth(_load_instance, owner=owner, name=name)
@@ -206,7 +206,7 @@ def _load_instance(
 
 
 def access_aws(storage_root: str, access_token: Optional[str] = None) -> Dict[str, str]:
-    from .._settings import settings
+    from ._settings import settings
 
     if settings.user.handle != "anonymous" or access_token is not None:
         credentials = call_with_fallback_auth(

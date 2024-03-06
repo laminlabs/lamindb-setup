@@ -1,5 +1,5 @@
 from typing import Optional
-from ._settings import settings
+from .core._settings import settings
 from .core.django import setup_django
 
 

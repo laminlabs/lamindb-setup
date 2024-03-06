@@ -1,7 +1,5 @@
-# see the overlap with connector.py in laminhub-rest
 import os
 from typing import Optional
-from lamin_utils import logger
 from supabase.lib.client_options import ClientOptions
 from urllib.request import urlretrieve
 from supabase import create_client, Client
@@ -89,11 +87,6 @@ def get_access_token(email: Optional[str] = None, password: Optional[str] = None
             }
         )
         return auth_response.session.access_token
-    except Exception as e:
-        logger.error(
-            f"Could not authenticate with email {email} and password {password}"
-        )
-        raise e
     finally:
         hub.auth.sign_out()
 

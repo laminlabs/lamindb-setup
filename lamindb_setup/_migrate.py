@@ -2,7 +2,7 @@ from typing import Optional, Dict
 from lamin_utils import logger
 
 from ._check_instance_setup import check_instance_setup
-from ._settings import settings
+from .core._settings import settings
 from .core.django import setup_django
 from django.db import connection
 from django.db.migrations.loader import MigrationLoader
