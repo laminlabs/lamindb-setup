@@ -3,13 +3,13 @@
 ```{toctree}
 :maxdepth: 1
 
-prod-staging/init-on-prem-instance
-prod-staging/load-on-prem-instance
-prod-staging/set-storage
-prod-staging/test-bionty
-prod-staging/init-hosted-instance
-prod-staging/load-hosted-instance
-prod-staging/test-multi-session
+hub-cloud/init-on-prem-instance
+hub-cloud/load-on-prem-instance
+hub-cloud/set-storage
+hub-cloud/test-bionty
+hub-cloud/init-hosted-instance
+hub-cloud/load-hosted-instance
+hub-cloud/test-multi-session
 
 hub-prod/test-cache-management
 hub-prod/test-empty-init

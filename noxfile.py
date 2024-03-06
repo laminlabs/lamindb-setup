@@ -14,10 +14,10 @@ def lint(session: nox.Session) -> None:
 @nox.session
 @nox.parametrize(
     "group",
-    ["hub-local", "hub-prod", "prod-staging", "storage"],
+    ["hub-local", "hub-prod", "hub-cloud", "storage"],
 )
 def install(session: nox.Session, group: str) -> None:
-    if group in {"prod-staging"}:
+    if group in {"hub-cloud"}:
         # TODO: get rid of the bionty duplication asap
         session.run(*"pip install bionty".split())
         session.run(*"pip install git+https://github.com/laminlabs/bionty-base".split())
@@ -63,7 +63,7 @@ def install(session: nox.Session, group: str) -> None:
 @nox.session
 @nox.parametrize(
     "group",
-    ["hub-prod", "prod-staging"],
+    ["hub-prod", "hub-cloud"],
 )
 @nox.parametrize(
     "lamin_env",
@@ -79,27 +79,18 @@ def build(session: nox.Session, group: str, lamin_env: str):
             env=env,
         )
         session.run(*f"pytest -s {COVERAGE_ARGS} ./docs/hub-prod".split(), env=env)
-    elif group == "prod-staging":
+    elif group == "hub-cloud":
         session.run(
-            *f"pytest {COVERAGE_ARGS} ./tests/prod-staging".split(),
+            *f"pytest {COVERAGE_ARGS} ./tests/hub-cloud".split(),
             env=env,
         )
-        session.run(*f"pytest -s {COVERAGE_ARGS} ./docs/prod-staging".split(), env=env)
+        session.run(*f"pytest -s {COVERAGE_ARGS} ./docs/hub-cloud".split(), env=env)
 
 
 @nox.session
 def hub_local(session: nox.Session):
     # the -n 1 is to ensure that supabase thread exits properly
     session.run(*f"pytest -n 1 {COVERAGE_ARGS} ./tests/hub-local".split())
-
-
-@nox.session
-def docs(session: nox.Session):
-    import lamindb_setup as ln_setup
-
-    login_testuser1(session)
-    ln_setup.init(storage="./docsbuild")
-    build_docs(session, strip_prefix=True)
 
 
 @nox.session
@@ -113,6 +104,15 @@ def storage(session: nox.Session):
     del os.environ["AWS_ACCESS_KEY_ID"]
     del os.environ["AWS_SECRET_ACCESS_KEY"]
     session.run(
-        *f"pytest {COVERAGE_ARGS} ./tests/test_storage_access.py".split(),
+        *f"pytest {COVERAGE_ARGS} ./tests/storage".split(),
         env=os.environ,
     )
+
+
+@nox.session
+def docs(session: nox.Session):
+    import lamindb_setup as ln_setup
+
+    login_testuser1(session)
+    ln_setup.init(storage="./docsbuild")
+    build_docs(session, strip_prefix=True)
