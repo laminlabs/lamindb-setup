@@ -9,7 +9,7 @@ from pathlib import Path
 from typing import Literal, Dict
 import fsspec
 from itertools import islice
-from typing import Optional, Set, Any
+from typing import Optional, Set, Any, Tuple
 from collections import defaultdict
 from dateutil.parser import isoparse  # type: ignore
 from lamin_utils import logger
@@ -17,6 +17,7 @@ from upath import UPath
 from upath.implementations.cloud import CloudPath, S3Path  # noqa  # keep CloudPath!
 from upath.implementations.local import LocalPath, PosixUPath, WindowsUPath
 from .types import UPathStr
+from .hashing import b16_to_b64, hash_md5s_from_dir
 
 LocalPathClasses = (PosixUPath, WindowsUPath, LocalPath)
 
@@ -484,3 +485,65 @@ def create_path(path: UPath, access_token: Optional[str] = None) -> UPath:
         secret=credentials["secret"],
         token=credentials["token"],
     )
+
+
+def get_stat_file_cloud(stat: Dict) -> Tuple[int, str, str]:
+    size = stat["size"]
+    # small files
+    if "-" not in stat["ETag"]:
+        # only store hash for non-multipart uploads
+        # we can't rapidly validate multi-part uploaded files client-side
+        # we can add more logic later down-the-road
+        hash = b16_to_b64(stat["ETag"])
+        hash_type = "md5"
+    else:
+        stripped_etag, suffix = stat["ETag"].split("-")
+        suffix = suffix.strip('"')
+        hash = f"{b16_to_b64(stripped_etag)}-{suffix}"
+        hash_type = "md5-n"  # this is the S3 chunk-hashing strategy
+    return size, hash, hash_type
+
+
+def get_stat_dir_s3(path: UPath) -> Tuple[int, str, str, int]:
+    import boto3
+
+    if not AWS_CREDENTIALS_PRESENT:
+        # passing the following param directly to Session() doesn't
+        # work, unfortunately: botocore_session=path.fs.session
+        from botocore import UNSIGNED
+        from botocore.config import Config
+
+        config = Config(signature_version=UNSIGNED)
+        s3 = boto3.session.Session().resource("s3", config=config)
+    else:
+        s3 = boto3.session.Session().resource("s3")
+    bucket, key, _ = path.fs.split_path(path.as_posix())
+    # assuming this here is the fastest way of querying for many objects
+    objects = s3.Bucket(bucket).objects.filter(Prefix=key)
+    size = sum([object.size for object in objects])
+    md5s = [
+        # skip leading and trailing quotes
+        object.e_tag[1:-1]
+        for object in objects
+    ]
+    n_objects = len(md5s)
+    hash, hash_type = hash_md5s_from_dir(md5s)
+    return size, hash, hash_type, n_objects
+
+
+def get_stat_dir_gs(path: UPath) -> Tuple[int, str, str, int]:
+    import google.cloud.storage as gc_storage
+
+    bucket, key, _ = path.fs.split_path(path.as_posix())
+    # assuming this here is the fastest way of querying for many objects
+    client = gc_storage.Client(
+        credentials=path.fs.credentials.credentials, project=path.fs.project
+    )
+    objects = client.Bucket(bucket).list_blobs(prefix=key)
+    sizes, md5s = [], []
+    for object in objects:
+        sizes.append(object.size)
+        md5s.append(object.md5_hash)
+    n_objects = len(md5s)
+    hash, hash_type = hash_md5s_from_dir(md5s)
+    return sum(sizes), hash, hash_type, n_objects
