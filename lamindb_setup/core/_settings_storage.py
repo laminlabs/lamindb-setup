@@ -1,7 +1,6 @@
 import os
 import shutil
 from lamin_utils import logger
-from time import sleep
 from pathlib import Path
 from typing import Any, Optional, Union
 from ._aws_storage import find_closest_aws_region, get_aws_account_id
@@ -93,9 +92,6 @@ def init_storage(storage: UPathStr, region: Optional[str] = None) -> "StorageSet
         ssettings._description = f"Created as default storage for instance {uid}"
         ssettings._uuid = init_storage_hub(ssettings)
         logger.important(f"registered storage: {ssettings.root_as_str}")
-        if storage == "create-s3":
-            # wait one second so that storage permission layer goes live
-            sleep(1)
     return ssettings
 
 
