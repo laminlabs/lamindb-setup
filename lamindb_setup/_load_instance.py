@@ -106,10 +106,7 @@ def load(
         )
     else:
         # compare normalized identifier with a potentially previously loaded identifier
-        if (
-            settings._instance_exists
-            and f"{owner}/{name}" != settings.instance.identifier
-        ):
+        if settings._instance_exists and f"{owner}/{name}" != settings.instance.slug:
             close_instance(mute=True)
 
     settings_file = instance_settings_file(name, owner)

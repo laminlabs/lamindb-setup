@@ -12,7 +12,7 @@ def close(mute: bool = False) -> None:
     Returns `None` if succeeds, otherwise an exception is raised.
     """
     if current_instance_settings_file().exists():
-        instance = settings.instance.identifier
+        instance = settings.instance.slug
         try:
             settings.instance._update_cloud_sqlite_file()
         except Exception as e:

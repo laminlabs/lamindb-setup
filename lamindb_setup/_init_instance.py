@@ -104,7 +104,7 @@ def reload_lamindb(isettings: InstanceSettings):
         import lamindb
 
         importlib.reload(lamindb)
-        logger.important(f"lamindb instance: {isettings.identifier}")
+        logger.important(f"lamindb instance: {isettings.slug}")
     else:
         # only log if we're outside lamindb
         # lamindb itself logs upon import!

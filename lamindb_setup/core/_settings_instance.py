@@ -43,7 +43,7 @@ class InstanceSettings:
 
     def __repr__(self):
         """Rich string representation."""
-        representation = f"Current instance: {self.identifier}"
+        representation = f"Current instance: {self.slug}"
         attrs = ["owner", "name", "storage", "db", "schema"]
         for attr in attrs:
             value = getattr(self, attr)
@@ -80,10 +80,16 @@ class InstanceSettings:
 
     @property
     def identifier(self) -> str:
-        """Unique semantic identifier.
+        """Unique semantic identifier."""
+        logger.warning(
+            "InstanceSettings.identifier is deprecated and will be removed, use"
+            " InstanceSettings.slug instead"
+        )
+        return self.slug
 
-        See remote instances at https://lamin.ai/owner/name.
-        """
+    @property
+    def slug(self) -> str:
+        """Unique semantic identifier of form `"{account_handle}/{instance_name}"`."""
         return f"{self.owner}/{self.name}"
 
     @property
@@ -120,7 +126,7 @@ class InstanceSettings:
             sqlite_file = self._sqlite_file
             logger.warning(
                 f"updating & unlocking cloud SQLite '{sqlite_file}' of instance"
-                f" '{self.identifier}'"
+                f" '{self.slug}'"
             )
             cache_file = self.storage.cloud_to_local_no_update(sqlite_file)
             sqlite_file.upload_from(cache_file, print_progress=True)  # type: ignore
