@@ -14,7 +14,7 @@ def lint(session: nox.Session) -> None:
 @nox.session
 @nox.parametrize(
     "group",
-    ["hub-local", "hub-prod", "prod-staging", "storage", "vault"],
+    ["hub-local", "hub-prod", "prod-staging", "storage"],
 )
 def install(session: nox.Session, group: str) -> None:
     if group in {"prod-staging"}:
@@ -35,8 +35,6 @@ def install(session: nox.Session, group: str) -> None:
         session.run(*"git clone https://github.com/laminlabs/lamin-cli".split())
         session.run(*"pip install lamin-cli".split())
     elif group == "storage":
-        session.run(*"pip install -e .[aws,dev]".split())
-    elif group == "vault":
         session.run(*"pip install -e .[aws,dev]".split())
     elif group == "hub-prod":
         # TODO: get rid of the bionty duplication asap
@@ -117,14 +115,4 @@ def storage(session: nox.Session):
     session.run(
         *f"pytest {COVERAGE_ARGS} ./tests/test_storage_access.py".split(),
         env=os.environ,
-    )
-
-
-@nox.session
-def vault(session: nox.Session):
-    env = {"LAMIN_ENV": "staging"}
-    login_testuser1(session, env=env)
-    session.run(
-        *f"pytest {COVERAGE_ARGS} ./tests/test_vault.py".split(),
-        env=env,
     )
