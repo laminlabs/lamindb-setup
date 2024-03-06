@@ -182,7 +182,7 @@ _locker: Optional[Locker] = None
 
 
 def get_locker(isettings) -> Locker:
-    from .._settings import settings
+    from ._settings import settings
 
     global _locker
 

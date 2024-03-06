@@ -4,7 +4,7 @@ from lamin_utils import logger
 
 from ._check_instance_setup import check_instance_setup
 from ._init_instance import register_user
-from ._settings import settings
+from .core._settings import settings
 from .core._settings_load import load_or_create_user_settings, load_user_settings
 from .core._settings_save import save_user_settings
 from .core._settings_store import (

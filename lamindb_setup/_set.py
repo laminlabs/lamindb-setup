@@ -3,7 +3,7 @@ from lamin_utils import logger
 from lamindb_setup.core.types import UPathStr
 
 from ._init_instance import register_user_and_storage
-from ._settings import settings
+from .core._settings import settings
 from .core._settings_instance import InstanceSettings
 from .core._settings_storage import StorageSettings
 

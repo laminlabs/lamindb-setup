@@ -167,7 +167,7 @@ class StorageSettings:
         if self._record is None:
             # dynamic import because of import order
             from lnschema_core.models import Storage
-            from .._settings import settings
+            from ._settings import settings
 
             self._record = Storage.objects.using(settings._using_key).get(
                 root=self.root_as_str

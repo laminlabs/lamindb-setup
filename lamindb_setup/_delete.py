@@ -4,7 +4,7 @@ from pathlib import Path
 from lamin_utils import logger
 
 from ._close import close
-from ._settings import settings
+from .core._settings import settings
 from .core._settings_load import load_instance_settings
 from .core._settings_store import instance_settings_file
 

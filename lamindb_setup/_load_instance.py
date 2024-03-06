@@ -10,7 +10,7 @@ from lamindb_setup.core._hub_utils import (
 )
 from ._close import close as close_instance
 from ._init_instance import load_from_isettings
-from ._settings import InstanceSettings, settings
+from .core._settings import InstanceSettings, settings
 from ._silence_loggers import silence_loggers
 from .core._settings_load import load_instance_settings
 from .core._settings_storage import StorageSettings

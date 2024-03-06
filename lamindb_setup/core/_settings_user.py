@@ -15,6 +15,8 @@ class user_description:
 class UserSettings:
     """User data. All synched from cloud."""
 
+    handle: str = "anonymous"
+    """Unique handle."""
     email: str = None  # type: ignore
     """User email."""
     password: Optional[str] = None
@@ -24,9 +26,7 @@ class UserSettings:
     uid: str = "null"
     """Universal user ID."""
     uuid: Optional[UUID] = None
-    """Lamin's internal universal user ID."""
-    handle: Optional[str] = None
-    """Unique handle."""
+    """Lamin's internal user ID."""
     name: Optional[str] = None
     """Full name."""
 

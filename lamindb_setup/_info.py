@@ -1,4 +1,4 @@
-from ._settings import settings
+from .core._settings import settings
 
 
 def info():

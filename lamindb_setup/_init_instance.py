@@ -11,7 +11,7 @@ from django.db.utils import OperationalError, ProgrammingError
 from django.core.exceptions import FieldError
 from lamindb_setup.core.upath import LocalPathClasses
 from ._close import close as close_instance
-from ._settings import settings
+from .core._settings import settings
 from ._silence_loggers import silence_loggers
 from .core import InstanceSettings
 from .core.types import UPathStr
