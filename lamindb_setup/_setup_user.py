@@ -36,7 +36,7 @@ def load_user(
         user_settings.handle = handle
         save_user_settings(user_settings)
 
-    from ._settings import settings
+    from .core._settings import settings
 
     settings._user_settings = None  # this is to refresh a settings instance
 
