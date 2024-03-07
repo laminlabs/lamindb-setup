@@ -31,9 +31,9 @@ def check_instance_setup(from_lamindb: bool = False) -> bool:
     if current_instance_settings_file().exists():
         try:
             # attempt loading the settings file
-            from .core._settings_load import connect_instance_settings
+            from .core._settings_load import load_instance_settings
 
-            isettings = connect_instance_settings()
+            isettings = load_instance_settings()
 
             # this flag should probably be renamed to `from_user`
             # it will typically be invoked if lamindb is imported for use

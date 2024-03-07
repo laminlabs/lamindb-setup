@@ -12,7 +12,7 @@ from ._close import close as close_instance
 from ._init_instance import load_from_isettings
 from .core._settings import InstanceSettings, settings
 from ._silence_loggers import silence_loggers
-from .core._settings_load import connect_instance_settings
+from .core._settings_load import load_instance_settings
 from .core._settings_storage import StorageSettings
 from .core._settings_store import instance_settings_file
 from .core.cloud_sqlite_locker import unlock_cloud_sqlite_upon_exception
@@ -47,7 +47,7 @@ def update_db_using_local(
                 db_dsn_local = LaminDsnModel(db=os.getenv("LAMINDB_INSTANCE_DB"))
             # read from a cached settings file
             elif settings_file.exists():
-                isettings = connect_instance_settings(settings_file)
+                isettings = load_instance_settings(settings_file)
                 db_dsn_local = LaminDsnModel(db=isettings.db)
             else:
                 # just take the default hub result and ensure there is actually a user
@@ -148,7 +148,7 @@ def connect(
             f" https://lamin.ai/{owner}/{name}?tab=collaborators"
         )
         if settings_file.exists():
-            isettings = connect_instance_settings(settings_file)
+            isettings = load_instance_settings(settings_file)
             if isettings.is_remote:
                 if _raise_not_reachable_error:
                     raise SystemExit(error_message)

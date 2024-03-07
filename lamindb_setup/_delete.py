@@ -5,7 +5,7 @@ from typing import Optional
 from ._close import close
 from .core._settings_instance import InstanceSettings
 from .core._settings import settings
-from .core._settings_load import connect_instance_settings
+from .core._settings_load import load_instance_settings
 from .core._settings_store import instance_settings_file
 
 
@@ -35,7 +35,7 @@ def delete_by_isettings(isettings: InstanceSettings) -> None:
 
 
 def delete(instance_name: str, force: bool = False) -> Optional[int]:
-    """Delete an instance."""
+    """Delete a LaminDB instance."""
     if "/" in instance_name:
         logger.warning(
             "Deleting the instance of another user is currently not supported with the"
@@ -62,7 +62,7 @@ def delete(instance_name: str, force: bool = False) -> Optional[int]:
                 " provide a wrong instance name? could you try loading it?"
             )
             return None
-        isettings = connect_instance_settings(settings_file)
+        isettings = load_instance_settings(settings_file)
     else:
         isettings = settings.instance
     delete_by_isettings(isettings)
