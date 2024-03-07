@@ -41,7 +41,7 @@ class SetupSettings:
         if value:
             self._auto_connect_path.touch()
         else:
-            self._auto_connect_path.unlink()
+            self._auto_connect_path.unlink(missing_ok=True)
 
     @property
     def user(self) -> UserSettings:
