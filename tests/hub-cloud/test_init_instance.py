@@ -52,6 +52,7 @@ def get_instance_and_dbuser_from_hub(
 def test_init_instance_postgres_default_name(get_hub_client):
     hub = get_hub_client
     instance_name = "pgtest"
+    ln_setup.login("testuser2")
     instance, _ = get_instance_and_dbuser_from_hub(instance_name, hub)
     # if instance exists, delete it
     if instance is not None:
