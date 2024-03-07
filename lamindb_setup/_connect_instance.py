@@ -196,15 +196,19 @@ def connect(
     return None
 
 
-# we'll see how we'll use it in the future
-# currently, it makes sense for the CLI
 def load(
     slug: str,
     *,
     db: Optional[str] = None,
     storage: Optional[UPathStr] = None,
 ) -> Optional[Union[str, Tuple]]:
+    logger.warning(
+        "`lamin connect` replaces `lamin load`, which will be removed in a future"
+        " version\nif you still want to auto-connect to an instance upon lamindb"
+        " import, call: `lamin set --auto-connect true`"
+    )
     result = connect(slug, db=db, storage=storage)
+    settings.auto_connect = True
     return result
 
 
