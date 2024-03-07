@@ -418,7 +418,8 @@ def convert_pathlike(pathlike: UPathStr) -> UPath:
 
 hosted_regions = [
     "eu-central-1",
-    "eu-west-2us-east-1",
+    "eu-west-2",
+    "us-east-1",
     "us-east-2",
     "us-west-1",
     "us-west-2",
