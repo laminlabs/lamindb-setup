@@ -208,6 +208,8 @@ def _connect_instance(
 def access_aws(storage_root: str, access_token: Optional[str] = None) -> Dict[str, str]:
     from ._settings import settings
 
+    os.write(1, b"access_aws\n")
+
     if settings.user.handle != "anonymous" or access_token is not None:
         os.write(1, storage_root.encode())
         credentials = call_with_fallback_auth(
