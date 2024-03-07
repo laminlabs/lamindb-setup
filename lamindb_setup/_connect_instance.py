@@ -92,7 +92,7 @@ def connect(
         db: Load the instance with an updated database URL.
         storage: Load the instance with an updated default storage.
     """
-    from ._check_instance_setup import check_instance_setup
+    from ._check_setup import check_instance_setup
     from .core._hub_core import connect_instance as connect_instance_from_hub
 
     owner, name = get_owner_name_from_identifier(slug)

@@ -17,6 +17,7 @@ from .core import InstanceSettings
 from .core.types import UPathStr
 from .core._settings_storage import StorageSettings, init_storage
 from .core.upath import convert_pathlike
+from . import _check_setup as check_setup
 
 
 def get_schema_module_name(schema_name) -> str:
@@ -50,8 +51,6 @@ def register_storage(ssettings: StorageSettings):
         root=ssettings.root_as_str,
         defaults=defaults,
     )
-    if created:
-        logger.save(f"saved: {storage}")
     return storage
 
 
@@ -68,8 +67,6 @@ def register_user(usettings):
                     name=usettings.name,
                 ),
             )
-            if created:
-                logger.save(f"saved: {user}")
         # for users with only read access, except via ProgrammingError
         # ProgrammingError: permission denied for table lnschema_core_user
         except (OperationalError, FieldError, ProgrammingError):
@@ -103,7 +100,7 @@ def reload_lamindb(isettings: InstanceSettings):
     if "lamindb" in sys.modules:
         import lamindb
 
-        lamindb._CONNECTED_TO = isettings.slug
+        check_setup._LAMINDB_CONNECTED_TO = isettings.slug
         importlib.reload(lamindb)
     else:
         # only log if we're outside lamindb
@@ -200,7 +197,7 @@ def init(
     ssettings = None
     try:
         silence_loggers()
-        from ._check_instance_setup import check_instance_setup
+        from ._check_setup import check_instance_setup
 
         if check_instance_setup() and not _test:
             raise RuntimeError(
@@ -219,7 +216,7 @@ def init(
             _test=_test,
         )
         if instance_state == "connected":
-            logger.important("connected instance instead without creating it")
+            logger.important("connected to lamindb instance without creating it")
             return None
         ssettings = init_storage(storage)
         isettings = InstanceSettings(
@@ -245,8 +242,6 @@ def init(
                 "locked instance (to unlock and push changes to the cloud SQLite file,"
                 " call: lamin close)"
             )
-        if not isettings.is_remote:
-            logger.important("did not register local instance on lamin.ai")
     except Exception as e:
         from .core._hub_core import delete_storage, delete_instance
 

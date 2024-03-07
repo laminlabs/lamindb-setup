@@ -7,7 +7,7 @@ def register(_test: bool = False):
     """Register an instance on the hub."""
     from .core._hub_core import init_instance as init_instance_hub
     from .core._hub_core import init_storage as init_storage_hub
-    from ._check_instance_setup import check_instance_setup
+    from ._check_setup import check_instance_setup
 
     isettings = settings.instance
     if not check_instance_setup() and not _test:
