@@ -97,14 +97,16 @@ def reload_schema_modules(isettings: InstanceSettings):
 def reload_lamindb(isettings: InstanceSettings):
     # only touch lamindb if we're operating from lamindb
     reload_schema_modules(isettings)
+    log_message = settings.auto_connect
     if "lamindb" in sys.modules:
         import lamindb
 
         check_setup._LAMINDB_CONNECTED_TO = isettings.slug
         importlib.reload(lamindb)
     else:
-        # only log if we're outside lamindb
-        logger.important(f"connected instance: {isettings.owner}/{isettings.name}")
+        log_message = True
+    if log_message:
+        logger.important(f"connected lamindb: {isettings.slug}")
 
 
 ERROR_SQLITE_CACHE = """
