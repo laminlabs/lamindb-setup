@@ -165,10 +165,9 @@ def validate_init_args(
     # should be called as the first thing
     name_str = infer_instance_name(storage=storage, name=name, db=db)
     # test whether instance exists by trying to load it
-    instance_identifier = f"{settings.user.handle}/{name_str}"
-    response = connect(
-        instance_identifier, _raise_not_reachable_error=False, _test=_test
-    )
+    instance_slug = f"{settings.user.handle}/{name_str}"
+    print(instance_slug)
+    response = connect(instance_slug, _raise_not_reachable_error=False, _test=_test)
     instance_state: Literal[
         "connected",
         "instance-corrupted-or-deleted",
@@ -177,9 +176,7 @@ def validate_init_args(
     ] = "connected"
     instance_id = None
     if response is not None:
-        instance_id, instance_state = process_connect_response(
-            response, instance_identifier
-        )
+        instance_id, instance_state = process_connect_response(response, instance_slug)
     schema = validate_schema_arg(schema)
     return name_str, instance_id, instance_state
 

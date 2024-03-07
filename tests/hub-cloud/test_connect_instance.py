@@ -24,6 +24,7 @@ def test_load_remote_instance():
         ln_setup.settings.instance._sqlite_file.as_posix()
         == f"s3://lamindb-ci/load_remote_instance/{ln_setup.settings.instance.id.hex}.lndb"  # noqa
     )
+    ln_setup.close()
 
 
 def test_load_after_revoked_access():
@@ -132,3 +133,4 @@ def test_load_with_db_parameter():
         assert error.exconly().startswith(
             "ValueError: The local differs from the hub database information"
         )
+        ln_setup.login("testuser2")

@@ -11,6 +11,7 @@ from lamindb_setup.core._hub_crud import (
     select_account_by_handle,
     select_db_user_by_instance,
     select_instance_by_name,
+    select_instance_by_owner_name,
 )
 
 pgurl = "postgresql://postgres:pwd@0.0.0.0:5432/pgtest"
@@ -37,12 +38,26 @@ def get_instance_and_dbuser_from_hub(
     instance_name: str, hub: Client
 ) -> Tuple[Optional[Dict[str, str]], Optional[Dict[str, str]]]:
     assert ln_setup.settings.user.handle == "testuser2"
-    account = select_account_by_handle(handle="testuser2", client=hub)
+    account = select_account_by_handle("testuser2", client=hub)
+    print(instance_name)
+    print(account["handle"], account["id"])
     instance = select_instance_by_name(
         account_id=account["id"],
         name=instance_name,
         client=hub,
     )
+    print(instance)
+    instance_account_storage = select_instance_by_owner_name(
+        "testuser2",
+        name=instance_name,
+        client=hub,
+    )
+    print(instance_account_storage)
+    if instance_account_storage is not None:
+        _ = instance_account_storage.pop("account")
+        _ = instance_account_storage.pop("storage")
+        instance_cmp = instance_account_storage
+        assert instance_cmp == instance
     if instance is None:
         return None, None
     db_user = select_db_user_by_instance(instance_id=instance["id"], client=hub)
@@ -60,7 +75,9 @@ def test_init_instance_postgres_default_name(get_hub_client):
     ln_setup.delete("pgtest", force=True)
     # now, run init
     ln_setup.init(storage="./mydatapg", db=pgurl, _test=True)
+    assert ln_setup.settings.instance.slug == "testuser2/pgtest"
     ln_setup.register(_test=True)
+    assert ln_setup.settings.instance.slug == "testuser2/pgtest"
     # and check
     instance, db_user = get_instance_and_dbuser_from_hub(instance_name, hub)
     # hub checks
