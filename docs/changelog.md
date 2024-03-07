@@ -3,6 +3,7 @@
 <!-- prettier-ignore -->
 Name | PR | Developer | Date | Version
 --- | --- | --- | --- | ---
+🏗️ Enable`ln.connect()` in lamindb | [668](https://github.com/laminlabs/lamindb-setup/pull/668) | [falexwolf](https://github.com/falexwolf) | 2024-03-07 |
 🚚 Rename `load()` to `connect()` | [667](https://github.com/laminlabs/lamindb-setup/pull/667) | [falexwolf](https://github.com/falexwolf) | 2024-03-07 |
 👷 Better CI group names | [666](https://github.com/laminlabs/lamindb-setup/pull/666) | [falexwolf](https://github.com/falexwolf) | 2024-03-07 |
 🛂 Make `get_stat_dir_s3` read from UPath credentials | [664](https://github.com/laminlabs/lamindb-setup/pull/664) | [bpenteado](https://github.com/bpenteado) | 2024-03-06 |
