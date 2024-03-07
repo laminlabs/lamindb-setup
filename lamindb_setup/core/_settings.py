@@ -2,7 +2,7 @@ import os
 from typing import Union, Optional
 from lamindb_setup.core import InstanceSettings, StorageSettings, UserSettings
 from lamindb_setup.core._settings_load import (
-    load_instance_settings,
+    connect_instance_settings,
     load_or_create_user_settings,
 )
 
@@ -43,7 +43,7 @@ class SetupSettings:
             self._instance_settings is None
             or self._instance_settings_env != get_env_name()  # noqa
         ):
-            self._instance_settings = load_instance_settings()
+            self._instance_settings = connect_instance_settings()
             self._instance_settings_env = get_env_name()
         return self._instance_settings  # type: ignore
 

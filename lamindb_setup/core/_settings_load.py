@@ -15,7 +15,7 @@ from ._settings_store import (
 from ._settings_user import UserSettings
 
 
-def load_instance_settings(instance_settings_file: Optional[Path] = None):
+def connect_instance_settings(instance_settings_file: Optional[Path] = None):
     if instance_settings_file is None:
         instance_settings_file = current_instance_settings_file()
     if not instance_settings_file.exists():

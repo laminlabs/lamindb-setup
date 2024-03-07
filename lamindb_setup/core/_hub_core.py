@@ -147,7 +147,7 @@ def _init_instance(isettings: InstanceSettings, client: Client) -> None:
     logger.save(f"browse to: https://lamin.ai/{isettings.owner}/{isettings.name}")
 
 
-def load_instance(
+def connect_instance(
     *,
     owner: str,  # account_handle
     name: str,  # instance_name
@@ -155,12 +155,12 @@ def load_instance(
     from ._settings import settings
 
     if settings.user.handle != "anonymous":
-        return call_with_fallback_auth(_load_instance, owner=owner, name=name)
+        return call_with_fallback_auth(_connect_instance, owner=owner, name=name)
     else:
-        return call_with_fallback(_load_instance, owner=owner, name=name)
+        return call_with_fallback(_connect_instance, owner=owner, name=name)
 
 
-def _load_instance(
+def _connect_instance(
     *,
     owner: str,  # account_handle
     name: str,  # instance_name

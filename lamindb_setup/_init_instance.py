@@ -108,7 +108,7 @@ def reload_lamindb(isettings: InstanceSettings):
     else:
         # only log if we're outside lamindb
         # lamindb itself logs upon import!
-        logger.important(f"loaded instance: {isettings.owner}/{isettings.name}")
+        logger.important(f"connected instance: {isettings.owner}/{isettings.name}")
 
 
 ERROR_SQLITE_CACHE = """
@@ -117,7 +117,7 @@ Either delete your cache ({}) or add it back to the cloud (if delete was acciden
 """
 
 
-def process_load_response(
+def process_connect_response(
     response: Union[Tuple, str], instance_identifier: str
 ) -> Tuple[
     UUID,
@@ -151,13 +151,13 @@ def validate_init_args(
     str,
     Optional[UUID],
     Literal[
-        "loaded",
+        "connected",
         "instance-corrupted-or-deleted",
         "account-not-exists",
         "instance-not-reachable",
     ],
 ]:
-    from ._load_instance import load
+    from ._connect_instance import connect
     from .core._hub_utils import (
         validate_schema_arg,
     )
@@ -166,16 +166,18 @@ def validate_init_args(
     name_str = infer_instance_name(storage=storage, name=name, db=db)
     # test whether instance exists by trying to load it
     instance_identifier = f"{settings.user.handle}/{name_str}"
-    response = load(instance_identifier, _raise_not_reachable_error=False, _test=_test)
+    response = connect(
+        instance_identifier, _raise_not_reachable_error=False, _test=_test
+    )
     instance_state: Literal[
-        "loaded",
+        "connected",
         "instance-corrupted-or-deleted",
         "account-not-exists",
         "instance-not-reachable",
-    ] = "loaded"
+    ] = "connected"
     instance_id = None
     if response is not None:
-        instance_id, instance_state = process_load_response(
+        instance_id, instance_state = process_connect_response(
             response, instance_identifier
         )
     schema = validate_schema_arg(schema)
@@ -221,8 +223,8 @@ def init(
             schema=schema,
             _test=_test,
         )
-        if instance_state == "loaded":
-            logger.important("loaded instance instead without creating it")
+        if instance_state == "connected":
+            logger.important("connected instance instead without creating it")
             return None
         ssettings = init_storage(storage)
         isettings = InstanceSettings(
@@ -276,7 +278,7 @@ def load_from_isettings(
     else:
         # when loading, django is already set up
         #
-        # only register user if the instance is loaded
+        # only register user if the instance is connected
         # for the first time in an environment
         # this is our best proxy for that the user might not
         # yet be registered

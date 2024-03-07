@@ -4,7 +4,7 @@ import lamindb_setup as ln_setup
 from gotrue.errors import AuthUnknownError
 from lamindb_setup import login, settings
 from lamindb_setup.core._hub_core import (
-    load_instance,
+    connect_instance,
     sign_in_hub,
 )
 
@@ -27,7 +27,7 @@ def test_switch_env():
     os.environ["LAMIN_ENV"] = "prod"
 
 
-def test_load_instance_fallbacks():
+def test_connect_instance_fallbacks():
     prod_url = ln_setup.core._hub_client.PROD_URL
     ln_setup.core._hub_client.PROD_URL = (  # deactivated prod url
         "https://inactive.lamin.ai"
@@ -40,7 +40,7 @@ def test_load_instance_fallbacks():
         ),
         str,
     )
-    load_instance(
+    connect_instance(
         owner="static-testuser1",
         name="static-testinstance1",
     )
