@@ -462,6 +462,8 @@ def create_path(path: UPath, access_token: Optional[str] = None) -> UPath:
     path_str = path.as_posix()
     is_hosted_storage = path_str.startswith(hosted_buckets)
 
+    os.write(1, b"create_path\n")
+
     if not is_hosted_storage:
         # make anon request if no credentials present
         return UPath(path, cache_regions=True, anon=anon)
