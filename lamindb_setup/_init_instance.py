@@ -92,6 +92,10 @@ def reload_schema_modules(isettings: InstanceSettings):
             schema_module = importlib.import_module(schema_module_name)
             importlib.reload(schema_module)
 
+    if "bionty" in isettings.schema:
+        schema_module = importlib.import_module("bionty")
+        importlib.reload(schema_module)
+
 
 def reload_lamindb_alone(slug: str) -> bool:
     if "lamindb" in sys.modules:
