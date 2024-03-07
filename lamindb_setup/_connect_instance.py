@@ -98,7 +98,11 @@ def connect(
     """
     owner, name = get_owner_name_from_identifier(slug)
 
-    if settings._instance_exists and f"{owner}/{name}" == settings.instance.slug:
+    if (
+        settings._instance_exists
+        and f"{owner}/{name}" == settings.instance.slug
+        and not _test
+    ):
         logger.info(f"connected lamindb: {settings.instance.slug}")
         reload_lamindb_alone(settings.instance.slug)
         return None
