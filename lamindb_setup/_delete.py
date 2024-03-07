@@ -54,13 +54,16 @@ def delete(instance_name: str, force: bool = False) -> Optional[int]:
         if user_input not in valid_responses:
             return -1
     logger.info(f"deleting instance {instance_slug}")
-    settings_file = instance_settings_file(instance_name, settings.user.handle)
-    if not settings_file.exists():
-        logger.warning(
-            "could not delete as instance settings do not exist locally. did you"
-            " provide a wrong instance name? could you try loading it?"
-        )
-        return None
-    isettings = connect_instance_settings(settings_file)
+    if settings.instance.name == instance_name:
+        settings_file = instance_settings_file(instance_name, settings.user.handle)
+        if not settings_file.exists():
+            logger.warning(
+                "could not delete as instance settings do not exist locally. did you"
+                " provide a wrong instance name? could you try loading it?"
+            )
+            return None
+        isettings = connect_instance_settings(settings_file)
+    else:
+        isettings = settings.instance
     delete_by_isettings(isettings)
     return None
