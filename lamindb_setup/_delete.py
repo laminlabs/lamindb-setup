@@ -2,7 +2,6 @@ import shutil
 from pathlib import Path
 from lamin_utils import logger
 from typing import Optional
-from ._close import close
 from .core._settings_instance import InstanceSettings
 from .core._settings import settings
 from .core._settings_load import load_instance_settings
@@ -15,10 +14,6 @@ def delete_cache(cache_dir: Path):
 
 
 def delete_by_isettings(isettings: InstanceSettings) -> None:
-    if settings._instance_exists:
-        if isettings.slug == settings.instance.slug:
-            close(mute=True)  # close() also unlocks, that's why we need it
-            settings._instance_settings = None
     settings_file = isettings._get_settings_file()
     if settings_file.exists():
         settings_file.unlink()
@@ -32,6 +27,9 @@ def delete_by_isettings(isettings: InstanceSettings) -> None:
     if isettings.is_remote:
         logger.warning("manually delete your remote instance on lamin.ai")
     logger.warning(f"manually delete your stored data: {isettings.storage.root}")
+    # unset the global instance settings
+    if settings._instance_exists and isettings.slug == settings.instance.slug:
+        settings._instance_settings = None
 
 
 def delete(instance_name: str, force: bool = False) -> Optional[int]:
