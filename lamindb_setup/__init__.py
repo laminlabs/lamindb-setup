@@ -23,7 +23,6 @@ More instance operations:
 .. autosummary::
    :toctree:
 
-   info
    migrate
    register
 
@@ -47,7 +46,6 @@ from . import core
 from ._check_setup import check_instance_setup as _check_instance_setup  # noqa
 from ._close import close  # noqa
 from ._delete import delete  # noqa
-from ._info import info  # noqa
 from ._init_instance import init  # noqa
 from ._connect_instance import connect  # noqa
 from ._migrate import migrate
