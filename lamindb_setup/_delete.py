@@ -19,11 +19,18 @@ def delete_by_isettings(isettings: InstanceSettings) -> None:
         settings_file.unlink()
     delete_cache(isettings.storage.cache_dir)
     if isettings.dialect == "sqlite":
-        if isettings._sqlite_file.exists():
-            isettings._sqlite_file.unlink()
-        exclusion_dir = isettings.storage.root / ".lamindb/_exclusion"
-        if exclusion_dir.exists():
-            exclusion_dir.rmdir()
+        try:
+            if isettings._sqlite_file.exists():
+                isettings._sqlite_file.unlink()
+            exclusion_dir = isettings.storage.root / ".lamindb/_exclusion"
+            if exclusion_dir.exists():
+                exclusion_dir.rmdir()
+        except PermissionError:
+            logger.warning(
+                "Did not have permission to delete SQLite file:"
+                f" {isettings._sqlite_file}"
+            )
+            pass
     if isettings.is_remote:
         logger.warning("manually delete your remote instance on lamin.ai")
     logger.warning(f"manually delete your stored data: {isettings.storage.root}")
