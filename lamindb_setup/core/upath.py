@@ -462,7 +462,8 @@ def create_path(path: UPath, access_token: Optional[str] = None) -> UPath:
     path_str = path.as_posix()
     is_hosted_storage = path_str.startswith(hosted_buckets)
 
-    os.write(1, b"create_path\n")
+    os.write(1, f"create_path {path}\n".encode())
+    os.write(1, f"is_hosted_storage: {is_hosted_storage}\n".encode())
 
     if not is_hosted_storage:
         # make anon request if no credentials present
@@ -471,6 +472,7 @@ def create_path(path: UPath, access_token: Optional[str] = None) -> UPath:
     root_folder = "/".join(path_str.replace("s3://", "").split("/")[:2])
 
     if access_token is None and root_folder in credentials_cache:
+        os.write(1, b"loading creds from cache\n")
         credentials = credentials_cache[root_folder]
     else:
         from ._hub_core import access_aws
@@ -482,6 +484,8 @@ def create_path(path: UPath, access_token: Optional[str] = None) -> UPath:
         )
         if access_token is None:
             credentials_cache[root_folder] = credentials
+
+    os.write(1, b"very end of create_path\n")
 
     return UPath(
         path,
