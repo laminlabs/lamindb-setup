@@ -16,6 +16,7 @@ from .core._settings_load import load_instance_settings
 from .core._settings_storage import StorageSettings
 from .core._settings_store import instance_settings_file
 from .core.cloud_sqlite_locker import unlock_cloud_sqlite_upon_exception
+from ._init_instance import MESSAGE_NO_MULTIPLE_INSTANCE
 
 # this is for testing purposes only
 # set to True only to test failed load
@@ -98,10 +99,7 @@ def connect(
     owner, name = get_owner_name_from_identifier(slug)
 
     if check_instance_setup() and not _test:
-        raise RuntimeError(
-            "Currently don't support init or load of multiple instances in the same"
-            " Python session. We will bring this feature back at some point."
-        )
+        raise RuntimeError(MESSAGE_NO_MULTIPLE_INSTANCE)
     else:
         # compare normalized slug with a potentially previously loaded slug
         if settings._instance_exists and f"{owner}/{name}" != settings.instance.slug:

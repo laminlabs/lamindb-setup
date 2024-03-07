@@ -89,8 +89,7 @@ class SetupSettings:
     def __repr__(self) -> str:
         """Rich string representation."""
         repr = self.user.__repr__()
-        if self.auto_connect:
-            repr += f"\nAuto-connect in Python: {self.auto_connect}\n"
+        repr += f"\nAuto-connect in Python: {self.auto_connect}\n"
         if self._instance_exists:
             repr += self.instance.__repr__()
         else:

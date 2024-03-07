@@ -178,6 +178,13 @@ def validate_init_args(
     return name_str, instance_id, instance_state, instance_slug
 
 
+MESSAGE_NO_MULTIPLE_INSTANCE = """
+Currently don't support connecting to multiple default databases in the same
+Python session.\n
+Try: `lamin set --auto-connect false`
+"""
+
+
 def init(
     *,
     storage: UPathStr,
@@ -202,10 +209,7 @@ def init(
         from ._check_setup import check_instance_setup
 
         if check_instance_setup() and not _test:
-            raise RuntimeError(
-                "Currently don't support init or load of multiple instances in the same"
-                " Python session. We will bring this feature back at some point."
-            )
+            raise RuntimeError(MESSAGE_NO_MULTIPLE_INSTANCE)
         else:
             close_instance(mute=True)
         from .core._hub_core import init_instance as init_instance_hub
