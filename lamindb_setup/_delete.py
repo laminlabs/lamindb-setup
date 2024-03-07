@@ -51,7 +51,6 @@ def delete(instance_name: str, force: bool = False) -> Optional[int]:
         )
         if user_input not in valid_responses:
             return -1
-    print(settings._instance_exists)
     if settings._instance_exists and settings.instance.name == instance_name:
         isettings = settings.instance
     else:
@@ -63,7 +62,6 @@ def delete(instance_name: str, force: bool = False) -> Optional[int]:
             )
             return None
         isettings = load_instance_settings(settings_file)
-    print(isettings)
     logger.info(f"deleting instance {instance_slug}")
     delete_by_isettings(isettings)
     return None

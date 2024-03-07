@@ -9,7 +9,6 @@ from typing import Tuple, Literal
 from pydantic import PostgresDsn
 from django.db.utils import OperationalError, ProgrammingError
 from django.core.exceptions import FieldError
-from lamindb_setup.core.upath import LocalPathClasses
 from ._close import close as close_instance
 from .core._settings import settings
 from ._silence_loggers import silence_loggers
@@ -154,6 +153,7 @@ def validate_init_args(
         "account-not-exists",
         "instance-not-reachable",
     ],
+    str,
 ]:
     from ._connect_instance import connect
     from .core._hub_utils import (
@@ -175,7 +175,7 @@ def validate_init_args(
     if response is not None:
         instance_id, instance_state = process_connect_response(response, instance_slug)
     schema = validate_schema_arg(schema)
-    return name_str, instance_id, instance_state
+    return name_str, instance_id, instance_state, instance_slug
 
 
 def init(
@@ -210,7 +210,7 @@ def init(
             close_instance(mute=True)
         from .core._hub_core import init_instance as init_instance_hub
 
-        name_str, instance_id, instance_state = validate_init_args(
+        name_str, instance_id, instance_state, instance_slug = validate_init_args(
             storage=storage,
             name=name,
             db=db,
@@ -218,7 +218,7 @@ def init(
             _test=_test,
         )
         if instance_state == "connected":
-            logger.important("connected to lamindb instance without creating it")
+            logger.important(f"connected to lamindb instance: {instance_slug}")
             return None
         ssettings = init_storage(storage)
         isettings = InstanceSettings(
@@ -318,9 +318,9 @@ def infer_instance_name(
     if storage == "create-s3":
         raise ValueError("pass name to init if storage = 'create-s3'")
     storage_path = convert_pathlike(storage)
-    if isinstance(storage_path, LocalPathClasses):
-        name = storage_path.stem
+    if storage_path.name != "":
+        name = storage_path.name
     else:
+        # dedicated treatment of bucket names
         name = storage_path._url.netloc
-    name = name.lower()
-    return name
+    return name.lower()
