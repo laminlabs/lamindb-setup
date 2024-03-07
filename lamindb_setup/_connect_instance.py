@@ -9,7 +9,7 @@ from lamindb_setup.core._hub_utils import (
     LaminDsnModel,
 )
 from ._close import close as close_instance
-from ._init_instance import load_from_isettings, reload_lamindb_alone
+from ._init_instance import load_from_isettings
 from .core._settings import InstanceSettings, settings
 from ._silence_loggers import silence_loggers
 from .core._settings_load import load_instance_settings
@@ -98,16 +98,12 @@ def connect(
     """
     owner, name = get_owner_name_from_identifier(slug)
 
-    if (
-        settings._instance_exists
-        and f"{owner}/{name}" == settings.instance.slug
-        and not _test
-    ):
-        logger.info(f"connected lamindb: {settings.instance.slug}")
-        reload_lamindb_alone(settings.instance.slug)
-        return None
-    elif check_instance_setup() and not _test:
-        raise RuntimeError(MESSAGE_NO_MULTIPLE_INSTANCE)
+    if check_instance_setup() and not _test:
+        if settings._instance_exists and f"{owner}/{name}" == settings.instance.slug:
+            logger.info(f"connected lamindb: {settings.instance.slug}")
+            return None
+        else:
+            raise RuntimeError(MESSAGE_NO_MULTIPLE_INSTANCE)
     elif settings._instance_exists and f"{owner}/{name}" != settings.instance.slug:
         close_instance(mute=True)
 
