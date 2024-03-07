@@ -6,7 +6,7 @@ from lamindb_setup.core._settings_load import (
     load_or_create_user_settings,
 )
 from pathlib import Path
-from _settings_store import settings_dir
+from ._settings_store import settings_dir
 
 
 class SetupSettings:
