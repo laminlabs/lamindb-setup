@@ -5,6 +5,8 @@ from lamindb_setup.core._settings_load import (
     load_instance_settings,
     load_or_create_user_settings,
 )
+from pathlib import Path
+from _settings_store import settings_dir
 
 
 class SetupSettings:
@@ -22,6 +24,24 @@ class SetupSettings:
 
     _user_settings_env: Union[str, None] = None
     _instance_settings_env: Union[str, None] = None
+
+    _auto_connect_path: Path = settings_dir / "auto_connect"
+
+    @property
+    def settings_dir(self) -> Path:
+        return settings_dir
+
+    @property
+    def auto_connect(self) -> bool:
+        """Auto-connect to loaded instance upon lamindb import."""
+        return self._auto_connect_path.exists()
+
+    @auto_connect.setter
+    def auto_connect(self, value: bool) -> None:
+        if value:
+            self._auto_connect_path.touch()
+        else:
+            self._auto_connect_path.unlink()
 
     @property
     def user(self) -> UserSettings:

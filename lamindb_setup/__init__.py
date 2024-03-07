@@ -24,7 +24,6 @@ More instance operations:
    :toctree:
 
    info
-   set
    migrate
    register
 
@@ -53,7 +52,6 @@ from ._init_instance import init  # noqa
 from ._connect_instance import connect  # noqa
 from ._migrate import migrate
 from ._register_instance import register  # noqa
-from ._set import set  # noqa
 from .core._settings import settings  # noqa
 from ._setup_user import login, logout  # noqa
 from ._django import django
