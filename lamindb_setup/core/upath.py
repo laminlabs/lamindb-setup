@@ -475,6 +475,8 @@ def create_path(path: UPath, access_token: Optional[str] = None) -> UPath:
     else:
         from ._hub_core import access_aws
 
+        os.write(1, b"call access_aws in create_path\n")
+
         credentials = access_aws(
             storage_root=f"s3://{root_folder}", access_token=access_token
         )
