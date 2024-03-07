@@ -2,9 +2,12 @@ import os
 from typing import Union, Optional
 from lamindb_setup.core import InstanceSettings, StorageSettings, UserSettings
 from lamindb_setup.core._settings_load import (
-    connect_instance_settings,
+    load_instance_settings,
     load_or_create_user_settings,
 )
+from ._settings_store import current_instance_settings_file
+from pathlib import Path
+from ._settings_store import settings_dir
 
 
 class SetupSettings:
@@ -22,6 +25,28 @@ class SetupSettings:
 
     _user_settings_env: Union[str, None] = None
     _instance_settings_env: Union[str, None] = None
+
+    _auto_connect_path: Path = settings_dir / "auto_connect"
+
+    @property
+    def _instance_settings_path(self) -> Path:
+        return current_instance_settings_file()
+
+    @property
+    def settings_dir(self) -> Path:
+        return settings_dir
+
+    @property
+    def auto_connect(self) -> bool:
+        """Auto-connect to loaded instance upon lamindb import."""
+        return self._auto_connect_path.exists()
+
+    @auto_connect.setter
+    def auto_connect(self, value: bool) -> None:
+        if value:
+            self._auto_connect_path.touch()
+        else:
+            self._auto_connect_path.unlink(missing_ok=True)
 
     @property
     def user(self) -> UserSettings:
@@ -43,7 +68,7 @@ class SetupSettings:
             self._instance_settings is None
             or self._instance_settings_env != get_env_name()  # noqa
         ):
-            self._instance_settings = connect_instance_settings()
+            self._instance_settings = load_instance_settings()
             self._instance_settings_env = get_env_name()
         return self._instance_settings  # type: ignore
 
@@ -60,6 +85,16 @@ class SetupSettings:
         # this is implicit logic that catches if no instance is loaded
         except SystemExit:
             return False
+
+    def __repr__(self) -> str:
+        """Rich string representation."""
+        repr = self.user.__repr__()
+        repr += f"\nAuto-connect in Python: {self.auto_connect}\n"
+        if self._instance_exists:
+            repr += self.instance.__repr__()
+        else:
+            repr += "\nNo instance connected"
+        return repr
 
 
 def get_env_name():

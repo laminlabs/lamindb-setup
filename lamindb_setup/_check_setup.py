@@ -1,33 +1,39 @@
 from lamin_utils import logger
+from typing import Optional
 import os
 from ._init_instance import reload_lamindb, reload_schema_modules
 from ._silence_loggers import silence_loggers
 from .core._settings_store import current_instance_settings_file
 
+_LAMINDB_CONNECTED_TO: Optional[str] = None
+
 _INSTANCE_NOT_SETUP_WARNING = """\
-You haven't yet setup an instance: Please call `ln.setup.init()` or `ln.setup.connect()`
+To use lamindb, you need to connect to an instance.
+
+Connect to an instance: `ln.connect()`. Init an instance: `ln.setup.init()`.
 """
 
 
-def check_instance_setup(from_lamindb: bool = False):
-    # silence_loggers is called twice within the if conditions for latency
-    # reasons
+def check_instance_setup(from_lamindb: bool = False) -> bool:
+    from .core.django import IS_SETUP, setup_django
+
+    if _LAMINDB_CONNECTED_TO is not None:
+        return True
+    if IS_SETUP:
+        return True
+    silence_loggers()
     if os.environ.get("LAMINDB_MULTI_INSTANCE") == "true":
         logger.warning(
             "running LaminDB in multi-instance mode; you'll experience "
             "errors in regular lamindb usage"
         )
-        silence_loggers()
         return True
     if current_instance_settings_file().exists():
-        silence_loggers()
         try:
             # attempt loading the settings file
-            from .core._settings_load import connect_instance_settings
+            from .core._settings_load import load_instance_settings
 
-            isettings = connect_instance_settings()
-
-            from .core.django import IS_SETUP, setup_django
+            isettings = load_instance_settings()
 
             # this flag should probably be renamed to `from_user`
             # it will typically be invoked if lamindb is imported for use

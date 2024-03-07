@@ -13,7 +13,8 @@ def test_load_remote_instance():
     ln_setup.login("testuser1")
     ln_setup.delete("load_remote_instance", force=True)
     ln_setup.init(storage="s3://lamindb-ci/load_remote_instance", _test=True)
-    ln_setup.connect("testuser1/lamindb-ci", _test=True)
+    assert ln_setup.settings.instance.name == "load_remote_instance"
+    ln_setup.connect("testuser1/load_remote_instance", _test=True)
     assert ln_setup.settings.instance.id is not None
     assert ln_setup.settings.instance.storage.is_cloud
     assert (
