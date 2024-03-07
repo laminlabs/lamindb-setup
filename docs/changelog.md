@@ -3,6 +3,7 @@
 <!-- prettier-ignore -->
 Name | PR | Developer | Date | Version
 --- | --- | --- | --- | ---
+👷 Better CI group names | [666](https://github.com/laminlabs/lamindb-setup/pull/666) | [falexwolf](https://github.com/falexwolf) | 2024-03-07 |
 🛂 Make `get_stat_dir_s3` read from UPath credentials | [664](https://github.com/laminlabs/lamindb-setup/pull/664) | [bpenteado](https://github.com/bpenteado) | 2024-03-06 |
 ♻️ Move generic hashing and storage utilities from `lamindb` into `lamindb-setup` | [661](https://github.com/laminlabs/lamindb-setup/pull/661) | [bpenteado](https://github.com/bpenteado) | 2024-03-06 |
 ♻️ Make `SetupSettings` a dynamic class | [663](https://github.com/laminlabs/lamindb-setup/pull/663) | [falexwolf](https://github.com/falexwolf) | 2024-03-06 |
