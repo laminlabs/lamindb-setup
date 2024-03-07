@@ -15,6 +15,7 @@ Setup:
    logout
    init
    connect
+   load
    close
    delete
 
