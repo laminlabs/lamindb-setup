@@ -5,7 +5,7 @@ from ._silence_loggers import silence_loggers
 from .core._settings_store import current_instance_settings_file
 
 _INSTANCE_NOT_SETUP_WARNING = """\
-You haven't yet setup an instance: Please call `ln.setup.init()` or `ln.setup.load()`
+You haven't yet setup an instance: Please call `ln.setup.init()` or `ln.setup.connect()`
 """
 
 
@@ -23,9 +23,9 @@ def check_instance_setup(from_lamindb: bool = False):
         silence_loggers()
         try:
             # attempt loading the settings file
-            from .core._settings_load import load_instance_settings
+            from .core._settings_load import connect_instance_settings
 
-            isettings = load_instance_settings()
+            isettings = connect_instance_settings()
 
             from .core.django import IS_SETUP, setup_django
 

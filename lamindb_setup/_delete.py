@@ -5,7 +5,7 @@ from lamin_utils import logger
 
 from ._close import close
 from .core._settings import settings
-from .core._settings_load import load_instance_settings
+from .core._settings_load import connect_instance_settings
 from .core._settings_store import instance_settings_file
 
 
@@ -40,7 +40,7 @@ def delete(instance_name: str, force: bool = False):
             " provide a wrong instance name? could you try loading it?"
         )
         return None
-    isettings = load_instance_settings(settings_file)
+    isettings = connect_instance_settings(settings_file)
 
     delete_settings(settings_file)
     if settings._instance_exists:

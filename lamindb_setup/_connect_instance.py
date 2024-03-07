@@ -12,7 +12,7 @@ from ._close import close as close_instance
 from ._init_instance import load_from_isettings
 from .core._settings import InstanceSettings, settings
 from ._silence_loggers import silence_loggers
-from .core._settings_load import load_instance_settings
+from .core._settings_load import connect_instance_settings
 from .core._settings_storage import StorageSettings
 from .core._settings_store import instance_settings_file
 from .core.cloud_sqlite_locker import unlock_cloud_sqlite_upon_exception
@@ -47,7 +47,7 @@ def update_db_using_local(
                 db_dsn_local = LaminDsnModel(db=os.getenv("LAMINDB_INSTANCE_DB"))
             # read from a cached settings file
             elif settings_file.exists():
-                isettings = load_instance_settings(settings_file)
+                isettings = connect_instance_settings(settings_file)
                 db_dsn_local = LaminDsnModel(db=isettings.db)
             else:
                 # just take the default hub result and ensure there is actually a user
@@ -76,8 +76,8 @@ def update_db_using_local(
 
 
 @unlock_cloud_sqlite_upon_exception(ignore_prev_locker=True)
-def load(
-    identifier: str,
+def connect(
+    slug: str,
     *,
     db: Optional[str] = None,
     storage: Optional[UPathStr] = None,
@@ -87,17 +87,15 @@ def load(
     """Load existing instance.
 
     Args:
-        identifier: `str` - The instance identifier `owner/name`.
-            You can also pass the URL: `https://lamin.ai/owner/name`.
-            If the instance is owned by you,
-            it suffices to pass the instance name.
+        slug: The instance slug `account_handle/instance_name` or URL.
+            If the instance is owned by you, it suffices to pass the instance name.
         db: Load the instance with an updated database URL.
         storage: Load the instance with an updated default storage.
     """
     from ._check_instance_setup import check_instance_setup
-    from .core._hub_core import load_instance as load_instance_from_hub
+    from .core._hub_core import connect_instance as connect_instance_from_hub
 
-    owner, name = get_owner_name_from_identifier(identifier)
+    owner, name = get_owner_name_from_identifier(slug)
 
     if check_instance_setup() and not _test:
         raise RuntimeError(
@@ -105,7 +103,7 @@ def load(
             " Python session. We will bring this feature back at some point."
         )
     else:
-        # compare normalized identifier with a potentially previously loaded identifier
+        # compare normalized slug with a potentially previously loaded slug
         if settings._instance_exists and f"{owner}/{name}" != settings.instance.slug:
             close_instance(mute=True)
 
@@ -113,7 +111,8 @@ def load(
 
     # the following will return a string if the instance does not exist
     # on the hub
-    hub_result = load_instance_from_hub(owner=owner, name=name)
+    hub_result = connect_instance_from_hub(owner=owner, name=name)
+    print(hub_result)
 
     # if hub_result is not a string, it means it made a request
     # that successfully returned metadata
@@ -150,7 +149,7 @@ def load(
             f" https://lamin.ai/{owner}/{name}?tab=collaborators"
         )
         if settings_file.exists():
-            isettings = load_instance_settings(settings_file)
+            isettings = connect_instance_settings(settings_file)
             if isettings.is_remote:
                 if _raise_not_reachable_error:
                     raise SystemExit(error_message)

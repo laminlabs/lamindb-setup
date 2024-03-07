@@ -14,7 +14,7 @@ Setup:
    login
    logout
    init
-   load
+   connect
    close
    delete
 
@@ -50,7 +50,7 @@ from ._close import close  # noqa
 from ._delete import delete  # noqa
 from ._info import info  # noqa
 from ._init_instance import init  # noqa
-from ._load_instance import load  # noqa
+from ._connect_instance import connect  # noqa
 from ._migrate import migrate
 from ._register_instance import register  # noqa
 from ._set import set  # noqa
@@ -59,6 +59,7 @@ from ._setup_user import login, logout  # noqa
 from ._django import django
 
 dev = core  # backward compat
+load = connect  # backward compat
 _TESTING = False  # used in lamindb tests
 
 # hide the supabase error in a thread on windows
