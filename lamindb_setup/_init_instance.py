@@ -93,16 +93,22 @@ def reload_schema_modules(isettings: InstanceSettings):
             importlib.reload(schema_module)
 
 
+def reload_lamindb_alone(slug: str) -> bool:
+    if "lamindb" in sys.modules:
+        import lamindb
+
+        check_setup._LAMINDB_CONNECTED_TO = slug
+        importlib.reload(lamindb)
+        return True
+    else:
+        return False
+
+
 def reload_lamindb(isettings: InstanceSettings):
     # only touch lamindb if we're operating from lamindb
     reload_schema_modules(isettings)
     log_message = settings.auto_connect
-    if "lamindb" in sys.modules:
-        import lamindb
-
-        check_setup._LAMINDB_CONNECTED_TO = isettings.slug
-        importlib.reload(lamindb)
-    else:
+    if not reload_lamindb_alone(isettings.slug):
         log_message = True
     if log_message:
         logger.important(f"connected lamindb: {isettings.slug}")

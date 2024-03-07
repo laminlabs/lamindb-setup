@@ -17,6 +17,9 @@ from .core._settings_storage import StorageSettings
 from .core._settings_store import instance_settings_file
 from .core.cloud_sqlite_locker import unlock_cloud_sqlite_upon_exception
 from ._init_instance import MESSAGE_NO_MULTIPLE_INSTANCE
+from ._check_setup import check_instance_setup
+from .core._hub_core import connect_instance as connect_instance_from_hub
+
 
 # this is for testing purposes only
 # set to True only to test failed load
@@ -93,17 +96,16 @@ def connect(
         db: Load the instance with an updated database URL.
         storage: Load the instance with an updated default storage.
     """
-    from ._check_setup import check_instance_setup
-    from .core._hub_core import connect_instance as connect_instance_from_hub
-
     owner, name = get_owner_name_from_identifier(slug)
 
     if check_instance_setup() and not _test:
-        raise RuntimeError(MESSAGE_NO_MULTIPLE_INSTANCE)
-    else:
-        # compare normalized slug with a potentially previously loaded slug
-        if settings._instance_exists and f"{owner}/{name}" != settings.instance.slug:
-            close_instance(mute=True)
+        if settings._instance_exists and f"{owner}/{name}" == settings.instance.slug:
+            logger.info(f"connected lamindb: {settings.instance.slug}")
+            return None
+        else:
+            raise RuntimeError(MESSAGE_NO_MULTIPLE_INSTANCE)
+    elif settings._instance_exists and f"{owner}/{name}" != settings.instance.slug:
+        close_instance(mute=True)
 
     settings_file = instance_settings_file(name, owner)
 
