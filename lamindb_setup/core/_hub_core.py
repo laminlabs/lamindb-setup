@@ -209,11 +209,11 @@ def access_aws(storage_root: str, access_token: Optional[str] = None) -> Dict[st
     from ._settings import settings
 
     if settings.user.handle != "anonymous" or access_token is not None:
-        print(storage_root)
+        os.write(1, storage_root.encode())
         credentials = call_with_fallback_auth(
             _access_aws, storage_root=storage_root, access_token=access_token
         )
-        print(credentials)
+        os.write(1, str(credentials).encode())
         logger.important("loaded AWS credentials")
         return credentials
     else:
