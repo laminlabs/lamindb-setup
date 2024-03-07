@@ -213,6 +213,7 @@ def access_aws(storage_root: str, access_token: Optional[str] = None) -> Dict[st
         credentials = call_with_fallback_auth(
             _access_aws, storage_root=storage_root, access_token=access_token
         )
+        print(credentials)
         logger.important("loaded AWS credentials")
         return credentials
     else:
