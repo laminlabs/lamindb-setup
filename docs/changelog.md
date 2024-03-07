@@ -3,6 +3,7 @@
 <!-- prettier-ignore -->
 Name | PR | Developer | Date | Version
 --- | --- | --- | --- | ---
+🩹 Nicer behavior for same instance | [671](https://github.com/laminlabs/lamindb-setup/pull/671) | [falexwolf](https://github.com/falexwolf) | 2024-03-07 |
 🏗️ Enable`ln.connect()` in lamindb | [668](https://github.com/laminlabs/lamindb-setup/pull/668) | [falexwolf](https://github.com/falexwolf) | 2024-03-07 |
 🚚 Rename `load()` to `connect()` | [667](https://github.com/laminlabs/lamindb-setup/pull/667) | [falexwolf](https://github.com/falexwolf) | 2024-03-07 |
 👷 Better CI group names | [666](https://github.com/laminlabs/lamindb-setup/pull/666) | [falexwolf](https://github.com/falexwolf) | 2024-03-07 |
