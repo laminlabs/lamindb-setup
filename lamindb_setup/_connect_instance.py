@@ -77,7 +77,7 @@ def update_db_using_local(
 
 @unlock_cloud_sqlite_upon_exception(ignore_prev_locker=True)
 def connect(
-    identifier: str,
+    slug: str,
     *,
     db: Optional[str] = None,
     storage: Optional[UPathStr] = None,
@@ -87,17 +87,15 @@ def connect(
     """Load existing instance.
 
     Args:
-        identifier: `str` - The instance identifier `owner/name`.
-            You can also pass the URL: `https://lamin.ai/owner/name`.
-            If the instance is owned by you,
-            it suffices to pass the instance name.
+        slug: The instance slug `account_handle/instance_name` or URL.
+            If the instance is owned by you, it suffices to pass the instance name.
         db: Load the instance with an updated database URL.
         storage: Load the instance with an updated default storage.
     """
     from ._check_instance_setup import check_instance_setup
     from .core._hub_core import connect_instance as connect_instance_from_hub
 
-    owner, name = get_owner_name_from_identifier(identifier)
+    owner, name = get_owner_name_from_identifier(slug)
 
     if check_instance_setup() and not _test:
         raise RuntimeError(
@@ -105,7 +103,7 @@ def connect(
             " Python session. We will bring this feature back at some point."
         )
     else:
-        # compare normalized identifier with a potentially previously loaded identifier
+        # compare normalized slug with a potentially previously loaded slug
         if settings._instance_exists and f"{owner}/{name}" != settings.instance.slug:
             close_instance(mute=True)
 
