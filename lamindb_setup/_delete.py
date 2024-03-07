@@ -1,15 +1,40 @@
 import shutil
 from pathlib import Path
-
 from lamin_utils import logger
-
+from typing import Optional
 from ._close import close
+from .core._settings_instance import InstanceSettings
 from .core._settings import settings
 from .core._settings_load import connect_instance_settings
 from .core._settings_store import instance_settings_file
 
 
-def delete(instance_name: str, force: bool = False):
+def delete_cache(cache_dir: Path):
+    if cache_dir is not None and cache_dir.exists():
+        shutil.rmtree(cache_dir)
+
+
+def delete_by_isettings(isettings: InstanceSettings) -> None:
+    if settings._instance_exists:
+        if isettings.slug == settings.instance.slug:
+            close(mute=True)  # close() also unlocks, that's why we need it
+            settings._instance_settings = None
+    settings_file = isettings._get_settings_file()
+    if settings_file.exists():
+        settings_file.unlink()
+    delete_cache(isettings.storage.cache_dir)
+    if isettings.dialect == "sqlite":
+        if isettings._sqlite_file.exists():
+            isettings._sqlite_file.unlink()
+        exclusion_dir = isettings.storage.root / ".lamindb/_exclusion"
+        if exclusion_dir.exists():
+            exclusion_dir.rmdir()
+    if isettings.is_remote:
+        logger.warning("manually delete your remote instance on lamin.ai")
+    logger.warning(f"manually delete your stored data: {isettings.storage.root}")
+
+
+def delete(instance_name: str, force: bool = False) -> Optional[int]:
     """Delete an instance."""
     if "/" in instance_name:
         logger.warning(
@@ -18,21 +43,17 @@ def delete(instance_name: str, force: bool = False):
             " delimiter not allowed)."
         )
         raise ValueError("Invalid instance name: '/' delimiter not allowed.")
-
-    instance_identifier = f"{settings.user.handle}/{instance_name}"
+    instance_slug = f"{settings.user.handle}/{instance_name}"
     if not force:
         valid_responses = ["y", "yes"]
         user_input = (
-            input(
-                f"Are you sure you want to delete instance {instance_identifier}?"
-                " (y/n) "
-            )
+            input(f"Are you sure you want to delete instance {instance_slug}? (y/n) ")
             .strip()
             .lower()
         )
         if user_input not in valid_responses:
             return -1
-    logger.info(f"deleting instance {instance_identifier}")
+    logger.info(f"deleting instance {instance_slug}")
     settings_file = instance_settings_file(instance_name, settings.user.handle)
     if not settings_file.exists():
         logger.warning(
@@ -41,37 +62,5 @@ def delete(instance_name: str, force: bool = False):
         )
         return None
     isettings = connect_instance_settings(settings_file)
-
-    delete_settings(settings_file)
-    if settings._instance_exists:
-        if instance_identifier == settings.instance.slug:
-            close(mute=True)  # close() does further operations, unlocking...
-            settings._instance_settings = None
-    delete_cache(isettings.storage.cache_dir)
-    if isettings.dialect == "sqlite":
-        if isettings._sqlite_file.exists():
-            isettings._sqlite_file.unlink()
-            logger.success("    deleted '.lndb' sqlite file")
-        else:
-            logger.warning("    '.lndb' sqlite file does not exist")
-    if isettings.is_remote:
-        logger.warning(
-            "    consider manually deleting your remote instance on lamin.ai"
-        )
-    logger.warning(
-        f"    consider manually deleting your stored data: {isettings.storage.root}"
-    )
-
-
-def delete_cache(cache_dir: Path):
-    if cache_dir is not None and cache_dir.exists():
-        shutil.rmtree(cache_dir)
-        logger.success("    instance cache deleted")
-
-
-def delete_settings(settings_file: Path):
-    if settings_file.exists():
-        settings_file.unlink()
-        logger.success(f"    deleted instance settings file: {settings_file}")
-    else:
-        logger.warning(f"    instance settings file doesn't exist: {settings_file}")
+    delete_by_isettings(isettings)
+    return None
