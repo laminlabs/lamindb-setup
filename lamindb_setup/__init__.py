@@ -47,7 +47,7 @@ from ._check_setup import check_instance_setup as _check_instance_setup  # noqa
 from ._close import close  # noqa
 from ._delete import delete  # noqa
 from ._init_instance import init  # noqa
-from ._connect_instance import connect  # noqa
+from ._connect_instance import connect, load  # noqa
 from ._migrate import migrate
 from ._register_instance import register  # noqa
 from .core._settings import settings  # noqa
@@ -55,7 +55,6 @@ from ._setup_user import login, logout  # noqa
 from ._django import django
 
 dev = core  # backward compat
-load = connect  # backward compat
 _TESTING = False  # used in lamindb tests
 
 # hide the supabase error in a thread on windows

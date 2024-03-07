@@ -196,6 +196,20 @@ def connect(
     return None
 
 
+def load(
+    slug: str,
+    *,
+    db: Optional[str] = None,
+    storage: Optional[UPathStr] = None,
+    _called_from_cli: bool = False,
+) -> Optional[Union[str, Tuple]]:
+    if not _called_from_cli:
+        logger.warning("ln.setup.load() is deprecated, use ln.connect()")
+    result = connect(slug, db=db, storage=storage)
+    settings.auto_connect = True
+    return result
+
+
 def get_owner_name_from_identifier(identifier: str):
     if "/" in identifier:
         if identifier.startswith("https://lamin.ai/"):
