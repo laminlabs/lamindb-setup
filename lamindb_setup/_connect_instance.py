@@ -196,17 +196,15 @@ def connect(
     return None
 
 
+# we'll see how we'll use it in the future
+# currently, it makes sense for the CLI
 def load(
     slug: str,
     *,
     db: Optional[str] = None,
     storage: Optional[UPathStr] = None,
-    _called_from_cli: bool = False,
 ) -> Optional[Union[str, Tuple]]:
-    if not _called_from_cli:
-        logger.warning("ln.setup.load() is deprecated, use ln.connect()")
     result = connect(slug, db=db, storage=storage)
-    settings.auto_connect = True
     return result
 
 
