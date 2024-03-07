@@ -3,6 +3,7 @@
 <!-- prettier-ignore -->
 Name | PR | Developer | Date | Version
 --- | --- | --- | --- | ---
+🐛 Fix hosted regions list | [673](https://github.com/laminlabs/lamindb-setup/pull/673) | [Koncopd](https://github.com/Koncopd) | 2024-03-07 |
 🚑️ Fix bionty reload | [672](https://github.com/laminlabs/lamindb-setup/pull/672) | [sunnyosun](https://github.com/sunnyosun) | 2024-03-07 |
 🩹 Nicer behavior for same instance | [671](https://github.com/laminlabs/lamindb-setup/pull/671) | [falexwolf](https://github.com/falexwolf) | 2024-03-07 |
 🏗️ Enable`ln.connect()` in lamindb | [668](https://github.com/laminlabs/lamindb-setup/pull/668) | [falexwolf](https://github.com/falexwolf) | 2024-03-07 |
