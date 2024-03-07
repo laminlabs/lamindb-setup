@@ -166,7 +166,6 @@ def validate_init_args(
     name_str = infer_instance_name(storage=storage, name=name, db=db)
     # test whether instance exists by trying to load it
     instance_slug = f"{settings.user.handle}/{name_str}"
-    print(instance_slug)
     response = connect(instance_slug, _raise_not_reachable_error=False, _test=_test)
     instance_state: Literal[
         "connected",

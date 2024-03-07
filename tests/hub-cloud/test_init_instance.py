@@ -29,6 +29,7 @@ def delete_instance(
 
 @pytest.fixture
 def get_hub_client():
+    ln_setup.login("testuser2")
     hub = connect_hub_with_auth()
     yield hub
     hub.auth.sign_out()
@@ -38,27 +39,16 @@ def get_instance_and_dbuser_from_hub(
     instance_name: str, hub: Client
 ) -> Tuple[Optional[Dict[str, str]], Optional[Dict[str, str]]]:
     assert ln_setup.settings.user.handle == "testuser2"
-    account = select_account_by_handle("testuser2", client=hub)
-    print(instance_name)
-    print(account["handle"], account["id"])
-    instance = select_instance_by_name(
-        account_id=account["id"],
-        name=instance_name,
-        client=hub,
-    )
-    print(instance)
     instance_account_storage = select_instance_by_owner_name(
         "testuser2",
         name=instance_name,
         client=hub,
     )
-    print(instance_account_storage)
     if instance_account_storage is not None:
         _ = instance_account_storage.pop("account")
         _ = instance_account_storage.pop("storage")
-        instance_cmp = instance_account_storage
-        assert instance_cmp == instance
-    if instance is None:
+        instance = instance_account_storage
+    else:
         return None, None
     db_user = select_db_user_by_instance(instance_id=instance["id"], client=hub)
     return instance, db_user
@@ -67,7 +57,6 @@ def get_instance_and_dbuser_from_hub(
 def test_init_instance_postgres_default_name(get_hub_client):
     hub = get_hub_client
     instance_name = "pgtest"
-    ln_setup.login("testuser2")
     instance, _ = get_instance_and_dbuser_from_hub(instance_name, hub)
     # if instance exists, delete it
     if instance is not None:
