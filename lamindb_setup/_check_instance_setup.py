@@ -5,7 +5,9 @@ from ._silence_loggers import silence_loggers
 from .core._settings_store import current_instance_settings_file
 
 _INSTANCE_NOT_SETUP_WARNING = """\
-You haven't yet setup an instance: Please call `ln.setup.init()` or `ln.setup.connect()`
+To use lamindb, you need to connect to an instance.
+
+Connect to an instance: `ln.connect()`. Init an instance: `ln.setup.init()`.
 """
 
 

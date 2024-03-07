@@ -103,11 +103,10 @@ def reload_lamindb(isettings: InstanceSettings):
     if "lamindb" in sys.modules:
         import lamindb
 
+        lamindb._CONNECTED_TO = isettings.slug
         importlib.reload(lamindb)
-        logger.important(f"lamindb instance: {isettings.slug}")
     else:
         # only log if we're outside lamindb
-        # lamindb itself logs upon import!
         logger.important(f"connected instance: {isettings.owner}/{isettings.name}")
 
 

@@ -112,7 +112,6 @@ def connect(
     # the following will return a string if the instance does not exist
     # on the hub
     hub_result = connect_instance_from_hub(owner=owner, name=name)
-    print(hub_result)
 
     # if hub_result is not a string, it means it made a request
     # that successfully returned metadata
