@@ -5,6 +5,7 @@ from lamindb_setup.core._settings_load import (
     load_instance_settings,
     load_or_create_user_settings,
 )
+from ._settings_store import current_instance_settings_file
 from pathlib import Path
 from ._settings_store import settings_dir
 
@@ -26,6 +27,10 @@ class SetupSettings:
     _instance_settings_env: Union[str, None] = None
 
     _auto_connect_path: Path = settings_dir / "auto_connect"
+
+    @property
+    def _instance_settings_path(self) -> Path:
+        return current_instance_settings_file()
 
     @property
     def settings_dir(self) -> Path:

@@ -29,6 +29,8 @@ def delete_by_isettings(isettings: InstanceSettings) -> None:
     logger.warning(f"manually delete your stored data: {isettings.storage.root}")
     # unset the global instance settings
     if settings._instance_exists and isettings.slug == settings.instance.slug:
+        if settings._instance_settings_path.exists():
+            settings._instance_settings_path.unlink()
         settings._instance_settings = None
 
 
