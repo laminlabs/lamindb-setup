@@ -88,7 +88,7 @@ def connect(
     _raise_not_reachable_error: bool = True,
     _test: bool = False,
 ) -> Optional[Union[str, Tuple]]:
-    """Load existing instance.
+    """Connect to instance.
 
     Args:
         slug: The instance slug `account_handle/instance_name` or URL.
@@ -202,6 +202,11 @@ def load(
     db: Optional[str] = None,
     storage: Optional[UPathStr] = None,
 ) -> Optional[Union[str, Tuple]]:
+    """Connect to instance and set ``auto-connect`` to true.
+
+    This is exactly the same as ``ln.connect()`` except for that
+    ``ln.connect()`` doesn't change the state of ``auto-connect``.
+    """
     # enable the message in the next release
     # logger.warning(
     #     "`lamin connect` replaces `lamin load`, which will be removed in a future"
