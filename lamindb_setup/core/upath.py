@@ -505,36 +505,12 @@ def get_stat_file_cloud(stat: Dict) -> Tuple[int, str, str]:
 
 
 def get_stat_dir_s3(path: UPath) -> Tuple[int, str, str, int]:
-    import boto3
-
-    if (
-        path.fs.key is not None
-        and path.fs.secret is not None
-        and path.fs.token is not None
-    ):
-        s3 = boto3.session.Session(
-            aws_access_key_id=path.fs.key,
-            aws_secret_access_key=path.fs.secret,
-            aws_session_token=path.fs.token,
-        ).resource("s3")
-    elif not AWS_CREDENTIALS_PRESENT:
-        # passing the following param directly to Session() doesn't
-        # work, unfortunately: botocore_session=path.fs.session
-        from botocore import UNSIGNED
-        from botocore.config import Config
-
-        config = Config(signature_version=UNSIGNED)
-        s3 = boto3.session.Session().resource("s3", config=config)
-    else:
-        s3 = boto3.session.Session().resource("s3")
-    bucket, key, _ = path.fs.split_path(path.as_posix())
-    # assuming this here is the fastest way of querying for many objects
-    objects = s3.Bucket(bucket).objects.filter(Prefix=key)
-    size = sum([object.size for object in objects])
+    objects = path.fs.find(path.as_posix(), detail=True)
+    size = sum([object["size"] for object in objects.values()])
     md5s = [
         # skip leading and trailing quotes
-        object.e_tag[1:-1]
-        for object in objects
+        object["ETag"][1:-1]
+        for object in objects.values()
     ]
     n_objects = len(md5s)
     hash, hash_type = hash_md5s_from_dir(md5s)
