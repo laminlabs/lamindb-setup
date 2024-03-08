@@ -257,6 +257,9 @@ def init(
                 "locked instance (to unlock and push changes to the cloud SQLite file,"
                 " call: lamin close)"
             )
+        # we can debate whether this is the right setting, but this is how
+        # things have been and we'd like to not easily break backward compat
+        settings.auto_connect = True
     except Exception as e:
         from ._delete import delete_by_isettings
         from .core._hub_core import delete_storage as delete_storage_record
