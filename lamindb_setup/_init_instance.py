@@ -16,7 +16,6 @@ from .core import InstanceSettings
 from .core.types import UPathStr
 from .core._settings_storage import StorageSettings, init_storage
 from .core.upath import convert_pathlike
-from . import _check_setup as check_setup
 
 
 def get_schema_module_name(schema_name) -> str:
@@ -100,7 +99,6 @@ def reload_lamindb_itself(slug: str) -> bool:
     if "lamindb" in sys.modules:
         import lamindb
 
-        check_setup._LAMINDB_CONNECTED_TO = slug
         importlib.reload(lamindb)
         return True
     else:

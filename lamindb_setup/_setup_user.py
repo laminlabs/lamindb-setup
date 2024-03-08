@@ -103,7 +103,7 @@ def login(
     user_settings.access_token = access_token
     save_user_settings(user_settings)
 
-    if _check_instance_setup() and settings._instance_exists:
+    if settings._instance_exists and _check_instance_setup():
         register_user(user_settings)
 
     settings._user_settings = None
