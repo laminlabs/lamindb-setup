@@ -20,7 +20,9 @@ If you used the CLI to set up lamindb in a notebook, restart the Python session.
 """
 
 
-def check_instance_setup(from_lamindb: bool = False) -> bool:
+# we make this a private function because in all the places it's used,
+# users should see it
+def _check_instance_setup(from_lamindb: bool = False) -> bool:
     from .core.django import IS_SETUP, setup_django
 
     if _LAMINDB_CONNECTED_TO is not None:

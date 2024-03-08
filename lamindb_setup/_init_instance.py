@@ -215,9 +215,9 @@ def init(
     ssettings = None
     try:
         silence_loggers()
-        from ._check_setup import check_instance_setup
+        from ._check_setup import _check_instance_setup
 
-        if check_instance_setup() and not _test:
+        if _check_instance_setup() and not _test:
             raise RuntimeError(MESSAGE_NO_MULTIPLE_INSTANCE)
         else:
             close_instance(mute=True)

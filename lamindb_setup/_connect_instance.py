@@ -17,7 +17,7 @@ from .core._settings_storage import StorageSettings
 from .core._settings_store import instance_settings_file
 from .core.cloud_sqlite_locker import unlock_cloud_sqlite_upon_exception
 from ._init_instance import MESSAGE_NO_MULTIPLE_INSTANCE
-from ._check_setup import check_instance_setup
+from ._check_setup import _check_instance_setup
 from .core._hub_core import connect_instance as connect_instance_from_hub
 
 
@@ -98,7 +98,7 @@ def connect(
     """
     owner, name = get_owner_name_from_identifier(slug)
 
-    if check_instance_setup() and not _test:
+    if _check_instance_setup() and not _test:
         if settings._instance_exists and f"{owner}/{name}" == settings.instance.slug:
             logger.info(f"connected lamindb: {settings.instance.slug}")
             return None
