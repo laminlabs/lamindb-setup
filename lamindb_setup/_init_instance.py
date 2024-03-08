@@ -85,9 +85,9 @@ def register_user_and_storage(isettings: InstanceSettings, usettings):
 def reload_schema_modules(isettings: InstanceSettings):
     schema_names = ["core"] + list(isettings.schema)
     schema_module_names = [get_schema_module_name(n) for n in schema_names]
-    if "bionty" in isettings.schema:
-        # we need to reload both bionty and lnschema_bionty
-        schema_module_names.append("bionty")
+    # if "bionty" in isettings.schema:
+    #     # we need to reload both bionty and lnschema_bionty
+    #     schema_module_names.append("bionty")
 
     for schema_module_name in schema_module_names:
         if schema_module_name in sys.modules:
