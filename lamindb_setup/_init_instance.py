@@ -231,7 +231,7 @@ def init(
             _test=_test,
         )
         if instance_state == "connected":
-            logger.important(f"connected to lamindb instance: {instance_slug}")
+            settings.auto_connect = True  # we can also debate this switch here
             return None
         ssettings = init_storage(storage)
         isettings = InstanceSettings(
