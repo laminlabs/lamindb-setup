@@ -48,10 +48,6 @@ def _get_current_instance_settings() -> Optional[InstanceSettings]:
 # we make this a private function because in all the places it's used,
 # users should see it
 def _check_instance_setup(from_lamindb: bool = False) -> bool:
-    print(
-        f"call me with from_lamindb: {from_lamindb}, django.IS_SETUP: {django.IS_SETUP}"
-    )
-
     if django.IS_SETUP:
         return True
     silence_loggers()
