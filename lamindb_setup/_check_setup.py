@@ -1,7 +1,6 @@
 from lamin_utils import logger
 from typing import Optional
 import os
-from ._init_instance import reload_lamindb, reload_schema_modules
 from ._silence_loggers import silence_loggers
 from .core._settings_store import current_instance_settings_file
 from .core.exceptions import DefaultMessageException
@@ -48,6 +47,8 @@ def _check_instance_setup(from_lamindb: bool = False) -> bool:
             # but users might also import their schema modules first
             # and then want lamindb be to be available
             if from_lamindb and settings.auto_connect:
+                from ._init_instance import reload_lamindb, reload_schema_modules
+
                 # this guarantees that ths is called exactly once
                 # prior to django being setup!
                 if not IS_SETUP:
