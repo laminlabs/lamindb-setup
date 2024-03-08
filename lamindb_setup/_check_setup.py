@@ -4,13 +4,19 @@ import os
 from ._init_instance import reload_lamindb, reload_schema_modules
 from ._silence_loggers import silence_loggers
 from .core._settings_store import current_instance_settings_file
+from .core.exceptions import DefaultMessageException
+from .core._settings import settings
 
 _LAMINDB_CONNECTED_TO: Optional[str] = None
 
-_INSTANCE_NOT_SETUP_WARNING = """\
+
+class InstanceNotSetupError(DefaultMessageException):
+    default_message = """\
 To use lamindb, you need to connect to an instance.
 
 Connect to an instance: `ln.connect()`. Init an instance: `ln.setup.init()`.
+
+If you used the CLI to set up lamindb in a notebook, restart the Python session.
 """
 
 
@@ -39,7 +45,7 @@ def check_instance_setup(from_lamindb: bool = False) -> bool:
             # it will typically be invoked if lamindb is imported for use
             # but users might also import their schema modules first
             # and then want lamindb be to be available
-            if from_lamindb:
+            if from_lamindb and settings.auto_connect:
                 # this guarantees that ths is called exactly once
                 # prior to django being setup!
                 if not IS_SETUP:
@@ -60,5 +66,5 @@ def check_instance_setup(from_lamindb: bool = False) -> bool:
             raise e
     else:
         if from_lamindb:
-            logger.warning(_INSTANCE_NOT_SETUP_WARNING)
+            logger.warning(InstanceNotSetupError.default_message)
         return False
