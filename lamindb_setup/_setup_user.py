@@ -2,7 +2,7 @@ from typing import Union, Optional
 
 from lamin_utils import logger
 
-from ._check_setup import check_instance_setup
+from ._check_setup import _check_instance_setup
 from ._init_instance import register_user
 from .core._settings import settings
 from .core._settings_load import load_or_create_user_settings, load_user_settings
@@ -103,7 +103,7 @@ def login(
     user_settings.access_token = access_token
     save_user_settings(user_settings)
 
-    if check_instance_setup() and settings._instance_exists:
+    if settings._instance_exists and _check_instance_setup():
         register_user(user_settings)
 
     settings._user_settings = None

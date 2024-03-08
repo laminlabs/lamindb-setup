@@ -16,7 +16,6 @@ from .core import InstanceSettings
 from .core.types import UPathStr
 from .core._settings_storage import StorageSettings, init_storage
 from .core.upath import convert_pathlike
-from . import _check_setup as check_setup
 
 
 def get_schema_module_name(schema_name) -> str:
@@ -86,9 +85,6 @@ def register_user_and_storage(isettings: InstanceSettings, usettings):
 def reload_schema_modules(isettings: InstanceSettings):
     schema_names = ["core"] + list(isettings.schema)
     schema_module_names = [get_schema_module_name(n) for n in schema_names]
-    if "bionty" in isettings.schema:
-        # we need to reload both bionty and lnschema_bionty
-        schema_module_names.append("bionty")
 
     for schema_module_name in schema_module_names:
         if schema_module_name in sys.modules:
@@ -96,22 +92,25 @@ def reload_schema_modules(isettings: InstanceSettings):
             importlib.reload(schema_module)
 
 
-def reload_lamindb_itself(slug: str) -> bool:
+def reload_lamindb_itself(isettings) -> bool:
+    reloaded = False
     if "lamindb" in sys.modules:
         import lamindb
 
-        check_setup._LAMINDB_CONNECTED_TO = slug
         importlib.reload(lamindb)
-        return True
-    else:
-        return False
+        reloaded = True
+    if "bionty" in isettings.schema and "bionty" in sys.modules:
+        schema_module = importlib.import_module("bionty")
+        importlib.reload(schema_module)
+        reloaded = True
+    return reloaded
 
 
 def reload_lamindb(isettings: InstanceSettings):
     # only touch lamindb if we're operating from lamindb
     reload_schema_modules(isettings)
     log_message = settings.auto_connect
-    if not reload_lamindb_itself(isettings.slug):
+    if not reload_lamindb_itself(isettings):
         log_message = True
     if log_message:
         logger.important(f"connected lamindb: {isettings.slug}")
@@ -188,9 +187,9 @@ def validate_init_args(
 
 
 MESSAGE_NO_MULTIPLE_INSTANCE = """
-Currently don't support connecting to multiple default databases in the same
+Currently don't support subsequent connection to different databases in the same
 Python session.\n
-Try: `lamin set --auto-connect false`
+Try running on the CLI: lamin set auto-connect false
 """
 
 
@@ -215,9 +214,9 @@ def init(
     ssettings = None
     try:
         silence_loggers()
-        from ._check_setup import check_instance_setup
+        from ._check_setup import _check_instance_setup
 
-        if check_instance_setup() and not _test:
+        if _check_instance_setup() and not _test:
             raise RuntimeError(MESSAGE_NO_MULTIPLE_INSTANCE)
         else:
             close_instance(mute=True)
@@ -231,7 +230,7 @@ def init(
             _test=_test,
         )
         if instance_state == "connected":
-            logger.important(f"connected to lamindb instance: {instance_slug}")
+            settings.auto_connect = True  # we can also debate this switch here
             return None
         ssettings = init_storage(storage)
         isettings = InstanceSettings(
@@ -257,6 +256,9 @@ def init(
                 "locked instance (to unlock and push changes to the cloud SQLite file,"
                 " call: lamin close)"
             )
+        # we can debate whether this is the right setting, but this is how
+        # things have been and we'd like to not easily break backward compat
+        settings.auto_connect = True
     except Exception as e:
         from ._delete import delete_by_isettings
         from .core._hub_core import delete_storage as delete_storage_record
