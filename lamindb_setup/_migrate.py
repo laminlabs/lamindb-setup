@@ -1,7 +1,7 @@
 from typing import Optional, Dict
 from lamin_utils import logger
 
-from ._check_instance_setup import check_instance_setup
+from ._check_setup import _check_instance_setup
 from .core._settings import settings
 from .core.django import setup_django
 from django.db import connection
@@ -24,14 +24,14 @@ class migrate:
     @classmethod
     def create(cls) -> None:
         """Create a migration."""
-        if check_instance_setup():
+        if _check_instance_setup():
             raise RuntimeError("Restart Python session to create migration or use CLI!")
         setup_django(settings.instance, create_migrations=True)
 
     @classmethod
     def deploy(cls) -> None:
         """Deploy a migration."""
-        if check_instance_setup():
+        if _check_instance_setup():
             raise RuntimeError("Restart Python session to migrate or use CLI!")
         from lamindb_setup.core._hub_crud import (
             update_instance,

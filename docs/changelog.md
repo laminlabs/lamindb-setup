@@ -3,6 +3,14 @@
 <!-- prettier-ignore -->
 Name | PR | Developer | Date | Version
 --- | --- | --- | --- | ---
+🚸 Restore `auto_connect=True` after `lamin init` | [674](https://github.com/laminlabs/lamindb-setup/pull/674) | [falexwolf](https://github.com/falexwolf) | 2024-03-08 | 0.66.1
+🐛 Fix hosted regions list | [673](https://github.com/laminlabs/lamindb-setup/pull/673) | [Koncopd](https://github.com/Koncopd) | 2024-03-07 | 0.66.0
+🚑️ Fix bionty reload | [672](https://github.com/laminlabs/lamindb-setup/pull/672) | [sunnyosun](https://github.com/sunnyosun) | 2024-03-07 |
+🩹 Nicer behavior for same instance | [671](https://github.com/laminlabs/lamindb-setup/pull/671) | [falexwolf](https://github.com/falexwolf) | 2024-03-07 |
+🏗️ Enable`ln.connect()` in lamindb | [668](https://github.com/laminlabs/lamindb-setup/pull/668) | [falexwolf](https://github.com/falexwolf) | 2024-03-07 |
+🚚 Rename `load()` to `connect()` | [667](https://github.com/laminlabs/lamindb-setup/pull/667) | [falexwolf](https://github.com/falexwolf) | 2024-03-07 |
+👷 Better CI group names | [666](https://github.com/laminlabs/lamindb-setup/pull/666) | [falexwolf](https://github.com/falexwolf) | 2024-03-07 |
+🛂 Make `get_stat_dir_s3` read from UPath credentials | [664](https://github.com/laminlabs/lamindb-setup/pull/664) | [bpenteado](https://github.com/bpenteado) | 2024-03-06 |
 ♻️ Move generic hashing and storage utilities from `lamindb` into `lamindb-setup` | [661](https://github.com/laminlabs/lamindb-setup/pull/661) | [bpenteado](https://github.com/bpenteado) | 2024-03-06 |
 ♻️ Make `SetupSettings` a dynamic class | [663](https://github.com/laminlabs/lamindb-setup/pull/663) | [falexwolf](https://github.com/falexwolf) | 2024-03-06 |
 ♻️ Replace `InstanceSettings.identifier` with `InstanceSettings.slug` | [662](https://github.com/laminlabs/lamindb-setup/pull/662) | [falexwolf](https://github.com/falexwolf) | 2024-03-06 |

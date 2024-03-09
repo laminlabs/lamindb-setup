@@ -16,6 +16,10 @@ from .core._settings_load import load_instance_settings
 from .core._settings_storage import StorageSettings
 from .core._settings_store import instance_settings_file
 from .core.cloud_sqlite_locker import unlock_cloud_sqlite_upon_exception
+from ._init_instance import MESSAGE_NO_MULTIPLE_INSTANCE
+from ._check_setup import _check_instance_setup
+from .core._hub_core import connect_instance as connect_instance_from_hub
+
 
 # this is for testing purposes only
 # set to True only to test failed load
@@ -76,44 +80,38 @@ def update_db_using_local(
 
 
 @unlock_cloud_sqlite_upon_exception(ignore_prev_locker=True)
-def load(
-    identifier: str,
+def connect(
+    slug: str,
     *,
     db: Optional[str] = None,
     storage: Optional[UPathStr] = None,
     _raise_not_reachable_error: bool = True,
     _test: bool = False,
 ) -> Optional[Union[str, Tuple]]:
-    """Load existing instance.
+    """Connect to instance.
 
     Args:
-        identifier: `str` - The instance identifier `owner/name`.
-            You can also pass the URL: `https://lamin.ai/owner/name`.
-            If the instance is owned by you,
-            it suffices to pass the instance name.
+        slug: The instance slug `account_handle/instance_name` or URL.
+            If the instance is owned by you, it suffices to pass the instance name.
         db: Load the instance with an updated database URL.
         storage: Load the instance with an updated default storage.
     """
-    from ._check_instance_setup import check_instance_setup
-    from .core._hub_core import load_instance as load_instance_from_hub
+    owner, name = get_owner_name_from_identifier(slug)
 
-    owner, name = get_owner_name_from_identifier(identifier)
-
-    if check_instance_setup() and not _test:
-        raise RuntimeError(
-            "Currently don't support init or load of multiple instances in the same"
-            " Python session. We will bring this feature back at some point."
-        )
-    else:
-        # compare normalized identifier with a potentially previously loaded identifier
-        if settings._instance_exists and f"{owner}/{name}" != settings.instance.slug:
-            close_instance(mute=True)
+    if _check_instance_setup() and not _test:
+        if settings._instance_exists and f"{owner}/{name}" == settings.instance.slug:
+            logger.info(f"connected lamindb: {settings.instance.slug}")
+            return None
+        else:
+            raise RuntimeError(MESSAGE_NO_MULTIPLE_INSTANCE)
+    elif settings._instance_exists and f"{owner}/{name}" != settings.instance.slug:
+        close_instance(mute=True)
 
     settings_file = instance_settings_file(name, owner)
 
     # the following will return a string if the instance does not exist
     # on the hub
-    hub_result = load_instance_from_hub(owner=owner, name=name)
+    hub_result = connect_instance_from_hub(owner=owner, name=name)
 
     # if hub_result is not a string, it means it made a request
     # that successfully returned metadata
@@ -196,6 +194,28 @@ def load(
         update_root_field_in_default_storage(isettings)
     load_from_isettings(isettings)
     return None
+
+
+def load(
+    slug: str,
+    *,
+    db: Optional[str] = None,
+    storage: Optional[UPathStr] = None,
+) -> Optional[Union[str, Tuple]]:
+    """Connect to instance and set ``auto-connect`` to true.
+
+    This is exactly the same as ``ln.connect()`` except for that
+    ``ln.connect()`` doesn't change the state of ``auto-connect``.
+    """
+    # enable the message in the next release
+    # logger.warning(
+    #     "`lamin connect` replaces `lamin load`, which will be removed in a future"
+    #     " version\nif you still want to auto-connect to an instance upon lamindb"
+    #     " import, call: `lamin set --auto-connect true`"
+    # )
+    result = connect(slug, db=db, storage=storage)
+    settings.auto_connect = True
+    return result
 
 
 def get_owner_name_from_identifier(identifier: str):

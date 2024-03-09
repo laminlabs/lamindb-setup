@@ -23,8 +23,6 @@ More instance operations:
 .. autosummary::
    :toctree:
 
-   info
-   set
    migrate
    register
 
@@ -39,27 +37,28 @@ Modules & settings:
 
 """
 
-__version__ = "0.65.3"  # denote a release candidate for 0.1.0 with 0.1rc1
+__version__ = "0.66.1"  # denote a release candidate for 0.1.0 with 0.1rc1
 
 import sys
 from os import name as _os_name
 
 from . import core
-from ._check_instance_setup import check_instance_setup as _check_instance_setup  # noqa
 from ._close import close  # noqa
 from ._delete import delete  # noqa
-from ._info import info  # noqa
 from ._init_instance import init  # noqa
-from ._load_instance import load  # noqa
+from ._connect_instance import connect, load  # noqa
 from ._migrate import migrate
 from ._register_instance import register  # noqa
-from ._set import set  # noqa
 from .core._settings import settings  # noqa
 from ._setup_user import login, logout  # noqa
 from ._django import django
+from lamin_utils import py_version_warning as _py_version_warning
+from ._check_setup import _check_instance_setup
 
 dev = core  # backward compat
 _TESTING = False  # used in lamindb tests
+
+_py_version_warning("3.8", "3.12")
 
 # hide the supabase error in a thread on windows
 if _os_name == "nt":
