@@ -30,7 +30,7 @@ MODELS = {
         "Ethnicity": False,
         "PublicSource": False,
     },
-    # "lamin1": {
+    # "wetlab": {
     #     "ExperimentType": False,
     #     "Experiment": False,
     #     "Well": False,

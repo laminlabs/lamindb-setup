@@ -46,9 +46,7 @@ def install(session: nox.Session, group: str) -> None:
         session.run(
             *"pip install git+https://github.com/laminlabs/lnschema-bionty".split()
         )
-        session.run(
-            *"pip install git+https://github.com/laminlabs/lnschema-lamin1".split()
-        )
+        session.run(*"pip install git+https://github.com/laminlabs/wetlab".split())
         session.run(*"pip install -e .[aws,dev]".split())
         # need for CLI, but this is bad because it's downstream
         session.run(*"git clone https://github.com/laminlabs/lamin-cli".split())
