@@ -278,7 +278,7 @@ def view_tree(
     last = "└── "
     max_files_per_dir_per_type = 7
 
-    n_files = 0
+    n_objects = 0
     n_directories = 0
 
     # by default only including registered files
@@ -291,7 +291,7 @@ def view_tree(
         include_paths = set()
 
     def inner(dir_path: Path, prefix: str = "", level: int = -1):
-        nonlocal n_files, n_directories, suffixes
+        nonlocal n_objects, n_directories, suffixes
         if level == 0:
             return
         stripped_dir_path = dir_path.as_posix().rstrip("/")
@@ -323,7 +323,7 @@ def view_tree(
                 suffix = extract_suffix_from_path(child_path)
                 suffixes.add(suffix)
                 n_files_per_dir_per_type[suffix] += 1
-                n_files += 1
+                n_objects += 1
                 if n_files_per_dir_per_type[suffix] == max_files_per_dir_per_type:
                     yield prefix + "..."
                 elif n_files_per_dir_per_type[suffix] > max_files_per_dir_per_type:
@@ -336,14 +336,15 @@ def view_tree(
     for line in islice(iterator, limit):
         folder_tree += f"\n{line}"
     if next(iterator, None):
-        folder_tree += f"\n... only showing {limit} out of {n_files} files"
+        folder_tree += f"\n... only showing {limit} out of {n_objects} files"
     directory_info = "directory" if n_directories == 1 else "directories"
     display_suffixes = ", ".join([f"{suffix!r}" for suffix in suffixes])
-    suffix_message = f" with suffixes {display_suffixes}" if n_files > 0 else ""
+    suffix_message = f" with suffixes {display_suffixes}" if n_objects > 0 else ""
     message = (
         f"{path.name} ({n_directories} sub-{directory_info} &"
-        f" {n_files} files{suffix_message}): {folder_tree}"
+        f" {n_objects} files{suffix_message}): {folder_tree}"
     )
+    path._n_objects = n_objects  # type: ignore
     return message
 
 
