@@ -236,7 +236,7 @@ def view_tree(
     only_dirs: bool = False,
     limit: int = 1000,
     include_paths: Optional[Set[Any]] = None,
-) -> None:
+) -> str:
     """Print a visual tree structure of files & directories.
 
     Args:
@@ -345,6 +345,7 @@ def view_tree(
         f" {n_files} files{suffix_message}): {folder_tree}"
     )
     logger.print(message)
+    return message
 
 
 # Why aren't we subclassing?
