@@ -236,7 +236,7 @@ def view_tree(
     only_dirs: bool = False,
     limit: int = 1000,
     include_paths: Optional[Set[Any]] = None,
-) -> None:
+) -> str:
     """Print a visual tree structure of files & directories.
 
     Args:
@@ -278,7 +278,7 @@ def view_tree(
     last = "└── "
     max_files_per_dir_per_type = 7
 
-    n_files = 0
+    n_objects = 0
     n_directories = 0
 
     # by default only including registered files
@@ -291,7 +291,7 @@ def view_tree(
         include_paths = set()
 
     def inner(dir_path: Path, prefix: str = "", level: int = -1):
-        nonlocal n_files, n_directories, suffixes
+        nonlocal n_objects, n_directories, suffixes
         if level == 0:
             return
         stripped_dir_path = dir_path.as_posix().rstrip("/")
@@ -323,7 +323,7 @@ def view_tree(
                 suffix = extract_suffix_from_path(child_path)
                 suffixes.add(suffix)
                 n_files_per_dir_per_type[suffix] += 1
-                n_files += 1
+                n_objects += 1
                 if n_files_per_dir_per_type[suffix] == max_files_per_dir_per_type:
                     yield prefix + "..."
                 elif n_files_per_dir_per_type[suffix] > max_files_per_dir_per_type:
@@ -336,15 +336,16 @@ def view_tree(
     for line in islice(iterator, limit):
         folder_tree += f"\n{line}"
     if next(iterator, None):
-        folder_tree += f"\n... only showing {limit} out of {n_files} files"
+        folder_tree += f"\n... only showing {limit} out of {n_objects} files"
     directory_info = "directory" if n_directories == 1 else "directories"
     display_suffixes = ", ".join([f"{suffix!r}" for suffix in suffixes])
-    suffix_message = f" with suffixes {display_suffixes}" if n_files > 0 else ""
+    suffix_message = f" with suffixes {display_suffixes}" if n_objects > 0 else ""
     message = (
         f"{path.name} ({n_directories} sub-{directory_info} &"
-        f" {n_files} files{suffix_message}): {folder_tree}"
+        f" {n_objects} files{suffix_message}): {folder_tree}"
     )
-    logger.print(message)
+    path._n_objects = n_objects  # type: ignore
+    return message
 
 
 # Why aren't we subclassing?
@@ -506,39 +507,15 @@ def get_stat_file_cloud(stat: Dict) -> Tuple[int, str, str]:
 
 
 def get_stat_dir_s3(path: UPath) -> Tuple[int, str, str, int]:
-    import boto3
-
-    if (
-        path.fs.key is not None
-        and path.fs.secret is not None
-        and path.fs.token is not None
-    ):
-        s3 = boto3.session.Session(
-            aws_access_key_id=path.fs.key,
-            aws_secret_access_key=path.fs.secret,
-            aws_session_token=path.fs.token,
-        ).resource("s3")
-    elif not AWS_CREDENTIALS_PRESENT:
-        # passing the following param directly to Session() doesn't
-        # work, unfortunately: botocore_session=path.fs.session
-        from botocore import UNSIGNED
-        from botocore.config import Config
-
-        config = Config(signature_version=UNSIGNED)
-        s3 = boto3.session.Session().resource("s3", config=config)
-    else:
-        s3 = boto3.session.Session().resource("s3")
-    bucket, key, _ = path.fs.split_path(path.as_posix())
-    # assuming this here is the fastest way of querying for many objects
-    objects = s3.Bucket(bucket).objects.filter(Prefix=key)
-    size = sum([object.size for object in objects])
-    md5s = [
-        # skip leading and trailing quotes
-        object.e_tag[1:-1]
-        for object in objects
-    ]
-    n_objects = len(md5s)
+    sizes = []
+    md5s = []
+    objects = path.fs.find(path.as_posix(), detail=True)
+    for object in objects.values():
+        sizes.append(object["size"])
+        md5s.append(object["ETag"][1:-1])  # skip leading and trailing quotes
+    size = sum(sizes)
     hash, hash_type = hash_md5s_from_dir(md5s)
+    n_objects = len(md5s)
     return size, hash, hash_type, n_objects
 
 
