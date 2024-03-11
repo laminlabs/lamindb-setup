@@ -505,15 +505,15 @@ def get_stat_file_cloud(stat: Dict) -> Tuple[int, str, str]:
 
 
 def get_stat_dir_s3(path: UPath) -> Tuple[int, str, str, int]:
+    sizes = []
+    md5s = []
     objects = path.fs.find(path.as_posix(), detail=True)
-    size = sum([object["size"] for object in objects.values()])
-    md5s = [
-        # skip leading and trailing quotes
-        object["ETag"][1:-1]
-        for object in objects.values()
-    ]
-    n_objects = len(md5s)
+    for object in objects.values():
+        sizes.append(object["size"])
+        md5s.append(object["ETag"][1:-1])  # skip leading and trailing quotes
+    size = sum(sizes)
     hash, hash_type = hash_md5s_from_dir(md5s)
+    n_objects = len(md5s)
     return size, hash, hash_type, n_objects
 
 
