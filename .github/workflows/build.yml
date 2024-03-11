@@ -9,8 +9,8 @@ on:
     types: [build]
 
 jobs:
-  # just tests on production
-  prod-only:
+  # tests only on production hub
+  hub-prod:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
@@ -26,15 +26,15 @@ jobs:
           aws-region: eu-central-1
       - run: pip install -U laminci
       - run: nox -s lint
-      - run: nox -s "install(group='prod-only')"
-      - run: nox -s "build(lamin_env='prod', group='prod-only')"
+      - run: nox -s "install(group='hub-prod')"
+      - run: nox -s "build(lamin_env='prod', group='hub-prod')"
       - uses: actions/upload-artifact@v2
         with:
-          name: coverage--prod-only
+          name: coverage--hub-prod
           path: .coverage
 
-  # tests on both production and staging
-  prod-staging:
+  # tests both on production and staging hub
+  hub-cloud:
     runs-on: ubuntu-22.04
     strategy:
       fail-fast: false
@@ -55,12 +55,12 @@ jobs:
           python-version: '3.10'
           cache: 'pip'
           cache-dependency-path: '.github/workflows/build.yml'
-      - name: checkout laminhub-rest
+      - name: checkout laminhub
         uses: actions/checkout@v4
         with:
-          repository: laminlabs/laminhub-rest
+          repository: laminlabs/laminapp-ui
           token: ${{ secrets.GH_TOKEN_DEPLOY_LAMINAPP }}
-          path: laminhub-rest
+          path: laminhub
           ref: main
       - uses: actions/cache@v3
         with:
@@ -86,15 +86,15 @@ jobs:
       #   with:
       #     credentials_json: "${{ secrets.GCP_CREDENTIALS }}"
       # - uses: "google-github-actions/setup-gcloud@v0"
-      - run: nox -s "install(group='prod-staging')"
-      - run: nox -s "build(lamin_env='${{ matrix.lamin_env }}', group='prod-staging')"
+      - run: nox -s "install(group='hub-cloud')"
+      - run: nox -s "build(lamin_env='${{ matrix.lamin_env }}', group='hub-cloud')"
       - uses: actions/upload-artifact@v2
         if: ${{ matrix.lamin_env == 'prod' }}
         with:
-          name: coverage--prod-staging
+          name: coverage--hub-cloud
           path: .coverage
 
-  # a test group for testing user access to storage
+  # test user access to storage
   storage:
     runs-on: ubuntu-latest
     steps:
@@ -116,7 +116,7 @@ jobs:
           name: coverage--storage
           path: .coverage
 
-  # a test group for testing low-level hub functionality
+  # test low-level hub functionality
   hub-local:
     runs-on: ubuntu-latest
     timeout-minutes: 15
@@ -149,7 +149,7 @@ jobs:
           path: .coverage
 
   coverage:
-    needs: [prod-only, prod-staging, storage, hub-local]
+    needs: [hub-prod, hub-cloud, storage, hub-local]
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -172,7 +172,7 @@ jobs:
           token: ${{ secrets.CODECOV_TOKEN }}
 
   docs:
-    needs: prod-staging
+    needs: hub-cloud
     runs-on: ubuntu-latest
     steps:
       - uses: aws-actions/configure-aws-credentials@v2
@@ -212,13 +212,13 @@ jobs:
 
   notify:
     if: always()
-    # this here is only for notifying developers of laminhub-rest
-    # hence, it only needs groups hub-local and prod-staging
-    needs: [hub-local, prod-staging]
+    # this here is only for notifying developers of laminhub
+    # hence, it only needs groups hub-local and hub-cloud
+    needs: [hub-local, hub-cloud]
     runs-on: ubuntu-latest
     steps:
       - uses: voxmedia/github-action-slack-notify-build@v1
-        if: ${{ needs.hub-local.result == 'success' && needs.prod-staging.result == 'success' && github.event_name == 'repository_dispatch' }}
+        if: ${{ needs.hub-local.result == 'success' && needs.hub-cloud.result == 'success' && github.event_name == 'repository_dispatch' }}
         env:
           SLACK_BOT_TOKEN: ${{ secrets.SLACK_GITHUB_ACTION }}
         with:
@@ -226,7 +226,7 @@ jobs:
           status: SUCCESS
           color: good
       - uses: voxmedia/github-action-slack-notify-build@v1
-        if: ${{ ( needs.hub-local.result == 'failure' || needs.prod-staging.result == 'failure' ) && github.event_name == 'repository_dispatch' }}
+        if: ${{ ( needs.hub-local.result == 'failure' || needs.hub-cloud.result == 'failure' ) && github.event_name == 'repository_dispatch' }}
         env:
           SLACK_BOT_TOKEN: ${{ secrets.SLACK_GITHUB_ACTION }}
         with:

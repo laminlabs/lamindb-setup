@@ -15,7 +15,7 @@ from lamindb_setup.core._hub_client import (
 from lamindb_setup.core._hub_core import (
     init_storage,
     init_instance,
-    load_instance,
+    connect_instance,
     sign_in_hub,
     sign_up_local_hub,
 )
@@ -166,7 +166,7 @@ def create_myinstance(create_testuser1_session):  # -> Dict
     init_instance(isettings)
     # test loading it
     with pytest.raises(PermissionError) as error:
-        ln_setup.load("testuser1/myinstance", _test=True)
+        ln_setup.connect("testuser1/myinstance", _test=True)
     assert error.exconly().startswith(
         "PermissionError: No database access, please ask your admin"
     )
@@ -203,14 +203,14 @@ def test_connection_string_decomp(create_myinstance, create_testuser1_session):
     assert db_collaborator["db_user_id"] is None
 
 
-def test_load_instance(create_myinstance, create_testuser1_session):
+def test_connect_instance(create_myinstance, create_testuser1_session):
     # trigger return for inexistent handle
-    assert "account-not-exists" == load_instance(
+    assert "account-not-exists" == connect_instance(
         owner="testusr1",  # testuser1 with a typo
         name=create_myinstance["name"],
     )
     # trigger misspelled name
-    assert "instance-not-reachable" == load_instance(
+    assert "instance-not-reachable" == connect_instance(
         owner="testuser1",
         name="inexistent-name",  # inexistent name
     )
@@ -222,7 +222,7 @@ def test_load_instance(create_myinstance, create_testuser1_session):
         client=client,
     )
     # now supply correct data and make instance public
-    result = load_instance(
+    result = connect_instance(
         owner="testuser1",
         name=create_myinstance["name"],
     )
@@ -249,7 +249,7 @@ def test_load_instance(create_myinstance, create_testuser1_session):
     )
 
 
-def test_load_instance_corrupted_or_expired_credentials(
+def test_connect_instance_corrupted_or_expired_credentials(
     create_myinstance, create_testuser1_session
 ):
     # assume token & password are corrupted or expired
@@ -257,7 +257,7 @@ def test_load_instance_corrupted_or_expired_credentials(
     correct_password = ln_setup.settings.user.password
     ln_setup.settings.user.password = "corrupted_password"
     with pytest.raises(AuthApiError):
-        load_instance(
+        connect_instance(
             owner="testuser1",
             name=create_myinstance["name"],
         )
@@ -266,7 +266,7 @@ def test_load_instance_corrupted_or_expired_credentials(
     # excepts the error assuming the token is expired
     ln_setup.settings.user.access_token = "corrupted_or_expired_token"
     ln_setup.settings.user.password = correct_password
-    load_instance(
+    connect_instance(
         owner="testuser1",
         name=create_myinstance["name"],
     )

@@ -3,21 +3,21 @@
 ```{toctree}
 :maxdepth: 1
 
-prod-staging/init-on-prem-instance
-prod-staging/load-on-prem-instance
-prod-staging/set-storage
-prod-staging/test-bionty
-prod-staging/init-hosted-instance
-prod-staging/load-hosted-instance
-prod-staging/test-multi-session
+hub-cloud/init-on-prem-instance
+hub-cloud/connect-on-prem-instance
+hub-cloud/set-storage
+hub-cloud/test-bionty
+hub-cloud/init-hosted-instance
+hub-cloud/connect-hosted-instance
+hub-cloud/test-multi-session
 
-prod-only/test-cache-management
-prod-only/test-empty-init
-prod-only/test-import-schema
-prod-only/test-invalid-schema
-prod-only/test-insufficient-user-info
-prod-only/test-load-anonymously
-prod-only/test-load-lock
-prod-only/test-sqlite-sync
+hub-prod/test-cache-management
+hub-prod/test-empty-init
+hub-prod/test-import-schema
+hub-prod/test-invalid-schema
+hub-prod/test-insufficient-user-info
+hub-prod/test-connect-anonymously
+hub-prod/test-sqlite-lock
+hub-prod/test-sqlite-sync
 
 ```

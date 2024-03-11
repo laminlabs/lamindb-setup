@@ -15,10 +15,10 @@ urlpatterns = [
 def view():
     from .core.django import setup_django
     from .core._settings import settings
-    from ._check_instance_setup import check_instance_setup
+    from ._check_setup import _check_instance_setup
     from django.core.management import call_command
 
-    if check_instance_setup():
+    if _check_instance_setup():
         raise RuntimeError("Restart Python session or use CLI!")
     setup_django(settings.instance, view_schema=True)
     call_command("runserver")

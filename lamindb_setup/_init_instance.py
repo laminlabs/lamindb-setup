@@ -9,7 +9,6 @@ from typing import Tuple, Literal
 from pydantic import PostgresDsn
 from django.db.utils import OperationalError, ProgrammingError
 from django.core.exceptions import FieldError
-from lamindb_setup.core.upath import LocalPathClasses
 from ._close import close as close_instance
 from .core._settings import settings
 from ._silence_loggers import silence_loggers
@@ -50,8 +49,6 @@ def register_storage(ssettings: StorageSettings):
         root=ssettings.root_as_str,
         defaults=defaults,
     )
-    if created:
-        logger.save(f"saved: {storage}")
     return storage
 
 
@@ -68,8 +65,6 @@ def register_user(usettings):
                     name=usettings.name,
                 ),
             )
-            if created:
-                logger.save(f"saved: {user}")
         # for users with only read access, except via ProgrammingError
         # ProgrammingError: permission denied for table lnschema_core_user
         except (OperationalError, FieldError, ProgrammingError):
@@ -97,18 +92,28 @@ def reload_schema_modules(isettings: InstanceSettings):
             importlib.reload(schema_module)
 
 
-def reload_lamindb(isettings: InstanceSettings):
-    # only touch lamindb if we're operating from lamindb
-    reload_schema_modules(isettings)
+def reload_lamindb_itself(isettings) -> bool:
+    reloaded = False
     if "lamindb" in sys.modules:
         import lamindb
 
         importlib.reload(lamindb)
-        logger.important(f"lamindb instance: {isettings.slug}")
-    else:
-        # only log if we're outside lamindb
-        # lamindb itself logs upon import!
-        logger.important(f"loaded instance: {isettings.owner}/{isettings.name}")
+        reloaded = True
+    if "bionty" in isettings.schema and "bionty" in sys.modules:
+        schema_module = importlib.import_module("bionty")
+        importlib.reload(schema_module)
+        reloaded = True
+    return reloaded
+
+
+def reload_lamindb(isettings: InstanceSettings):
+    # only touch lamindb if we're operating from lamindb
+    reload_schema_modules(isettings)
+    log_message = settings.auto_connect
+    if not reload_lamindb_itself(isettings):
+        log_message = True
+    if log_message:
+        logger.important(f"connected lamindb: {isettings.slug}")
 
 
 ERROR_SQLITE_CACHE = """
@@ -117,7 +122,7 @@ Either delete your cache ({}) or add it back to the cloud (if delete was acciden
 """
 
 
-def process_load_response(
+def process_connect_response(
     response: Union[Tuple, str], instance_identifier: str
 ) -> Tuple[
     UUID,
@@ -151,13 +156,14 @@ def validate_init_args(
     str,
     Optional[UUID],
     Literal[
-        "loaded",
+        "connected",
         "instance-corrupted-or-deleted",
         "account-not-exists",
         "instance-not-reachable",
     ],
+    str,
 ]:
-    from ._load_instance import load
+    from ._connect_instance import connect
     from .core._hub_utils import (
         validate_schema_arg,
     )
@@ -165,21 +171,26 @@ def validate_init_args(
     # should be called as the first thing
     name_str = infer_instance_name(storage=storage, name=name, db=db)
     # test whether instance exists by trying to load it
-    instance_identifier = f"{settings.user.handle}/{name_str}"
-    response = load(instance_identifier, _raise_not_reachable_error=False, _test=_test)
+    instance_slug = f"{settings.user.handle}/{name_str}"
+    response = connect(instance_slug, _raise_not_reachable_error=False, _test=_test)
     instance_state: Literal[
-        "loaded",
+        "connected",
         "instance-corrupted-or-deleted",
         "account-not-exists",
         "instance-not-reachable",
-    ] = "loaded"
+    ] = "connected"
     instance_id = None
     if response is not None:
-        instance_id, instance_state = process_load_response(
-            response, instance_identifier
-        )
+        instance_id, instance_state = process_connect_response(response, instance_slug)
     schema = validate_schema_arg(schema)
-    return name_str, instance_id, instance_state
+    return name_str, instance_id, instance_state, instance_slug
+
+
+MESSAGE_NO_MULTIPLE_INSTANCE = """
+Currently don't support subsequent connection to different databases in the same
+Python session.\n
+Try running on the CLI: lamin set auto-connect false
+"""
 
 
 def init(
@@ -203,26 +214,23 @@ def init(
     ssettings = None
     try:
         silence_loggers()
-        from ._check_instance_setup import check_instance_setup
+        from ._check_setup import _check_instance_setup
 
-        if check_instance_setup() and not _test:
-            raise RuntimeError(
-                "Currently don't support init or load of multiple instances in the same"
-                " Python session. We will bring this feature back at some point."
-            )
+        if _check_instance_setup() and not _test:
+            raise RuntimeError(MESSAGE_NO_MULTIPLE_INSTANCE)
         else:
             close_instance(mute=True)
         from .core._hub_core import init_instance as init_instance_hub
 
-        name_str, instance_id, instance_state = validate_init_args(
+        name_str, instance_id, instance_state, instance_slug = validate_init_args(
             storage=storage,
             name=name,
             db=db,
             schema=schema,
             _test=_test,
         )
-        if instance_state == "loaded":
-            logger.important("loaded instance instead without creating it")
+        if instance_state == "connected":
+            settings.auto_connect = True  # we can also debate this switch here
             return None
         ssettings = init_storage(storage)
         isettings = InstanceSettings(
@@ -248,15 +256,19 @@ def init(
                 "locked instance (to unlock and push changes to the cloud SQLite file,"
                 " call: lamin close)"
             )
-        if not isettings.is_remote:
-            logger.important("did not register local instance on lamin.ai")
+        # we can debate whether this is the right setting, but this is how
+        # things have been and we'd like to not easily break backward compat
+        settings.auto_connect = True
     except Exception as e:
-        from .core._hub_core import delete_storage, delete_instance
+        from ._delete import delete_by_isettings
+        from .core._hub_core import delete_storage as delete_storage_record
+        from .core._hub_core import delete_instance as delete_instance_record
 
         if isettings is not None:
-            delete_instance(isettings.id)
+            delete_by_isettings(isettings)
+            delete_instance_record(isettings.id)
         if ssettings is not None:
-            delete_storage(ssettings.uuid)  # type: ignore
+            delete_storage_record(ssettings.uuid)  # type: ignore
         raise e
     return None
 
@@ -276,7 +288,7 @@ def load_from_isettings(
     else:
         # when loading, django is already set up
         #
-        # only register user if the instance is loaded
+        # only register user if the instance is connected
         # for the first time in an environment
         # this is our best proxy for that the user might not
         # yet be registered
@@ -321,9 +333,9 @@ def infer_instance_name(
     if storage == "create-s3":
         raise ValueError("pass name to init if storage = 'create-s3'")
     storage_path = convert_pathlike(storage)
-    if isinstance(storage_path, LocalPathClasses):
-        name = storage_path.stem
+    if storage_path.name != "":
+        name = storage_path.name
     else:
+        # dedicated treatment of bucket names
         name = storage_path._url.netloc
-    name = name.lower()
-    return name
+    return name.lower()

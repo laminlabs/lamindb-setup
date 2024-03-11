@@ -30,7 +30,7 @@ class UserSettings:
     name: Optional[str] = None
     """Full name."""
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         """Rich string representation."""
         representation = f"Current user: {self.handle}"
         attrs = ["handle", "email", "uid"]
