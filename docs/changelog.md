@@ -3,6 +3,7 @@
 <!-- prettier-ignore -->
 Name | PR | Developer | Date | Version
 --- | --- | --- | --- | ---
+🎨 Make `get_stat_dir_s3` compatible with canonical storage policy (`s3:ListBucket` conditional on `prefix/`) | [675](https://github.com/laminlabs/lamindb-setup/pull/675) | [bpenteado](https://github.com/bpenteado) | 2024-03-11 |
 🚚 Rename `lnschema_lamin1` to `wetlab` | [676](https://github.com/laminlabs/lamindb-setup/pull/676) | [falexwolf](https://github.com/falexwolf) | 2024-03-09 |
 🚸 Restore `auto_connect=True` after `lamin init` | [674](https://github.com/laminlabs/lamindb-setup/pull/674) | [falexwolf](https://github.com/falexwolf) | 2024-03-08 | 0.66.1
 🐛 Fix hosted regions list | [673](https://github.com/laminlabs/lamindb-setup/pull/673) | [Koncopd](https://github.com/Koncopd) | 2024-03-07 | 0.66.0
