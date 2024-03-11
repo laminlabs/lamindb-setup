@@ -344,7 +344,6 @@ def view_tree(
         f"{path.name} ({n_directories} sub-{directory_info} &"
         f" {n_files} files{suffix_message}): {folder_tree}"
     )
-    logger.print(message)
     return message
 
 
