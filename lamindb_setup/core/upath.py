@@ -228,50 +228,14 @@ def modified(self) -> Optional[datetime]:
     return mtime.astimezone().replace(tzinfo=None)
 
 
-# adapted from: https://stackoverflow.com/questions/9727673
-def view_tree(
+def compute_file_tree(
     path: Path,
     *,
     level: int = -1,
     only_dirs: bool = False,
     limit: int = 1000,
     include_paths: Optional[Set[Any]] = None,
-) -> str:
-    """Print a visual tree structure of files & directories.
-
-    Args:
-        level: If `1`, only iterate through one level, if `2` iterate through 2
-            levels, if `-1` iterate through entire hierarchy.
-        only_dirs: Only iterate through directories.
-        limit: Display limit. Will only show this many files. Doesn't affect count.
-        include_paths: Restrict to these paths.
-
-    Examples:
-        >>> dir_path = ln.core.datasets.generate_cell_ranger_files(
-        >>>     "sample_001", ln.settings.storage
-        >>> )
-        >>> ln.UPath(dir_path).view_tree()
-        3 subdirectories, 15 files
-        sample_001
-        ├── web_summary.html
-        ├── metrics_summary.csv
-        ├── molecule_info.h5
-        ├── filtered_feature_bc_matrix
-        │   ├── features.tsv.gz
-        │   ├── barcodes.tsv.gz
-        │   └── matrix.mtx.gz
-        ├── analysis
-        │   └── analysis.csv
-        ├── raw_feature_bc_matrix
-        │   ├── features.tsv.gz
-        │   ├── barcodes.tsv.gz
-        │   └── matrix.mtx.gz
-        ├── possorted_genome_bam.bam.bai
-        ├── cloupe.cloupe
-        ├── possorted_genome_bam.bam
-        ├── filtered_feature_bc_matrix.h5
-        └── raw_feature_bc_matrix.h5
-    """
+) -> Tuple[str, int]:
     space = "    "
     branch = "│   "
     tee = "├── "
@@ -344,8 +308,57 @@ def view_tree(
         f"{path.name} ({n_directories} sub-{directory_info} &"
         f" {n_objects} files{suffix_message}): {folder_tree}"
     )
-    path._n_objects = n_objects  # type: ignore
-    return message
+    return message, n_objects
+
+
+# adapted from: https://stackoverflow.com/questions/9727673
+def view_tree(
+    path: Path,
+    *,
+    level: int = -1,
+    only_dirs: bool = False,
+    limit: int = 1000,
+    include_paths: Optional[Set[Any]] = None,
+) -> None:
+    """Print a visual tree structure of files & directories.
+
+    Args:
+        level: If `1`, only iterate through one level, if `2` iterate through 2
+            levels, if `-1` iterate through entire hierarchy.
+        only_dirs: Only iterate through directories.
+        limit: Display limit. Will only show this many files. Doesn't affect count.
+        include_paths: Restrict to these paths.
+
+    Examples:
+        >>> dir_path = ln.core.datasets.generate_cell_ranger_files(
+        >>>     "sample_001", ln.settings.storage
+        >>> )
+        >>> ln.UPath(dir_path).view_tree()
+        3 subdirectories, 15 files
+        sample_001
+        ├── web_summary.html
+        ├── metrics_summary.csv
+        ├── molecule_info.h5
+        ├── filtered_feature_bc_matrix
+        │   ├── features.tsv.gz
+        │   ├── barcodes.tsv.gz
+        │   └── matrix.mtx.gz
+        ├── analysis
+        │   └── analysis.csv
+        ├── raw_feature_bc_matrix
+        │   ├── features.tsv.gz
+        │   ├── barcodes.tsv.gz
+        │   └── matrix.mtx.gz
+        ├── possorted_genome_bam.bam.bai
+        ├── cloupe.cloupe
+        ├── possorted_genome_bam.bam
+        ├── filtered_feature_bc_matrix.h5
+        └── raw_feature_bc_matrix.h5
+    """
+    message, _ = compute_file_tree(
+        path, level=level, only_dirs=only_dirs, limit=limit, include_paths=include_paths
+    )
+    logger.print(message)
 
 
 # Why aren't we subclassing?
