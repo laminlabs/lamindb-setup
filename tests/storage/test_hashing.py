@@ -1,6 +1,6 @@
 import base64
 from pathlib import Path
-
+from lamindb_setup.core.hashing import hash_code
 from lamindb_setup.core.hashing import b16_to_b64, hash_file, to_b64_str
 
 
@@ -33,3 +33,8 @@ def test_base64():
 
 def test_b16_to_b64():
     assert b16_to_b64("9b89c8c1acf79dba5b5341d1fff9806f") == "m4nIwaz3nbpbU0HR__mAbw"
+
+
+def test_hash_code():
+    sha1 = hash_code("./LICENSE")
+    assert sha1.hexdigest() == "b09cd7856d58590578ee1a4f3ad45d1310a97f87"

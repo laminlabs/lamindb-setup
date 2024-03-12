@@ -11,6 +11,7 @@
 import base64
 import hashlib
 from typing import List, Set, Tuple
+from .types import Path, UPathStr
 
 
 def to_b64_str(bstr: bytes):
@@ -39,7 +40,19 @@ def hash_md5s_from_dir(etags: List[str]) -> Tuple[str, str]:
     return to_b64_str(digest)[:22], "md5-d"
 
 
-def hash_file(file_path, chunk_size=50 * 1024 * 1024) -> Tuple[str, str]:
+def hash_code(file_path: UPathStr):
+    with open(file_path, "rb") as fp:
+        data = fp.read()
+    data_size = len(data)
+    header = f"blob {data_size}\0".encode()
+    blob = header + data
+    return hashlib.sha1(blob)
+
+
+def hash_file(file_path: Path, chunk_size=50 * 1024 * 1024) -> Tuple[str, str]:
+    if file_path.suffix == ".py":
+        sha1 = hash_code(file_path)
+        return to_b64_str(sha1.digest())[:22], "sha1-git"
     chunks = []
     with open(file_path, "rb") as fp:
         # read first chunk
