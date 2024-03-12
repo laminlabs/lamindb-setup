@@ -3,6 +3,7 @@
 <!-- prettier-ignore -->
 Name | PR | Developer | Date | Version
 --- | --- | --- | --- | ---
+✨ Add hash_code function | [677](https://github.com/laminlabs/lamindb-setup/pull/677) | [falexwolf](https://github.com/falexwolf) | 2024-03-12 |
 🎨 Make `get_stat_dir_s3` compatible with canonical storage policy (`s3:ListBucket` conditional on `prefix/`) | [675](https://github.com/laminlabs/lamindb-setup/pull/675) | [bpenteado](https://github.com/bpenteado) | 2024-03-11 |
 🚚 Rename `lnschema_lamin1` to `wetlab` | [676](https://github.com/laminlabs/lamindb-setup/pull/676) | [falexwolf](https://github.com/falexwolf) | 2024-03-09 |
 🚸 Restore `auto_connect=True` after `lamin init` | [674](https://github.com/laminlabs/lamindb-setup/pull/674) | [falexwolf](https://github.com/falexwolf) | 2024-03-08 | 0.66.1
