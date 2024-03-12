@@ -50,9 +50,6 @@ def hash_code(file_path: UPathStr):
 
 
 def hash_file(file_path: Path, chunk_size=50 * 1024 * 1024) -> Tuple[str, str]:
-    if file_path.suffix == ".py":
-        sha1 = hash_code(file_path)
-        return to_b64_str(sha1.digest())[:22], "sha1-git"
     chunks = []
     with open(file_path, "rb") as fp:
         # read first chunk
