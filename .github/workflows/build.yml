@@ -143,6 +143,8 @@ jobs:
           key: cache-supabase
       - uses: supabase/setup-cli@v1
       - run: nox -s hub_local
+        env:
+          LAMIN_ENV: 'local'
       - uses: actions/upload-artifact@v2
         with:
           name: coverage--hub-local
