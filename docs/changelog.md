@@ -3,6 +3,7 @@
 <!-- prettier-ignore -->
 Name | PR | Developer | Date | Version
 --- | --- | --- | --- | ---
+👷 Use test utilities from `laminhub-rest` during local tests | [679](https://github.com/laminlabs/lamindb-setup/pull/679) | [bpenteado](https://github.com/bpenteado) | 2024-03-13 |
 ♻️ Refactor view_tree() | [678](https://github.com/laminlabs/lamindb-setup/pull/678) | [falexwolf](https://github.com/falexwolf) | 2024-03-12 |
 ✨ Add hash_code function | [677](https://github.com/laminlabs/lamindb-setup/pull/677) | [falexwolf](https://github.com/falexwolf) | 2024-03-12 |
 🎨 Make `get_stat_dir_s3` compatible with canonical storage policy (`s3:ListBucket` conditional on `prefix/`) | [675](https://github.com/laminlabs/lamindb-setup/pull/675) | [bpenteado](https://github.com/bpenteado) | 2024-03-11 |
