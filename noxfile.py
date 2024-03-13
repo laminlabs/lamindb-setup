@@ -52,19 +52,10 @@ def install(session: nox.Session, group: str) -> None:
         session.run(*"git clone https://github.com/laminlabs/lamin-cli".split())
         session.run(*"pip install lamin-cli".split())
     elif group == "hub-local":
-        session.run(*"pip install lamindb".split())
-        if os.getenv("GITHUB_ACTIONS") is None:
-            if os.path.exists("./laminhub"):
-                session.run(*"git -C laminhub pull".split())
-            else:
-                session.run(
-                    *"git clone https://github.com/laminlabs/laminapp-ui laminhub"
-                    .split()
-                )
-        session.run(*"pip install -e ./laminhub/rest-hub".split())
+        session.run(*"pip install -e .[aws,dev,hub]".split())
+        session.run(*"pip install ./laminhub/rest-hub".split())
         # grab directories & files from laminhub-rest repo
         session.run(*"cp -r laminhub/rest-hub/supabase .".split())
-        session.run(*"pip install -e .[aws,dev,hub]".split())
 
 
 @nox.session
