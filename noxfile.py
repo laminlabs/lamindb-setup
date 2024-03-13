@@ -61,7 +61,7 @@ def install(session: nox.Session, group: str) -> None:
                     *"git clone https://github.com/laminlabs/laminapp-ui laminhub"
                     .split()
                 )
-        session.run(*"pip install ./laminhub/rest-hub".split())
+        session.run(*"pip install -e ./laminhub/rest-hub".split())
         # grab directories & files from laminhub-rest repo
         session.run(*"cp -r laminhub/rest-hub/supabase .".split())
 
