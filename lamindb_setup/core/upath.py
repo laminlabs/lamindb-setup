@@ -548,3 +548,14 @@ def get_stat_dir_gs(path: UPath) -> Tuple[int, str, str, int]:
     n_objects = len(md5s)
     hash, hash_type = hash_md5s_from_dir(md5s)
     return sum(sizes), hash, hash_type, n_objects
+
+
+def check_s3_storage_location_empty(path: UPath) -> bool:
+    from ._settings import settings
+
+    objects = path.fs.find(path.as_posix(), detail=True)
+    n_objects = len(objects.values())
+    if n_objects == 0:
+        return True
+    else:
+        raise ValueError(settings.storage.root.view_tree())
