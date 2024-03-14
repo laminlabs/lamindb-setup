@@ -42,7 +42,7 @@ def save_settings(
                 if store_key in {"storage_root", "storage_region"}:
                     value = getattr(settings.storage, store_key.split("_")[1])
                 else:
-                    if store_key in {"dbconfig_", "schema_str", "name_"}:
+                    if store_key in {"db", "schema_str", "name_"}:
                         settings_key = f"_{store_key.rstrip('_')}"
                     else:
                         settings_key = store_key

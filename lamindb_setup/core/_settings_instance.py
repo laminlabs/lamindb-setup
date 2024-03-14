@@ -271,7 +271,6 @@ class InstanceSettings:
 
         filepath = self._get_settings_file()
         # persist under filepath for later reference
-        print("persist")
         save_instance_settings(self, filepath)
         # persist under current file for auto load
         shutil.copy2(filepath, current_instance_settings_file())
