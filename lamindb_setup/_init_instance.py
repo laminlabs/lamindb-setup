@@ -262,7 +262,7 @@ def init(
     except Exception as e:
         from ._delete import delete_by_isettings
         from .core._hub_core import delete_storage_record
-        from .core._hub_core import delete_instance as delete_instance_record
+        from .core._hub_core import delete_instance_record
 
         if isettings is not None:
             delete_by_isettings(isettings)

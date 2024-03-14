@@ -141,11 +141,11 @@ def select_db_user_by_instance(instance_id: str, client: Client):
     return data[0]
 
 
-def _delete_instance(instance_id: UUID, client: Client) -> None:
+def _delete_instance_record(instance_id: UUID, client: Client) -> None:
     if not isinstance(instance_id, UUID):
         instance_id = UUID(instance_id)
     logger.important(f"deleting instance {instance_id.hex}")
     client.table("instance").delete().eq("id", instance_id.hex).execute()
 
 
-sb_delete_instance = _delete_instance
+sb_delete_instance = _delete_instance_record
