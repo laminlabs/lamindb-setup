@@ -92,6 +92,14 @@ def init_storage(storage: UPathStr, region: Optional[str] = None) -> "StorageSet
         ssettings._description = f"Created as default storage for instance {uid}"
         ssettings._uuid = init_storage_hub(ssettings)
         logger.important(f"registered storage: {ssettings.root_as_str}")
+    if root.startswith("s3://"):
+        from .upath import create_path
+        from ._settings import settings
+
+        # we need to touch a 0-byte object in the storage location to avoid
+        # permission errors from leveraging s3fs on an empty subdirectory
+        path = create_path(root, settings.user.access_token)
+        path.fs.touch(str(path / ".lamindb" / "_is_initialized"))
     return ssettings
 
 
