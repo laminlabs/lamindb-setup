@@ -130,6 +130,7 @@ def connect(
             storage=ssettings,
             db=db_updated,
             schema=instance_result["schema_str"],
+            git_repo=instance_result["git_repo"],
         )
         from importlib import metadata
 

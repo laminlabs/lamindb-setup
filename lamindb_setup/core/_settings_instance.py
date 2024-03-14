@@ -17,6 +17,11 @@ from ._settings_store import current_instance_settings_file, instance_settings_f
 from .upath import UPath
 
 
+def sanitize_git_repo_url(repo_url: str) -> str:
+    assert repo_url.startswith("https://")
+    return repo_url.replace(".git", "")
+
+
 class InstanceSettings:
     """Instance settings."""
 
@@ -29,6 +34,7 @@ class InstanceSettings:
         uid: Optional[str] = None,  # instance uid/lnid
         db: Optional[str] = None,  # DB URI
         schema: Optional[str] = None,  # comma-separated string of schema names
+        git_repo: Optional[str] = None,  # a git repo URL
     ):
         from ._hub_utils import validate_db_arg
 
@@ -40,11 +46,12 @@ class InstanceSettings:
         validate_db_arg(db)
         self._db: Optional[str] = db
         self._schema_str: Optional[str] = schema
+        self._git_repo = None if git_repo is None else sanitize_git_repo_url(git_repo)
 
     def __repr__(self):
         """Rich string representation."""
         representation = f"Current instance: {self.slug}"
-        attrs = ["owner", "name", "storage", "db", "schema"]
+        attrs = ["owner", "name", "storage", "db", "schema", "git_repo"]
         for attr in attrs:
             value = getattr(self, attr)
             if attr == "storage":
@@ -91,6 +98,14 @@ class InstanceSettings:
     def slug(self) -> str:
         """Unique semantic identifier of form `"{account_handle}/{instance_name}"`."""
         return f"{self.owner}/{self.name}"
+
+    @property
+    def git_repo(self) -> Optional[str]:
+        """Sync transforms with scripts in git repository.
+
+        Provide the full git repo URL.
+        """
+        return self._git_repo
 
     @property
     def id(self) -> UUID:
