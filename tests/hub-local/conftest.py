@@ -4,6 +4,12 @@ from lamin_utils import logger
 
 from laminhub_rest.dev._setup_local_hub import setup_local_hub
 
+pytest_plugins = [
+    "laminhub_rest.test.fixtures.s3_bucket",
+    "laminhub_rest.test.fixtures.instance_hub_only",
+    "laminhub_rest.test.fixtures.user",
+]
+
 local_setup_state = setup_local_hub()
 
 

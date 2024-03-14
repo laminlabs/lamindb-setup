@@ -548,3 +548,17 @@ def get_stat_dir_gs(path: UPath) -> Tuple[int, str, str, int]:
     n_objects = len(md5s)
     hash, hash_type = hash_md5s_from_dir(md5s)
     return sum(sizes), hash, hash_type, n_objects
+
+
+def check_s3_storage_location_empty(path: UPath) -> None:
+    objects = path.fs.find(path.as_posix())
+    n_objects = len(objects)
+    if n_objects > 1:
+        # we currently touch a 0-byte file in the root of a storage location
+        # ({storage_root}/.lamindb/_is_initialized) during storage initialization
+        # since path.fs.find raises a PermissionError on empty subdirectories,
+        # regardless of the credentials registered in the path (see
+        # lamindb_setup/core/_settings_storage/init_storage).
+        raise ValueError(
+            f"storage location contains objects; {compute_file_tree(path)[0]}"
+        )
