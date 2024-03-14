@@ -550,13 +550,15 @@ def get_stat_dir_gs(path: UPath) -> Tuple[int, str, str, int]:
     return sum(sizes), hash, hash_type, n_objects
 
 
-def check_s3_storage_location_empty(path: UPath) -> bool:
-    objects = path.fs.find(path.as_posix(), detail=True)
+def check_s3_storage_location_empty(path: UPath) -> None:
+    objects = path.fs.find(path.as_posix())
     n_objects = len(objects.values())
-    if n_objects == 0:
-        return True
-    else:
+    if n_objects > 1:
+        # we currently touch a 0-byte file in the root of a storage location
+        # ({storage_root}/.lamindb/_is_initialized) during storage initialization
+        # since path.fs.find raises a PermissionError on empty subdirectories,
+        # regardless of the credentials registered in the path (see
+        # lamindb_setup/core/_settings_storage/init_storage).
         raise ValueError(
-            "deletion of non-empty storage location is not allowed;"
-            f" {compute_file_tree(path)[0]}"
+            f"storage location contains objects; {compute_file_tree(path)[0]}"
         )

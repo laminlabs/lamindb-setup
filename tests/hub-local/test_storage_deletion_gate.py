@@ -21,15 +21,13 @@ def test_check_s3_storage_location_empty(
             client,
         )
 
+    # Make sure gating function does not error on empty storage location
     path = get_upath_from_access_token(
         user_account_2.access_token, test_instance_hub_only.storage_root
     )
+    assert check_s3_storage_location_empty(path) is None  # type: ignore
 
+    # Add object and make sure gating function errors
+    path.fs.touch(str(path / "new_file"))
     with pytest.raises(ValueError):
         check_s3_storage_location_empty(path)
-
-    string_objects = path.fs.find(path.as_posix())
-    string_paths = ["s3://" + obj for obj in string_objects]
-    path.fs.rm(string_paths)
-
-    assert check_s3_storage_location_empty(path)
