@@ -33,16 +33,16 @@ from ._hub_utils import (
 )
 
 
-def delete_storage(
+def delete_storage_record(
     storage_uuid: UUID,
 ) -> None:
     return call_with_fallback_auth(
-        _delete_storage,
+        _delete_storage_record,
         storage_uuid=storage_uuid,
     )
 
 
-def _delete_storage(storage_uuid: UUID, client: Client) -> None:
+def _delete_storage_record(storage_uuid: UUID, client: Client) -> None:
     if storage_uuid is None:
         return None
     logger.important(f"deleting storage {storage_uuid.hex}")
@@ -93,7 +93,7 @@ def delete_instance_storage(instance_identifier: str) -> None:
         instance_account.pop("account")
         instance = instance_account
         delete_instance(UUID(instance["id"]))
-        delete_storage(UUID(instance["storage_id"]))
+        delete_storage_record(UUID(instance["storage_id"]))
 
 
 def delete_instance(
