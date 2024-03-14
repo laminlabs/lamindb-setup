@@ -83,12 +83,21 @@ def _init_storage(ssettings: StorageSettings, client: Client) -> UUID:
 
 
 def delete_instance_storage(instance_identifier: str) -> None:
+    from .upath import create_path
+    from ._settings_storage import TOUCH_FILE_PATH
+    from lamindb_setup import settings
+
     owner, name = instance_identifier.split("/")
     instance_account = call_with_fallback_auth(
         select_instance_by_owner_name,
         owner=owner,
         name=name,
     )
+    # we need to make sure the default 0-byte object in the storage location has
+    # not been deleted to avoid permission errors from leveraging s3fs on an
+    # empty subdirectory
+    path = create_path(instance_account["storage"]["root"], settings.user.access_token)
+    path.fs.touch(str(path / TOUCH_FILE_PATH))
     if instance_account is not None:
         instance_account.pop("account")
         instance = instance_account
