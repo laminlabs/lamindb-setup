@@ -552,7 +552,7 @@ def get_stat_dir_gs(path: UPath) -> Tuple[int, str, str, int]:
 
 def check_s3_storage_location_empty(path: UPath) -> None:
     objects = path.fs.find(path.as_posix())
-    n_objects = len(objects.values())
+    n_objects = len(objects)
     if n_objects > 1:
         # we currently touch a 0-byte file in the root of a storage location
         # ({storage_root}/.lamindb/_is_initialized) during storage initialization
