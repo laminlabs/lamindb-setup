@@ -83,7 +83,7 @@ def _init_storage(ssettings: StorageSettings, client: Client) -> UUID:
 
 
 def delete_instance_storage(instance_identifier: str) -> None:
-    from .upath import create_path
+    from .upath import create_path, check_s3_storage_location_empty
     from ._settings_storage import TOUCH_FILE_PATH
     from lamindb_setup import settings
 
@@ -98,6 +98,10 @@ def delete_instance_storage(instance_identifier: str) -> None:
     # empty subdirectory
     path = create_path(instance_account["storage"]["root"], settings.user.access_token)
     path.fs.touch(str(path / TOUCH_FILE_PATH))
+
+    # gate storage and instance deletion on empty storage location
+    check_s3_storage_location_empty(path)
+
     if instance_account is not None:
         instance_account.pop("account")
         instance = instance_account
