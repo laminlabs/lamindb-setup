@@ -551,11 +551,12 @@ def get_stat_dir_gs(path: UPath) -> Tuple[int, str, str, int]:
 
 
 def check_s3_storage_location_empty(path: UPath) -> bool:
-    from ._settings import settings
-
     objects = path.fs.find(path.as_posix(), detail=True)
     n_objects = len(objects.values())
     if n_objects == 0:
         return True
     else:
-        raise ValueError(settings.storage.root.view_tree())
+        raise ValueError(
+            "deletion of non-empty storage location is not allowed;"
+            f" {compute_file_tree(path)[0]}"
+        )
