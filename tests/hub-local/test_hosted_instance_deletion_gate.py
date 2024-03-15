@@ -10,9 +10,7 @@ import pytest
 
 
 def test_hosted_instance_deletion_gate(run_id):
-    test_instance = create_hosted_test_instance(
-        f"test_instance_{run_id}", "bionty,wetlab,swarm"
-    )
+    test_instance = create_hosted_test_instance(f"test_instance_{run_id}")
 
     # Make sure 0-byte file is touched upon storage initialization
     path = create_path(
