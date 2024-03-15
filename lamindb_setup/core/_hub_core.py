@@ -82,7 +82,7 @@ def _init_storage(ssettings: StorageSettings, client: Client) -> UUID:
     return id
 
 
-def delete_instance(instance_identifier: str) -> None:
+def delete_storage_instance(instance_identifier: str) -> None:
     from .upath import create_path, check_s3_storage_location_empty
     from ._settings_storage import TOUCH_FILE_PATH
     from lamindb_setup import settings
