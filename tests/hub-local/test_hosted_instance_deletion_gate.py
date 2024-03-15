@@ -37,4 +37,4 @@ def test_hosted_instance_deletion_gate(run_id, s3_bucket):
     delete_instance(instance_slug)
 
     # Clean up other assets
-    delete_test_instance(f"test_instance_{run_id}")
+    delete_test_instance(test_instance)
