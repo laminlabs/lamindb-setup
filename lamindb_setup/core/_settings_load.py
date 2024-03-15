@@ -15,6 +15,10 @@ from ._settings_store import (
 from ._settings_user import UserSettings
 
 
+class SettingsEnvFileOutdated(Exception):
+    pass
+
+
 def load_instance_settings(instance_settings_file: Optional[Path] = None):
     if instance_settings_file is None:
         instance_settings_file = current_instance_settings_file()
@@ -22,10 +26,13 @@ def load_instance_settings(instance_settings_file: Optional[Path] = None):
         raise SystemExit("No instance is loaded! Call `lamin init` or `lamin load`")
     try:
         settings_store = InstanceSettingsStore(_env_file=instance_settings_file)
-    except (ValidationError, TypeError):
-        raise ValidationError(
-            "Your instance settings file is invalid, please delete"
-            f" {instance_settings_file} and init the instance again."
+    except (ValidationError, TypeError) as error:
+        with open(instance_settings_file) as f:
+            content = f.read()
+        raise SettingsEnvFileOutdated(
+            f"\n\n{error}\n\nYour instance settings file with\n\n{content}\nis invalid"
+            f" (likely outdated), please delete {instance_settings_file} &"
+            " re-initialize (local) or re-connect to the instance (remote)"
         )
     if settings_store.id == "null":
         raise ValueError(
@@ -59,7 +66,7 @@ def load_user_settings(user_settings_file: Path):
             f" {user_settings_file} and log in again."
         )
         print(msg)
-        raise ValidationError(msg)
+        raise SettingsEnvFileOutdated(msg)
     settings = setup_user_from_store(settings_store)
     return settings
 
@@ -76,6 +83,7 @@ def setup_instance_from_store(store: InstanceSettingsStore) -> InstanceSettings:
         storage=ssettings,
         db=store.db if store.db != "null" else None,  # type: ignore
         schema=store.schema_str if store.schema_str != "null" else None,
+        git_repo=store.git_repo if store.git_repo != "null" else None,
     )
 
 
