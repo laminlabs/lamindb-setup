@@ -25,7 +25,7 @@ from ._hub_crud import (
     select_db_user_by_instance,
     select_instance_by_name,
     select_storage,
-    _delete_instance_record,
+    _delete_instance,
 )
 from ._hub_utils import (
     LaminDsn,
@@ -108,15 +108,15 @@ def delete_storage_instance(instance_identifier: str) -> None:
 
         instance_account.pop("account")
         instance = instance_account
-        delete_instance_record(UUID(instance["id"]))
+        delete_instance(UUID(instance["id"]))
         delete_storage_record(UUID(instance["storage_id"]))
 
 
-def delete_instance_record(
+def delete_instance(
     instance_id: UUID,
 ) -> None:
     return call_with_fallback_auth(
-        _delete_instance_record,
+        _delete_instance,
         instance_id=instance_id,
     )
 
