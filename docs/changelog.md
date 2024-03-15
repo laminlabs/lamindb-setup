@@ -3,6 +3,7 @@
 <!-- prettier-ignore -->
 Name | PR | Developer | Date | Version
 --- | --- | --- | --- | ---
+🚚 Rename deletion functions | [683](https://github.com/laminlabs/lamindb-setup/pull/683) | [bpenteado](https://github.com/bpenteado) | 2024-03-15 |
 ✨ Load `git_repo` setting from hub, refactor settings file management | [681](https://github.com/laminlabs/lamindb-setup/pull/681) | [falexwolf](https://github.com/falexwolf) | 2024-03-14 |
 ✨ Create gating function to check for empty storage location | [680](https://github.com/laminlabs/lamindb-setup/pull/680) | [bpenteado](https://github.com/bpenteado) | 2024-03-14 |
 👷 Use test utilities from `laminhub-rest` during local tests | [679](https://github.com/laminlabs/lamindb-setup/pull/679) | [bpenteado](https://github.com/bpenteado) | 2024-03-13 |
