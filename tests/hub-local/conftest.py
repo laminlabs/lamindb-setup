@@ -8,6 +8,7 @@ pytest_plugins = [
     "laminhub_rest.test.fixtures.s3_bucket",
     "laminhub_rest.test.fixtures.instance_hub_only",
     "laminhub_rest.test.fixtures.user",
+    "laminhub_rest.test.fixtures.run_id",
 ]
 
 local_setup_state = setup_local_hub()

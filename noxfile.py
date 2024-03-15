@@ -54,6 +54,7 @@ def install(session: nox.Session, group: str) -> None:
     elif group == "hub-local":
         session.run(*"pip install -e .[aws,dev,hub]".split())
         session.run(*"pip install -e ./laminhub/rest-hub".split())
+        session.run(*"pip install -e ./laminhub/rest-app".split())
         session.run(*"pip install lamin-cli".split())
 
 
