@@ -2,7 +2,7 @@ from laminhub_rest.test.utils.instance import (
     create_hosted_test_instance,
     delete_test_instance,
 )
-from lamindb_setup.core.upath import create_path
+from lamindb_setup.core.upath import create_path, InstanceNotEmpty
 from lamindb_setup.core._settings_storage import IS_INITIALIZED_KEY
 from lamindb_setup.core._hub_core import delete_instance
 from lamindb_setup import settings
@@ -31,7 +31,7 @@ def test_hosted_instance_deletion_gate(run_id, s3_bucket):
     new_file = UPath(path / "new_file")
     new_file.touch()
     instance_slug = f"{settings.user.handle}/{test_instance.name}"
-    with pytest.raises(ValueError):
+    with pytest.raises(InstanceNotEmpty):
         delete_instance(instance_slug)
 
     # Make sure instance and storage deletion is possible with empty storage
