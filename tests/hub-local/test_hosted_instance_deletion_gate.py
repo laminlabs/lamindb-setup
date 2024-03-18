@@ -27,13 +27,13 @@ def test_hosted_instance_deletion_gate(run_id, s3_bucket):
 
     # Make sure gating function blocks instance and storage deletion if
     # storage location is not empty
-    path.fs.touch(str(path / "new_file"))
+    path.touch(str(path / "new_file"))
     instance_slug = f"{settings.user.handle}/{test_instance.name}"
     with pytest.raises(ValueError):
         delete_instance(instance_slug)
 
     # Make sure instance and storage deletion is possible with empty storage
-    path.fs.rm(str(path / "new_file"))
+    path.unlink(str(path / "new_file"))
     delete_instance(instance_slug)
 
     # Clean up other assets
