@@ -56,6 +56,8 @@ def get_storage_region(storage_root: UPathStr) -> Optional[str]:
 
 
 def mark_storage_root(root: UPathStr):
+    # we need to touch a 0-byte object in the storage location to avoid
+    # permission errors from leveraging s3fs on an empty subdirectory
     root = convert_pathlike(root)
     root.fs.touch(str(root / IS_INITIALIZED_KEY))  # type: ignore
 
@@ -99,8 +101,6 @@ def init_storage(storage: UPathStr, region: Optional[str] = None) -> "StorageSet
         ssettings._uuid = init_storage_hub(ssettings)
         logger.important(f"registered storage: {ssettings.root_as_str}")
     if root.startswith("s3://"):
-        # we need to touch a 0-byte object in the storage location to avoid
-        # permission errors from leveraging s3fs on an empty subdirectory
         mark_storage_root(ssettings.root)
     return ssettings
 

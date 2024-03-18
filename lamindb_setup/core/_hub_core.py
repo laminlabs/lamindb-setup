@@ -94,13 +94,9 @@ def delete_instance(instance_identifier: str) -> None:
     )
 
     if instance_account is not None:
-        # we need to make sure the default 0-byte object in the storage location has
-        # not been deleted to avoid permission errors from leveraging s3fs on an
-        # empty subdirectory
+        # gate storage and instance deletion on empty storage location
         path = create_path(instance_account["storage"]["root"])
         mark_storage_root(path)
-
-        # gate storage and instance deletion on empty storage location
         check_s3_storage_location_empty(path)
 
         instance_account.pop("account")
