@@ -6,6 +6,7 @@ from lamindb_setup.core.upath import create_path
 from lamindb_setup.core._settings_storage import IS_INITIALIZED_KEY
 from lamindb_setup.core._hub_core import delete_instance
 from lamindb_setup import settings
+from upath import UPath
 import pytest
 
 
@@ -27,13 +28,14 @@ def test_hosted_instance_deletion_gate(run_id, s3_bucket):
 
     # Make sure gating function blocks instance and storage deletion if
     # storage location is not empty
-    path.touch(str(path / "new_file"))
+    new_file = UPath(path / "new_file")
+    new_file.touch()
     instance_slug = f"{settings.user.handle}/{test_instance.name}"
     with pytest.raises(ValueError):
         delete_instance(instance_slug)
 
     # Make sure instance and storage deletion is possible with empty storage
-    path.unlink(str(path / "new_file"))
+    new_file.unlink()
     delete_instance(instance_slug)
 
     # Clean up other assets
