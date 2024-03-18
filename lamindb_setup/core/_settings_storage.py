@@ -16,7 +16,7 @@ from .upath import hosted_regions
 
 
 DIRS = AppDirs("lamindb", "laminlabs")
-TOUCH_FILE_PATH = ".lamindb/_is_initialized"
+IS_INITIALIZED_KEY = ".lamindb/_is_initialized"
 
 
 def base62(n_char: int) -> str:
@@ -53,6 +53,12 @@ def get_storage_region(storage_root: UPathStr) -> Optional[str]:
     else:
         storage_region = None
     return storage_region
+
+
+def mark_storage_root(root: UPathStr):
+    if not isinstance(root, UPath):
+        root = convert_pathlike(root)
+    root.fs.touch(str(root / IS_INITIALIZED_KEY))
 
 
 def init_storage(storage: UPathStr, region: Optional[str] = None) -> "StorageSettings":
@@ -94,13 +100,9 @@ def init_storage(storage: UPathStr, region: Optional[str] = None) -> "StorageSet
         ssettings._uuid = init_storage_hub(ssettings)
         logger.important(f"registered storage: {ssettings.root_as_str}")
     if root.startswith("s3://"):
-        from .upath import create_path
-        from ._settings import settings
-
         # we need to touch a 0-byte object in the storage location to avoid
         # permission errors from leveraging s3fs on an empty subdirectory
-        path = create_path(root, settings.user.access_token)
-        path.fs.touch(str(path / TOUCH_FILE_PATH))
+        mark_storage_root(ssettings.root)
     return ssettings
 
 

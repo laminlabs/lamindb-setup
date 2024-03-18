@@ -83,9 +83,8 @@ def _init_storage(ssettings: StorageSettings, client: Client) -> UUID:
 
 
 def delete_instance(instance_identifier: str) -> None:
-    from .upath import create_path, check_s3_storage_location_empty
-    from ._settings_storage import TOUCH_FILE_PATH
-    from lamindb_setup import settings
+    from .upath import check_s3_storage_location_empty
+    from ._settings_storage import mark_storage_root
 
     owner, name = instance_identifier.split("/")
     instance_account = call_with_fallback_auth(
@@ -98,13 +97,11 @@ def delete_instance(instance_identifier: str) -> None:
         # we need to make sure the default 0-byte object in the storage location has
         # not been deleted to avoid permission errors from leveraging s3fs on an
         # empty subdirectory
-        path = create_path(
-            instance_account["storage"]["root"], settings.user.access_token
-        )
-        path.fs.touch(str(path / TOUCH_FILE_PATH))
+        root = instance_account["storage"]["root"]
+        mark_storage_root(root)
 
         # gate storage and instance deletion on empty storage location
-        check_s3_storage_location_empty(path)
+        check_s3_storage_location_empty(root)
 
         instance_account.pop("account")
         instance = instance_account

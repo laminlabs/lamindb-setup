@@ -550,7 +550,9 @@ def get_stat_dir_gs(path: UPath) -> Tuple[int, str, str, int]:
     return sum(sizes), hash, hash_type, n_objects
 
 
-def check_s3_storage_location_empty(path: UPath) -> None:
+def check_s3_storage_location_empty(path: UPathStr) -> None:
+    if not isinstance(path, UPath):
+        path = convert_pathlike(path)
     objects = path.fs.find(path.as_posix())
     n_objects = len(objects)
     if n_objects > 1:
