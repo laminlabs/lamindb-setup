@@ -83,7 +83,7 @@ def _init_storage(ssettings: StorageSettings, client: Client) -> UUID:
 
 
 def delete_instance(instance_identifier: str) -> None:
-    from .upath import check_s3_storage_location_empty
+    from .upath import check_s3_storage_location_empty, create_path
     from ._settings_storage import mark_storage_root
 
     owner, name = instance_identifier.split("/")
@@ -97,11 +97,11 @@ def delete_instance(instance_identifier: str) -> None:
         # we need to make sure the default 0-byte object in the storage location has
         # not been deleted to avoid permission errors from leveraging s3fs on an
         # empty subdirectory
-        root = instance_account["storage"]["root"]
-        mark_storage_root(root)
+        path = create_path(instance_account["storage"]["root"])
+        mark_storage_root(path)
 
         # gate storage and instance deletion on empty storage location
-        check_s3_storage_location_empty(root)
+        check_s3_storage_location_empty(path)
 
         instance_account.pop("account")
         instance = instance_account

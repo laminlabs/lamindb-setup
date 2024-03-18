@@ -56,9 +56,8 @@ def get_storage_region(storage_root: UPathStr) -> Optional[str]:
 
 
 def mark_storage_root(root: UPathStr):
-    if not isinstance(root, UPath):
-        root = convert_pathlike(root)
-    root.fs.touch(str(root / IS_INITIALIZED_KEY))
+    root = convert_pathlike(root)
+    root.fs.touch(str(root / IS_INITIALIZED_KEY))  # type: ignore
 
 
 def init_storage(storage: UPathStr, region: Optional[str] = None) -> "StorageSettings":

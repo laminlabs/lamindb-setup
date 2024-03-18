@@ -551,9 +551,8 @@ def get_stat_dir_gs(path: UPath) -> Tuple[int, str, str, int]:
 
 
 def check_s3_storage_location_empty(path: UPathStr) -> None:
-    if not isinstance(path, UPath):
-        path = convert_pathlike(path)
-    objects = path.fs.find(path.as_posix())
+    path = convert_pathlike(path)
+    objects = path.fs.find(path.as_posix())  # type: ignore
     n_objects = len(objects)
     if n_objects > 1:
         # we currently touch a 0-byte file in the root of a storage location
@@ -562,5 +561,6 @@ def check_s3_storage_location_empty(path: UPathStr) -> None:
         # regardless of the credentials registered in the path (see
         # lamindb_setup/core/_settings_storage/init_storage).
         raise ValueError(
-            f"storage location contains objects; {compute_file_tree(path)[0]}"
+            f"""storage location contains objects;
+            {compute_file_tree(path)[0]}"""  # type: ignore
         )
