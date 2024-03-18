@@ -3,7 +3,7 @@ from laminhub_rest.test.utils.instance import (
     delete_test_instance,
 )
 from lamindb_setup.core.upath import create_path
-from lamindb_setup.core._settings_storage import TOUCH_FILE_PATH
+from lamindb_setup.core._settings_storage import IS_INITIALIZED_KEY
 from lamindb_setup.core._hub_core import delete_instance
 from lamindb_setup import settings
 import pytest
@@ -22,7 +22,7 @@ def test_hosted_instance_deletion_gate(run_id, s3_bucket):
     assert len(object_string_paths) == 1
     assert (
         object_string_paths[0]
-        == f"{test_instance.storage_root.replace('s3://', '')}/{TOUCH_FILE_PATH}"
+        == f"{test_instance.storage_root.replace('s3://', '')}/{IS_INITIALIZED_KEY}"
     )
 
     # Make sure gating function blocks instance and storage deletion if
