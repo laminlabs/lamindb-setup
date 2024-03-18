@@ -39,8 +39,10 @@ def save_settings(
             if type == Optional[str]:
                 type = str
             if "__" not in store_key:
-                if store_key in {"storage_root", "storage_region"}:
-                    value = getattr(settings.storage, store_key.split("_")[1])
+                if store_key == "storage_root":
+                    value = settings.storage.root_as_str
+                elif store_key == "storage_region":
+                    value = settings.storage.region
                 else:
                     if store_key in {"db", "schema_str", "name_"}:
                         settings_key = f"_{store_key.rstrip('_')}"
