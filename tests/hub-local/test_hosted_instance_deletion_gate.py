@@ -16,9 +16,7 @@ def test_hosted_instance_deletion_gate(run_id, s3_bucket):
     )
 
     # Make sure 0-byte file is touched upon storage initialization
-    path = create_path(
-        test_instance.storage_root, access_token=settings.user.access_token
-    )
+    path = create_path(test_instance.storage_root)
     object_string_paths = path.fs.find(path.as_posix())
     assert len(object_string_paths) == 1
     assert (
