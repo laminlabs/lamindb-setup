@@ -83,6 +83,11 @@ def _init_storage(ssettings: StorageSettings, client: Client) -> UUID:
 
 
 def delete_instance(instance_identifier: str) -> None:
+    """Fully delete an instance in the hub.
+
+    This function deletes the relevant instance and storage records in the hub,
+    conditional on the emptiness of the storage location.
+    """
     from .upath import check_s3_storage_location_empty, create_path
     from ._settings_storage import mark_storage_root
 
