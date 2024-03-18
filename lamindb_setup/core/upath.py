@@ -550,6 +550,10 @@ def get_stat_dir_gs(path: UPath) -> Tuple[int, str, str, int]:
     return sum(sizes), hash, hash_type, n_objects
 
 
+class InstanceNotEmpty(Exception):
+    pass
+
+
 def check_s3_storage_location_empty(path: UPathStr) -> None:
     path = convert_pathlike(path)
     objects = path.fs.find(path.as_posix())  # type: ignore
@@ -560,7 +564,7 @@ def check_s3_storage_location_empty(path: UPathStr) -> None:
         # since path.fs.find raises a PermissionError on empty subdirectories,
         # regardless of the credentials registered in the path (see
         # lamindb_setup/core/_settings_storage/init_storage).
-        raise ValueError(
+        raise InstanceNotEmpty(
             f"""storage location contains objects;
             {compute_file_tree(path)[0]}"""  # type: ignore
         )
