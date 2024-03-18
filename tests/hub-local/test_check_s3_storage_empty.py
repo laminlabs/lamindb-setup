@@ -1,4 +1,4 @@
-from lamindb_setup.core.upath import check_s3_storage_location_empty
+from lamindb_setup.core.upath import check_s3_storage_location_empty, InstanceNotEmpty
 from laminhub_rest.orm._account_instance import sb_insert_collaborator
 from laminhub_rest.test.utils.instance import TestInstance
 from laminhub_rest.test.utils.user import TestUser
@@ -29,5 +29,5 @@ def test_check_s3_storage_location_empty(
 
     # Add object and make sure gating function errors
     path.fs.touch(str(path / "new_file"))
-    with pytest.raises(ValueError):
+    with pytest.raises(InstanceNotEmpty):
         check_s3_storage_location_empty(path)
