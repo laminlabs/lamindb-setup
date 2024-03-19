@@ -554,17 +554,20 @@ class InstanceNotEmpty(Exception):
     pass
 
 
-def check_s3_storage_location_empty(path: UPathStr) -> None:
-    path = convert_pathlike(path)
-    objects = path.fs.find(path.as_posix())  # type: ignore
+def check_s3_storage_location_empty(root: UPathStr) -> None:
+    root_upath = convert_pathlike(root)
+    root_string = root_upath.as_posix()  # type: ignore
+    # we currently touch a 0-byte file in the root of a hosted storage location
+    # ({storage_root}/.lamindb/_is_initialized) during storage initialization
+    # since path.fs.find raises a PermissionError on empty hosted
+    # subdirectories (see lamindb_setup/core/_settings_storage/init_storage).
+    n_touched_objects = 0
+    if root_string.startswith(hosted_buckets):
+        n_touched_objects = 1
+    objects = root_upath.fs.find(root_string)
     n_objects = len(objects)
-    if n_objects > 1:
-        # we currently touch a 0-byte file in the root of a storage location
-        # ({storage_root}/.lamindb/_is_initialized) during storage initialization
-        # since path.fs.find raises a PermissionError on empty subdirectories,
-        # regardless of the credentials registered in the path (see
-        # lamindb_setup/core/_settings_storage/init_storage).
+    if n_objects > n_touched_objects:
         raise InstanceNotEmpty(
             f"""storage location contains objects;
-            {compute_file_tree(path)[0]}"""  # type: ignore
+            {compute_file_tree(root_upath)[0]}"""
         )

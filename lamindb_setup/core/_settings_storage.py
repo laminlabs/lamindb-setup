@@ -57,7 +57,7 @@ def get_storage_region(storage_root: UPathStr) -> Optional[str]:
 
 def mark_storage_root(root: UPathStr):
     # we need to touch a 0-byte object in the storage location to avoid
-    # permission errors from leveraging s3fs on an empty subdirectory
+    # permission errors from leveraging s3fs on an empty hosted storage location
     root_upath = convert_pathlike(root)
     mark_upath = root_upath / IS_INITIALIZED_KEY
     mark_upath.touch()
