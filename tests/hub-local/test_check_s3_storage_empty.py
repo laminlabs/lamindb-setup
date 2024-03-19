@@ -25,6 +25,13 @@ def test_check_s3_storage_location_empty(
     path = get_upath_from_access_token(
         user_account_2.access_token, test_instance_hub_only.storage_root
     )
+    # a "dummy" file is touched in the test_instance_hub_only fixture
+    # but we need to remove it here as test_instance_hub_only is not seen as a
+    # hosted instance by check_s3_storage_location (which checks if the
+    # storage location root starts with 'lamin-hosted-instance'). We thus
+    # need an empty storage location here
+    dummy_file = path / "dummy"
+    dummy_file.unlink()
     assert check_s3_storage_location_empty(path) is None  # type: ignore
 
     # Add object and make sure gating function errors
