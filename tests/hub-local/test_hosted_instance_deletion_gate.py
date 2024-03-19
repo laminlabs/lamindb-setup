@@ -10,9 +10,9 @@ from upath import UPath
 import pytest
 
 
-def test_hosted_instance_deletion_gate(run_id, s3_bucket):
+def test_hosted_instance_deletion_gate(run_id, hosted_s3_bucket):
     test_instance = create_hosted_test_instance(
-        f"test_instance_{run_id}", s3_bucket.name
+        f"test_instance_{run_id}", hosted_s3_bucket.name
     )
 
     # Make sure 0-byte file is touched upon storage initialization
