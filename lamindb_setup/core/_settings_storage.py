@@ -101,7 +101,7 @@ def init_storage(storage: UPathStr, region: Optional[str] = None) -> "StorageSet
         ssettings._description = f"Created as default storage for instance {uid}"
         ssettings._uuid = init_storage_hub(ssettings)
         logger.important(f"registered storage: {ssettings.root_as_str}")
-    if root.startswith("s3://"):
+    if ssettings.is_cloud and storage == "create-s3":
         mark_storage_root(ssettings.root)
     return ssettings
 
