@@ -22,7 +22,9 @@ def delete_by_isettings(isettings: InstanceSettings) -> None:
         try:
             if isettings._sqlite_file.exists():
                 isettings._sqlite_file.unlink()
-            exclusion_dir = isettings.storage.root / ".lamindb/_exclusion"
+            exclusion_dir = (
+                isettings.storage.root / f".lamindb/_exclusion/{isettings.id.hex}"
+            )
             if exclusion_dir.exists():
                 exclusion_dir.rmdir()
         except PermissionError:
