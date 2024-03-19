@@ -3,7 +3,6 @@ from pathlib import Path
 from typing import Optional, Union
 from functools import wraps
 from uuid import UUID
-from dateutil.parser import isoparse  # type: ignore
 from lamin_utils import logger
 
 from .upath import UPath, infer_filesystem, create_mapper
@@ -95,15 +94,7 @@ class Locker:
         self._locked_by = None
 
     def modified(self, path):
-        if "gcs" not in self.fs.protocol:
-            mtime = self.fs.modified(path)
-        else:
-            stat = self.fs.stat(path)
-            if "updated" in stat:
-                mtime = stat["updated"]
-                mtime = isoparse(mtime)
-            else:
-                return None
+        mtime = self.fs.modified(path)
         # always convert to the local timezone before returning
         # assume in utc if the time zone is not specified
         if mtime.tzinfo is None:
