@@ -185,7 +185,7 @@ def synchronize(self, objectpath: Path, error_no_origin: bool = True, **kwargs):
     else:
         # perform only one network request to check existence, type and timestamp
         try:
-            cloud_mts = self.modified
+            cloud_mts = self.modified.timestamp()
             is_dir = False
             exists = True
         except FileNotFoundError:
