@@ -3,6 +3,7 @@
 <!-- prettier-ignore -->
 Name | PR | Developer | Date | Version
 --- | --- | --- | --- | ---
+🎨 Refactor `delete_instance_by_id` and `delete_instance_by_slug` | [691](https://github.com/laminlabs/lamindb-setup/pull/691) | [bpenteado](https://github.com/bpenteado) | 2024-03-20 |
 ✨ Create utility to delete instance by id in the hub | [689](https://github.com/laminlabs/lamindb-setup/pull/689) | [bpenteado](https://github.com/bpenteado) | 2024-03-20 |
 🚸 Enforce empty storage during instance deletion | [682](https://github.com/laminlabs/lamindb-setup/pull/682) | [bpenteado](https://github.com/bpenteado) | 2024-03-20 |
 🐛 Use `root_as_str` for lazy load to save settings | [685](https://github.com/laminlabs/lamindb-setup/pull/685) | [Koncopd](https://github.com/Koncopd) | 2024-03-18 | 0.67.1
