@@ -1,6 +1,6 @@
 from lamindb_setup.core.upath import InstanceNotEmpty
 from lamindb_setup.core._settings_storage import IS_INITIALIZED_KEY
-from lamindb_setup.core._hub_core import delete_instance_by_id
+from lamindb_setup.core._hub_core import delete_instance
 from lamindb_setup import settings
 import lamindb_setup as ln_setup
 import pytest
@@ -24,9 +24,9 @@ def test_hosted_instance_deletion_gate():
     new_file.touch()
     instance_id = settings.instance.id
     with pytest.raises(InstanceNotEmpty):
-        delete_instance_by_id(instance_id)
+        delete_instance(instance_id)
 
     # Make sure instance and storage deletion is possible with empty storage
     new_file.unlink()
     ln_setup.delete("my-hosted", force=True)
-    delete_instance_by_id(instance_id)
+    delete_instance(instance_id)
