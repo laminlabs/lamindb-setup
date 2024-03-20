@@ -21,6 +21,7 @@ from ._hub_client import (
 )
 from ._hub_crud import (
     select_instance_by_owner_name,
+    select_instance_by_id_with_storage,
     select_account_by_handle,
     select_db_user_by_instance,
     select_instance_by_name,
@@ -82,7 +83,36 @@ def _init_storage(ssettings: StorageSettings, client: Client) -> UUID:
     return id
 
 
-def delete_instance(instance_identifier: str) -> None:
+def delete_instance_by_id(instance_id: UUID) -> None:
+    """Fully delete an instance in the hub.
+
+    This function deletes the relevant instance and storage records in the hub,
+    conditional on the emptiness of the storage location.
+    """
+    from .upath import check_s3_storage_location_empty, create_path, hosted_buckets
+    from ._settings_storage import mark_storage_root
+
+    instance_with_storage = call_with_fallback_auth(
+        select_instance_by_id_with_storage,
+        instance_id=instance_id,
+    )
+
+    if instance_with_storage is not None:
+        root_string = instance_with_storage["storage"]["root"]
+        # gate storage and instance deletion on empty storage location for
+        # both hosted and non-hosted s3 instances
+        if root_string.startswith("s3://"):
+            root_path = create_path(instance_with_storage["storage"]["root"])
+            # only mark hosted instances
+            if root_string.startswith(hosted_buckets):
+                mark_storage_root(root_path)
+            check_s3_storage_location_empty(root_path)
+
+        delete_instance_record(UUID(instance_with_storage["id"]))
+        delete_storage_record(UUID(instance_with_storage["storage_id"]))
+
+
+def delete_instance_by_slug(instance_identifier: str) -> None:
     """Fully delete an instance in the hub.
 
     This function deletes the relevant instance and storage records in the hub,
