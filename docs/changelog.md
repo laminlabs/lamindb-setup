@@ -3,6 +3,8 @@
 <!-- prettier-ignore -->
 Name | PR | Developer | Date | Version
 --- | --- | --- | --- | ---
+🐛 Use `root_as_str` for lazy load to save settings | [685](https://github.com/laminlabs/lamindb-setup/pull/685) | [Koncopd](https://github.com/Koncopd) | 2024-03-18 | 0.67.1
+♻️ Enable easy switching between prod-test and staging-test | [684](https://github.com/laminlabs/lamindb-setup/pull/684) | [falexwolf](https://github.com/falexwolf) | 2024-03-17 | 0.67.0
 🚚 Rename deletion functions | [683](https://github.com/laminlabs/lamindb-setup/pull/683) | [bpenteado](https://github.com/bpenteado) | 2024-03-15 |
 ✨ Load `git_repo` setting from hub, refactor settings file management | [681](https://github.com/laminlabs/lamindb-setup/pull/681) | [falexwolf](https://github.com/falexwolf) | 2024-03-14 |
 ✨ Create gating function to check for empty storage location | [680](https://github.com/laminlabs/lamindb-setup/pull/680) | [bpenteado](https://github.com/bpenteado) | 2024-03-14 |
