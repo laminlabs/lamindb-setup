@@ -77,6 +77,18 @@ def select_instance_by_id(
     return response.data[0]
 
 
+def select_instance_by_id_with_storage(
+    instance_id: str,
+    client: Client,
+):
+    response = (
+        client.table("instance").select("*, storage(*)").eq("id", instance_id).execute()
+    )
+    if len(response.data) == 0:
+        return None
+    return response.data[0]
+
+
 def update_instance(instance_id: str, instance_fields: dict, client: Client):
     response = (
         client.table("instance").update(instance_fields).eq("id", instance_id).execute()
