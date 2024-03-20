@@ -104,7 +104,7 @@ def delete_instance(instance_identifier: str) -> None:
         # both hosted and non-hosted s3 instances
         if root_string.startswith("s3://"):
             root_path = create_path(instance_account["storage"]["root"])
-            # only mark non-hosted instances
+            # only mark hosted instances
             if root_string.startswith(hosted_buckets):
                 mark_storage_root(root_path)
             check_s3_storage_location_empty(root_path)
