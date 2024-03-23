@@ -252,7 +252,9 @@ def synchronize(self, objectpath: Path, error_no_origin: bool = True, **kwargs):
                             not in origin_file_keys
                         ):
                             file.unlink()
-
+                            parent = file.parent
+                            if next(parent.iterdir(), None) is None:
+                                parent.rmdir()
         return None
 
     # synchronization logic for files
