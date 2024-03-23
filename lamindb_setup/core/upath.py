@@ -215,17 +215,23 @@ def synchronize(self, objectpath: Path, error_no_origin: bool = True, **kwargs):
         if modified_key is None:
             raise ValueError(f"Can't synchronize a directory for {self.protocol}.")
         if objectpath.exists():
-            local_files = [file for file in objectpath.rglob("*") if file.is_file()]
-            cloud_mts = max([file[modified_key] for file in files.values()]).timestamp()
-            local_mts = max([file.stat().st_mtime for file in local_files])
-            if local_mts == cloud_mts:
-                need_synchronize = len(local_files) != len(files)
-            elif local_mts > cloud_mts:
+            destination_exists = True
+            cloud_mts_max = max(
+                file[modified_key] for file in files.values()
+            ).timestamp()
+            local_mts = [
+                file.stat().st_mtime for file in objectpath.rglob("*") if file.is_file()
+            ]
+            n_local_files = len(local_mts)
+            local_mts_max = max(local_mts)
+            if local_mts_max == cloud_mts_max:
+                need_synchronize = n_local_files != len(files)
+            elif local_mts_max > cloud_mts_max:
                 need_synchronize = False
             else:
                 need_synchronize = True
         else:
-            local_files = None
+            destination_exists = False
             need_synchronize = True
         if need_synchronize:
             origin_file_keys = []
@@ -237,7 +243,7 @@ def synchronize(self, objectpath: Path, error_no_origin: bool = True, **kwargs):
                 origin.synchronize(
                     objectpath / destination, timestamp=timestamp, **kwargs
                 )
-            if local_files is not None:
+            if destination_exists:
                 local_files = [file for file in objectpath.rglob("*") if file.is_file()]
                 if len(local_files) > len(files):
                     for file in local_files:
@@ -251,7 +257,7 @@ def synchronize(self, objectpath: Path, error_no_origin: bool = True, **kwargs):
 
     # synchronization logic for files
     if objectpath.exists():
-        local_mts = objectpath.stat().st_mtime
+        local_mts = objectpath.stat().st_mtime  # type: ignore
         need_synchronize = cloud_mts > local_mts
     else:
         objectpath.parent.mkdir(parents=True, exist_ok=True)
