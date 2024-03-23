@@ -216,14 +216,14 @@ def synchronize(self, objectpath: Path, error_no_origin: bool = True, **kwargs):
             raise ValueError(f"Can't synchronize a directory for {self.protocol}.")
         if objectpath.exists():
             local_files = [file for file in objectpath.rglob("*") if file.is_file()]
-            if len(local_files) != len(files):
-                need_synchronize = True
+            cloud_mts = max([file[modified_key] for file in files.values()]).timestamp()
+            local_mts = max([file.stat().st_mtime for file in local_files])
+            if local_mts == cloud_mts:
+                need_synchronize = len(local_files) != len(files)
+            elif local_mts > cloud_mts:
+                need_synchronize = False
             else:
-                cloud_mts = max(
-                    [file[modified_key] for file in files.values()]
-                ).timestamp()
-                local_mts = max([file.stat().st_mtime for file in local_files])
-                need_synchronize = cloud_mts > local_mts
+                need_synchronize = True
         else:
             local_files = None
             need_synchronize = True
@@ -237,7 +237,6 @@ def synchronize(self, objectpath: Path, error_no_origin: bool = True, **kwargs):
                 origin.synchronize(
                     objectpath / destination, timestamp=timestamp, **kwargs
                 )
-            # check that there are no redundant files in the local dir
             if local_files is not None:
                 local_files = [file for file in objectpath.rglob("*") if file.is_file()]
                 if len(local_files) > len(files):
@@ -246,8 +245,8 @@ def synchronize(self, objectpath: Path, error_no_origin: bool = True, **kwargs):
                             file.relative_to(objectpath).as_posix()
                             not in origin_file_keys
                         ):
-                            # what to do with empty dirs after file deletion?
                             file.unlink()
+
         return None
 
     # synchronization logic for files
