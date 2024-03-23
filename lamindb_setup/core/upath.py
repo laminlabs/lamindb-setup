@@ -215,21 +215,39 @@ def synchronize(self, objectpath: Path, error_no_origin: bool = True, **kwargs):
         if modified_key is None:
             raise ValueError(f"Can't synchronize a directory for {self.protocol}.")
         if objectpath.exists():
-            cloud_mts = max(file[modified_key] for file in files.values()).timestamp()
-            local_mts = max(
-                [file.stat().st_mtime for file in objectpath.rglob("*") if file.is_file]
-            )
-            need_synchronize = cloud_mts > local_mts
+            local_files = [file for file in objectpath.rglob("*") if file.is_file()]
+            if len(local_files) != len(files):
+                need_synchronize = True
+            else:
+                cloud_mts = max(
+                    [file[modified_key] for file in files.values()]
+                ).timestamp()
+                local_mts = max([file.stat().st_mtime for file in local_files])
+                need_synchronize = cloud_mts > local_mts
         else:
+            local_files = None
             need_synchronize = True
         if need_synchronize:
+            origin_file_keys = []
             for file, stat in files.items():
                 destination = PurePosixPath(file).relative_to(self.path)
+                origin_file_keys.append(destination.as_posix())
                 timestamp = stat[modified_key].timestamp()
                 origin = UPath(f"{self.protocol}://{file}", **self._kwargs)
                 origin.synchronize(
                     objectpath / destination, timestamp=timestamp, **kwargs
                 )
+            # check that there are no redundant files in the local dir
+            if local_files is not None:
+                local_files = [file for file in objectpath.rglob("*") if file.is_file()]
+                if len(local_files) > len(files):
+                    for file in local_files:
+                        if (
+                            file.relative_to(objectpath).as_posix()
+                            not in origin_file_keys
+                        ):
+                            # what to do with empty dirs after file deletion?
+                            file.unlink()
         return None
 
     # synchronization logic for files
