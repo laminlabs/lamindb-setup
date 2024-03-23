@@ -18,6 +18,6 @@ hub-prod/test-invalid-schema
 hub-prod/test-insufficient-user-info
 hub-prod/test-connect-anonymously
 hub-prod/test-sqlite-lock
-hub-prod/test-sqlite-sync
+hub-prod/test-cloud-sync
 
 ```
