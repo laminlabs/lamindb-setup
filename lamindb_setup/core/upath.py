@@ -568,35 +568,21 @@ def get_stat_file_cloud(stat: Dict) -> Tuple[int, str, str]:
     return size, hash, hash_type
 
 
-def get_stat_dir_s3(path: UPath) -> Tuple[int, str, str, int]:
+def get_stat_dir_cloud(path: UPath) -> Tuple[int, str, str, int]:
     sizes = []
     md5s = []
     objects = path.fs.find(path.as_posix(), detail=True)
+    if path.protocol == "s3":
+        accessor = "ETag"
+    elif path.protocol == "gs":
+        accessor = "md5Hash"
     for object in objects.values():
         sizes.append(object["size"])
-        md5s.append(object["ETag"][1:-1])  # skip leading and trailing quotes
+        md5s.append(object[accessor].strip('"='))
     size = sum(sizes)
     hash, hash_type = hash_md5s_from_dir(md5s)
     n_objects = len(md5s)
     return size, hash, hash_type, n_objects
-
-
-def get_stat_dir_gs(path: UPath) -> Tuple[int, str, str, int]:
-    import google.cloud.storage as gc_storage
-
-    bucket, key, _ = path.fs.split_path(path.as_posix())
-    # assuming this here is the fastest way of querying for many objects
-    client = gc_storage.Client(
-        credentials=path.fs.credentials.credentials, project=path.fs.project
-    )
-    objects = client.Bucket(bucket).list_blobs(prefix=key)
-    sizes, md5s = [], []
-    for object in objects:
-        sizes.append(object.size)
-        md5s.append(object.md5_hash)
-    n_objects = len(md5s)
-    hash, hash_type = hash_md5s_from_dir(md5s)
-    return sum(sizes), hash, hash_type, n_objects
 
 
 class InstanceNotEmpty(Exception):

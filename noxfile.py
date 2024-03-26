@@ -36,6 +36,7 @@ def install(session: nox.Session, group: str) -> None:
         session.run(*"pip install lamin-cli".split())
     elif group == "storage":
         session.run(*"pip install -e .[aws,dev]".split())
+        session.run(*"pip install gcsfs".split())
     elif group == "hub-prod":
         # TODO: get rid of the bionty duplication asap
         session.run(*"pip install bionty".split())
