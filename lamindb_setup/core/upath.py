@@ -8,7 +8,7 @@ from pathlib import Path, PurePosixPath
 from typing import Literal, Dict
 import fsspec
 from itertools import islice
-from typing import Optional, Set, Any, Tuple
+from typing import Optional, Set, Any, Tuple, List
 from collections import defaultdict
 from lamin_utils import logger
 from upath import UPath
@@ -284,6 +284,7 @@ def compute_file_tree(
     only_dirs: bool = False,
     limit: int = 1000,
     include_paths: Optional[Set[Any]] = None,
+    skip_suffixes: List[str] = [],
 ) -> Tuple[str, int]:
     space = "    "
     branch = "│   "
@@ -309,7 +310,7 @@ def compute_file_tree(
             return
         stripped_dir_path = dir_path.as_posix().rstrip("/")
         # do not iterate through zarr directories
-        if stripped_dir_path.endswith((".zarr", ".zrad")):
+        if stripped_dir_path.endswith(tuple(skip_suffixes)):
             return
         # this is needed so that the passed folder is not listed
         contents = [
@@ -368,6 +369,7 @@ def view_tree(
     only_dirs: bool = False,
     limit: int = 1000,
     include_paths: Optional[Set[Any]] = None,
+    skip_suffixes: List[str] = [".zarr", ".zrad"],
 ) -> None:
     """Print a visual tree structure of files & directories.
 
@@ -377,6 +379,7 @@ def view_tree(
         only_dirs: Only iterate through directories.
         limit: Display limit. Will only show this many files. Doesn't affect count.
         include_paths: Restrict to these paths.
+        skip_suffixes: Skip directories with these suffixes.
 
     Examples:
         >>> dir_path = ln.core.datasets.generate_cell_ranger_files(
@@ -405,7 +408,12 @@ def view_tree(
         └── raw_feature_bc_matrix.h5
     """
     message, _ = compute_file_tree(
-        path, level=level, only_dirs=only_dirs, limit=limit, include_paths=include_paths
+        path,
+        level=level,
+        only_dirs=only_dirs,
+        limit=limit,
+        include_paths=include_paths,
+        skip_suffixes=skip_suffixes,
     )
     logger.print(message)
 
