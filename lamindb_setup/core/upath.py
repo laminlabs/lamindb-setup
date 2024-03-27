@@ -284,14 +284,17 @@ def compute_file_tree(
     only_dirs: bool = False,
     limit: int = 1000,
     include_paths: Optional[Set[Any]] = None,
-    skip_suffixes: List[str] = [],
+    skip_suffixes: Optional[List[str]] = None,
 ) -> Tuple[str, int]:
     space = "    "
     branch = "│   "
     tee = "├── "
     last = "└── "
     max_files_per_dir_per_type = 7
-
+    if skip_suffixes is None:
+        skip_suffixes_tuple = ()
+    else:
+        skip_suffixes_tuple = tuple(skip_suffixes)  # type: ignore
     n_objects = 0
     n_directories = 0
 
@@ -310,7 +313,7 @@ def compute_file_tree(
             return
         stripped_dir_path = dir_path.as_posix().rstrip("/")
         # do not iterate through zarr directories
-        if stripped_dir_path.endswith(tuple(skip_suffixes)):
+        if stripped_dir_path.endswith(skip_suffixes_tuple):
             return
         # this is needed so that the passed folder is not listed
         contents = [
@@ -369,7 +372,7 @@ def view_tree(
     only_dirs: bool = False,
     limit: int = 1000,
     include_paths: Optional[Set[Any]] = None,
-    skip_suffixes: List[str] = [".zarr", ".zrad"],
+    skip_suffixes: Optional[List[str]] = None,
 ) -> None:
     """Print a visual tree structure of files & directories.
 
