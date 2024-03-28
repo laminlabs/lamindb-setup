@@ -53,7 +53,7 @@ KNOWN_SUFFIXES = {
 
 def extract_suffix_from_path(path: Path, arg_name: Optional[str] = None) -> str:
     if len(path.suffixes) <= 1:
-        if path.suffix.isdigit():
+        if path.suffix[1:].isdigit():
             return ""  # digits are no valid suffixes
         else:
             return path.suffix
