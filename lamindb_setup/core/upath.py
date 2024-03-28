@@ -52,8 +52,14 @@ KNOWN_SUFFIXES = {
 
 
 def extract_suffix_from_path(path: Path, arg_name: Optional[str] = None) -> str:
+    def process_digits(suffix: str):
+        if suffix[1:].isdigit():
+            return ""  # digits are no valid suffixes
+        else:
+            return suffix
+
     if len(path.suffixes) <= 1:
-        return path.suffix
+        return process_digits(path.suffix)
     else:
         print_hint = True
         arg_name = "file" if arg_name is None else arg_name  # for the warning
@@ -79,7 +85,7 @@ def extract_suffix_from_path(path: Path, arg_name: Optional[str] = None) -> str:
             )
         if print_hint:
             logger.hint(msg)
-        return suffix
+        return process_digits(suffix)
 
 
 def infer_filesystem(path: UPathStr):
@@ -154,10 +160,10 @@ class ProgressCallback(fsspec.callbacks.Callback):
 def download_to(self, path, print_progress: bool = False, **kwargs):
     """Download to a path."""
     if print_progress:
-        if path.suffix not in {".zarr", ".zrad"}:
+        if not path.is_dir():
             cb = ProgressCallback("downloading")
         else:
-            # todo: make proper progress bar for zarr
+            # todo: make proper progress bar for directories
             cb = fsspec.callbacks.NoOpCallback()
         kwargs["callback"] = cb
     self.fs.download(str(self), str(path), **kwargs)
@@ -166,10 +172,10 @@ def download_to(self, path, print_progress: bool = False, **kwargs):
 def upload_from(self, path, print_progress: bool = False, **kwargs):
     """Upload from a local path."""
     if print_progress:
-        if path.suffix not in {".zarr", ".zrad"}:
+        if not path.is_dir():
             cb = ProgressCallback("uploading")
         else:
-            # todo: make proper progress bar for zarr
+            # todo: make proper progress bar for directories
             cb = fsspec.callbacks.NoOpCallback()
         kwargs["callback"] = cb
     self.fs.upload(str(path), str(self), **kwargs)
@@ -421,6 +427,33 @@ def view_tree(
     logger.print(message)
 
 
+def to_url(upath):
+    """Public storage URL.
+
+    Generates a public URL for an object in an S3 bucket using fsspec's UPath,
+    considering the bucket's region.
+
+    Args:
+    - upath: A UPath object representing an S3 path.
+
+    Returns:
+    - A string containing the public URL to the S3 object.
+    """
+    if upath.protocol != "s3":
+        raise ValueError("The provided UPath must be an S3 path.")
+    key = "/".join(upath.parts[1:])
+    bucket = upath._url.netloc
+    if f"s3://{bucket}" not in hosted_buckets:
+        metadata = upath.fs.call_s3("head_bucket", Bucket=upath._url.netloc)
+        region = metadata["BucketRegion"]
+    else:
+        region = bucket.replace("lamin_", "")
+    if region is None:
+        return f"https://{bucket}.s3.amazonaws.com/{key}"
+    else:
+        return f"https://{bucket}.s3-{region}.amazonaws.com/{key}"
+
+
 # Why aren't we subclassing?
 #
 # The problem is that UPath defines a type system of paths
@@ -439,6 +472,7 @@ def view_tree(
 UPath.modified = property(modified)
 UPath.synchronize = synchronize
 UPath.upload_from = upload_from
+UPath.to_url = to_url
 UPath.download_to = download_to
 UPath.view_tree = view_tree
 # unfortunately, we also have to do this for the subclasses
