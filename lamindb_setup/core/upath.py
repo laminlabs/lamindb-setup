@@ -16,6 +16,7 @@ from upath.implementations.cloud import CloudPath, S3Path  # noqa  # keep CloudP
 from upath.implementations.local import LocalPath, PosixUPath, WindowsUPath
 from .types import UPathStr
 from .hashing import b16_to_b64, hash_md5s_from_dir
+from fsspec.utils import infer_storage_options
 
 LocalPathClasses = (PosixUPath, WindowsUPath, LocalPath)
 
@@ -53,7 +54,10 @@ KNOWN_SUFFIXES = {
 
 def extract_suffix_from_path(path: Path, arg_name: Optional[str] = None) -> str:
     if len(path.suffixes) <= 1:
-        return path.suffix
+        if path.suffix.isdigit():
+            return ""  # digits are no valid suffixes
+        else:
+            return path.suffix
     else:
         print_hint = True
         arg_name = "file" if arg_name is None else arg_name  # for the warning
@@ -421,6 +425,54 @@ def view_tree(
     logger.print(message)
 
 
+# TODO: replace with something faster at some point
+# also consolidate with what's in _settings_storage
+def get_bucket_region(bucket_name) -> str:
+    """Retrieves the region for a given S3 bucket using boto3.
+
+    Args:
+    - bucket_name: Name of the S3 bucket.
+
+    Returns:
+    - The region in which the S3 bucket is located.
+    """
+    import boto3
+
+    s3 = boto3.client("s3")
+    bucket_location = s3.get_bucket_location(Bucket=bucket_name)
+    region = bucket_location["LocationConstraint"]
+    return region
+
+
+def to_url(upath):
+    """Public storage URL.
+
+    Generates a public URL for an object in an S3 bucket using fsspec's UPath,
+    considering the bucket's region.
+
+    Args:
+    - upath: A UPath object representing an S3 path.
+
+    Returns:
+    - A string containing the public URL to the S3 object.
+    """
+    if upath.protocol != "s3":
+        raise ValueError("The provided UPath must be an S3 path.")
+
+    # Parse bucket name from the UPath
+    parts = infer_storage_options(upath.as_uri())
+    bucket = parts["host"]
+    key = parts["path"].lstrip("/")
+
+    # Fetch the bucket's region
+    region = get_bucket_region(bucket)
+
+    if region is None:
+        return f"https://{bucket}.s3.amazonaws.com/{key}"
+    else:
+        return f"https://{bucket}.s3-{region}.amazonaws.com/{key}"
+
+
 # Why aren't we subclassing?
 #
 # The problem is that UPath defines a type system of paths
@@ -439,6 +491,7 @@ def view_tree(
 UPath.modified = property(modified)
 UPath.synchronize = synchronize
 UPath.upload_from = upload_from
+UPath.to_url = to_url
 UPath.download_to = download_to
 UPath.view_tree = view_tree
 # unfortunately, we also have to do this for the subclasses
