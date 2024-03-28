@@ -7,6 +7,7 @@ def test_extract_suffix_from_path():
     collection = [
         ("a", ""),
         ("a.txt", ".txt"),
+        ("a.123", ""),  # digits are no valid suffixes
         ("archive.tar.gz", ".tar.gz"),
         ("directory/file", ""),
         ("d.x.y.z/f.b.c", ".c"),

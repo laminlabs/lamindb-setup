@@ -52,11 +52,14 @@ KNOWN_SUFFIXES = {
 
 
 def extract_suffix_from_path(path: Path, arg_name: Optional[str] = None) -> str:
-    if len(path.suffixes) <= 1:
-        if path.suffix[1:].isdigit():
+    def process_digits(suffix: str):
+        if suffix[1:].isdigit():
             return ""  # digits are no valid suffixes
         else:
-            return path.suffix
+            return suffix
+
+    if len(path.suffixes) <= 1:
+        return process_digits(path.suffix)
     else:
         print_hint = True
         arg_name = "file" if arg_name is None else arg_name  # for the warning
@@ -82,7 +85,7 @@ def extract_suffix_from_path(path: Path, arg_name: Optional[str] = None) -> str:
             )
         if print_hint:
             logger.hint(msg)
-        return suffix
+        return process_digits(suffix)
 
 
 def infer_filesystem(path: UPathStr):
