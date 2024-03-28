@@ -16,7 +16,6 @@ from upath.implementations.cloud import CloudPath, S3Path  # noqa  # keep CloudP
 from upath.implementations.local import LocalPath, PosixUPath, WindowsUPath
 from .types import UPathStr
 from .hashing import b16_to_b64, hash_md5s_from_dir
-from fsspec.utils import infer_storage_options
 
 LocalPathClasses = (PosixUPath, WindowsUPath, LocalPath)
 
@@ -458,15 +457,9 @@ def to_url(upath):
     """
     if upath.protocol != "s3":
         raise ValueError("The provided UPath must be an S3 path.")
-
-    # Parse bucket name from the UPath
-    parts = infer_storage_options(upath.as_uri())
-    bucket = parts["host"]
-    key = parts["path"].lstrip("/")
-
-    # Fetch the bucket's region
+    bucket = upath._url.netloc
+    key = "/".join(upath.parts[1:])
     region = get_bucket_region(bucket)
-
     if region is None:
         return f"https://{bucket}.s3.amazonaws.com/{key}"
     else:
