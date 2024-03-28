@@ -157,7 +157,7 @@ class ProgressCallback(fsspec.callbacks.Callback):
 def download_to(self, path, print_progress: bool = False, **kwargs):
     """Download to a path."""
     if print_progress:
-        if not path.isdir():
+        if not path.is_dir():
             cb = ProgressCallback("downloading")
         else:
             # todo: make proper progress bar for directories
@@ -169,7 +169,7 @@ def download_to(self, path, print_progress: bool = False, **kwargs):
 def upload_from(self, path, print_progress: bool = False, **kwargs):
     """Upload from a local path."""
     if print_progress:
-        if not path.isdir():
+        if not path.is_dir():
             cb = ProgressCallback("uploading")
         else:
             # todo: make proper progress bar for directories
