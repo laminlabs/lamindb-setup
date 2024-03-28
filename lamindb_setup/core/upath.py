@@ -55,7 +55,7 @@ def extract_suffix_from_path(path: Path, arg_name: Optional[str] = None) -> str:
     if len(path.suffixes) <= 1:
         return path.suffix
     else:
-        print_warning = True
+        print_hint = True
         arg_name = "file" if arg_name is None else arg_name  # for the warning
         msg = f"{arg_name} has more than one suffix (path.suffixes), "
         # first check the 2nd-to-last suffix because it might be followed by .gz
@@ -69,7 +69,7 @@ def extract_suffix_from_path(path: Path, arg_name: Optional[str] = None) -> str:
             msg += f"inferring: '{suffix}'"
             # do not print a warning for things like .tar.gz, .fastq.gz
             if path.suffixes[-1] == ".gz":
-                print_warning = False
+                print_hint = False
         else:
             suffix = path.suffixes[-1]  # this is equivalent to path.suffix!!!
             msg += (
@@ -77,8 +77,8 @@ def extract_suffix_from_path(path: Path, arg_name: Optional[str] = None) -> str:
                 " be recognized, make an issue:"
                 " https://github.com/laminlabs/lamindb/issues/new"
             )
-        if print_warning:
-            logger.warning(msg)
+        if print_hint:
+            logger.hint(msg)
         return suffix
 
 
