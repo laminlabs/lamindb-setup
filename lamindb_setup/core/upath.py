@@ -424,25 +424,6 @@ def view_tree(
     logger.print(message)
 
 
-# TODO: replace with something faster at some point
-# also consolidate with what's in _settings_storage
-def get_bucket_region(bucket_name) -> str:
-    """Retrieves the region for a given S3 bucket using boto3.
-
-    Args:
-    - bucket_name: Name of the S3 bucket.
-
-    Returns:
-    - The region in which the S3 bucket is located.
-    """
-    import boto3
-
-    s3 = boto3.client("s3")
-    bucket_location = s3.get_bucket_location(Bucket=bucket_name)
-    region = bucket_location["LocationConstraint"]
-    return region
-
-
 def to_url(upath):
     """Public storage URL.
 
@@ -457,9 +438,13 @@ def to_url(upath):
     """
     if upath.protocol != "s3":
         raise ValueError("The provided UPath must be an S3 path.")
-    bucket = upath._url.netloc
     key = "/".join(upath.parts[1:])
-    region = get_bucket_region(bucket)
+    bucket = upath._url.netloc
+    if f"s3://{bucket}" not in hosted_buckets:
+        metadata = upath.fs.call_s3("head_bucket", Bucket=upath._url.netloc)
+        region = metadata["ResponseMetadata"]["BucketRegion"]
+    else:
+        region = bucket.replace("lamin_", "")
     if region is None:
         return f"https://{bucket}.s3.amazonaws.com/{key}"
     else:
