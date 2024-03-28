@@ -445,7 +445,7 @@ def to_url(upath):
     bucket = upath._url.netloc
     if f"s3://{bucket}" not in hosted_buckets:
         metadata = upath.fs.call_s3("head_bucket", Bucket=upath._url.netloc)
-        region = metadata["ResponseMetadata"]["BucketRegion"]
+        region = metadata["BucketRegion"]
     else:
         region = bucket.replace("lamin_", "")
     if region is None:
