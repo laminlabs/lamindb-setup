@@ -3,6 +3,7 @@
 <!-- prettier-ignore -->
 Name | PR | Developer | Date | Version
 --- | --- | --- | --- | ---
+✨ `upath.to_url()` | [695](https://github.com/laminlabs/lamindb-setup/pull/695) | [falexwolf](https://github.com/falexwolf) | 2024-03-28 |
 ♻️ Enable to choose skip_suffixes | [693](https://github.com/laminlabs/lamindb-setup/pull/693) | [falexwolf](https://github.com/falexwolf) | 2024-03-27 | 0.68.1
 ♻️ Refactor GCP compat | [692](https://github.com/laminlabs/lamindb-setup/pull/692) | [falexwolf](https://github.com/falexwolf) | 2024-03-26 |
 ✨ Rework synchronize, support directories | [687](https://github.com/laminlabs/lamindb-setup/pull/687) | [Koncopd](https://github.com/Koncopd) | 2024-03-23 | 0.68.0
