@@ -128,7 +128,7 @@ jobs:
           repository: laminlabs/laminapp-ui
           token: ${{ secrets.GH_TOKEN_DEPLOY_LAMINAPP }}
           path: laminhub
-          ref: write-level
+          ref: main
       - name: Set env file for local test of edge functions
         run: |
           touch .env.local
