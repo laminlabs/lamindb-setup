@@ -1,7 +1,7 @@
 from supabase.client import Client
 from typing import Optional, Dict
 from lamin_utils import logger
-from uuid import UUID
+from uuid import UUID, uuid4
 
 
 def select_instance_by_owner_name(
@@ -133,6 +133,27 @@ def select_storage(id: str, client: Client):
 
 
 # --------------- DBUser ----------------------
+
+
+def insert_db_user(
+    *,
+    name: str,
+    db_user_name: str,
+    db_user_password: str,
+    instance_id: UUID,
+    client: Client,
+) -> None:
+    fields = (
+        {
+            "id": uuid4().hex,
+            "instance_id": instance_id.hex,
+            "name": name,
+            "db_user_name": db_user_name,
+            "db_user_password": db_user_password,
+        },
+    )
+    data = client.table("db_user").insert(fields).execute().data
+    return data[0]
 
 
 def select_db_user_by_instance(instance_id: str, client: Client):

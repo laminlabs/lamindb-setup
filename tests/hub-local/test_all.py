@@ -1,7 +1,6 @@
 import os
 from uuid import UUID, uuid4
 import pytest
-from supabase import Client
 from lamindb_setup.core._hub_utils import LaminDsnModel
 from gotrue.errors import AuthApiError
 import lamindb_setup as ln_setup
@@ -22,6 +21,7 @@ from lamindb_setup.core._hub_crud import (
     select_db_user_by_instance,
     select_instance_by_name,
     update_instance,
+    insert_db_user,
 )
 from laminhub_rest.core.collaborator._add_collaborator import add_collaborator_by_ids
 
@@ -33,50 +33,6 @@ from lamindb_setup.core._settings_storage import base62
 from lamindb_setup.core._settings_storage import init_storage as init_storage_base
 from lamindb_setup.core._settings_save import save_user_settings
 from lamindb_setup.core._settings_user import UserSettings
-
-
-def insert_db_user(db_user_fields: dict, client: Client):
-    try:
-        data = client.table("db_user").insert(db_user_fields).execute().data
-    except Exception as e:
-        if str(e) == str("Expecting value: line 1 column 1 (char 0)"):
-            pass
-        else:
-            raise e
-    return data[0]
-
-
-def update_db_user(db_user_id: str, db_user_fields: dict, client: Client):
-    data = (
-        client.table("db_user")
-        .update(db_user_fields)
-        .eq("id", db_user_id)
-        .execute()
-        .data
-    )
-    if len(data) == 0:
-        return None
-    return data[0]
-
-
-def add_db_user(
-    *,
-    name: str,
-    db_user_name: str,
-    db_user_password: str,
-    instance_id: UUID,
-    client: Client,
-) -> None:
-    insert_db_user(
-        {
-            "id": uuid4().hex,
-            "instance_id": instance_id.hex,
-            "name": name,
-            "db_user_name": db_user_name,
-            "db_user_password": db_user_password,
-        },
-        client,
-    )
 
 
 def sign_up_user(email: str, handle: str, save_as_settings: bool = False):
@@ -179,7 +135,7 @@ def create_myinstance(create_testadmin1_session):  # -> Dict
     db_dsn = LaminDsnModel(db=db_str)
     db_user_name = db_dsn.db.user
     db_user_password = db_dsn.db.password
-    add_db_user(
+    insert_db_user(
         name="write",
         db_user_name=db_user_name,
         db_user_password=db_user_password,
@@ -258,7 +214,7 @@ def test_db_user(
     )
     assert db_user is None
     # now set the db_user
-    add_db_user(
+    insert_db_user(
         name="read",
         db_user_name="dbreader",
         db_user_password="1234",
