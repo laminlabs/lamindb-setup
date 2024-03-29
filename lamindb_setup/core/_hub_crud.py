@@ -136,11 +136,7 @@ def select_storage(id: str, client: Client):
 
 
 def select_db_user_by_instance(instance_id: str, client: Client):
-    """Get the DBAccount directly associated with Instance.
-
-    By contrast this is not the DBAccount that is linked through the
-    UserInstance table.
-    """
+    """Get db_user for which client has permission."""
     data = (
         client.table("db_user")
         .select("*")

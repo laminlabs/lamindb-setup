@@ -130,20 +130,20 @@ def test_incomplete_signup():
 
 
 @pytest.fixture(scope="session")
-def create_testuser1_session():  # -> Tuple[Client, UserSettings]
-    email = "testuser1@gmail.com"
-    response = sign_up_user(email, "testuser1")
+def create_testadmin1_session():  # -> Tuple[Client, UserSettings]
+    email = "testadmin1@gmail.com"
+    response = sign_up_user(email, "testadmin1")
     assert response is None
     # test repeated sign up
     with pytest.raises(AuthApiError):
         # test error with "User already registered"
-        sign_up_user(email, "testuser1")
+        sign_up_user(email, "testadmin1")
     account_id = ln_setup.settings.user.uuid.hex
     account = {
         "id": account_id,
         "user_id": account_id,
         "lnid": base62(8),
-        "handle": "testuser1",
+        "handle": "testadmin1",
     }
     # uses ln_setup.settings.user.access_token
     client = connect_hub_with_auth()
@@ -153,8 +153,8 @@ def create_testuser1_session():  # -> Tuple[Client, UserSettings]
 
 
 @pytest.fixture(scope="session")
-def create_myinstance(create_testuser1_session):  # -> Dict
-    _, usettings = create_testuser1_session
+def create_myinstance(create_testadmin1_session):  # -> Dict
+    _, usettings = create_testadmin1_session
     instance_id = uuid4()
     isettings = InstanceSettings(
         id=instance_id,
@@ -166,14 +166,14 @@ def create_myinstance(create_testuser1_session):  # -> Dict
     init_instance(isettings)
     # test loading it
     with pytest.raises(PermissionError) as error:
-        ln_setup.connect("testuser1/myinstance", _test=True)
+        ln_setup.connect("testadmin1/myinstance", _test=True)
     assert error.exconly().startswith(
         "PermissionError: No database access, please ask your admin"
     )
     set_db_user(
         db="postgresql://postgres:pwd@fakeserver.xyz:5432/mydb", instance_id=instance_id
     )
-    client, _ = create_testuser1_session
+    client, _ = create_testadmin1_session
     instance = select_instance_by_name(
         account_id=ln_setup.settings.user.uuid,
         name="myinstance",
@@ -182,8 +182,8 @@ def create_myinstance(create_testuser1_session):  # -> Dict
     yield instance
 
 
-def test_connection_string_decomp(create_myinstance, create_testuser1_session):
-    client, _ = create_testuser1_session
+def test_connection_string_decomp(create_myinstance, create_testadmin1_session):
+    client, _ = create_testadmin1_session
     db_user = select_db_user_by_instance(
         instance_id=create_myinstance["id"],
         client=client,
@@ -203,27 +203,26 @@ def test_connection_string_decomp(create_myinstance, create_testuser1_session):
     assert db_collaborator["db_user_id"] is None
 
 
-def test_connect_instance(create_myinstance, create_testuser1_session):
+def test_connect_instance(create_myinstance, create_testadmin1_session):
     # trigger return for inexistent handle
     assert "account-not-exists" == connect_instance(
-        owner="testusr1",  # testuser1 with a typo
+        owner="testusr1",  # testadmin1 with a typo
         name=create_myinstance["name"],
     )
     # trigger misspelled name
     assert "instance-not-reachable" == connect_instance(
-        owner="testuser1",
+        owner="testadmin1",
         name="inexistent-name",  # inexistent name
     )
     # make instance public so that we can also test connection string
-    client, _ = create_testuser1_session
+    client, _ = create_testadmin1_session
     update_instance(
         instance_id=create_myinstance["id"],
         instance_fields={"public": True},
         client=client,
     )
-    # now supply correct data and make instance public
     result = connect_instance(
-        owner="testuser1",
+        owner="testadmin1",
         name=create_myinstance["name"],
     )
     db_user = select_db_user_by_instance(
@@ -250,7 +249,7 @@ def test_connect_instance(create_myinstance, create_testuser1_session):
 
 
 def test_connect_instance_corrupted_or_expired_credentials(
-    create_myinstance, create_testuser1_session
+    create_myinstance, create_testadmin1_session
 ):
     # assume token & password are corrupted or expired
     ln_setup.settings.user.access_token = "corrupted_or_expired_token"
@@ -258,7 +257,7 @@ def test_connect_instance_corrupted_or_expired_credentials(
     ln_setup.settings.user.password = "corrupted_password"
     with pytest.raises(AuthApiError):
         connect_instance(
-            owner="testuser1",
+            owner="testadmin1",
             name=create_myinstance["name"],
         )
     # now, let's assume only the token is expired or corrupted
@@ -267,18 +266,18 @@ def test_connect_instance_corrupted_or_expired_credentials(
     ln_setup.settings.user.access_token = "corrupted_or_expired_token"
     ln_setup.settings.user.password = correct_password
     connect_instance(
-        owner="testuser1",
+        owner="testadmin1",
         name=create_myinstance["name"],
     )
 
 
-def test_init_storage(create_testuser1_session):
-    client, _ = create_testuser1_session
+def test_init_storage(create_testadmin1_session):
+    client, _ = create_testadmin1_session
     storage_id = init_storage(ssettings=init_storage_base("s3://lamindb-ci/myinstance"))
     assert isinstance(storage_id, UUID)
 
 
-def test_init_storage_with_non_existing_bucket(create_testuser1_session):
+def test_init_storage_with_non_existing_bucket(create_testadmin1_session):
     from botocore.exceptions import ClientError
 
     with pytest.raises(ClientError) as error:
