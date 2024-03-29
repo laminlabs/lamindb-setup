@@ -9,7 +9,6 @@ from lamindb_setup.core._settings_instance import InstanceSettings
 from lamindb_setup.core._hub_client import (
     Environment,
     connect_hub_with_auth,
-    call_with_fallback_auth,
 )
 from lamindb_setup.core._hub_core import (
     init_storage,
@@ -24,6 +23,7 @@ from lamindb_setup.core._hub_crud import (
     select_instance_by_name,
     update_instance,
 )
+from laminhub_rest.core.collaborator._add_collaborator import add_collaborator_by_ids
 
 # typing
 # from lamindb.dev import UserSettings
@@ -59,23 +59,7 @@ def update_db_user(db_user_id: str, db_user_fields: dict, client: Client):
     return data[0]
 
 
-def set_db_user(
-    *,
-    name: str,
-    db_user_name: str,
-    db_user_password: str,
-    instance_id: UUID,
-) -> None:
-    return call_with_fallback_auth(
-        _set_db_user,
-        name=name,
-        db_user_name=db_user_name,
-        db_user_password=db_user_password,
-        instance_id=instance_id,
-    )
-
-
-def _set_db_user(
+def add_db_user(
     *,
     name: str,
     db_user_name: str,
@@ -83,28 +67,16 @@ def _set_db_user(
     instance_id: UUID,
     client: Client,
 ) -> None:
-    db_user = select_db_user_by_instance(instance_id.hex, client)
-    if db_user is None:
-        insert_db_user(
-            {
-                "id": uuid4().hex,
-                "instance_id": instance_id.hex,
-                "name": name,
-                "db_user_name": db_user_name,
-                "db_user_password": db_user_password,
-            },
-            client,
-        )
-    else:
-        update_db_user(
-            db_user["id"],
-            {
-                "instance_id": instance_id.hex,
-                "db_user_name": db_user_name,
-                "db_user_password": db_user_password,
-            },
-            client,
-        )
+    insert_db_user(
+        {
+            "id": uuid4().hex,
+            "instance_id": instance_id.hex,
+            "name": name,
+            "db_user_name": db_user_name,
+            "db_user_password": db_user_password,
+        },
+        client,
+    )
 
 
 def sign_up_user(email: str, handle: str, save_as_settings: bool = False):
@@ -125,7 +97,7 @@ def sign_up_user(email: str, handle: str, save_as_settings: bool = False):
     )
     if save_as_settings:
         save_user_settings(user_settings)
-    return account_id, access_token
+    return user_settings
 
 
 def test_runs_locally():
@@ -165,22 +137,22 @@ def create_testadmin1_session():  # -> Tuple[Client, UserSettings]
 @pytest.fixture(scope="session")
 def create_testreader1_session():  # -> Tuple[Client, UserSettings]
     email = "testreader1@gmail.com"
-    account_id, access_token = sign_up_user(email, "testreader1")
+    user_settings = sign_up_user(email, "testreader1")
     account = {
-        "id": account_id.hex,
-        "user_id": account_id.hex,
+        "id": user_settings.uuid.hex,
+        "user_id": user_settings.uuid.hex,
         "lnid": base62(8),
         "handle": "testreader1",
     }
-    client = connect_hub_with_auth(access_token=access_token)
+    client = connect_hub_with_auth(access_token=user_settings.access_token)
     client.table("account").insert(account).execute()
-    yield client, ln_setup.settings.user
+    yield client, user_settings
     client.auth.sign_out()
 
 
 @pytest.fixture(scope="session")
 def create_myinstance(create_testadmin1_session):  # -> Dict
-    _, usettings = create_testadmin1_session
+    admin_client, usettings = create_testadmin1_session
     instance_id = uuid4()
     db_str = "postgresql://postgres:pwd@fakeserver.xyz:5432/mydb"
     isettings = InstanceSettings(
@@ -197,20 +169,27 @@ def create_myinstance(create_testadmin1_session):  # -> Dict
     assert error.exconly().startswith(
         "PermissionError: No database access, please ask your admin"
     )
+    db_collaborator = select_collaborator(
+        instance_id=instance_id.hex,
+        account_id=ln_setup.settings.user.uuid.hex,
+        client=admin_client,
+    )
+    assert db_collaborator["role"] == "admin"
+    assert db_collaborator["db_user_id"] is None
     db_dsn = LaminDsnModel(db=db_str)
     db_user_name = db_dsn.db.user
     db_user_password = db_dsn.db.password
-    set_db_user(
+    add_db_user(
         name="write",
         db_user_name=db_user_name,
         db_user_password=db_user_password,
         instance_id=instance_id,
+        client=admin_client,
     )
-    client, _ = create_testadmin1_session
     instance = select_instance_by_name(
         account_id=ln_setup.settings.user.uuid,
         name="myinstance",
-        client=client,
+        client=admin_client,
     )
     yield instance
 
@@ -233,20 +212,84 @@ def test_connection_string_decomp(create_myinstance, create_testadmin1_session):
 def test_db_user(
     create_myinstance, create_testadmin1_session, create_testreader1_session
 ):
-    client, _ = create_testadmin1_session
+    admin_client, admin_settings = create_testadmin1_session
+    instance_id = UUID(create_myinstance["id"])
     db_user = select_db_user_by_instance(
-        instance_id=create_myinstance["id"],
-        client=client,
+        instance_id=instance_id,
+        client=admin_client,
     )
     assert db_user["db_user_name"] == "postgres"
     assert db_user["db_user_password"] == "pwd"
     assert db_user["name"] == "write"
-    client, _ = create_testreader1_session
+    reader_client, reader_settings = create_testreader1_session
     db_user = select_db_user_by_instance(
-        instance_id=create_myinstance["id"],
-        client=client,
+        instance_id=instance_id,
+        client=reader_client,
     )
     assert db_user is None
+    # check that testreader1 is not yet a collaborator
+    db_collaborator = select_collaborator(
+        instance_id=instance_id.hex,
+        account_id=reader_settings.uuid.hex,
+        client=admin_client,
+    )
+    assert db_collaborator is None
+    # now add testreader1 as a collaborator
+    add_collaborator_by_ids(
+        account_id=reader_settings.uuid,
+        instance_id=instance_id,
+        role="read",
+        supabase_client=admin_client,
+    )
+    # check that this was successful and can be read by the reader
+    db_collaborator = select_collaborator(
+        instance_id=instance_id.hex,
+        account_id=reader_settings.uuid.hex,
+        client=reader_client,
+    )
+    assert db_collaborator["role"] == "read"
+    assert UUID(db_collaborator["instance_id"]) == instance_id
+    assert UUID(db_collaborator["account_id"]) == reader_settings.uuid
+    assert db_collaborator["db_user_id"] is None
+    # this alone doesn't set a db_user
+    db_user = select_db_user_by_instance(
+        instance_id=instance_id,
+        client=reader_client,
+    )
+    assert db_user is None
+    # now set the db_user
+    add_db_user(
+        name="read",
+        db_user_name="dbreader",
+        db_user_password="1234",
+        instance_id=instance_id,
+        client=admin_client,
+    )
+    # admin can access all db users
+    data = (
+        admin_client.table("db_user")
+        .select("*")
+        .eq("instance_id", instance_id)
+        .execute()
+        .data
+    )
+    assert len(data) == 2
+    # reader can only access the read-level db user
+    db_user = select_db_user_by_instance(
+        instance_id=instance_id,
+        client=reader_client,
+    )
+    assert db_user["db_user_name"] == "dbreader"
+    assert db_user["db_user_password"] == "1234"
+    assert db_user["name"] == "read"
+    # admin still gets the write-level connection string
+    db_user = select_db_user_by_instance(
+        instance_id=instance_id,
+        client=admin_client,
+    )
+    assert db_user["db_user_name"] == "postgres"
+    assert db_user["db_user_password"] == "pwd"
+    assert db_user["name"] == "write"
 
 
 def test_connect_instance(create_myinstance, create_testadmin1_session):

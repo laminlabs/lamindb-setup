@@ -146,6 +146,11 @@ def select_db_user_by_instance(instance_id: str, client: Client):
     )
     if len(data) == 0:
         return None
+    elif len(data) > 1:
+        for item in data:
+            if item["name"] == "write":
+                return item
+        logger.warning("found multiple db credentials, using the first one")
     return data[0]
 
 
