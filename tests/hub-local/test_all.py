@@ -1,8 +1,6 @@
 import os
 from uuid import UUID, uuid4
-from typing import Optional
 import pytest
-from supabase import Client
 from lamindb_setup.core._hub_utils import LaminDsnModel
 from gotrue.errors import AuthApiError
 import lamindb_setup as ln_setup
@@ -10,7 +8,6 @@ from lamindb_setup.core._settings_instance import InstanceSettings
 from lamindb_setup.core._hub_client import (
     Environment,
     connect_hub_with_auth,
-    call_with_fallback_auth,
 )
 from lamindb_setup.core._hub_core import (
     init_storage,
@@ -24,7 +21,9 @@ from lamindb_setup.core._hub_crud import (
     select_db_user_by_instance,
     select_instance_by_name,
     update_instance,
+    insert_db_user,
 )
+from laminhub_rest.core.collaborator._add_collaborator import add_collaborator_by_ids
 
 # typing
 # from lamindb.dev import UserSettings
@@ -36,84 +35,25 @@ from lamindb_setup.core._settings_save import save_user_settings
 from lamindb_setup.core._settings_user import UserSettings
 
 
-def insert_db_user(db_user_fields: dict, client: Client):
-    try:
-        data = client.table("db_user").insert(db_user_fields).execute().data
-    except Exception as e:
-        if str(e) == str("Expecting value: line 1 column 1 (char 0)"):
-            pass
-        else:
-            raise e
-    return data[0]
-
-
-def update_db_user(db_user_id: str, db_user_fields: dict, client: Client):
-    data = (
-        client.table("db_user")
-        .update(db_user_fields)
-        .eq("id", db_user_id)
-        .execute()
-        .data
-    )
-    if len(data) == 0:
-        return None
-    return data[0]
-
-
-def set_db_user(
-    *,
-    db: str,
-    instance_id: UUID,
-) -> None:
-    return call_with_fallback_auth(_set_db_user, db=db, instance_id=instance_id)
-
-
-def _set_db_user(
-    *,
-    db: str,
-    instance_id: UUID,
-    client: Client,
-) -> None:
-    db_dsn = LaminDsnModel(db=db)
-    db_user = select_db_user_by_instance(instance_id.hex, client)
-    if db_user is None:
-        insert_db_user(
-            {
-                "id": uuid4().hex,
-                "instance_id": instance_id.hex,
-                "db_user_name": db_dsn.db.user,
-                "db_user_password": db_dsn.db.password,
-            },
-            client,
-        )
-    else:
-        update_db_user(
-            db_user["id"],
-            {
-                "instance_id": instance_id.hex,
-                "db_user_name": db_dsn.db.user,
-                "db_user_password": db_dsn.db.password,
-            },
-            client,
-        )
-
-
-def sign_up_user(email: str, handle: str) -> Optional[str]:
+def sign_up_user(email: str, handle: str, save_as_settings: bool = False):
     """Sign up user."""
     from lamindb_setup.core._hub_core import sign_up_local_hub
 
     result_or_error = sign_up_local_hub(email)
     if result_or_error == "user-exists":  # user already exists
         return "user-exists"
+    account_id = UUID(result_or_error[1])
+    access_token = result_or_error[2]
     user_settings = UserSettings(
         handle=handle,
         email=email,
         password=result_or_error[0],
-        uuid=UUID(result_or_error[1]),
-        access_token=result_or_error[2],
+        uuid=account_id,
+        access_token=access_token,
     )
-    save_user_settings(user_settings)
-    return None  # user needs to confirm email now
+    if save_as_settings:
+        save_user_settings(user_settings)
+    return user_settings
 
 
 def test_runs_locally():
@@ -130,20 +70,18 @@ def test_incomplete_signup():
 
 
 @pytest.fixture(scope="session")
-def create_testuser1_session():  # -> Tuple[Client, UserSettings]
-    email = "testuser1@gmail.com"
-    response = sign_up_user(email, "testuser1")
-    assert response is None
-    # test repeated sign up
+def create_testadmin1_session():  # -> Tuple[Client, UserSettings]
+    email = "testadmin1@gmail.com"
+    sign_up_user(email, "testadmin1", save_as_settings=True)
     with pytest.raises(AuthApiError):
         # test error with "User already registered"
-        sign_up_user(email, "testuser1")
-    account_id = ln_setup.settings.user.uuid.hex
+        sign_up_user(email, "testadmin1")
+    account_id = ln_setup.settings.user.uuid
     account = {
-        "id": account_id,
-        "user_id": account_id,
+        "id": account_id.hex,
+        "user_id": account_id.hex,
         "lnid": base62(8),
-        "handle": "testuser1",
+        "handle": "testadmin1",
     }
     # uses ln_setup.settings.user.access_token
     client = connect_hub_with_auth()
@@ -153,77 +91,183 @@ def create_testuser1_session():  # -> Tuple[Client, UserSettings]
 
 
 @pytest.fixture(scope="session")
-def create_myinstance(create_testuser1_session):  # -> Dict
-    _, usettings = create_testuser1_session
+def create_testreader1_session():  # -> Tuple[Client, UserSettings]
+    email = "testreader1@gmail.com"
+    user_settings = sign_up_user(email, "testreader1")
+    account = {
+        "id": user_settings.uuid.hex,
+        "user_id": user_settings.uuid.hex,
+        "lnid": base62(8),
+        "handle": "testreader1",
+    }
+    client = connect_hub_with_auth(access_token=user_settings.access_token)
+    client.table("account").insert(account).execute()
+    yield client, user_settings
+    client.auth.sign_out()
+
+
+@pytest.fixture(scope="session")
+def create_myinstance(create_testadmin1_session):  # -> Dict
+    admin_client, usettings = create_testadmin1_session
     instance_id = uuid4()
+    db_str = "postgresql://postgres:pwd@fakeserver.xyz:5432/mydb"
     isettings = InstanceSettings(
         id=instance_id,
         owner=usettings.handle,
         name="myinstance",
         storage=init_storage_base("s3://lamindb-ci/myinstance"),
-        db="postgresql://postgres:pwd@fakeserver.xyz:5432/mydb",
+        db=db_str,
     )
     init_instance(isettings)
     # test loading it
     with pytest.raises(PermissionError) as error:
-        ln_setup.connect("testuser1/myinstance", _test=True)
+        ln_setup.connect("testadmin1/myinstance", _test=True)
     assert error.exconly().startswith(
         "PermissionError: No database access, please ask your admin"
     )
-    set_db_user(
-        db="postgresql://postgres:pwd@fakeserver.xyz:5432/mydb", instance_id=instance_id
+    db_collaborator = select_collaborator(
+        instance_id=instance_id.hex,
+        account_id=ln_setup.settings.user.uuid.hex,
+        client=admin_client,
     )
-    client, _ = create_testuser1_session
+    assert db_collaborator["role"] == "admin"
+    assert db_collaborator["db_user_id"] is None
+    db_dsn = LaminDsnModel(db=db_str)
+    db_user_name = db_dsn.db.user
+    db_user_password = db_dsn.db.password
+    insert_db_user(
+        name="write",
+        db_user_name=db_user_name,
+        db_user_password=db_user_password,
+        instance_id=instance_id,
+        client=admin_client,
+    )
     instance = select_instance_by_name(
         account_id=ln_setup.settings.user.uuid,
         name="myinstance",
-        client=client,
+        client=admin_client,
     )
     yield instance
 
 
-def test_connection_string_decomp(create_myinstance, create_testuser1_session):
-    client, _ = create_testuser1_session
-    db_user = select_db_user_by_instance(
-        instance_id=create_myinstance["id"],
-        client=client,
-    )
+def test_connection_string_decomp(create_myinstance, create_testadmin1_session):
+    client, _ = create_testadmin1_session
     assert create_myinstance["db_scheme"] == "postgresql"
     assert create_myinstance["db_host"] == "fakeserver.xyz"
     assert create_myinstance["db_port"] == 5432
     assert create_myinstance["db_database"] == "mydb"
-    assert db_user["db_user_name"] == "postgres"
-    assert db_user["db_user_password"] == "pwd"
-
     db_collaborator = select_collaborator(
         instance_id=create_myinstance["id"],
         account_id=ln_setup.settings.user.uuid.hex,
         client=client,
     )
+    assert db_collaborator["role"] == "admin"
     assert db_collaborator["db_user_id"] is None
 
 
-def test_connect_instance(create_myinstance, create_testuser1_session):
+def test_db_user(
+    create_myinstance, create_testadmin1_session, create_testreader1_session
+):
+    admin_client, admin_settings = create_testadmin1_session
+    instance_id = UUID(create_myinstance["id"])
+    db_user = select_db_user_by_instance(
+        instance_id=instance_id,
+        client=admin_client,
+    )
+    assert db_user["db_user_name"] == "postgres"
+    assert db_user["db_user_password"] == "pwd"
+    assert db_user["name"] == "write"
+    reader_client, reader_settings = create_testreader1_session
+    db_user = select_db_user_by_instance(
+        instance_id=instance_id,
+        client=reader_client,
+    )
+    assert db_user is None
+    # check that testreader1 is not yet a collaborator
+    db_collaborator = select_collaborator(
+        instance_id=instance_id.hex,
+        account_id=reader_settings.uuid.hex,
+        client=admin_client,
+    )
+    assert db_collaborator is None
+    # now add testreader1 as a collaborator
+    add_collaborator_by_ids(
+        account_id=reader_settings.uuid,
+        instance_id=instance_id,
+        role="read",
+        supabase_client=admin_client,
+    )
+    # check that this was successful and can be read by the reader
+    db_collaborator = select_collaborator(
+        instance_id=instance_id.hex,
+        account_id=reader_settings.uuid.hex,
+        client=reader_client,
+    )
+    assert db_collaborator["role"] == "read"
+    assert UUID(db_collaborator["instance_id"]) == instance_id
+    assert UUID(db_collaborator["account_id"]) == reader_settings.uuid
+    assert db_collaborator["db_user_id"] is None
+    # this alone doesn't set a db_user
+    db_user = select_db_user_by_instance(
+        instance_id=instance_id,
+        client=reader_client,
+    )
+    assert db_user is None
+    # now set the db_user
+    insert_db_user(
+        name="read",
+        db_user_name="dbreader",
+        db_user_password="1234",
+        instance_id=instance_id,
+        client=admin_client,
+    )
+    # admin can access all db users
+    data = (
+        admin_client.table("db_user")
+        .select("*")
+        .eq("instance_id", instance_id)
+        .execute()
+        .data
+    )
+    assert len(data) == 2
+    # reader can only access the read-level db user
+    db_user = select_db_user_by_instance(
+        instance_id=instance_id,
+        client=reader_client,
+    )
+    assert db_user["db_user_name"] == "dbreader"
+    assert db_user["db_user_password"] == "1234"
+    assert db_user["name"] == "read"
+    # admin still gets the write-level connection string
+    db_user = select_db_user_by_instance(
+        instance_id=instance_id,
+        client=admin_client,
+    )
+    assert db_user["db_user_name"] == "postgres"
+    assert db_user["db_user_password"] == "pwd"
+    assert db_user["name"] == "write"
+
+
+def test_connect_instance(create_myinstance, create_testadmin1_session):
     # trigger return for inexistent handle
     assert "account-not-exists" == connect_instance(
-        owner="testusr1",  # testuser1 with a typo
+        owner="testusr1",  # testadmin1 with a typo
         name=create_myinstance["name"],
     )
     # trigger misspelled name
     assert "instance-not-reachable" == connect_instance(
-        owner="testuser1",
+        owner="testadmin1",
         name="inexistent-name",  # inexistent name
     )
     # make instance public so that we can also test connection string
-    client, _ = create_testuser1_session
+    client, _ = create_testadmin1_session
     update_instance(
         instance_id=create_myinstance["id"],
         instance_fields={"public": True},
         client=client,
     )
-    # now supply correct data and make instance public
     result = connect_instance(
-        owner="testuser1",
+        owner="testadmin1",
         name=create_myinstance["name"],
     )
     db_user = select_db_user_by_instance(
@@ -250,7 +294,7 @@ def test_connect_instance(create_myinstance, create_testuser1_session):
 
 
 def test_connect_instance_corrupted_or_expired_credentials(
-    create_myinstance, create_testuser1_session
+    create_myinstance, create_testadmin1_session
 ):
     # assume token & password are corrupted or expired
     ln_setup.settings.user.access_token = "corrupted_or_expired_token"
@@ -258,7 +302,7 @@ def test_connect_instance_corrupted_or_expired_credentials(
     ln_setup.settings.user.password = "corrupted_password"
     with pytest.raises(AuthApiError):
         connect_instance(
-            owner="testuser1",
+            owner="testadmin1",
             name=create_myinstance["name"],
         )
     # now, let's assume only the token is expired or corrupted
@@ -267,18 +311,18 @@ def test_connect_instance_corrupted_or_expired_credentials(
     ln_setup.settings.user.access_token = "corrupted_or_expired_token"
     ln_setup.settings.user.password = correct_password
     connect_instance(
-        owner="testuser1",
+        owner="testadmin1",
         name=create_myinstance["name"],
     )
 
 
-def test_init_storage(create_testuser1_session):
-    client, _ = create_testuser1_session
+def test_init_storage(create_testadmin1_session):
+    client, _ = create_testadmin1_session
     storage_id = init_storage(ssettings=init_storage_base("s3://lamindb-ci/myinstance"))
     assert isinstance(storage_id, UUID)
 
 
-def test_init_storage_with_non_existing_bucket(create_testuser1_session):
+def test_init_storage_with_non_existing_bucket(create_testadmin1_session):
     from botocore.exceptions import ClientError
 
     with pytest.raises(ClientError) as error:
