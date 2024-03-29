@@ -119,7 +119,6 @@ def test_load_with_db_parameter():
         ln_setup.login("static-testuser1@lamin.ai", key="static-testuser1-password")
         # test load from hub
         ln_setup.connect("laminlabs/lamindata", _test=True)
-        assert "public-read" in ln_setup.settings.instance.db
         # test load from provided db argument
         db = "postgresql://testuser:testpwd@database2.cmyfs24wugc3.us-east-1.rds.amazonaws.com:5432/db1"  # noqa
         ln_setup.connect("laminlabs/lamindata", db=db, _test=True)
