@@ -62,27 +62,37 @@ def update_db_user(db_user_id: str, db_user_fields: dict, client: Client):
 
 def set_db_user(
     *,
-    db: str,
+    name: str,
+    db_user_name: str,
+    db_user_password: str,
     instance_id: UUID,
 ) -> None:
-    return call_with_fallback_auth(_set_db_user, db=db, instance_id=instance_id)
+    return call_with_fallback_auth(
+        _set_db_user,
+        name=name,
+        db_user_name=db_user_name,
+        db_user_password=db_user_password,
+        instance_id=instance_id,
+    )
 
 
 def _set_db_user(
     *,
-    db: str,
+    name: str,
+    db_user_name: str,
+    db_user_password: str,
     instance_id: UUID,
     client: Client,
 ) -> None:
-    db_dsn = LaminDsnModel(db=db)
     db_user = select_db_user_by_instance(instance_id.hex, client)
     if db_user is None:
         insert_db_user(
             {
                 "id": uuid4().hex,
                 "instance_id": instance_id.hex,
-                "db_user_name": db_dsn.db.user,
-                "db_user_password": db_dsn.db.password,
+                "name": name,
+                "db_user_name": db_user_name,
+                "db_user_password": db_user_password,
             },
             client,
         )
@@ -91,8 +101,8 @@ def _set_db_user(
             db_user["id"],
             {
                 "instance_id": instance_id.hex,
-                "db_user_name": db_dsn.db.user,
-                "db_user_password": db_dsn.db.password,
+                "db_user_name": db_user_name,
+                "db_user_password": db_user_password,
             },
             client,
         )
@@ -156,12 +166,13 @@ def create_testadmin1_session():  # -> Tuple[Client, UserSettings]
 def create_myinstance(create_testadmin1_session):  # -> Dict
     _, usettings = create_testadmin1_session
     instance_id = uuid4()
+    db_str = "postgresql://postgres:pwd@fakeserver.xyz:5432/mydb"
     isettings = InstanceSettings(
         id=instance_id,
         owner=usettings.handle,
         name="myinstance",
         storage=init_storage_base("s3://lamindb-ci/myinstance"),
-        db="postgresql://postgres:pwd@fakeserver.xyz:5432/mydb",
+        db=db_str,
     )
     init_instance(isettings)
     # test loading it
@@ -170,8 +181,14 @@ def create_myinstance(create_testadmin1_session):  # -> Dict
     assert error.exconly().startswith(
         "PermissionError: No database access, please ask your admin"
     )
+    db_dsn = LaminDsnModel(db=db_str)
+    db_user_name = db_dsn.db.user
+    db_user_password = db_dsn.db.password
     set_db_user(
-        db="postgresql://postgres:pwd@fakeserver.xyz:5432/mydb", instance_id=instance_id
+        name="write",
+        db_user_name=db_user_name,
+        db_user_password=db_user_password,
+        instance_id=instance_id,
     )
     client, _ = create_testadmin1_session
     instance = select_instance_by_name(
@@ -194,12 +211,14 @@ def test_connection_string_decomp(create_myinstance, create_testadmin1_session):
     assert create_myinstance["db_database"] == "mydb"
     assert db_user["db_user_name"] == "postgres"
     assert db_user["db_user_password"] == "pwd"
+    assert db_user["name"] == "write"
 
     db_collaborator = select_collaborator(
         instance_id=create_myinstance["id"],
         account_id=ln_setup.settings.user.uuid.hex,
         client=client,
     )
+    assert db_collaborator["role"] == "admin"
     assert db_collaborator["db_user_id"] is None
 
 
