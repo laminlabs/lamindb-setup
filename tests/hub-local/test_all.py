@@ -1,6 +1,5 @@
 import os
 from uuid import UUID, uuid4
-from typing import Optional
 import pytest
 from supabase import Client
 from lamindb_setup.core._hub_utils import LaminDsnModel
@@ -108,22 +107,25 @@ def _set_db_user(
         )
 
 
-def sign_up_user(email: str, handle: str) -> Optional[str]:
+def sign_up_user(email: str, handle: str, save_as_settings: bool = False):
     """Sign up user."""
     from lamindb_setup.core._hub_core import sign_up_local_hub
 
     result_or_error = sign_up_local_hub(email)
     if result_or_error == "user-exists":  # user already exists
         return "user-exists"
+    account_id = UUID(result_or_error[1])
+    access_token = result_or_error[2]
     user_settings = UserSettings(
         handle=handle,
         email=email,
         password=result_or_error[0],
-        uuid=UUID(result_or_error[1]),
-        access_token=result_or_error[2],
+        uuid=account_id,
+        access_token=access_token,
     )
-    save_user_settings(user_settings)
-    return None  # user needs to confirm email now
+    if save_as_settings:
+        save_user_settings(user_settings)
+    return account_id, access_token
 
 
 def test_runs_locally():
@@ -142,21 +144,35 @@ def test_incomplete_signup():
 @pytest.fixture(scope="session")
 def create_testadmin1_session():  # -> Tuple[Client, UserSettings]
     email = "testadmin1@gmail.com"
-    response = sign_up_user(email, "testadmin1")
-    assert response is None
-    # test repeated sign up
+    sign_up_user(email, "testadmin1", save_as_settings=True)
     with pytest.raises(AuthApiError):
         # test error with "User already registered"
         sign_up_user(email, "testadmin1")
-    account_id = ln_setup.settings.user.uuid.hex
+    account_id = ln_setup.settings.user.uuid
     account = {
-        "id": account_id,
-        "user_id": account_id,
+        "id": account_id.hex,
+        "user_id": account_id.hex,
         "lnid": base62(8),
         "handle": "testadmin1",
     }
     # uses ln_setup.settings.user.access_token
     client = connect_hub_with_auth()
+    client.table("account").insert(account).execute()
+    yield client, ln_setup.settings.user
+    client.auth.sign_out()
+
+
+@pytest.fixture(scope="session")
+def create_testreader1_session():  # -> Tuple[Client, UserSettings]
+    email = "testreader1@gmail.com"
+    account_id, access_token = sign_up_user(email, "testreader1")
+    account = {
+        "id": account_id.hex,
+        "user_id": account_id.hex,
+        "lnid": base62(8),
+        "handle": "testreader1",
+    }
+    client = connect_hub_with_auth(access_token=access_token)
     client.table("account").insert(account).execute()
     yield client, ln_setup.settings.user
     client.auth.sign_out()
@@ -201,18 +217,10 @@ def create_myinstance(create_testadmin1_session):  # -> Dict
 
 def test_connection_string_decomp(create_myinstance, create_testadmin1_session):
     client, _ = create_testadmin1_session
-    db_user = select_db_user_by_instance(
-        instance_id=create_myinstance["id"],
-        client=client,
-    )
     assert create_myinstance["db_scheme"] == "postgresql"
     assert create_myinstance["db_host"] == "fakeserver.xyz"
     assert create_myinstance["db_port"] == 5432
     assert create_myinstance["db_database"] == "mydb"
-    assert db_user["db_user_name"] == "postgres"
-    assert db_user["db_user_password"] == "pwd"
-    assert db_user["name"] == "write"
-
     db_collaborator = select_collaborator(
         instance_id=create_myinstance["id"],
         account_id=ln_setup.settings.user.uuid.hex,
@@ -220,6 +228,25 @@ def test_connection_string_decomp(create_myinstance, create_testadmin1_session):
     )
     assert db_collaborator["role"] == "admin"
     assert db_collaborator["db_user_id"] is None
+
+
+def test_db_user(
+    create_myinstance, create_testadmin1_session, create_testreader1_session
+):
+    client, _ = create_testadmin1_session
+    db_user = select_db_user_by_instance(
+        instance_id=create_myinstance["id"],
+        client=client,
+    )
+    assert db_user["db_user_name"] == "postgres"
+    assert db_user["db_user_password"] == "pwd"
+    assert db_user["name"] == "write"
+    client, _ = create_testreader1_session
+    db_user = select_db_user_by_instance(
+        instance_id=create_myinstance["id"],
+        client=client,
+    )
+    assert db_user is None
 
 
 def test_connect_instance(create_myinstance, create_testadmin1_session):
