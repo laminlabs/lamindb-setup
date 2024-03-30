@@ -14,7 +14,6 @@ Setup:
    login
    logout
    init
-   load
    close
    delete
 
