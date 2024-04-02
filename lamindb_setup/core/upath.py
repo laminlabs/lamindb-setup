@@ -443,10 +443,9 @@ def to_url(upath):
         raise ValueError("The provided UPath must be an S3 path.")
     key = "/".join(upath.parts[1:])
     bucket = upath._url.netloc
-    if (
-        f"s3://{bucket}" not in hosted_buckets
-        or f"s3://{bucket}" == "s3://scverse-spatial-eu-central-1"
-    ):
+    if "s3://{bucket}" == "s3://scverse-spatial-eu-central-1":
+        region = "eu-central-1"
+    elif f"s3://{bucket}" not in hosted_buckets:
         metadata = upath.fs.call_s3("head_bucket", Bucket=upath._url.netloc)
         region = metadata["BucketRegion"]
     else:
