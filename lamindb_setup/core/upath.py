@@ -178,7 +178,20 @@ def upload_from(self, path, print_progress: bool = False, **kwargs):
             # todo: make proper progress bar for directories
             cb = fsspec.callbacks.NoOpCallback()
         kwargs["callback"] = cb
+    # this weird thing is to avoid triggering create_bucket in upload
+    # if dirs are present
+    # it allows to avoid permission error
+    bucket = self._url.netloc
+    if bucket not in self.fs.dircache:
+        self.fs.dircache[bucket] = [{}]
+        cleanup_cache = True
+    else:
+        cleanup_cache = False
+
     self.fs.upload(str(path), str(self), **kwargs)
+
+    if cleanup_cache:
+        del self.fs.dircache[bucket]
 
 
 def synchronize(self, objectpath: Path, error_no_origin: bool = True, **kwargs):
