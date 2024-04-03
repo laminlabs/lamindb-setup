@@ -51,6 +51,9 @@ KNOWN_SUFFIXES = {
 }
 
 
+TRAILING_SEP = (os.sep, os.altsep) if os.altsep is not None else os.sep
+
+
 def extract_suffix_from_path(path: Path, arg_name: Optional[str] = None) -> str:
     def process_digits(suffix: str):
         if suffix[1:].isdigit():
@@ -181,14 +184,20 @@ def upload_from(self, path, print_progress: bool = False, **kwargs):
     # this weird thing is to avoid triggering create_bucket in upload
     # if dirs are present
     # it allows to avoid permission error
-    bucket = self._url.netloc
-    if bucket not in self.fs.dircache:
-        self.fs.dircache[bucket] = [{}]
-        cleanup_cache = True
-    else:
+    destination = str(self)
+    if path.is_file():
         cleanup_cache = False
+    else:
+        bucket = self._url.netloc
+        if bucket not in self.fs.dircache:
+            self.fs.dircache[bucket] = [{}]
+            if not destination.endswith(TRAILING_SEP):
+                destination += "/"
+            cleanup_cache = True
+        else:
+            cleanup_cache = False
 
-    self.fs.upload(str(path), str(self), **kwargs)
+    self.fs.upload(str(path), destination, **kwargs)
 
     if cleanup_cache:
         del self.fs.dircache[bucket]
