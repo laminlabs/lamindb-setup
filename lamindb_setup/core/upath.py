@@ -185,13 +185,13 @@ def upload_from(self, path, print_progress: bool = False, **kwargs):
     # if dirs are present
     # it allows to avoid permission error
     destination = str(self)
-    if path.is_file():
+    if os.path.isfile(path):
         cleanup_cache = False
     else:
         bucket = self._url.netloc
         if bucket not in self.fs.dircache:
             self.fs.dircache[bucket] = [{}]
-            if not destination.endswith(TRAILING_SEP):
+            if not destination.endswith(TRAILING_SEP):  # type: ignore
                 destination += "/"
             cleanup_cache = True
         else:
