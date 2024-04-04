@@ -200,7 +200,8 @@ def upload_from(self, path, print_progress: bool = False, **kwargs):
     self.fs.upload(str(path), destination, **kwargs)
 
     if cleanup_cache:
-        del self.fs.dircache[bucket]
+        if bucket in self.fs.dircache:
+            del self.fs.dircache[bucket]
 
 
 def synchronize(self, objectpath: Path, error_no_origin: bool = True, **kwargs):
