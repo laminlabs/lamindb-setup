@@ -1,3 +1,4 @@
+from __future__ import annotations
 from pathlib import Path
 
 # UPath is subclass of Path, hence, it's not necessary to list UPath
