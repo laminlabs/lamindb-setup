@@ -3,6 +3,7 @@
 <!-- prettier-ignore -->
 Name | PR | Developer | Date | Version
 --- | --- | --- | --- | ---
+🐛 Fix directory uploads for hosted instances | [702](https://github.com/laminlabs/lamindb-setup/pull/702) | [Koncopd](https://github.com/Koncopd) | 2024-04-04 |
 🚑️ Temp fix for non-hosted buckets | [700](https://github.com/laminlabs/lamindb-setup/pull/700) | [sunnyosun](https://github.com/sunnyosun) | 2024-04-02 |
 🍱 Add the scverse spatial hackathon bucket | [699](https://github.com/laminlabs/lamindb-setup/pull/699) | [falexwolf](https://github.com/falexwolf) | 2024-03-30 |
 ♻️ More fine-grained db credentials management | [698](https://github.com/laminlabs/lamindb-setup/pull/698) | [falexwolf](https://github.com/falexwolf) | 2024-03-29 | 0.68.2
