@@ -51,6 +51,9 @@ KNOWN_SUFFIXES = {
 }
 
 
+TRAILING_SEP = (os.sep, os.altsep) if os.altsep is not None else os.sep
+
+
 def extract_suffix_from_path(path: Path, arg_name: Optional[str] = None) -> str:
     def process_digits(suffix: str):
         if suffix[1:].isdigit():
@@ -160,7 +163,10 @@ class ProgressCallback(fsspec.callbacks.Callback):
 def download_to(self, path, print_progress: bool = False, **kwargs):
     """Download to a path."""
     if print_progress:
-        if not path.is_dir():
+        # can't do path.is_dir() because path doesn't exist
+        # so assume any destination without a suffix is a dir
+        # this is temporary until we have a proper progress bar for directories
+        if os.path.splitext(path)[-1] not in {"", ".zrad", ".zarr"}:
             cb = ProgressCallback("downloading")
         else:
             # todo: make proper progress bar for directories
@@ -172,13 +178,34 @@ def download_to(self, path, print_progress: bool = False, **kwargs):
 def upload_from(self, path, print_progress: bool = False, **kwargs):
     """Upload from a local path."""
     if print_progress:
-        if not path.is_dir():
+        if not os.path.isdir(path):
             cb = ProgressCallback("uploading")
         else:
             # todo: make proper progress bar for directories
             cb = fsspec.callbacks.NoOpCallback()
         kwargs["callback"] = cb
-    self.fs.upload(str(path), str(self), **kwargs)
+    # this weird thing is to avoid triggering create_bucket in upload
+    # if dirs are present
+    # it allows to avoid permission error
+    destination = str(self)
+    if os.path.isfile(path):
+        cleanup_cache = False
+    else:
+        bucket = self._url.netloc
+        if bucket not in self.fs.dircache:
+            self.fs.dircache[bucket] = [{}]
+            if not destination.endswith(TRAILING_SEP):  # type: ignore
+                destination += "/"
+            cleanup_cache = True
+        else:
+            cleanup_cache = False
+
+    self.fs.upload(str(path), destination, **kwargs)
+
+    if cleanup_cache:
+        # normally this is invalidated after the upload but still better to check
+        if bucket in self.fs.dircache:
+            del self.fs.dircache[bucket]
 
 
 def synchronize(self, objectpath: Path, error_no_origin: bool = True, **kwargs):
