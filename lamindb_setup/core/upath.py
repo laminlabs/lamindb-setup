@@ -163,7 +163,10 @@ class ProgressCallback(fsspec.callbacks.Callback):
 def download_to(self, path, print_progress: bool = False, **kwargs):
     """Download to a path."""
     if print_progress:
-        if not path.is_dir():
+        # can't do path.is_dir() because path doesn't exist
+        # so assume any destination without a suffix is a dir
+        # this is temporary until we have a proper progress bar for directories
+        if os.path.splitext(path)[-1] not in {"", ".zrad", ".zarr"}:
             cb = ProgressCallback("downloading")
         else:
             # todo: make proper progress bar for directories
@@ -175,7 +178,7 @@ def download_to(self, path, print_progress: bool = False, **kwargs):
 def upload_from(self, path, print_progress: bool = False, **kwargs):
     """Upload from a local path."""
     if print_progress:
-        if not path.is_dir():
+        if not os.path.isdir(path):
             cb = ProgressCallback("uploading")
         else:
             # todo: make proper progress bar for directories
@@ -200,6 +203,7 @@ def upload_from(self, path, print_progress: bool = False, **kwargs):
     self.fs.upload(str(path), destination, **kwargs)
 
     if cleanup_cache:
+        # normally this is invalidated after the upload but still better to check
         if bucket in self.fs.dircache:
             del self.fs.dircache[bucket]
 
