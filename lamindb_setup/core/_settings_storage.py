@@ -63,12 +63,19 @@ def mark_storage_root(root: UPathStr):
     mark_upath.touch()
 
 
-def init_storage(storage: UPathStr, region: Optional[str] = None) -> "StorageSettings":
+def init_storage(storage: UPathStr) -> "StorageSettings":
     if storage is None:
         raise ValueError("storage argument can't be `None`")
     root = str(storage)  # ensure we have a string
     uid = base62(8)
-    if root == "create-s3":
+    if root.startswith("create-s3"):
+        if root == "create-s3":
+            region = None
+        else:
+            assert (
+                "--" in root
+            ), "region has to be specified with `create-s3--eu-central-1`"
+            region = root.replace("create-s3--", "")
         if region is None:
             region = find_closest_aws_region()
         else:
