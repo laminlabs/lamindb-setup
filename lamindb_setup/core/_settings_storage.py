@@ -68,13 +68,10 @@ def init_storage(storage: UPathStr) -> "StorageSettings":
         raise ValueError("storage argument can't be `None`")
     root = str(storage)  # ensure we have a string
     uid = base62(8)
+    region = None
     if root.startswith("create-s3"):
-        if root == "create-s3":
-            region = None
-        else:
-            assert (
-                "--" in root
-            ), "region has to be specified with `create-s3--eu-central-1`"
+        if root != "create-s3":
+            assert "--" in root, "example: `create-s3--eu-central-1`"
             region = root.replace("create-s3--", "")
         if region is None:
             region = find_closest_aws_region()
