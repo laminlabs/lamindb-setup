@@ -184,11 +184,11 @@ def upload_from(self, path, print_progress: bool = False, **kwargs):
             # todo: make proper progress bar for directories
             cb = fsspec.callbacks.NoOpCallback()
         kwargs["callback"] = cb
-    # this weird thing is to avoid triggering create_bucket in upload
+    # this weird thing is to avoid s3fs triggering create_bucket in upload
     # if dirs are present
     # it allows to avoid permission error
     destination = str(self)
-    if os.path.isfile(path):
+    if self.protocol != "s3" or os.path.isfile(path):
         cleanup_cache = False
     else:
         bucket = self._url.netloc
