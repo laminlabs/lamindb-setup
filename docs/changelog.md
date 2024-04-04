@@ -3,6 +3,7 @@
 <!-- prettier-ignore -->
 Name | PR | Developer | Date | Version
 --- | --- | --- | --- | ---
+🩹 Do bucket injection trick only for s3 | [705](https://github.com/laminlabs/lamindb-setup/pull/705) | [Koncopd](https://github.com/Koncopd) | 2024-04-04 |
 🚸 Add region param | [704](https://github.com/laminlabs/lamindb-setup/pull/704) | [falexwolf](https://github.com/falexwolf) | 2024-04-04 |
 🐛 Avoid the error due to deleting the same file by multiple processes | [703](https://github.com/laminlabs/lamindb-setup/pull/703) | [Koncopd](https://github.com/Koncopd) | 2024-04-04 | 0.68.5
 🐛 Fix directory uploads for hosted instances | [702](https://github.com/laminlabs/lamindb-setup/pull/702) | [Koncopd](https://github.com/Koncopd) | 2024-04-04 |
