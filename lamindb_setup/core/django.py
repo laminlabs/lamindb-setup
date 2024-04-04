@@ -200,8 +200,17 @@ def setup_django(
 
     # clean up temporary settings files
     if not settings_file_existed:
-        isettings._get_settings_file().unlink()
-    current_instance_settings_file().unlink()
+        try:
+            isettings._get_settings_file().unlink()
+        except FileNotFoundError:
+            pass
+    # try except is needed here and above to avoid problems due to
+    # multiple processes trying to delete this file, and for one of them
+    # it has been deleted already
+    try:
+        current_instance_settings_file().unlink()
+    except FileNotFoundError:
+        pass
     if current_settings_file_existed:
         shutil.copy(current_settings_file.with_name("_tmp.env"), current_settings_file)
 
