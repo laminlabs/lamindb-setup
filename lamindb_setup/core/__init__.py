@@ -1,13 +1,5 @@
 """Core library.
 
-Paths and file system:
-
-.. autosummary::
-   :toctree:
-
-   upath
-   types
-
 Settings:
 
 .. autosummary::
