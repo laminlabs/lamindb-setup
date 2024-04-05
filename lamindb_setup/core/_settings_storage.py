@@ -98,7 +98,11 @@ def init_storage(storage: UPathStr) -> "StorageSettings":
     if ssettings.is_cloud:
         from ._hub_core import init_storage as init_storage_hub
 
-        if root_str.startswith("create-s3"):
+        if (
+            root_str.startswith("create-s3")
+            and lamin_env is None
+            or lamin_env == "prod"
+        ):
             ssettings._aws_account_id = 767398070972
         elif root_str.startswith("s3://"):
             ssettings._aws_account_id = get_aws_account_id()
