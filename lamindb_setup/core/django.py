@@ -205,7 +205,13 @@ def setup_django(
     # or load is complete
     current_instance_settings_file().unlink(missing_ok=True)
     if current_settings_file_existed:
-        shutil.copy(current_settings_file.with_name("_tmp.env"), current_settings_file)
+        # a fix for parallel removal and copying
+        try:
+            shutil.copy(
+                current_settings_file.with_name("_tmp.env"), current_settings_file
+            )
+        except FileNotFoundError:
+            pass
 
     global IS_SETUP
     IS_SETUP = True
