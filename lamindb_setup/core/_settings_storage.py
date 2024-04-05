@@ -69,6 +69,8 @@ def init_storage(storage: UPathStr) -> "StorageSettings":
     root_str = str(storage)  # ensure we have a string
     uid = base62(8)
     region = None
+    lamin_env = os.getenv("LAMIN_ENV")
+    aws_account_id = None
     if root_str.startswith("create-s3"):
         if root_str != "create-s3":
             assert "--" in root_str, "example: `create-s3--eu-central-1`"
@@ -78,9 +80,9 @@ def init_storage(storage: UPathStr) -> "StorageSettings":
         else:
             if region not in hosted_regions:
                 raise ValueError(f"region has to be one of {hosted_regions}")
-        lamin_env = os.getenv("LAMIN_ENV")
         if lamin_env is None or lamin_env == "prod":
             root_str = f"s3://lamin-{region}/{uid}"
+            aws_account_id = 767398070972
         else:
             root_str = f"s3://lamin-hosted-test/{uid}"
     elif root_str.startswith(("gs://", "s3://")):
@@ -98,13 +100,9 @@ def init_storage(storage: UPathStr) -> "StorageSettings":
     if ssettings.is_cloud:
         from ._hub_core import init_storage as init_storage_hub
 
-        if (
-            root_str.startswith("create-s3")
-            and lamin_env is None
-            or lamin_env == "prod"
-        ):
-            ssettings._aws_account_id = 767398070972
-        elif root_str.startswith("s3://"):
+        # we use this in anticipation of secrets management
+        # AWS considers the account id non-sensitive information
+        if root_str.startswith("s3://") and aws_account_id is None:
             ssettings._aws_account_id = get_aws_account_id()
         ssettings._description = f"Created as default storage for instance {uid}"
         ssettings._uuid = init_storage_hub(ssettings)
