@@ -164,8 +164,8 @@ def connect(
 
     if storage is not None:
         update_isettings_with_storage(isettings, storage)
+    isettings._persist()
     if _test:
-        isettings._persist()  # this is to test the settings
         return None
     silence_loggers()
     check, msg = isettings._load_db(
