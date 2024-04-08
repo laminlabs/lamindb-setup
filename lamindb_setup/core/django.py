@@ -172,14 +172,14 @@ def setup_django(
         call_command("makemigrations")
         return None
 
-    # check that migrations have been deployed
-    settings_file_existed = isettings._get_settings_file().exists()
-    # make a temporary copy of the current settings file
-    current_settings_file = current_instance_settings_file()
-    current_settings_file_existed = current_settings_file.exists()
-    if current_settings_file_existed:
-        shutil.copy(current_settings_file, current_settings_file.with_name("_tmp.env"))
-    isettings._persist()  # temporarily make settings available to migrations, should probably if fails
+    # # check that migrations have been deployed
+    # settings_file_existed = isettings._get_settings_file().exists()
+    # # make a temporary copy of the current settings file
+    # current_settings_file = current_instance_settings_file()
+    # current_settings_file_existed = current_settings_file.exists()
+    # if current_settings_file_existed:
+    #     shutil.copy(current_settings_file, current_settings_file.with_name("_tmp.env"))
+    # isettings._persist()  # temporarily make settings available to migrations, should probably if fails
 
     if deploy_migrations:
         call_command("migrate", verbosity=2)
@@ -187,14 +187,14 @@ def setup_django(
     elif init:
         call_command("migrate", verbosity=0)
 
-    # clean up temporary settings files
-    if not settings_file_existed:
-        isettings._get_settings_file().unlink(missing_ok=True)
-    # also the following needs to be removed - it will only be created once init
-    # or load is complete
-    current_instance_settings_file().unlink(missing_ok=True)
-    if current_settings_file_existed:
-        shutil.copy(current_settings_file.with_name("_tmp.env"), current_settings_file)
+    # # clean up temporary settings files
+    # if not settings_file_existed:
+    #     isettings._get_settings_file().unlink(missing_ok=True)
+    # # also the following needs to be removed - it will only be created once init
+    # # or load is complete
+    # current_instance_settings_file().unlink(missing_ok=True)
+    # if current_settings_file_existed:
+    #     shutil.copy(current_settings_file.with_name("_tmp.env"), current_settings_file)
 
     global IS_SETUP
     IS_SETUP = True
