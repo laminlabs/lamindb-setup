@@ -267,7 +267,7 @@ def init(
         if isettings is not None:
             delete_by_isettings(isettings)
             delete_instance_record(isettings.id)
-            isettings._get_settings_file.unlink(missing_ok=True)  # type: ignore
+            isettings._get_settings_file().unlink(missing_ok=True)  # type: ignore
         if ssettings is not None:
             delete_storage_record(ssettings.uuid)  # type: ignore
         raise e
