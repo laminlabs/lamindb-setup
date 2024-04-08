@@ -40,6 +40,21 @@ Please update your Python library to match the database!
 
 
 def get_migrations_to_sync():
+    #     status, latest_migrs = get_migrations_to_sync()
+    #     if status == "synced":
+    #         pass
+    #     else:
+    #         warning_func = (
+    #             MISSING_MIGRATIONS_WARNING
+    #             if status == "missing"
+    #             else AHEAD_MIGRATIONS_WARNING
+    #         )
+    #         logger.warning(
+    #             warning_func.format(
+    #                 deployed_latest_migrations=latest_migrs[0],
+    #                 defined_latest_migrations=latest_migrs[1],
+    #             )
+    #         )
     from .._migrate import migrate
 
     deployed_latest_migs = migrate.deployed_migrations(latest=True)
@@ -167,36 +182,10 @@ def setup_django(
     isettings._persist()  # temporarily make settings available to migrations, should probably if fails
 
     if deploy_migrations:
-        # deploy migrations
         call_command("migrate", verbosity=2)
-        # only update if called from lamin migrate deploy
-        # if called from load_schema(..., init=True)
-        # no need to update the remote sqlite
         isettings._update_cloud_sqlite_file(unlock_cloud_sqlite=False)
-    else:
-        if init:
-            # create migrations
-            call_command("migrate", verbosity=0)
-        # the check below got replaced with printing the lamindb version
-        # of the last migration stored in the hub
-        # not running the migration check brings down lamindb import time
-        # from around 2.4s to 1.4s
-        # else:
-        #     status, latest_migrs = get_migrations_to_sync()
-        #     if status == "synced":
-        #         pass
-        #     else:
-        #         warning_func = (
-        #             MISSING_MIGRATIONS_WARNING
-        #             if status == "missing"
-        #             else AHEAD_MIGRATIONS_WARNING
-        #         )
-        #         logger.warning(
-        #             warning_func.format(
-        #                 deployed_latest_migrations=latest_migrs[0],
-        #                 defined_latest_migrations=latest_migrs[1],
-        #             )
-        #         )
+    elif init:
+        call_command("migrate", verbosity=0)
 
     # clean up temporary settings files
     if not settings_file_existed:
