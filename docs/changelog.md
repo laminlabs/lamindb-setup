@@ -3,6 +3,7 @@
 <!-- prettier-ignore -->
 Name | PR | Developer | Date | Version
 --- | --- | --- | --- | ---
+♻️ No longer need AWS account | [711](https://github.com/laminlabs/lamindb-setup/pull/711) | [falexwolf](https://github.com/falexwolf) | 2024-04-08 |
 📝 Fix docs | [709](https://github.com/laminlabs/lamindb-setup/pull/709) | [falexwolf](https://github.com/falexwolf) | 2024-04-05 |
 ♻️ Replace TypeVar with TypeAlias | [707](https://github.com/laminlabs/lamindb-setup/pull/707) | [falexwolf](https://github.com/falexwolf) | 2024-04-04 |
 ♻️ Refactor clean up | [706](https://github.com/laminlabs/lamindb-setup/pull/706) | [falexwolf](https://github.com/falexwolf) | 2024-04-04 |
