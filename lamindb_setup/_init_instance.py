@@ -245,8 +245,8 @@ def init(
         if isettings.is_remote and instance_state != "instance-corrupted-or-deleted":
             init_instance_hub(isettings)
         validate_sqlite_state(isettings)
+        isettings._persist()
         if _test:
-            isettings._persist()
             return None
         isettings._init_db()
         load_from_isettings(isettings, init=True)
@@ -267,6 +267,7 @@ def init(
         if isettings is not None:
             delete_by_isettings(isettings)
             delete_instance_record(isettings.id)
+            isettings._get_settings_file().unlink(missing_ok=True)  # type: ignore
         if ssettings is not None:
             delete_storage_record(ssettings.uuid)  # type: ignore
         raise e

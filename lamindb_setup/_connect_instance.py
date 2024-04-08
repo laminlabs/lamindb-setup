@@ -96,104 +96,115 @@ def connect(
         db: Load the instance with an updated database URL.
         storage: Load the instance with an updated default storage.
     """
-    owner, name = get_owner_name_from_identifier(slug)
+    isettings: InstanceSettings = None  # type: ignore
+    try:
+        owner, name = get_owner_name_from_identifier(slug)
 
-    if _check_instance_setup() and not _test:
-        if settings._instance_exists and f"{owner}/{name}" == settings.instance.slug:
-            logger.info(f"connected lamindb: {settings.instance.slug}")
-            return None
+        if _check_instance_setup() and not _test:
+            if (
+                settings._instance_exists
+                and f"{owner}/{name}" == settings.instance.slug
+            ):
+                logger.info(f"connected lamindb: {settings.instance.slug}")
+                return None
+            else:
+                raise RuntimeError(MESSAGE_NO_MULTIPLE_INSTANCE)
+        elif settings._instance_exists and f"{owner}/{name}" != settings.instance.slug:
+            close_instance(mute=True)
+
+        settings_file = instance_settings_file(name, owner)
+
+        # the following will return a string if the instance does not exist
+        # on the hub
+        hub_result = connect_instance_from_hub(owner=owner, name=name)
+
+        # if hub_result is not a string, it means it made a request
+        # that successfully returned metadata
+        if not isinstance(hub_result, str):
+            instance_result, storage_result = hub_result
+            db_updated = update_db_using_local(instance_result, settings_file, db=db)
+            ssettings = StorageSettings(
+                root=storage_result["root"],
+                region=storage_result["region"],
+                uid=storage_result["lnid"],
+            )
+            isettings = InstanceSettings(
+                id=UUID(instance_result["id"]),
+                owner=owner,
+                name=name,
+                storage=ssettings,
+                db=db_updated,
+                schema=instance_result["schema_str"],
+                git_repo=instance_result["git_repo"],
+            )
+            from importlib import metadata
+
+            try:
+                lamindb_version = metadata.version("lamindb")
+            except metadata.PackageNotFoundError:
+                lamindb_version = None
+            logger.important(
+                f"last migration: lamindb=={instance_result['lamindb_version']} <> your"
+                f" env: lamindb=={lamindb_version}"
+            )
         else:
-            raise RuntimeError(MESSAGE_NO_MULTIPLE_INSTANCE)
-    elif settings._instance_exists and f"{owner}/{name}" != settings.instance.slug:
-        close_instance(mute=True)
-
-    settings_file = instance_settings_file(name, owner)
-
-    # the following will return a string if the instance does not exist
-    # on the hub
-    hub_result = connect_instance_from_hub(owner=owner, name=name)
-
-    # if hub_result is not a string, it means it made a request
-    # that successfully returned metadata
-    if not isinstance(hub_result, str):
-        instance_result, storage_result = hub_result
-        db_updated = update_db_using_local(instance_result, settings_file, db=db)
-        ssettings = StorageSettings(
-            root=storage_result["root"],
-            region=storage_result["region"],
-            uid=storage_result["lnid"],
-        )
-        isettings = InstanceSettings(
-            id=UUID(instance_result["id"]),
-            owner=owner,
-            name=name,
-            storage=ssettings,
-            db=db_updated,
-            schema=instance_result["schema_str"],
-            git_repo=instance_result["git_repo"],
-        )
-        from importlib import metadata
-
-        try:
-            lamindb_version = metadata.version("lamindb")
-        except metadata.PackageNotFoundError:
-            lamindb_version = None
-        logger.important(
-            f"last migration: lamindb=={instance_result['lamindb_version']} <> your"
-            f" env: lamindb=={lamindb_version}"
-        )
-    else:
-        error_message = (
-            f"'{owner}/{name}' not loadable:"
-            f" '{hub_result}'\nCheck your permissions:"
-            f" https://lamin.ai/{owner}/{name}?tab=collaborators"
-        )
-        if settings_file.exists():
-            isettings = load_instance_settings(settings_file)
-            if isettings.is_remote:
+            error_message = (
+                f"'{owner}/{name}' not loadable:"
+                f" '{hub_result}'\nCheck your permissions:"
+                f" https://lamin.ai/{owner}/{name}?tab=collaborators"
+            )
+            if settings_file.exists():
+                isettings = load_instance_settings(settings_file)
+                if isettings.is_remote:
+                    if _raise_not_reachable_error:
+                        raise SystemExit(error_message)
+                    return "instance-not-reachable"
+                logger.info(f"found cached instance metadata: {settings_file}")
+            else:
                 if _raise_not_reachable_error:
                     raise SystemExit(error_message)
                 return "instance-not-reachable"
-            logger.info(f"found cached instance metadata: {settings_file}")
-        else:
-            if _raise_not_reachable_error:
-                raise SystemExit(error_message)
-            return "instance-not-reachable"
-        # mimic instance_result from hub
-        instance_result = {"id": isettings.id.hex}
+            # mimic instance_result from hub
+            instance_result = {"id": isettings.id.hex}
 
-    if storage is not None:
-        update_isettings_with_storage(isettings, storage)
-    if _test:
-        isettings._persist()  # this is to test the settings
-        return None
-    silence_loggers()
-    check, msg = isettings._load_db(
-        do_not_lock_for_laminapp_admin=True
-    )  # this also updates local SQLite
-    if not check:
-        local_db = isettings._is_cloud_sqlite and isettings._sqlite_file_local.exists()
-        if local_db:
-            logger.warning(
-                "SQLite file does not exist in the cloud, but exists locally:"
-                f" {isettings._sqlite_file_local}\nTo push the file to the cloud, call:"
-                " lamin close"
+        if storage is not None:
+            update_isettings_with_storage(isettings, storage)
+        isettings._persist()
+        if _test:
+            return None
+        silence_loggers()
+        check, msg = isettings._load_db(
+            do_not_lock_for_laminapp_admin=True
+        )  # this also updates local SQLite
+        if not check:
+            local_db = (
+                isettings._is_cloud_sqlite and isettings._sqlite_file_local.exists()
             )
-        elif _raise_not_reachable_error:
-            raise SystemExit(msg)
-        else:
-            logger.warning(
-                f"instance exists with id {isettings.id.hex}, but database is not"
-                " loadable: re-initializing"
-            )
-            return "instance-corrupted-or-deleted", instance_result
-    # this is for testing purposes only
-    if _TEST_FAILED_LOAD:
-        raise RuntimeError("Technical testing error.")
+            if local_db:
+                logger.warning(
+                    "SQLite file does not exist in the cloud, but exists locally:"
+                    f" {isettings._sqlite_file_local}\nTo push the file to the cloud,"
+                    " call: lamin close"
+                )
+            elif _raise_not_reachable_error:
+                raise SystemExit(msg)
+            else:
+                logger.warning(
+                    f"instance exists with id {isettings.id.hex}, but database is not"
+                    " loadable: re-initializing"
+                )
+                return "instance-corrupted-or-deleted", instance_result
+        # this is for testing purposes only
+        if _TEST_FAILED_LOAD:
+            raise RuntimeError("Technical testing error.")
 
-    if storage is not None and isettings.dialect == "sqlite":
-        update_root_field_in_default_storage(isettings)
-    load_from_isettings(isettings)
+        if storage is not None and isettings.dialect == "sqlite":
+            update_root_field_in_default_storage(isettings)
+        load_from_isettings(isettings)
+    except Exception as e:
+        if isettings is not None:
+            isettings._get_settings_file().unlink(missing_ok=True)  # type: ignore
+        raise e
     return None
 
 
