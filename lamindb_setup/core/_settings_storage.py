@@ -3,7 +3,7 @@ import shutil
 from lamin_utils import logger
 from pathlib import Path
 from typing import Any, Optional, Union
-from ._aws_storage import find_closest_aws_region, get_aws_account_id
+from ._aws_storage import find_closest_aws_region
 from appdirs import AppDirs
 from ._settings_save import save_system_storage_settings
 from ._settings_store import system_storage_settings_file
@@ -63,14 +63,13 @@ def mark_storage_root(root: UPathStr):
     mark_upath.touch()
 
 
-def init_storage(storage: UPathStr) -> "StorageSettings":
-    if storage is None:
-        raise ValueError("storage argument can't be `None`")
-    root_str = str(storage)  # ensure we have a string
+def init_storage(root: UPathStr) -> "StorageSettings":
+    if root is None:
+        raise ValueError("`storage` argument can't be `None`")
+    root_str = str(root)  # ensure we have a string
     uid = base62(8)
     region = None
     lamin_env = os.getenv("LAMIN_ENV")
-    aws_account_id = None
     if root_str.startswith("create-s3"):
         if root_str != "create-s3":
             assert "--" in root_str, "example: `create-s3--eu-central-1`"
@@ -82,32 +81,24 @@ def init_storage(storage: UPathStr) -> "StorageSettings":
                 raise ValueError(f"region has to be one of {hosted_regions}")
         if lamin_env is None or lamin_env == "prod":
             root_str = f"s3://lamin-{region}/{uid}"
-            aws_account_id = 767398070972
         else:
             root_str = f"s3://lamin-hosted-test/{uid}"
     elif root_str.startswith(("gs://", "s3://")):
-        # check for existence happens in get_storage_region
         pass
     else:  # local path
         try:
             _ = Path(root_str)
         except Exception as e:
-            logger.error(
-                "`storage` is neither a valid local, a Google Cloud nor an S3 path."
-            )
+            logger.error("`storage` is not a valid local, GCP storage or AWS S3 path")
             raise e
     ssettings = StorageSettings(uid=uid, root=root_str, region=region)
     if ssettings.is_cloud:
         from ._hub_core import init_storage as init_storage_hub
 
-        # we use this in anticipation of secrets management
-        # AWS considers the account id non-sensitive information
-        if root_str.startswith("s3://") and aws_account_id is None:
-            ssettings._aws_account_id = get_aws_account_id()
         ssettings._description = f"Created as default storage for instance {uid}"
         ssettings._uuid = init_storage_hub(ssettings)
         logger.important(f"registered storage: {ssettings.root_as_str}")
-    if ssettings.is_cloud and storage == "create-s3":
+    if ssettings.is_cloud and root_str.startswith("create-s3"):
         mark_storage_root(ssettings.root)
     return ssettings
 
