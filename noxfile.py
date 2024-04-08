@@ -87,8 +87,11 @@ def build(session: nox.Session, group: str, lamin_env: str):
 
 @nox.session
 def hub_local(session: nox.Session):
+    os.environ["AWS_SECRET_ACCESS_KEY_DEV_S3"] = os.environ["AWS_ACCESS_KEY_ID"]
     # the -n 1 is to ensure that supabase thread exits properly
-    session.run(*f"pytest -n 1 {COVERAGE_ARGS} ./tests/hub-local".split())
+    session.run(
+        *f"pytest -n 1 {COVERAGE_ARGS} ./tests/hub-local".split(), env=os.environ
+    )
 
 
 @nox.session
