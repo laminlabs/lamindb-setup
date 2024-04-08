@@ -17,7 +17,6 @@ from ._hub_client import (
     connect_hub,
     call_with_fallback_auth,
     call_with_fallback,
-    AuthUnknownError,
 )
 from ._hub_crud import (
     select_instance_by_owner_name,
@@ -253,15 +252,13 @@ def _access_aws(*, storage_root: str, client: Client) -> Dict[str, str]:
                 invoke_options={"body": {"storage_root": storage_root}},
             )
         except (FunctionsRelayError, FunctionsHttpError, json.JSONDecodeError) as error:
-            if isinstance(error, json.JSONDecodeError):
-                raise AuthUnknownError(message=str(error), original_error=error)
             print("no valid response, retry", response)
             sleep(1)
             if retry == max_retries - 1:
                 raise error
             else:
                 continue
-        if response is not None and response != {}:
+        if response is not None and response != b"{}":
             loaded_credentials = json.loads(response)["Credentials"]
             credentials = {}
             credentials["key"] = loaded_credentials["AccessKeyId"]
