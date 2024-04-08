@@ -167,7 +167,7 @@ def connect(
                         if _raise_not_reachable_error:
                             raise SystemExit(error_message)
                         return "instance-not-reachable"
-                    logger.info(f"found cached instance metadata: {settings_file}")
+
                 else:
                     if _raise_not_reachable_error:
                         raise SystemExit(error_message)
