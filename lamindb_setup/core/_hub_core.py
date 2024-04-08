@@ -261,7 +261,7 @@ def _access_aws(*, storage_root: str, client: Client) -> Dict[str, str]:
                 raise error
             else:
                 continue
-        if response is not None and response != {}:
+        if response is not None and response != b"{}":
             loaded_credentials = json.loads(response)["Credentials"]
             credentials = {}
             credentials["key"] = loaded_credentials["AccessKeyId"]
