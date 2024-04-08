@@ -3,6 +3,7 @@
 <!-- prettier-ignore -->
 Name | PR | Developer | Date | Version
 --- | --- | --- | --- | ---
+📝 Fix docs | [709](https://github.com/laminlabs/lamindb-setup/pull/709) | [falexwolf](https://github.com/falexwolf) | 2024-04-05 |
 ♻️ Replace TypeVar with TypeAlias | [707](https://github.com/laminlabs/lamindb-setup/pull/707) | [falexwolf](https://github.com/falexwolf) | 2024-04-04 |
 ♻️ Refactor clean up | [706](https://github.com/laminlabs/lamindb-setup/pull/706) | [falexwolf](https://github.com/falexwolf) | 2024-04-04 |
 🩹 Do bucket injection trick only for s3 | [705](https://github.com/laminlabs/lamindb-setup/pull/705) | [Koncopd](https://github.com/Koncopd) | 2024-04-04 |
