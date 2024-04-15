@@ -4,8 +4,8 @@ from supabase.lib.client_options import ClientOptions
 from urllib.request import urlretrieve
 from supabase import create_client, Client
 from pydantic import BaseSettings
-from postgrest import APIError as PostgrestAPIError
 from gotrue.errors import AuthUnknownError
+from lamin_utils import logger
 
 
 class Connector(BaseSettings):
@@ -116,12 +116,19 @@ def call_with_fallback_auth(
 
     for renew_token, fallback_env in [(False, False), (True, False), (False, True)]:
         try:
+            if renew_token:
+                logger.important(
+                    "Renewing expired lamin token: call lamin login to avoid this"
+                )
             client = connect_hub_with_auth(
                 renew_token=renew_token, fallback_env=fallback_env
             )
             result = callable(**kwargs, client=client)
             break
-        except (PostgrestAPIError, AuthUnknownError) as e:
+        # we use Exception here as the ways in which the client fails upon 401
+        # are not consistent and keep changing
+        # because we ultimately raise the error, it's OK I'd say
+        except Exception as e:
             if fallback_env:
                 raise e
         finally:

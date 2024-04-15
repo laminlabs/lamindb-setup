@@ -5,7 +5,6 @@ from postgrest.exceptions import APIError
 from uuid import UUID
 from lamin_utils import logger
 from supabase import Client
-from supafunc.errors import FunctionsRelayError, FunctionsHttpError
 import lamindb_setup
 import json
 from importlib import metadata
@@ -241,32 +240,19 @@ def access_aws(storage_root: str, access_token: Optional[str] = None) -> Dict[st
 
 
 def _access_aws(*, storage_root: str, client: Client) -> Dict[str, str]:
-    from time import sleep
-
-    response = None
-    max_retries = 5
-    for retry in range(max_retries):
-        try:
-            response = client.functions.invoke(
-                "access-aws",
-                invoke_options={"body": {"storage_root": storage_root}},
-            )
-        except (FunctionsRelayError, FunctionsHttpError, json.JSONDecodeError) as error:
-            print("no valid response, retry", response)
-            sleep(1)
-            if retry == max_retries - 1:
-                raise error
-            else:
-                continue
-        if response is not None and response != b"{}":
-            loaded_credentials = json.loads(response)["Credentials"]
-            credentials = {}
-            credentials["key"] = loaded_credentials["AccessKeyId"]
-            credentials["secret"] = loaded_credentials["SecretAccessKey"]
-            credentials["token"] = loaded_credentials["SessionToken"]
-            return credentials
-        elif lamindb_setup._TESTING:
-            raise RuntimeError(f"access-aws errored: {response}")
+    response = client.functions.invoke(
+        "access-aws",
+        invoke_options={"body": {"storage_root": storage_root}},
+    )
+    if response is not None and response != b"{}":
+        loaded_credentials = json.loads(response)["Credentials"]
+        credentials = {}
+        credentials["key"] = loaded_credentials["AccessKeyId"]
+        credentials["secret"] = loaded_credentials["SecretAccessKey"]
+        credentials["token"] = loaded_credentials["SessionToken"]
+        return credentials
+    elif lamindb_setup._TESTING:
+        raise RuntimeError(f"access-aws errored: {response}")
     return {}
 
 
