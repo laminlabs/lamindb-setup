@@ -3,6 +3,7 @@ from uuid import UUID, uuid4
 import pytest
 from lamindb_setup.core._hub_utils import LaminDsnModel
 from gotrue.errors import AuthApiError
+from postgrest.exceptions import APIError
 import lamindb_setup as ln_setup
 from lamindb_setup.core._settings_instance import InstanceSettings
 from lamindb_setup.core._hub_client import (
@@ -300,7 +301,7 @@ def test_connect_instance_corrupted_or_expired_credentials(
     ln_setup.settings.user.access_token = "corrupted_or_expired_token"
     correct_password = ln_setup.settings.user.password
     ln_setup.settings.user.password = "corrupted_password"
-    with pytest.raises(AuthApiError):
+    with pytest.raises(APIError):
         connect_instance(
             owner="testadmin1",
             name=create_myinstance["name"],
