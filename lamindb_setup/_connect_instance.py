@@ -19,6 +19,7 @@ from .core.cloud_sqlite_locker import unlock_cloud_sqlite_upon_exception
 from ._init_instance import MESSAGE_NO_MULTIPLE_INSTANCE
 from ._check_setup import _check_instance_setup
 from .core._hub_core import connect_instance as connect_instance_from_hub
+from ._migrate import check_whether_migrations_in_sync
 
 
 # this is for testing purposes only
@@ -145,16 +146,7 @@ def connect(
                     schema=instance_result["schema_str"],
                     git_repo=instance_result["git_repo"],
                 )
-                from importlib import metadata
-
-                try:
-                    lamindb_version = metadata.version("lamindb")
-                except metadata.PackageNotFoundError:
-                    lamindb_version = None
-                logger.important(
-                    f"last migration: lamindb=={instance_result['lamindb_version']} <>"
-                    f" your env: lamindb=={lamindb_version}"
-                )
+                check_whether_migrations_in_sync(instance_result["lamindb_version"])
             else:
                 error_message = (
                     f"'{owner}/{name}' not loadable:"
