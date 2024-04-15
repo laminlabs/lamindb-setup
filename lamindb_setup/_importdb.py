@@ -1,5 +1,5 @@
 from pathlib import Path
-from ._export import MODELS
+from ._exportdb import MODELS
 from importlib import import_module
 
 
@@ -25,15 +25,16 @@ def importdb() -> None:
         )
         if response != "y":
             return None
-    from sqlalchemy import create_engine
+    from sqlalchemy import create_engine, text
     import lamindb_setup as ln_setup
 
     engine = create_engine(ln_setup.settings.instance.db, echo=False)
     with engine.begin() as connection:
         if ln_setup.settings.instance.dialect == "postgresql":
-            connection.execute("SET CONSTRAINTS ALL DEFERRED;")
+            connection.execute(text("SET CONSTRAINTS ALL DEFERRED;"))
         for schema_name, models in MODELS.items():
             for model_name in models.keys():
+                print(model_name)
                 schema_module = import_module(f"lnschema_{schema_name}")
                 registry = getattr(schema_module, model_name)
                 import_registry(registry, directory, connection)
