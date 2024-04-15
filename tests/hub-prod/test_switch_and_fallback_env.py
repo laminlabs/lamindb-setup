@@ -1,7 +1,7 @@
 import os
 import pytest
 import lamindb_setup as ln_setup
-from gotrue.errors import AuthUnknownError
+from gotrue.errors import AuthRetryableError
 from lamindb_setup import login, settings
 from lamindb_setup.core._hub_core import (
     connect_instance,
@@ -14,13 +14,13 @@ def test_switch_env():
     assert os.getenv("LAMIN_ENV") == "prod"
 
     # check whether we can log in
-    login("static-testuser1@lamin.ai", password="static-testuser1-password")
+    login("static-testuser1@lamin.ai", key="static-testuser1-password")
     assert settings.user.email == "static-testuser1@lamin.ai"
 
     # testuser1.staging is defined only in staging
     os.environ["LAMIN_ENV"] = "staging"
 
-    login("testuser1.staging@lamin.ai", password="password")
+    login("testuser1.staging@lamin.ai", key="password")
     assert settings.user.email == "testuser1.staging@lamin.ai"
 
     # back to prod
@@ -32,7 +32,7 @@ def test_connect_instance_fallbacks():
     ln_setup.core._hub_client.PROD_URL = (  # deactivated prod url
         "https://inactive.lamin.ai"
     )
-    with pytest.raises(AuthUnknownError):
+    with pytest.raises(AuthRetryableError):
         ln_setup.core._hub_client.connect_hub_with_auth(renew_token=True)
     assert not isinstance(
         sign_in_hub(
