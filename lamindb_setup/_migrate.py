@@ -8,6 +8,7 @@ from django.db import connection
 from django.db.migrations.loader import MigrationLoader
 
 
+# for the django-based synching code, see laminhub_rest
 def check_whether_migrations_in_sync(db_version_str: str):
     from importlib import metadata
 
@@ -35,82 +36,6 @@ def check_whether_migrations_in_sync(db_version_str: str):
             f" ({installed_version_str}). \nPlease migrate your database: lamin migrate"
             " deploy"
         )
-
-
-# ------------------------------------------------------------
-# Below comes the Django-based migrations synching code
-# ------------------------------------------------------------
-# MISSING_MIGRATIONS_WARNING = """
-
-# Your database is not up to date with your installed Python library.
-
-# Your database has the latest migrations:
-# {deployed_latest_migrations}
-
-# Your Python library has the latest migrations:
-# {defined_latest_migrations}
-
-# Only if you are an admin and manage migrations manually,
-# deploy them to the database: lamin migrate deploy
-
-# Otherwise, downgrade your Python library to match the database!
-# """
-# AHEAD_MIGRATIONS_WARNING = """
-
-# Your database is ahead of your installed Python library.
-
-# Your database has the latest migrations:
-# {deployed_latest_migrations}
-
-# Your Python library has the latest migrations:
-# {defined_latest_migrations}
-
-# Please update your Python library to match the database!
-# """
-#
-#     status, latest_migrs = get_migrations_to_sync()
-#     if status == "synced":
-#         pass
-#     else:
-#         warning_func = (
-#             MISSING_MIGRATIONS_WARNING
-#             if status == "missing"
-#             else AHEAD_MIGRATIONS_WARNING
-#         )
-#         logger.warning(
-#             warning_func.format(
-#                 deployed_latest_migrations=latest_migrs[0],
-#                 defined_latest_migrations=latest_migrs[1],
-#             )
-#         )
-#
-# def get_migrations_to_sync():
-#     from .._migrate import migrate
-#     deployed_latest_migs = migrate.deployed_migrations(latest=True)
-#     defined_latest_migs = migrate.defined_migrations(latest=True)
-#     # in case a new app was added in the defined migrations,
-#     # reflect this with a dummy migration "0000_"
-#     for app in defined_latest_migs.keys():
-#         if app not in deployed_latest_migs:
-#             deployed_latest_migs[app] = "0000_"
-#     status = "synced"
-#     latest_migrs = ([], [])
-#     for app, deployed_latest_mig in deployed_latest_migs.items():
-#         deployed_latest_mig_nr = int(deployed_latest_mig.split("_")[0])
-#         defined_latest_mig = defined_latest_migs.get(app)
-#         if defined_latest_mig:
-#             defined_latest_mig_nr = int(defined_latest_mig.split("_")[0])
-#             if deployed_latest_mig_nr != defined_latest_mig_nr:
-#                 deployed_mig_str = f"{app}.{deployed_latest_mig}"
-#                 defined_mig_str = f"{app}.{defined_latest_mig}"
-#                 status = (
-#                     "missing"
-#                     if deployed_latest_mig_nr < defined_latest_mig_nr
-#                     else "ahead"
-#                 )
-#                 latest_migrs[0].append(deployed_mig_str)
-#                 latest_migrs[1].append(defined_mig_str)
-#     return status, latest_migrs
 
 
 # for tests, see lamin-cli
