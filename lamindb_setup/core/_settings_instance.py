@@ -30,7 +30,7 @@ class InstanceSettings:
         id: UUID,  # instance id/uuid
         owner: str,  # owner handle
         name: str,  # instance name
-        storage: StorageSettings,  # storage location on cloud
+        storage: StorageSettings,  # storage location
         uid: Optional[str] = None,  # instance uid/lnid
         db: Optional[str] = None,  # DB URI
         schema: Optional[str] = None,  # comma-separated string of schema names
@@ -41,8 +41,8 @@ class InstanceSettings:
         self._id: UUID = id
         self._owner: str = owner
         self._name: str = name
-        self._storage: StorageSettings = storage
         self._uid: Optional[str] = uid
+        self._storage: StorageSettings = storage
         validate_db_arg(db)
         self._db: Optional[str] = db
         self._schema_str: Optional[str] = schema

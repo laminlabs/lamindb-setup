@@ -2,7 +2,7 @@ import os
 import shutil
 from lamin_utils import logger
 from pathlib import Path
-from typing import Any, Optional, Union
+from typing import Any, Optional, Union, Literal
 from ._aws_storage import find_closest_aws_region
 from appdirs import AppDirs
 from ._settings_save import save_system_storage_settings
@@ -121,17 +121,20 @@ class StorageSettings:
         self,
         root: UPathStr,
         region: Optional[str] = None,
+        is_hybrid: bool = False,  # refers to storage mode
         uid: Optional[str] = None,
         uuid: Optional[UUID] = None,
         access_token: Optional[str] = None,
     ):
         self._uid = uid
         self._uuid = uuid
+        self._is_hybrid = is_hybrid
         self._root_init = convert_pathlike(root)
         if isinstance(self._root_init, LocalPathClasses):  # local paths
             self._root_init.mkdir(parents=True, exist_ok=True)
             self._root_init = self._root_init.resolve()
         self._root = None
+        self._remote_root = None
         self._aws_account_id: Optional[int] = None
         self._description: Optional[str] = None
         # we don't yet infer region here to make init fast
@@ -177,9 +180,18 @@ class StorageSettings:
             from lnschema_core.models import Storage
             from ._settings import settings
 
-            self._record = Storage.objects.using(settings._using_key).get(
-                root=self.root_as_str
-            )
+            if not self.is_hybrid:
+                self._record = Storage.objects.using(settings._using_key).get(
+                    root=self.root_as_str
+                )
+            else:
+                # this has to be redone
+                records = Storage.objects.filter(type="local").all()
+                for record in records:
+                    if Path(record.root).exists():
+                        self._record = record
+                        logger.warning("found local storage location")
+                        break
         return self._record
 
     def __repr__(self):
@@ -190,14 +202,40 @@ class StorageSettings:
         return f"StorageSettings({s})"
 
     @property
+    def is_hybrid(self) -> bool:
+        """Qualifies storage mode.
+
+        A storage location can be local, in the cloud, or hybrid. See
+        :attr:`~lamindb.setup.core.StorageSettings.type`.
+
+        Hybrid means that a default local storage location is backed by an
+        optional cloud storage location.
+        """
+        return self._is_hybrid
+
+    @property
     def root(self) -> UPath:
         """Root storage location."""
         if self._root is None:
-            # below also makes network requests to get credentials
-            # right
-            root_path = create_path(self._root_init, access_token=self.access_token)
+            if not self.is_hybrid:
+                # below makes network requests to get credentials
+                root_path = create_path(self._root_init, access_token=self.access_token)
+            else:
+                # this is a local path
+                root_path = create_path(self.record.root)
             self._root = root_path
         return self._root
+
+    @property
+    def remote_root(self) -> UPath:
+        """Remote storage location. Only needed for hybrid storage."""
+        if not self.is_hybrid:
+            raise ValueError("remote_root is only defined for hybrid storage")
+        if self._remote_root is None:
+            self._remote_root = create_path(
+                self._root_init, access_token=self.access_token
+            )
+        return self._remote_root
 
     def _set_fs_kwargs(self, **kwargs):
         """Set additional fsspec arguments for cloud root.
@@ -273,16 +311,16 @@ class StorageSettings:
         return self._region
 
     @property
-    def type(self) -> str:
-        """AWS S3 vs. Google Cloud vs. local vs. the other protocols.
+    def type(self) -> Literal["local", "s3", "gs"]:
+        """AWS S3 vs. Google Cloud vs. local.
 
-        Returns the protocol.
+        Returns the protocol as a string: "local", "s3", "gs".
         """
         import fsspec
 
         convert = {"file": "local"}
         protocol = fsspec.utils.get_protocol(self.root_as_str)
-        return convert.get(protocol, protocol)
+        return convert.get(protocol, protocol)  # type: ignore
 
     def key_to_filepath(self, filekey: Union[Path, UPath, str]) -> UPath:
         """Cloud or local filepath from filekey."""

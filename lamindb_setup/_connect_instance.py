@@ -18,7 +18,7 @@ from .core._settings_store import instance_settings_file
 from .core.cloud_sqlite_locker import unlock_cloud_sqlite_upon_exception
 from ._init_instance import MESSAGE_NO_MULTIPLE_INSTANCE
 from ._check_setup import _check_instance_setup
-from .core._hub_core import connect_instance as connect_instance_from_hub
+from .core._hub_core import connect_instance as load_instance_from_hub
 from ._migrate import check_whether_migrations_in_sync
 
 
@@ -124,7 +124,7 @@ def connect(
         if make_hub_request:
             # the following will return a string if the instance does not exist
             # on the hub
-            hub_result = connect_instance_from_hub(owner=owner, name=name)
+            hub_result = load_instance_from_hub(owner=owner, name=name)
             # if hub_result is not a string, it means it made a request
             # that successfully returned metadata
             if not isinstance(hub_result, str):
@@ -136,6 +136,7 @@ def connect(
                     root=storage_result["root"],
                     region=storage_result["region"],
                     uid=storage_result["lnid"],
+                    is_hybrid=instance_result["storage_mode"] == "hybrid",
                 )
                 isettings = InstanceSettings(
                     id=UUID(instance_result["id"]),
