@@ -1,11 +1,41 @@
 from typing import Optional, Dict
 from lamin_utils import logger
-
+from packaging import version
 from ._check_setup import _check_instance_setup
 from .core._settings import settings
 from .core.django import setup_django
 from django.db import connection
 from django.db.migrations.loader import MigrationLoader
+
+
+# for the django-based synching code, see laminhub_rest
+def check_whether_migrations_in_sync(db_version_str: str):
+    from importlib import metadata
+
+    try:
+        installed_version_str = metadata.version("lamindb")
+    except metadata.PackageNotFoundError:
+        return None
+    installed_version = version.parse(installed_version_str)
+    db_version = version.parse(db_version_str)
+    if (
+        installed_version.major < db_version.major
+        or installed_version.minor < db_version.minor
+    ):
+        logger.warning(
+            f"Your database ({db_version_str}) is ahead of your lamindb installation"
+            f" ({installed_version_str}). \nPlease update your Python library to match"
+            f" the database: pip install -U lamindb=={db_version_str}"
+        )
+    elif (
+        installed_version.major > db_version.major
+        or installed_version.minor > db_version.minor
+    ):
+        logger.warning(
+            f"Your database ({db_version_str}) is behind your lamindb installation"
+            f" ({installed_version_str}). \nPlease migrate your database: lamin migrate"
+            " deploy"
+        )
 
 
 # for tests, see lamin-cli
