@@ -180,9 +180,18 @@ class StorageSettings:
             from lnschema_core.models import Storage
             from ._settings import settings
 
-            self._record = Storage.objects.using(settings._using_key).get(
-                root=self.root_as_str
-            )
+            if not self.is_hybrid:
+                self._record = Storage.objects.using(settings._using_key).get(
+                    root=self.root_as_str
+                )
+            else:
+                # this has to be redone
+                records = Storage.objects.filter(type="local").all()
+                for record in records:
+                    if Path(record.root).exists():
+                        self._record = record
+                        logger.warning("found local storage location")
+                        break
         return self._record
 
     def __repr__(self):
