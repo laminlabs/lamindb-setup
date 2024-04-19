@@ -21,6 +21,7 @@ LocalPathClasses = (PosixUPath, WindowsUPath, LocalPath)
 
 # also see https://gist.github.com/securifera/e7eed730cbe1ce43d0c29d7cd2d582f4
 #    ".gz" is not listed here as it typically occurs with another suffix
+# the complete list is at lamindb.core.storage._suffixes
 KNOWN_SUFFIXES = {
     #
     # without readers
@@ -47,7 +48,7 @@ KNOWN_SUFFIXES = {
     ".fcs",
     ".xslx",
     ".zarr",
-    ".zrad",
+    ".json",
 }
 
 
@@ -56,13 +57,17 @@ TRAILING_SEP = (os.sep, os.altsep) if os.altsep is not None else os.sep
 
 def extract_suffix_from_path(path: Path, arg_name: Optional[str] = None) -> str:
     def process_digits(suffix: str):
-        if suffix[1:].isdigit():
+        if suffix[1:].isdigit():  # :1 to skip the dot
             return ""  # digits are no valid suffixes
         else:
             return suffix
 
     if len(path.suffixes) <= 1:
         return process_digits(path.suffix)
+
+    total_suffix = "".join(path.suffixes)
+    if total_suffix in KNOWN_SUFFIXES:
+        return total_suffix
     else:
         print_hint = True
         arg_name = "file" if arg_name is None else arg_name  # for the warning
@@ -76,15 +81,14 @@ def extract_suffix_from_path(path: Path, arg_name: Optional[str] = None) -> str:
         if path.suffixes[-2] in KNOWN_SUFFIXES:
             suffix = "".join(path.suffixes[-2:])
             msg += f"inferring: '{suffix}'"
-            # do not print a warning for things like .tar.gz, .fastq.gz
-            if path.suffixes[-1] == ".gz":
+            # do not print a warning for things like .tar.gz, .fastq.gz, .vitessce.json
+            if path.suffixes[-1] in (".gz", ".json"):
                 print_hint = False
         else:
             suffix = path.suffixes[-1]  # this is equivalent to path.suffix!!!
             msg += (
                 f"using only last suffix: '{suffix}' - if you want your file format to"
-                " be recognized, make an issue:"
-                " https://github.com/laminlabs/lamindb/issues/new"
+                " be recognized call lamindb.setup.core.upath.KNOWN_SUFFIXES.add()"
             )
         if print_hint:
             logger.hint(msg)
