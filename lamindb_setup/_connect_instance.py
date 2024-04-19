@@ -50,8 +50,11 @@ def update_db_using_local(
             if os.getenv("LAMINDB_INSTANCE_DB") is not None:
                 logger.important("loading db URL from env variable LAMINDB_INSTANCE_DB")
                 db_dsn_local = LaminDsnModel(db=os.getenv("LAMINDB_INSTANCE_DB"))
-            # read from a cached settings file
-            elif settings_file.exists():
+            # read from a cached settings file in case the hub result is only
+            # read level or inexistent
+            elif settings_file.exists() and (
+                "read" in db_dsn_hub.db.user or db_dsn_hub.db.user is None
+            ):
                 isettings = load_instance_settings(settings_file)
                 db_dsn_local = LaminDsnModel(db=isettings.db)
             else:
