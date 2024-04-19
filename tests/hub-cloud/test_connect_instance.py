@@ -116,16 +116,30 @@ def test_load_after_private_public_switch():
 
 def test_load_with_db_parameter():
     if os.getenv("LAMIN_ENV") == "prod":
-        ln_setup.login("static-testuser1@lamin.ai", key="static-testuser1-password")
+        ln_setup.login("testuser1")
         # test load from hub
         ln_setup.connect("laminlabs/lamindata", _test=True)
+        assert "root" in ln_setup.settings.instance.db
         # test load from provided db argument
-        db = "postgresql://testuser:testpwd@database2.cmyfs24wugc3.us-east-1.rds.amazonaws.com:5432/db1"  # noqa
+        db = "postgresql://testdbuser:testpwd@database2.cmyfs24wugc3.us-east-1.rds.amazonaws.com:5432/db1"  # noqa
         ln_setup.connect("laminlabs/lamindata", db=db, _test=True)
-        assert "testuser" in ln_setup.settings.instance.db
-        # test load from cache (no db arg)
+        assert "testdbuser" in ln_setup.settings.instance.db
+        # test ignore loading from cache because hub result has >read access
         ln_setup.connect("laminlabs/lamindata", _test=True)
-        assert "testuser" in ln_setup.settings.instance.db
+        assert "root" in ln_setup.settings.instance.db
+
+        # now take a user that has no collaborator status
+        ln_setup.login("testuser2")
+        # the cached high priviledge connection string remains active
+        ln_setup.connect("laminlabs/lamindata", _test=True)
+        assert "root" in ln_setup.settings.instance.db
+        # now pass the connection string
+        ln_setup.connect("laminlabs/lamindata", db=db, _test=True)
+        assert "testdbuser" in ln_setup.settings.instance.db
+        # now the cache is used
+        ln_setup.connect("laminlabs/lamindata", _test=True)
+        assert "testdbuser" in ln_setup.settings.instance.db
+
         # test corrupted input
         db_corrupted = "postgresql://testuser:testpwd@wrongserver:5432/db1"
         with pytest.raises(ValueError) as error:
@@ -133,4 +147,3 @@ def test_load_with_db_parameter():
         assert error.exconly().startswith(
             "ValueError: The local differs from the hub database information"
         )
-        ln_setup.login("testuser2")
