@@ -116,6 +116,7 @@ def test_load_after_private_public_switch():
 
 def test_load_with_db_parameter():
     if os.getenv("LAMIN_ENV") == "prod":
+        # take a write-level access collaborator
         ln_setup.login("testuser1")
         # test load from hub
         ln_setup.connect("laminlabs/lamindata", _test=True)
