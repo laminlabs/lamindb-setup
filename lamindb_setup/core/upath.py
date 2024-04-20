@@ -183,8 +183,8 @@ def download_to(self, path: UPathStr, print_progress: bool = False, **kwargs):
 def upload_from(
     self,
     path: UPathStr,
-    print_progress: bool = False,
     dir_inplace: bool = False,
+    print_progress: bool = False,
     **kwargs,
 ):
     """Upload from a local path."""
