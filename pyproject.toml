@@ -16,7 +16,7 @@ dependencies = [
     "pydantic[dotenv]<2.0.0",
     "appdirs<2.0.0",
     "requests",
-    "universal_pathlib==0.2.2",  # is still experimental, need pinning
+    "universal_pathlib==0.1.4",  # is still experimental, need pinning
     "botocore<2.0.0",
     "supabase==2.2.1",
 ]
