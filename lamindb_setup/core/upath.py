@@ -5,10 +5,9 @@ import os
 from datetime import datetime, timezone
 import botocore.session
 from pathlib import Path, PurePosixPath
-from typing import Literal, Dict
 import fsspec
 from itertools import islice
-from typing import Optional, Set, Any, Tuple, List
+from typing import Optional, Set, Any, Tuple, List, Literal, Dict, Union
 from collections import defaultdict
 from lamin_utils import logger
 from upath import UPath
@@ -165,7 +164,7 @@ class ProgressCallback(fsspec.callbacks.Callback):
         return None
 
 
-def download_to(self, path, print_progress: bool = False, **kwargs):
+def download_to(self, path: UPathStr, print_progress: bool = False, **kwargs):
     """Download to a path."""
     if print_progress:
         # can't do path.is_dir() because path doesn't exist
@@ -180,10 +179,20 @@ def download_to(self, path, print_progress: bool = False, **kwargs):
     self.fs.download(str(self), str(path), **kwargs)
 
 
-def upload_from(self, path, print_progress: bool = False, **kwargs):
+def upload_from(
+    self,
+    path: Union[UPathStr, List[str], Tuple[str]],
+    print_progress: bool = False,
+    **kwargs,
+):
     """Upload from a local path."""
+    source_is_list = isinstance(path, (list, tuple))
+    if source_is_list:
+        source_has_dirs = any(os.path.isdir(p) for p in path)  # type: ignore
+    else:
+        source_has_dirs = os.path.isdir(path)  # type: ignore
     if print_progress:
-        if not os.path.isdir(path):
+        if not source_has_dirs:
             cb = ProgressCallback("uploading")
         else:
             # todo: make proper progress bar for directories
@@ -193,7 +202,7 @@ def upload_from(self, path, print_progress: bool = False, **kwargs):
     # if dirs are present
     # it allows to avoid permission error
     destination = str(self)
-    if self.protocol != "s3" or os.path.isfile(path):
+    if self.protocol != "s3" or not source_has_dirs:
         cleanup_cache = False
     else:
         bucket = self._url.netloc
@@ -205,7 +214,8 @@ def upload_from(self, path, print_progress: bool = False, **kwargs):
         else:
             cleanup_cache = False
 
-    self.fs.upload(str(path), destination, **kwargs)
+    source = [str(p) for p in path] if source_is_list else str(path)  # type: ignore
+    self.fs.upload(source, destination, **kwargs)
 
     if cleanup_cache:
         # normally this is invalidated after the upload but still better to check
