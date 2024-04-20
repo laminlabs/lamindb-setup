@@ -165,7 +165,7 @@ class ProgressCallback(fsspec.callbacks.Callback):
         return None
 
 
-def download_to(self, path, print_progress: bool = False, **kwargs):
+def download_to(self, path: UPathStr, print_progress: bool = False, **kwargs):
     """Download to a path."""
     if print_progress:
         # can't do path.is_dir() because path doesn't exist
@@ -180,20 +180,38 @@ def download_to(self, path, print_progress: bool = False, **kwargs):
     self.fs.download(str(self), str(path), **kwargs)
 
 
-def upload_from(self, path, print_progress: bool = False, **kwargs):
+def upload_from(
+    self,
+    path: UPathStr,
+    print_progress: bool = False,
+    dir_inplace: bool = False,
+    **kwargs,
+):
     """Upload from a local path."""
+    path_is_dir = os.path.isdir(path)
+    if not path_is_dir:
+        dir_inplace = False
+
     if print_progress:
-        if not os.path.isdir(path):
+        if not path_is_dir:
             cb = ProgressCallback("uploading")
         else:
             # todo: make proper progress bar for directories
             cb = fsspec.callbacks.NoOpCallback()
         kwargs["callback"] = cb
+
+    if dir_inplace:
+        path = Path(path)
+        source = [f for f in path.rglob("*") if f.is_file()]
+        destination = [str(self / f.relative_to(path)) for f in source]
+        source = [str(f) for f in source]  # type: ignore
+    else:
+        source = str(path)  # type: ignore
+        destination = str(self)  # type: ignore
     # this weird thing is to avoid s3fs triggering create_bucket in upload
     # if dirs are present
     # it allows to avoid permission error
-    destination = str(self)
-    if self.protocol != "s3" or os.path.isfile(path):
+    if self.protocol != "s3" or not path_is_dir or dir_inplace:
         cleanup_cache = False
     else:
         bucket = self._url.netloc
@@ -205,7 +223,7 @@ def upload_from(self, path, print_progress: bool = False, **kwargs):
         else:
             cleanup_cache = False
 
-    self.fs.upload(str(path), destination, **kwargs)
+    self.fs.upload(source, destination, **kwargs)
 
     if cleanup_cache:
         # normally this is invalidated after the upload but still better to check
