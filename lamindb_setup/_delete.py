@@ -8,7 +8,7 @@ from .core._settings_storage import StorageSettings
 from .core._settings import settings
 from .core._settings_load import load_instance_settings
 from .core._settings_store import instance_settings_file
-from .core.upath import check_storage_is_empty
+from .core.upath import check_storage_is_empty, hosted_buckets
 from .core._hub_core import delete_instance as delete_instance_on_hub
 from .core._hub_core import connect_instance as load_instance_from_hub
 from ._connect_instance import INSTANCE_NOT_FOUND_MESSAGE
@@ -45,6 +45,8 @@ def delete_by_isettings(isettings: InstanceSettings) -> None:
         if settings._instance_settings_path.exists():
             settings._instance_settings_path.unlink()
         settings._instance_settings = None
+    if isettings.storage._mark_storage_root.exists():
+        isettings.storage._mark_storage_root.unlink()
 
 
 def delete(
@@ -118,6 +120,14 @@ def delete(
     if isettings.dialect == "sqlite" and isettings.is_remote:
         # delete the exlusion dir first because it's hard to count its objects
         delete_exclusion_dir(isettings)
+    if isettings.storage.is_cloud and isettings.storage.root_as_str.startswith(
+        hosted_buckets
+    ):
+        if not require_empty:
+            logger.warning(
+                "hosted storage always has to be empty, ignoring `require_empty`"
+            )
+        require_empty = True
     n_objects = check_storage_is_empty(
         isettings.storage.root,
         raise_error=require_empty,
@@ -131,5 +141,5 @@ def delete(
     delete_by_isettings(isettings)
     if n_objects == 0 and isettings.storage.type == "local":
         # dir is only empty after sqlite file was delete via delete_by_isettings
-        isettings.storage.root.rmdir(recursive=True)
+        isettings.storage.root.rmdir()
     return None

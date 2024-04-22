@@ -173,6 +173,10 @@ class StorageSettings:
         return self._uid
 
     @property
+    def _mark_storage_root(self) -> UPath:
+        return self.root / IS_INITIALIZED_KEY
+
+    @property
     def record(self) -> Any:
         """Storage record."""
         if self._record is None:
