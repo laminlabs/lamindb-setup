@@ -6,6 +6,8 @@ from .core._settings_instance import InstanceSettings
 from .core._settings import settings
 from .core._settings_load import load_instance_settings
 from .core._settings_store import instance_settings_file
+from .core.upath import check_storage_is_empty
+from .core._hub_core import delete_instance as delete_instance_on_hub
 
 
 def delete_cache(cache_dir: Path):
@@ -35,7 +37,6 @@ def delete_by_isettings(isettings: InstanceSettings) -> None:
             pass
     if isettings.is_remote:
         logger.warning("manually delete your remote instance on lamin.ai")
-    logger.warning(f"manually delete your stored data: {isettings.storage.root}")
     # unset the global instance settings
     if settings._instance_exists and isettings.slug == settings.instance.slug:
         if settings._instance_settings_path.exists():
@@ -43,8 +44,16 @@ def delete_by_isettings(isettings: InstanceSettings) -> None:
         settings._instance_settings = None
 
 
-def delete(instance_name: str, force: bool = False) -> Optional[int]:
-    """Delete a LaminDB instance."""
+def delete(
+    instance_name: str, force: bool = False, require_empty: bool = True
+) -> Optional[int]:
+    """Delete a LaminDB instance.
+
+    Args:
+        instance_name (str): The name of the instance to delete.
+        force (bool): Whether to skip the confirmation prompt.
+        require_empty (bool): Whether to check if the instance is empty before deleting.
+    """
     if "/" in instance_name:
         logger.warning(
             "Deleting the instance of another user is currently not supported with the"
@@ -73,6 +82,18 @@ def delete(instance_name: str, force: bool = False) -> Optional[int]:
             )
             return None
         isettings = load_instance_settings(settings_file)
+    if isettings.dialect != "sqlite":
+        raise NotImplementedError("Deleting Postgres instances not yet supported.")
     logger.info(f"deleting instance {instance_slug}")
+    n_objects = check_storage_is_empty(
+        isettings.storage.root,
+        raise_error=require_empty,
+        account_for_sqlite_file=isettings.dialect == "sqlite",
+    )
+    if isettings.is_remote:
+        delete_instance_on_hub(isettings.id)
     delete_by_isettings(isettings)
+    if n_objects == 0 and isettings.storage.type == "local":
+        # dir is only empty after sqlite file was delete via delete_by_isettings
+        isettings.storage.root.rmdir()
     return None

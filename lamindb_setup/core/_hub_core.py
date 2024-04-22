@@ -87,7 +87,7 @@ def delete_instance(identifier: Union[UUID, str]):
     This function deletes the relevant instance and storage records in the hub,
     conditional on the emptiness of the storage location.
     """
-    from .upath import check_s3_storage_location_empty, create_path, hosted_buckets
+    from .upath import check_storage_is_empty, create_path, hosted_buckets
     from ._settings_storage import mark_storage_root
 
     if isinstance(identifier, UUID):
@@ -112,7 +112,7 @@ def delete_instance(identifier: Union[UUID, str]):
             # only mark hosted instances
             if root_string.startswith(hosted_buckets):
                 mark_storage_root(root_path)
-            check_s3_storage_location_empty(root_path)
+            check_storage_is_empty(root_path)
 
         delete_instance_record(UUID(instance_with_storage["id"]))
         delete_storage_record(UUID(instance_with_storage["storage_id"]))
