@@ -11,7 +11,7 @@ from .core._settings_store import instance_settings_file
 from .core.upath import check_storage_is_empty
 from .core._hub_core import delete_instance as delete_instance_on_hub
 from .core._hub_core import connect_instance as load_instance_from_hub
-from ._connect_instance import INSTANCE_NOT_FOUND_MESSAGE, InstanceNotFoundError
+from ._connect_instance import INSTANCE_NOT_FOUND_MESSAGE
 
 
 def delete_cache(cache_dir: Path):
@@ -88,7 +88,8 @@ def delete(
                     name=instance_name,
                     hub_result=hub_result,
                 )
-                raise InstanceNotFoundError(message)
+                logger.warning(message)
+                return None
             instance_result, storage_result = hub_result
             ssettings = StorageSettings(
                 root=storage_result["root"],
@@ -130,5 +131,5 @@ def delete(
     delete_by_isettings(isettings)
     if n_objects == 0 and isettings.storage.type == "local":
         # dir is only empty after sqlite file was delete via delete_by_isettings
-        isettings.storage.root.rmdir()
+        isettings.storage.root.rmdir(recursive=True)
     return None
