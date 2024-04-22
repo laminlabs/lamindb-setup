@@ -694,18 +694,16 @@ class InstanceNotEmpty(Exception):
 def check_storage_is_empty(
     root: UPathStr, *, raise_error: bool = True, account_for_sqlite_file: bool = False
 ) -> int:
-    # I think we should always raise an error
     root_upath = convert_pathlike(root)
     root_string = root_upath.as_posix()  # type: ignore
     # we currently touch a 0-byte file in the root of a hosted storage location
     # ({storage_root}/.lamindb/_is_initialized) during storage initialization
     # since path.fs.find raises a PermissionError on empty hosted
     # subdirectories (see lamindb_setup/core/_settings_storage/init_storage).
-    n_offset_objects = 0
-    if root_string.startswith(hosted_buckets):
-        n_offset_objects += 1  # because of touched dummy file
+    n_offset_objects = 1  # because of touched dummy file, see mark_storage_root()
     if account_for_sqlite_file:
         n_offset_objects += 1  # because of SQLite file
+    print(n_offset_objects)
     objects = root_upath.fs.find(root_string)
     n_objects = len(objects)
     n_diff = n_objects - n_offset_objects
@@ -714,9 +712,8 @@ def check_storage_is_empty(
         if raise_error
         else "consider deleting them"
     )
-    message = f"""Storage location contains {n_diff} objects - {ask_for_deletion}.\n
-    {compute_file_tree(root_upath)[0]}\n
-    """
+    message = f"Storage location contains {n_objects} objects "
+    f"({n_offset_objects} ignored) - {ask_for_deletion}\n{objects}"
     if n_diff > 0:
         if raise_error:
             raise InstanceNotEmpty(message)

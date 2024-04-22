@@ -15,6 +15,12 @@ def delete_cache(cache_dir: Path):
         shutil.rmtree(cache_dir)
 
 
+def delete_exclusion_dir(isettings: InstanceSettings) -> None:
+    exclusion_dir = isettings.storage.root / f".lamindb/_exclusion/{isettings.id.hex}"
+    if exclusion_dir.exists():
+        exclusion_dir.rmdir()
+
+
 def delete_by_isettings(isettings: InstanceSettings) -> None:
     settings_file = isettings._get_settings_file()
     if settings_file.exists():
@@ -24,19 +30,12 @@ def delete_by_isettings(isettings: InstanceSettings) -> None:
         try:
             if isettings._sqlite_file.exists():
                 isettings._sqlite_file.unlink()
-            exclusion_dir = (
-                isettings.storage.root / f".lamindb/_exclusion/{isettings.id.hex}"
-            )
-            if exclusion_dir.exists():
-                exclusion_dir.rmdir()
         except PermissionError:
             logger.warning(
                 "Did not have permission to delete SQLite file:"
                 f" {isettings._sqlite_file}"
             )
             pass
-    if isettings.is_remote:
-        logger.warning("manually delete your remote instance on lamin.ai")
     # unset the global instance settings
     if settings._instance_exists and isettings.slug == settings.instance.slug:
         if settings._instance_settings_path.exists():
@@ -89,14 +88,19 @@ def delete(
             )
         else:
             logger.warning("delete() does not affect your Postgres database.")
-    logger.info(f"deleting instance {instance_slug}")
+    if isettings.dialect == "sqlite" and isettings.is_remote:
+        # delete the exlusion dir first because it's hard to count its objects
+        delete_exclusion_dir(isettings)
     n_objects = check_storage_is_empty(
         isettings.storage.root,
         raise_error=require_empty,
         account_for_sqlite_file=isettings.dialect == "sqlite",
     )
+    logger.info(f"deleting instance {instance_slug}")
     if isettings.is_remote:
-        delete_instance_on_hub(isettings.id)
+        # below we can skip check_storage_is_empty() because we already called
+        # it above
+        delete_instance_on_hub(isettings.id, require_empty=False)
     delete_by_isettings(isettings)
     if n_objects == 0 and isettings.storage.type == "local":
         # dir is only empty after sqlite file was delete via delete_by_isettings
