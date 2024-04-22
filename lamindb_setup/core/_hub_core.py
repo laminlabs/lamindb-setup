@@ -81,13 +81,13 @@ def _init_storage(ssettings: StorageSettings, client: Client) -> UUID:
     return id
 
 
-def delete_instance(identifier: Union[UUID, str]):
+def delete_instance(identifier: Union[UUID, str], require_empty: bool = True) -> None:
     """Fully delete an instance in the hub.
 
     This function deletes the relevant instance and storage records in the hub,
     conditional on the emptiness of the storage location.
     """
-    from .upath import check_s3_storage_location_empty, create_path, hosted_buckets
+    from .upath import check_storage_is_empty, create_path
     from ._settings_storage import mark_storage_root
 
     if isinstance(identifier, UUID):
@@ -103,19 +103,22 @@ def delete_instance(identifier: Union[UUID, str]):
             name=name,
         )
 
-    if instance_with_storage is not None:
+    if instance_with_storage is None:
+        logger.warning("instance not found")
+        return None
+
+    if require_empty:
         root_string = instance_with_storage["storage"]["root"]
         # gate storage and instance deletion on empty storage location for
-        # both hosted and non-hosted s3 instances
-        if root_string.startswith("s3://"):
-            root_path = create_path(root_string)
-            # only mark hosted instances
-            if root_string.startswith(hosted_buckets):
-                mark_storage_root(root_path)
-            check_s3_storage_location_empty(root_path)
-
-        delete_instance_record(UUID(instance_with_storage["id"]))
-        delete_storage_record(UUID(instance_with_storage["storage_id"]))
+        root_path = create_path(root_string)
+        mark_storage_root(root_path)  # address permission error
+        account_for_sqlite_file = instance_with_storage["db_scheme"] is None
+        check_storage_is_empty(
+            root_path, account_for_sqlite_file=account_for_sqlite_file
+        )
+    delete_instance_record(UUID(instance_with_storage["id"]))
+    delete_storage_record(UUID(instance_with_storage["storage_id"]))
+    return None
 
 
 def delete_instance_record(

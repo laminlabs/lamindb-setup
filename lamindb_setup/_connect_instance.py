@@ -27,6 +27,17 @@ from ._migrate import check_whether_migrations_in_sync
 _TEST_FAILED_LOAD = False
 
 
+INSTANCE_NOT_FOUND_MESSAGE = (
+    "'{owner}/{name}' not found:"
+    " '{hub_result}'\nCheck your permissions:"
+    " https://lamin.ai/{owner}/{name}"
+)
+
+
+class InstanceNotFoundError(SystemExit):
+    pass
+
+
 def check_db_dsn_equal_up_to_credentials(db_dsn_hub, db_dsn_local):
     return (
         db_dsn_hub.scheme == db_dsn_local.scheme
@@ -154,21 +165,19 @@ def connect(
                 )
                 check_whether_migrations_in_sync(instance_result["lamindb_version"])
             else:
-                error_message = (
-                    f"'{owner}/{name}' not loadable:"
-                    f" '{hub_result}'\nCheck your permissions:"
-                    f" https://lamin.ai/{owner}/{name}?tab=collaborators"
+                message = INSTANCE_NOT_FOUND_MESSAGE.format(
+                    owner=owner, name=name, hub_result=hub_result
                 )
                 if settings_file.exists():
                     isettings = load_instance_settings(settings_file)
                     if isettings.is_remote:
                         if _raise_not_reachable_error:
-                            raise SystemExit(error_message)
+                            raise InstanceNotFoundError(message)
                         return "instance-not-reachable"
 
                 else:
                     if _raise_not_reachable_error:
-                        raise SystemExit(error_message)
+                        raise InstanceNotFoundError(message)
                     return "instance-not-reachable"
 
         if storage is not None:
