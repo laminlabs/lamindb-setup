@@ -121,6 +121,8 @@ def connect(
         make_hub_request = True
         if settings_file.exists():
             isettings = load_instance_settings(settings_file)
+            # mimic instance_result from hub
+            instance_result = {"id": isettings.id.hex}
             # skip hub request for a purely local instance
             make_hub_request = isettings.is_remote
 
@@ -168,8 +170,6 @@ def connect(
                     if _raise_not_reachable_error:
                         raise SystemExit(error_message)
                     return "instance-not-reachable"
-                # mimic instance_result from hub
-                instance_result = {"id": isettings.id.hex}
 
         if storage is not None:
             update_isettings_with_storage(isettings, storage)
