@@ -703,7 +703,6 @@ def check_storage_is_empty(
     n_offset_objects = 1  # because of touched dummy file, see mark_storage_root()
     if account_for_sqlite_file:
         n_offset_objects += 1  # because of SQLite file
-    print(n_offset_objects)
     objects = root_upath.fs.find(root_string)
     n_objects = len(objects)
     n_diff = n_objects - n_offset_objects
@@ -712,8 +711,10 @@ def check_storage_is_empty(
         if raise_error
         else "consider deleting them"
     )
-    message = f"Storage location contains {n_objects} objects "
-    f"({n_offset_objects} ignored) - {ask_for_deletion}\n{objects}"
+    message = (
+        f"Storage location contains {n_objects} objects "
+        f"({n_offset_objects} ignored) - {ask_for_deletion}\n{objects}"
+    )
     if n_diff > 0:
         if raise_error:
             raise InstanceNotEmpty(message)

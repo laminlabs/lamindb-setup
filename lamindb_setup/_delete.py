@@ -1,13 +1,17 @@
 import shutil
 from pathlib import Path
 from lamin_utils import logger
+from uuid import UUID
 from typing import Optional
 from .core._settings_instance import InstanceSettings
+from .core._settings_storage import StorageSettings
 from .core._settings import settings
 from .core._settings_load import load_instance_settings
 from .core._settings_store import instance_settings_file
 from .core.upath import check_storage_is_empty
 from .core._hub_core import delete_instance as delete_instance_on_hub
+from .core._hub_core import connect_instance as load_instance_from_hub
+from ._connect_instance import INSTANCE_NOT_FOUND_MESSAGE, InstanceNotFoundError
 
 
 def delete_cache(cache_dir: Path):
@@ -75,12 +79,34 @@ def delete(
     else:
         settings_file = instance_settings_file(instance_name, settings.user.handle)
         if not settings_file.exists():
-            logger.warning(
-                "could not delete as instance settings do not exist locally. did you"
-                " provide a wrong instance name? could you try loading it?"
+            hub_result = load_instance_from_hub(
+                owner=settings.user.handle, name=instance_name
             )
-            return None
-        isettings = load_instance_settings(settings_file)
+            if isinstance(hub_result, str):
+                message = INSTANCE_NOT_FOUND_MESSAGE.format(
+                    owner=settings.user.handle,
+                    name=instance_name,
+                    hub_result=hub_result,
+                )
+                raise InstanceNotFoundError(message)
+            instance_result, storage_result = hub_result
+            ssettings = StorageSettings(
+                root=storage_result["root"],
+                region=storage_result["region"],
+                uid=storage_result["lnid"],
+                is_hybrid=instance_result["storage_mode"] == "hybrid",
+            )
+            isettings = InstanceSettings(
+                id=UUID(instance_result["id"]),
+                owner=settings.user.handle,
+                name=instance_name,
+                storage=ssettings,
+                db=instance_result["db"] if "db" in instance_result else None,
+                schema=instance_result["schema_str"],
+                git_repo=instance_result["git_repo"],
+            )
+        else:
+            isettings = load_instance_settings(settings_file)
     if isettings.dialect != "sqlite":
         if isettings.is_remote:
             raise NotImplementedError(
