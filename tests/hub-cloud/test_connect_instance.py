@@ -3,7 +3,7 @@ from postgrest.exceptions import APIError
 import pytest
 from laminhub_rest.core.collaborator._add_collaborator import add_collaborator
 from laminhub_rest.core.collaborator._delete_collaborator import delete_collaborator
-
+from lamindb_setup._connect_instance import InstanceNotFoundError
 import lamindb_setup as ln_setup
 from lamindb_setup.core._hub_client import connect_hub_with_auth
 from lamindb_setup.core._hub_crud import update_instance
@@ -60,18 +60,11 @@ def test_load_after_revoked_access():
             admin_hub,
         )
         # make the instance private
-        with pytest.raises(SystemExit) as error:
+        with pytest.raises(InstanceNotFoundError):
             ln_setup.connect(
                 "https://lamin.ai/laminlabs/static-test-instance-private-sqlite",
                 _test=True,
             )
-        assert (
-            error.exconly()
-            == "SystemExit: 'laminlabs/static-test-instance-private-sqlite' not"
-            " loadable: 'instance-not-reachable'\n"
-            "Check your permissions:"
-            " https://lamin.ai/laminlabs/static-test-instance-private-sqlite?tab=collaborators"  # noqa
-        )
 
 
 def test_load_after_private_public_switch():
@@ -91,7 +84,7 @@ def test_load_after_private_public_switch():
         )
         # attempt to load instance with non-collaborator user
         ln_setup.login("testuser2")
-        with pytest.raises(SystemExit):
+        with pytest.raises(InstanceNotFoundError):
             ln_setup.connect(
                 "https://lamin.ai/laminlabs/static-test-instance-private-sqlite",
                 _test=True,
