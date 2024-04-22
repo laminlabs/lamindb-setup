@@ -105,6 +105,7 @@ def delete_instance(identifier: Union[UUID, str], require_empty: bool = True) ->
 
     if instance_with_storage is None:
         logger.warning("instance not found")
+        return None
 
     if require_empty:
         root_string = instance_with_storage["storage"]["root"]

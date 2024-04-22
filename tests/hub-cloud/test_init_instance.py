@@ -1,17 +1,15 @@
 from pathlib import Path
-from typing import Dict, Optional, Tuple
 from uuid import UUID
 
 import pytest
 
 import lamindb_setup as ln_setup
 from lamindb_setup.core._hub_client import connect_hub_with_auth
+from lamindb_setup.core._hub_core import _connect_instance
 from lamindb_setup.core._hub_crud import (
     Client,
     select_account_by_handle,
-    select_db_user_by_instance,
     select_instance_by_name,
-    select_instance_by_owner_name,
 )
 
 pgurl = "postgresql://postgres:pwd@0.0.0.0:5432/pgtest"
@@ -35,43 +33,22 @@ def get_hub_client():
     hub.auth.sign_out()
 
 
-def get_instance_and_dbuser_from_hub(
-    instance_name: str, hub: Client
-) -> Tuple[Optional[Dict[str, str]], Optional[Dict[str, str]]]:
-    assert ln_setup.settings.user.handle == "testuser2"
-    instance_account_storage = select_instance_by_owner_name(
-        "testuser2",
-        name=instance_name,
-        client=hub,
-    )
-    if instance_account_storage is not None:
-        _ = instance_account_storage.pop("account")
-        _ = instance_account_storage.pop("storage")
-        instance = instance_account_storage
-    else:
-        return None, None
-    db_user = select_db_user_by_instance(instance_id=instance["id"], client=hub)
-    return instance, db_user
-
-
 def test_init_instance_postgres_default_name(get_hub_client):
     hub = get_hub_client
     instance_name = "pgtest"
-    instance, _ = get_instance_and_dbuser_from_hub(instance_name, hub)
-    # if instance exists, delete it
-    if instance is not None:
-        delete_instance(instance["id"], hub)
-    ln_setup.delete("pgtest", force=True)
+    ln_setup.delete(instance_name, force=True)
     # now, run init
     ln_setup.init(storage="./mydatapg", db=pgurl, _test=True)
     assert ln_setup.settings.instance.slug == "testuser2/pgtest"
     ln_setup.register(_test=True)
     assert ln_setup.settings.instance.slug == "testuser2/pgtest"
     # and check
-    instance, db_user = get_instance_and_dbuser_from_hub(instance_name, hub)
+    instance, storage = _connect_instance(
+        owner="testuser2", name=instance_name, client=hub
+    )
     # hub checks
-    assert db_user is None
-    assert instance["name"] == "pgtest"
+    assert instance["db"].startswith("postgresql://none:none")
+    assert instance["name"] == instance_name
     assert instance["db_scheme"] == "postgresql"
     assert instance["db_host"] == "0.0.0.0"
     assert instance["db_port"] == 5432
@@ -87,8 +64,7 @@ def test_init_instance_postgres_default_name(get_hub_client):
         ln_setup.settings.instance.storage.root.as_posix()
         == Path("mydatapg").absolute().as_posix()
     )
-    delete_instance(instance["id"], hub)
-    ln_setup.delete("pgtest", force=True)
+    ln_setup.delete(instance_name, force=True)
 
 
 def test_init_instance_postgres_custom_name():

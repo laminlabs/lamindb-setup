@@ -116,7 +116,7 @@ def delete(
                 "Deleting remote Postgres instances not yet supported."
             )
         else:
-            logger.warning("delete() does not affect your Postgres database.")
+            logger.warning("delete() does not affect your Postgres database")
     if isettings.dialect == "sqlite" and isettings.is_remote:
         # delete the exlusion dir first because it's hard to count its objects
         delete_exclusion_dir(isettings)
@@ -134,12 +134,12 @@ def delete(
         account_for_sqlite_file=isettings.dialect == "sqlite",
     )
     logger.info(f"deleting instance {instance_slug}")
-    if isettings.is_remote:
-        # below we can skip check_storage_is_empty() because we already called
-        # it above
-        delete_instance_on_hub(isettings.id, require_empty=False)
+    # below we can skip check_storage_is_empty() because we already called
+    # it above
+    delete_instance_on_hub(isettings.id, require_empty=False)
     delete_by_isettings(isettings)
     if n_objects == 0 and isettings.storage.type == "local":
         # dir is only empty after sqlite file was delete via delete_by_isettings
+        (isettings.storage.root / ".lamindb").rmdir()
         isettings.storage.root.rmdir()
     return None
