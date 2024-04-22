@@ -131,7 +131,7 @@ class StorageSettings:
         self._is_hybrid = is_hybrid
         self._root_init = convert_pathlike(root)
         if isinstance(self._root_init, LocalPathClasses):  # local paths
-            self._root_init.mkdir(parents=True, exist_ok=True)
+            (self._root_init / ".lamindb").mkdir(parents=True, exist_ok=True)
             self._root_init = self._root_init.resolve()
         self._root = None
         self._remote_root = None

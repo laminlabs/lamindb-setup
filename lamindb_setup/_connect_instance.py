@@ -30,7 +30,7 @@ _TEST_FAILED_LOAD = False
 INSTANCE_NOT_FOUND_MESSAGE = (
     "'{owner}/{name}' not found:"
     " '{hub_result}'\nCheck your permissions:"
-    " https://lamin.ai/{owner}/{name}?tab=collaborators"
+    " https://lamin.ai/{owner}/{name}"
 )
 
 
