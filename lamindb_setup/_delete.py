@@ -83,7 +83,12 @@ def delete(
             return None
         isettings = load_instance_settings(settings_file)
     if isettings.dialect != "sqlite":
-        raise NotImplementedError("Deleting Postgres instances not yet supported.")
+        if isettings.is_remote:
+            raise NotImplementedError(
+                "Deleting remote Postgres instances not yet supported."
+            )
+        else:
+            logger.warning("delete() does not affect your Postgres database.")
     logger.info(f"deleting instance {instance_slug}")
     n_objects = check_storage_is_empty(
         isettings.storage.root,
