@@ -121,20 +121,17 @@ class StorageSettings:
         self,
         root: UPathStr,
         region: Optional[str] = None,
-        local_storage: bool = False,  # refers to storage mode
         uid: Optional[str] = None,
         uuid: Optional[UUID] = None,
         access_token: Optional[str] = None,
     ):
         self._uid = uid
         self._uuid_ = uuid
-        self._local_storage = local_storage
         self._root_init = convert_pathlike(root)
         if isinstance(self._root_init, LocalPathClasses):  # local paths
             (self._root_init / ".lamindb").mkdir(parents=True, exist_ok=True)
             self._root_init = self._root_init.resolve()
         self._root = None
-        self._cloud_root = None
         self._aws_account_id: Optional[int] = None
         self._description: Optional[str] = None
         # we don't yet infer region here to make init fast
@@ -154,6 +151,11 @@ class StorageSettings:
             self._cache_dir = None
         # save access_token here for use in self.root
         self.access_token = access_token
+
+        # local storage
+        self._local_storage = False
+        self._local_record = None
+        self._local_root = None
 
     @property
     def id(self) -> int:
@@ -184,19 +186,24 @@ class StorageSettings:
             from lnschema_core.models import Storage
             from ._settings import settings
 
-            if not self.local_storage:
-                self._record = Storage.objects.using(settings._using_key).get(
-                    root=self.root_as_str
-                )
-            else:
-                # this has to be redone
-                records = Storage.objects.filter(type="local").all()
-                for record in records:
-                    if Path(record.root).exists():
-                        self._record = record
-                        logger.warning("found local storage location")
-                        break
+            self._record = Storage.objects.using(settings._using_key).get(
+                root=self.root_as_str
+            )
         return self._record
+
+    @property
+    def local_record(self) -> Any:
+        """Storage record."""
+        # dynamic import because of import order
+        from lnschema_core.models import Storage
+
+        records = Storage.objects.filter(type="local").all()
+        for record in records:
+            if Path(record.root).exists():
+                self._local_record = record
+                logger.important(f"defaulting to local storage: {record}")
+                break
+        return self._local_record
 
     def __repr__(self):
         """String rep."""
@@ -207,6 +214,12 @@ class StorageSettings:
 
     @property
     def local_storage(self) -> bool:
+        """Default to local storage.
+
+        Change the value via instance settings.
+
+        More info: :attr:`~lamindb.setup.core.InstanceSettings.local_storage`
+        """
         return self._local_storage
 
     @property
@@ -223,15 +236,15 @@ class StorageSettings:
         return self._root
 
     @property
-    def cloud_root(self) -> UPath:
-        """Remote storage location. Only needed for hybrid storage."""
+    def local_root(self) -> UPath:
+        """Local storage location. Only needed if `local_storage` is `True`."""
         if not self.local_storage:
-            raise ValueError("cloud_root is only defined for hybrid storage")
-        if self._cloud_root is None:
-            self._cloud_root = create_path(
+            raise ValueError("local_root is only defined if `local_storage` is true")
+        if self._local_root is None:
+            self._local_root = create_path(
                 self._root_init, access_token=self.access_token
             )
-        return self._cloud_root
+        return self._local_root
 
     def _set_fs_kwargs(self, **kwargs):
         """Set additional fsspec arguments for cloud root.

@@ -16,6 +16,9 @@ def check_whether_migrations_in_sync(db_version_str: str):
         installed_version_str = metadata.version("lamindb")
     except metadata.PackageNotFoundError:
         return None
+    if db_version_str is None:
+        logger.warning("no lamindb version stored to compare with installed version")
+        return None
     installed_version = version.parse(installed_version_str)
     db_version = version.parse(db_version_str)
     if (

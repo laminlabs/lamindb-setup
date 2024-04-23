@@ -88,13 +88,13 @@ def delete(
                 root=storage_result["root"],
                 region=storage_result["region"],
                 uid=storage_result["lnid"],
-                local_storage=instance_result["storage_mode"] == "hybrid",
             )
             isettings = InstanceSettings(
                 id=UUID(instance_result["id"]),
                 owner=settings.user.handle,
                 name=instance_name,
                 storage=ssettings,
+                local_storage=instance_result["storage_mode"] == "hybrid",
                 db=instance_result["db"] if "db" in instance_result else None,
                 schema=instance_result["schema_str"],
                 git_repo=instance_result["git_repo"],

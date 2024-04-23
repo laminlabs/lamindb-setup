@@ -31,6 +31,7 @@ class InstanceSettings:
         owner: str,  # owner handle
         name: str,  # instance name
         storage: StorageSettings,  # storage location
+        local_storage: bool = False,  # default to local storage
         uid: Optional[str] = None,  # instance uid/lnid
         db: Optional[str] = None,  # DB URI
         schema: Optional[str] = None,  # comma-separated string of schema names
@@ -43,6 +44,7 @@ class InstanceSettings:
         self._name: str = name
         self._uid: Optional[str] = uid
         self._storage: StorageSettings = storage
+        self._storage._local_storage = local_storage
         validate_db_arg(db)
         self._db: Optional[str] = db
         self._schema_str: Optional[str] = schema
@@ -96,11 +98,14 @@ class InstanceSettings:
         artifact to the default cloud storage location:
         :attr:`~lamindb.setup.core.StorageSettings.root`.
         """
-        return self._local_storage
+        return self._storage._local_storage
 
     @local_storage.setter
     def local_storage(self, value: bool):
-        self._local_storage = value
+        from ._hub_core import update_instance_record
+
+        update_instance_record(self.id, {"storage_mode": "hybrid" if value else None})
+        self._storage._local_storage = value
 
     @property
     def identifier(self) -> str:
