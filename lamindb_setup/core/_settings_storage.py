@@ -97,7 +97,7 @@ def init_storage(root: UPathStr) -> "StorageSettings":
         from ._hub_core import init_storage as init_storage_hub
 
         ssettings._description = f"Created as default storage for instance {uid}"
-        ssettings._uuid = init_storage_hub(ssettings)
+        ssettings._uuid_ = init_storage_hub(ssettings)
         logger.important(f"registered storage: {ssettings.root_as_str}")
     mark_storage_root(ssettings.root)
     return ssettings
@@ -127,7 +127,7 @@ class StorageSettings:
         access_token: Optional[str] = None,
     ):
         self._uid = uid
-        self._uuid = uuid
+        self._uuid_ = uuid
         self._is_hybrid = is_hybrid
         self._root_init = convert_pathlike(root)
         if isinstance(self._root_init, LocalPathClasses):  # local paths
@@ -161,9 +161,9 @@ class StorageSettings:
         return self.record.id
 
     @property
-    def uuid(self) -> Optional[UUID]:
-        """Storage uuid."""
-        return self._uuid
+    def _uuid(self) -> Optional[UUID]:
+        """Lamin's internal storage uuid."""
+        return self._uuid_
 
     @property
     def uid(self) -> Optional[str]:
@@ -201,8 +201,8 @@ class StorageSettings:
     def __repr__(self):
         """String rep."""
         s = f"root='{self.root_as_str}', uid='{self.uid}'"
-        if self.uuid is not None:
-            s += f", uuid='{self.uuid.hex}'"
+        if self._uuid is not None:
+            s += f", uuid='{self._uuid.hex}'"
         return f"StorageSettings({s})"
 
     @property

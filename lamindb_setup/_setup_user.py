@@ -99,7 +99,7 @@ def login(
     user_settings.uid = user_id
     user_settings.handle = user_handle
     user_settings.name = user_name
-    user_settings.uuid = user_uuid
+    user_settings._uuid = user_uuid
     user_settings.access_token = access_token
     save_user_settings(user_settings)
 
