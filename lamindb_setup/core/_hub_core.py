@@ -70,7 +70,7 @@ def _init_storage(ssettings: StorageSettings, client: Client) -> UUID:
     fields = dict(
         id=id.hex,
         lnid=ssettings.uid,
-        created_by=settings.user.uuid.hex,  # type: ignore
+        created_by=settings.user._uuid.hex,  # type: ignore
         root=root,
         region=ssettings.region,
         type=ssettings.type,
@@ -143,9 +143,9 @@ def _init_instance(isettings: InstanceSettings, client: Client) -> None:
         lamindb_version = None
     fields = dict(
         id=isettings.id.hex,
-        account_id=settings.user.uuid.hex,  # type: ignore
+        account_id=settings.user._uuid.hex,  # type: ignore
         name=isettings.name,
-        storage_id=isettings.storage.uuid.hex,  # type: ignore
+        storage_id=isettings.storage._uuid.hex,  # type: ignore
         schema_str=isettings._schema_str,
         lamindb_version=lamindb_version,
         public=False,

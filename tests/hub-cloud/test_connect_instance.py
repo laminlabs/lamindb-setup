@@ -56,7 +56,7 @@ def test_load_after_revoked_access():
         delete_collaborator(
             "laminlabs",
             "static-test-instance-private-sqlite",
-            ln_setup.settings.user.uuid,
+            ln_setup.settings.user._uuid,
             admin_hub,
         )
         # make the instance private

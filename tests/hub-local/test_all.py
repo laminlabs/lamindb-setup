@@ -49,7 +49,7 @@ def sign_up_user(email: str, handle: str, save_as_settings: bool = False):
         handle=handle,
         email=email,
         password=result_or_error[0],
-        uuid=account_id,
+        _uuid=account_id,
         access_token=access_token,
     )
     if save_as_settings:
@@ -77,7 +77,7 @@ def create_testadmin1_session():  # -> Tuple[Client, UserSettings]
     with pytest.raises(AuthApiError):
         # test error with "User already registered"
         sign_up_user(email, "testadmin1")
-    account_id = ln_setup.settings.user.uuid
+    account_id = ln_setup.settings.user._uuid
     account = {
         "id": account_id.hex,
         "user_id": account_id.hex,
@@ -96,8 +96,8 @@ def create_testreader1_session():  # -> Tuple[Client, UserSettings]
     email = "testreader1@gmail.com"
     user_settings = sign_up_user(email, "testreader1")
     account = {
-        "id": user_settings.uuid.hex,
-        "user_id": user_settings.uuid.hex,
+        "id": user_settings._uuid.hex,
+        "user_id": user_settings._uuid.hex,
         "lnid": base62(8),
         "handle": "testreader1",
     }
@@ -128,7 +128,7 @@ def create_myinstance(create_testadmin1_session):  # -> Dict
     )
     db_collaborator = select_collaborator(
         instance_id=instance_id.hex,
-        account_id=ln_setup.settings.user.uuid.hex,
+        account_id=ln_setup.settings.user._uuid.hex,
         client=admin_client,
     )
     assert db_collaborator["role"] == "admin"
@@ -144,7 +144,7 @@ def create_myinstance(create_testadmin1_session):  # -> Dict
         client=admin_client,
     )
     instance = select_instance_by_name(
-        account_id=ln_setup.settings.user.uuid,
+        account_id=ln_setup.settings.user._uuid,
         name="myinstance",
         client=admin_client,
     )
@@ -159,7 +159,7 @@ def test_connection_string_decomp(create_myinstance, create_testadmin1_session):
     assert create_myinstance["db_database"] == "mydb"
     db_collaborator = select_collaborator(
         instance_id=create_myinstance["id"],
-        account_id=ln_setup.settings.user.uuid.hex,
+        account_id=ln_setup.settings.user._uuid.hex,
         client=client,
     )
     assert db_collaborator["role"] == "admin"
@@ -187,13 +187,13 @@ def test_db_user(
     # check that testreader1 is not yet a collaborator
     db_collaborator = select_collaborator(
         instance_id=instance_id.hex,
-        account_id=reader_settings.uuid.hex,
+        account_id=reader_settings._uuid.hex,
         client=admin_client,
     )
     assert db_collaborator is None
     # now add testreader1 as a collaborator
     add_collaborator_by_ids(
-        account_id=reader_settings.uuid,
+        account_id=reader_settings._uuid,
         instance_id=instance_id,
         role="read",
         supabase_client=admin_client,
@@ -201,12 +201,12 @@ def test_db_user(
     # check that this was successful and can be read by the reader
     db_collaborator = select_collaborator(
         instance_id=instance_id.hex,
-        account_id=reader_settings.uuid.hex,
+        account_id=reader_settings._uuid.hex,
         client=reader_client,
     )
     assert db_collaborator["role"] == "read"
     assert UUID(db_collaborator["instance_id"]) == instance_id
-    assert UUID(db_collaborator["account_id"]) == reader_settings.uuid
+    assert UUID(db_collaborator["account_id"]) == reader_settings._uuid
     assert db_collaborator["db_user_id"] is None
     # this alone doesn't set a db_user
     db_user = select_db_user_by_instance(

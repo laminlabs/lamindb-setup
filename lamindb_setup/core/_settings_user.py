@@ -25,7 +25,7 @@ class UserSettings:
     """User access token."""
     uid: str = "null"
     """Universal user ID."""
-    uuid: Optional[UUID] = None
+    _uuid: Optional[UUID] = None
     """Lamin's internal user ID."""
     name: Optional[str] = None
     """Full name."""

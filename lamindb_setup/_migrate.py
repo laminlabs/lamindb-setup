@@ -83,7 +83,7 @@ class migrate:
             collaborator = call_with_fallback_auth(
                 select_collaborator,
                 instance_id=instance_id_str,
-                account_id=settings.user.uuid,
+                account_id=settings.user._uuid,
             )
             if collaborator is None or collaborator["role"] != "admin":
                 raise SystemExit(
