@@ -250,7 +250,7 @@ def init(
             return None
         isettings._init_db()
         load_from_isettings(isettings, init=True)
-        if isettings._is_cloud_sqlite:
+        if isettings._type_is_cloud_sqlite:
             isettings._cloud_sqlite_locker.lock()
             logger.warning(
                 "locked instance (to unlock and push changes to the cloud SQLite file,"
@@ -301,7 +301,7 @@ def load_from_isettings(
 
 
 def validate_sqlite_state(isettings: InstanceSettings) -> None:
-    if isettings._is_cloud_sqlite:
+    if isettings._type_is_cloud_sqlite:
         if (
             # it's important to first evaluate the existence check
             # for the local sqlite file because it doesn't need a network

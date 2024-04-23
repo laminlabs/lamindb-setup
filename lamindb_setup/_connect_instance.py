@@ -191,7 +191,8 @@ def connect(
         )  # this also updates local SQLite
         if not check:
             local_db = (
-                isettings._is_cloud_sqlite and isettings._sqlite_file_local.exists()
+                isettings._type_is_cloud_sqlite
+                and isettings._sqlite_file_local.exists()
             )
             if local_db:
                 logger.warning(
@@ -264,7 +265,7 @@ def update_isettings_with_storage(
     isettings: InstanceSettings, storage: UPathStr
 ) -> None:
     ssettings = StorageSettings(storage)
-    if ssettings.is_cloud:
+    if ssettings.type_is_cloud:
         try:  # triggering ssettings.id makes a lookup in the storage table
             logger.success(f"loaded storage: {ssettings.id} / {ssettings.root_as_str}")
         except RuntimeError as e:
