@@ -153,9 +153,8 @@ class StorageSettings:
         self.access_token = access_token
 
         # local storage
-        self._local_storage = False
-        self._local_record = None
-        self._local_root = None
+        self._has_local = False
+        self._local = None
 
     @property
     def id(self) -> int:
@@ -191,20 +190,6 @@ class StorageSettings:
             )
         return self._record
 
-    @property
-    def local_record(self) -> Any:
-        """Storage record."""
-        # dynamic import because of import order
-        from lnschema_core.models import Storage
-
-        records = Storage.objects.filter(type="local").all()
-        for record in records:
-            if Path(record.root).exists():
-                self._local_record = record
-                logger.important(f"defaulting to local storage: {record}")
-                break
-        return self._local_record
-
     def __repr__(self):
         """String rep."""
         s = f"root='{self.root_as_str}', uid='{self.uid}'"
@@ -213,38 +198,12 @@ class StorageSettings:
         return f"StorageSettings({s})"
 
     @property
-    def local_storage(self) -> bool:
-        """Default to local storage.
-
-        Change the value via instance settings.
-
-        More info: :attr:`~lamindb.setup.core.InstanceSettings.local_storage`
-        """
-        return self._local_storage
-
-    @property
     def root(self) -> UPath:
         """Root storage location."""
         if self._root is None:
-            if not self.local_storage:
-                # below makes network requests to get credentials
-                root_path = create_path(self._root_init, access_token=self.access_token)
-            else:
-                # this is a local path
-                root_path = create_path(self.record.root)
-            self._root = root_path
+            # below makes network requests to get credentials
+            self._root = create_path(self._root_init, access_token=self.access_token)
         return self._root
-
-    @property
-    def local_root(self) -> UPath:
-        """Local storage location. Only needed if `local_storage` is `True`."""
-        if not self.local_storage:
-            raise ValueError("local_root is only defined if `local_storage` is true")
-        if self._local_root is None:
-            self._local_root = create_path(
-                self._root_init, access_token=self.access_token
-            )
-        return self._local_root
 
     def _set_fs_kwargs(self, **kwargs):
         """Set additional fsspec arguments for cloud root.

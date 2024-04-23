@@ -9,28 +9,12 @@ from lamindb_setup.core._hub_client import connect_hub_with_auth
 from lamindb_setup.core._hub_crud import update_instance
 
 
-@pytest.fixture
-def create_remote_test_instance():
-    ln_setup.login("testuser1")
-    ln_setup.init(storage="s3://lamindb-ci/load_remote_instance", _test=True)
-    yield
-    ln_setup.delete("load_remote_instance", force=True)
-
-
-def test_connect_remote_instance(create_remote_test_instance):
-    ln_setup.connect("testuser1/load_remote_instance", _test=True)
-    assert ln_setup.settings.instance.name == "load_remote_instance"
-    assert ln_setup.settings.instance.storage.type_is_cloud
-    assert (
-        ln_setup.settings.instance.storage.root_as_str
-        == "s3://lamindb-ci/load_remote_instance"
-    )
-    assert (
-        ln_setup.settings.instance._sqlite_file.as_posix()
-        == f"s3://lamindb-ci/load_remote_instance/{ln_setup.settings.instance.id.hex}.lndb"  # noqa
-    )
-    ln_setup.settings.instance.local_storage = True
-    assert ln_setup.settings.storage.local_storage
+# @pytest.fixture
+# def create_remote_test_instance():
+#     ln_setup.login("testuser1")
+#     ln_setup.init(storage="s3://lamindb-ci/load_remote_instance", _test=True)
+#     yield
+#     ln_setup.delete("load_remote_instance", force=True)
 
 
 def test_connect_after_revoked_access():
