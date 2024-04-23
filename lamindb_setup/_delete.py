@@ -67,15 +67,6 @@ def delete(
         )
         raise ValueError("Invalid instance name: '/' delimiter not allowed.")
     instance_slug = f"{settings.user.handle}/{instance_name}"
-    if not force:
-        valid_responses = ["y", "yes"]
-        user_input = (
-            input(f"Are you sure you want to delete instance {instance_slug}? (y/n) ")
-            .strip()
-            .lower()
-        )
-        if user_input not in valid_responses:
-            return -1
     if settings._instance_exists and settings.instance.name == instance_name:
         isettings = settings.instance
     else:
@@ -111,12 +102,20 @@ def delete(
         else:
             isettings = load_instance_settings(settings_file)
     if isettings.dialect != "sqlite":
-        if isettings.is_remote:
-            raise NotImplementedError(
-                "Deleting remote Postgres instances not yet supported."
-            )
-        else:
-            logger.warning("delete() does not affect your Postgres database")
+        logger.warning(
+            f"delete() does not yet affect your Postgres database at {isettings.db}"
+        )
+    if not force:
+        valid_responses = ["y", "yes"]
+        user_input = (
+            input(f"Are you sure you want to delete instance {instance_slug}? (y/n) ")
+            .strip()
+            .lower()
+        )
+        if user_input not in valid_responses:
+            return -1
+
+    # the actual deletion process begins here
     if isettings.dialect == "sqlite" and isettings.is_remote:
         # delete the exlusion dir first because it's hard to count its objects
         delete_exclusion_dir(isettings)
