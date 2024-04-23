@@ -3,6 +3,7 @@
 <!-- prettier-ignore -->
 Name | PR | Developer | Date | Version
 --- | --- | --- | --- | ---
+🚚 Make `.uuid` attributes private | [727](https://github.com/laminlabs/lamindb-setup/pull/727) | [falexwolf](https://github.com/falexwolf) | 2024-04-23 |
 🚚 Rename `is_cloud` to `type_is_cloud` | [726](https://github.com/laminlabs/lamindb-setup/pull/726) | [falexwolf](https://github.com/falexwolf) | 2024-04-23 |
 🚸 In `.delete()`, check for data deletion & delete from hub | [725](https://github.com/laminlabs/lamindb-setup/pull/725) | [falexwolf](https://github.com/falexwolf) | 2024-04-22 |
 ✨ Upload dirs inplace | [722](https://github.com/laminlabs/lamindb-setup/pull/722) | [Koncopd](https://github.com/Koncopd) | 2024-04-20 | 0.69.5
