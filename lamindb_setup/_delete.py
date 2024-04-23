@@ -119,7 +119,7 @@ def delete(
     if isettings.dialect == "sqlite" and isettings.is_remote:
         # delete the exlusion dir first because it's hard to count its objects
         delete_exclusion_dir(isettings)
-    if isettings.storage.is_cloud and isettings.storage.root_as_str.startswith(
+    if isettings.storage.type_is_cloud and isettings.storage.root_as_str.startswith(
         hosted_buckets
     ):
         if not require_empty:

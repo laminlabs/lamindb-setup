@@ -3,6 +3,7 @@
 <!-- prettier-ignore -->
 Name | PR | Developer | Date | Version
 --- | --- | --- | --- | ---
+🚚 Rename `is_cloud` to `type_is_cloud` | [726](https://github.com/laminlabs/lamindb-setup/pull/726) | [falexwolf](https://github.com/falexwolf) | 2024-04-23 |
 🚸 In `.delete()`, check for data deletion & delete from hub | [725](https://github.com/laminlabs/lamindb-setup/pull/725) | [falexwolf](https://github.com/falexwolf) | 2024-04-22 |
 ✨ Upload dirs inplace | [722](https://github.com/laminlabs/lamindb-setup/pull/722) | [Koncopd](https://github.com/Koncopd) | 2024-04-20 | 0.69.5
 ♻️ Do not always read from local cache | [720](https://github.com/laminlabs/lamindb-setup/pull/720) | [falexwolf](https://github.com/falexwolf) | 2024-04-19 | 0.69.4

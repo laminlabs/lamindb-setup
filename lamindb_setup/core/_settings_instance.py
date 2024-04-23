@@ -220,7 +220,7 @@ class InstanceSettings:
         # can we make this a private property, Sergei?
         # as it's not relevant to the user
         """Is this a cloud instance with sqlite db."""
-        return self.dialect == "sqlite" and self.storage.is_cloud
+        return self.dialect == "sqlite" and self.storage.type_is_cloud
 
     @property
     def _cloud_sqlite_locker(self):
@@ -244,7 +244,7 @@ class InstanceSettings:
     @property
     def is_remote(self) -> bool:
         """Boolean indicating if an instance has no local component."""
-        if not self.storage.is_cloud:
+        if not self.storage.type_is_cloud:
             return False
 
         def is_local_uri(uri: str):

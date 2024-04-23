@@ -264,7 +264,7 @@ def update_isettings_with_storage(
     isettings: InstanceSettings, storage: UPathStr
 ) -> None:
     ssettings = StorageSettings(storage)
-    if ssettings.is_cloud:
+    if ssettings.type_is_cloud:
         try:  # triggering ssettings.id makes a lookup in the storage table
             logger.success(f"loaded storage: {ssettings.id} / {ssettings.root_as_str}")
         except RuntimeError as e:
