@@ -103,3 +103,6 @@ def setup_django(
 
     global IS_SETUP
     IS_SETUP = True
+
+    if isettings._local_storage_on:
+        isettings._search_local_root()

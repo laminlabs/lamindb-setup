@@ -59,8 +59,6 @@ class InstanceSettings:
         # local storage
         self._local_storage_on = local_storage
         self._local_storage = None
-        if self._local_storage_on:
-            self._search_local_root()
 
     def __repr__(self):
         """Rich string representation."""
