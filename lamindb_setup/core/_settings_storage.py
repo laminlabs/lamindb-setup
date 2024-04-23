@@ -277,7 +277,7 @@ class StorageSettings:
         """Set cache root."""
         from lamindb_setup import settings
 
-        if settings.instance._type_is_cloud_sqlite:
+        if settings.instance._is_cloud_sqlite:
             src_sqlite_file = settings.instance._sqlite_file_local
         else:
             src_sqlite_file = None

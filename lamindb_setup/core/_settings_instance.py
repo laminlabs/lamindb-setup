@@ -137,7 +137,7 @@ class InstanceSettings:
 
     def _update_cloud_sqlite_file(self, unlock_cloud_sqlite: bool = True) -> None:
         """Upload the local sqlite file to the cloud file."""
-        if self._type_is_cloud_sqlite:
+        if self._is_cloud_sqlite:
             sqlite_file = self._sqlite_file
             logger.warning(
                 f"updating & unlocking cloud SQLite '{sqlite_file}' of instance"
@@ -154,7 +154,7 @@ class InstanceSettings:
 
     def _update_local_sqlite_file(self, lock_cloud_sqlite: bool = True) -> None:
         """Download the cloud sqlite file if it is newer than local."""
-        if self._type_is_cloud_sqlite:
+        if self._is_cloud_sqlite:
             logger.warning(
                 "updating local SQLite & locking cloud SQLite (sync back & unlock:"
                 " lamin close)"
@@ -216,7 +216,7 @@ class InstanceSettings:
         raise NotImplementedError
 
     @property
-    def _type_is_cloud_sqlite(self) -> bool:
+    def _is_cloud_sqlite(self) -> bool:
         # can we make this a private property, Sergei?
         # as it's not relevant to the user
         """Is this a cloud instance with sqlite db."""
@@ -227,7 +227,7 @@ class InstanceSettings:
         # avoid circular import
         from .cloud_sqlite_locker import empty_locker, get_locker
 
-        if self._type_is_cloud_sqlite:
+        if self._is_cloud_sqlite:
             try:
                 return get_locker(self)
             except PermissionError:
@@ -304,7 +304,7 @@ class InstanceSettings:
         # lock in all cases except if do_not_lock_for_laminapp_admin is True and
         # user is `laminapp-admin`
         # value doesn't matter if not a cloud sqlite instance
-        lock_cloud_sqlite = self._type_is_cloud_sqlite and (
+        lock_cloud_sqlite = self._is_cloud_sqlite and (
             not do_not_lock_for_laminapp_admin
             or settings.user.handle != "laminapp-admin"
         )

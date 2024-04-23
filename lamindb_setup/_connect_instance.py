@@ -191,8 +191,7 @@ def connect(
         )  # this also updates local SQLite
         if not check:
             local_db = (
-                isettings._type_is_cloud_sqlite
-                and isettings._sqlite_file_local.exists()
+                isettings._is_cloud_sqlite and isettings._sqlite_file_local.exists()
             )
             if local_db:
                 logger.warning(
