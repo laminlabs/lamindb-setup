@@ -94,7 +94,7 @@ def delete(
                 owner=settings.user.handle,
                 name=instance_name,
                 storage=ssettings,
-                local_storage=instance_result["storage_mode"] == "hybrid",
+                local_storage=instance_result["local_storage"],
                 db=instance_result["db"] if "db" in instance_result else None,
                 schema=instance_result["schema_str"],
                 git_repo=instance_result["git_repo"],
