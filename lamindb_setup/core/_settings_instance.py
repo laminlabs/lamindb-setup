@@ -153,15 +153,6 @@ class InstanceSettings:
         update_instance_record(self.id, {"local_storage": self._local_storage_on})
 
     @property
-    def identifier(self) -> str:
-        """Unique semantic identifier."""
-        logger.warning(
-            "InstanceSettings.identifier is deprecated and will be removed, use"
-            " InstanceSettings.slug instead"
-        )
-        return self.slug
-
-    @property
     def slug(self) -> str:
         """Unique semantic identifier of form `"{account_handle}/{instance_name}"`."""
         return f"{self.owner}/{self.name}"
@@ -277,10 +268,6 @@ class InstanceSettings:
         else:
             assert self._db.startswith("postgresql"), f"Unexpected DB value: {self._db}"
             return "postgresql"
-
-    @property
-    def session(self):
-        raise NotImplementedError
 
     @property
     def _is_cloud_sqlite(self) -> bool:
