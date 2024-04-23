@@ -56,7 +56,7 @@ def test_init_instance_postgres_default_name(get_hub_client):
     # client checks
     assert ln_setup.settings.instance.id == UUID(instance["id"])
     assert ln_setup.settings.instance.name == "pgtest"
-    assert not ln_setup.settings.instance.storage.is_cloud
+    assert not ln_setup.settings.instance.storage.type_is_cloud
     assert ln_setup.settings.instance.owner == ln_setup.settings.user.handle
     assert ln_setup.settings.instance.dialect == "postgresql"
     assert ln_setup.settings.instance.db == pgurl
@@ -70,7 +70,7 @@ def test_init_instance_postgres_default_name(get_hub_client):
 def test_init_instance_postgres_custom_name():
     ln_setup.init(storage="./mystorage", name="mydata2", db=pgurl, _test=True)
     assert ln_setup.settings.instance.name == "mydata2"
-    assert not ln_setup.settings.instance.storage.is_cloud
+    assert not ln_setup.settings.instance.storage.type_is_cloud
     assert ln_setup.settings.instance.owner == ln_setup.settings.user.handle
     assert ln_setup.settings.instance.dialect == "postgresql"
     assert ln_setup.settings.instance.db == pgurl
@@ -93,7 +93,7 @@ def test_init_instance_cloud_aws_us():
         client=hub,
     )
     assert ln_setup.settings.instance.id == UUID(instance["id"])
-    assert ln_setup.settings.storage.is_cloud
+    assert ln_setup.settings.storage.type_is_cloud
     assert (
         str(ln_setup.settings.storage.root)
         == "s3://lamindb-ci/init_instance_cloud_aws_us"
@@ -143,7 +143,7 @@ def test_init_instance_sqlite():
     )
     assert ln_setup.settings.instance.id == UUID(instance["id"])
     assert ln_setup.settings.instance.name == "local-sqlite-instance"
-    assert not ln_setup.settings.instance.storage.is_cloud
+    assert not ln_setup.settings.instance.storage.type_is_cloud
     assert ln_setup.settings.instance.owner == ln_setup.settings.user.handle
     assert ln_setup.settings.instance.dialect == "sqlite"
     ln_setup.delete("local-sqlite-instance", force=True)

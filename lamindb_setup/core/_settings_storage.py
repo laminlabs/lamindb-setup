@@ -93,7 +93,7 @@ def init_storage(root: UPathStr) -> "StorageSettings":
             logger.error("`storage` is not a valid local, GCP storage or AWS S3 path")
             raise e
     ssettings = StorageSettings(uid=uid, root=root_str, region=region)
-    if ssettings.is_cloud:
+    if ssettings.type_is_cloud:
         from ._hub_core import init_storage as init_storage_hub
 
         ssettings._description = f"Created as default storage for instance {uid}"
@@ -303,7 +303,7 @@ class StorageSettings:
             raise e
 
     @property
-    def is_cloud(self) -> bool:
+    def type_is_cloud(self) -> bool:
         """`True` if `storage_root` is in cloud, `False` otherwise."""
         return self.type != "local"
 

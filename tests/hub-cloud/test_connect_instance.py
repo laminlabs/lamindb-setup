@@ -16,7 +16,7 @@ def test_load_remote_instance():
     assert ln_setup.settings.instance.name == "load_remote_instance"
     ln_setup.connect("testuser1/load_remote_instance", _test=True)
     assert ln_setup.settings.instance.id is not None
-    assert ln_setup.settings.instance.storage.is_cloud
+    assert ln_setup.settings.instance.storage.type_is_cloud
     assert (
         ln_setup.settings.instance.storage.root_as_str
         == "s3://lamindb-ci/load_remote_instance"
