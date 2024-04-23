@@ -121,14 +121,14 @@ class StorageSettings:
         self,
         root: UPathStr,
         region: Optional[str] = None,
-        is_hybrid: bool = False,  # refers to storage mode
+        mode_is_hybrid: bool = False,  # refers to storage mode
         uid: Optional[str] = None,
         uuid: Optional[UUID] = None,
         access_token: Optional[str] = None,
     ):
         self._uid = uid
         self._uuid_ = uuid
-        self._is_hybrid = is_hybrid
+        self._mode_is_hybrid = mode_is_hybrid
         self._root_init = convert_pathlike(root)
         if isinstance(self._root_init, LocalPathClasses):  # local paths
             (self._root_init / ".lamindb").mkdir(parents=True, exist_ok=True)
@@ -184,7 +184,7 @@ class StorageSettings:
             from lnschema_core.models import Storage
             from ._settings import settings
 
-            if not self.is_hybrid:
+            if not self.mode_is_hybrid:
                 self._record = Storage.objects.using(settings._using_key).get(
                     root=self.root_as_str
                 )
@@ -206,7 +206,7 @@ class StorageSettings:
         return f"StorageSettings({s})"
 
     @property
-    def is_hybrid(self) -> bool:
+    def mode_is_hybrid(self) -> bool:
         """Qualifies storage mode.
 
         A storage location can be local, in the cloud, or hybrid. See
@@ -215,13 +215,13 @@ class StorageSettings:
         Hybrid means that a default local storage location is backed by an
         optional cloud storage location.
         """
-        return self._is_hybrid
+        return self._mode_is_hybrid
 
     @property
     def root(self) -> UPath:
         """Root storage location."""
         if self._root is None:
-            if not self.is_hybrid:
+            if not self.mode_is_hybrid:
                 # below makes network requests to get credentials
                 root_path = create_path(self._root_init, access_token=self.access_token)
             else:
@@ -233,7 +233,7 @@ class StorageSettings:
     @property
     def remote_root(self) -> UPath:
         """Remote storage location. Only needed for hybrid storage."""
-        if not self.is_hybrid:
+        if not self.mode_is_hybrid:
             raise ValueError("remote_root is only defined for hybrid storage")
         if self._remote_root is None:
             self._remote_root = create_path(
