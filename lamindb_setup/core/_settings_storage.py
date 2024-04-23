@@ -134,7 +134,7 @@ class StorageSettings:
             (self._root_init / ".lamindb").mkdir(parents=True, exist_ok=True)
             self._root_init = self._root_init.resolve()
         self._root = None
-        self._remote_root = None
+        self._cloud_root = None
         self._aws_account_id: Optional[int] = None
         self._description: Optional[str] = None
         # we don't yet infer region here to make init fast
@@ -209,11 +209,16 @@ class StorageSettings:
     def mode_is_hybrid(self) -> bool:
         """Qualifies storage mode.
 
-        A storage location can be local, in the cloud, or hybrid. See
+        In hybrid mode, you'll save artifacts to a default local storage
+        location at :attr:`~lamindb.setup.core.StorageSettings.root`
+
+        Upon passing `upload=True` in `artifact.save(upload=True)`, you upload
+        the artifact to the default cloud storage location:
+        :attr:`~lamindb.setup.core.StorageSettings.cloud_root`.
+
+        A storage location can be local or in the cloud: see
         :attr:`~lamindb.setup.core.StorageSettings.type`.
 
-        Hybrid means that a default local storage location is backed by an
-        optional cloud storage location.
         """
         return self._mode_is_hybrid
 
@@ -231,15 +236,15 @@ class StorageSettings:
         return self._root
 
     @property
-    def remote_root(self) -> UPath:
+    def cloud_root(self) -> UPath:
         """Remote storage location. Only needed for hybrid storage."""
         if not self.mode_is_hybrid:
-            raise ValueError("remote_root is only defined for hybrid storage")
-        if self._remote_root is None:
-            self._remote_root = create_path(
+            raise ValueError("cloud_root is only defined for hybrid storage")
+        if self._cloud_root is None:
+            self._cloud_root = create_path(
                 self._root_init, access_token=self.access_token
             )
-        return self._remote_root
+        return self._cloud_root
 
     def _set_fs_kwargs(self, **kwargs):
         """Set additional fsspec arguments for cloud root.
