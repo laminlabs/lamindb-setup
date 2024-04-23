@@ -3,13 +3,14 @@
 ```{toctree}
 :maxdepth: 1
 
-hub-cloud/init-on-prem-instance
-hub-cloud/connect-on-prem-instance
+hub-cloud/init-local-instance
+hub-cloud/connect-local-instance
 hub-cloud/set-storage
 hub-cloud/test-bionty
 hub-cloud/init-hosted-instance
 hub-cloud/connect-hosted-instance
 hub-cloud/test-multi-session
+hub-cloud/connect-hybrid-instance
 
 hub-prod/test-cache-management
 hub-prod/test-empty-init

@@ -1,5 +1,8 @@
+from __future__ import annotations
+
 import os
 import shutil
+from .upath import LocalPathClasses, convert_pathlike
 from pathlib import Path
 from typing import Literal, Optional, Set, Tuple
 from uuid import UUID
@@ -16,6 +19,11 @@ from ._settings_storage import StorageSettings
 from ._settings_store import current_instance_settings_file, instance_settings_file
 from .upath import UPath
 
+LOCAL_STORAGE_ROOT_WARNING = (
+    "No local storage root found, set via `ln.setup.settings.instance.local_storage ="
+    " local_root`"
+)
+
 
 def sanitize_git_repo_url(repo_url: str) -> str:
     assert repo_url.startswith("https://")
@@ -31,6 +39,7 @@ class InstanceSettings:
         owner: str,  # owner handle
         name: str,  # instance name
         storage: StorageSettings,  # storage location
+        local_storage: bool = False,  # default to local storage
         uid: Optional[str] = None,  # instance uid/lnid
         db: Optional[str] = None,  # DB URI
         schema: Optional[str] = None,  # comma-separated string of schema names
@@ -47,6 +56,9 @@ class InstanceSettings:
         self._db: Optional[str] = db
         self._schema_str: Optional[str] = schema
         self._git_repo = None if git_repo is None else sanitize_git_repo_url(git_repo)
+        # local storage
+        self._local_storage_on = local_storage
+        self._local_storage = None
 
     def __repr__(self):
         """Rich string representation."""
@@ -84,6 +96,61 @@ class InstanceSettings:
     def name(self) -> str:
         """Instance name."""
         return self._name
+
+    def _search_local_root(self):
+        from lnschema_core.models import Storage
+
+        records = Storage.objects.filter(type="local").all()
+        for record in records:
+            if Path(record.root).exists():
+                self._local_storage = StorageSettings(record.root)
+                logger.important(f"defaulting to local storage: {record}")
+                break
+        if self._local_storage is None:
+            logger.warning(LOCAL_STORAGE_ROOT_WARNING)
+
+    @property
+    def local_storage(self) -> StorageSettings:
+        """Default local storage.
+
+        Warning: Only enable if you're sure you want to use the more complicated
+        storage mode across local & cloud locations.
+
+        As an admin, enable via: `ln.setup.settings.instance.local_storage =
+        local_root`.
+
+        If enabled, you'll save artifacts to a default local storage
+        location at :attr:`~lamindb.setup.settings.InstanceSettings.local_storage`.
+
+        Upon passing `upload=True` in `artifact.save(upload=True)`, you upload the
+        artifact to the default cloud storage location:
+        :attr:`~lamindb.setup.core.InstanceSettings.storage`.
+        """
+        if not self._local_storage_on:
+            raise ValueError("Local storage is not enabled for this instance.")
+        if self._local_storage is None:
+            self._search_local_root()
+        if self._local_storage is None:
+            raise ValueError(LOCAL_STORAGE_ROOT_WARNING)
+        return self._local_storage
+
+    @local_storage.setter
+    def local_storage(self, local_root: Path):
+        from ._hub_core import update_instance_record
+        from .._init_instance import register_storage
+
+        self._search_local_root()
+        if self._local_storage is not None:
+            raise ValueError(
+                "You already configured a local storage root for this instance in this"
+                f" environment: {self.local_storage.root}"
+            )
+        local_root = convert_pathlike(local_root)
+        assert isinstance(local_root, LocalPathClasses)
+        self._local_storage = StorageSettings(local_root)  # type: ignore
+        register_storage(self._local_storage)  # type: ignore
+        self._local_storage_on = True
+        update_instance_record(self.id, {"local_storage": self._local_storage_on})
 
     @property
     def identifier(self) -> str:

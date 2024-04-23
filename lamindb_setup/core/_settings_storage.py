@@ -121,20 +121,17 @@ class StorageSettings:
         self,
         root: UPathStr,
         region: Optional[str] = None,
-        is_hybrid: bool = False,  # refers to storage mode
         uid: Optional[str] = None,
         uuid: Optional[UUID] = None,
         access_token: Optional[str] = None,
     ):
         self._uid = uid
         self._uuid_ = uuid
-        self._is_hybrid = is_hybrid
         self._root_init = convert_pathlike(root)
         if isinstance(self._root_init, LocalPathClasses):  # local paths
             (self._root_init / ".lamindb").mkdir(parents=True, exist_ok=True)
             self._root_init = self._root_init.resolve()
         self._root = None
-        self._remote_root = None
         self._aws_account_id: Optional[int] = None
         self._description: Optional[str] = None
         # we don't yet infer region here to make init fast
@@ -154,6 +151,10 @@ class StorageSettings:
             self._cache_dir = None
         # save access_token here for use in self.root
         self.access_token = access_token
+
+        # local storage
+        self._has_local = False
+        self._local = None
 
     @property
     def id(self) -> int:
@@ -184,18 +185,9 @@ class StorageSettings:
             from lnschema_core.models import Storage
             from ._settings import settings
 
-            if not self.is_hybrid:
-                self._record = Storage.objects.using(settings._using_key).get(
-                    root=self.root_as_str
-                )
-            else:
-                # this has to be redone
-                records = Storage.objects.filter(type="local").all()
-                for record in records:
-                    if Path(record.root).exists():
-                        self._record = record
-                        logger.warning("found local storage location")
-                        break
+            self._record = Storage.objects.using(settings._using_key).get(
+                root=self.root_as_str
+            )
         return self._record
 
     def __repr__(self):
@@ -206,40 +198,12 @@ class StorageSettings:
         return f"StorageSettings({s})"
 
     @property
-    def is_hybrid(self) -> bool:
-        """Qualifies storage mode.
-
-        A storage location can be local, in the cloud, or hybrid. See
-        :attr:`~lamindb.setup.core.StorageSettings.type`.
-
-        Hybrid means that a default local storage location is backed by an
-        optional cloud storage location.
-        """
-        return self._is_hybrid
-
-    @property
     def root(self) -> UPath:
         """Root storage location."""
         if self._root is None:
-            if not self.is_hybrid:
-                # below makes network requests to get credentials
-                root_path = create_path(self._root_init, access_token=self.access_token)
-            else:
-                # this is a local path
-                root_path = create_path(self.record.root)
-            self._root = root_path
+            # below makes network requests to get credentials
+            self._root = create_path(self._root_init, access_token=self.access_token)
         return self._root
-
-    @property
-    def remote_root(self) -> UPath:
-        """Remote storage location. Only needed for hybrid storage."""
-        if not self.is_hybrid:
-            raise ValueError("remote_root is only defined for hybrid storage")
-        if self._remote_root is None:
-            self._remote_root = create_path(
-                self._root_init, access_token=self.access_token
-            )
-        return self._remote_root
 
     def _set_fs_kwargs(self, **kwargs):
         """Set additional fsspec arguments for cloud root.

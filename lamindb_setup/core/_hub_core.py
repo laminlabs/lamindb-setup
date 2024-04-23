@@ -48,6 +48,14 @@ def _delete_storage_record(storage_uuid: UUID, client: Client) -> None:
     client.table("storage").delete().eq("id", storage_uuid.hex).execute()
 
 
+def update_instance_record(instance_uuid: UUID, fields: Dict) -> None:
+    from ._hub_crud import update_instance
+
+    return call_with_fallback_auth(
+        update_instance, instance_id=instance_uuid.hex, instance_fields=fields
+    )
+
+
 def init_storage(
     ssettings: StorageSettings,
 ) -> UUID:
