@@ -121,14 +121,14 @@ class StorageSettings:
         self,
         root: UPathStr,
         region: Optional[str] = None,
-        mode_is_hybrid: bool = False,  # refers to storage mode
+        local_storage: bool = False,  # refers to storage mode
         uid: Optional[str] = None,
         uuid: Optional[UUID] = None,
         access_token: Optional[str] = None,
     ):
         self._uid = uid
         self._uuid_ = uuid
-        self._mode_is_hybrid = mode_is_hybrid
+        self._local_storage = local_storage
         self._root_init = convert_pathlike(root)
         if isinstance(self._root_init, LocalPathClasses):  # local paths
             (self._root_init / ".lamindb").mkdir(parents=True, exist_ok=True)
@@ -184,7 +184,7 @@ class StorageSettings:
             from lnschema_core.models import Storage
             from ._settings import settings
 
-            if not self.mode_is_hybrid:
+            if not self.local_storage:
                 self._record = Storage.objects.using(settings._using_key).get(
                     root=self.root_as_str
                 )
@@ -206,27 +206,14 @@ class StorageSettings:
         return f"StorageSettings({s})"
 
     @property
-    def mode_is_hybrid(self) -> bool:
-        """Qualifies storage mode.
-
-        In hybrid mode, you'll save artifacts to a default local storage
-        location at :attr:`~lamindb.setup.core.StorageSettings.root`
-
-        Upon passing `upload=True` in `artifact.save(upload=True)`, you upload
-        the artifact to the default cloud storage location:
-        :attr:`~lamindb.setup.core.StorageSettings.cloud_root`.
-
-        A storage location can be local or in the cloud: see
-        :attr:`~lamindb.setup.core.StorageSettings.type`.
-
-        """
-        return self._mode_is_hybrid
+    def local_storage(self) -> bool:
+        return self._local_storage
 
     @property
     def root(self) -> UPath:
         """Root storage location."""
         if self._root is None:
-            if not self.mode_is_hybrid:
+            if not self.local_storage:
                 # below makes network requests to get credentials
                 root_path = create_path(self._root_init, access_token=self.access_token)
             else:
@@ -238,7 +225,7 @@ class StorageSettings:
     @property
     def cloud_root(self) -> UPath:
         """Remote storage location. Only needed for hybrid storage."""
-        if not self.mode_is_hybrid:
+        if not self.local_storage:
             raise ValueError("cloud_root is only defined for hybrid storage")
         if self._cloud_root is None:
             self._cloud_root = create_path(

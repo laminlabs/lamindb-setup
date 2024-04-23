@@ -86,6 +86,23 @@ class InstanceSettings:
         return self._name
 
     @property
+    def local_storage(self) -> bool:
+        """Default to local storage.
+
+        If true, you'll save artifacts to a default local storage
+        location at :attr:`~lamindb.setup.core.StorageSettings.local_root`.
+
+        Upon passing `upload=True` in `artifact.save(upload=True)`, you upload the
+        artifact to the default cloud storage location:
+        :attr:`~lamindb.setup.core.StorageSettings.root`.
+        """
+        return self._local_storage
+
+    @local_storage.setter
+    def local_storage(self, value: bool):
+        self._local_storage = value
+
+    @property
     def identifier(self) -> str:
         """Unique semantic identifier."""
         logger.warning(

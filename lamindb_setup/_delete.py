@@ -88,7 +88,7 @@ def delete(
                 root=storage_result["root"],
                 region=storage_result["region"],
                 uid=storage_result["lnid"],
-                mode_is_hybrid=instance_result["storage_mode"] == "hybrid",
+                local_storage=instance_result["storage_mode"] == "hybrid",
             )
             isettings = InstanceSettings(
                 id=UUID(instance_result["id"]),
