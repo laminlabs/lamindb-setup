@@ -150,7 +150,7 @@ class InstanceSettings:
         self._local_storage = StorageSettings(local_root)  # type: ignore
         register_storage(self._local_storage)  # type: ignore
         self._local_storage_on = True
-        update_instance_record(self.id, {"local_storage": self._local_storage_on})
+        update_instance_record(self.id, {"storage_mode": "hybrid"})
 
     @property
     def slug(self) -> str:
