@@ -120,11 +120,10 @@ class InstanceSettings:
         local_root`.
 
         If enabled, you'll save artifacts to a default local storage
-        location at :attr:`~lamindb.setup.settings.InstanceSettings.local_storage`.
+        location.
 
         Upon passing `upload=True` in `artifact.save(upload=True)`, you upload the
-        artifact to the default cloud storage location:
-        :attr:`~lamindb.setup.core.InstanceSettings.storage`.
+        artifact to the default cloud storage location.
         """
         if not self._local_storage_on:
             raise ValueError("Local storage is not enabled for this instance.")
