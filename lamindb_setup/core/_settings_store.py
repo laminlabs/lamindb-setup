@@ -1,5 +1,3 @@
-from __future__ import annotations
-
 import os
 from pathlib import Path
 from typing import Optional
@@ -54,11 +52,11 @@ class InstanceSettingsStore(BaseSettings):
     owner: str
     name: str
     storage_root: str
-    storage_region: str | None
-    db: str | None
-    schema_str: str | None
+    storage_region: Optional[str]  # take old type annotations here because pydantic
+    db: Optional[str]  # doesn't like new types on 3.9 even with future annotations
+    schema_str: Optional[str]
     id: str
-    git_repo: str | None
+    git_repo: Optional[str]
 
     class Config:
         env_prefix = "lamindb_instance_"
