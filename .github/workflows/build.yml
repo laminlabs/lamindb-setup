@@ -16,7 +16,7 @@ jobs:
       - uses: actions/checkout@v3
       - uses: actions/setup-python@v4
         with:
-          python-version: "3.10"
+          python-version: "3.11" # consciously run one job on Python 3.11
           cache: "pip"
           cache-dependency-path: ".github/workflows/build.yml"
       - uses: aws-actions/configure-aws-credentials@v2
@@ -52,7 +52,7 @@ jobs:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v4
         with:
-          python-version: "3.10"
+          python-version: "3.11" # consciously run one job on Python 3.11
           cache: "pip"
           cache-dependency-path: ".github/workflows/build.yml"
       - name: checkout laminhub
@@ -96,7 +96,7 @@ jobs:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v4
         with:
-          python-version: "3.10"
+          python-version: "3.10" # consciously run one job on Python 3.10
           cache: "pip"
           cache-dependency-path: ".github/workflows/build.yml"
       - run: pip install -U laminci
@@ -137,7 +137,7 @@ jobs:
         working-directory: laminhub/rest-hub/supabase
       - uses: actions/setup-python@v4
         with:
-          python-version: "3.10"
+          python-version: "3.9" # consciously run one job on Python 3.9
           cache: "pip"
           cache-dependency-path: ".github/workflows/build.yml"
       - run: pip install -U laminci
