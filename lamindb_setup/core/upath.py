@@ -386,7 +386,7 @@ def compute_file_tree(
             contents = [d for d in contents if d.is_dir()]
         pointers = [tee] * (len(contents) - 1) + [last]
         n_files_per_dir_per_type = defaultdict(lambda: 0)  # type: ignore
-        for pointer, child_path in zip(pointers, contents, strict=False):
+        for pointer, child_path in zip(pointers, contents, strict=False):  # type: ignore
             if child_path.is_dir():
                 if include_dirs and child_path not in include_dirs:
                     continue

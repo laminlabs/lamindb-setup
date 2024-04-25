@@ -39,7 +39,7 @@ def save_settings(
 ):
     with open(settings_file, "w") as f:
         for store_key, type in type_hints.items():
-            if type == str | None:
+            if type == Optional[str]:
                 type = str
             if "__" not in store_key:
                 if store_key == "storage_root":
