@@ -1,6 +1,7 @@
 import os
 from pathlib import Path
 from typing import Optional
+
 from pydantic import BaseSettings
 
 if "LAMIN_SETTINGS_DIR" in os.environ:
@@ -51,8 +52,8 @@ class InstanceSettingsStore(BaseSettings):
     owner: str
     name: str
     storage_root: str
-    storage_region: Optional[str]
-    db: Optional[str]
+    storage_region: Optional[str]  # take old type annotations here because pydantic
+    db: Optional[str]  # doesn't like new types on 3.9 even with future annotations
     schema_str: Optional[str]
     id: str
     git_repo: Optional[str]

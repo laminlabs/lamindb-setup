@@ -1,19 +1,30 @@
+from __future__ import annotations
+
 import os
+import secrets
 import shutil
-from lamin_utils import logger
+import string
 from pathlib import Path
-from typing import Any, Optional, Union, Literal
-from ._aws_storage import find_closest_aws_region
+from typing import TYPE_CHECKING, Any, Literal, Optional, Union
+
 from appdirs import AppDirs
+from lamin_utils import logger
+
+from ._aws_storage import find_closest_aws_region
 from ._settings_save import save_system_storage_settings
 from ._settings_store import system_storage_settings_file
-from .upath import LocalPathClasses, UPath, create_path, convert_pathlike
-from uuid import UUID
-import string
-import secrets
-from .types import UPathStr
-from .upath import hosted_regions
+from .upath import (
+    LocalPathClasses,
+    UPath,
+    convert_pathlike,
+    create_path,
+    hosted_regions,
+)
 
+if TYPE_CHECKING:
+    from uuid import UUID
+
+    from .types import UPathStr
 
 DIRS = AppDirs("lamindb", "laminlabs")
 IS_INITIALIZED_KEY = ".lamindb/_is_initialized"
@@ -26,7 +37,7 @@ def base62(n_char: int) -> str:
     return id
 
 
-def get_storage_region(storage_root: UPathStr) -> Optional[str]:
+def get_storage_region(storage_root: UPathStr) -> str | None:
     storage_root_str = str(storage_root)
     if storage_root_str.startswith("s3://"):
         import botocore.session as session
@@ -64,7 +75,7 @@ def mark_storage_root(root: UPathStr):
     mark_upath.touch()
 
 
-def init_storage(root: UPathStr) -> "StorageSettings":
+def init_storage(root: UPathStr) -> StorageSettings:
     if root is None:
         raise ValueError("`storage` argument can't be `None`")
     root_str = str(root)  # ensure we have a string
@@ -103,7 +114,7 @@ def init_storage(root: UPathStr) -> "StorageSettings":
     return ssettings
 
 
-def _process_cache_path(cache_path: Union[str, Path, UPath, None]):
+def _process_cache_path(cache_path: str | Path | UPath | None):
     if cache_path is None or cache_path == "null":
         return None
     cache_dir = UPath(cache_path)
@@ -120,10 +131,10 @@ class StorageSettings:
     def __init__(
         self,
         root: UPathStr,
-        region: Optional[str] = None,
-        uid: Optional[str] = None,
-        uuid: Optional[UUID] = None,
-        access_token: Optional[str] = None,
+        region: str | None = None,
+        uid: str | None = None,
+        uuid: UUID | None = None,
+        access_token: str | None = None,
     ):
         self._uid = uid
         self._uuid_ = uuid
@@ -132,12 +143,12 @@ class StorageSettings:
             (self._root_init / ".lamindb").mkdir(parents=True, exist_ok=True)
             self._root_init = self._root_init.resolve()
         self._root = None
-        self._aws_account_id: Optional[int] = None
-        self._description: Optional[str] = None
+        self._aws_account_id: int | None = None
+        self._description: str | None = None
         # we don't yet infer region here to make init fast
         self._region = region
         # would prefer to type below as Registry, but need to think through import order
-        self._record: Optional[Any] = None
+        self._record: Any | None = None
         # cache settings
         self._storage_settings_file = system_storage_settings_file()
         if self._storage_settings_file.exists():
@@ -162,12 +173,12 @@ class StorageSettings:
         return self.record.id
 
     @property
-    def _uuid(self) -> Optional[UUID]:
+    def _uuid(self) -> UUID | None:
         """Lamin's internal storage uuid."""
         return self._uuid_
 
     @property
-    def uid(self) -> Optional[str]:
+    def uid(self) -> str | None:
         """Storage id."""
         if self._uid is None:
             self._uid = self.record.uid
@@ -183,6 +194,7 @@ class StorageSettings:
         if self._record is None:
             # dynamic import because of import order
             from lnschema_core.models import Storage
+
             from ._settings import settings
 
             self._record = Storage.objects.using(settings._using_key).get(
@@ -272,7 +284,7 @@ class StorageSettings:
         return self.type != "local"
 
     @property
-    def region(self) -> Optional[str]:
+    def region(self) -> str | None:
         """Storage region."""
         if self._region is None:
             self._region = get_storage_region(self.root_as_str)
@@ -290,11 +302,11 @@ class StorageSettings:
         protocol = fsspec.utils.get_protocol(self.root_as_str)
         return convert.get(protocol, protocol)  # type: ignore
 
-    def key_to_filepath(self, filekey: Union[Path, UPath, str]) -> UPath:
+    def key_to_filepath(self, filekey: Path | UPath | str) -> UPath:
         """Cloud or local filepath from filekey."""
         return self.root / filekey
 
-    def cloud_to_local(self, filepath: Union[Path, UPath], **kwargs) -> UPath:
+    def cloud_to_local(self, filepath: Path | UPath, **kwargs) -> UPath:
         """Local (cache) filepath from filepath."""
         local_filepath = self.cloud_to_local_no_update(filepath)  # type: ignore
         if isinstance(filepath, UPath) and not isinstance(filepath, LocalPathClasses):
@@ -309,9 +321,9 @@ class StorageSettings:
     # using the `.parts` attribute in the following line
     def cloud_to_local_no_update(self, filepath: UPath) -> UPath:
         if isinstance(filepath, UPath) and not isinstance(filepath, LocalPathClasses):
-            return self.cache_dir.joinpath(filepath._url.netloc, *filepath.parts[1:])  # type: ignore # noqa
+            return self.cache_dir.joinpath(filepath._url.netloc, *filepath.parts[1:])  # type: ignore
         return filepath
 
-    def local_filepath(self, filekey: Union[Path, UPath, str]) -> UPath:
+    def local_filepath(self, filekey: Path | UPath | str) -> UPath:
         """Local (cache) filepath from filekey: `local(filepath(...))`."""
         return self.cloud_to_local(self.key_to_filepath(filekey))

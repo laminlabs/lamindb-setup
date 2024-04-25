@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 """Core library.
 
 Settings:
@@ -10,8 +12,7 @@ Settings:
    StorageSettings
 
 """
-from . import types
-from . import upath, django
+from . import django, types, upath
 from ._deprecated import deprecated
 from ._docs import doc_args
 from ._settings_instance import InstanceSettings

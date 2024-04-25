@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 """Types.
 
 .. autosummary::
@@ -5,10 +7,11 @@
 
    UPathStr
 """
+# we need Union here because __future__ annotations doesn't work with TypeAlias
+from pathlib import Path
 from typing import (
     Union,
-)  # we need Union here because __future__ annotations doesn't work with TypeAlias
-from pathlib import Path
+)
 
 # UPath is subclass of Path, hence, it's not necessary to list UPath
 # we keep it in the name of the TypeAlias to make it clear to users that

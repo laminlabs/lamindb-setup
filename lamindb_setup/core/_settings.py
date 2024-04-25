@@ -1,13 +1,18 @@
+from __future__ import annotations
+
 import os
-from typing import Union, Optional
-from lamindb_setup.core import InstanceSettings, StorageSettings, UserSettings
-from lamindb_setup.core._settings_load import (
+from typing import TYPE_CHECKING
+
+from ._settings_load import (
     load_instance_settings,
     load_or_create_user_settings,
 )
-from ._settings_store import current_instance_settings_file
-from pathlib import Path
-from ._settings_store import settings_dir
+from ._settings_store import current_instance_settings_file, settings_dir
+
+if TYPE_CHECKING:
+    from pathlib import Path
+
+    from lamindb_setup.core import InstanceSettings, StorageSettings, UserSettings
 
 
 class SetupSettings:
@@ -18,13 +23,13 @@ class SetupSettings:
     - :class:`~lamindb_setup.core.UserSettings`
     """
 
-    _using_key: Optional[str] = None  # set through lamindb.settings
+    _using_key: str | None = None  # set through lamindb.settings
 
-    _user_settings: Union[UserSettings, None] = None
-    _instance_settings: Union[InstanceSettings, None] = None
+    _user_settings: UserSettings | None = None
+    _instance_settings: InstanceSettings | None = None
 
-    _user_settings_env: Union[str, None] = None
-    _instance_settings_env: Union[str, None] = None
+    _user_settings_env: str | None = None
+    _instance_settings_env: str | None = None
 
     _auto_connect_path: Path = settings_dir / "auto_connect"
 
@@ -51,10 +56,7 @@ class SetupSettings:
     @property
     def user(self) -> UserSettings:
         """User."""
-        if (
-            self._user_settings is None
-            or self._user_settings_env != get_env_name()  # noqa
-        ):
+        if self._user_settings is None or self._user_settings_env != get_env_name():
             self._user_settings = load_or_create_user_settings()
             self._user_settings_env = get_env_name()
             if self._user_settings and self._user_settings.uid is None:
@@ -66,7 +68,7 @@ class SetupSettings:
         """Instance."""
         if (
             self._instance_settings is None
-            or self._instance_settings_env != get_env_name()  # noqa
+            or self._instance_settings_env != get_env_name()
         ):
             self._instance_settings = load_instance_settings()
             self._instance_settings_env = get_env_name()
@@ -80,7 +82,7 @@ class SetupSettings:
     @property
     def _instance_exists(self):
         try:
-            self.instance
+            self.instance  # noqa
             return True
         # this is implicit logic that catches if no instance is loaded
         except SystemExit:

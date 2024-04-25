@@ -1,9 +1,12 @@
+from __future__ import annotations
+
 from typing import Optional
+
 from .core._settings import settings
 from .core.django import setup_django
 
 
-def django(command: str, package_name: Optional[str] = None, **kwargs):
+def django(command: str, package_name: str | None = None, **kwargs):
     r"""Manage migrations.
 
     Examples:

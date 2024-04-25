@@ -1,5 +1,8 @@
-import nox
+from __future__ import annotations
+
 import os
+
+import nox
 from laminci.nox import build_docs, login_testuser1, login_testuser2, run_pre_commit
 
 nox.options.default_venv_backend = "none"
@@ -22,12 +25,10 @@ def install(session: nox.Session, group: str) -> None:
         session.run(*"pip install bionty".split())
         session.run(*"pip install git+https://github.com/laminlabs/bionty-base".split())
         session.run(
-            *"pip install --no-deps git+https://github.com/laminlabs/lnschema-bionty"
-            .split()
+            *"pip install --no-deps git+https://github.com/laminlabs/lnschema-bionty".split()
         )
         session.run(
-            *"pip install --no-deps git+https://github.com/laminlabs/lnschema-core"
-            .split()
+            *"pip install --no-deps git+https://github.com/laminlabs/lnschema-core".split()
         )
         session.run(*"pip install ./laminhub/rest-hub".split())
         session.run(*"pip install -e .[aws,dev]".split())

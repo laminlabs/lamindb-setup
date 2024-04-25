@@ -1,6 +1,7 @@
-from pathlib import Path
-from importlib import import_module
+from __future__ import annotations
 
+from importlib import import_module
+from pathlib import Path
 
 MODELS = {
     "core": {
@@ -46,6 +47,7 @@ def exportdb() -> None:
     directory = Path("./lamindb_export/")
     directory.mkdir(parents=True, exist_ok=True)
     import pandas as pd
+
     import lamindb_setup as ln_setup
 
     def export_registry(registry, directory):

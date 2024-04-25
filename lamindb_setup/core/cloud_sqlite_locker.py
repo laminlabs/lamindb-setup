@@ -1,11 +1,16 @@
+from __future__ import annotations
+
 from datetime import datetime, timezone
-from pathlib import Path
-from typing import Optional, Union
 from functools import wraps
-from uuid import UUID
+from typing import TYPE_CHECKING, Optional, Union
+
 from lamin_utils import logger
 
-from .upath import UPath, infer_filesystem, create_mapper
+from .upath import UPath, create_mapper, infer_filesystem
+
+if TYPE_CHECKING:
+    from pathlib import Path
+    from uuid import UUID
 
 EXPIRATION_TIME = 24 * 60 * 60 * 7  # 7 days
 
@@ -31,9 +36,7 @@ class empty_locker:
 
 
 class Locker:
-    def __init__(
-        self, user_uid: str, storage_root: Union[UPath, Path], instance_id: UUID
-    ):
+    def __init__(self, user_uid: str, storage_root: UPath | Path, instance_id: UUID):
         logger.debug(
             f"init cloud sqlite locker: {user_uid}, {storage_root}, {instance_id}."
         )
@@ -169,7 +172,7 @@ class Locker:
         return self._has_lock
 
 
-_locker: Optional[Locker] = None
+_locker: Locker | None = None
 
 
 def get_locker(isettings) -> Locker:

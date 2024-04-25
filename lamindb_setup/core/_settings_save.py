@@ -1,17 +1,20 @@
-from pathlib import Path
+from __future__ import annotations
 
-from typing import Any, Dict, Union, get_type_hints, Optional
+from pathlib import Path
+from typing import TYPE_CHECKING, Any, Optional, get_type_hints
 from uuid import UUID
 
 from ._settings_store import (
-    UserSettingsStore,
     InstanceSettingsStore,
+    UserSettingsStore,
     current_user_settings_file,
     user_settings_file_email,
     user_settings_file_handle,
 )
-from ._settings_user import UserSettings
-from .upath import UPath
+
+if TYPE_CHECKING:
+    from ._settings_user import UserSettings
+    from .upath import UPath
 
 
 def save_user_settings(settings: UserSettings):
@@ -31,7 +34,7 @@ def save_user_settings(settings: UserSettings):
 def save_settings(
     settings: Any,
     settings_file: Path,
-    type_hints: Dict[str, Any],
+    type_hints: dict[str, Any],
     prefix: str,
 ):
     with open(settings_file, "w") as f:
@@ -65,7 +68,7 @@ def save_instance_settings(settings: Any, settings_file: Path):
 
 
 def save_system_storage_settings(
-    cache_path: Union[str, Path, UPath, None], settings_file: Path
+    cache_path: str | Path | UPath | None, settings_file: Path
 ):
     cache_path = "null" if cache_path is None else cache_path
     if isinstance(cache_path, Path):  # also True for UPath

@@ -1,6 +1,8 @@
-from pathlib import Path
-from typing import Optional
+from __future__ import annotations
+
+from typing import TYPE_CHECKING, Optional
 from uuid import UUID, uuid4
+
 from lamin_utils import logger
 from pydantic.error_wrappers import ValidationError
 
@@ -14,12 +16,15 @@ from ._settings_store import (
 )
 from ._settings_user import UserSettings
 
+if TYPE_CHECKING:
+    from pathlib import Path
+
 
 class SettingsEnvFileOutdated(Exception):
     pass
 
 
-def load_instance_settings(instance_settings_file: Optional[Path] = None):
+def load_instance_settings(instance_settings_file: Path | None = None):
     if instance_settings_file is None:
         instance_settings_file = current_instance_settings_file()
     if not instance_settings_file.exists():
@@ -33,7 +38,7 @@ def load_instance_settings(instance_settings_file: Optional[Path] = None):
             f"\n\n{error}\n\nYour instance settings file with\n\n{content}\nis invalid"
             f" (likely outdated), please delete {instance_settings_file} &"
             " re-initialize (local) or re-connect to the instance (remote)"
-        )
+        ) from error
     if settings_store.id == "null":
         raise ValueError(
             "Your instance.id is undefined, please either load your instance from the"
@@ -60,13 +65,13 @@ def load_or_create_user_settings() -> UserSettings:
 def load_user_settings(user_settings_file: Path):
     try:
         settings_store = UserSettingsStore(_env_file=user_settings_file)
-    except (ValidationError, TypeError):
+    except (ValidationError, TypeError) as error:
         msg = (
             "Your user settings file is invalid, please delete"
             f" {user_settings_file} and log in again."
         )
         print(msg)
-        raise SettingsEnvFileOutdated(msg)
+        raise SettingsEnvFileOutdated(msg) from error
     settings = setup_user_from_store(settings_store)
     return settings
 

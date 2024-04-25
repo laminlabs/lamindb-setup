@@ -1,13 +1,15 @@
+from __future__ import annotations
+
 import os
-from postgrest.exceptions import APIError
-import pytest
-from laminhub_rest.core.collaborator._add_collaborator import add_collaborator
-from laminhub_rest.core.collaborator._delete_collaborator import delete_collaborator
-from lamindb_setup._connect_instance import InstanceNotFoundError
+
 import lamindb_setup as ln_setup
+import pytest
+from lamindb_setup._connect_instance import InstanceNotFoundError
 from lamindb_setup.core._hub_client import connect_hub_with_auth
 from lamindb_setup.core._hub_crud import update_instance
-
+from laminhub_rest.core.collaborator._add_collaborator import add_collaborator
+from laminhub_rest.core.collaborator._delete_collaborator import delete_collaborator
+from postgrest.exceptions import APIError
 
 # @pytest.fixture
 # def create_remote_test_instance():
@@ -104,7 +106,7 @@ def test_connect_with_db_parameter():
         ln_setup.connect("laminlabs/lamindata", _test=True)
         assert "root" in ln_setup.settings.instance.db
         # test load from provided db argument
-        db = "postgresql://testdbuser:testpwd@database2.cmyfs24wugc3.us-east-1.rds.amazonaws.com:5432/db1"  # noqa
+        db = "postgresql://testdbuser:testpwd@database2.cmyfs24wugc3.us-east-1.rds.amazonaws.com:5432/db1"
         ln_setup.connect("laminlabs/lamindata", db=db, _test=True)
         assert "testdbuser" in ln_setup.settings.instance.db
         # test ignore loading from cache because hub result has >read access

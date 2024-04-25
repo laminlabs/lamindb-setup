@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 # flake8: noqa
 import builtins
 import os

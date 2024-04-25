@@ -1,9 +1,10 @@
+from __future__ import annotations
+
 from pathlib import Path
 from uuid import UUID
 
-import pytest
-
 import lamindb_setup as ln_setup
+import pytest
 from lamindb_setup.core._hub_client import connect_hub_with_auth
 from lamindb_setup.core._hub_core import _connect_instance
 from lamindb_setup.core._hub_crud import (
@@ -105,7 +106,7 @@ def test_init_instance_cloud_aws_us():
     assert ln_setup.settings.storage.region == "us-west-1"
     assert (
         str(ln_setup.settings.instance._sqlite_file)
-        == f"s3://lamindb-ci/init_instance_cloud_aws_us/{ln_setup.settings.instance.id.hex}.lndb"  # noqa
+        == f"s3://lamindb-ci/init_instance_cloud_aws_us/{ln_setup.settings.instance.id.hex}.lndb"
     )
 
 

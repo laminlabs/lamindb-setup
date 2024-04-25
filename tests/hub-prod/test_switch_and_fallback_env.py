@@ -1,6 +1,9 @@
+from __future__ import annotations
+
 import os
-import pytest
+
 import lamindb_setup as ln_setup
+import pytest
 from gotrue.errors import AuthRetryableError
 from lamindb_setup import login, settings
 from lamindb_setup.core._hub_core import (

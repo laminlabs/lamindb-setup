@@ -1,5 +1,8 @@
-from lamindb_setup.core.upath import extract_suffix_from_path
+from __future__ import annotations
+
 from pathlib import Path
+
+from lamindb_setup.core.upath import extract_suffix_from_path
 
 
 def test_extract_suffix_from_path():

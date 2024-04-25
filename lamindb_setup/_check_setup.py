@@ -1,12 +1,18 @@
-from lamin_utils import logger
-from typing import Optional
+from __future__ import annotations
+
 import os
+from typing import TYPE_CHECKING, Optional
+
+from lamin_utils import logger
+
 from ._silence_loggers import silence_loggers
+from .core import django
+from .core._settings import settings
 from .core._settings_store import current_instance_settings_file
 from .core.exceptions import DefaultMessageException
-from .core._settings import settings
-from .core._settings_instance import InstanceSettings
-from .core import django
+
+if TYPE_CHECKING:
+    from .core._settings_instance import InstanceSettings
 
 
 class InstanceNotSetupError(DefaultMessageException):
@@ -19,10 +25,10 @@ If you used the CLI to set up lamindb in a notebook, restart the Python session.
 """
 
 
-CURRENT_ISETTINGS: Optional[InstanceSettings] = None
+CURRENT_ISETTINGS: InstanceSettings | None = None
 
 
-def _get_current_instance_settings() -> Optional[InstanceSettings]:
+def _get_current_instance_settings() -> InstanceSettings | None:
     global CURRENT_ISETTINGS
 
     if CURRENT_ISETTINGS is not None:

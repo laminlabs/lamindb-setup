@@ -1,6 +1,10 @@
+from __future__ import annotations
+
 from dataclasses import dataclass
-from typing import Optional
-from uuid import UUID
+from typing import TYPE_CHECKING, Optional
+
+if TYPE_CHECKING:
+    from uuid import UUID
 
 
 class user_description:
@@ -19,15 +23,15 @@ class UserSettings:
     """Unique handle."""
     email: str = None  # type: ignore
     """User email."""
-    password: Optional[str] = None
+    password: str | None = None
     """API key or legacy password."""
-    access_token: Optional[str] = None
+    access_token: str | None = None
     """User access token."""
     uid: str = "null"
     """Universal user ID."""
-    _uuid: Optional[UUID] = None
+    _uuid: UUID | None = None
     """Lamin's internal user ID."""
-    name: Optional[str] = None
+    name: str | None = None
     """Full name."""
 
     def __repr__(self) -> str:

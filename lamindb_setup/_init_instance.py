@@ -1,21 +1,27 @@
+from __future__ import annotations
+
 import importlib
-import sys
-from typing import Optional, Union
-import uuid
-from uuid import UUID
 import os
-from lamin_utils import logger
-from typing import Tuple, Literal
-from pydantic import PostgresDsn
-from django.db.utils import OperationalError, ProgrammingError
+import sys
+import uuid
+from typing import TYPE_CHECKING, Literal
+from uuid import UUID
+
 from django.core.exceptions import FieldError
+from django.db.utils import OperationalError, ProgrammingError
+from lamin_utils import logger
+
 from ._close import close as close_instance
-from .core._settings import settings
 from ._silence_loggers import silence_loggers
 from .core import InstanceSettings
-from .core.types import UPathStr
+from .core._settings import settings
 from .core._settings_storage import StorageSettings, init_storage
 from .core.upath import convert_pathlike
+
+if TYPE_CHECKING:
+    from pydantic import PostgresDsn
+
+    from .core.types import UPathStr
 
 
 def get_schema_module_name(schema_name) -> str:
@@ -36,12 +42,12 @@ def register_storage(ssettings: StorageSettings):
     from lnschema_core.models import Storage
     from lnschema_core.users import current_user_id
 
-    defaults = dict(
-        root=ssettings.root_as_str,
-        type=ssettings.type,
-        region=ssettings.region,
-        created_by_id=current_user_id(),
-    )
+    defaults = {
+        "root": ssettings.root_as_str,
+        "type": ssettings.type,
+        "region": ssettings.region,
+        "created_by_id": current_user_id(),
+    }
     if ssettings._uid is not None:
         defaults["uid"] = ssettings._uid
 
@@ -60,10 +66,10 @@ def register_user(usettings):
             # need to have try except because of integer primary key migration
             user, created = User.objects.update_or_create(
                 uid=usettings.uid,
-                defaults=dict(
-                    handle=usettings.handle,
-                    name=usettings.name,
-                ),
+                defaults={
+                    "handle": usettings.handle,
+                    "name": usettings.name,
+                },
             )
         # for users with only read access, except via ProgrammingError
         # ProgrammingError: permission denied for table lnschema_core_user
@@ -123,8 +129,8 @@ Either delete your cache ({}) or add it back to the cloud (if delete was acciden
 
 
 def process_connect_response(
-    response: Union[Tuple, str], instance_identifier: str
-) -> Tuple[
+    response: tuple | str, instance_identifier: str
+) -> tuple[
     UUID,
     Literal[
         "instance-corrupted-or-deleted", "account-not-exists", "instance-not-reachable"
@@ -148,13 +154,13 @@ def process_connect_response(
 def validate_init_args(
     *,
     storage: UPathStr,
-    name: Optional[str] = None,
-    db: Optional[PostgresDsn] = None,
-    schema: Optional[str] = None,
+    name: str | None = None,
+    db: PostgresDsn | None = None,
+    schema: str | None = None,
     _test: bool = False,
-) -> Tuple[
+) -> tuple[
     str,
-    Optional[UUID],
+    UUID | None,
     Literal[
         "connected",
         "instance-corrupted-or-deleted",
@@ -196,9 +202,9 @@ Try running on the CLI: lamin set auto-connect false
 def init(
     *,
     storage: UPathStr,
-    name: Optional[str] = None,
-    db: Optional[PostgresDsn] = None,
-    schema: Optional[str] = None,
+    name: str | None = None,
+    db: PostgresDsn | None = None,
+    schema: str | None = None,
     _test: bool = False,
 ) -> None:
     """Create and load a LaminDB instance.
@@ -261,8 +267,8 @@ def init(
         settings.auto_connect = True
     except Exception as e:
         from ._delete import delete_by_isettings
-        from .core._hub_core import delete_storage_record as delete_storage_record
         from .core._hub_core import delete_instance_record as delete_instance_record
+        from .core._hub_core import delete_storage_record as delete_storage_record
 
         if isettings is not None:
             delete_by_isettings(isettings)
@@ -319,8 +325,8 @@ def validate_sqlite_state(isettings: InstanceSettings) -> None:
 def infer_instance_name(
     *,
     storage: UPathStr,
-    name: Optional[str] = None,
-    db: Optional[PostgresDsn] = None,
+    name: str | None = None,
+    db: PostgresDsn | None = None,
 ) -> str:
     if name is not None:
         if "/" in name:

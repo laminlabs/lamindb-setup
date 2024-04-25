@@ -1,17 +1,23 @@
+from __future__ import annotations
+
 import shutil
-from pathlib import Path
-from lamin_utils import logger
+from typing import TYPE_CHECKING, Optional
 from uuid import UUID
-from typing import Optional
-from .core._settings_instance import InstanceSettings
-from .core._settings_storage import StorageSettings
+
+from lamin_utils import logger
+
+from ._connect_instance import INSTANCE_NOT_FOUND_MESSAGE
+from .core._hub_core import connect_instance as load_instance_from_hub
+from .core._hub_core import delete_instance as delete_instance_on_hub
 from .core._settings import settings
+from .core._settings_instance import InstanceSettings
 from .core._settings_load import load_instance_settings
+from .core._settings_storage import StorageSettings
 from .core._settings_store import instance_settings_file
 from .core.upath import check_storage_is_empty, hosted_buckets
-from .core._hub_core import delete_instance as delete_instance_on_hub
-from .core._hub_core import connect_instance as load_instance_from_hub
-from ._connect_instance import INSTANCE_NOT_FOUND_MESSAGE
+
+if TYPE_CHECKING:
+    from pathlib import Path
 
 
 def delete_cache(cache_dir: Path):
@@ -46,12 +52,14 @@ def delete_by_isettings(isettings: InstanceSettings) -> None:
             settings._instance_settings_path.unlink()
         settings._instance_settings = None
     if isettings.storage._mark_storage_root.exists():
-        isettings.storage._mark_storage_root.unlink()
+        isettings.storage._mark_storage_root.unlink(
+            missing_ok=True
+        )  # this is totally weird, but needed on Py3.11
 
 
 def delete(
     instance_name: str, force: bool = False, require_empty: bool = True
-) -> Optional[int]:
+) -> int | None:
     """Delete a LaminDB instance.
 
     Args:

@@ -1,11 +1,13 @@
+from __future__ import annotations
+
 import os
-from typing import Optional
-from supabase.lib.client_options import ClientOptions
 from urllib.request import urlretrieve
-from supabase import create_client, Client
-from pydantic import BaseSettings
+
 from gotrue.errors import AuthUnknownError
 from lamin_utils import logger
+from pydantic import BaseSettings
+from supabase import Client, create_client  # type: ignore
+from supabase.lib.client_options import ClientOptions
 
 
 class Connector(BaseSettings):
@@ -21,7 +23,7 @@ def load_fallback_connector() -> Connector:
 
 
 PROD_URL = "https://hub.lamin.ai"
-PROD_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImxhZXNhdW1tZHlkbGxwcGdmY2h1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE2NTY4NDA1NTEsImV4cCI6MTk3MjQxNjU1MX0.WUeCRiun0ExUxKIv5-CtjF6878H8u26t0JmCWx3_2-c"  # noqa
+PROD_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImxhZXNhdW1tZHlkbGxwcGdmY2h1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE2NTY4NDA1NTEsImV4cCI6MTk3MjQxNjU1MX0.WUeCRiun0ExUxKIv5-CtjF6878H8u26t0JmCWx3_2-c"
 
 
 class Environment:
@@ -40,13 +42,13 @@ class Environment:
                 key = connector.key
         elif lamin_env == "staging":
             url = "https://amvrvdwndlqdzgedrqdv.supabase.co"
-            key = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImFtdnJ2ZHduZGxxZHpnZWRycWR2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE2NzcxNTcxMzMsImV4cCI6MTk5MjczMzEzM30.Gelt3dQEi8tT4j-JA36RbaZuUvxRnczvRr3iyRtzjY0"  # noqa
+            key = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImFtdnJ2ZHduZGxxZHpnZWRycWR2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE2NzcxNTcxMzMsImV4cCI6MTk5MjczMzEzM30.Gelt3dQEi8tT4j-JA36RbaZuUvxRnczvRr3iyRtzjY0"
         elif lamin_env == "staging-test":
             url = "https://iugyyajllqftbpidapak.supabase.co"
-            key = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Iml1Z3l5YWpsbHFmdGJwaWRhcGFrIiwicm9sZSI6ImFub24iLCJpYXQiOjE2OTQyMjYyODMsImV4cCI6MjAwOTgwMjI4M30.s7B0gMogFhUatMSwlfuPJ95kWhdCZMn1ROhZ3t6Og90"  # noqa
+            key = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Iml1Z3l5YWpsbHFmdGJwaWRhcGFrIiwicm9sZSI6ImFub24iLCJpYXQiOjE2OTQyMjYyODMsImV4cCI6MjAwOTgwMjI4M30.s7B0gMogFhUatMSwlfuPJ95kWhdCZMn1ROhZ3t6Og90"
         elif lamin_env == "prod-test":
             url = "https://xtdacpwiqwpbxsatoyrv.supabase.co"
-            key = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inh0ZGFjcHdpcXdwYnhzYXRveXJ2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE2OTQyMjYxNDIsImV4cCI6MjAwOTgwMjE0Mn0.Dbi27qujTt8Ei9gfp9KnEWTYptE5KUbZzEK6boL46k4"  # noqa
+            key = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inh0ZGFjcHdpcXdwYnhzYXRveXJ2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE2OTQyMjYxNDIsImV4cCI6MjAwOTgwMjE0Mn0.Dbi27qujTt8Ei9gfp9KnEWTYptE5KUbZzEK6boL46k4"
         else:
             url = os.environ["SUPABASE_API_URL"]
             key = os.environ["SUPABASE_ANON_KEY"]
@@ -66,7 +68,7 @@ def connect_hub(
 def connect_hub_with_auth(
     fallback_env: bool = False,
     renew_token: bool = False,
-    access_token: Optional[str] = None,
+    access_token: str | None = None,
 ) -> Client:
     hub = connect_hub(fallback_env=fallback_env)
     if access_token is None:
@@ -83,7 +85,7 @@ def connect_hub_with_auth(
 
 
 # runs ~0.5s
-def get_access_token(email: Optional[str] = None, password: Optional[str] = None):
+def get_access_token(email: str | None = None, password: str | None = None):
     hub = connect_hub()
     try:
         auth_response = hub.auth.sign_in_with_password(
