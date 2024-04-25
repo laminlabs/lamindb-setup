@@ -612,9 +612,8 @@ def create_path(path: UPath, access_token: Optional[str] = None) -> UPath:
         if path.fs.key is not None and path.fs.secret is not None:
             anon = False
         else:
-            # we can do
-            # path.fs.connect()
-            # and check path.fs.session._credentials, but it is slower
+            # we could do path.fs.connect()
+            # and check path.fs.session._credentials, but it'd be slower
             session = botocore.session.get_session()
             credentials = session.get_credentials()
             if credentials is None or credentials.access_key is None:
