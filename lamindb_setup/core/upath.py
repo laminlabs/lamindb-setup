@@ -498,8 +498,9 @@ def to_url(upath):
     if bucket == "scverse-spatial-eu-central-1":
         region = "eu-central-1"
     elif f"s3://{bucket}" not in hosted_buckets:
-        metadata = upath.fs.call_s3("head_bucket", Bucket=upath._url.netloc)
-        region = metadata["BucketRegion"]
+        response = upath.fs.call_s3("head_bucket", Bucket=upath._url.netloc)
+        headers = response["ResponseMetadata"]["HTTPHeaders"]
+        region = headers.get("x-amz-bucket-region")
     else:
         region = bucket.replace("lamin_", "")
     if region == "us-east-1":
