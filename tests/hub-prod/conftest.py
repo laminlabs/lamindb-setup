@@ -1,7 +1,6 @@
+import lamindb_setup
 import pytest
 from lamin_utils import logger
-
-import lamindb_setup
 
 
 def pytest_sessionstart(session: pytest.Session):

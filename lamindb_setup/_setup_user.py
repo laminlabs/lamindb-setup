@@ -1,4 +1,4 @@
-from typing import Union, Optional
+from typing import Optional, Union
 
 from lamin_utils import logger
 
@@ -8,15 +8,13 @@ from .core._settings import settings
 from .core._settings_load import load_or_create_user_settings, load_user_settings
 from .core._settings_save import save_user_settings
 from .core._settings_store import (
+    current_user_settings_file,
     user_settings_file_email,
     user_settings_file_handle,
-    current_user_settings_file,
 )
 
 
-def load_user(
-    email: Optional[str] = None, handle: Optional[str] = None
-) -> Union[str, None]:
+def load_user(email: str | None = None, handle: str | None = None) -> str | None:
     if email is not None:
         settings_file = user_settings_file_email(email)
     if handle is not None:
@@ -46,8 +44,8 @@ def load_user(
 def login(
     user: str,
     *,
-    key: Optional[str] = None,
-    password: Optional[str] = None,  # for backward compat
+    key: str | None = None,
+    password: str | None = None,  # for backward compat
 ) -> None:
     """Log in user.
 

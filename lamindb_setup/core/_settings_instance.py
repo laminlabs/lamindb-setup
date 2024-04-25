@@ -2,22 +2,25 @@ from __future__ import annotations
 
 import os
 import shutil
-from .upath import LocalPathClasses, convert_pathlike
 from pathlib import Path
-from typing import Literal, Optional, Set, Tuple
-from uuid import UUID
+from typing import TYPE_CHECKING, Literal
+
+from lamin_utils import logger
+
 from ._hub_client import call_with_fallback
 from ._hub_crud import select_account_handle_name_by_lnid
-from lamin_utils import logger
-from .cloud_sqlite_locker import (
-    InstanceLockedException,
-    EXPIRATION_TIME,
-)
-from ._hub_utils import LaminDsnModel, LaminDsn
+from ._hub_utils import LaminDsn, LaminDsnModel
 from ._settings_save import save_instance_settings
 from ._settings_storage import StorageSettings
 from ._settings_store import current_instance_settings_file, instance_settings_file
-from .upath import UPath
+from .cloud_sqlite_locker import (
+    EXPIRATION_TIME,
+    InstanceLockedException,
+)
+from .upath import LocalPathClasses, UPath, convert_pathlike
+
+if TYPE_CHECKING:
+    from uuid import UUID
 
 LOCAL_STORAGE_ROOT_WARNING = (
     "No local storage root found, set via `ln.setup.settings.instance.local_storage ="
@@ -40,21 +43,21 @@ class InstanceSettings:
         name: str,  # instance name
         storage: StorageSettings,  # storage location
         local_storage: bool = False,  # default to local storage
-        uid: Optional[str] = None,  # instance uid/lnid
-        db: Optional[str] = None,  # DB URI
-        schema: Optional[str] = None,  # comma-separated string of schema names
-        git_repo: Optional[str] = None,  # a git repo URL
+        uid: str | None = None,  # instance uid/lnid
+        db: str | None = None,  # DB URI
+        schema: str | None = None,  # comma-separated string of schema names
+        git_repo: str | None = None,  # a git repo URL
     ):
         from ._hub_utils import validate_db_arg
 
         self._id: UUID = id
         self._owner: str = owner
         self._name: str = name
-        self._uid: Optional[str] = uid
+        self._uid: str | None = uid
         self._storage: StorageSettings = storage
         validate_db_arg(db)
-        self._db: Optional[str] = db
-        self._schema_str: Optional[str] = schema
+        self._db: str | None = db
+        self._schema_str: str | None = schema
         self._git_repo = None if git_repo is None else sanitize_git_repo_url(git_repo)
         # local storage
         self._local_storage_on = local_storage
@@ -135,8 +138,9 @@ class InstanceSettings:
 
     @local_storage.setter
     def local_storage(self, local_root: Path):
+        from lamindb_setup._init_instance import register_storage
+
         from ._hub_core import update_instance_record
-        from .._init_instance import register_storage
 
         self._search_local_root()
         if self._local_storage is not None:
@@ -157,7 +161,7 @@ class InstanceSettings:
         return f"{self.owner}/{self.name}"
 
     @property
-    def git_repo(self) -> Optional[str]:
+    def git_repo(self) -> str | None:
         """Sync transforms with scripts in git repository.
 
         Provide the full git repo URL.
@@ -170,12 +174,12 @@ class InstanceSettings:
         return self._id
 
     @property
-    def uid(self) -> Optional[str]:
+    def uid(self) -> str | None:
         """The user-facing instance id."""
         return self._uid
 
     @property
-    def schema(self) -> Set[str]:
+    def schema(self) -> set[str]:
         """Schema modules in addition to core schema."""
         if self._schema_str is None:
             return {}  # type: ignore
@@ -340,7 +344,7 @@ class InstanceSettings:
 
     def _load_db(
         self, do_not_lock_for_laminapp_admin: bool = False
-    ) -> Tuple[bool, str]:
+    ) -> tuple[bool, str]:
         # Is the database available and initialized as LaminDB?
         # returns a tuple of status code and message
         if self.dialect == "sqlite" and not self._sqlite_file.exists():
@@ -352,6 +356,7 @@ class InstanceSettings:
                 )
             return False, f"SQLite file {self._sqlite_file} does not exist"
         from lamindb_setup import settings  # to check user
+
         from .django import setup_django
 
         # lock in all cases except if do_not_lock_for_laminapp_admin is True and

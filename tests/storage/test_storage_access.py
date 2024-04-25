@@ -1,7 +1,8 @@
 import os
 from uuid import UUID
-import pytest
+
 import lamindb_setup as ln_setup
+import pytest
 from lamindb_setup.core._hub_client import connect_hub_with_auth
 from lamindb_setup.core._hub_crud import (
     select_account_by_handle,

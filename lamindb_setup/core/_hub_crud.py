@@ -1,14 +1,14 @@
-from supabase.client import Client
-from typing import Optional, Dict
-from lamin_utils import logger
 from uuid import UUID, uuid4
+
+from lamin_utils import logger
+from supabase.client import Client
 
 
 def select_instance_by_owner_name(
     owner: str,
     name: str,
     client: Client,
-) -> Optional[Dict]:
+) -> dict | None:
     try:
         data = (
             client.table("instance")

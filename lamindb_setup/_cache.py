@@ -1,9 +1,10 @@
 import shutil
+
 from lamin_utils import logger
 
 
 def clear_cache_dir():
-    from lamindb_setup import settings, close
+    from lamindb_setup import close, settings
 
     if settings.instance._is_cloud_sqlite:
         logger.warning(

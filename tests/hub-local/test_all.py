@@ -1,39 +1,39 @@
 import os
 from uuid import UUID, uuid4
-import pytest
-from lamindb_setup.core._hub_utils import LaminDsnModel
-from gotrue.errors import AuthApiError
-from postgrest.exceptions import APIError
+
 import lamindb_setup as ln_setup
-from lamindb_setup.core._settings_instance import InstanceSettings
+import pytest
+from gotrue.errors import AuthApiError
 from lamindb_setup.core._hub_client import (
     Environment,
     connect_hub_with_auth,
 )
 from lamindb_setup.core._hub_core import (
-    init_storage,
-    init_instance,
     connect_instance,
+    init_instance,
+    init_storage,
     sign_in_hub,
     sign_up_local_hub,
 )
 from lamindb_setup.core._hub_crud import (
+    insert_db_user,
     select_collaborator,
     select_db_user_by_instance,
     select_instance_by_name,
     update_instance,
-    insert_db_user,
 )
-from laminhub_rest.core.collaborator._add_collaborator import add_collaborator_by_ids
 
 # typing
 # from lamindb.dev import UserSettings
 # from supabase import Client
-from lamindb_setup.core._hub_utils import LaminDsn
+from lamindb_setup.core._hub_utils import LaminDsn, LaminDsnModel
+from lamindb_setup.core._settings_instance import InstanceSettings
+from lamindb_setup.core._settings_save import save_user_settings
 from lamindb_setup.core._settings_storage import base62
 from lamindb_setup.core._settings_storage import init_storage as init_storage_base
-from lamindb_setup.core._settings_save import save_user_settings
 from lamindb_setup.core._settings_user import UserSettings
+from laminhub_rest.core.collaborator._add_collaborator import add_collaborator_by_ids
+from postgrest.exceptions import APIError
 
 
 def sign_up_user(email: str, handle: str, save_as_settings: bool = False):

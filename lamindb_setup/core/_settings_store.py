@@ -1,6 +1,7 @@
 import os
 from pathlib import Path
 from typing import Optional
+
 from pydantic import BaseSettings
 
 if "LAMIN_SETTINGS_DIR" in os.environ:
@@ -51,11 +52,11 @@ class InstanceSettingsStore(BaseSettings):
     owner: str
     name: str
     storage_root: str
-    storage_region: Optional[str]
-    db: Optional[str]
-    schema_str: Optional[str]
+    storage_region: str | None
+    db: str | None
+    schema_str: str | None
     id: str
-    git_repo: Optional[str]
+    git_repo: str | None
 
     class Config:
         env_prefix = "lamindb_instance_"

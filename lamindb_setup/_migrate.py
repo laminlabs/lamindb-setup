@@ -1,11 +1,11 @@
-from typing import Optional, Dict
+from django.db import connection
+from django.db.migrations.loader import MigrationLoader
 from lamin_utils import logger
 from packaging import version
+
 from ._check_setup import _check_instance_setup
 from .core._settings import settings
 from .core.django import setup_django
-from django.db import connection
-from django.db.migrations.loader import MigrationLoader
 
 
 # for the django-based synching code, see laminhub_rest
@@ -68,12 +68,12 @@ class migrate:
         """Deploy a migration."""
         if _check_instance_setup():
             raise RuntimeError("Restart Python session to migrate or use CLI!")
-        from lamindb_setup.core._hub_crud import (
-            update_instance,
-            select_instance_by_id,
-            select_collaborator,
-        )
         from lamindb_setup.core._hub_client import call_with_fallback_auth
+        from lamindb_setup.core._hub_crud import (
+            select_collaborator,
+            select_instance_by_id,
+            update_instance,
+        )
 
         instance_id_str = settings.instance.id.hex
         instance = call_with_fallback_auth(
@@ -126,7 +126,7 @@ class migrate:
 
     @classmethod
     def squash(
-        cls, package_name, migration_nr, start_migration_nr: Optional[str] = None
+        cls, package_name, migration_nr, start_migration_nr: str | None = None
     ) -> None:
         """Squash migrations."""
         from django.core.management import call_command
@@ -149,8 +149,9 @@ class migrate:
 
     @classmethod
     def defined_migrations(cls, latest: bool = False):
-        from django.core.management import call_command
         from io import StringIO
+
+        from django.core.management import call_command
 
         def parse_migration_output(output):
             """Parse the output of the showmigrations command to get migration names."""
@@ -210,11 +211,11 @@ class migrate:
             # Load all migrations using Django's migration loader
             loader = MigrationLoader(connection)
             squashed_replacements = set()
-            for key, migration in loader.disk_migrations.items():
+            for _key, migration in loader.disk_migrations.items():
                 if hasattr(migration, "replaces"):
                     squashed_replacements.update(migration.replaces)
 
-            deployed_migrations: Dict = {}
+            deployed_migrations: dict = {}
             with connection.cursor() as cursor:
                 cursor.execute(
                     """
@@ -223,7 +224,7 @@ class migrate:
                     ORDER BY app, deployed DESC
                 """
                 )
-                for app, name, deployed in cursor.fetchall():
+                for app, name, _deployed in cursor.fetchall():
                     # skip migrations that are part of a squashed migration
                     if (app, name) in squashed_replacements:
                         continue

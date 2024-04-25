@@ -1,26 +1,26 @@
-from pathlib import Path
-from typing import Optional, Union, Dict, Tuple
-from uuid import UUID
 import os
+from pathlib import Path
+from uuid import UUID
+
 from lamin_utils import logger
-from lamindb_setup.core.types import UPathStr
+
 from lamindb_setup.core._hub_utils import (
     LaminDsn,
     LaminDsnModel,
 )
+from lamindb_setup.core.types import UPathStr
+
+from ._check_setup import _check_instance_setup
 from ._close import close as close_instance
-from ._init_instance import load_from_isettings
-from .core._settings import InstanceSettings, settings
+from ._init_instance import MESSAGE_NO_MULTIPLE_INSTANCE, load_from_isettings
+from ._migrate import check_whether_migrations_in_sync
 from ._silence_loggers import silence_loggers
+from .core._hub_core import connect_instance as load_instance_from_hub
+from .core._settings import InstanceSettings, settings
 from .core._settings_load import load_instance_settings
 from .core._settings_storage import StorageSettings
 from .core._settings_store import instance_settings_file
 from .core.cloud_sqlite_locker import unlock_cloud_sqlite_upon_exception
-from ._init_instance import MESSAGE_NO_MULTIPLE_INSTANCE
-from ._check_setup import _check_instance_setup
-from .core._hub_core import connect_instance as load_instance_from_hub
-from ._migrate import check_whether_migrations_in_sync
-
 
 # this is for testing purposes only
 # set to True only to test failed load
@@ -48,8 +48,8 @@ def check_db_dsn_equal_up_to_credentials(db_dsn_hub, db_dsn_local):
 
 
 def update_db_using_local(
-    hub_instance_result: Dict[str, str], settings_file: Path, db: Optional[str] = None
-) -> Optional[str]:
+    hub_instance_result: dict[str, str], settings_file: Path, db: str | None = None
+) -> str | None:
     db_updated = None
     # check if postgres
     if hub_instance_result["db_scheme"] == "postgresql":
@@ -98,11 +98,11 @@ def update_db_using_local(
 def connect(
     slug: str,
     *,
-    db: Optional[str] = None,
-    storage: Optional[UPathStr] = None,
+    db: str | None = None,
+    storage: UPathStr | None = None,
     _raise_not_reachable_error: bool = True,
     _test: bool = False,
-) -> Optional[Union[str, Tuple]]:
+) -> str | tuple | None:
     """Connect to instance.
 
     Args:
@@ -224,9 +224,9 @@ def connect(
 def load(
     slug: str,
     *,
-    db: Optional[str] = None,
-    storage: Optional[UPathStr] = None,
-) -> Optional[Union[str, Tuple]]:
+    db: str | None = None,
+    storage: UPathStr | None = None,
+) -> str | tuple | None:
     """Connect to instance and set ``auto-connect`` to true.
 
     This is exactly the same as ``ln.connect()`` except for that

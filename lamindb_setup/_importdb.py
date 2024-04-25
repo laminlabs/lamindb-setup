@@ -1,6 +1,7 @@
-from pathlib import Path
-from ._exportdb import MODELS
 from importlib import import_module
+from pathlib import Path
+
+from ._exportdb import MODELS
 
 
 def import_registry(registry, directory, connection):
@@ -26,6 +27,7 @@ def importdb() -> None:
         if response != "y":
             return None
     from sqlalchemy import create_engine, text
+
     import lamindb_setup as ln_setup
 
     engine = create_engine(ln_setup.settings.instance.db, echo=False)

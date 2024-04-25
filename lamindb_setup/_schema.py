@@ -13,10 +13,11 @@ urlpatterns = [
 
 
 def view():
-    from .core.django import setup_django
-    from .core._settings import settings
-    from ._check_setup import _check_instance_setup
     from django.core.management import call_command
+
+    from ._check_setup import _check_instance_setup
+    from .core._settings import settings
+    from .core.django import setup_django
 
     if _check_instance_setup():
         raise RuntimeError("Restart Python session or use CLI!")

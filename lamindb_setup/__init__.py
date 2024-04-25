@@ -42,16 +42,16 @@ import sys
 from os import name as _os_name
 
 from . import core
-from ._close import close  # noqa
-from ._delete import delete  # noqa
-from ._init_instance import init  # noqa
-from ._connect_instance import connect, load  # noqa
-from ._migrate import migrate
-from ._register_instance import register  # noqa
-from .core._settings import settings  # noqa
-from ._setup_user import login, logout  # noqa
-from ._django import django
 from ._check_setup import _check_instance_setup
+from ._close import close
+from ._connect_instance import connect, load
+from ._delete import delete
+from ._django import django
+from ._init_instance import init
+from ._migrate import migrate
+from ._register_instance import register
+from ._setup_user import login, logout
+from .core._settings import settings
 
 dev = core  # backward compat
 _TESTING = False  # used in lamindb tests

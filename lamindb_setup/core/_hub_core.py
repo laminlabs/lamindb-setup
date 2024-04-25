@@ -1,35 +1,35 @@
-import os
-from typing import Optional, Tuple, Union, Dict
-import uuid
-from postgrest.exceptions import APIError
-from uuid import UUID
-from lamin_utils import logger
-from supabase import Client
-import lamindb_setup
 import json
+import os
+import uuid
 from importlib import metadata
-from ._settings_instance import InstanceSettings
-from ._settings_storage import StorageSettings, base62
+from uuid import UUID
 
+from lamin_utils import logger
+from postgrest.exceptions import APIError
+from supabase import Client  # type: ignore
+
+import lamindb_setup
 
 from ._hub_client import (
-    connect_hub,
-    call_with_fallback_auth,
     call_with_fallback,
+    call_with_fallback_auth,
+    connect_hub,
 )
 from ._hub_crud import (
-    select_instance_by_owner_name,
-    select_instance_by_id_with_storage,
+    _delete_instance_record,
     select_account_by_handle,
     select_db_user_by_instance,
+    select_instance_by_id_with_storage,
     select_instance_by_name,
+    select_instance_by_owner_name,
     select_storage,
-    _delete_instance_record,
 )
 from ._hub_utils import (
     LaminDsn,
     LaminDsnModel,
 )
+from ._settings_instance import InstanceSettings
+from ._settings_storage import StorageSettings, base62
 
 
 def delete_storage_record(
@@ -48,7 +48,7 @@ def _delete_storage_record(storage_uuid: UUID, client: Client) -> None:
     client.table("storage").delete().eq("id", storage_uuid.hex).execute()
 
 
-def update_instance_record(instance_uuid: UUID, fields: Dict) -> None:
+def update_instance_record(instance_uuid: UUID, fields: dict) -> None:
     from ._hub_crud import update_instance
 
     return call_with_fallback_auth(
@@ -75,28 +75,28 @@ def _init_storage(ssettings: StorageSettings, client: Client) -> UUID:
     # locations
     # f"{prefix}{root}"
     id = uuid.uuid5(uuid.NAMESPACE_URL, root)
-    fields = dict(
-        id=id.hex,
-        lnid=ssettings.uid,
-        created_by=settings.user._uuid.hex,  # type: ignore
-        root=root,
-        region=ssettings.region,
-        type=ssettings.type,
-        aws_account_id=ssettings._aws_account_id,
-        description=ssettings._description,
-    )
+    fields = {
+        "id": id.hex,
+        "lnid": ssettings.uid,
+        "created_by": settings.user._uuid.hex,  # type: ignore
+        "root": root,
+        "region": ssettings.region,
+        "type": ssettings.type,
+        "aws_account_id": ssettings._aws_account_id,
+        "description": ssettings._description,
+    }
     client.table("storage").upsert(fields).execute()
     return id
 
 
-def delete_instance(identifier: Union[UUID, str], require_empty: bool = True) -> None:
+def delete_instance(identifier: UUID | str, require_empty: bool = True) -> None:
     """Fully delete an instance in the hub.
 
     This function deletes the relevant instance and storage records in the hub,
     conditional on the emptiness of the storage location.
     """
-    from .upath import check_storage_is_empty, create_path
     from ._settings_storage import mark_storage_root
+    from .upath import check_storage_is_empty, create_path
 
     if isinstance(identifier, UUID):
         instance_with_storage = call_with_fallback_auth(
@@ -149,15 +149,15 @@ def _init_instance(isettings: InstanceSettings, client: Client) -> None:
         lamindb_version = metadata.version("lamindb")
     except metadata.PackageNotFoundError:
         lamindb_version = None
-    fields = dict(
-        id=isettings.id.hex,
-        account_id=settings.user._uuid.hex,  # type: ignore
-        name=isettings.name,
-        storage_id=isettings.storage._uuid.hex,  # type: ignore
-        schema_str=isettings._schema_str,
-        lamindb_version=lamindb_version,
-        public=False,
-    )
+    fields = {
+        "id": isettings.id.hex,
+        "account_id": settings.user._uuid.hex,  # type: ignore
+        "name": isettings.name,
+        "storage_id": isettings.storage._uuid.hex,  # type: ignore
+        "schema_str": isettings._schema_str,
+        "lamindb_version": lamindb_version,
+        "public": False,
+    }
     if isettings.dialect != "sqlite":
         db_dsn = LaminDsnModel(db=isettings.db)
         fields.update(
@@ -184,7 +184,7 @@ def connect_instance(
     *,
     owner: str,  # account_handle
     name: str,  # instance_name
-) -> Union[Tuple[dict, dict], str]:
+) -> tuple[dict, dict] | str:
     from ._settings import settings
 
     if settings.user.handle != "anonymous":
@@ -198,7 +198,7 @@ def _connect_instance(
     owner: str,  # account_handle
     name: str,  # instance_name
     client: Client,
-) -> Union[Tuple[dict, dict], str]:
+) -> tuple[dict, dict] | str:
     instance_account_storage = select_instance_by_owner_name(owner, name, client)
     if instance_account_storage is None:
         # try the via single requests, will take more time
@@ -238,7 +238,7 @@ def _connect_instance(
     return instance, storage
 
 
-def access_aws(storage_root: str, access_token: Optional[str] = None) -> Dict[str, str]:
+def access_aws(storage_root: str, access_token: str | None = None) -> dict[str, str]:
     from ._settings import settings
 
     if settings.user.handle != "anonymous" or access_token is not None:
@@ -250,7 +250,7 @@ def access_aws(storage_root: str, access_token: Optional[str] = None) -> Dict[st
         raise RuntimeError("Can only get access to AWS if authenticated.")
 
 
-def _access_aws(*, storage_root: str, client: Client) -> Dict[str, str]:
+def _access_aws(*, storage_root: str, client: Client) -> dict[str, str]:
     response = client.functions.invoke(
         "access-aws",
         invoke_options={"body": {"storage_root": storage_root}},
@@ -276,7 +276,7 @@ def get_lamin_site_base_url():
     return "https://lamin.ai"
 
 
-def sign_up_local_hub(email) -> Union[str, Tuple[str, str, str]]:
+def sign_up_local_hub(email) -> str | tuple[str, str, str]:
     # raises gotrue.errors.AuthApiError: User already registered
     password = base62(40)  # generate new password
     sign_up_kwargs = {"email": email, "password": password}
@@ -290,7 +290,7 @@ def sign_up_local_hub(email) -> Union[str, Tuple[str, str, str]]:
     )
 
 
-def _sign_in_hub(email: str, password: str, handle: Optional[str], client: Client):
+def _sign_in_hub(email: str, password: str, handle: str | None, client: Client):
     auth = client.auth.sign_in_with_password(
         {
             "email": email,
@@ -320,8 +320,8 @@ def _sign_in_hub(email: str, password: str, handle: Optional[str], client: Clien
 
 
 def sign_in_hub(
-    email: str, password: str, handle: Optional[str] = None
-) -> Union[Exception, Tuple[UUID, str, str, str, str]]:
+    email: str, password: str, handle: str | None = None
+) -> Exception | tuple[UUID, str, str, str, str]:
     try:
         result = call_with_fallback(
             _sign_in_hub, email=email, password=password, handle=handle

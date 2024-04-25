@@ -1,5 +1,6 @@
-from ._settings_instance import InstanceSettings
 from django.db.utils import OperationalError, ProgrammingError
+
+from ._settings_instance import InstanceSettings
 
 
 def write_bionty_sources(isettings: InstanceSettings) -> None:
@@ -7,8 +8,9 @@ def write_bionty_sources(isettings: InstanceSettings) -> None:
     if "bionty" not in isettings.schema:
         return None
     import shutil
-    from bionty_base.dev._handle_sources import parse_sources_yaml
+
     import bionty_base
+    from bionty_base.dev._handle_sources import parse_sources_yaml
     from lnschema_bionty.models import PublicSource
 
     shutil.copy(

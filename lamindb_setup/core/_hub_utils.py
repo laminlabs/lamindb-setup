@@ -1,9 +1,10 @@
 from typing import Optional
+
 from pydantic import BaseModel, validator
 from pydantic.networks import MultiHostDsn
 
 
-def validate_schema_arg(schema: Optional[str] = None) -> str:
+def validate_schema_arg(schema: str | None = None) -> str:
     if schema is None or schema == "":
         return ""
     # currently no actual validation, can add back if we see a need
@@ -12,7 +13,7 @@ def validate_schema_arg(schema: Optional[str] = None) -> str:
     return ",".join(to_be_validated)
 
 
-def validate_db_arg(db: Optional[str]) -> None:
+def validate_db_arg(db: str | None) -> None:
     if db is not None:
         LaminDsnModel(db=db)
 
@@ -43,13 +44,13 @@ class LaminDsn(MultiHostDsn):
         cls,
         *,
         scheme: str,
-        user: Optional[str] = None,
-        password: Optional[str] = None,
+        user: str | None = None,
+        password: str | None = None,
         host: str,
-        port: Optional[str] = None,
-        database: Optional[str] = None,
-        query: Optional[str] = None,
-        fragment: Optional[str] = None,
+        port: str | None = None,
+        database: str | None = None,
+        query: str | None = None,
+        fragment: str | None = None,
         **_kwargs: str,
     ) -> str:
         return super().build(

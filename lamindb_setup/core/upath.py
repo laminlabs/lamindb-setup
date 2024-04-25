@@ -4,20 +4,23 @@
 from __future__ import annotations
 
 import os
-from datetime import datetime, timezone
-import botocore.session
-from pathlib import Path, PurePosixPath
-from typing import Literal, Dict
-import fsspec
-from itertools import islice
-from typing import Optional, Set, Any, Tuple, List
 from collections import defaultdict
+from datetime import datetime, timezone
+from itertools import islice
+from pathlib import Path, PurePosixPath
+from typing import TYPE_CHECKING, Any, Literal
+
+import botocore.session
+import fsspec
 from lamin_utils import logger
 from upath import UPath
-from upath.implementations.cloud import CloudPath, S3Path  # noqa  # keep CloudPath!
+from upath.implementations.cloud import CloudPath, S3Path  # keep CloudPath!
 from upath.implementations.local import LocalPath, PosixUPath, WindowsUPath
-from .types import UPathStr
+
 from .hashing import b16_to_b64, hash_md5s_from_dir
+
+if TYPE_CHECKING:
+    from .types import UPathStr
 
 LocalPathClasses = (PosixUPath, WindowsUPath, LocalPath)
 
@@ -57,7 +60,7 @@ VALID_SUFFIXES = {
 TRAILING_SEP = (os.sep, os.altsep) if os.altsep is not None else os.sep
 
 
-def extract_suffix_from_path(path: Path, arg_name: Optional[str] = None) -> str:
+def extract_suffix_from_path(path: Path, arg_name: str | None = None) -> str:
     def process_digits(suffix: str):
         if suffix[1:].isdigit():  # :1 to skip the dot
             return ""  # digits are no valid suffixes
@@ -160,7 +163,7 @@ class ProgressCallback(fsspec.callbacks.Callback):
 
     def branch(self, path_1, path_2, kwargs):
         kwargs["callback"] = fsspec.callbacks.Callback(
-            hooks=dict(print_hook=print_hook), filepath=path_1, action=self.action
+            hooks={"print_hook": print_hook}, filepath=path_1, action=self.action
         )
 
     def call(self, *args, **kwargs):
@@ -173,7 +176,7 @@ def download_to(self, path: UPathStr, print_progress: bool = False, **kwargs):
         # can't do path.is_dir() because path doesn't exist
         # so assume any destination without a suffix is a dir
         # this is temporary until we have a proper progress bar for directories
-        if os.path.splitext(path)[-1] not in {"", ".zrad", ".zarr"}:
+        if Path(path).suffix not in {"", ".zarr"}:
             cb = ProgressCallback("downloading")
         else:
             # todo: make proper progress bar for directories
@@ -190,7 +193,7 @@ def upload_from(
     **kwargs,
 ):
     """Upload from a local path."""
-    path_is_dir = os.path.isdir(path)
+    path_is_dir = Path(path).is_dir()
     if not path_is_dir:
         dir_inplace = False
 
@@ -327,7 +330,7 @@ def synchronize(self, objectpath: Path, error_no_origin: bool = True, **kwargs):
         os.utime(objectpath, times=(cloud_mts, cloud_mts))
 
 
-def modified(self) -> Optional[datetime]:
+def modified(self) -> datetime | None:
     """Return modified time stamp."""
     mtime = self.fs.modified(str(self))
     if mtime.tzinfo is None:
@@ -341,9 +344,9 @@ def compute_file_tree(
     level: int = -1,
     only_dirs: bool = False,
     limit: int = 1000,
-    include_paths: Optional[Set[Any]] = None,
-    skip_suffixes: Optional[List[str]] = None,
-) -> Tuple[str, int]:
+    include_paths: set[Any] | None = None,
+    skip_suffixes: list[str] | None = None,
+) -> tuple[str, int]:
     space = "    "
     branch = "│   "
     tee = "├── "
@@ -383,7 +386,7 @@ def compute_file_tree(
             contents = [d for d in contents if d.is_dir()]
         pointers = [tee] * (len(contents) - 1) + [last]
         n_files_per_dir_per_type = defaultdict(lambda: 0)  # type: ignore
-        for pointer, child_path in zip(pointers, contents):
+        for pointer, child_path in zip(pointers, contents, strict=False):
             if child_path.is_dir():
                 if include_dirs and child_path not in include_dirs:
                     continue
@@ -429,8 +432,8 @@ def view_tree(
     level: int = -1,
     only_dirs: bool = False,
     limit: int = 1000,
-    include_paths: Optional[Set[Any]] = None,
-    skip_suffixes: Optional[List[str]] = None,
+    include_paths: set[Any] | None = None,
+    skip_suffixes: list[str] | None = None,
 ) -> None:
     """Print a visual tree structure of files & directories.
 
@@ -567,7 +570,7 @@ Args:
 
 def convert_pathlike(pathlike: UPathStr) -> UPath:
     """Convert pathlike to Path or UPath inheriting options from root."""
-    if isinstance(pathlike, (str, UPath)):
+    if isinstance(pathlike, str | UPath):
         path = UPath(pathlike)
     elif isinstance(pathlike, Path):
         path = UPath(str(pathlike))  # UPath applied on Path gives Path back
@@ -594,11 +597,11 @@ if lamin_env is None or lamin_env == "prod":
     hosted_buckets = tuple(hosted_buckets_list)
 else:
     hosted_buckets = ("s3://lamin-hosted-test",)  # type: ignore
-credentials_cache: Dict[str, Dict[str, str]] = {}
+credentials_cache: dict[str, dict[str, str]] = {}
 AWS_CREDENTIALS_PRESENT = None
 
 
-def create_path(path: UPath, access_token: Optional[str] = None) -> UPath:
+def create_path(path: UPath, access_token: str | None = None) -> UPath:
     path = convert_pathlike(path)
     # test whether we have an AWS S3 path
     if not isinstance(path, S3Path):
@@ -652,7 +655,7 @@ def create_path(path: UPath, access_token: Optional[str] = None) -> UPath:
     )
 
 
-def get_stat_file_cloud(stat: Dict) -> Tuple[int, str, str]:
+def get_stat_file_cloud(stat: dict) -> tuple[int, str, str]:
     size = stat["size"]
     # small files
     if "-" not in stat["ETag"]:
@@ -669,7 +672,7 @@ def get_stat_file_cloud(stat: Dict) -> Tuple[int, str, str]:
     return size, hash, hash_type
 
 
-def get_stat_dir_cloud(path: UPath) -> Tuple[int, str, str, int]:
+def get_stat_dir_cloud(path: UPath) -> tuple[int, str, str, int]:
     sizes = []
     md5s = []
     objects = path.fs.find(path.as_posix(), detail=True)

@@ -1,6 +1,5 @@
-import pytest
-
 import lamindb_setup as ln_setup
+import pytest
 
 
 def test_delete_invalid_name():

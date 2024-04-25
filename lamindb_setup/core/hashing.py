@@ -10,7 +10,7 @@
 
 import base64
 import hashlib
-from typing import List, Set, Tuple
+
 from .types import Path, UPathStr
 
 
@@ -24,13 +24,13 @@ def b16_to_b64(s: str):
 
 
 # a lot to read about this: lamin-notes/2022/hashing
-def hash_set(s: Set[str]) -> str:
+def hash_set(s: set[str]) -> str:
     bstr = ":".join(sorted(s)).encode("utf-8")
     # as we're truncating at 20 b64, we choose md5 over sha512
     return to_b64_str(hashlib.md5(bstr).digest())[:20]
 
 
-def hash_md5s_from_dir(etags: List[str]) -> Tuple[str, str]:
+def hash_md5s_from_dir(etags: list[str]) -> tuple[str, str]:
     # need to sort below because we don't want the order of parsing the dir to
     # affect the hash
     digests = b"".join(
@@ -49,7 +49,7 @@ def hash_code(file_path: UPathStr):
     return hashlib.sha1(blob)
 
 
-def hash_file(file_path: Path, chunk_size=50 * 1024 * 1024) -> Tuple[str, str]:
+def hash_file(file_path: Path, chunk_size=50 * 1024 * 1024) -> tuple[str, str]:
     chunks = []
     with open(file_path, "rb") as fp:
         # read first chunk
