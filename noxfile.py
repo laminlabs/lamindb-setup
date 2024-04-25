@@ -1,12 +1,18 @@
 from __future__ import annotations
 
 import os
+import shlex
 
 import nox
 from laminci.nox import build_docs, login_testuser1, login_testuser2, run_pre_commit
 
 nox.options.default_venv_backend = "none"
 COVERAGE_ARGS = "--cov=lamindb_setup --cov-append --cov-report=term-missing"
+
+
+def run(session: nox.Session, s: str):
+    assert (args := shlex.split(s))
+    return session.run(*args)
 
 
 @nox.session
@@ -20,43 +26,27 @@ def lint(session: nox.Session) -> None:
     ["hub-local", "hub-prod", "hub-cloud", "storage"],
 )
 def install(session: nox.Session, group: str) -> None:
-    if group in {"hub-cloud"}:
-        # TODO: get rid of the bionty duplication asap
-        session.run(*"pip install bionty".split())
-        session.run(*"pip install git+https://github.com/laminlabs/bionty-base".split())
-        session.run(
-            *"pip install --no-deps git+https://github.com/laminlabs/lnschema-bionty".split()
-        )
-        session.run(
-            *"pip install --no-deps git+https://github.com/laminlabs/lnschema-core".split()
-        )
-        session.run(*"pip install ./laminhub/rest-hub".split())
-        session.run(*"pip install -e .[aws,dev]".split())
-        # need for CLI, but this is bad because it's downstream
-        session.run(*"git clone https://github.com/laminlabs/lamin-cli".split())
-        session.run(*"pip install lamin-cli".split())
+    cloud_prod_cmds = """uv pip install --system bionty
+uv pip install --system git+https://github.com/laminlabs/bionty-base
+uv pip install --system --no-deps git+https://github.com/laminlabs/lnschema-bionty
+uv pip install --system --no-deps git+https://github.com/laminlabs/lnschema-core
+uv pip install --system lamin-cli"""
+    if group == "hub-cloud":
+        cmds = cloud_prod_cmds + "uv pip install --system ./laminhub/rest-hub"
     elif group == "storage":
-        session.run(*"pip install -e .[aws,dev]".split())
-        session.run(*"pip install gcsfs".split())
+        cmds = """uv pip install --system gcsfs"""
     elif group == "hub-prod":
-        # TODO: get rid of the bionty duplication asap
-        session.run(*"pip install bionty".split())
-        session.run(*"pip install git+https://github.com/laminlabs/bionty-base".split())
-        session.run(
-            *"pip install git+https://github.com/laminlabs/lnschema-core".split()
+        cmds = (
+            cloud_prod_cmds
+            + "pip install --no-deps git+https://github.com/laminlabs/wetlab"
         )
-        session.run(
-            *"pip install git+https://github.com/laminlabs/lnschema-bionty".split()
-        )
-        session.run(*"pip install git+https://github.com/laminlabs/wetlab".split())
-        session.run(*"pip install -e .[aws,dev]".split())
-        # need for CLI, but this is bad because it's downstream
-        session.run(*"git clone https://github.com/laminlabs/lamin-cli".split())
-        session.run(*"pip install lamin-cli".split())
     elif group == "hub-local":
-        session.run(*"pip install -e .[aws,dev,hub]".split())
-        session.run(*"pip install -e ./laminhub/rest-hub".split())
-        session.run(*"pip install lamin-cli".split())
+        cmds = """uv pip install --system -e ./laminhub/rest-hub"""
+    cmds += """
+uv pip install --system -e .[aws,dev]
+uv pip install --system lamin-cli"""
+
+    [run(session, line) for line in cmds.splitlines()]
 
 
 @nox.session

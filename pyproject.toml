@@ -42,9 +42,6 @@ dev = [
     "nbproject-test>=0.4.3",
     "pandas",
 ]
-hub = [
-    "faker",
-]
 
 [tool.ruff]
 src = ["src"]
