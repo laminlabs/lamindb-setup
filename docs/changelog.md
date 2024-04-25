@@ -3,6 +3,7 @@
 <!-- prettier-ignore -->
 Name | PR | Developer | Date | Version
 --- | --- | --- | --- | ---
+🏷️ Add 3.10 types & ruff | [731](https://github.com/laminlabs/lamindb-setup/pull/731) | [falexwolf](https://github.com/falexwolf) | 2024-04-25 |
 ♻️ Backward compat for older botocore | [730](https://github.com/laminlabs/lamindb-setup/pull/730) | [falexwolf](https://github.com/falexwolf) | 2024-04-25 |
 ✨ Introduce `local_storage` mode for cloud instances | [728](https://github.com/laminlabs/lamindb-setup/pull/728) | [falexwolf](https://github.com/falexwolf) | 2024-04-23 | 0.70.0
 🚚 Make `.uuid` attributes private | [727](https://github.com/laminlabs/lamindb-setup/pull/727) | [falexwolf](https://github.com/falexwolf) | 2024-04-23 |
