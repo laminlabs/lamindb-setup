@@ -48,6 +48,7 @@ hub = [
 
 [tool.ruff]
 src = ["src"]
+target-version = "py310"
 line-length = 88
 select = [
     "F",  # Errors detected by Pyflakes
