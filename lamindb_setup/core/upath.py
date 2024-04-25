@@ -570,7 +570,7 @@ Args:
 
 def convert_pathlike(pathlike: UPathStr) -> UPath:
     """Convert pathlike to Path or UPath inheriting options from root."""
-    if isinstance(pathlike, str | UPath):
+    if isinstance(pathlike, (str, UPath)):
         path = UPath(pathlike)
     elif isinstance(pathlike, Path):
         path = UPath(str(pathlike))  # UPath applied on Path gives Path back
