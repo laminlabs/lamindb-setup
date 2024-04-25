@@ -30,7 +30,8 @@ def install(session: nox.Session, group: str) -> None:
 uv pip install --system git+https://github.com/laminlabs/bionty-base
 uv pip install --system --no-deps git+https://github.com/laminlabs/lnschema-bionty
 uv pip install --system --no-deps git+https://github.com/laminlabs/lnschema-core
-uv pip install --system lamin-cli"""
+uv pip install --system lamin-cli
+"""
     if group == "hub-cloud":
         cmds = cloud_prod_cmds + "uv pip install --system ./laminhub/rest-hub"
     elif group == "storage":
