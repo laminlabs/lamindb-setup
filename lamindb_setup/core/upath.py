@@ -498,8 +498,9 @@ def to_url(upath):
     if bucket == "scverse-spatial-eu-central-1":
         region = "eu-central-1"
     elif f"s3://{bucket}" not in hosted_buckets:
-        metadata = upath.fs.call_s3("head_bucket", Bucket=upath._url.netloc)
-        region = metadata["BucketRegion"]
+        response = upath.fs.call_s3("head_bucket", Bucket=upath._url.netloc)
+        headers = response["ResponseMetadata"]["HTTPHeaders"]
+        region = headers.get("x-amz-bucket-region")
     else:
         region = bucket.replace("lamin_", "")
     if region == "us-east-1":
@@ -611,9 +612,8 @@ def create_path(path: UPath, access_token: Optional[str] = None) -> UPath:
         if path.fs.key is not None and path.fs.secret is not None:
             anon = False
         else:
-            # we can do
-            # path.fs.connect()
-            # and check path.fs.session._credentials, but it is slower
+            # we could do path.fs.connect()
+            # and check path.fs.session._credentials, but it'd be slower
             session = botocore.session.get_session()
             credentials = session.get_credentials()
             if credentials is None or credentials.access_key is None:
