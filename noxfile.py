@@ -66,10 +66,10 @@ def build(session: nox.Session, group: str, lamin_env: str):
     login_testuser2(session, env=env)
     if group == "hub-prod":
         run(session, f"pytest {COVERAGE_ARGS} ./tests/hub-prod", env=env)
-        run(session, "pytest -s {COVERAGE_ARGS} ./docs/hub-prod", env=env)
+        run(session, f"pytest -s {COVERAGE_ARGS} ./docs/hub-prod", env=env)
     elif group == "hub-cloud":
-        run(session, "pytest {COVERAGE_ARGS} ./tests/hub-cloud".split(), env=env)
-        run(session, "pytest -s {COVERAGE_ARGS} ./docs/hub-cloud".split(), env=env)
+        run(session, f"pytest {COVERAGE_ARGS} ./tests/hub-cloud".split(), env=env)
+        run(session, f"pytest -s {COVERAGE_ARGS} ./docs/hub-cloud".split(), env=env)
 
 
 @nox.session
@@ -77,7 +77,9 @@ def hub_local(session: nox.Session):
     os.environ["AWS_SECRET_ACCESS_KEY_DEV_S3"] = os.environ["AWS_ACCESS_KEY_ID"]
     # the -n 1 is to ensure that supabase thread exits properly
     run(
-        session, "pytest -n 1 {COVERAGE_ARGS} ./tests/hub-local".split(), env=os.environ
+        session,
+        f"pytest -n 1 {COVERAGE_ARGS} ./tests/hub-local".split(),
+        env=os.environ,
     )
 
 
@@ -91,7 +93,7 @@ def storage(session: nox.Session):
     # mimic anonymous access
     del os.environ["AWS_ACCESS_KEY_ID"]
     del os.environ["AWS_SECRET_ACCESS_KEY"]
-    run(session, "pytest {COVERAGE_ARGS} ./tests/storage", env=os.environ)
+    run(session, f"pytest {COVERAGE_ARGS} ./tests/storage", env=os.environ)
 
 
 @nox.session
