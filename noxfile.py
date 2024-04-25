@@ -68,8 +68,8 @@ def build(session: nox.Session, group: str, lamin_env: str):
         run(session, f"pytest {COVERAGE_ARGS} ./tests/hub-prod", env=env)
         run(session, f"pytest -s {COVERAGE_ARGS} ./docs/hub-prod", env=env)
     elif group == "hub-cloud":
-        run(session, f"pytest {COVERAGE_ARGS} ./tests/hub-cloud".split(), env=env)
-        run(session, f"pytest -s {COVERAGE_ARGS} ./docs/hub-cloud".split(), env=env)
+        run(session, f"pytest {COVERAGE_ARGS} ./tests/hub-cloud", env=env)
+        run(session, f"pytest -s {COVERAGE_ARGS} ./docs/hub-cloud", env=env)
 
 
 @nox.session
@@ -78,7 +78,7 @@ def hub_local(session: nox.Session):
     # the -n 1 is to ensure that supabase thread exits properly
     run(
         session,
-        f"pytest -n 1 {COVERAGE_ARGS} ./tests/hub-local".split(),
+        f"pytest -n 1 {COVERAGE_ARGS} ./tests/hub-local",
         env=os.environ,
     )
 
