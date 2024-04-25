@@ -6,17 +6,16 @@ from uuid import UUID
 
 from lamin_utils import logger
 
-from lamindb_setup.core._hub_utils import (
-    LaminDsn,
-    LaminDsnModel,
-)
-
 from ._check_setup import _check_instance_setup
 from ._close import close as close_instance
 from ._init_instance import MESSAGE_NO_MULTIPLE_INSTANCE, load_from_isettings
 from ._migrate import check_whether_migrations_in_sync
 from ._silence_loggers import silence_loggers
 from .core._hub_core import connect_instance as load_instance_from_hub
+from .core._hub_utils import (
+    LaminDsn,
+    LaminDsnModel,
+)
 from .core._settings import settings
 from .core._settings_instance import InstanceSettings
 from .core._settings_load import load_instance_settings
@@ -27,7 +26,7 @@ from .core.cloud_sqlite_locker import unlock_cloud_sqlite_upon_exception
 if TYPE_CHECKING:
     from pathlib import Path
 
-    from lamindb_setup.core.types import UPathStr
+    from .core.types import UPathStr
 
 # this is for testing purposes only
 # set to True only to test failed load

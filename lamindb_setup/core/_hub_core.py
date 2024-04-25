@@ -10,8 +10,6 @@ from uuid import UUID
 from lamin_utils import logger
 from postgrest.exceptions import APIError
 
-import lamindb_setup
-
 from ._hub_client import (
     call_with_fallback,
     call_with_fallback_auth,
@@ -257,6 +255,8 @@ def access_aws(storage_root: str, access_token: str | None = None) -> dict[str, 
 
 
 def _access_aws(*, storage_root: str, client: Client) -> dict[str, str]:
+    import lamindb_setup
+
     response = client.functions.invoke(
         "access-aws",
         invoke_options={"body": {"storage_root": storage_root}},
