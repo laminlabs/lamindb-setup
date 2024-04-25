@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 from .core._settings import settings
 from .core._settings_storage import base62
 from .core.django import setup_django

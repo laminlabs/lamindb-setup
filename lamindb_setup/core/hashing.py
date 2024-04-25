@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 """Hashing.
 
 .. autosummary::
@@ -10,8 +12,10 @@
 
 import base64
 import hashlib
+from typing import TYPE_CHECKING
 
-from .types import Path, UPathStr
+if TYPE_CHECKING:
+    from .types import Path, UPathStr
 
 
 def to_b64_str(bstr: bytes):

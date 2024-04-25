@@ -1,12 +1,16 @@
+from __future__ import annotations
+
 from datetime import datetime, timezone
 from functools import wraps
-from pathlib import Path
-from typing import Optional, Union
-from uuid import UUID
+from typing import TYPE_CHECKING, Optional, Union
 
 from lamin_utils import logger
 
 from .upath import UPath, create_mapper, infer_filesystem
+
+if TYPE_CHECKING:
+    from pathlib import Path
+    from uuid import UUID
 
 EXPIRATION_TIME = 24 * 60 * 60 * 7  # 7 days
 

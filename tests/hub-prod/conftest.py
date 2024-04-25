@@ -1,6 +1,12 @@
+from __future__ import annotations
+
+from typing import TYPE_CHECKING
+
 import lamindb_setup
-import pytest
 from lamin_utils import logger
+
+if TYPE_CHECKING:
+    import pytest
 
 
 def pytest_sessionstart(session: pytest.Session):

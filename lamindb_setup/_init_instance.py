@@ -1,22 +1,27 @@
+from __future__ import annotations
+
 import importlib
 import os
 import sys
 import uuid
-from typing import Literal
+from typing import TYPE_CHECKING, Literal
 from uuid import UUID
 
 from django.core.exceptions import FieldError
 from django.db.utils import OperationalError, ProgrammingError
 from lamin_utils import logger
-from pydantic import PostgresDsn
 
 from ._close import close as close_instance
 from ._silence_loggers import silence_loggers
 from .core import InstanceSettings
 from .core._settings import settings
 from .core._settings_storage import StorageSettings, init_storage
-from .core.types import UPathStr
 from .core.upath import convert_pathlike
+
+if TYPE_CHECKING:
+    from pydantic import PostgresDsn
+
+    from .core.types import UPathStr
 
 
 def get_schema_module_name(schema_name) -> str:

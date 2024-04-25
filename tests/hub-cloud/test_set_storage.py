@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import lamindb_setup as ln_setup
 from lamindb_setup._add_remote_storage import switch_default_storage
 

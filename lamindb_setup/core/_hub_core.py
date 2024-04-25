@@ -1,12 +1,14 @@
+from __future__ import annotations
+
 import json
 import os
 import uuid
 from importlib import metadata
+from typing import TYPE_CHECKING
 from uuid import UUID
 
 from lamin_utils import logger
 from postgrest.exceptions import APIError
-from supabase import Client  # type: ignore
 
 import lamindb_setup
 
@@ -28,8 +30,12 @@ from ._hub_utils import (
     LaminDsn,
     LaminDsnModel,
 )
-from ._settings_instance import InstanceSettings
 from ._settings_storage import StorageSettings, base62
+
+if TYPE_CHECKING:
+    from supabase import Client  # type: ignore
+
+    from ._settings_instance import InstanceSettings
 
 
 def delete_storage_record(

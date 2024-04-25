@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 from lamin_utils import logger
 
 from .core._settings import settings

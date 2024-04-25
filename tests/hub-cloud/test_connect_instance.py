@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import os
 
 import lamindb_setup as ln_setup

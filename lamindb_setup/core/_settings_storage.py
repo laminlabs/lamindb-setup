@@ -1,10 +1,11 @@
+from __future__ import annotations
+
 import os
 import secrets
 import shutil
 import string
 from pathlib import Path
-from typing import Any, Literal, Optional, Union
-from uuid import UUID
+from typing import TYPE_CHECKING, Any, Literal, Optional, Union
 
 from appdirs import AppDirs
 from lamin_utils import logger
@@ -12,7 +13,6 @@ from lamin_utils import logger
 from ._aws_storage import find_closest_aws_region
 from ._settings_save import save_system_storage_settings
 from ._settings_store import system_storage_settings_file
-from .types import UPathStr
 from .upath import (
     LocalPathClasses,
     UPath,
@@ -20,6 +20,11 @@ from .upath import (
     create_path,
     hosted_regions,
 )
+
+if TYPE_CHECKING:
+    from uuid import UUID
+
+    from .types import UPathStr
 
 DIRS = AppDirs("lamindb", "laminlabs")
 IS_INITIALIZED_KEY = ".lamindb/_is_initialized"
@@ -70,7 +75,7 @@ def mark_storage_root(root: UPathStr):
     mark_upath.touch()
 
 
-def init_storage(root: UPathStr) -> "StorageSettings":
+def init_storage(root: UPathStr) -> StorageSettings:
     if root is None:
         raise ValueError("`storage` argument can't be `None`")
     root_str = str(root)  # ensure we have a string

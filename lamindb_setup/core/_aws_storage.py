@@ -1,3 +1,6 @@
+from __future__ import annotations
+
+
 def get_location(ip="ipinfo.io"):
     import requests  # type: ignore
 

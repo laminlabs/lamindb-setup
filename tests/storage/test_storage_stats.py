@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 from lamindb_setup.core.upath import UPath, compute_file_tree, get_stat_dir_cloud
 
 

@@ -1,5 +1,7 @@
+from __future__ import annotations
+
 from pathlib import Path
-from typing import Any, Optional, get_type_hints
+from typing import TYPE_CHECKING, Any, Optional, get_type_hints
 from uuid import UUID
 
 from ._settings_store import (
@@ -9,8 +11,10 @@ from ._settings_store import (
     user_settings_file_email,
     user_settings_file_handle,
 )
-from ._settings_user import UserSettings
-from .upath import UPath
+
+if TYPE_CHECKING:
+    from ._settings_user import UserSettings
+    from .upath import UPath
 
 
 def save_user_settings(settings: UserSettings):

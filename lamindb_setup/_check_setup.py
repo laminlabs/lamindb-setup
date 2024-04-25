@@ -1,14 +1,18 @@
+from __future__ import annotations
+
 import os
-from typing import Optional
+from typing import TYPE_CHECKING, Optional
 
 from lamin_utils import logger
 
 from ._silence_loggers import silence_loggers
 from .core import django
 from .core._settings import settings
-from .core._settings_instance import InstanceSettings
 from .core._settings_store import current_instance_settings_file
 from .core.exceptions import DefaultMessageException
+
+if TYPE_CHECKING:
+    from .core._settings_instance import InstanceSettings
 
 
 class InstanceNotSetupError(DefaultMessageException):

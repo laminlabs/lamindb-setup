@@ -1,6 +1,10 @@
+from __future__ import annotations
+
 from dataclasses import dataclass
-from typing import Optional
-from uuid import UUID
+from typing import TYPE_CHECKING, Optional
+
+if TYPE_CHECKING:
+    from uuid import UUID
 
 
 class user_description:

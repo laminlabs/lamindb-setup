@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 from django.db import connection
 from django.db.migrations.loader import MigrationLoader
 from lamin_utils import logger

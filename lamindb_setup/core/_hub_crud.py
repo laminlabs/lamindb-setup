@@ -1,7 +1,12 @@
+from __future__ import annotations
+
+from typing import TYPE_CHECKING
 from uuid import UUID, uuid4
 
 from lamin_utils import logger
-from supabase.client import Client
+
+if TYPE_CHECKING:
+    from supabase.client import Client
 
 
 def select_instance_by_owner_name(

@@ -1,13 +1,19 @@
-import os
-from pathlib import Path
+from __future__ import annotations
 
-from lamindb_setup.core import InstanceSettings, StorageSettings, UserSettings
+import os
+from typing import TYPE_CHECKING
+
 from lamindb_setup.core._settings_load import (
     load_instance_settings,
     load_or_create_user_settings,
 )
 
 from ._settings_store import current_instance_settings_file, settings_dir
+
+if TYPE_CHECKING:
+    from pathlib import Path
+
+    from lamindb_setup.core import InstanceSettings, StorageSettings, UserSettings
 
 
 class SetupSettings:

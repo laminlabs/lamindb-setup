@@ -1,11 +1,16 @@
-from lamin_utils import logger
+from __future__ import annotations
 
-from lamindb_setup.core.types import UPathStr
+from typing import TYPE_CHECKING
+
+from lamin_utils import logger
 
 from ._init_instance import register_user_and_storage
 from .core._settings import settings
 from .core._settings_instance import InstanceSettings
 from .core._settings_storage import StorageSettings
+
+if TYPE_CHECKING:
+    from lamindb_setup.core.types import UPathStr
 
 
 def switch_default_storage(root: UPathStr, **fs_kwargs):

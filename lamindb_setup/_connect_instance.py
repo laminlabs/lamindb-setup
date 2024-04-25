@@ -1,5 +1,7 @@
+from __future__ import annotations
+
 import os
-from pathlib import Path
+from typing import TYPE_CHECKING
 from uuid import UUID
 
 from lamin_utils import logger
@@ -8,7 +10,6 @@ from lamindb_setup.core._hub_utils import (
     LaminDsn,
     LaminDsnModel,
 )
-from lamindb_setup.core.types import UPathStr
 
 from ._check_setup import _check_instance_setup
 from ._close import close as close_instance
@@ -21,6 +22,11 @@ from .core._settings_load import load_instance_settings
 from .core._settings_storage import StorageSettings
 from .core._settings_store import instance_settings_file
 from .core.cloud_sqlite_locker import unlock_cloud_sqlite_upon_exception
+
+if TYPE_CHECKING:
+    from pathlib import Path
+
+    from lamindb_setup.core.types import UPathStr
 
 # this is for testing purposes only
 # set to True only to test failed load

@@ -1,6 +1,11 @@
+from __future__ import annotations
+
+from typing import TYPE_CHECKING
+
 from django.db.utils import OperationalError, ProgrammingError
 
-from ._settings_instance import InstanceSettings
+if TYPE_CHECKING:
+    from ._settings_instance import InstanceSettings
 
 
 def write_bionty_sources(isettings: InstanceSettings) -> None:

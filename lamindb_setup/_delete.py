@@ -1,6 +1,7 @@
+from __future__ import annotations
+
 import shutil
-from pathlib import Path
-from typing import Optional
+from typing import TYPE_CHECKING, Optional
 from uuid import UUID
 
 from lamin_utils import logger
@@ -14,6 +15,9 @@ from .core._settings_load import load_instance_settings
 from .core._settings_storage import StorageSettings
 from .core._settings_store import instance_settings_file
 from .core.upath import check_storage_is_empty, hosted_buckets
+
+if TYPE_CHECKING:
+    from pathlib import Path
 
 
 def delete_cache(cache_dir: Path):

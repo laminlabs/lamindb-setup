@@ -1,5 +1,6 @@
-from pathlib import Path
-from typing import Optional
+from __future__ import annotations
+
+from typing import TYPE_CHECKING, Optional
 from uuid import UUID, uuid4
 
 from lamin_utils import logger
@@ -14,6 +15,9 @@ from ._settings_store import (
     current_user_settings_file,
 )
 from ._settings_user import UserSettings
+
+if TYPE_CHECKING:
+    from pathlib import Path
 
 
 class SettingsEnvFileOutdated(Exception):
