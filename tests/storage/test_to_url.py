@@ -22,6 +22,8 @@ def test_to_url():
     # eu-central-1 / AWS Hosted
     # below is the default storage of the lamin-dev instance
     assert (
-        ln_setup.core.upath.create_path("s3://lamin-eu-central-1/9fm7UN13/test-folder").to_url()
-        == "https://lamin-eu-central-1.s3-lamin-eu-central-1.amazonaws.com/9fm7UN13/test-folder"
+        ln_setup.core.upath.create_path(
+            "s3://lamin-eu-central-1/9fm7UN13/test-folder"
+        ).to_url()
+        == "https://lamin-eu-central-1.s3-lamin-eu-central-1.amazonaws.com/9fm7UN13/test-folder"  # noqa
     )
