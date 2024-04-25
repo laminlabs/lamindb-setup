@@ -52,7 +52,9 @@ def delete_by_isettings(isettings: InstanceSettings) -> None:
             settings._instance_settings_path.unlink()
         settings._instance_settings = None
     if isettings.storage._mark_storage_root.exists():
-        isettings.storage._mark_storage_root.unlink()
+        isettings.storage._mark_storage_root.unlink(
+            missing_ok=True
+        )  # this is totally weird, but needed on Py3.11
 
 
 def delete(
