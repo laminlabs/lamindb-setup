@@ -66,20 +66,20 @@ def get_storage_region(storage_root: UPathStr) -> str | None:
     return storage_region
 
 
-def mark_storage_root(root: UPathStr):
+def mark_storage_root(root: UPathStr, uid: str):
     # we need to touch a 0-byte object in folder-like storage location on S3 to avoid
     # permission errors from leveraging s3fs on an empty hosted storage location
     # for consistency, we write this file everywhere
     root_upath = convert_pathlike(root)
     mark_upath = root_upath / IS_INITIALIZED_KEY
-    mark_upath.touch()
+    mark_upath.write_text(uid)
 
 
 def init_storage(root: UPathStr) -> StorageSettings:
     if root is None:
         raise ValueError("`storage` argument can't be `None`")
     root_str = str(root)  # ensure we have a string
-    uid = base62(8)
+    uid = base62(12)
     region = None
     lamin_env = os.getenv("LAMIN_ENV")
     if root_str.startswith("create-s3"):
@@ -110,7 +110,7 @@ def init_storage(root: UPathStr) -> StorageSettings:
         ssettings._description = f"Created as default storage for instance {uid}"
         ssettings._uuid_ = init_storage_hub(ssettings)
         logger.important(f"registered storage: {ssettings.root_as_str}")
-    mark_storage_root(ssettings.root)
+    mark_storage_root(ssettings.root, uid)
     return ssettings
 
 

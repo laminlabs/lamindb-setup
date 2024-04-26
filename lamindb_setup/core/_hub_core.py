@@ -123,7 +123,9 @@ def delete_instance(identifier: UUID | str, require_empty: bool = True) -> None:
         root_string = instance_with_storage["storage"]["root"]
         # gate storage and instance deletion on empty storage location for
         root_path = create_path(root_string)
-        mark_storage_root(root_path)  # address permission error
+        mark_storage_root(
+            root_path, instance_with_storage["storage"]["lnid"]
+        )  # address permission error
         account_for_sqlite_file = instance_with_storage["db_scheme"] is None
         check_storage_is_empty(
             root_path, account_for_sqlite_file=account_for_sqlite_file
@@ -154,24 +156,24 @@ def _init_instance(isettings: InstanceSettings, client: Client) -> None:
     except metadata.PackageNotFoundError:
         lamindb_version = None
     fields = {
-        "id": isettings.id.hex,
+        "id": isettings._id.hex,
         "account_id": settings.user._uuid.hex,  # type: ignore
         "name": isettings.name,
         "storage_id": isettings.storage._uuid.hex,  # type: ignore
+        "lnid": isettings.uid,
         "schema_str": isettings._schema_str,
         "lamindb_version": lamindb_version,
         "public": False,
     }
     if isettings.dialect != "sqlite":
         db_dsn = LaminDsnModel(db=isettings.db)
-        fields.update(
-            {
-                "db_scheme": db_dsn.db.scheme,
-                "db_host": db_dsn.db.host,
-                "db_port": db_dsn.db.port,
-                "db_database": db_dsn.db.database,
-            }
-        )
+        db_fields = {
+            "db_scheme": db_dsn.db.scheme,
+            "db_host": db_dsn.db.host,
+            "db_port": db_dsn.db.port,
+            "db_database": db_dsn.db.database,
+        }
+        fields.update(db_fields)
     # I'd like the following to be an upsert, but this seems to violate RLS
     # Similarly, if we don't specify `returning="minimal"`, we'll violate RLS
     # we could make this idempotent by catching an error, but this seems dangerous
@@ -181,6 +183,9 @@ def _init_instance(isettings: InstanceSettings, client: Client) -> None:
     except APIError as e:
         logger.warning("instance likely already exists")
         raise e
+    client.table("storage").update(
+        {"instance_id": isettings.id.hex, "is_default": True}
+    ).eq("id", isettings.storage._uuid.hex).execute()  # type: ignore
     logger.save(f"browse to: https://lamin.ai/{isettings.owner}/{isettings.name}")
 
 

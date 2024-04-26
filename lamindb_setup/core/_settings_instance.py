@@ -50,7 +50,7 @@ class InstanceSettings:
     ):
         from ._hub_utils import validate_db_arg
 
-        self._id: UUID = id
+        self._id_: UUID = id
         self._owner: str = owner
         self._name: str = name
         self._uid: str | None = uid
@@ -171,12 +171,20 @@ class InstanceSettings:
     @property
     def id(self) -> UUID:
         """The internal instance id."""
-        return self._id
+        logger.warning("is deprecated, use _id instead")
+        return self._id_
 
     @property
-    def uid(self) -> str | None:
+    def _id(self) -> UUID:
+        """The internal instance id."""
+        return self._id_
+
+    @property
+    def uid(self) -> str:
         """The user-facing instance id."""
-        return self._uid
+        from .hashing import hash_and_encode_as_b62
+
+        return hash_and_encode_as_b62(self._id.hex)[:12]
 
     @property
     def schema(self) -> set[str]:
