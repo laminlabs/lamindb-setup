@@ -14,7 +14,7 @@ from .core._settings_instance import InstanceSettings
 from .core._settings_load import load_instance_settings
 from .core._settings_storage import StorageSettings
 from .core._settings_store import instance_settings_file
-from .core.upath import check_storage_is_empty, hosted_buckets
+from .core.upath import HOSTED_BUCKETS, check_storage_is_empty
 
 if TYPE_CHECKING:
     from pathlib import Path
@@ -128,7 +128,7 @@ def delete(
         # delete the exlusion dir first because it's hard to count its objects
         delete_exclusion_dir(isettings)
     if isettings.storage.type_is_cloud and isettings.storage.root_as_str.startswith(
-        hosted_buckets
+        HOSTED_BUCKETS
     ):
         if not require_empty:
             logger.warning(
