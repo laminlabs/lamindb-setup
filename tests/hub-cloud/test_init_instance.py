@@ -16,16 +16,6 @@ from lamindb_setup.core._hub_crud import (
 pgurl = "postgresql://postgres:pwd@0.0.0.0:5432/pgtest"
 
 
-def delete_instance(
-    id: str,
-    client: Client,
-):
-    data = client.table("instance").delete().eq("id", id).execute().data
-    if len(data) == 0:
-        return None
-    return data[0]
-
-
 @pytest.fixture
 def get_hub_client():
     ln_setup.login("testuser2")
@@ -148,7 +138,6 @@ def test_init_instance_sqlite():
     assert ln_setup.settings.instance.owner == ln_setup.settings.user.handle
     assert ln_setup.settings.instance.dialect == "sqlite"
     ln_setup.delete("local-sqlite-instance", force=True)
-    delete_instance(instance["id"], hub)
 
 
 def test_init_invalid_name():
