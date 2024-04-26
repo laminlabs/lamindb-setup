@@ -109,9 +109,14 @@ def _delete_instance(
     from ._settings_storage import mark_storage_root
     from .upath import check_storage_is_empty, create_path
 
-    if isinstance(identifier, UUID):
+    # the "/" check is for backward compatibility with the old identifier format
+    if isinstance(identifier, UUID) or "/" not in identifier:
+        if isinstance(identifier, UUID):
+            instance_id_str = identifier.hex
+        else:
+            instance_id_str = identifier
         instance_with_storage = select_instance_by_id_with_storage(
-            instance_id=identifier.hex, client=client
+            instance_id=instance_id_str, client=client
         )
     else:
         owner, name = identifier.split("/")
