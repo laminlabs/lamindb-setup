@@ -258,7 +258,7 @@ def test_connect_instance(create_myinstance, create_testadmin1_session):
         name=create_myinstance["name"],
     )
     # trigger misspelled name
-    assert "instance-not-reachable" == connect_instance(
+    assert "instance-not-found" == connect_instance(
         owner="testadmin1",
         name="inexistent-name",  # inexistent name
     )

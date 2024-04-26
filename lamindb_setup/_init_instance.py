@@ -133,7 +133,7 @@ def process_connect_response(
 ) -> tuple[
     UUID,
     Literal[
-        "instance-corrupted-or-deleted", "account-not-exists", "instance-not-reachable"
+        "instance-corrupted-or-deleted", "account-not-exists", "instance-not-found"
     ],
 ]:
     # for internal use when creating instances through CICD
@@ -165,7 +165,7 @@ def validate_init_args(
         "connected",
         "instance-corrupted-or-deleted",
         "account-not-exists",
-        "instance-not-reachable",
+        "instance-not-found",
     ],
     str,
 ]:
@@ -183,7 +183,7 @@ def validate_init_args(
         "connected",
         "instance-corrupted-or-deleted",
         "account-not-exists",
-        "instance-not-reachable",
+        "instance-not-found",
     ] = "connected"
     instance_id = None
     if response is not None:

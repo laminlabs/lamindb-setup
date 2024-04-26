@@ -179,12 +179,12 @@ def connect(
                     if isettings.is_remote:
                         if _raise_not_reachable_error:
                             raise InstanceNotFoundError(message)
-                        return "instance-not-reachable"
+                        return "instance-not-found"
 
                 else:
                     if _raise_not_reachable_error:
                         raise InstanceNotFoundError(message)
-                    return "instance-not-reachable"
+                    return "instance-not-found"
 
         if storage is not None:
             update_isettings_with_storage(isettings, storage)

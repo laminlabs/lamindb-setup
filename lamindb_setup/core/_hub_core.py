@@ -92,7 +92,7 @@ def _init_storage(ssettings: StorageSettings, client: Client) -> UUID:
     return id
 
 
-def delete_instance(identifier: UUID | str, require_empty: bool = True) -> None:
+def delete_instance(identifier: UUID | str, require_empty: bool = True) -> str | None:
     return call_with_fallback_auth(
         _delete_instance, identifier=identifier, require_empty=require_empty
     )
@@ -100,7 +100,7 @@ def delete_instance(identifier: UUID | str, require_empty: bool = True) -> None:
 
 def _delete_instance(
     identifier: UUID | str, require_empty: bool, client: Client
-) -> None:
+) -> str | None:
     """Fully delete an instance in the hub.
 
     This function deletes the relevant instance and storage records in the hub,
@@ -126,7 +126,7 @@ def _delete_instance(
 
     if instance_with_storage is None:
         logger.warning("instance not found")
-        return None
+        return "instance-not-found"
 
     if require_empty:
         root_string = instance_with_storage["storage"]["root"]
@@ -226,7 +226,7 @@ def _connect_instance(
             return "account-not-exists"
         instance = select_instance_by_name(account["id"], name, client)
         if instance is None:
-            return "instance-not-reachable"
+            return "instance-not-found"
         # get default storage
         storage = select_storage(instance["storage_id"], client)
         if storage is None:
