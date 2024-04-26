@@ -130,6 +130,7 @@ def delete_instance(identifier: UUID | str, require_empty: bool = True) -> None:
         check_storage_is_empty(
             root_path, account_for_sqlite_file=account_for_sqlite_file
         )
+    update_instance_record(UUID(instance_with_storage["id"]), {"storage_id": None})
     delete_storage_record(UUID(instance_with_storage["storage_id"]))
     delete_instance_record(UUID(instance_with_storage["id"]))
     return None
