@@ -500,7 +500,7 @@ def to_url(upath):
     bucket = upath._url.netloc
     if bucket == "scverse-spatial-eu-central-1":
         region = "eu-central-1"
-    elif f"s3://{bucket}" not in hosted_buckets:
+    elif f"s3://{bucket}" not in HOSTED_BUCKETS:
         response = upath.fs.call_s3("head_bucket", Bucket=upath._url.netloc)
         headers = response["ResponseMetadata"]["HTTPHeaders"]
         region = headers.get("x-amz-bucket-region")
@@ -582,7 +582,7 @@ def convert_pathlike(pathlike: UPathStr) -> UPath:
     return path
 
 
-hosted_regions = [
+HOSTED_REGIONS = [
     "eu-central-1",
     "eu-west-2",
     "us-east-1",
@@ -592,11 +592,11 @@ hosted_regions = [
 ]
 lamin_env = os.getenv("LAMIN_ENV")
 if lamin_env is None or lamin_env == "prod":
-    hosted_buckets_list = [f"s3://lamin-{region}" for region in hosted_regions]
+    hosted_buckets_list = [f"s3://lamin-{region}" for region in HOSTED_REGIONS]
     hosted_buckets_list.append("s3://scverse-spatial-eu-central-1")
-    hosted_buckets = tuple(hosted_buckets_list)
+    HOSTED_BUCKETS = tuple(hosted_buckets_list)
 else:
-    hosted_buckets = ("s3://lamin-hosted-test",)  # type: ignore
+    HOSTED_BUCKETS = ("s3://lamin-hosted-test",)  # type: ignore
 credentials_cache: dict[str, dict[str, str]] = {}
 AWS_CREDENTIALS_PRESENT = None
 
@@ -628,7 +628,7 @@ def create_path(path: UPath, access_token: str | None = None) -> UPath:
 
     # test whether we are on hosted storage or not
     path_str = path.as_posix()
-    is_hosted_storage = path_str.startswith(hosted_buckets)
+    is_hosted_storage = path_str.startswith(HOSTED_BUCKETS)
 
     if not is_hosted_storage:
         # make anon request if no credentials present

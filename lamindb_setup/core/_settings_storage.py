@@ -14,11 +14,11 @@ from ._aws_storage import find_closest_aws_region
 from ._settings_save import save_system_storage_settings
 from ._settings_store import system_storage_settings_file
 from .upath import (
+    HOSTED_REGIONS,
     LocalPathClasses,
     UPath,
     convert_pathlike,
     create_path,
-    hosted_regions,
 )
 
 if TYPE_CHECKING:
@@ -89,8 +89,8 @@ def init_storage(root: UPathStr) -> StorageSettings:
         if region is None:
             region = find_closest_aws_region()
         else:
-            if region not in hosted_regions:
-                raise ValueError(f"region has to be one of {hosted_regions}")
+            if region not in HOSTED_REGIONS:
+                raise ValueError(f"region has to be one of {HOSTED_REGIONS}")
         if lamin_env is None or lamin_env == "prod":
             root_str = f"s3://lamin-{region}/{uid}"
         else:
