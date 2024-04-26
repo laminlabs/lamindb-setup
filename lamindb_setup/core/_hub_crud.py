@@ -17,7 +17,7 @@ def select_instance_by_owner_name(
             client.table("instance")
             .select(
                 "*, account!inner!instance_account_id_28936e8f_fk_account_id(*),"
-                " storage(*)"
+                " storage!instance_storage_id_87963cc8_fk_storage_id(*)"
             )
             .eq("account.handle", owner)
             .eq("name", name)
@@ -85,7 +85,10 @@ def select_instance_by_id_with_storage(
     client: Client,
 ):
     response = (
-        client.table("instance").select("*, storage(*)").eq("id", instance_id).execute()
+        client.table("instance")
+        .select("*, storage!instance_storage_id_87963cc8_fk_storage_id(*)")
+        .eq("id", instance_id)
+        .execute()
     )
     if len(response.data) == 0:
         return None
