@@ -186,6 +186,3 @@ def _delete_instance_record(instance_id: UUID, client: Client) -> None:
         instance_id = UUID(instance_id)
     logger.important(f"deleting instance {instance_id.hex}")
     client.table("instance").delete().eq("id", instance_id.hex).execute()
-
-
-sb_delete_instance = _delete_instance_record

@@ -24,6 +24,7 @@ from ._hub_crud import (
     select_instance_by_owner_name,
     select_storage,
 )
+from ._hub_crud import update_instance as _update_instance_record
 from ._hub_utils import (
     LaminDsn,
     LaminDsnModel,
@@ -53,10 +54,8 @@ def _delete_storage_record(storage_uuid: UUID, client: Client) -> None:
 
 
 def update_instance_record(instance_uuid: UUID, fields: dict) -> None:
-    from ._hub_crud import update_instance
-
     return call_with_fallback_auth(
-        update_instance, instance_id=instance_uuid.hex, instance_fields=fields
+        _update_instance_record, instance_id=instance_uuid.hex, instance_fields=fields
     )
 
 
@@ -94,6 +93,14 @@ def _init_storage(ssettings: StorageSettings, client: Client) -> UUID:
 
 
 def delete_instance(identifier: UUID | str, require_empty: bool = True) -> None:
+    return call_with_fallback_auth(
+        _delete_instance, identifier=identifier, require_empty=require_empty
+    )
+
+
+def _delete_instance(
+    identifier: UUID | str, require_empty: bool, client: Client
+) -> None:
     """Fully delete an instance in the hub.
 
     This function deletes the relevant instance and storage records in the hub,
@@ -103,16 +110,13 @@ def delete_instance(identifier: UUID | str, require_empty: bool = True) -> None:
     from .upath import check_storage_is_empty, create_path
 
     if isinstance(identifier, UUID):
-        instance_with_storage = call_with_fallback_auth(
-            select_instance_by_id_with_storage,
-            instance_id=identifier,
+        instance_with_storage = select_instance_by_id_with_storage(
+            instance_id=identifier.hex, client=client
         )
     else:
         owner, name = identifier.split("/")
-        instance_with_storage = call_with_fallback_auth(
-            select_instance_by_owner_name,
-            owner=owner,
-            name=name,
+        instance_with_storage = select_instance_by_owner_name(
+            owner=owner, name=name, client=client
         )
 
     if instance_with_storage is None:
@@ -122,7 +126,7 @@ def delete_instance(identifier: UUID | str, require_empty: bool = True) -> None:
     if require_empty:
         root_string = instance_with_storage["storage"]["root"]
         # gate storage and instance deletion on empty storage location for
-        root_path = create_path(root_string)
+        root_path = create_path(root_string, client.session.access_token)
         mark_storage_root(
             root_path, instance_with_storage["storage"]["lnid"]
         )  # address permission error
@@ -130,9 +134,9 @@ def delete_instance(identifier: UUID | str, require_empty: bool = True) -> None:
         check_storage_is_empty(
             root_path, account_for_sqlite_file=account_for_sqlite_file
         )
-    update_instance_record(UUID(instance_with_storage["id"]), {"storage_id": None})
-    delete_storage_record(UUID(instance_with_storage["storage_id"]))
-    delete_instance_record(UUID(instance_with_storage["id"]))
+    _update_instance_record(instance_with_storage["id"], {"storage_id": None}, client)
+    _delete_storage_record(UUID(instance_with_storage["storage_id"]), client)
+    _delete_instance_record(UUID(instance_with_storage["id"]), client)
     return None
 
 
