@@ -3,6 +3,7 @@
 <!-- prettier-ignore -->
 Name | PR | Developer | Date | Version
 --- | --- | --- | --- | ---
+♻️ Capitalize HOSTED | [733](https://github.com/laminlabs/lamindb-setup/pull/733) | [falexwolf](https://github.com/falexwolf) | 2024-04-26 |
 ♻️ Refactor noxfile and manage `aws` extra here instead of in lamindb | [732](https://github.com/laminlabs/lamindb-setup/pull/732) | [falexwolf](https://github.com/falexwolf) | 2024-04-25 |
 🏷️ Add 3.10 types & ruff | [731](https://github.com/laminlabs/lamindb-setup/pull/731) | [falexwolf](https://github.com/falexwolf) | 2024-04-25 |
 ♻️ Backward compat for older botocore | [730](https://github.com/laminlabs/lamindb-setup/pull/730) | [falexwolf](https://github.com/falexwolf) | 2024-04-25 |
