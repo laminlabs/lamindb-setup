@@ -3,6 +3,7 @@
 <!-- prettier-ignore -->
 Name | PR | Developer | Date | Version
 --- | --- | --- | --- | ---
+⬆️ Upper and lower bounds for fsspec | [736](https://github.com/laminlabs/lamindb-setup/pull/736) | [Koncopd](https://github.com/Koncopd) | 2024-04-27 |
 ♻️ Capitalize HOSTED | [733](https://github.com/laminlabs/lamindb-setup/pull/733) | [falexwolf](https://github.com/falexwolf) | 2024-04-26 |
 ♻️ Refactor noxfile and manage `aws` extra here instead of in lamindb | [732](https://github.com/laminlabs/lamindb-setup/pull/732) | [falexwolf](https://github.com/falexwolf) | 2024-04-25 |
 🏷️ Add 3.10 types & ruff | [731](https://github.com/laminlabs/lamindb-setup/pull/731) | [falexwolf](https://github.com/falexwolf) | 2024-04-25 |
