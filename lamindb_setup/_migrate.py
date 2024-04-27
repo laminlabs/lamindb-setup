@@ -77,7 +77,7 @@ class migrate:
             update_instance,
         )
 
-        instance_id_str = settings.instance.id.hex
+        instance_id_str = settings.instance._id.hex
         instance = call_with_fallback_auth(
             select_instance_by_id, instance_id=instance_id_str
         )
@@ -106,7 +106,7 @@ class migrate:
             logger.important(f"updating lamindb version in hub: {lamindb.__version__}")
             call_with_fallback_auth(
                 update_instance,
-                instance_id=settings.instance.id.hex,
+                instance_id=settings.instance._id.hex,
                 instance_fields={"lamindb_version": lamindb.__version__},
             )
 

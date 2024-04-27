@@ -69,7 +69,7 @@ def test_connect_after_private_public_switch():
         admin_hub = connect_hub_with_auth()
         # make the instance private
         update_instance(
-            instance_id=ln_setup.settings.instance.id,
+            instance_id=ln_setup.settings.instance._id,
             instance_fields={"public": False},
             client=admin_hub,
         )
@@ -82,7 +82,7 @@ def test_connect_after_private_public_switch():
             )
         # make the instance public
         update_instance(
-            instance_id=ln_setup.settings.instance.id,
+            instance_id=ln_setup.settings.instance._id,
             instance_fields={"public": True},
             client=admin_hub,
         )
@@ -92,7 +92,7 @@ def test_connect_after_private_public_switch():
         )
         # make the instance private again
         update_instance(
-            instance_id=ln_setup.settings.instance.id,
+            instance_id=ln_setup.settings.instance._id,
             instance_fields={"public": False},
             client=admin_hub,
         )
