@@ -153,7 +153,7 @@ class InstanceSettings:
         self._local_storage = StorageSettings(local_root)  # type: ignore
         register_storage(self._local_storage)  # type: ignore
         self._local_storage_on = True
-        update_instance_record(self.id, {"storage_mode": "hybrid"})
+        update_instance_record(self._id, {"storage_mode": "hybrid"})
 
     @property
     def slug(self) -> str:
@@ -168,11 +168,11 @@ class InstanceSettings:
         """
         return self._git_repo
 
-    @property
-    def id(self) -> UUID:
-        """The internal instance id."""
-        logger.warning("is deprecated, use _id instead")
-        return self._id_
+    # @property
+    # def id(self) -> UUID:
+    #     """The internal instance id."""
+    #     logger.warning("is deprecated, use _id instead")
+    #     return self._id_
 
     @property
     def _id(self) -> UUID:
@@ -197,7 +197,7 @@ class InstanceSettings:
     @property
     def _sqlite_file(self) -> UPath:
         """SQLite file."""
-        return self.storage.key_to_filepath(f"{self.id.hex}.lndb")
+        return self.storage.key_to_filepath(f"{self._id.hex}.lndb")
 
     @property
     def _sqlite_file_local(self) -> Path:

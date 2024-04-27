@@ -47,7 +47,7 @@ def save_settings(
                 elif store_key == "storage_region":
                     value = settings.storage.region
                 else:
-                    if store_key in {"db", "schema_str", "name_", "uuid"}:
+                    if store_key in {"db", "schema_str", "name_", "uuid", "id"}:
                         settings_key = f"_{store_key.rstrip('_')}"
                     else:
                         settings_key = store_key
