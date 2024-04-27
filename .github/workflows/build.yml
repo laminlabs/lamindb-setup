@@ -230,7 +230,7 @@ jobs:
         env:
           SLACK_BOT_TOKEN: ${{ secrets.SLACK_GITHUB_ACTION }}
         with:
-          channel: web-hub-tests
+          channel_id: C05S2C02JHM
           status: SUCCESS
           color: good
       - uses: voxmedia/github-action-slack-notify-build@v1
@@ -238,6 +238,6 @@ jobs:
         env:
           SLACK_BOT_TOKEN: ${{ secrets.SLACK_GITHUB_ACTION }}
         with:
-          channel: web-hub-tests
+          channel_id: C05S2C02JHM
           status: FAILURE
           color: danger
