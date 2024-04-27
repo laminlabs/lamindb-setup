@@ -24,6 +24,7 @@ from ._hub_crud import (
     select_instance_by_owner_name,
     select_storage,
 )
+from ._hub_crud import update_instance as _update_instance_record
 from ._hub_utils import (
     LaminDsn,
     LaminDsnModel,
@@ -53,10 +54,8 @@ def _delete_storage_record(storage_uuid: UUID, client: Client) -> None:
 
 
 def update_instance_record(instance_uuid: UUID, fields: dict) -> None:
-    from ._hub_crud import update_instance
-
     return call_with_fallback_auth(
-        update_instance, instance_id=instance_uuid.hex, instance_fields=fields
+        _update_instance_record, instance_id=instance_uuid.hex, instance_fields=fields
     )
 
 
@@ -93,7 +92,15 @@ def _init_storage(ssettings: StorageSettings, client: Client) -> UUID:
     return id
 
 
-def delete_instance(identifier: UUID | str, require_empty: bool = True) -> None:
+def delete_instance(identifier: UUID | str, require_empty: bool = True) -> str | None:
+    return call_with_fallback_auth(
+        _delete_instance, identifier=identifier, require_empty=require_empty
+    )
+
+
+def _delete_instance(
+    identifier: UUID | str, require_empty: bool, client: Client
+) -> str | None:
     """Fully delete an instance in the hub.
 
     This function deletes the relevant instance and storage records in the hub,
@@ -102,34 +109,43 @@ def delete_instance(identifier: UUID | str, require_empty: bool = True) -> None:
     from ._settings_storage import mark_storage_root
     from .upath import check_storage_is_empty, create_path
 
-    if isinstance(identifier, UUID):
-        instance_with_storage = call_with_fallback_auth(
-            select_instance_by_id_with_storage,
-            instance_id=identifier,
+    # the "/" check is for backward compatibility with the old identifier format
+    if isinstance(identifier, UUID) or "/" not in identifier:
+        if isinstance(identifier, UUID):
+            instance_id_str = identifier.hex
+        else:
+            instance_id_str = identifier
+        instance_with_storage = select_instance_by_id_with_storage(
+            instance_id=instance_id_str, client=client
         )
     else:
         owner, name = identifier.split("/")
-        instance_with_storage = call_with_fallback_auth(
-            select_instance_by_owner_name,
-            owner=owner,
-            name=name,
+        instance_with_storage = select_instance_by_owner_name(
+            owner=owner, name=name, client=client
         )
 
     if instance_with_storage is None:
         logger.warning("instance not found")
-        return None
+        return "instance-not-found"
 
     if require_empty:
         root_string = instance_with_storage["storage"]["root"]
         # gate storage and instance deletion on empty storage location for
-        root_path = create_path(root_string)
-        mark_storage_root(root_path)  # address permission error
+        if client.auth.get_session() is not None:
+            access_token = client.auth.get_session().access_token
+        else:
+            access_token = None
+        root_path = create_path(root_string, access_token)
+        mark_storage_root(
+            root_path, instance_with_storage["storage"]["lnid"]
+        )  # address permission error
         account_for_sqlite_file = instance_with_storage["db_scheme"] is None
         check_storage_is_empty(
             root_path, account_for_sqlite_file=account_for_sqlite_file
         )
-    delete_instance_record(UUID(instance_with_storage["id"]))
-    delete_storage_record(UUID(instance_with_storage["storage_id"]))
+    _update_instance_record(instance_with_storage["id"], {"storage_id": None}, client)
+    _delete_storage_record(UUID(instance_with_storage["storage_id"]), client)
+    _delete_instance_record(UUID(instance_with_storage["id"]), client)
     return None
 
 
@@ -154,24 +170,24 @@ def _init_instance(isettings: InstanceSettings, client: Client) -> None:
     except metadata.PackageNotFoundError:
         lamindb_version = None
     fields = {
-        "id": isettings.id.hex,
+        "id": isettings._id.hex,
         "account_id": settings.user._uuid.hex,  # type: ignore
         "name": isettings.name,
         "storage_id": isettings.storage._uuid.hex,  # type: ignore
+        "lnid": isettings.uid,
         "schema_str": isettings._schema_str,
         "lamindb_version": lamindb_version,
         "public": False,
     }
     if isettings.dialect != "sqlite":
         db_dsn = LaminDsnModel(db=isettings.db)
-        fields.update(
-            {
-                "db_scheme": db_dsn.db.scheme,
-                "db_host": db_dsn.db.host,
-                "db_port": db_dsn.db.port,
-                "db_database": db_dsn.db.database,
-            }
-        )
+        db_fields = {
+            "db_scheme": db_dsn.db.scheme,
+            "db_host": db_dsn.db.host,
+            "db_port": db_dsn.db.port,
+            "db_database": db_dsn.db.database,
+        }
+        fields.update(db_fields)
     # I'd like the following to be an upsert, but this seems to violate RLS
     # Similarly, if we don't specify `returning="minimal"`, we'll violate RLS
     # we could make this idempotent by catching an error, but this seems dangerous
@@ -181,6 +197,9 @@ def _init_instance(isettings: InstanceSettings, client: Client) -> None:
     except APIError as e:
         logger.warning("instance likely already exists")
         raise e
+    client.table("storage").update(
+        {"instance_id": isettings._id.hex, "is_default": True}
+    ).eq("id", isettings.storage._uuid.hex).execute()  # type: ignore
     logger.save(f"browse to: https://lamin.ai/{isettings.owner}/{isettings.name}")
 
 
@@ -211,7 +230,7 @@ def _connect_instance(
             return "account-not-exists"
         instance = select_instance_by_name(account["id"], name, client)
         if instance is None:
-            return "instance-not-reachable"
+            return "instance-not-found"
         # get default storage
         storage = select_storage(instance["storage_id"], client)
         if storage is None:

@@ -18,6 +18,12 @@ if TYPE_CHECKING:
     from .types import Path, UPathStr
 
 
+def hash_and_encode_as_b62(s: str) -> str:
+    from lamin_utils._base62 import encodebytes
+
+    return encodebytes(hashlib.md5(s.encode()).digest())
+
+
 def to_b64_str(bstr: bytes):
     b64 = base64.urlsafe_b64encode(bstr).decode().strip("=")
     return b64

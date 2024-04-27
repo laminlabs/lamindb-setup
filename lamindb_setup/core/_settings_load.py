@@ -41,7 +41,7 @@ def load_instance_settings(instance_settings_file: Path | None = None):
         ) from error
     if settings_store.id == "null":
         raise ValueError(
-            "Your instance.id is undefined, please either load your instance from the"
+            "Your instance._id is undefined, please either load your instance from the"
             f" hub or update {instance_settings_file} with a new id: {uuid4().hex}"
         )
     isettings = setup_instance_from_store(settings_store)

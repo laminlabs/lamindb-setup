@@ -16,16 +16,6 @@ from lamindb_setup.core._hub_crud import (
 pgurl = "postgresql://postgres:pwd@0.0.0.0:5432/pgtest"
 
 
-def delete_instance(
-    id: str,
-    client: Client,
-):
-    data = client.table("instance").delete().eq("id", id).execute().data
-    if len(data) == 0:
-        return None
-    return data[0]
-
-
 @pytest.fixture
 def get_hub_client():
     ln_setup.login("testuser2")
@@ -55,7 +45,7 @@ def test_init_instance_postgres_default_name(get_hub_client):
     assert instance["db_port"] == 5432
     assert instance["db_database"] == "pgtest"
     # client checks
-    assert ln_setup.settings.instance.id == UUID(instance["id"])
+    assert ln_setup.settings.instance._id == UUID(instance["id"])
     assert ln_setup.settings.instance.name == "pgtest"
     assert not ln_setup.settings.instance.storage.type_is_cloud
     assert ln_setup.settings.instance.owner == ln_setup.settings.user.handle
@@ -93,7 +83,7 @@ def test_init_instance_cloud_aws_us():
         name=ln_setup.settings.instance.name,
         client=hub,
     )
-    assert ln_setup.settings.instance.id == UUID(instance["id"])
+    assert ln_setup.settings.instance._id == UUID(instance["id"])
     assert ln_setup.settings.storage.type_is_cloud
     assert (
         str(ln_setup.settings.storage.root)
@@ -106,7 +96,7 @@ def test_init_instance_cloud_aws_us():
     assert ln_setup.settings.storage.region == "us-west-1"
     assert (
         str(ln_setup.settings.instance._sqlite_file)
-        == f"s3://lamindb-ci/init_instance_cloud_aws_us/{ln_setup.settings.instance.id.hex}.lndb"
+        == f"s3://lamindb-ci/init_instance_cloud_aws_us/{ln_setup.settings.instance._id.hex}.lndb"
     )
 
 
@@ -122,7 +112,7 @@ def test_init_instance_cloud_aws_europe():
     assert ln_setup.settings.instance.name == "lamindb-ci-europe"
     assert (
         str(ln_setup.settings.instance._sqlite_file)
-        == f"s3://lndb-setup-ci-eu-central-1/{ln_setup.settings.instance.id.hex}.lndb"
+        == f"s3://lndb-setup-ci-eu-central-1/{ln_setup.settings.instance._id.hex}.lndb"
     )
 
 
@@ -142,13 +132,12 @@ def test_init_instance_sqlite():
         name=ln_setup.settings.instance.name,
         client=hub,
     )
-    assert ln_setup.settings.instance.id == UUID(instance["id"])
+    assert ln_setup.settings.instance._id == UUID(instance["id"])
     assert ln_setup.settings.instance.name == "local-sqlite-instance"
     assert not ln_setup.settings.instance.storage.type_is_cloud
     assert ln_setup.settings.instance.owner == ln_setup.settings.user.handle
     assert ln_setup.settings.instance.dialect == "sqlite"
     ln_setup.delete("local-sqlite-instance", force=True)
-    delete_instance(instance["id"], hub)
 
 
 def test_init_invalid_name():

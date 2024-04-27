@@ -187,9 +187,9 @@ def get_locker(isettings) -> Locker:
         _locker is None
         or _locker.user != user_uid
         or _locker.root is not storage_root
-        or _locker.instance_id != isettings.id
+        or _locker.instance_id != isettings._id
     ):
-        _locker = Locker(user_uid, storage_root, isettings.id)
+        _locker = Locker(user_uid, storage_root, isettings._id)
 
     return _locker
 

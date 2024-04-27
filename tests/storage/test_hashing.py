@@ -2,8 +2,15 @@ from __future__ import annotations
 
 import base64
 from pathlib import Path
+from uuid import UUID
 
-from lamindb_setup.core.hashing import b16_to_b64, hash_code, hash_file, to_b64_str
+from lamindb_setup.core.hashing import (
+    b16_to_b64,
+    hash_and_encode_as_b62,
+    hash_code,
+    hash_file,
+    to_b64_str,
+)
 
 
 def test_compute_hash():
@@ -40,3 +47,8 @@ def test_b16_to_b64():
 def test_hash_code():
     sha1 = hash_code("./LICENSE")
     assert sha1.hexdigest() == "b09cd7856d58590578ee1a4f3ad45d1310a97f87"
+
+
+def test_hash_and_encode_as_b62():
+    id = UUID("10075f07-0b0b-48b0-9006-18724fb3be62")
+    assert hash_and_encode_as_b62(id.hex) == "7clAMMtTbqlKVQPmUbqnIq"

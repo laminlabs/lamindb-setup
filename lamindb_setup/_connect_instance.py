@@ -139,7 +139,7 @@ def connect(
         if settings_file.exists():
             isettings = load_instance_settings(settings_file)
             # mimic instance_result from hub
-            instance_result = {"id": isettings.id.hex}
+            instance_result = {"id": isettings._id.hex}
             # skip hub request for a purely local instance
             make_hub_request = isettings.is_remote
 
@@ -179,12 +179,12 @@ def connect(
                     if isettings.is_remote:
                         if _raise_not_reachable_error:
                             raise InstanceNotFoundError(message)
-                        return "instance-not-reachable"
+                        return "instance-not-found"
 
                 else:
                     if _raise_not_reachable_error:
                         raise InstanceNotFoundError(message)
-                    return "instance-not-reachable"
+                    return "instance-not-found"
 
         if storage is not None:
             update_isettings_with_storage(isettings, storage)
@@ -209,7 +209,7 @@ def connect(
                 raise SystemExit(msg)
             else:
                 logger.warning(
-                    f"instance exists with id {isettings.id.hex}, but database is not"
+                    f"instance exists with id {isettings._id.hex}, but database is not"
                     " loadable: re-initializing"
                 )
                 return "instance-corrupted-or-deleted", instance_result

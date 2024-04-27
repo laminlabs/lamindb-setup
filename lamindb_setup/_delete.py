@@ -26,7 +26,7 @@ def delete_cache(cache_dir: Path):
 
 
 def delete_exclusion_dir(isettings: InstanceSettings) -> None:
-    exclusion_dir = isettings.storage.root / f".lamindb/_exclusion/{isettings.id.hex}"
+    exclusion_dir = isettings.storage.root / f".lamindb/_exclusion/{isettings._id.hex}"
     if exclusion_dir.exists():
         exclusion_dir.rmdir()
 
@@ -143,7 +143,7 @@ def delete(
     logger.info(f"deleting instance {instance_slug}")
     # below we can skip check_storage_is_empty() because we already called
     # it above
-    delete_instance_on_hub(isettings.id, require_empty=False)
+    delete_instance_on_hub(isettings._id, require_empty=False)
     delete_by_isettings(isettings)
     if n_objects == 0 and isettings.storage.type == "local":
         # dir is only empty after sqlite file was delete via delete_by_isettings
