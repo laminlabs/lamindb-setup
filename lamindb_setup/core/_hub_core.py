@@ -131,7 +131,7 @@ def _delete_instance(
     if require_empty:
         root_string = instance_with_storage["storage"]["root"]
         # gate storage and instance deletion on empty storage location for
-        root_path = create_path(root_string, client.session.access_token)
+        root_path = create_path(root_string, client.auth.get_session().access_token)
         mark_storage_root(
             root_path, instance_with_storage["storage"]["lnid"]
         )  # address permission error
