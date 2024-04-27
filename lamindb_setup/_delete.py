@@ -143,7 +143,8 @@ def delete(
     logger.info(f"deleting instance {instance_slug}")
     # below we can skip check_storage_is_empty() because we already called
     # it above
-    delete_instance_on_hub(isettings._id, require_empty=False)
+    if isettings.is_remote:
+        delete_instance_on_hub(isettings._id, require_empty=False)
     delete_by_isettings(isettings)
     if n_objects == 0 and isettings.storage.type == "local":
         # dir is only empty after sqlite file was delete via delete_by_isettings
