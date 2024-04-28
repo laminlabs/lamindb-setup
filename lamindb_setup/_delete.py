@@ -132,17 +132,24 @@ def delete(
                 "hosted storage always has to be empty, ignoring `require_empty`"
             )
         require_empty = True
-    storage_records = get_storage_records_for_instance(isettings._id)
-    print(isettings._id)
-    for storage_record in storage_records:
-        account_for_sqlite_file = (
-            isettings.dialect == "sqlite"
-            and isettings.storage.root_as_str == storage_record["root"]
+    # first the default storage
+    n_objects = check_storage_is_empty(
+        isettings.storage.root,
+        raise_error=require_empty,
+        account_for_sqlite_file=isettings.dialect == "sqlite",
+    )
+    if isettings.storage._mark_storage_root.exists():
+        isettings.storage._mark_storage_root.unlink(
+            missing_ok=True  # this is totally weird, but needed on Py3.11
         )
-        n_objects = check_storage_is_empty(
+    # now everything that's on the hub
+    storage_records = get_storage_records_for_instance(isettings._id)
+    for storage_record in storage_records:
+        if storage_record["root"] == isettings.storage.root_as_str:
+            continue
+        check_storage_is_empty(
             storage_record["root"],  # type: ignore
             raise_error=require_empty,
-            account_for_sqlite_file=account_for_sqlite_file,
         )
         ssettings = StorageSettings(storage_record["root"])  # type: ignore
         if ssettings._mark_storage_root.exists():
