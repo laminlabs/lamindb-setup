@@ -61,14 +61,14 @@ def update_instance_record(instance_uuid: UUID, fields: dict) -> None:
 
 def init_storage(
     ssettings: StorageSettings,
-) -> UUID:
+) -> None:
     return call_with_fallback_auth(
         _init_storage,
         ssettings=ssettings,
     )
 
 
-def _init_storage(ssettings: StorageSettings, client: Client) -> UUID:
+def _init_storage(ssettings: StorageSettings, client: Client) -> None:
     from lamindb_setup import settings
 
     # storage roots are always stored without the trailing slash in the SQL
@@ -79,8 +79,31 @@ def _init_storage(ssettings: StorageSettings, client: Client) -> UUID:
     # f"{prefix}{root}"
     if ssettings.type_is_cloud:
         id = uuid.uuid5(uuid.NAMESPACE_URL, root)
+        response = client.table("storage").select("*").eq("root", root).execute()
+        if response.data:
+            existing_storage = response.data[0]
+            if ssettings._instance_id is not None:
+                # consider storage settings that are meant to be managed by an instance
+                if existing_storage["instance_id"] == ssettings._instance_id.hex:
+                    # everything is alright if the instance_id matches
+                    # we're probably just switching storage locations
+                    return None
+                else:
+                    raise ValueError(
+                        f"Storage root {root} is already in use by instance {existing_storage['instance_id']}."
+                    )
+            else:
+                # if the request is agnostic of the instance, that's alright,
+                # we'll update the instance_id with what's stored in the hub
+                ssettings._instance_id = UUID(existing_storage["instance_id"])
+                return None
     else:
         id = uuid.uuid4()
+    if ssettings._instance_id is None:
+        logger.warning(
+            f"will manage storage location {ssettings.root_as_str} with instance {settings.instance.slug}"
+        )
+        ssettings._instance_id = settings.instance._id
     fields = {
         "id": id.hex,
         "lnid": ssettings.uid,
@@ -88,15 +111,17 @@ def _init_storage(ssettings: StorageSettings, client: Client) -> UUID:
         "root": root,
         "region": ssettings.region,
         "type": ssettings.type,
-        "instance_id": ssettings._instance_id,
+        "instance_id": ssettings._instance_id.hex,
         # the empty string is important as we want the user flow to be through LaminHub
         # if this errors with unique constraint error, the user has to update
         # the description in LaminHub
         "description": "",
     }
     # TODO: add error message for violated unique constraint
+    # on root & description
     client.table("storage").upsert(fields).execute()
-    return id
+    ssettings._instance_id = UUID(existing_storage["instance_id"])
+    return None
 
 
 def delete_instance(identifier: UUID | str, require_empty: bool = True) -> str | None:

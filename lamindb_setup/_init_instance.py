@@ -38,11 +38,13 @@ def get_schema_module_name(schema_name) -> str:
     )
 
 
-def register_storage_in_instance(
-    ssettings: StorageSettings, isettings: InstanceSettings
-):
+def register_storage_in_instance(ssettings: StorageSettings):
     from lnschema_core.models import Storage
     from lnschema_core.users import current_user_id
+
+    from .core.hashing import hash_and_encode_as_b62
+
+    assert ssettings._instance_id is not None
 
     # how do we ensure that this function is only called passing
     # the managing instance?
@@ -50,12 +52,11 @@ def register_storage_in_instance(
         "root": ssettings.root_as_str,
         "type": ssettings.type,
         "region": ssettings.region,
-        "instance_uid": isettings.uid,
+        "instance_uid": hash_and_encode_as_b62(ssettings._instance_id.hex)[:12],
         "created_by_id": current_user_id(),
     }
     if ssettings._uid is not None:
         defaults["uid"] = ssettings._uid
-
     storage, _ = Storage.objects.update_or_create(
         root=ssettings.root_as_str,
         defaults=defaults,
@@ -88,7 +89,7 @@ def register_user_and_storage_in_instance(isettings: InstanceSettings, usettings
 
     try:
         register_user(usettings)
-        register_storage_in_instance(isettings.storage, isettings=isettings)
+        register_storage_in_instance(isettings.storage)
     except OperationalError as error:
         logger.warning(f"instance seems not set up ({error})")
 

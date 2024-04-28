@@ -112,8 +112,7 @@ def init_storage(root: UPathStr, instance_id: UUID | None = None) -> StorageSett
     if ssettings.type_is_cloud or instance_id is not None:
         from ._hub_core import init_storage as init_storage_hub
 
-        ssettings._uuid_ = init_storage_hub(ssettings)
-        logger.important(f"registered storage: {ssettings.root_as_str}")
+        init_storage_hub(ssettings)
     # below comes last only if everything else was successful
     mark_storage_root(ssettings.root, uid)
     return ssettings

@@ -196,12 +196,6 @@ class InstanceSettings:
         """
         return self._git_repo
 
-    # @property
-    # def id(self) -> UUID:
-    #     """The internal instance id."""
-    #     logger.warning("is deprecated, use _id instead")
-    #     return self._id_
-
     @property
     def _id(self) -> UUID:
         """The internal instance id."""
