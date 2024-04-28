@@ -1,6 +1,8 @@
 from __future__ import annotations
 
-from lamindb_setup.core.upath import UPath, create_path
+from pathlib import Path
+
+from lamindb_setup.core.upath import ProgressCallback, UPath, create_path
 
 
 def test_create_path():
@@ -18,3 +20,20 @@ def test_create_path():
         UPath("s3://lamindb-ci/xyz").as_posix()
         == create_path("s3://lamindb-ci/xyz/").as_posix()
     )
+
+
+def test_progress_callback_size():
+    pcb = ProgressCallback("test", "downloading", adjust_size=True)
+    pcb.set_size(10)
+
+    cwd = str(Path.cwd())
+    paths = zip([cwd, cwd], [cwd, cwd])
+    # adjust size for directories in path list
+    assert pcb.wrap(paths) == [(cwd, cwd), (cwd, cwd)]
+    assert pcb.size == 8
+    assert not pcb.adjust_size
+
+    pcb.adjust_size = True
+    pcb.branch(cwd, cwd, {})
+
+    assert pcb.size == 7
