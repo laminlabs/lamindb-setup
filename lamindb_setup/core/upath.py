@@ -238,6 +238,7 @@ def upload_from(
 
 def synchronize(self, objectpath: Path, error_no_origin: bool = True, **kwargs):
     """Sync to a local destination path."""
+    callback = kwargs.get("callback", fsspec.callbacks.DEFAULT_CALLBACK)
     # optimize the number of network requests
     if "timestamp" in kwargs:
         is_dir = False
@@ -296,14 +297,18 @@ def synchronize(self, objectpath: Path, error_no_origin: bool = True, **kwargs):
             need_synchronize = True
         if need_synchronize:
             origin_file_keys = []
-            for file, stat in files.items():
-                destination = PurePosixPath(file).relative_to(self.path)
-                origin_file_keys.append(destination.as_posix())
+            callback.set_size(len(files))
+            for file, stat in callback.wrap(files.items()):
+                file_key = PurePosixPath(file).relative_to(self.path)
+                origin_file_keys.append(file_key.as_posix())
                 timestamp = stat[modified_key].timestamp()
-                origin = UPath(f"{self.protocol}://{file}", **self._kwargs)
-                origin.synchronize(
-                    objectpath / destination, timestamp=timestamp, **kwargs
-                )
+
+                origin = f"{self.protocol}://{file}"
+                destination = objectpath / file_key
+                with callback.branched(origin, destination.as_posix()) as child:
+                    UPath(origin, **self._kwargs).synchronize(
+                        destination, timestamp=timestamp, callback=child, **kwargs
+                    )
             if destination_exists:
                 local_files = [file for file in objectpath.rglob("*") if file.is_file()]
                 if len(local_files) > len(files):
