@@ -186,7 +186,7 @@ class ProgressCallback(fsspec.callbacks.Callback):
             if print_progress:
                 return cls(objectname, action)
             else:
-                return fsspec.callbacks.DEFAULT_CALLBACK
+                return fsspec.callbacks.NoOpCallback
         return maybe_callback
 
 
