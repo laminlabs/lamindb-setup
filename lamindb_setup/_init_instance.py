@@ -244,7 +244,7 @@ def init(
         if instance_state == "connected":
             settings.auto_connect = True  # we can also debate this switch here
             return None
-        ssettings = init_storage(storage)
+        ssettings = init_storage(storage, instance_id=instance_id)
         isettings = InstanceSettings(
             id=instance_id,  # type: ignore
             owner=settings.user.handle,
