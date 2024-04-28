@@ -148,18 +148,26 @@ def create_mapper(
 def print_hook(size: int, value: int, objectname: str, action: str):
     progress_in_percent = (value / size) * 100
     out = f"... {action} {objectname}:" f" {min(progress_in_percent, 100):4.1f}%"
-    if progress_in_percent >= 100:
-        out += "\n"
     if "NBPRJ_TEST_NBPATH" not in os.environ:
         print(out, end="\r")
 
 
 class ProgressCallback(fsspec.callbacks.Callback):
-    def __init__(self, objectname: str, action: str):
+    def __init__(
+        self,
+        objectname: str,
+        action: Literal["uploading", "downloading", "synchronizing"],
+        adjust_size: bool = False,
+    ):
+        assert action in {"uploading", "downloading", "synchronizing"}
+
         super().__init__()
 
+        self.action = action
         print_progress = partial(print_hook, objectname=objectname, action=action)
         self.hooks = {"print_progress": print_progress}
+
+        self.adjust_size = adjust_size
 
     def absolute_update(self, value):
         pass
@@ -172,7 +180,26 @@ class ProgressCallback(fsspec.callbacks.Callback):
         self.call()
 
     def branch(self, path_1, path_2, kwargs):
-        return ChildProgressCallback(self)
+        if self.adjust_size:
+            if Path(path_2 if self.action != "uploading" else path_1).is_dir():
+                self.size -= 1
+        kwargs["callback"] = ChildProgressCallback(self)
+
+    def branched(self, path_1, path_2, **kwargs):
+        self.branch(path_1, path_2, kwargs)
+        return kwargs["callback"]
+
+    def wrap(self, iterable):
+        if self.adjust_size:
+            paths = []
+            for lpath, rpath in iterable:
+                paths.append((lpath, rpath))
+                if Path(lpath).is_dir():
+                    self.size -= 1
+            self.adjust_size = False
+            return paths
+        else:
+            return iterable
 
     @classmethod
     def requires_progress(
@@ -180,13 +207,14 @@ class ProgressCallback(fsspec.callbacks.Callback):
         maybe_callback: fsspec.callbacks.Callback | None,
         print_progress: bool,
         objectname: str,
-        action: str,
+        action: Literal["uploading", "downloading", "synchronizing"],
+        **kwargs,
     ):
         if maybe_callback is None:
             if print_progress:
-                return cls(objectname, action)
+                return cls(objectname, action, **kwargs)
             else:
-                return fsspec.callbacks.NoOpCallback
+                return fsspec.callbacks.NoOpCallback()
         return maybe_callback
 
 
@@ -199,11 +227,16 @@ class ChildProgressCallback(fsspec.callbacks.Callback):
     def relative_update(self, inc=1):
         self.parent.update_relative_value(inc / self.size)
 
+    def parent_update(self, inc=1):
+        self.parent.update_relative_value(inc)
+
 
 def download_to(self, path: UPathStr, print_progress: bool = False, **kwargs):
     """Download to a path."""
     if print_progress and "callback" not in kwargs:
-        callback = ProgressCallback(PurePosixPath(path).name, "downloading")
+        callback = ProgressCallback(
+            PurePosixPath(path).name, "downloading", adjust_size=True
+        )
         kwargs["callback"] = callback
 
     self.fs.download(str(self), str(path), **kwargs)
@@ -334,10 +367,11 @@ def synchronize(
 
                 origin = f"{self.protocol}://{file}"
                 destination = objectpath / file_key
-                with callback.branched(origin, destination.as_posix()) as child:
-                    UPath(origin, **self._kwargs).synchronize(
-                        destination, timestamp=timestamp, callback=child, **kwargs
-                    )
+                child = callback.branched(origin, destination.as_posix())
+                UPath(origin, **self._kwargs).synchronize(
+                    destination, timestamp=timestamp, callback=child, **kwargs
+                )
+                child.close()
             if destination_exists:
                 local_files = [file for file in objectpath.rglob("*") if file.is_file()]
                 if len(local_files) > len(files):
@@ -367,8 +401,9 @@ def synchronize(
         self.download_to(objectpath, **kwargs)
         os.utime(objectpath, times=(cloud_mts, cloud_mts))
     else:
-        if isinstance(callback, ChildProgressCallback):
-            callback.parent.update_relative_value(1)
+        # nothing happens if parent_update is not defined
+        # because of Callback.no_op
+        callback.parent_update()
 
 
 def modified(self) -> datetime | None:
