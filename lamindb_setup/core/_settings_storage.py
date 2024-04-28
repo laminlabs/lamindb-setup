@@ -75,7 +75,9 @@ def mark_storage_root(root: UPathStr, uid: str):
     mark_upath.write_text(uid)
 
 
-def init_storage(root: UPathStr, instance_id: UUID | None = None) -> StorageSettings:
+def init_storage(
+    root: UPathStr, instance_id: UUID | None = None, register_hub: bool | None = None
+) -> StorageSettings:
     if root is None:
         raise ValueError("`storage` argument can't be `None`")
     root_str = str(root)  # ensure we have a string
@@ -109,7 +111,7 @@ def init_storage(root: UPathStr, instance_id: UUID | None = None) -> StorageSett
         region=region,
         instance_id=instance_id,
     )
-    if ssettings.type_is_cloud or instance_id is not None:
+    if ssettings.type_is_cloud or register_hub:
         from ._hub_core import init_storage as init_storage_hub
 
         init_storage_hub(ssettings)

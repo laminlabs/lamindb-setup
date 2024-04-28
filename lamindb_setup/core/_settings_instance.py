@@ -180,7 +180,7 @@ class InstanceSettings:
             )
         local_root = convert_pathlike(local_root)
         assert isinstance(local_root, LocalPathClasses)
-        self._local_storage = init_storage(local_root)  # type: ignore
+        self._local_storage = init_storage(local_root, self._id, register_hub=True)  # type: ignore
         register_storage_in_instance(self._local_storage, self)  # type: ignore
 
     @property
