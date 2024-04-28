@@ -9,6 +9,7 @@ from lamin_utils import logger
 from ._connect_instance import INSTANCE_NOT_FOUND_MESSAGE
 from .core._hub_core import connect_instance as load_instance_from_hub
 from .core._hub_core import delete_instance as delete_instance_on_hub
+from .core._hub_core import get_storage_records_for_instance
 from .core._settings import settings
 from .core._settings_instance import InstanceSettings
 from .core._settings_load import load_instance_settings
@@ -51,10 +52,6 @@ def delete_by_isettings(isettings: InstanceSettings) -> None:
         if settings._instance_settings_path.exists():
             settings._instance_settings_path.unlink()
         settings._instance_settings = None
-    if isettings.storage._mark_storage_root.exists():
-        isettings.storage._mark_storage_root.unlink(
-            missing_ok=True
-        )  # this is totally weird, but needed on Py3.11
 
 
 def delete(
@@ -135,11 +132,22 @@ def delete(
                 "hosted storage always has to be empty, ignoring `require_empty`"
             )
         require_empty = True
-    n_objects = check_storage_is_empty(
-        isettings.storage.root,
-        raise_error=require_empty,
-        account_for_sqlite_file=isettings.dialect == "sqlite",
-    )
+    storage_records = get_storage_records_for_instance(isettings._id)
+    for storage_record in storage_records:
+        account_for_sqlite_file = (
+            isettings.dialect == "sqlite"
+            and isettings.storage.root_as_str == storage_record["root"]
+        )
+        n_objects = check_storage_is_empty(
+            storage_record["root"],  # type: ignore
+            raise_error=require_empty,
+            account_for_sqlite_file=account_for_sqlite_file,
+        )
+        ssettings = StorageSettings(storage_record["root"])  # type: ignore
+        if ssettings._mark_storage_root.exists():
+            ssettings._mark_storage_root.unlink(
+                missing_ok=True  # this is totally weird, but needed on Py3.11
+            )
     logger.info(f"deleting instance {instance_slug}")
     # below we can skip check_storage_is_empty() because we already called
     # it above

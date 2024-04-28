@@ -59,6 +59,24 @@ def update_instance_record(instance_uuid: UUID, fields: dict) -> None:
     )
 
 
+def get_storage_records_for_instance(
+    instance_id: UUID,
+) -> list[dict[str, str | int]]:
+    return call_with_fallback_auth(
+        _get_storage_records_for_instance,
+        instance_id=instance_id,
+    )
+
+
+def _get_storage_records_for_instance(
+    instance_id: UUID, client: Client
+) -> list[dict[str, str | int]]:
+    response = (
+        client.table("storage").delete().eq("instance_id", instance_id.hex).execute()
+    )
+    return response.data
+
+
 def init_storage(
     ssettings: StorageSettings,
 ) -> None:
@@ -120,7 +138,6 @@ def _init_storage(ssettings: StorageSettings, client: Client) -> None:
     # TODO: add error message for violated unique constraint
     # on root & description
     client.table("storage").upsert(fields).execute()
-    ssettings._instance_id = UUID(existing_storage["instance_id"])
     return None
 
 

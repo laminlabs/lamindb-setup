@@ -782,7 +782,13 @@ def check_storage_is_empty(
     n_offset_objects = 1  # because of touched dummy file, see mark_storage_root()
     if account_for_sqlite_file:
         n_offset_objects += 1  # because of SQLite file
-    objects = root_upath.fs.find(root_string)
+    if root_string.startswith(HOSTED_BUCKETS):
+        # in hosted buckets, count across entire root
+        directory_string = root_string
+    else:
+        # in any other storage location, only count in .lamindb
+        directory_string = root_string + "/.lamindb"
+    objects = root_upath.fs.find(directory_string)
     n_objects = len(objects)
     n_diff = n_objects - n_offset_objects
     ask_for_deletion = (
@@ -791,7 +797,7 @@ def check_storage_is_empty(
         else "consider deleting them"
     )
     message = (
-        f"Storage location contains {n_objects} objects "
+        f"Storage {directory_string} contains {n_objects} objects "
         f"({n_offset_objects} ignored) - {ask_for_deletion}\n{objects}"
     )
     if n_diff > 0:
