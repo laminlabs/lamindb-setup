@@ -228,7 +228,7 @@ def init(
             close_instance(mute=True)
         from .core._hub_core import init_instance as init_instance_hub
 
-        name_str, instance_id, instance_state, instance_slug = validate_init_args(
+        name_str, instance_id, instance_state, _ = validate_init_args(
             storage=storage,
             name=name,
             db=db,

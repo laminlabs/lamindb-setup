@@ -143,7 +143,7 @@ def delete(
     logger.info(f"deleting instance {instance_slug}")
     # below we can skip check_storage_is_empty() because we already called
     # it above
-    if isettings.is_remote:
+    if settings.user.handle != "anonymous":
         delete_instance_on_hub(isettings._id, require_empty=False)
     delete_by_isettings(isettings)
     if n_objects == 0 and isettings.storage.type == "local":

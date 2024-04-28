@@ -146,8 +146,12 @@ class StorageSettings:
         self._uuid_ = uuid
         self._root_init = convert_pathlike(root)
         if isinstance(self._root_init, LocalPathClasses):  # local paths
-            (self._root_init / ".lamindb").mkdir(parents=True, exist_ok=True)
-            self._root_init = self._root_init.resolve()
+            try:
+                (self._root_init / ".lamindb").mkdir(parents=True, exist_ok=True)
+                self._root_init = self._root_init.resolve()
+            except Exception:
+                logger.warning("unable to create .lamindb folder")
+                pass
         self._root = None
         self._instance_id = instance_id
         # we don't yet infer region here to make init fast
