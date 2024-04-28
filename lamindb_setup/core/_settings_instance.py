@@ -56,7 +56,7 @@ class InstanceSettings:
         self._git_repo = None if git_repo is None else sanitize_git_repo_url(git_repo)
         # local storage
         self._keep_artifacts_local = keep_artifacts_local
-        self._local_storage = None
+        self._local_storage: StorageSettings | None = None
 
     def __repr__(self):
         """Rich string representation."""
@@ -95,7 +95,7 @@ class InstanceSettings:
         """Instance name."""
         return self._name
 
-    def _search_local_root(self):
+    def _search_local_root(self, mute_warning: bool = False):
         from lnschema_core.models import Storage
 
         local_records = Storage.objects.filter(type="local")
@@ -121,10 +121,10 @@ class InstanceSettings:
         if found:
             self._local_storage = StorageSettings(record.root)
             logger.important(f"defaulting to local storage: {record}")
-        else:
+        elif not mute_warning:
             logger.warning(
                 f"none of the registered local storage locations were found in your environment: {local_records}"
-                "\n❗please register a new local storage location via `ln.settings.storage = storage_path` "
+                "\n❗ please register a new local storage location via `ln_setup.settings.instance.local_storage = local_root_path` "
                 "and re-load/connect the instance"
             )
 
@@ -172,7 +172,7 @@ class InstanceSettings:
 
         if not self._keep_artifacts_local:
             raise ValueError("`keep_artifacts_local` is not enabled for this instance.")
-        self._search_local_root()
+        self._search_local_root(mute_warning=True)
         if self._local_storage is not None:
             raise ValueError(
                 "You already configured a local storage root for this instance in this"
