@@ -124,7 +124,7 @@ class InstanceSettings:
         else:
             logger.warning(
                 f"none of the registered local storage locations were found in your environment: {local_records}"
-                "\n\nplease register a new local storage location via `ln.settings.storage = storage_path` "
+                "\n❗please register a new local storage location via `ln.settings.storage = storage_path` "
                 "and re-load/connect the instance"
             )
 
