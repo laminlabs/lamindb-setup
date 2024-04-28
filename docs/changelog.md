@@ -3,6 +3,7 @@
 <!-- prettier-ignore -->
 Name | PR | Developer | Date | Version
 --- | --- | --- | --- | ---
+✨ Proper progress bars for upload and download | [739](https://github.com/laminlabs/lamindb-setup/pull/739) | [Koncopd](https://github.com/Koncopd) | 2024-04-28 |
 ♻️ Truncate fsspec deps | [740](https://github.com/laminlabs/lamindb-setup/pull/740) | [Koncopd](https://github.com/Koncopd) | 2024-04-28 |
 ♻️ Refactor storage management | [734](https://github.com/laminlabs/lamindb-setup/pull/734) | [falexwolf](https://github.com/falexwolf) | 2024-04-27 |
 ⬆️ Upper and lower bounds for fsspec | [736](https://github.com/laminlabs/lamindb-setup/pull/736) | [Koncopd](https://github.com/Koncopd) | 2024-04-27 |
