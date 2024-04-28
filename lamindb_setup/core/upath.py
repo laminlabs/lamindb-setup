@@ -6,6 +6,7 @@ from __future__ import annotations
 import os
 from collections import defaultdict
 from datetime import datetime, timezone
+from functools import partial
 from itertools import islice
 from pathlib import Path, PurePosixPath
 from typing import TYPE_CHECKING, Any, Literal
@@ -144,44 +145,100 @@ def create_mapper(
         )
 
 
-def print_hook(size: int, value: int, **kwargs):
+def print_hook(size: int, value: int, objectname: str, action: str):
     progress_in_percent = (value / size) * 100
-    out = (
-        f"... {kwargs['action']} {Path(kwargs['filepath']).name}:"
-        f" {min(progress_in_percent, 100):4.1f}%"
-    )
-    if progress_in_percent >= 100:
-        out += "\n"
+    out = f"... {action} {objectname}:" f" {min(progress_in_percent, 100):4.1f}%"
     if "NBPRJ_TEST_NBPATH" not in os.environ:
         print(out, end="\r")
 
 
 class ProgressCallback(fsspec.callbacks.Callback):
-    def __init__(self, action: Literal["uploading", "downloading"]):
+    def __init__(
+        self,
+        objectname: str,
+        action: Literal["uploading", "downloading", "synchronizing"],
+        adjust_size: bool = False,
+    ):
+        assert action in {"uploading", "downloading", "synchronizing"}
+
         super().__init__()
+
         self.action = action
+        print_progress = partial(print_hook, objectname=objectname, action=action)
+        self.hooks = {"print_progress": print_progress}
+
+        self.adjust_size = adjust_size
+
+    def absolute_update(self, value):
+        pass
+
+    def relative_update(self, inc=1):
+        pass
+
+    def update_relative_value(self, inc=1):
+        self.value += inc
+        self.call()
 
     def branch(self, path_1, path_2, kwargs):
-        kwargs["callback"] = fsspec.callbacks.Callback(
-            hooks={"print_hook": print_hook}, filepath=path_1, action=self.action
-        )
+        if self.adjust_size:
+            if Path(path_2 if self.action != "uploading" else path_1).is_dir():
+                self.size -= 1
+        kwargs["callback"] = ChildProgressCallback(self)
 
-    def call(self, *args, **kwargs):
-        return None
+    def branched(self, path_1, path_2, **kwargs):
+        self.branch(path_1, path_2, kwargs)
+        return kwargs["callback"]
+
+    def wrap(self, iterable):
+        if self.adjust_size:
+            paths = []
+            for lpath, rpath in iterable:
+                paths.append((lpath, rpath))
+                if Path(lpath).is_dir():
+                    self.size -= 1
+            self.adjust_size = False
+            return paths
+        else:
+            return iterable
+
+    @classmethod
+    def requires_progress(
+        cls,
+        maybe_callback: fsspec.callbacks.Callback | None,
+        print_progress: bool,
+        objectname: str,
+        action: Literal["uploading", "downloading", "synchronizing"],
+        **kwargs,
+    ):
+        if maybe_callback is None:
+            if print_progress:
+                return cls(objectname, action, **kwargs)
+            else:
+                return fsspec.callbacks.NoOpCallback()
+        return maybe_callback
+
+
+class ChildProgressCallback(fsspec.callbacks.Callback):
+    def __init__(self, parent: ProgressCallback):
+        super().__init__()
+
+        self.parent = parent
+
+    def parent_update(self, inc=1):
+        self.parent.update_relative_value(inc)
+
+    def relative_update(self, inc=1):
+        self.parent_update(inc / self.size)
 
 
 def download_to(self, path: UPathStr, print_progress: bool = False, **kwargs):
     """Download to a path."""
-    if print_progress:
-        # can't do path.is_dir() because path doesn't exist
-        # so assume any destination without a suffix is a dir
-        # this is temporary until we have a proper progress bar for directories
-        if Path(path).suffix not in {"", ".zarr"}:
-            cb = ProgressCallback("downloading")
-        else:
-            # todo: make proper progress bar for directories
-            cb = fsspec.callbacks.NoOpCallback()
-        kwargs["callback"] = cb
+    if print_progress and "callback" not in kwargs:
+        callback = ProgressCallback(
+            PurePosixPath(path).name, "downloading", adjust_size=True
+        )
+        kwargs["callback"] = callback
+
     self.fs.download(str(self), str(path), **kwargs)
 
 
@@ -193,20 +250,16 @@ def upload_from(
     **kwargs,
 ):
     """Upload from a local path."""
-    path_is_dir = Path(path).is_dir()
+    path = Path(path)
+    path_is_dir = path.is_dir()
     if not path_is_dir:
         dir_inplace = False
 
-    if print_progress:
-        if not path_is_dir:
-            cb = ProgressCallback("uploading")
-        else:
-            # todo: make proper progress bar for directories
-            cb = fsspec.callbacks.NoOpCallback()
-        kwargs["callback"] = cb
+    if print_progress and "callback" not in kwargs:
+        callback = ProgressCallback(path.name, "uploading")
+        kwargs["callback"] = callback
 
     if dir_inplace:
-        path = Path(path)
         source = [f for f in path.rglob("*") if f.is_file()]
         destination = [str(self / f.relative_to(path)) for f in source]
         source = [str(f) for f in source]  # type: ignore
@@ -236,7 +289,14 @@ def upload_from(
             del self.fs.dircache[bucket]
 
 
-def synchronize(self, objectpath: Path, error_no_origin: bool = True, **kwargs):
+def synchronize(
+    self,
+    objectpath: Path,
+    error_no_origin: bool = True,
+    print_progress: bool = False,
+    callback: fsspec.callbacks.Callback | None = None,
+    **kwargs,
+):
     """Sync to a local destination path."""
     # optimize the number of network requests
     if "timestamp" in kwargs:
@@ -295,15 +355,23 @@ def synchronize(self, objectpath: Path, error_no_origin: bool = True, **kwargs):
             destination_exists = False
             need_synchronize = True
         if need_synchronize:
+            callback = ProgressCallback.requires_progress(
+                callback, print_progress, objectpath.name, "synchronizing"
+            )
+            callback.set_size(len(files))
             origin_file_keys = []
-            for file, stat in files.items():
-                destination = PurePosixPath(file).relative_to(self.path)
-                origin_file_keys.append(destination.as_posix())
+            for file, stat in callback.wrap(files.items()):
+                file_key = PurePosixPath(file).relative_to(self.path)
+                origin_file_keys.append(file_key.as_posix())
                 timestamp = stat[modified_key].timestamp()
-                origin = UPath(f"{self.protocol}://{file}", **self._kwargs)
-                origin.synchronize(
-                    objectpath / destination, timestamp=timestamp, **kwargs
+
+                origin = f"{self.protocol}://{file}"
+                destination = objectpath / file_key
+                child = callback.branched(origin, destination.as_posix())
+                UPath(origin, **self._kwargs).synchronize(
+                    destination, timestamp=timestamp, callback=child, **kwargs
                 )
+                child.close()
             if destination_exists:
                 local_files = [file for file in objectpath.rglob("*") if file.is_file()]
                 if len(local_files) > len(files):
@@ -319,6 +387,10 @@ def synchronize(self, objectpath: Path, error_no_origin: bool = True, **kwargs):
         return None
 
     # synchronization logic for files
+    callback = ProgressCallback.requires_progress(
+        callback, print_progress, objectpath.name, "synchronizing"
+    )
+    kwargs["callback"] = callback
     if objectpath.exists():
         local_mts = objectpath.stat().st_mtime  # type: ignore
         need_synchronize = cloud_mts > local_mts
@@ -328,6 +400,10 @@ def synchronize(self, objectpath: Path, error_no_origin: bool = True, **kwargs):
     if need_synchronize:
         self.download_to(objectpath, **kwargs)
         os.utime(objectpath, times=(cloud_mts, cloud_mts))
+    else:
+        # nothing happens if parent_update is not defined
+        # because of Callback.no_op
+        callback.parent_update()
 
 
 def modified(self) -> datetime | None:
