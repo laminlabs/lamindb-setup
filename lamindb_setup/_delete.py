@@ -133,6 +133,7 @@ def delete(
             )
         require_empty = True
     storage_records = get_storage_records_for_instance(isettings._id)
+    print(isettings._id)
     for storage_record in storage_records:
         account_for_sqlite_file = (
             isettings.dialect == "sqlite"

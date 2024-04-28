@@ -177,23 +177,33 @@ def _delete_instance(
         logger.warning("instance not found")
         return "instance-not-found"
 
+    storage_records = get_storage_records_for_instance(
+        UUID(instance_with_storage["id"])
+    )
+
     if require_empty:
-        root_string = instance_with_storage["storage"]["root"]
-        # gate storage and instance deletion on empty storage location for
-        if client.auth.get_session() is not None:
-            access_token = client.auth.get_session().access_token
-        else:
-            access_token = None
-        root_path = create_path(root_string, access_token)
-        mark_storage_root(
-            root_path, instance_with_storage["storage"]["lnid"]
-        )  # address permission error
-        account_for_sqlite_file = instance_with_storage["db_scheme"] is None
-        check_storage_is_empty(
-            root_path, account_for_sqlite_file=account_for_sqlite_file
-        )
+        for storage_record in storage_records:
+            account_for_sqlite_file = (
+                instance_with_storage["db_scheme"] is None
+                and instance_with_storage["root"] == storage_record["root"]
+            )
+            root_string = storage_record["root"]
+            # gate storage and instance deletion on empty storage location for
+            if client.auth.get_session() is not None:
+                access_token = client.auth.get_session().access_token
+            else:
+                access_token = None
+            root_path = create_path(root_string, access_token)
+            mark_storage_root(
+                root_path,
+                storage_record["lnid"],  # type: ignore
+            )  # address permission error
+            check_storage_is_empty(
+                root_path, account_for_sqlite_file=account_for_sqlite_file
+            )
     _update_instance_record(instance_with_storage["id"], {"storage_id": None}, client)
-    _delete_storage_record(UUID(instance_with_storage["storage_id"]), client)
+    for storage_record in storage_records:
+        _delete_storage_record(UUID(storage_record["id"]), client)  # type: ignore
     _delete_instance_record(UUID(instance_with_storage["id"]), client)
     return None
 
