@@ -77,7 +77,10 @@ def _init_storage(ssettings: StorageSettings, client: Client) -> UUID:
     # in the future, we could also encode a prefix to model local storage
     # locations
     # f"{prefix}{root}"
-    id = uuid.uuid5(uuid.NAMESPACE_URL, root)
+    if ssettings.type_is_cloud:
+        id = uuid.uuid5(uuid.NAMESPACE_URL, root)
+    else:
+        id = uuid.uuid4()
     fields = {
         "id": id.hex,
         "lnid": ssettings.uid,
@@ -85,9 +88,13 @@ def _init_storage(ssettings: StorageSettings, client: Client) -> UUID:
         "root": root,
         "region": ssettings.region,
         "type": ssettings.type,
-        "aws_account_id": ssettings._aws_account_id,
-        "description": ssettings._description,
+        "instance_id": ssettings._instance_id,
+        # the empty string is important as we want the user flow to be through LaminHub
+        # if this errors with unique constraint error, the user has to update
+        # the description in LaminHub
+        "description": "",
     }
+    # TODO: add error message for violated unique constraint
     client.table("storage").upsert(fields).execute()
     return id
 

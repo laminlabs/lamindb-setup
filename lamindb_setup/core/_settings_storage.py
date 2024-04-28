@@ -75,7 +75,7 @@ def mark_storage_root(root: UPathStr, uid: str):
     mark_upath.write_text(uid)
 
 
-def init_storage(root: UPathStr) -> StorageSettings:
+def init_storage(root: UPathStr, instance_id: UUID | None = None) -> StorageSettings:
     if root is None:
         raise ValueError("`storage` argument can't be `None`")
     root_str = str(root)  # ensure we have a string
@@ -103,13 +103,18 @@ def init_storage(root: UPathStr) -> StorageSettings:
         except Exception as e:
             logger.error("`storage` is not a valid local, GCP storage or AWS S3 path")
             raise e
-    ssettings = StorageSettings(uid=uid, root=root_str, region=region)
-    if ssettings.type_is_cloud:
+    ssettings = StorageSettings(
+        uid=uid,
+        root=root_str,
+        region=region,
+        instance_id=instance_id,
+    )
+    if ssettings.type_is_cloud or instance_id is not None:
         from ._hub_core import init_storage as init_storage_hub
 
-        ssettings._description = f"Created as default storage for instance {uid}"
         ssettings._uuid_ = init_storage_hub(ssettings)
         logger.important(f"registered storage: {ssettings.root_as_str}")
+    # below comes last only if everything else was successful
     mark_storage_root(ssettings.root, uid)
     return ssettings
 
@@ -126,7 +131,7 @@ def _process_cache_path(cache_path: str | Path | UPath | None):
 
 
 class StorageSettings:
-    """Manage cloud or local storage settings."""
+    """Settings for a given storage location (local or cloud)."""
 
     def __init__(
         self,
@@ -134,6 +139,7 @@ class StorageSettings:
         region: str | None = None,
         uid: str | None = None,
         uuid: UUID | None = None,
+        instance_id: UUID | None = None,
         access_token: str | None = None,
     ):
         self._uid = uid
@@ -143,8 +149,7 @@ class StorageSettings:
             (self._root_init / ".lamindb").mkdir(parents=True, exist_ok=True)
             self._root_init = self._root_init.resolve()
         self._root = None
-        self._aws_account_id: int | None = None
-        self._description: str | None = None
+        self._instance_id = instance_id
         # we don't yet infer region here to make init fast
         self._region = region
         # would prefer to type below as Registry, but need to think through import order
@@ -169,7 +174,7 @@ class StorageSettings:
 
     @property
     def id(self) -> int:
-        """Storage id."""
+        """Storage id in current instance."""
         return self.record.id
 
     @property
@@ -190,7 +195,7 @@ class StorageSettings:
 
     @property
     def record(self) -> Any:
-        """Storage record."""
+        """Storage record in current instance."""
         if self._record is None:
             # dynamic import because of import order
             from lnschema_core.models import Storage
