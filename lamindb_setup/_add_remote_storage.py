@@ -4,7 +4,7 @@ from typing import TYPE_CHECKING
 
 from lamin_utils import logger
 
-from ._init_instance import register_user_and_storage
+from ._init_instance import register_user_and_storage_in_instance
 from .core._settings import settings
 from .core._settings_instance import InstanceSettings
 from .core._settings_storage import StorageSettings
@@ -44,7 +44,7 @@ def switch_default_storage(root: UPathStr, **fs_kwargs):
     )
 
     new_isettings._persist()  # this also updates the settings object
-    register_user_and_storage(new_isettings, settings.user)
+    register_user_and_storage_in_instance(new_isettings, settings.user)
     # we are not doing this for now because of difficulties to define the right RLS policy
     # https://laminlabs.slack.com/archives/C04FPE8V01W/p1687948324601929?thread_ts=1687531921.394119&cid=C04FPE8V01W
     # if settings.instance.is_remote:
