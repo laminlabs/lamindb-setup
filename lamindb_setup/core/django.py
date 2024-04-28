@@ -106,5 +106,5 @@ def setup_django(
     global IS_SETUP
     IS_SETUP = True
 
-    if isettings._local_storage_on:
+    if isettings.keep_artifacts_local:
         isettings._search_local_root()

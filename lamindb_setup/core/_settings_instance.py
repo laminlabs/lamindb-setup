@@ -11,7 +11,7 @@ from ._hub_client import call_with_fallback
 from ._hub_crud import select_account_handle_name_by_lnid
 from ._hub_utils import LaminDsn, LaminDsnModel
 from ._settings_save import save_instance_settings
-from ._settings_storage import StorageSettings
+from ._settings_storage import StorageSettings, mark_storage_root
 from ._settings_store import current_instance_settings_file, instance_settings_file
 from .cloud_sqlite_locker import (
     EXPIRATION_TIME,
@@ -21,11 +21,6 @@ from .upath import LocalPathClasses, UPath, convert_pathlike
 
 if TYPE_CHECKING:
     from uuid import UUID
-
-LOCAL_STORAGE_ROOT_WARNING = (
-    "No local storage root found, set via `ln.setup.settings.instance.local_storage ="
-    " local_root`"
-)
 
 
 def sanitize_git_repo_url(repo_url: str) -> str:
@@ -42,7 +37,7 @@ class InstanceSettings:
         owner: str,  # owner handle
         name: str,  # instance name
         storage: StorageSettings,  # storage location
-        local_storage: bool = False,  # default to local storage
+        keep_artifacts_local: bool = False,  # default to local storage
         uid: str | None = None,  # instance uid/lnid
         db: str | None = None,  # DB URI
         schema: str | None = None,  # comma-separated string of schema names
@@ -60,7 +55,7 @@ class InstanceSettings:
         self._schema_str: str | None = schema
         self._git_repo = None if git_repo is None else sanitize_git_repo_url(git_repo)
         # local storage
-        self._local_storage_on = local_storage
+        self._keep_artifacts_local = keep_artifacts_local
         self._local_storage = None
 
     def __repr__(self):
@@ -103,14 +98,38 @@ class InstanceSettings:
     def _search_local_root(self):
         from lnschema_core.models import Storage
 
-        records = Storage.objects.filter(type="local").all()
-        for record in records:
+        local_records = Storage.objects.filter(type="local")
+        found = False
+        for record in local_records.all():
             if Path(record.root).exists():
-                self._local_storage = StorageSettings(record.root)
-                logger.important(f"defaulting to local storage: {record}")
-                break
-        if self._local_storage is None:
-            logger.warning(LOCAL_STORAGE_ROOT_WARNING)
+                marker_path = record.root / ".lamindb/_is_initialized"
+                if marker_path.exists():
+                    uid = marker_path.read_text()
+                    if uid == self.uid:
+                        found = True
+                        break
+                    elif uid == "":
+                        # legacy instance that was not yet marked properly
+                        mark_storage_root(record.root, record.uid)
+                    else:
+                        continue
+                else:
+                    # legacy instance that was not yet marked at all
+                    mark_storage_root(record.root, record.uid)
+                    break
+        if found:
+            self._local_storage = StorageSettings(record.root)
+            logger.important(f"defaulting to local storage: {record}")
+        else:
+            logger.warning(
+                f"none of the registered local storage locations were found in your environment: {local_records.df()}"
+                "\n\nplease register a new local storage location via `ln.settings.storage = storage_path` "
+                "and re-load/connect the instance"
+            )
+
+    @property
+    def keep_artifacts_local(self) -> bool:
+        return self._keep_artifacts_local
 
     @property
     def local_storage(self) -> StorageSettings:
@@ -128,12 +147,12 @@ class InstanceSettings:
         Upon passing `upload=True` in `artifact.save(upload=True)`, you upload the
         artifact to the default cloud storage location.
         """
-        if not self._local_storage_on:
-            raise ValueError("Local storage is not enabled for this instance.")
+        if not self._keep_artifacts_local:
+            raise ValueError("`keep_artifacts_local` is not enabled for this instance.")
         if self._local_storage is None:
             self._search_local_root()
         if self._local_storage is None:
-            raise ValueError(LOCAL_STORAGE_ROOT_WARNING)
+            raise ValueError()
         return self._local_storage
 
     @local_storage.setter
@@ -152,7 +171,7 @@ class InstanceSettings:
         assert isinstance(local_root, LocalPathClasses)
         self._local_storage = StorageSettings(local_root)  # type: ignore
         register_storage(self._local_storage)  # type: ignore
-        self._local_storage_on = True
+        self._keep_artifacts_local = True
         update_instance_record(self._id, {"storage_mode": "hybrid"})
 
     @property
