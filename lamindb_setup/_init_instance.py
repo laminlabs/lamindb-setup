@@ -38,20 +38,25 @@ def get_schema_module_name(schema_name) -> str:
     )
 
 
-def register_storage(ssettings: StorageSettings):
+def register_storage_in_instance(
+    ssettings: StorageSettings, isettings: InstanceSettings
+):
     from lnschema_core.models import Storage
     from lnschema_core.users import current_user_id
 
+    # how do we ensure that this function is only called passing
+    # the managing instance?
     defaults = {
         "root": ssettings.root_as_str,
         "type": ssettings.type,
         "region": ssettings.region,
+        "instance_uid": isettings.uid,
         "created_by_id": current_user_id(),
     }
     if ssettings._uid is not None:
         defaults["uid"] = ssettings._uid
 
-    storage, created = Storage.objects.update_or_create(
+    storage, _ = Storage.objects.update_or_create(
         root=ssettings.root_as_str,
         defaults=defaults,
     )
@@ -77,13 +82,13 @@ def register_user(usettings):
             pass
 
 
-def register_user_and_storage(isettings: InstanceSettings, usettings):
+def register_user_and_storage_in_instance(isettings: InstanceSettings, usettings):
     """Register user & storage in DB."""
     from django.db.utils import OperationalError
 
     try:
         register_user(usettings)
-        register_storage(isettings.storage)
+        register_storage_in_instance(isettings.storage, isettings=isettings)
     except OperationalError as error:
         logger.warning(f"instance seems not set up ({error})")
 
@@ -289,7 +294,7 @@ def load_from_isettings(
 
     if init:
         # during init both user and storage need to be registered
-        register_user_and_storage(isettings, settings.user)
+        register_user_and_storage_in_instance(isettings, settings.user)
         write_bionty_sources(isettings)
         isettings._update_cloud_sqlite_file(unlock_cloud_sqlite=False)
     else:

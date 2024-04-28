@@ -101,8 +101,9 @@ class InstanceSettings:
         local_records = Storage.objects.filter(type="local")
         found = False
         for record in local_records.all():
-            if Path(record.root).exists():
-                marker_path = record.root / ".lamindb/_is_initialized"
+            root_path = Path(record.root)
+            if root_path.exists():
+                marker_path = root_path / ".lamindb/_is_initialized"
                 if marker_path.exists():
                     uid = marker_path.read_text()
                     if uid == self.uid:
@@ -167,7 +168,7 @@ class InstanceSettings:
 
     @local_storage.setter
     def local_storage(self, local_root: Path):
-        from lamindb_setup._init_instance import register_storage
+        from lamindb_setup._init_instance import register_storage_in_instance
 
         if not self._keep_artifacts_local:
             raise ValueError("`keep_artifacts_local` is not enabled for this instance.")
@@ -180,7 +181,7 @@ class InstanceSettings:
         local_root = convert_pathlike(local_root)
         assert isinstance(local_root, LocalPathClasses)
         self._local_storage = init_storage(local_root)  # type: ignore
-        register_storage(self._local_storage)  # type: ignore
+        register_storage_in_instance(self._local_storage, self)  # type: ignore
 
     @property
     def slug(self) -> str:
