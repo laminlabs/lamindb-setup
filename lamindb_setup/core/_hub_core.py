@@ -29,6 +29,7 @@ from ._hub_utils import (
     LaminDsn,
     LaminDsnModel,
 )
+from ._settings import settings
 from ._settings_storage import StorageSettings, base62
 
 if TYPE_CHECKING:
@@ -112,10 +113,19 @@ def _select_storage(
 def init_storage(
     ssettings: StorageSettings,
 ) -> None:
-    return call_with_fallback_auth(
-        _init_storage,
-        ssettings=ssettings,
-    )
+    if settings.user.handle != "anonymous":
+        return call_with_fallback_auth(
+            _init_storage,
+            ssettings=ssettings,
+        )
+    else:
+        storage_exists = call_with_fallback(
+            _select_storage, ssettings=ssettings, update_uid=True
+        )
+        if storage_exists:
+            return None
+        else:
+            raise ValueError("Log in to create a storage location on the hub.")
 
 
 def _init_storage(ssettings: StorageSettings, client: Client) -> None:
