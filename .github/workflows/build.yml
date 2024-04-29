@@ -132,8 +132,8 @@ jobs:
       - name: Set env file for local test of edge functions
         run: |
           touch .env.local
-          echo "AWS_ACCESS_KEY_ID_LAMIN_MANAGER=${{ secrets.AWS_ACCESS_KEY_ID_LAMIN_MANAGER }}" >> .env.local
-          echo "AWS_SECRET_ACCESS_KEY_LAMIN_MANAGER=${{ secrets.AWS_SECRET_ACCESS_KEY_LAMIN_MANAGER }}" >> .env.local
+          echo "AWS_ACCESS_KEY_ID_LAMIN_MANAGER=${{ secrets.AWS_ACCESS_KEY_ID_LAMIN_MANAGER_TEST }}" >> .env.local
+          echo "AWS_SECRET_ACCESS_KEY_LAMIN_MANAGER=${{ secrets.AWS_SECRET_ACCESS_KEY_LAMIN_MANAGER_TEST }}" >> .env.local
         working-directory: laminhub/rest-hub/supabase
       - uses: actions/setup-python@v4
         with:
