@@ -177,7 +177,7 @@ def _delete_instance(
         )
 
     if instance_with_storage is None:
-        logger.warning("instance not found")
+        logger.important("not deleting instance from hub as instance not found there")
         return "instance-not-found"
 
     storage_records = get_storage_records_for_instance(
@@ -205,6 +205,8 @@ def _delete_instance(
                 root_path, account_for_sqlite_file=account_for_sqlite_file
             )
     _update_instance_record(instance_with_storage["id"], {"storage_id": None}, client)
+    # first delete the storage records because we will turn instance_id on
+    # storage into a FK soon
     for storage_record in storage_records:
         _delete_storage_record(UUID(storage_record["id"]), client)  # type: ignore
     _delete_instance_record(UUID(instance_with_storage["id"]), client)
