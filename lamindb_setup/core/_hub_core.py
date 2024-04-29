@@ -198,7 +198,7 @@ def _delete_instance(
         for storage_record in storage_records:
             account_for_sqlite_file = (
                 instance_with_storage["db_scheme"] is None
-                and instance_with_storage["root"] == storage_record["root"]
+                and instance_with_storage["storage"]["root"] == storage_record["root"]
             )
             root_string = storage_record["root"]
             # gate storage and instance deletion on empty storage location for
