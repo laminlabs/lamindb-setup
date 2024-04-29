@@ -165,6 +165,8 @@ def delete(
     # if .lndb file was delete, then we might count -1
     if n_objects <= 0 and isettings.storage.type == "local":
         # dir is only empty after sqlite file was delete via delete_by_isettings
-        (isettings.storage.root / ".lamindb").rmdir()
-        isettings.storage.root.rmdir()
+        if (isettings.storage.root / ".lamindb").exists:
+            (isettings.storage.root / ".lamindb").rmdir()
+        if isettings.storage.root.exists():
+            isettings.storage.root.rmdir()
     return None
