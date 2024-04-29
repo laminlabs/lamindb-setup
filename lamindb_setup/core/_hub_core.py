@@ -72,7 +72,7 @@ def _get_storage_records_for_instance(
     instance_id: UUID, client: Client
 ) -> list[dict[str, str | int]]:
     response = (
-        client.table("storage").delete().eq("instance_id", instance_id.hex).execute()
+        client.table("storage").select().eq("instance_id", instance_id.hex).execute()
     )
     return response.data
 
