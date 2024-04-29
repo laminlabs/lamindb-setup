@@ -108,7 +108,7 @@ def _init_storage(ssettings: StorageSettings, client: Client) -> None:
                     return None
                 else:
                     raise ValueError(
-                        f"Storage root {root} is already in use by instance {existing_storage['instance_id']}."
+                        f"Storage root {root} is already managed by instance {existing_storage['instance_id']}."
                     )
             else:
                 # if the request is agnostic of the instance, that's alright,
