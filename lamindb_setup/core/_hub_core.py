@@ -105,6 +105,7 @@ def _init_storage(ssettings: StorageSettings, client: Client) -> None:
                 if existing_storage["instance_id"] == ssettings._instance_id.hex:
                     # everything is alright if the instance_id matches
                     # we're probably just switching storage locations
+                    ssettings._uuid_ = UUID(existing_storage["id"])
                     return None
                 else:
                     raise ValueError(
@@ -113,6 +114,7 @@ def _init_storage(ssettings: StorageSettings, client: Client) -> None:
             else:
                 # if the request is agnostic of the instance, that's alright,
                 # we'll update the instance_id with what's stored in the hub
+                ssettings._uuid_ = UUID(existing_storage["id"])
                 ssettings._instance_id = UUID(existing_storage["instance_id"])
                 return None
     else:
@@ -138,6 +140,7 @@ def _init_storage(ssettings: StorageSettings, client: Client) -> None:
     # TODO: add error message for violated unique constraint
     # on root & description
     client.table("storage").upsert(fields).execute()
+    ssettings._uuid_ = id
     return None
 
 
