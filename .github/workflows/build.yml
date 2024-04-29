@@ -205,7 +205,7 @@ jobs:
           cache: "pip"
           cache-dependency-path: ".github/workflows/build.yml"
       - run: pip install -U laminci
-      - run: nox -s "install(group='storage')"
+      - run: nox -s "install(group='docs')"
       - uses: actions/download-artifact@v2
       - run: nox -s docs
       - uses: nwtgck/actions-netlify@v1.2

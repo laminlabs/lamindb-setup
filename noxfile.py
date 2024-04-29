@@ -24,7 +24,7 @@ def lint(session: nox.Session) -> None:
 @nox.session
 @nox.parametrize(
     "group",
-    ["hub-local", "hub-prod", "hub-cloud", "storage"],
+    ["hub-local", "hub-prod", "hub-cloud", "storage", "docs"],
 )
 def install(session: nox.Session, group: str) -> None:
     no_deps_packages = "git+https://github.com/laminlabs/lnschema-bionty git+https://github.com/laminlabs/lnschema-core lamin-cli"
@@ -33,6 +33,10 @@ uv pip install --system --no-deps {no_deps_packages}
 """
     if group == "hub-cloud":
         cmds = cloud_prod_installs + "uv pip install --system ./laminhub/rest-hub"
+    elif group == "docs":
+        cmds = (
+            """uv pip install --system git+https://github.com/laminlabs/lnschema-core"""
+        )
     elif group == "storage":
         cmds = """uv pip install --system gcsfs"""
     elif group == "hub-prod":
