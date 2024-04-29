@@ -168,6 +168,7 @@ def connect(
                     schema=instance_result["schema_str"],
                     git_repo=instance_result["git_repo"],
                     keep_artifacts_local=bool(instance_result["keep_artifacts_local"]),
+                    is_on_hub=True,
                 )
                 check_whether_migrations_in_sync(instance_result["lamindb_version"])
             else:

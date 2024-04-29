@@ -49,8 +49,9 @@ def delete_storage_record(
 def _delete_storage_record(storage_uuid: UUID, client: Client) -> None:
     if storage_uuid is None:
         return None
-    logger.important(f"deleting storage {storage_uuid.hex}")
-    client.table("storage").delete().eq("id", storage_uuid.hex).execute()
+    response = client.table("storage").delete().eq("id", storage_uuid.hex).execute()
+    if response.data:
+        logger.important(f"deleted storage record on hub {storage_uuid.hex}")
 
 
 def update_instance_record(instance_uuid: UUID, fields: dict) -> None:
@@ -72,9 +73,40 @@ def _get_storage_records_for_instance(
     instance_id: UUID, client: Client
 ) -> list[dict[str, str | int]]:
     response = (
-        client.table("storage").select().eq("instance_id", instance_id.hex).execute()
+        client.table("storage").select("*").eq("instance_id", instance_id.hex).execute()
     )
     return response.data
+
+
+def _select_storage(
+    ssettings: StorageSettings, update_uid: bool, client: Client
+) -> bool:
+    root = ssettings.root_as_str
+    response = client.table("storage").select("*").eq("root", root).execute()
+    if not response.data:
+        return False
+    else:
+        existing_storage = response.data[0]
+        if ssettings._instance_id is not None:
+            # consider storage settings that are meant to be managed by an instance
+            if UUID(existing_storage["instance_id"]) != ssettings._instance_id:
+                # everything is alright if the instance_id matches
+                # we're probably just switching storage locations
+                # below can be turned into a warning and then delegate the error
+                # to a unique constraint violation below
+                raise ValueError(
+                    f"Storage root {root} is already managed by instance {existing_storage['instance_id']}."
+                )
+        else:
+            # if the request is agnostic of the instance, that's alright,
+            # we'll update the instance_id with what's stored in the hub
+            ssettings._instance_id = UUID(existing_storage["instance_id"])
+        ssettings._uuid_ = UUID(existing_storage["id"])
+        if update_uid:
+            ssettings._uid = existing_storage["lnid"]
+        else:
+            assert ssettings._uid == existing_storage["lnid"]
+        return True
 
 
 def init_storage(
@@ -92,31 +124,10 @@ def _init_storage(ssettings: StorageSettings, client: Client) -> None:
     # storage roots are always stored without the trailing slash in the SQL
     # database
     root = ssettings.root_as_str
-    # in the future, we could also encode a prefix to model local storage
-    # locations
-    # f"{prefix}{root}"
+    if _select_storage(ssettings, update_uid=True, client=client):
+        return None
     if ssettings.type_is_cloud:
         id = uuid.uuid5(uuid.NAMESPACE_URL, root)
-        response = client.table("storage").select("*").eq("root", root).execute()
-        if response.data:
-            existing_storage = response.data[0]
-            if ssettings._instance_id is not None:
-                # consider storage settings that are meant to be managed by an instance
-                if existing_storage["instance_id"] == ssettings._instance_id.hex:
-                    # everything is alright if the instance_id matches
-                    # we're probably just switching storage locations
-                    ssettings._uuid_ = UUID(existing_storage["id"])
-                    return None
-                else:
-                    raise ValueError(
-                        f"Storage root {root} is already managed by instance {existing_storage['instance_id']}."
-                    )
-            else:
-                # if the request is agnostic of the instance, that's alright,
-                # we'll update the instance_id with what's stored in the hub
-                ssettings._uuid_ = UUID(existing_storage["id"])
-                ssettings._instance_id = UUID(existing_storage["instance_id"])
-                return None
     else:
         id = uuid.uuid4()
     if ssettings._instance_id is None:
@@ -183,7 +194,6 @@ def _delete_instance(
     storage_records = get_storage_records_for_instance(
         UUID(instance_with_storage["id"])
     )
-
     if require_empty:
         for storage_record in storage_records:
             account_for_sqlite_file = (

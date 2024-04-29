@@ -42,6 +42,7 @@ class InstanceSettings:
         db: str | None = None,  # DB URI
         schema: str | None = None,  # comma-separated string of schema names
         git_repo: str | None = None,  # a git repo URL
+        is_on_hub: bool = False,  # initialized from hub
     ):
         from ._hub_utils import validate_db_arg
 
@@ -57,6 +58,7 @@ class InstanceSettings:
         # local storage
         self._keep_artifacts_local = keep_artifacts_local
         self._local_storage: StorageSettings | None = None
+        self._is_on_hub = is_on_hub
 
     def __repr__(self):
         """Rich string representation."""
@@ -349,6 +351,25 @@ class InstanceSettings:
         # returns True for cloud SQLite
         # and remote postgres
         return True
+
+    @property
+    def is_on_hub(self) -> bool:
+        """Is this instance on the hub.
+
+        Only works if user has access to the instance.
+        """
+        if self._is_on_hub is None:
+            from ._hub_client import call_with_fallback_auth
+            from ._hub_crud import select_instance_by_id
+
+            response = call_with_fallback_auth(
+                select_instance_by_id, instance_id=self._id.hex
+            )
+            if response is None:
+                self._is_on_hub = False
+            else:
+                self._is_on_hub = True
+        return self._is_on_hub
 
     def _get_settings_file(self) -> Path:
         return instance_settings_file(self.name, self.owner)

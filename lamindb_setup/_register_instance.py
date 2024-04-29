@@ -25,4 +25,5 @@ def register(_test: bool = False):
         ssettings._uid = base62(8)
     init_storage_hub(ssettings)
     init_instance_hub(isettings)
+    isettings._is_on_hub = True
     isettings._persist()
