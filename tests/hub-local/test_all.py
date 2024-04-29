@@ -118,7 +118,9 @@ def create_myinstance(create_testadmin1_session):  # -> Dict
         id=instance_id,
         owner=usettings.handle,
         name="myinstance",
-        storage=init_storage_base("s3://lamindb-ci/myinstance"),
+        storage=init_storage_base(
+            "s3://lamindb-ci/myinstance", instance_id=instance_id
+        ),
         db=db_str,
     )
     init_instance(isettings)
@@ -319,15 +321,13 @@ def test_connect_instance_corrupted_or_expired_credentials(
     )
 
 
-def test_init_storage(create_testadmin1_session):
-    client, _ = create_testadmin1_session
-    storage_id = init_storage(ssettings=init_storage_base("s3://lamindb-ci/myinstance"))
-    assert isinstance(storage_id, UUID)
-
-
 def test_init_storage_with_non_existing_bucket(create_testadmin1_session):
     from botocore.exceptions import ClientError
 
     with pytest.raises(ClientError) as error:
-        init_storage(ssettings=init_storage_base("s3://non_existing_storage_root"))
+        init_storage(
+            ssettings=init_storage_base(
+                "s3://non_existing_storage_root", instance_id=uuid4()
+            )
+        )
     assert error.exconly().endswith("Not Found")
