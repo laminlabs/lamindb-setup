@@ -43,7 +43,7 @@ uv pip install --system --no-deps {no_deps_packages}
     elif group == "hub-local":
         cmds = """uv pip install --system -e ./laminhub/rest-hub"""
     # current package
-    cmds += """uv pip install --system .[aws,dev] lamin-cli"""
+    cmds += """\nuv pip install --system .[aws,dev] lamin-cli"""
 
     [run(session, line) for line in cmds.splitlines()]
 
