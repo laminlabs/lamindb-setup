@@ -505,7 +505,7 @@ def compute_file_tree(
 def view_tree(
     path: Path,
     *,
-    level: int = -1,
+    level: int = 2,
     only_dirs: bool = False,
     limit: int = 1000,
     include_paths: set[Any] | None = None,
@@ -787,7 +787,9 @@ def check_storage_is_empty(
         directory_string = root_string
     else:
         # in any other storage location, only count in .lamindb
-        directory_string = root_string + "/.lamindb"
+        if not root_string.endswith("/"):
+            root_string += "/"
+        directory_string = root_string + ".lamindb"
     objects = root_upath.fs.find(directory_string)
     n_objects = len(objects)
     n_diff = n_objects - n_offset_objects
