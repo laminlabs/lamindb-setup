@@ -137,7 +137,7 @@ class InstanceSettings:
 
     @property
     def keep_artifacts_local(self) -> bool:
-        """Default to keeping artifacts in :attr:`lamindb.settings.storage_local`.
+        """Default to keeping artifacts local.
 
         Enable this optional setting for cloud instances on lamin.ai.
 
