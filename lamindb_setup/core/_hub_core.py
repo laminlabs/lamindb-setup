@@ -201,8 +201,9 @@ def _delete_instance(
         logger.important("not deleting instance from hub as instance not found there")
         return "instance-not-found"
 
-    storage_records = get_storage_records_for_instance(
-        UUID(instance_with_storage["id"])
+    storage_records = _get_storage_records_for_instance(
+        UUID(instance_with_storage["id"]),
+        client,
     )
     if require_empty:
         for storage_record in storage_records:
