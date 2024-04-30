@@ -134,15 +134,24 @@ class InstanceSettings:
     def keep_artifacts_local(self) -> bool:
         """Keep artifacts in a default local storage.
 
-        Only needed for cloud instances. Local instances keep their artifacts local, anyway.
+        Optional for cloud instances. Local instances keep their artifacts local, anyway.
 
-        Change this setting on lamin.ai.
+        Change this instance setting on lamin.ai.
 
-        If enabled, it makes it easy to, by default, keep artifacts local and
-        maintain an overview of local storage locations managed by an instance
-        on lamin.ai.
+        If enabled, you keep artifacts local by default.
+
+        Guide: :doc:`faq/keep-artifacts-local`
         """
         return self._keep_artifacts_local
+
+    @property
+    def storage(self) -> StorageSettings:
+        """Default storage.
+
+        For a cloud instance, this is cloud storage. For a local instance, this
+        is a local directory.
+        """
+        return self._storage
 
     @property
     def storage_local(self) -> StorageSettings:
@@ -324,11 +333,6 @@ class InstanceSettings:
                 return empty_locker
         else:
             return empty_locker
-
-    @property
-    def storage(self) -> StorageSettings:
-        """Low-level access to storage location."""
-        return self._storage
 
     @property
     def is_remote(self) -> bool:
