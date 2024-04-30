@@ -151,9 +151,9 @@ class InstanceSettings:
 
     @property
     def storage_local(self) -> StorageSettings:
-        """Default local storage.
+        """An additional local default storage.
 
-        Only available if :attr:`keep_artifacts_local` is enabled.
+        Is only available if :attr:`keep_artifacts_local` is enabled.
 
         Guide: :doc:`faq/keep-artifacts-local`
         """
