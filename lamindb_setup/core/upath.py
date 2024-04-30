@@ -782,11 +782,12 @@ def check_storage_is_empty(
     # since path.fs.find raises a PermissionError on empty hosted
     # subdirectories (see lamindb_setup/core/_settings_storage/init_storage).
     n_offset_objects = 1  # because of touched dummy file, see mark_storage_root()
-    if account_for_sqlite_file:
-        n_offset_objects += 1  # because of SQLite file
     if root_string.startswith(HOSTED_BUCKETS):
         # in hosted buckets, count across entire root
         directory_string = root_string
+        # the SQLite file is not in the ".lamindb" directory
+        if account_for_sqlite_file:
+            n_offset_objects += 1  # because of SQLite file
     else:
         # in any other storage location, only count in .lamindb
         if not root_string.endswith("/"):
@@ -800,9 +801,13 @@ def check_storage_is_empty(
         if raise_error
         else "consider deleting them"
     )
+    hint = "'./lamindb/_is_initialized' "
+    if n_offset_objects == 2:
+        hint += "& SQLite file"
+    hint += " ignored"
     message = (
         f"Storage {directory_string} contains {n_objects} objects "
-        f"({n_offset_objects} ignored) - {ask_for_deletion}\n{objects}"
+        f"({hint}) - {ask_for_deletion}\n{objects}"
     )
     if n_diff > 0:
         if raise_error:
