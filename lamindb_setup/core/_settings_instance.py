@@ -57,7 +57,7 @@ class InstanceSettings:
         self._git_repo = None if git_repo is None else sanitize_git_repo_url(git_repo)
         # local storage
         self._keep_artifacts_local = keep_artifacts_local
-        self._local_storage: StorageSettings | None = None
+        self._storage_local: StorageSettings | None = None
         self._is_on_hub = is_on_hub
 
     def __repr__(self):
@@ -121,12 +121,12 @@ class InstanceSettings:
                     mark_storage_root(record.root, record.uid)
                     break
         if found:
-            self._local_storage = StorageSettings(record.root)
+            self._storage_local = StorageSettings(record.root)
             logger.important(f"defaulting to local storage: {record}")
         elif not mute_warning:
             logger.warning(
                 f"none of the registered local storage locations were found in your environment: {local_records}"
-                "\n❗ please register a new local storage location via `ln_setup.settings.instance.local_storage = local_root_path` "
+                "\n❗ please register a new local storage location via `ln_setup.settings.instance.storage_local = local_root_path` "
                 "and re-load/connect the instance"
             )
 
@@ -145,13 +145,13 @@ class InstanceSettings:
         return self._keep_artifacts_local
 
     @property
-    def local_storage(self) -> StorageSettings:
+    def storage_local(self) -> StorageSettings:
         """Default local storage.
 
         Warning: Only enable if you're sure you want to use the more complicated
         storage mode across local & cloud locations.
 
-        As an admin, enable via: `ln.setup.settings.instance.local_storage =
+        As an admin, enable via: `ln.setup.settings.instance.storage_local =
         local_root`.
 
         If enabled, you'll save artifacts to a default local storage
@@ -162,28 +162,28 @@ class InstanceSettings:
         """
         if not self._keep_artifacts_local:
             raise ValueError("`keep_artifacts_local` is not enabled for this instance.")
-        if self._local_storage is None:
+        if self._storage_local is None:
             self._search_local_root()
-        if self._local_storage is None:
+        if self._storage_local is None:
             raise ValueError()
-        return self._local_storage
+        return self._storage_local
 
-    @local_storage.setter
-    def local_storage(self, local_root: Path):
+    @storage_local.setter
+    def storage_local(self, local_root: Path):
         from lamindb_setup._init_instance import register_storage_in_instance
 
         if not self._keep_artifacts_local:
             raise ValueError("`keep_artifacts_local` is not enabled for this instance.")
         self._search_local_root(mute_warning=True)
-        if self._local_storage is not None:
+        if self._storage_local is not None:
             raise ValueError(
                 "You already configured a local storage root for this instance in this"
-                f" environment: {self.local_storage.root}"
+                f" environment: {self.storage_local.root}"
             )
         local_root = convert_pathlike(local_root)
         assert isinstance(local_root, LocalPathClasses)
-        self._local_storage = init_storage(local_root, self._id, register_hub=True)  # type: ignore
-        register_storage_in_instance(self._local_storage)  # type: ignore
+        self._storage_local = init_storage(local_root, self._id, register_hub=True)  # type: ignore
+        register_storage_in_instance(self._storage_local)  # type: ignore
 
     @property
     def slug(self) -> str:
