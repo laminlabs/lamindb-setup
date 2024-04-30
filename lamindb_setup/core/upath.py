@@ -419,7 +419,8 @@ def compute_file_tree(
     *,
     level: int = -1,
     only_dirs: bool = False,
-    limit: int = 1000,
+    n_max_files_per_dir_and_type: int = 100,
+    n_max_files: int = 1000,
     include_paths: set[Any] | None = None,
     skip_suffixes: list[str] | None = None,
 ) -> tuple[str, int]:
@@ -427,7 +428,6 @@ def compute_file_tree(
     branch = "│   "
     tee = "├── "
     last = "└── "
-    max_files_per_dir_per_type = 7
     if skip_suffixes is None:
         skip_suffixes_tuple = ()
     else:
@@ -461,14 +461,14 @@ def compute_file_tree(
         if only_dirs:
             contents = [d for d in contents if d.is_dir()]
         pointers = [tee] * (len(contents) - 1) + [last]
-        n_files_per_dir_per_type = defaultdict(lambda: 0)  # type: ignore
+        n_files_per_dir_and_type = defaultdict(lambda: 0)  # type: ignore
         for pointer, child_path in zip(pointers, contents, strict=False):  # type: ignore
             if child_path.is_dir():
                 if include_dirs and child_path not in include_dirs:
                     continue
                 yield prefix + pointer + child_path.name
                 n_directories += 1
-                n_files_per_dir_per_type = defaultdict(lambda: 0)
+                n_files_per_dir_and_type = defaultdict(lambda: 0)
                 extension = branch if pointer == tee else space
                 yield from inner(child_path, prefix=prefix + extension, level=level - 1)
             elif not only_dirs:
@@ -476,21 +476,21 @@ def compute_file_tree(
                     continue
                 suffix = extract_suffix_from_path(child_path)
                 suffixes.add(suffix)
-                n_files_per_dir_per_type[suffix] += 1
+                n_files_per_dir_and_type[suffix] += 1
                 n_objects += 1
-                if n_files_per_dir_per_type[suffix] == max_files_per_dir_per_type:
+                if n_files_per_dir_and_type[suffix] == n_max_files_per_dir_and_type:
                     yield prefix + "..."
-                elif n_files_per_dir_per_type[suffix] > max_files_per_dir_per_type:
+                elif n_files_per_dir_and_type[suffix] > n_max_files_per_dir_and_type:
                     continue
                 else:
                     yield prefix + pointer + child_path.name
 
     folder_tree = ""
     iterator = inner(path, level=level)
-    for line in islice(iterator, limit):
+    for line in islice(iterator, n_max_files):
         folder_tree += f"\n{line}"
     if next(iterator, None):
-        folder_tree += f"\n... only showing {limit} out of {n_objects} files"
+        folder_tree += f"\n... only showing {n_max_files} out of {n_objects} files"
     directory_info = "directory" if n_directories == 1 else "directories"
     display_suffixes = ", ".join([f"{suffix!r}" for suffix in suffixes])
     suffix_message = f" with suffixes {display_suffixes}" if n_objects > 0 else ""
@@ -505,9 +505,10 @@ def compute_file_tree(
 def view_tree(
     path: Path,
     *,
-    level: int = -1,
+    level: int = 2,
     only_dirs: bool = False,
-    limit: int = 1000,
+    n_max_files_per_dir_and_type: int = 100,
+    n_max_files: int = 1000,
     include_paths: set[Any] | None = None,
     skip_suffixes: list[str] | None = None,
 ) -> None:
@@ -517,7 +518,7 @@ def view_tree(
         level: If `1`, only iterate through one level, if `2` iterate through 2
             levels, if `-1` iterate through entire hierarchy.
         only_dirs: Only iterate through directories.
-        limit: Display limit. Will only show this many files. Doesn't affect count.
+        n_max_files: Display limit. Will only show this many files. Doesn't affect count.
         include_paths: Restrict to these paths.
         skip_suffixes: Skip directories with these suffixes.
 
@@ -551,7 +552,8 @@ def view_tree(
         path,
         level=level,
         only_dirs=only_dirs,
-        limit=limit,
+        n_max_files=n_max_files,
+        n_max_files_per_dir_and_type=n_max_files_per_dir_and_type,
         include_paths=include_paths,
         skip_suffixes=skip_suffixes,
     )
@@ -780,9 +782,18 @@ def check_storage_is_empty(
     # since path.fs.find raises a PermissionError on empty hosted
     # subdirectories (see lamindb_setup/core/_settings_storage/init_storage).
     n_offset_objects = 1  # because of touched dummy file, see mark_storage_root()
-    if account_for_sqlite_file:
-        n_offset_objects += 1  # because of SQLite file
-    objects = root_upath.fs.find(root_string)
+    if root_string.startswith(HOSTED_BUCKETS):
+        # in hosted buckets, count across entire root
+        directory_string = root_string
+        # the SQLite file is not in the ".lamindb" directory
+        if account_for_sqlite_file:
+            n_offset_objects += 1  # because of SQLite file
+    else:
+        # in any other storage location, only count in .lamindb
+        if not root_string.endswith("/"):
+            root_string += "/"
+        directory_string = root_string + ".lamindb"
+    objects = root_upath.fs.find(directory_string)
     n_objects = len(objects)
     n_diff = n_objects - n_offset_objects
     ask_for_deletion = (
@@ -790,9 +801,13 @@ def check_storage_is_empty(
         if raise_error
         else "consider deleting them"
     )
+    hint = "'./lamindb/_is_initialized' "
+    if n_offset_objects == 2:
+        hint += "& SQLite file"
+    hint += " ignored"
     message = (
-        f"Storage location contains {n_objects} objects "
-        f"({n_offset_objects} ignored) - {ask_for_deletion}\n{objects}"
+        f"Storage {directory_string} contains {n_objects} objects "
+        f"({hint}) - {ask_for_deletion}\n{objects}"
     )
     if n_diff > 0:
         if raise_error:

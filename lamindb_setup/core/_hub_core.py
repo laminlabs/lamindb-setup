@@ -29,6 +29,7 @@ from ._hub_utils import (
     LaminDsn,
     LaminDsnModel,
 )
+from ._settings import settings
 from ._settings_storage import StorageSettings, base62
 
 if TYPE_CHECKING:
@@ -49,8 +50,9 @@ def delete_storage_record(
 def _delete_storage_record(storage_uuid: UUID, client: Client) -> None:
     if storage_uuid is None:
         return None
-    logger.important(f"deleting storage {storage_uuid.hex}")
-    client.table("storage").delete().eq("id", storage_uuid.hex).execute()
+    response = client.table("storage").delete().eq("id", storage_uuid.hex).execute()
+    if response.data:
+        logger.important(f"deleted storage record on hub {storage_uuid.hex}")
 
 
 def update_instance_record(instance_uuid: UUID, fields: dict) -> None:
@@ -59,25 +61,90 @@ def update_instance_record(instance_uuid: UUID, fields: dict) -> None:
     )
 
 
-def init_storage(
-    ssettings: StorageSettings,
-) -> UUID:
+def get_storage_records_for_instance(
+    instance_id: UUID,
+) -> list[dict[str, str | int]]:
     return call_with_fallback_auth(
-        _init_storage,
-        ssettings=ssettings,
+        _get_storage_records_for_instance,
+        instance_id=instance_id,
     )
 
 
-def _init_storage(ssettings: StorageSettings, client: Client) -> UUID:
+def _get_storage_records_for_instance(
+    instance_id: UUID, client: Client
+) -> list[dict[str, str | int]]:
+    response = (
+        client.table("storage").select("*").eq("instance_id", instance_id.hex).execute()
+    )
+    return response.data
+
+
+def _select_storage(
+    ssettings: StorageSettings, update_uid: bool, client: Client
+) -> bool:
+    root = ssettings.root_as_str
+    response = client.table("storage").select("*").eq("root", root).execute()
+    if not response.data:
+        return False
+    else:
+        existing_storage = response.data[0]
+        if ssettings._instance_id is not None:
+            # consider storage settings that are meant to be managed by an instance
+            if UUID(existing_storage["instance_id"]) != ssettings._instance_id:
+                # everything is alright if the instance_id matches
+                # we're probably just switching storage locations
+                # below can be turned into a warning and then delegate the error
+                # to a unique constraint violation below
+                raise ValueError(
+                    f"Storage root {root} is already managed by instance {existing_storage['instance_id']}."
+                )
+        else:
+            # if the request is agnostic of the instance, that's alright,
+            # we'll update the instance_id with what's stored in the hub
+            ssettings._instance_id = UUID(existing_storage["instance_id"])
+        ssettings._uuid_ = UUID(existing_storage["id"])
+        if update_uid:
+            ssettings._uid = existing_storage["lnid"]
+        else:
+            assert ssettings._uid == existing_storage["lnid"]
+        return True
+
+
+def init_storage(
+    ssettings: StorageSettings,
+) -> None:
+    if settings.user.handle != "anonymous":
+        return call_with_fallback_auth(
+            _init_storage,
+            ssettings=ssettings,
+        )
+    else:
+        storage_exists = call_with_fallback(
+            _select_storage, ssettings=ssettings, update_uid=True
+        )
+        if storage_exists:
+            return None
+        else:
+            raise ValueError("Log in to create a storage location on the hub.")
+
+
+def _init_storage(ssettings: StorageSettings, client: Client) -> None:
     from lamindb_setup import settings
 
     # storage roots are always stored without the trailing slash in the SQL
     # database
     root = ssettings.root_as_str
-    # in the future, we could also encode a prefix to model local storage
-    # locations
-    # f"{prefix}{root}"
-    id = uuid.uuid5(uuid.NAMESPACE_URL, root)
+    if _select_storage(ssettings, update_uid=True, client=client):
+        return None
+    if ssettings.type_is_cloud:
+        id = uuid.uuid5(uuid.NAMESPACE_URL, root)
+    else:
+        id = uuid.uuid4()
+    if ssettings._instance_id is None:
+        logger.warning(
+            f"will manage storage location {ssettings.root_as_str} with instance {settings.instance.slug}"
+        )
+        ssettings._instance_id = settings.instance._id
     fields = {
         "id": id.hex,
         "lnid": ssettings.uid,
@@ -85,11 +152,17 @@ def _init_storage(ssettings: StorageSettings, client: Client) -> UUID:
         "root": root,
         "region": ssettings.region,
         "type": ssettings.type,
-        "aws_account_id": ssettings._aws_account_id,
-        "description": ssettings._description,
+        "instance_id": ssettings._instance_id.hex,
+        # the empty string is important as we want the user flow to be through LaminHub
+        # if this errors with unique constraint error, the user has to update
+        # the description in LaminHub
+        "description": "",
     }
+    # TODO: add error message for violated unique constraint
+    # on root & description
     client.table("storage").upsert(fields).execute()
-    return id
+    ssettings._uuid_ = id
+    return None
 
 
 def delete_instance(identifier: UUID | str, require_empty: bool = True) -> str | None:
@@ -125,26 +198,37 @@ def _delete_instance(
         )
 
     if instance_with_storage is None:
-        logger.warning("instance not found")
+        logger.important("not deleting instance from hub as instance not found there")
         return "instance-not-found"
 
+    storage_records = get_storage_records_for_instance(
+        UUID(instance_with_storage["id"])
+    )
     if require_empty:
-        root_string = instance_with_storage["storage"]["root"]
-        # gate storage and instance deletion on empty storage location for
-        if client.auth.get_session() is not None:
-            access_token = client.auth.get_session().access_token
-        else:
-            access_token = None
-        root_path = create_path(root_string, access_token)
-        mark_storage_root(
-            root_path, instance_with_storage["storage"]["lnid"]
-        )  # address permission error
-        account_for_sqlite_file = instance_with_storage["db_scheme"] is None
-        check_storage_is_empty(
-            root_path, account_for_sqlite_file=account_for_sqlite_file
-        )
+        for storage_record in storage_records:
+            account_for_sqlite_file = (
+                instance_with_storage["db_scheme"] is None
+                and instance_with_storage["storage"]["root"] == storage_record["root"]
+            )
+            root_string = storage_record["root"]
+            # gate storage and instance deletion on empty storage location for
+            if client.auth.get_session() is not None:
+                access_token = client.auth.get_session().access_token
+            else:
+                access_token = None
+            root_path = create_path(root_string, access_token)
+            mark_storage_root(
+                root_path,
+                storage_record["lnid"],  # type: ignore
+            )  # address permission error
+            check_storage_is_empty(
+                root_path, account_for_sqlite_file=account_for_sqlite_file
+            )
     _update_instance_record(instance_with_storage["id"], {"storage_id": None}, client)
-    _delete_storage_record(UUID(instance_with_storage["storage_id"]), client)
+    # first delete the storage records because we will turn instance_id on
+    # storage into a FK soon
+    for storage_record in storage_records:
+        _delete_storage_record(UUID(storage_record["id"]), client)  # type: ignore
     _delete_instance_record(UUID(instance_with_storage["id"]), client)
     return None
 

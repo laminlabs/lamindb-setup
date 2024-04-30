@@ -9,6 +9,7 @@ from lamin_utils import logger
 from ._connect_instance import INSTANCE_NOT_FOUND_MESSAGE
 from .core._hub_core import connect_instance as load_instance_from_hub
 from .core._hub_core import delete_instance as delete_instance_on_hub
+from .core._hub_core import get_storage_records_for_instance
 from .core._settings import settings
 from .core._settings_instance import InstanceSettings
 from .core._settings_load import load_instance_settings
@@ -51,10 +52,6 @@ def delete_by_isettings(isettings: InstanceSettings) -> None:
         if settings._instance_settings_path.exists():
             settings._instance_settings_path.unlink()
         settings._instance_settings = None
-    if isettings.storage._mark_storage_root.exists():
-        isettings.storage._mark_storage_root.unlink(
-            missing_ok=True
-        )  # this is totally weird, but needed on Py3.11
 
 
 def delete(
@@ -102,7 +99,7 @@ def delete(
                 owner=settings.user.handle,
                 name=instance_name,
                 storage=ssettings,
-                local_storage=instance_result["storage_mode"] == "hybrid",
+                keep_artifacts_local=bool(instance_result["keep_artifacts_local"]),
                 db=instance_result["db"] if "db" in instance_result else None,
                 schema=instance_result["schema_str"],
                 git_repo=instance_result["git_repo"],
@@ -135,19 +132,41 @@ def delete(
                 "hosted storage always has to be empty, ignoring `require_empty`"
             )
         require_empty = True
+    # first the default storage
     n_objects = check_storage_is_empty(
         isettings.storage.root,
         raise_error=require_empty,
         account_for_sqlite_file=isettings.dialect == "sqlite",
     )
+    if isettings.storage._mark_storage_root.exists():
+        isettings.storage._mark_storage_root.unlink(
+            missing_ok=True  # this is totally weird, but needed on Py3.11
+        )
+    # now everything that's on the hub
+    storage_records = get_storage_records_for_instance(isettings._id)
+    for storage_record in storage_records:
+        if storage_record["root"] == isettings.storage.root_as_str:
+            continue
+        check_storage_is_empty(
+            storage_record["root"],  # type: ignore
+            raise_error=require_empty,
+        )
+        ssettings = StorageSettings(storage_record["root"])  # type: ignore
+        if ssettings._mark_storage_root.exists():
+            ssettings._mark_storage_root.unlink(
+                missing_ok=True  # this is totally weird, but needed on Py3.11
+            )
     logger.info(f"deleting instance {instance_slug}")
     # below we can skip check_storage_is_empty() because we already called
     # it above
-    if isettings.is_remote:
+    if settings.user.handle != "anonymous":
         delete_instance_on_hub(isettings._id, require_empty=False)
     delete_by_isettings(isettings)
-    if n_objects == 0 and isettings.storage.type == "local":
+    # if .lndb file was delete, then we might count -1
+    if n_objects <= 0 and isettings.storage.type == "local":
         # dir is only empty after sqlite file was delete via delete_by_isettings
-        (isettings.storage.root / ".lamindb").rmdir()
-        isettings.storage.root.rmdir()
+        if (isettings.storage.root / ".lamindb").exists():
+            (isettings.storage.root / ".lamindb").rmdir()
+        if isettings.storage.root.exists():
+            isettings.storage.root.rmdir()
     return None

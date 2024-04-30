@@ -25,7 +25,6 @@ jobs:
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           aws-region: eu-central-1
       - run: pip install -U laminci
-      - run: nox -s lint
       - run: nox -s "install(group='hub-prod')"
       - run: nox -s "build(lamin_env='prod', group='hub-prod')"
       - uses: actions/upload-artifact@v2
@@ -101,6 +100,7 @@ jobs:
           cache-dependency-path: ".github/workflows/build.yml"
       - run: pip install -U laminci
       - run: nox -s "install(group='storage')"
+      - run: nox -s lint
       - run: nox -s storage
         env:
           TEST_INSTANCE_PRIVATE_POSTGRES: ${{ secrets.TEST_INSTANCE_PRIVATE_POSTGRES }}
@@ -205,7 +205,7 @@ jobs:
           cache: "pip"
           cache-dependency-path: ".github/workflows/build.yml"
       - run: pip install -U laminci
-      - run: nox -s "install(group='storage')"
+      - run: nox -s "install(group='docs')"
       - uses: actions/download-artifact@v2
       - run: nox -s docs
       - uses: nwtgck/actions-netlify@v1.2

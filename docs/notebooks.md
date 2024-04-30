@@ -10,7 +10,7 @@ hub-cloud/test-bionty
 hub-cloud/init-hosted-instance
 hub-cloud/connect-hosted-instance
 hub-cloud/test-multi-session
-hub-cloud/connect-hybrid-instance
+hub-cloud/keep-artifacts-local
 
 hub-prod/test-cache-management
 hub-prod/test-empty-init

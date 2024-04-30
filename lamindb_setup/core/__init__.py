@@ -1,12 +1,11 @@
-from __future__ import annotations
-
-"""Core library.
+"""Core setup library.
 
 Settings:
 
 .. autosummary::
    :toctree:
 
+   SetupSettings
    UserSettings
    InstanceSettings
    StorageSettings
@@ -15,6 +14,7 @@ Settings:
 from . import django, types, upath
 from ._deprecated import deprecated
 from ._docs import doc_args
+from ._settings import SetupSettings
 from ._settings_instance import InstanceSettings
 from ._settings_storage import StorageSettings
 from ._settings_user import UserSettings

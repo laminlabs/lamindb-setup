@@ -24,29 +24,30 @@ def lint(session: nox.Session) -> None:
 @nox.session
 @nox.parametrize(
     "group",
-    ["hub-local", "hub-prod", "hub-cloud", "storage"],
+    ["hub-local", "hub-prod", "hub-cloud", "storage", "docs"],
 )
 def install(session: nox.Session, group: str) -> None:
-    cloud_prod_cmds = """uv pip install --system bionty
-uv pip install --system git+https://github.com/laminlabs/bionty-base
-uv pip install --system --no-deps git+https://github.com/laminlabs/lnschema-bionty
-uv pip install --system --no-deps git+https://github.com/laminlabs/lnschema-core
-uv pip install --system lamin-cli
+    no_deps_packages = "git+https://github.com/laminlabs/lnschema-bionty git+https://github.com/laminlabs/lnschema-core lamin-cli"
+    cloud_prod_installs = f"""uv pip install --system bionty git+https://github.com/laminlabs/bionty-base
+uv pip install --system --no-deps {no_deps_packages}
 """
     if group == "hub-cloud":
-        cmds = cloud_prod_cmds + "uv pip install --system ./laminhub/rest-hub"
+        cmds = cloud_prod_installs + "uv pip install --system ./laminhub/rest-hub"
+    elif group == "docs":
+        cmds = (
+            """uv pip install --system git+https://github.com/laminlabs/lnschema-core"""
+        )
     elif group == "storage":
         cmds = """uv pip install --system gcsfs"""
     elif group == "hub-prod":
         cmds = (
-            cloud_prod_cmds
-            + "pip install --no-deps git+https://github.com/laminlabs/wetlab"
+            cloud_prod_installs
+            + "uv pip install --system --no-deps git+https://github.com/laminlabs/wetlab"
         )
     elif group == "hub-local":
         cmds = """uv pip install --system -e ./laminhub/rest-hub"""
-    cmds += """
-uv pip install --system -e .[aws,dev]
-uv pip install --system lamin-cli"""
+    # current package
+    cmds += """\nuv pip install --system .[aws,dev] lamin-cli"""
 
     [run(session, line) for line in cmds.splitlines()]
 
@@ -61,7 +62,7 @@ uv pip install --system lamin-cli"""
     ["staging", "prod"],
 )
 def build(session: nox.Session, group: str, lamin_env: str):
-    env = {"LAMIN_ENV": lamin_env}
+    env = {"LAMIN_ENV": lamin_env, "LAMIN_TESTING": "true"}
     login_testuser1(session, env=env)
     login_testuser2(session, env=env)
     if group == "hub-prod":

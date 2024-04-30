@@ -38,20 +38,26 @@ def get_schema_module_name(schema_name) -> str:
     )
 
 
-def register_storage(ssettings: StorageSettings):
+def register_storage_in_instance(ssettings: StorageSettings):
     from lnschema_core.models import Storage
     from lnschema_core.users import current_user_id
 
+    from .core.hashing import hash_and_encode_as_b62
+
+    assert ssettings._instance_id is not None
+
+    # how do we ensure that this function is only called passing
+    # the managing instance?
     defaults = {
         "root": ssettings.root_as_str,
         "type": ssettings.type,
         "region": ssettings.region,
+        "instance_uid": hash_and_encode_as_b62(ssettings._instance_id.hex)[:12],
         "created_by_id": current_user_id(),
     }
     if ssettings._uid is not None:
         defaults["uid"] = ssettings._uid
-
-    storage, created = Storage.objects.update_or_create(
+    storage, _ = Storage.objects.update_or_create(
         root=ssettings.root_as_str,
         defaults=defaults,
     )
@@ -77,13 +83,13 @@ def register_user(usettings):
             pass
 
 
-def register_user_and_storage(isettings: InstanceSettings, usettings):
+def register_user_and_storage_in_instance(isettings: InstanceSettings, usettings):
     """Register user & storage in DB."""
     from django.db.utils import OperationalError
 
     try:
         register_user(usettings)
-        register_storage(isettings.storage)
+        register_storage_in_instance(isettings.storage)
     except OperationalError as error:
         logger.warning(f"instance seems not set up ({error})")
 
@@ -228,7 +234,7 @@ def init(
             close_instance(mute=True)
         from .core._hub_core import init_instance as init_instance_hub
 
-        name_str, instance_id, instance_state, instance_slug = validate_init_args(
+        name_str, instance_id, instance_state, _ = validate_init_args(
             storage=storage,
             name=name,
             db=db,
@@ -238,7 +244,7 @@ def init(
         if instance_state == "connected":
             settings.auto_connect = True  # we can also debate this switch here
             return None
-        ssettings = init_storage(storage)
+        ssettings = init_storage(storage, instance_id=instance_id)
         isettings = InstanceSettings(
             id=instance_id,  # type: ignore
             owner=settings.user.handle,
@@ -267,8 +273,7 @@ def init(
         settings.auto_connect = True
     except Exception as e:
         from ._delete import delete_by_isettings
-        from .core._hub_core import delete_instance_record as delete_instance_record
-        from .core._hub_core import delete_storage_record as delete_storage_record
+        from .core._hub_core import delete_instance_record, delete_storage_record
 
         if isettings is not None:
             delete_by_isettings(isettings)
@@ -289,7 +294,7 @@ def load_from_isettings(
 
     if init:
         # during init both user and storage need to be registered
-        register_user_and_storage(isettings, settings.user)
+        register_user_and_storage_in_instance(isettings, settings.user)
         write_bionty_sources(isettings)
         isettings._update_cloud_sqlite_file(unlock_cloud_sqlite=False)
     else:

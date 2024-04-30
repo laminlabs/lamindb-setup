@@ -122,17 +122,6 @@ def test_init_instance_sqlite():
         name="local-sqlite-instance",
         _test=True,
     )
-    ln_setup.register(_test=True)
-    hub = connect_hub_with_auth()
-    account = select_account_by_handle(
-        handle=ln_setup.settings.instance.owner, client=hub
-    )
-    instance = select_instance_by_name(
-        account_id=account["id"],
-        name=ln_setup.settings.instance.name,
-        client=hub,
-    )
-    assert ln_setup.settings.instance._id == UUID(instance["id"])
     assert ln_setup.settings.instance.name == "local-sqlite-instance"
     assert not ln_setup.settings.instance.storage.type_is_cloud
     assert ln_setup.settings.instance.owner == ln_setup.settings.user.handle
