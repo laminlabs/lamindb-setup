@@ -1,12 +1,10 @@
 """Setup & configure LaminDB.
 
-Every function in the API has a matching command in the `lamin` CLI.
-
-Typically, you'll want to use the CLI rather than this API.
+Many functions in this "setup API" have a matching command in the :doc:`docs:lamin` CLI.
 
 Guide: :doc:`docs:setup`.
 
-Setup:
+Basic operations:
 
 .. autosummary::
    :toctree:
@@ -17,7 +15,7 @@ Setup:
    close
    delete
 
-More instance operations:
+Instance operations:
 
 .. autosummary::
    :toctree:
@@ -70,3 +68,5 @@ if _os_name == "nt":
                 _original_excepthook(args)
 
         threading.excepthook = _except_hook
+
+settings.__doc__ = """Global :class:`~lamindb.setup.core.SetupSettings`."""

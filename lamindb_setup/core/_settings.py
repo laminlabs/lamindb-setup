@@ -16,12 +16,7 @@ if TYPE_CHECKING:
 
 
 class SetupSettings:
-    """Setup settings.
-
-    - :class:`~lamindb_setup.core.InstanceSettings`
-    - :class:`~lamindb_setup.core.StorageSettings`
-    - :class:`~lamindb_setup.core.UserSettings`
-    """
+    """Setup settings."""
 
     _using_key: str | None = None  # set through lamindb.settings
 
@@ -55,7 +50,7 @@ class SetupSettings:
 
     @property
     def user(self) -> UserSettings:
-        """User."""
+        """User :class:`~lamindb_setup.core.UserSettings`."""
         if self._user_settings is None or self._user_settings_env != get_env_name():
             self._user_settings = load_or_create_user_settings()
             self._user_settings_env = get_env_name()
@@ -65,7 +60,7 @@ class SetupSettings:
 
     @property
     def instance(self) -> InstanceSettings:
-        """Instance."""
+        """Instance (:class:`~lamindb_setup.core.InstanceSettings`)."""
         if (
             self._instance_settings is None
             or self._instance_settings_env != get_env_name()
@@ -76,7 +71,7 @@ class SetupSettings:
 
     @property
     def storage(self) -> StorageSettings:
-        """Storage."""
+        """Storage :class:`~lamindb_setup.core.StorageSettings`."""
         return self.instance.storage
 
     @property
