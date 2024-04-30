@@ -132,13 +132,9 @@ class InstanceSettings:
 
     @property
     def keep_artifacts_local(self) -> bool:
-        """Keep artifacts in a default local storage.
+        """Default to keeping artifacts in :attr:`lamindb.settings.storage_local`.
 
-        Optional for cloud instances. Local instances keep their artifacts local, anyway.
-
-        Change this instance setting on lamin.ai.
-
-        If enabled, you keep artifacts local by default.
+        Enable this optional setting for cloud instances on lamin.ai.
 
         Guide: :doc:`faq/keep-artifacts-local`
         """
@@ -157,17 +153,9 @@ class InstanceSettings:
     def storage_local(self) -> StorageSettings:
         """Default local storage.
 
-        Warning: Only enable if you're sure you want to use the more complicated
-        storage mode across local & cloud locations.
+        Only available if :attr:`keep_artifacts_local` is enabled.
 
-        As an admin, enable via: `ln.setup.settings.instance.storage_local =
-        local_root`.
-
-        If enabled, you'll save artifacts to a default local storage
-        location.
-
-        Upon passing `upload=True` in `artifact.save(upload=True)`, you upload the
-        artifact to the default cloud storage location.
+        Guide: :doc:`faq/keep-artifacts-local`
         """
         if not self._keep_artifacts_local:
             raise ValueError("`keep_artifacts_local` is not enabled for this instance.")
