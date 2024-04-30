@@ -97,10 +97,15 @@ class InstanceSettings:
         """Instance name."""
         return self._name
 
-    def _search_local_root(self, mute_warning: bool = False):
+    def _search_local_root(
+        self, local_root: str | None = None, mute_warning: bool = False
+    ) -> StorageSettings | None:
         from lnschema_core.models import Storage
 
-        local_records = Storage.objects.filter(type="local")
+        if local_root is not None:
+            local_records = Storage.objects.filter(root=local_root)
+        else:
+            local_records = Storage.objects.filter(type="local")
         found = False
         for record in local_records.all():
             root_path = Path(record.root)
@@ -108,7 +113,7 @@ class InstanceSettings:
                 marker_path = root_path / ".lamindb/_is_initialized"
                 if marker_path.exists():
                     uid = marker_path.read_text()
-                    if uid == self.uid:
+                    if uid == record.uid:
                         found = True
                         break
                     elif uid == "":
@@ -121,14 +126,14 @@ class InstanceSettings:
                     mark_storage_root(record.root, record.uid)
                     break
         if found:
-            self._storage_local = StorageSettings(record.root)
-            logger.important(f"defaulting to local storage: {record}")
+            return StorageSettings(record.root)
         elif not mute_warning:
             logger.warning(
                 f"none of the registered local storage locations were found in your environment: {local_records}"
-                "\n❗ please register a new local storage location via `ln_setup.settings.instance.storage_local = local_root_path` "
+                "\n❗ please register a new local storage location via `ln.settings.storage_local = local_root_path` "
                 "and re-load/connect the instance"
             )
+        return None
 
     @property
     def keep_artifacts_local(self) -> bool:
@@ -160,27 +165,43 @@ class InstanceSettings:
         if not self._keep_artifacts_local:
             raise ValueError("`keep_artifacts_local` is not enabled for this instance.")
         if self._storage_local is None:
-            self._search_local_root()
+            self._storage_local = self._search_local_root()
         if self._storage_local is None:
+            # raise an error, there was a warning just before in search_local_root
             raise ValueError()
         return self._storage_local
 
     @storage_local.setter
-    def storage_local(self, local_root: Path):
+    def storage_local(self, local_root: Path | str):
         from lamindb_setup._init_instance import register_storage_in_instance
 
+        local_root = Path(local_root)
         if not self._keep_artifacts_local:
             raise ValueError("`keep_artifacts_local` is not enabled for this instance.")
-        self._search_local_root(mute_warning=True)
-        if self._storage_local is not None:
-            raise ValueError(
-                "You already configured a local storage root for this instance in this"
-                f" environment: {self.storage_local.root}"
-            )
+        storage_local = self._search_local_root(
+            local_root=StorageSettings(local_root).root_as_str, mute_warning=True
+        )
+        if storage_local is not None:
+            # great, we're merely switching storage location
+            self._storage_local = storage_local
+            logger.important(f"defaulting to local storage: {storage_local.root}")
+            return None
+        storage_local = self._search_local_root(mute_warning=True)
+        if storage_local is not None:
+            if os.getenv("LAMIN_TESTING") == "true":
+                response = "y"
+            else:
+                response = input(
+                    "You already configured a local storage root for this instance in this"
+                    f" environment: {self.storage_local.root}\nDo you want to register another one? (y/n)"
+                )
+            if response != "y":
+                return None
         local_root = convert_pathlike(local_root)
         assert isinstance(local_root, LocalPathClasses)
         self._storage_local = init_storage(local_root, self._id, register_hub=True)  # type: ignore
         register_storage_in_instance(self._storage_local)  # type: ignore
+        logger.important(f"defaulting to local storage: {self._storage_local.root}")
 
     @property
     def slug(self) -> str:

@@ -62,7 +62,7 @@ uv pip install --system --no-deps {no_deps_packages}
     ["staging", "prod"],
 )
 def build(session: nox.Session, group: str, lamin_env: str):
-    env = {"LAMIN_ENV": lamin_env}
+    env = {"LAMIN_ENV": lamin_env, "LAMIN_TESTING": "true"}
     login_testuser1(session, env=env)
     login_testuser2(session, env=env)
     if group == "hub-prod":
