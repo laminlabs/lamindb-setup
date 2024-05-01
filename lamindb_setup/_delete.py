@@ -110,6 +110,10 @@ def delete(
         logger.warning(
             f"delete() does not yet affect your Postgres database at {isettings.db}"
         )
+    if isettings.is_on_hub and settings.user.handle == "anonymous":
+        logger.warning(
+            "won't delete the hub component of this instance because you're not logged in"
+        )
     if not force:
         valid_responses = ["y", "yes"]
         user_input = (
@@ -143,19 +147,20 @@ def delete(
             missing_ok=True  # this is totally weird, but needed on Py3.11
         )
     # now everything that's on the hub
-    storage_records = get_storage_records_for_instance(isettings._id)
-    for storage_record in storage_records:
-        if storage_record["root"] == isettings.storage.root_as_str:
-            continue
-        check_storage_is_empty(
-            storage_record["root"],  # type: ignore
-            raise_error=require_empty,
-        )
-        ssettings = StorageSettings(storage_record["root"])  # type: ignore
-        if ssettings._mark_storage_root.exists():
-            ssettings._mark_storage_root.unlink(
-                missing_ok=True  # this is totally weird, but needed on Py3.11
+    if settings.user.handle != "anonymous":
+        storage_records = get_storage_records_for_instance(isettings._id)
+        for storage_record in storage_records:
+            if storage_record["root"] == isettings.storage.root_as_str:
+                continue
+            check_storage_is_empty(
+                storage_record["root"],  # type: ignore
+                raise_error=require_empty,
             )
+            ssettings = StorageSettings(storage_record["root"])  # type: ignore
+            if ssettings._mark_storage_root.exists():
+                ssettings._mark_storage_root.unlink(
+                    missing_ok=True  # this is totally weird, but needed on Py3.11
+                )
     logger.info(f"deleting instance {instance_slug}")
     # below we can skip check_storage_is_empty() because we already called
     # it above
