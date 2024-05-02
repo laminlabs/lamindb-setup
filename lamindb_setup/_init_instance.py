@@ -277,10 +277,14 @@ def init(
 
         if isettings is not None:
             delete_by_isettings(isettings)
-            if settings.user.handle != "anonymous":
+            if settings.user.handle != "anonymous" and isettings.is_on_hub:
                 delete_instance_record(isettings._id)
             isettings._get_settings_file().unlink(missing_ok=True)  # type: ignore
-        if ssettings is not None and settings.user.handle != "anonymous":
+        if (
+            ssettings is not None
+            and settings.user.handle != "anonymous"
+            and ssettings.is_on_hub
+        ):
             delete_storage_record(ssettings._uuid)  # type: ignore
         raise e
     return None
