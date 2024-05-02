@@ -6,7 +6,10 @@ from uuid import UUID
 
 from lamin_utils import logger
 
-from ._connect_instance import INSTANCE_NOT_FOUND_MESSAGE
+from ._connect_instance import (
+    INSTANCE_NOT_FOUND_MESSAGE,
+    get_owner_name_from_identifier,
+)
 from .core._hub_core import connect_instance as load_instance_from_hub
 from .core._hub_core import delete_instance as delete_instance_on_hub
 from .core._hub_core import get_storage_records_for_instance
@@ -54,35 +57,27 @@ def delete_by_isettings(isettings: InstanceSettings) -> None:
         settings._instance_settings = None
 
 
-def delete(
-    instance_name: str, force: bool = False, require_empty: bool = True
-) -> int | None:
+def delete(slug: str, force: bool = False, require_empty: bool = True) -> int | None:
     """Delete a LaminDB instance.
 
     Args:
-        instance_name (str): The name of the instance to delete.
-        force (bool): Whether to skip the confirmation prompt.
-        require_empty (bool): Whether to check if the instance is empty before deleting.
+        slug: The instance slug `account_handle/instance_name` or URL.
+            If the instance is owned by you, it suffices to pass the instance name.
+        force: Whether to skip the confirmation prompt.
+        require_empty: Whether to check if the instance is empty before deleting.
     """
-    if "/" in instance_name:
-        logger.warning(
-            "Deleting the instance of another user is currently not supported with the"
-            " CLI. Please provide only the instance name when deleting an instance ('/'"
-            " delimiter not allowed)."
-        )
-        raise ValueError("Invalid instance name: '/' delimiter not allowed.")
-    instance_slug = f"{settings.user.handle}/{instance_name}"
+    instance_owner, instance_name = get_owner_name_from_identifier(slug)
     if settings._instance_exists and settings.instance.name == instance_name:
         isettings = settings.instance
     else:
-        settings_file = instance_settings_file(instance_name, settings.user.handle)
+        settings_file = instance_settings_file(instance_name, instance_owner)
         if not settings_file.exists():
             hub_result = load_instance_from_hub(
-                owner=settings.user.handle, name=instance_name
+                owner=instance_owner, name=instance_name
             )
             if isinstance(hub_result, str):
                 message = INSTANCE_NOT_FOUND_MESSAGE.format(
-                    owner=settings.user.handle,
+                    owner=instance_owner,
                     name=instance_name,
                     hub_result=hub_result,
                 )
@@ -96,7 +91,7 @@ def delete(
             )
             isettings = InstanceSettings(
                 id=UUID(instance_result["id"]),
-                owner=settings.user.handle,
+                owner=instance_owner,
                 name=instance_name,
                 storage=ssettings,
                 keep_artifacts_local=bool(instance_result["keep_artifacts_local"]),
@@ -117,7 +112,7 @@ def delete(
     if not force:
         valid_responses = ["y", "yes"]
         user_input = (
-            input(f"Are you sure you want to delete instance {instance_slug}? (y/n) ")
+            input(f"Are you sure you want to delete instance {isettings.slug}? (y/n) ")
             .strip()
             .lower()
         )
@@ -161,10 +156,12 @@ def delete(
                 ssettings._mark_storage_root.unlink(
                     missing_ok=True  # this is totally weird, but needed on Py3.11
                 )
-    logger.info(f"deleting instance {instance_slug}")
+    logger.info(f"deleting instance {isettings.slug}")
     # below we can skip check_storage_is_empty() because we already called
     # it above
     if settings.user.handle != "anonymous":
+        # start with deleting things on the hub
+        # this will error if the user doesn't have permission
         delete_instance_on_hub(isettings._id, require_empty=False)
     delete_by_isettings(isettings)
     # if .lndb file was delete, then we might count -1

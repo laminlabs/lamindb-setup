@@ -100,7 +100,7 @@ def update_instance(instance_id: str, instance_fields: dict, client: Client):
         client.table("instance").update(instance_fields).eq("id", instance_id).execute()
     )
     if len(response.data) == 0:
-        raise RuntimeError(
+        raise PermissionError(
             f"Update of instance with {instance_id} was not successful. Probably, you"
             " don't have sufficient permissions."
         )
@@ -187,3 +187,8 @@ def _delete_instance_record(instance_id: UUID, client: Client) -> None:
     response = client.table("instance").delete().eq("id", instance_id.hex).execute()
     if response.data:
         logger.important(f"deleted instance record on hub {instance_id.hex}")
+    else:
+        raise PermissionError(
+            f"Deleting of instance with {instance_id.hex} was not successful. Probably, you"
+            " don't have sufficient permissions."
+        )
