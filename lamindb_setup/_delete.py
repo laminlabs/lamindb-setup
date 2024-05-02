@@ -159,7 +159,7 @@ def delete(slug: str, force: bool = False, require_empty: bool = True) -> int | 
     logger.info(f"deleting instance {isettings.slug}")
     # below we can skip check_storage_is_empty() because we already called
     # it above
-    if settings.user.handle != "anonymous":
+    if settings.user.handle != "anonymous" and settings.instance.is_on_hub:
         # start with deleting things on the hub
         # this will error if the user doesn't have permission
         delete_instance_on_hub(isettings._id, require_empty=False)
