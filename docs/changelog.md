@@ -3,6 +3,7 @@
 <!-- prettier-ignore -->
 Name | PR | Developer | Date | Version
 --- | --- | --- | --- | ---
+♻️ Persist keep-artifacts-local in settings.env | [743](https://github.com/laminlabs/lamindb-setup/pull/743) | [falexwolf](https://github.com/falexwolf) | 2024-05-03 |
 ✅ Expand tests to multi users for managed storage | [742](https://github.com/laminlabs/lamindb-setup/pull/742) | [falexwolf](https://github.com/falexwolf) | 2024-05-03 |
 🐛 Fix delete function | [741](https://github.com/laminlabs/lamindb-setup/pull/741) | [falexwolf](https://github.com/falexwolf) | 2024-04-30 | 0.71.0
 ✨ Manage multiple storage locations with integrity | [738](https://github.com/laminlabs/lamindb-setup/pull/738) | [falexwolf](https://github.com/falexwolf) | 2024-04-30 |
