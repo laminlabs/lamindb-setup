@@ -8,6 +8,7 @@ from lamin_utils import logger
 
 from ._connect_instance import (
     INSTANCE_NOT_FOUND_MESSAGE,
+    InstanceNotFoundError,
     get_owner_name_from_identifier,
 )
 from .core._hub_core import connect_instance as load_instance_from_hub
@@ -81,8 +82,7 @@ def delete(slug: str, force: bool = False, require_empty: bool = True) -> int | 
                     name=instance_name,
                     hub_result=hub_result,
                 )
-                logger.warning(message)
-                return None
+                raise InstanceNotFoundError(message)
             instance_result, storage_result = hub_result
             ssettings = StorageSettings(
                 root=storage_result["root"],
