@@ -223,6 +223,7 @@ def connect(
         if storage is not None and isettings.dialect == "sqlite":
             update_root_field_in_default_storage(isettings)
         # below is for backfilling the instance_uid value
+        ssettings = isettings.storage
         if ssettings.record.instance_uid is None:
             ssettings.record.instance_uid = isettings.uid
             ssettings.record.save()
