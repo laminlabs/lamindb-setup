@@ -12,10 +12,8 @@ if TYPE_CHECKING:
     from lamindb_setup.core.types import UPathStr
 
 
-def add_managed_storage(root: UPathStr, **fs_kwargs):
-    """Add a remote default storage location to a local instance.
-
-    This can be used to selectively share data.
+def set_managed_storage(root: UPathStr, **fs_kwargs):
+    """Add or switch to another managed storage location.
 
     Args:
         root: `UPathStr` - The new storage root, e.g., an S3 bucket.

@@ -53,6 +53,11 @@ def _delete_storage_record(storage_uuid: UUID, client: Client) -> None:
     response = client.table("storage").delete().eq("id", storage_uuid.hex).execute()
     if response.data:
         logger.important(f"deleted storage record on hub {storage_uuid.hex}")
+    else:
+        raise PermissionError(
+            f"Deleting of storage with {storage_uuid.hex} was not successful. Probably, you"
+            " don't have sufficient permissions."
+        )
 
 
 def update_instance_record(instance_uuid: UUID, fields: dict) -> None:
