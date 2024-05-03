@@ -5,6 +5,7 @@ from uuid import UUID
 
 import lamindb_setup as ln_setup
 import pytest
+from lamindb_setup._connect_instance import InstanceNotFoundError
 from lamindb_setup.core._hub_client import connect_hub_with_auth
 from lamindb_setup.core._hub_core import _connect_instance
 from lamindb_setup.core._hub_crud import (
@@ -27,7 +28,10 @@ def get_hub_client():
 def test_init_instance_postgres_default_name(get_hub_client):
     hub = get_hub_client
     instance_name = "pgtest"
-    ln_setup.delete(instance_name, force=True)
+    try:
+        ln_setup.delete(instance_name, force=True)
+    except InstanceNotFoundError:
+        pass
     # now, run init
     ln_setup.init(storage="./mydatapg", db=pgurl, _test=True)
     assert ln_setup.settings.instance.slug == "testuser2/pgtest"
