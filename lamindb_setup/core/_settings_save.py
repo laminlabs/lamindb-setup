@@ -41,6 +41,8 @@ def save_settings(
         for store_key, type in type_hints.items():
             if type == Optional[str]:
                 type = str
+            if type == Optional[bool]:
+                type = bool
             if "__" not in store_key:
                 if store_key == "storage_root":
                     value = settings.storage.root_as_str
