@@ -56,7 +56,10 @@ VALID_SUFFIXES = {
     ".zarr",
     ".json",
 }
-
+VALID_COMPOSITE_SUFFIXES = {
+    ".anndata.zarr",
+    ".spatialdata.zarr",
+}
 
 TRAILING_SEP = (os.sep, os.altsep) if os.altsep is not None else os.sep
 
@@ -74,6 +77,12 @@ def extract_suffix_from_path(path: Path, arg_name: str | None = None) -> str:
     total_suffix = "".join(path.suffixes)
     if total_suffix in VALID_SUFFIXES:
         return total_suffix
+    elif total_suffix.endswith(tuple(VALID_COMPOSITE_SUFFIXES)):
+        # below seems slow but OK for now
+        for suffix in VALID_COMPOSITE_SUFFIXES:
+            if total_suffix.endswith(suffix):
+                break
+        return suffix
     else:
         print_hint = True
         arg_name = "file" if arg_name is None else arg_name  # for the warning
