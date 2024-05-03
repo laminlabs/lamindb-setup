@@ -167,7 +167,6 @@ def _init_storage(ssettings: StorageSettings, client: Client) -> None:
     # on root & description
     client.table("storage").upsert(fields).execute()
     ssettings._uuid_ = id
-    ssettings._is_on_hub = True
     return None
 
 

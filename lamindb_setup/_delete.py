@@ -88,6 +88,7 @@ def delete(slug: str, force: bool = False, require_empty: bool = True) -> int | 
                 root=storage_result["root"],
                 region=storage_result["region"],
                 uid=storage_result["lnid"],
+                uuid=UUID(storage_result["id"]),
             )
             isettings = InstanceSettings(
                 id=UUID(instance_result["id"]),

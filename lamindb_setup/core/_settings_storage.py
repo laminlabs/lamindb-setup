@@ -177,7 +177,6 @@ class StorageSettings:
         # local storage
         self._has_local = False
         self._local = None
-        self._is_on_hub: bool | None = None
 
     @property
     def id(self) -> int:
@@ -320,16 +319,10 @@ class StorageSettings:
 
         Only works if user has access to the instance.
         """
-        if self._is_on_hub is None:
-            from ._hub_client import call_with_fallback_auth
-            from ._hub_crud import select_storage
-
-            response = call_with_fallback_auth(select_storage, id=self._uuid.hex)  # type: ignore
-            if response is None:
-                self._is_on_hub = False
-            else:
-                self._is_on_hub = True
-        return self._is_on_hub
+        if self._uuid is None:
+            return False
+        else:
+            return True
 
     def key_to_filepath(self, filekey: Path | UPath | str) -> UPath:
         """Cloud or local filepath from filekey."""
