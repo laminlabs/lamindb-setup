@@ -159,6 +159,7 @@ def connect(
                     region=storage_result["region"],
                     uid=storage_result["lnid"],
                     uuid=UUID(storage_result["id"]),
+                    instance_id=UUID(instance_result["id"]),
                 )
                 isettings = InstanceSettings(
                     id=UUID(instance_result["id"]),
@@ -221,6 +222,10 @@ def connect(
 
         if storage is not None and isettings.dialect == "sqlite":
             update_root_field_in_default_storage(isettings)
+        # below is for backfilling the instance_uid value
+        if ssettings.record.instance_uid is None:
+            ssettings.record.instance_uid = isettings.uid
+            ssettings.record.save()
         load_from_isettings(isettings)
     except Exception as e:
         if isettings is not None:
