@@ -57,6 +57,7 @@ class InstanceSettingsStore(BaseSettings):
     schema_str: Optional[str]
     id: str
     git_repo: Optional[str]
+    keep_artifacts_local: Optional[bool]
 
     class Config:
         env_prefix = "lamindb_instance_"

@@ -89,6 +89,7 @@ def setup_instance_from_store(store: InstanceSettingsStore) -> InstanceSettings:
         db=store.db if store.db != "null" else None,  # type: ignore
         schema=store.schema_str if store.schema_str != "null" else None,
         git_repo=store.git_repo if store.git_repo != "null" else None,
+        keep_artifacts_local=store.keep_artifacts_local,  # type: ignore
     )
 
 
