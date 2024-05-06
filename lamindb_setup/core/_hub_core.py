@@ -290,7 +290,7 @@ def _init_instance(isettings: InstanceSettings, client: Client) -> None:
     client.table("storage").update(
         {"instance_id": isettings._id.hex, "is_default": True}
     ).eq("id", isettings.storage._uuid.hex).execute()  # type: ignore
-    logger.save(f"browse to: https://lamin.ai/{isettings.owner}/{isettings.name}")
+    logger.important(f"go to: https://lamin.ai/{isettings.owner}/{isettings.name}")
 
 
 def connect_instance(
