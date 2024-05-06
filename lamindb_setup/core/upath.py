@@ -505,8 +505,8 @@ def compute_file_tree(
     display_suffixes = ", ".join([f"{suffix!r}" for suffix in suffixes])
     suffix_message = f" with suffixes {display_suffixes}" if n_objects > 0 else ""
     message = (
-        f"{path.name} ({n_directories} sub-{directory_info} &"
-        f" {n_objects} files{suffix_message}): {folder_tree}"
+        f"{n_directories} sub-{directory_info} &"
+        f" {n_objects} files{suffix_message}\n{path.resolve()}{folder_tree}"
     )
     return message, n_objects
 
