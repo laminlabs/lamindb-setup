@@ -3,7 +3,7 @@
 <!-- prettier-ignore -->
 Name | PR | Developer | Date | Version
 --- | --- | --- | --- | ---
-♻️ Better treatment of current_user_id | [754](https://github.com/laminlabs/lamindb-setup/pull/754) | [falexwolf](https://github.com/falexwolf) | 2024-05-06 |
+♻️ Better treatment of current_user_id | [754](https://github.com/laminlabs/lamindb-setup/pull/754) | [falexwolf](https://github.com/falexwolf) | 2024-05-06 | 0.72.2
 💚 Fix tests | [753](https://github.com/laminlabs/lamindb-setup/pull/753) | [fredericenard](https://github.com/fredericenard) | 2024-05-06 |
 ♻️ Actually use local db | [751](https://github.com/laminlabs/lamindb-setup/pull/751) | [falexwolf](https://github.com/falexwolf) | 2024-05-06 | 0.71.2
 ✏️ Restore view_tree py3.9 compatibility | [750](https://github.com/laminlabs/lamindb-setup/pull/750) | [sunnyosun](https://github.com/sunnyosun) | 2024-05-06 |
