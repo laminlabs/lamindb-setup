@@ -46,10 +46,6 @@ class UserSettings:
     @property
     def id(self):
         """Integer id valid in current intance."""
-        # do NOT use the function below because this
-        # doesn't error - it needs to be this way to have
-        # a user id available in migrations
-        # from lnschema_core.users import current_user_id
-        from lnschema_core.models import User
+        from lnschema_core.users import current_user_id
 
-        return User.objects.get(uid=self.uid).id
+        return current_user_id()
