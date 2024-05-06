@@ -3,6 +3,7 @@
 <!-- prettier-ignore -->
 Name | PR | Developer | Date | Version
 --- | --- | --- | --- | ---
+✏️ Restore view_tree py3.9 compatibility | [750](https://github.com/laminlabs/lamindb-setup/pull/750) | [sunnyosun](https://github.com/sunnyosun) | 2024-05-06 |
 💚 Pin laminapp-ui | [749](https://github.com/laminlabs/lamindb-setup/pull/749) | [falexwolf](https://github.com/falexwolf) | 2024-05-06 |
 ♻️ Extend valid suffixes to composite suffixes | [746](https://github.com/laminlabs/lamindb-setup/pull/746) | [falexwolf](https://github.com/falexwolf) | 2024-05-03 | 0.71.1
 🐛 Fix test failures | [745](https://github.com/laminlabs/lamindb-setup/pull/745) | [Koncopd](https://github.com/Koncopd) | 2024-05-03 |
