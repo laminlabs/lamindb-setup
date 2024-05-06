@@ -52,4 +52,4 @@ class UserSettings:
         # from lnschema_core.users import current_user_id
         from lnschema_core.models import User
 
-        return User.objects.get(uid=self.user.uid).id
+        return User.objects.get(uid=self.uid).id
