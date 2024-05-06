@@ -7,8 +7,7 @@ import pytest
 from lamindb_setup._connect_instance import InstanceNotFoundError
 from lamindb_setup.core._hub_client import connect_hub_with_auth
 from lamindb_setup.core._hub_crud import update_instance
-from laminhub_rest.core.collaborator._add_collaborator import add_collaborator
-from laminhub_rest.core.collaborator._delete_collaborator import delete_collaborator
+from laminhub_rest.core.instance.collaborator import InstanceCollaboratorHandler
 from postgrest.exceptions import APIError
 
 # @pytest.fixture
@@ -24,15 +23,16 @@ def test_connect_after_revoked_access():
     if os.getenv("LAMIN_ENV") == "prod":
         ln_setup.login("testuser1@lamin.ai")
         admin_hub = connect_hub_with_auth()
+        collaborator_handler = InstanceCollaboratorHandler(admin_hub)
         try:
             # if a previous test run failed, this will
             # error with a violation of a unique constraint
-            add_collaborator(
+            collaborator_handler.add_by_name(
                 "testuser2",
                 "laminlabs",
                 "static-test-instance-private-sqlite",
                 "write",
-                admin_hub,
+                "default",
             )
         except APIError:
             pass
@@ -44,11 +44,8 @@ def test_connect_after_revoked_access():
             ln_setup.settings.instance.storage.root_as_str
             == "s3://lamindb-setup-private-bucket"
         )
-        delete_collaborator(
-            "laminlabs",
-            "static-test-instance-private-sqlite",
-            ln_setup.settings.user._uuid,
-            admin_hub,
+        collaborator_handler.delete_by_name(
+            "testuser2", "laminlabs", "static-test-instance-private-sqlite"
         )
         # make the instance private
         with pytest.raises(InstanceNotFoundError):

@@ -6,7 +6,7 @@ from lamin_utils import logger
 from laminhub_rest.dev._setup_local_hub import setup_local_hub
 
 pytest_plugins = [
-    "laminhub_rest.test.fixtures.user",
+    "laminhub_rest.core.account.user.test.fixtures",
     "laminhub_rest.test.fixtures.run_id",
 ]
 
