@@ -27,10 +27,9 @@ def test_connect_after_revoked_access():
         try:
             # if a previous test run failed, this will
             # error with a violation of a unique constraint
-            collaborator_handler.add_by_name(
+            collaborator_handler.add_by_slug(
+                "laminlabs/static-test-instance-private-sqlite",
                 "testuser2",
-                "laminlabs",
-                "static-test-instance-private-sqlite",
                 "write",
                 "default",
                 skip_insert_user_table=True,
@@ -45,8 +44,8 @@ def test_connect_after_revoked_access():
             ln_setup.settings.instance.storage.root_as_str
             == "s3://lamindb-setup-private-bucket"
         )
-        collaborator_handler.delete_by_name(
-            "testuser2", "laminlabs", "static-test-instance-private-sqlite"
+        collaborator_handler.delete_by_slug(
+            "laminlabs/static-test-instance-private-sqlite", "testuser2"
         )
         # make the instance private
         with pytest.raises(InstanceNotFoundError):
