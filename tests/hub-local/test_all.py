@@ -34,7 +34,7 @@ from lamindb_setup.core._settings_save import save_user_settings
 from lamindb_setup.core._settings_storage import base62
 from lamindb_setup.core._settings_storage import init_storage as init_storage_base
 from lamindb_setup.core._settings_user import UserSettings
-from laminhub_rest.core.collaborator._add_collaborator import add_collaborator_by_ids
+from laminhub_rest.core.instance.collaborator import InstanceCollaboratorHandler
 from postgrest.exceptions import APIError
 
 
@@ -196,11 +196,10 @@ def test_db_user(
     )
     assert db_collaborator is None
     # now add testreader1 as a collaborator
-    add_collaborator_by_ids(
+    InstanceCollaboratorHandler(admin_client).add(
         account_id=reader_settings._uuid,
         instance_id=instance_id,
         role="read",
-        supabase_client=admin_client,
     )
     # check that this was successful and can be read by the reader
     db_collaborator = select_collaborator(
