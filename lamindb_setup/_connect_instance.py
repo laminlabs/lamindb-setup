@@ -107,7 +107,7 @@ def connect(
     *,
     db: str | None = None,
     storage: UPathStr | None = None,
-    _raise_not_reachable_error: bool = True,
+    _raise_not_found_error: bool = True,
     _test: bool = False,
 ) -> str | tuple | None:
     """Connect to instance.
@@ -181,12 +181,12 @@ def connect(
                 if settings_file.exists():
                     isettings = load_instance_settings(settings_file)
                     if isettings.is_remote:
-                        if _raise_not_reachable_error:
+                        if _raise_not_found_error:
                             raise InstanceNotFoundError(message)
                         return "instance-not-found"
 
                 else:
-                    if _raise_not_reachable_error:
+                    if _raise_not_found_error:
                         raise InstanceNotFoundError(message)
                     return "instance-not-found"
 
@@ -209,7 +209,7 @@ def connect(
                     f" {isettings._sqlite_file_local}\nTo push the file to the cloud,"
                     " call: lamin close"
                 )
-            elif _raise_not_reachable_error:
+            elif _raise_not_found_error:
                 raise SystemExit(msg)
             else:
                 logger.warning(
