@@ -33,6 +33,7 @@ def test_connect_after_revoked_access():
                 "static-test-instance-private-sqlite",
                 "write",
                 "default",
+                skip_insert_user_table=True,
             )
         except APIError:
             pass
