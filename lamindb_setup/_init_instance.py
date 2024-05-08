@@ -67,20 +67,19 @@ def register_storage_in_instance(ssettings: StorageSettings):
 def register_user(usettings):
     from lnschema_core.models import User
 
-    if usettings.handle != "laminapp-admin":
-        try:
-            # need to have try except because of integer primary key migration
-            user, created = User.objects.update_or_create(
-                uid=usettings.uid,
-                defaults={
-                    "handle": usettings.handle,
-                    "name": usettings.name,
-                },
-            )
-        # for users with only read access, except via ProgrammingError
-        # ProgrammingError: permission denied for table lnschema_core_user
-        except (OperationalError, FieldError, ProgrammingError):
-            pass
+    try:
+        # need to have try except because of integer primary key migration
+        user, created = User.objects.update_or_create(
+            uid=usettings.uid,
+            defaults={
+                "handle": usettings.handle,
+                "name": usettings.name,
+            },
+        )
+    # for users with only read access, except via ProgrammingError
+    # ProgrammingError: permission denied for table lnschema_core_user
+    except (OperationalError, FieldError, ProgrammingError):
+        pass
 
 
 def register_user_and_storage_in_instance(isettings: InstanceSettings, usettings):

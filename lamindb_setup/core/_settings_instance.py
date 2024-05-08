@@ -406,9 +406,7 @@ class InstanceSettings:
 
         setup_django(self, init=True)
 
-    def _load_db(
-        self, do_not_lock_for_laminapp_admin: bool = False
-    ) -> tuple[bool, str]:
+    def _load_db(self) -> tuple[bool, str]:
         # Is the database available and initialized as LaminDB?
         # returns a tuple of status code and message
         if self.dialect == "sqlite" and not self._sqlite_file.exists():
@@ -423,15 +421,8 @@ class InstanceSettings:
 
         from .django import setup_django
 
-        # lock in all cases except if do_not_lock_for_laminapp_admin is True and
-        # user is `laminapp-admin`
-        # value doesn't matter if not a cloud sqlite instance
-        lock_cloud_sqlite = self._is_cloud_sqlite and (
-            not do_not_lock_for_laminapp_admin
-            or settings.user.handle != "laminapp-admin"
-        )
         # we need the local sqlite to setup django
-        self._update_local_sqlite_file(lock_cloud_sqlite=lock_cloud_sqlite)
+        self._update_local_sqlite_file(lock_cloud_sqlite=self._is_cloud_sqlite)
         # setting up django also performs a check for migrations & prints them
         # as warnings
         # this should fail, e.g., if the db is not reachable

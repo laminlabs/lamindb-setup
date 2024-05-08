@@ -196,9 +196,7 @@ def connect(
         if _test:
             return None
         silence_loggers()
-        check, msg = isettings._load_db(
-            do_not_lock_for_laminapp_admin=True
-        )  # this also updates local SQLite
+        check, msg = isettings._load_db()
         if not check:
             local_db = (
                 isettings._is_cloud_sqlite and isettings._sqlite_file_local.exists()
