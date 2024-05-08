@@ -55,7 +55,10 @@ def check_db_dsn_equal_up_to_credentials(db_dsn_hub, db_dsn_local):
 
 
 def update_db_using_local(
-    hub_instance_result: dict[str, str], settings_file: Path, db: str | None = None
+    hub_instance_result: dict[str, str],
+    settings_file: Path,
+    db: str | None = None,
+    raise_permission_error=True,
 ) -> str | None:
     db_updated = None
     # check if postgres
@@ -77,7 +80,11 @@ def update_db_using_local(
                 db_dsn_local = LaminDsnModel(db=isettings.db)
             else:
                 # just take the default hub result and ensure there is actually a user
-                if db_dsn_hub.db.user == "none" and db_dsn_hub.db.password == "none":
+                if (
+                    db_dsn_hub.db.user == "none"
+                    and db_dsn_hub.db.password == "none"
+                    and raise_permission_error
+                ):
                     raise PermissionError(
                         "No database access, please ask your admin to provide you with"
                         " a DB URL and pass it via --db <db_url>"
@@ -106,6 +113,7 @@ def _connect_instance(
     name: str,
     *,
     db: str | None = None,
+    raise_permission_error: bool = True,
 ) -> InstanceSettings:
     settings_file = instance_settings_file(name, owner)
     make_hub_request = True
@@ -121,7 +129,12 @@ def _connect_instance(
         # that successfully returned metadata
         if not isinstance(hub_result, str):
             instance_result, storage_result = hub_result
-            db_updated = update_db_using_local(instance_result, settings_file, db=db)
+            db_updated = update_db_using_local(
+                instance_result,
+                settings_file,
+                db=db,
+                raise_permission_error=raise_permission_error,
+            )
             ssettings = StorageSettings(
                 root=storage_result["root"],
                 region=storage_result["region"],

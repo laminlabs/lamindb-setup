@@ -62,7 +62,7 @@ def delete(slug: str, force: bool = False, require_empty: bool = True) -> int | 
         require_empty: Whether to check if the instance is empty before deleting.
     """
     owner, name = get_owner_name_from_identifier(slug)
-    isettings = _connect_instance(owner, name)
+    isettings = _connect_instance(owner, name, raise_permission_error=False)
     if isettings.dialect != "sqlite":
         logger.warning(
             f"delete() does not yet affect your Postgres database at {isettings.db}"
