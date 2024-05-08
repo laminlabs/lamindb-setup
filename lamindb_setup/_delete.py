@@ -1,28 +1,22 @@
 from __future__ import annotations
 
 import shutil
-from typing import TYPE_CHECKING, Optional
+from typing import TYPE_CHECKING
 from uuid import UUID
 
 from lamin_utils import logger
 
-from ._connect_instance import (
-    INSTANCE_NOT_FOUND_MESSAGE,
-    InstanceNotFoundError,
-    get_owner_name_from_identifier,
-)
-from .core._hub_core import connect_instance as load_instance_from_hub
+from ._connect_instance import _connect_instance, get_owner_name_from_identifier
 from .core._hub_core import delete_instance as delete_instance_on_hub
 from .core._hub_core import get_storage_records_for_instance
 from .core._settings import settings
-from .core._settings_instance import InstanceSettings
-from .core._settings_load import load_instance_settings
 from .core._settings_storage import StorageSettings
-from .core._settings_store import instance_settings_file
 from .core.upath import HOSTED_BUCKETS, check_storage_is_empty
 
 if TYPE_CHECKING:
     from pathlib import Path
+
+    from .core._settings_instance import InstanceSettings
 
 
 def delete_cache(cache_dir: Path):
@@ -67,42 +61,8 @@ def delete(slug: str, force: bool = False, require_empty: bool = True) -> int | 
         force: Whether to skip the confirmation prompt.
         require_empty: Whether to check if the instance is empty before deleting.
     """
-    instance_owner, instance_name = get_owner_name_from_identifier(slug)
-    if settings._instance_exists and settings.instance.name == instance_name:
-        isettings = settings.instance
-    else:
-        settings_file = instance_settings_file(instance_name, instance_owner)
-        if not settings_file.exists():
-            hub_result = load_instance_from_hub(
-                owner=instance_owner, name=instance_name
-            )
-            if isinstance(hub_result, str):
-                message = INSTANCE_NOT_FOUND_MESSAGE.format(
-                    owner=instance_owner,
-                    name=instance_name,
-                    hub_result=hub_result,
-                )
-                raise InstanceNotFoundError(message)
-            instance_result, storage_result = hub_result
-            ssettings = StorageSettings(
-                root=storage_result["root"],
-                region=storage_result["region"],
-                uid=storage_result["lnid"],
-                uuid=UUID(storage_result["id"]),
-            )
-            isettings = InstanceSettings(
-                id=UUID(instance_result["id"]),
-                owner=instance_owner,
-                name=instance_name,
-                storage=ssettings,
-                keep_artifacts_local=bool(instance_result["keep_artifacts_local"]),
-                db=instance_result["db"] if "db" in instance_result else None,
-                schema=instance_result["schema_str"],
-                git_repo=instance_result["git_repo"],
-                is_on_hub=True,
-            )
-        else:
-            isettings = load_instance_settings(settings_file)
+    owner, name = get_owner_name_from_identifier(slug)
+    isettings = _connect_instance(owner, name)
     if isettings.dialect != "sqlite":
         logger.warning(
             f"delete() does not yet affect your Postgres database at {isettings.db}"
