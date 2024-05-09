@@ -3,6 +3,7 @@
 <!-- prettier-ignore -->
 Name | PR | Developer | Date | Version
 --- | --- | --- | --- | ---
+♻️ Make init_instance_hub idempotent | [757](https://github.com/laminlabs/lamindb-setup/pull/757) | [falexwolf](https://github.com/falexwolf) | 2024-05-09 |
 ♻️ Refactor delete & connect | [756](https://github.com/laminlabs/lamindb-setup/pull/756) | [falexwolf](https://github.com/falexwolf) | 2024-05-09 |
 🔥 Remove laminapp-admin logic | [755](https://github.com/laminlabs/lamindb-setup/pull/755) | [falexwolf](https://github.com/falexwolf) | 2024-05-08 |
 ♻️ Better treatment of current_user_id | [754](https://github.com/laminlabs/lamindb-setup/pull/754) | [falexwolf](https://github.com/falexwolf) | 2024-05-06 | 0.72.2
