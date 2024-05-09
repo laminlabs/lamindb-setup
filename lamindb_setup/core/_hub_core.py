@@ -284,9 +284,11 @@ def _init_instance(isettings: InstanceSettings, client: Client) -> None:
     # as then init_instance is no longer idempotent
     try:
         client.table("instance").insert(fields, returning="minimal").execute()
-    except APIError as e:
-        logger.warning("instance likely already exists")
-        raise e
+    except APIError:
+        logger.warning(
+            f"instance already existed at: https://lamin.ai/{isettings.owner}/{isettings.name}"
+        )
+        return None
     client.table("storage").update(
         {"instance_id": isettings._id.hex, "is_default": True}
     ).eq("id", isettings.storage._uuid.hex).execute()  # type: ignore
