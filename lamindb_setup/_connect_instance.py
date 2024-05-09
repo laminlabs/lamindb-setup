@@ -55,7 +55,10 @@ def check_db_dsn_equal_up_to_credentials(db_dsn_hub, db_dsn_local):
 
 
 def update_db_using_local(
-    hub_instance_result: dict[str, str], settings_file: Path, db: str | None = None
+    hub_instance_result: dict[str, str],
+    settings_file: Path,
+    db: str | None = None,
+    raise_permission_error=True,
 ) -> str | None:
     db_updated = None
     # check if postgres
@@ -77,7 +80,11 @@ def update_db_using_local(
                 db_dsn_local = LaminDsnModel(db=isettings.db)
             else:
                 # just take the default hub result and ensure there is actually a user
-                if db_dsn_hub.db.user == "none" and db_dsn_hub.db.password == "none":
+                if (
+                    db_dsn_hub.db.user == "none"
+                    and db_dsn_hub.db.password == "none"
+                    and raise_permission_error
+                ):
                     raise PermissionError(
                         "No database access, please ask your admin to provide you with"
                         " a DB URL and pass it via --db <db_url>"
@@ -99,6 +106,65 @@ def update_db_using_local(
             database=db_dsn_hub.db.database,
         )
     return db_updated
+
+
+def _connect_instance(
+    owner: str,
+    name: str,
+    *,
+    db: str | None = None,
+    raise_permission_error: bool = True,
+) -> InstanceSettings:
+    settings_file = instance_settings_file(name, owner)
+    make_hub_request = True
+    if settings_file.exists():
+        isettings = load_instance_settings(settings_file)
+        # skip hub request for a purely local instance
+        make_hub_request = isettings.is_remote
+    if make_hub_request:
+        # the following will return a string if the instance does not exist
+        # on the hub
+        hub_result = load_instance_from_hub(owner=owner, name=name)
+        # if hub_result is not a string, it means it made a request
+        # that successfully returned metadata
+        if not isinstance(hub_result, str):
+            instance_result, storage_result = hub_result
+            db_updated = update_db_using_local(
+                instance_result,
+                settings_file,
+                db=db,
+                raise_permission_error=raise_permission_error,
+            )
+            ssettings = StorageSettings(
+                root=storage_result["root"],
+                region=storage_result["region"],
+                uid=storage_result["lnid"],
+                uuid=UUID(storage_result["id"]),
+                instance_id=UUID(instance_result["id"]),
+            )
+            isettings = InstanceSettings(
+                id=UUID(instance_result["id"]),
+                owner=owner,
+                name=name,
+                storage=ssettings,
+                db=db_updated,
+                schema=instance_result["schema_str"],
+                git_repo=instance_result["git_repo"],
+                keep_artifacts_local=bool(instance_result["keep_artifacts_local"]),
+                is_on_hub=True,
+            )
+            check_whether_migrations_in_sync(instance_result["lamindb_version"])
+        else:
+            message = INSTANCE_NOT_FOUND_MESSAGE.format(
+                owner=owner, name=name, hub_result=hub_result
+            )
+            if settings_file.exists():
+                isettings = load_instance_settings(settings_file)
+                if isettings.is_remote:
+                    raise InstanceNotFoundError(message)
+            else:
+                raise InstanceNotFoundError(message)
+    return isettings
 
 
 @unlock_cloud_sqlite_upon_exception(ignore_prev_locker=True)
@@ -134,62 +200,15 @@ def connect(
         elif settings._instance_exists and f"{owner}/{name}" != settings.instance.slug:
             close_instance(mute=True)
 
-        settings_file = instance_settings_file(name, owner)
-
-        make_hub_request = True
-        if settings_file.exists():
-            isettings = load_instance_settings(settings_file)
-            # mimic instance_result from hub
-            instance_result = {"id": isettings._id.hex}
-            # skip hub request for a purely local instance
-            make_hub_request = isettings.is_remote
-
-        if make_hub_request:
-            # the following will return a string if the instance does not exist
-            # on the hub
-            hub_result = load_instance_from_hub(owner=owner, name=name)
-            # if hub_result is not a string, it means it made a request
-            # that successfully returned metadata
-            if not isinstance(hub_result, str):
-                instance_result, storage_result = hub_result
-                db_updated = update_db_using_local(
-                    instance_result, settings_file, db=db
-                )
-                ssettings = StorageSettings(
-                    root=storage_result["root"],
-                    region=storage_result["region"],
-                    uid=storage_result["lnid"],
-                    uuid=UUID(storage_result["id"]),
-                    instance_id=UUID(instance_result["id"]),
-                )
-                isettings = InstanceSettings(
-                    id=UUID(instance_result["id"]),
-                    owner=owner,
-                    name=name,
-                    storage=ssettings,
-                    db=db_updated,
-                    schema=instance_result["schema_str"],
-                    git_repo=instance_result["git_repo"],
-                    keep_artifacts_local=bool(instance_result["keep_artifacts_local"]),
-                    is_on_hub=True,
-                )
-                check_whether_migrations_in_sync(instance_result["lamindb_version"])
+        try:
+            isettings = _connect_instance(owner, name, db=db)
+        except InstanceNotFoundError as e:
+            if _raise_not_found_error:
+                raise e
             else:
-                message = INSTANCE_NOT_FOUND_MESSAGE.format(
-                    owner=owner, name=name, hub_result=hub_result
-                )
-                if settings_file.exists():
-                    isettings = load_instance_settings(settings_file)
-                    if isettings.is_remote:
-                        if _raise_not_found_error:
-                            raise InstanceNotFoundError(message)
-                        return "instance-not-found"
-
-                else:
-                    if _raise_not_found_error:
-                        raise InstanceNotFoundError(message)
-                    return "instance-not-found"
-
+                return "instance-not-found"
+        if isinstance(isettings, str):
+            return isettings
         if storage is not None:
             update_isettings_with_storage(isettings, storage)
         isettings._persist()
@@ -214,7 +233,7 @@ def connect(
                     f"instance exists with id {isettings._id.hex}, but database is not"
                     " loadable: re-initializing"
                 )
-                return "instance-corrupted-or-deleted", instance_result
+                return "instance-corrupted-or-deleted"
         # this is for testing purposes only
         if _TEST_FAILED_LOAD:
             raise RuntimeError("Technical testing error.")

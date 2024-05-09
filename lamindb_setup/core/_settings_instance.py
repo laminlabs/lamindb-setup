@@ -42,7 +42,7 @@ class InstanceSettings:
         db: str | None = None,  # DB URI
         schema: str | None = None,  # comma-separated string of schema names
         git_repo: str | None = None,  # a git repo URL
-        is_on_hub: bool = False,  # initialized from hub
+        is_on_hub: bool | None = None,  # initialized from hub
     ):
         from ._hub_utils import validate_db_arg
 
