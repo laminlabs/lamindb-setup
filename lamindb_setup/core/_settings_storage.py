@@ -113,11 +113,20 @@ def init_storage(
     )
     # the below might update the uid with one that's already taken on the hub
     if ssettings.type_is_cloud or register_hub:
+        from ._hub_core import delete_storage_record
         from ._hub_core import init_storage as init_storage_hub
 
         init_storage_hub(ssettings)
     # below comes last only if everything else was successful
-    mark_storage_root(ssettings.root, ssettings.uid)  # type: ignore
+    try:
+        mark_storage_root(ssettings.root, ssettings.uid)  # type: ignore
+    except Exception:
+        logger.important(
+            f"due to lack of write access, LaminDB won't manage storage location: {ssettings.root}"
+        )
+        if ssettings._uuid is not None:
+            delete_storage_record(ssettings._uuid)  # type: ignore
+        ssettings._instance_id = None
     return ssettings
 
 
