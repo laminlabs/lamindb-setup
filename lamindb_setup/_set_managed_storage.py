@@ -31,6 +31,10 @@ def set_managed_storage(root: UPathStr, **fs_kwargs):
     ssettings = init_storage(
         root=root, instance_id=settings.instance._id, register_hub=True
     )
+    if ssettings._instance_id is None:
+        raise ValueError(
+            f"Cannot manage storage without write access: {ssettings.root}"
+        )
     settings.instance._storage = ssettings
     settings.instance._persist()  # this also updates the settings object
     register_storage_in_instance(ssettings)
