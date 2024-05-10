@@ -44,15 +44,17 @@ def register_storage_in_instance(ssettings: StorageSettings):
 
     from .core.hashing import hash_and_encode_as_b62
 
-    assert ssettings._instance_id is not None
-
+    if ssettings._instance_id is not None:
+        instance_uid = hash_and_encode_as_b62(ssettings._instance_id.hex)[:12]
+    else:
+        instance_uid = None
     # how do we ensure that this function is only called passing
     # the managing instance?
     defaults = {
         "root": ssettings.root_as_str,
         "type": ssettings.type,
         "region": ssettings.region,
-        "instance_uid": hash_and_encode_as_b62(ssettings._instance_id.hex)[:12],
+        "instance_uid": instance_uid,
         "created_by_id": current_user_id(),
     }
     if ssettings._uid is not None:
