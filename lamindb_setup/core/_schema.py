@@ -17,7 +17,7 @@ def get_schema(instance_id: UUID) -> dict:
 
 
 def _get_rest_api_url():
-    env = os.environ["LAMIN_ENV"]
+    env = os.environ.get("LAMIN_ENV", "prod")
     if env == "prod":
         return "https://w2pwdctwpt.us-east-1.awsapprunner.com"
     elif env == "prod-test":
