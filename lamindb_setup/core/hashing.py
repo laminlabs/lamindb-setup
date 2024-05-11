@@ -60,14 +60,18 @@ def hash_code(file_path: UPathStr):
 
 
 def hash_file(
-    file_path: Path, file_size: int | None = None, chunk_size: int = 50 * 1024 * 1024
+    file_path: Path,
+    file_size: int | None = None,
+    chunk_size: int | None = 50 * 1024 * 1024,
 ) -> tuple[str, str]:
     with open(file_path, "rb") as fp:
-        first_chunk = fp.read(chunk_size)
         if file_size is None:
             fp.seek(0, 2)
             file_size = fp.tell()
             fp.seek(0, 0)
+        if chunk_size is None:
+            chunk_size = file_size
+        first_chunk = fp.read(chunk_size)
         if file_size <= chunk_size:
             digest = hashlib.md5(first_chunk).digest()
             hash_type = "md5"
