@@ -367,17 +367,25 @@ class InstanceSettings:
 
     @property
     def is_on_hub(self) -> bool:
-        """Is this instance on the hub.
+        """Is this instance on the hub?
 
-        Only works if user has access to the instance.
+        Can only reliably establish if user has access to the instance. Will
+        return `False` in case the instance isn't found.
         """
         if self._is_on_hub is None:
             from ._hub_client import call_with_fallback_auth
             from ._hub_crud import select_instance_by_id
+            from ._settings import settings
 
-            response = call_with_fallback_auth(
-                select_instance_by_id, instance_id=self._id.hex
-            )
+            if settings.user.handle != "anonymous":
+                response = call_with_fallback_auth(
+                    select_instance_by_id, instance_id=self._id.hex
+                )
+            else:
+                response = call_with_fallback(
+                    select_instance_by_id, instance_id=self._id.hex
+                )
+                logger.warning("calling anonymously, will miss private instances")
             if response is None:
                 self._is_on_hub = False
             else:
