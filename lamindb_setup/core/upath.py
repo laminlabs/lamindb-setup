@@ -18,6 +18,7 @@ from upath import UPath
 from upath.implementations.cloud import CloudPath, S3Path  # keep CloudPath!
 from upath.implementations.local import LocalPath, PosixUPath, WindowsUPath
 
+from ._aws_credentials import get_aws_credentials_manager
 from .hashing import b16_to_b64, hash_md5s_from_dir
 
 if TYPE_CHECKING:
@@ -656,20 +657,6 @@ Args:
 """
 
 
-def convert_pathlike(pathlike: UPathStr) -> UPath:
-    """Convert pathlike to Path or UPath inheriting options from root."""
-    if isinstance(pathlike, (str, UPath)):
-        path = UPath(pathlike)
-    elif isinstance(pathlike, Path):
-        path = UPath(str(pathlike))  # UPath applied on Path gives Path back
-    else:
-        raise ValueError("pathlike should be of type UPathStr")
-    # remove trailing slash
-    if path._parts and path._parts[-1] == "":
-        path._parts = path._parts[:-1]
-    return path
-
-
 HOSTED_REGIONS = [
     "eu-central-1",
     "eu-west-2",
@@ -685,8 +672,20 @@ if lamin_env is None or lamin_env == "prod":
     HOSTED_BUCKETS = tuple(hosted_buckets_list)
 else:
     HOSTED_BUCKETS = ("s3://lamin-hosted-test",)  # type: ignore
-credentials_cache: dict[str, dict[str, str]] = {}
-AWS_CREDENTIALS_PRESENT = None
+
+
+def convert_pathlike(pathlike: UPathStr) -> UPath:
+    """Convert pathlike to Path or UPath inheriting options from root."""
+    if isinstance(pathlike, (str, UPath)):
+        path = UPath(pathlike)
+    elif isinstance(pathlike, Path):
+        path = UPath(str(pathlike))  # UPath applied on Path gives Path back
+    else:
+        raise ValueError("pathlike should be of type UPathStr")
+    # remove trailing slash
+    if path._parts and path._parts[-1] == "":
+        path._parts = path._parts[:-1]
+    return path
 
 
 def create_path(path: UPath, access_token: str | None = None) -> UPath:
@@ -694,53 +693,9 @@ def create_path(path: UPath, access_token: str | None = None) -> UPath:
     # test whether we have an AWS S3 path
     if not isinstance(path, S3Path):
         return path
-    # test whether AWS credentials are present
-    global AWS_CREDENTIALS_PRESENT
 
-    if AWS_CREDENTIALS_PRESENT is not None:
-        anon = AWS_CREDENTIALS_PRESENT
-    else:
-        if path.fs.key is not None and path.fs.secret is not None:
-            anon = False
-        else:
-            # we could do path.fs.connect()
-            # and check path.fs.session._credentials, but it'd be slower
-            session = botocore.session.get_session()
-            credentials = session.get_credentials()
-            if credentials is None or credentials.access_key is None:
-                anon = True
-            else:
-                anon = False
-            # cache credentials and reuse further
-            AWS_CREDENTIALS_PRESENT = anon
-
-    # test whether we are on hosted storage or not
-    path_str = path.as_posix()
-    is_hosted_storage = path_str.startswith(HOSTED_BUCKETS)
-
-    if not is_hosted_storage:
-        # make anon request if no credentials present
-        return UPath(path, cache_regions=True, anon=anon)
-
-    root_folder = "/".join(path_str.replace("s3://", "").split("/")[:2])
-
-    if access_token is None and root_folder in credentials_cache:
-        credentials = credentials_cache[root_folder]
-    else:
-        from ._hub_core import access_aws
-
-        credentials = access_aws(
-            storage_root=f"s3://{root_folder}", access_token=access_token
-        )
-        if access_token is None:
-            credentials_cache[root_folder] = credentials
-
-    return UPath(
-        path,
-        key=credentials["key"],
-        secret=credentials["secret"],
-        token=credentials["token"],
-    )
+    aws_credentials_manager = get_aws_credentials_manager()
+    return aws_credentials_manager.create_path(path, access_token)
 
 
 def get_stat_file_cloud(stat: dict) -> tuple[int, str, str]:
