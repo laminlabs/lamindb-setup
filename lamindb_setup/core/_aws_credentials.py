@@ -79,6 +79,7 @@ class AWSCredentialsManager:
             from ._hub_core import access_aws
 
             if root is None:
+                # for now take the second level for root if exists
                 root = "/".join(path_str.split("/")[:2])
             credentials = access_aws(f"s3://{root}", access_token=access_token)
             if access_token is None:
