@@ -4,7 +4,7 @@ import time
 
 from upath.implementations.cloud import S3Path
 
-AWS_CREDENTIALS_EXPIRATION = 7 * 60 * 60  # 7 hours
+AWS_CREDENTIALS_EXPIRATION = 6 * 60 * 60  # 6 hours
 
 
 class AWSCredentialsManager:
