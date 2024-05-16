@@ -40,11 +40,11 @@ def hash_set(s: set[str]) -> str:
     return to_b64_str(hashlib.md5(bstr).digest())[:20]
 
 
-def hash_md5s_from_dir(etags: list[str]) -> tuple[str, str]:
+def hash_md5s_from_dir(hashes: list[str]) -> tuple[str, str]:
     # need to sort below because we don't want the order of parsing the dir to
     # affect the hash
     digests = b"".join(
-        hashlib.md5(etag.encode("utf-8")).digest() for etag in sorted(etags)
+        hashlib.md5(hash.encode("utf-8")).digest() for hash in sorted(hashes)
     )
     digest = hashlib.md5(digests).digest()
     return to_b64_str(digest)[:22], "md5-d"
@@ -59,24 +59,27 @@ def hash_code(file_path: UPathStr):
     return hashlib.sha1(blob)
 
 
-def hash_file(file_path: Path, chunk_size=50 * 1024 * 1024) -> tuple[str, str]:
-    chunks = []
+def hash_file(
+    file_path: Path,
+    file_size: int | None = None,
+    chunk_size: int | None = 50 * 1024 * 1024,
+) -> tuple[str, str]:
     with open(file_path, "rb") as fp:
-        # read first chunk
-        chunks = [fp.read(chunk_size)]
-        # try reading the 2nd chunk
-        data = fp.read(chunk_size)
-        if data:
-            # go to end of file
+        if file_size is None:
+            fp.seek(0, 2)
+            file_size = fp.tell()
+            fp.seek(0, 0)
+        if chunk_size is None:
+            chunk_size = file_size
+        first_chunk = fp.read(chunk_size)
+        if file_size <= chunk_size:
+            digest = hashlib.md5(first_chunk).digest()
+            hash_type = "md5"
+        else:
             fp.seek(-chunk_size, 2)
-            # read last chunk
-            data = fp.read(chunk_size)
-            chunks.append(data)
-    if len(chunks) == 1:
-        digest = hashlib.md5(chunks[0]).digest()
-        hash_type = "md5"
-    else:
-        digests = b"".join(hashlib.sha1(chunk).digest() for chunk in chunks)
-        digest = hashlib.sha1(digests).digest()
-        hash_type = "sha1-fl"  # sha1 first last chunk
+            last_chunk = fp.read(chunk_size)
+            digest = hashlib.sha1(
+                hashlib.sha1(first_chunk).digest() + hashlib.sha1(last_chunk).digest()
+            ).digest()
+            hash_type = "sha1-fl"
     return to_b64_str(digest)[:22], hash_type
