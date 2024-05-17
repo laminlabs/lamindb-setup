@@ -18,7 +18,7 @@ from upath import UPath
 from upath.implementations.cloud import CloudPath, S3Path  # keep CloudPath!
 from upath.implementations.local import LocalPath, PosixUPath, WindowsUPath
 
-from ._aws_credentials import get_aws_credentials_manager
+from ._aws_credentials import HOSTED_BUCKETS, get_aws_credentials_manager
 from .hashing import b16_to_b64, hash_md5s_from_dir
 
 if TYPE_CHECKING:
@@ -657,23 +657,6 @@ Args:
 """
 
 
-HOSTED_REGIONS = [
-    "eu-central-1",
-    "eu-west-2",
-    "us-east-1",
-    "us-east-2",
-    "us-west-1",
-    "us-west-2",
-]
-lamin_env = os.getenv("LAMIN_ENV")
-if lamin_env is None or lamin_env == "prod":
-    hosted_buckets_list = [f"s3://lamin-{region}" for region in HOSTED_REGIONS]
-    hosted_buckets_list.append("s3://scverse-spatial-eu-central-1")
-    HOSTED_BUCKETS = tuple(hosted_buckets_list)
-else:
-    HOSTED_BUCKETS = ("s3://lamin-hosted-test",)  # type: ignore
-
-
 def convert_pathlike(pathlike: UPathStr) -> UPath:
     """Convert pathlike to Path or UPath inheriting options from root."""
     if isinstance(pathlike, (str, UPath)):
@@ -695,7 +678,7 @@ def create_path(path: UPath, access_token: str | None = None) -> UPath:
         return path
 
     aws_credentials_manager = get_aws_credentials_manager()
-    return aws_credentials_manager.create_path(path, access_token)
+    return aws_credentials_manager.enrich_path(path, access_token)
 
 
 def get_stat_file_cloud(stat: dict) -> tuple[int, str, str]:

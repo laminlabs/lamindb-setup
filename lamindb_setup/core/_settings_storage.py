@@ -10,11 +10,11 @@ from typing import TYPE_CHECKING, Any, Literal, Optional, Union
 from appdirs import AppDirs
 from lamin_utils import logger
 
+from ._aws_credentials import HOSTED_REGIONS
 from ._aws_storage import find_closest_aws_region
 from ._settings_save import save_system_storage_settings
 from ._settings_store import system_storage_settings_file
 from .upath import (
-    HOSTED_REGIONS,
     LocalPathClasses,
     UPath,
     convert_pathlike,
