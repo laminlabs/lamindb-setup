@@ -22,7 +22,7 @@ else:
     HOSTED_BUCKETS = ("s3://lamin-hosted-test",)  # type: ignore
 
 
-AWS_CREDENTIALS_EXPIRATION = 6 * 60 * 60  # 6 hours
+AWS_CREDENTIALS_EXPIRATION = 11 * 60 * 60  # refresh credentials after 11 hours
 
 
 class AWSCredentialsManager:
