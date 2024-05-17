@@ -10,7 +10,7 @@ from typing import TYPE_CHECKING, Any, Literal, Optional, Union
 from appdirs import AppDirs
 from lamin_utils import logger
 
-from ._aws_credentials import HOSTED_REGIONS
+from ._aws_credentials import HOSTED_REGIONS, get_aws_credentials_manager
 from ._aws_storage import find_closest_aws_region
 from ._settings_save import save_system_storage_settings
 from ._settings_store import system_storage_settings_file
@@ -151,6 +151,7 @@ class StorageSettings:
         uid: str | None = None,
         uuid: UUID | None = None,
         instance_id: UUID | None = None,
+        # note that passing access_token prevents credentials caching
         access_token: str | None = None,
     ):
         self._uid = uid
@@ -235,6 +236,12 @@ class StorageSettings:
         if self._root is None:
             # below makes network requests to get credentials
             self._root = create_path(self._root_init, access_token=self.access_token)
+        elif getattr(self._root, "protocol", "") == "s3":
+            # this is needed to be sure that the root always have nonexpired credentials
+            # this just checks for time of the cached credentials in most cases
+            return get_aws_credentials_manager().enrich_path(
+                self._root, access_token=self.access_token
+            )
         return self._root
 
     def _set_fs_kwargs(self, **kwargs):

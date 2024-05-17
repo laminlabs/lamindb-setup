@@ -676,9 +676,7 @@ def create_path(path: UPath, access_token: str | None = None) -> UPath:
     # test whether we have an AWS S3 path
     if not isinstance(path, S3Path):
         return path
-
-    aws_credentials_manager = get_aws_credentials_manager()
-    return aws_credentials_manager.enrich_path(path, access_token)
+    return get_aws_credentials_manager().enrich_path(path, access_token)
 
 
 def get_stat_file_cloud(stat: dict) -> tuple[int, str, str]:

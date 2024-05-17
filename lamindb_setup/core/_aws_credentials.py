@@ -63,14 +63,22 @@ class AWSCredentialsManager:
     def _path_inject_options(self, path: S3Path, credentials: dict) -> S3Path:
         if credentials == {}:
             # credentials were specified manually for the path
-            if path.fs.key is not None and path.fs.secret is not None:
+            if "anon" in path._kwargs:
+                anon = path._kwargs["anon"]
+            elif path.fs.key is not None and path.fs.secret is not None:
                 anon = False
             else:
                 anon = self.anon
             connection_options = {"anon": anon}
         else:
             connection_options = credentials
-        return S3Path(path, cache_regions=True, **connection_options)
+
+        if "cache_regions" in path._kwargs:
+            cache_regions = path._kwargs["cache_regions"]
+        else:
+            cache_regions = True
+
+        return S3Path(path, cache_regions=cache_regions, **connection_options)
 
     def enrich_path(self, path: S3Path, access_token: str | None = None) -> S3Path:
         path_str = path.as_posix().rstrip("/")
