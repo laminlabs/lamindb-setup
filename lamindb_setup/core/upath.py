@@ -11,7 +11,6 @@ from itertools import islice
 from pathlib import Path, PurePosixPath
 from typing import TYPE_CHECKING, Any, Literal
 
-import botocore.session
 import fsspec
 from lamin_utils import logger
 from upath import UPath
@@ -159,7 +158,8 @@ def print_hook(size: int, value: int, objectname: str, action: str):
     progress_in_percent = (value / size) * 100
     out = f"... {action} {objectname}:" f" {min(progress_in_percent, 100):4.1f}%"
     if "NBPRJ_TEST_NBPATH" not in os.environ:
-        print(out, end="\r")
+        end = "\n" if progress_in_percent >= 100 else "\r"
+        print(out, end=end)
 
 
 class ProgressCallback(fsspec.callbacks.Callback):
