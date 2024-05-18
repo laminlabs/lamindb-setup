@@ -3,6 +3,7 @@
 <!-- prettier-ignore -->
 Name | PR | Developer | Date | Version
 --- | --- | --- | --- | ---
+🐛 Check empty after storage record root init in delete | [763](https://github.com/laminlabs/lamindb-setup/pull/763) | [Koncopd](https://github.com/Koncopd) | 2024-05-18 |
 ✨ Call `access_aws` for all paths and cache | [762](https://github.com/laminlabs/lamindb-setup/pull/762) | [Koncopd](https://github.com/Koncopd) | 2024-05-18 |
 ⚡️ Speed-up file hash | [761](https://github.com/laminlabs/lamindb-setup/pull/761) | [Koncopd](https://github.com/Koncopd) | 2024-05-11 | 0.71.4
 ♻️ Account for public storage locations | [758](https://github.com/laminlabs/lamindb-setup/pull/758) | [falexwolf](https://github.com/falexwolf) | 2024-05-10 |
