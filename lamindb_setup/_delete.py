@@ -110,11 +110,11 @@ def delete(slug: str, force: bool = False, require_empty: bool = True) -> int | 
         for storage_record in storage_records:
             if storage_record["root"] == isettings.storage.root_as_str:
                 continue
+            ssettings = StorageSettings(storage_record["root"])  # type: ignore
             check_storage_is_empty(
-                storage_record["root"],  # type: ignore
+                ssettings.root,  # type: ignore
                 raise_error=require_empty,
             )
-            ssettings = StorageSettings(storage_record["root"])  # type: ignore
             if ssettings._mark_storage_root.exists():
                 ssettings._mark_storage_root.unlink(
                     missing_ok=True  # this is totally weird, but needed on Py3.11
