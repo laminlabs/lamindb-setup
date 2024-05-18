@@ -237,7 +237,7 @@ class StorageSettings:
             # below makes network requests to get credentials
             self._root = create_path(self._root_init, access_token=self.access_token)
         elif getattr(self._root, "protocol", "") == "s3":
-            # this is needed to be sure that the root always have nonexpired credentials
+            # this is needed to be sure that the root always has nonexpired credentials
             # this just checks for time of the cached credentials in most cases
             return get_aws_credentials_manager().enrich_path(
                 self._root, access_token=self.access_token
