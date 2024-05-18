@@ -353,35 +353,43 @@ def _connect_instance(
     return instance, storage
 
 
-def access_aws(storage_root: str, access_token: str | None = None) -> dict[str, str]:
+def access_aws(storage_root: str, access_token: str | None = None) -> dict[str, dict]:
     from ._settings import settings
 
     if settings.user.handle != "anonymous" or access_token is not None:
-        credentials = call_with_fallback_auth(
+        storage_root_info = call_with_fallback_auth(
             _access_aws, storage_root=storage_root, access_token=access_token
         )
-        return credentials
+        return storage_root_info
     else:
         raise RuntimeError("Can only get access to AWS if authenticated.")
 
 
-def _access_aws(*, storage_root: str, client: Client) -> dict[str, str]:
+def _access_aws(*, storage_root: str, client: Client) -> dict[str, dict]:
     import lamindb_setup
 
+    storage_root_info: dict[str, dict] = {"credentials": {}, "accessibility": {}}
     response = client.functions.invoke(
         "access-aws",
         invoke_options={"body": {"storage_root": storage_root}},
     )
     if response is not None and response != b"{}":
-        loaded_credentials = json.loads(response)["Credentials"]
-        credentials = {}
+        data = json.loads(response)
+
+        loaded_credentials = data["Credentials"]
+        loaded_accessibility = data["StorageAccessibility"]
+
+        credentials = storage_root_info["credentials"]
         credentials["key"] = loaded_credentials["AccessKeyId"]
         credentials["secret"] = loaded_credentials["SecretAccessKey"]
         credentials["token"] = loaded_credentials["SessionToken"]
-        return credentials
+
+        accessibility = storage_root_info["accessibility"]
+        accessibility["storage_root"] = loaded_accessibility["storageRoot"]
+        accessibility["is_managed"] = loaded_accessibility["isManaged"]
     elif lamindb_setup._TESTING:
         raise RuntimeError(f"access-aws errored: {response}")
-    return {}
+    return storage_root_info
 
 
 def get_lamin_site_base_url():

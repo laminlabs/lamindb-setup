@@ -11,13 +11,13 @@ from itertools import islice
 from pathlib import Path, PurePosixPath
 from typing import TYPE_CHECKING, Any, Literal
 
-import botocore.session
 import fsspec
 from lamin_utils import logger
 from upath import UPath
 from upath.implementations.cloud import CloudPath, S3Path  # keep CloudPath!
 from upath.implementations.local import LocalPath, PosixUPath, WindowsUPath
 
+from ._aws_credentials import HOSTED_BUCKETS, get_aws_credentials_manager
 from .hashing import b16_to_b64, hash_md5s_from_dir
 
 if TYPE_CHECKING:
@@ -158,7 +158,8 @@ def print_hook(size: int, value: int, objectname: str, action: str):
     progress_in_percent = (value / size) * 100
     out = f"... {action} {objectname}:" f" {min(progress_in_percent, 100):4.1f}%"
     if "NBPRJ_TEST_NBPATH" not in os.environ:
-        print(out, end="\r")
+        end = "\n" if progress_in_percent >= 100 else "\r"
+        print(out, end=end)
 
 
 class ProgressCallback(fsspec.callbacks.Callback):
@@ -670,77 +671,12 @@ def convert_pathlike(pathlike: UPathStr) -> UPath:
     return path
 
 
-HOSTED_REGIONS = [
-    "eu-central-1",
-    "eu-west-2",
-    "us-east-1",
-    "us-east-2",
-    "us-west-1",
-    "us-west-2",
-]
-lamin_env = os.getenv("LAMIN_ENV")
-if lamin_env is None or lamin_env == "prod":
-    hosted_buckets_list = [f"s3://lamin-{region}" for region in HOSTED_REGIONS]
-    hosted_buckets_list.append("s3://scverse-spatial-eu-central-1")
-    HOSTED_BUCKETS = tuple(hosted_buckets_list)
-else:
-    HOSTED_BUCKETS = ("s3://lamin-hosted-test",)  # type: ignore
-credentials_cache: dict[str, dict[str, str]] = {}
-AWS_CREDENTIALS_PRESENT = None
-
-
 def create_path(path: UPath, access_token: str | None = None) -> UPath:
     path = convert_pathlike(path)
     # test whether we have an AWS S3 path
     if not isinstance(path, S3Path):
         return path
-    # test whether AWS credentials are present
-    global AWS_CREDENTIALS_PRESENT
-
-    if AWS_CREDENTIALS_PRESENT is not None:
-        anon = AWS_CREDENTIALS_PRESENT
-    else:
-        if path.fs.key is not None and path.fs.secret is not None:
-            anon = False
-        else:
-            # we could do path.fs.connect()
-            # and check path.fs.session._credentials, but it'd be slower
-            session = botocore.session.get_session()
-            credentials = session.get_credentials()
-            if credentials is None or credentials.access_key is None:
-                anon = True
-            else:
-                anon = False
-            # cache credentials and reuse further
-            AWS_CREDENTIALS_PRESENT = anon
-
-    # test whether we are on hosted storage or not
-    path_str = path.as_posix()
-    is_hosted_storage = path_str.startswith(HOSTED_BUCKETS)
-
-    if not is_hosted_storage:
-        # make anon request if no credentials present
-        return UPath(path, cache_regions=True, anon=anon)
-
-    root_folder = "/".join(path_str.replace("s3://", "").split("/")[:2])
-
-    if access_token is None and root_folder in credentials_cache:
-        credentials = credentials_cache[root_folder]
-    else:
-        from ._hub_core import access_aws
-
-        credentials = access_aws(
-            storage_root=f"s3://{root_folder}", access_token=access_token
-        )
-        if access_token is None:
-            credentials_cache[root_folder] = credentials
-
-    return UPath(
-        path,
-        key=credentials["key"],
-        secret=credentials["secret"],
-        token=credentials["token"],
-    )
+    return get_aws_credentials_manager().enrich_path(path, access_token)
 
 
 def get_stat_file_cloud(stat: dict) -> tuple[int, str, str]:
