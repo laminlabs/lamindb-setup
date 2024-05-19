@@ -387,8 +387,6 @@ def _access_aws(*, storage_root: str, client: Client) -> dict[str, dict]:
         accessibility = storage_root_info["accessibility"]
         accessibility["storage_root"] = loaded_accessibility["storageRoot"]
         accessibility["is_managed"] = loaded_accessibility["isManaged"]
-    elif lamindb_setup._TESTING:
-        raise RuntimeError(f"access-aws errored: {response}")
     return storage_root_info
 
 

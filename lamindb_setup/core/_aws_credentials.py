@@ -99,10 +99,14 @@ class AWSCredentialsManager:
 
         if set_cache:
             from ._hub_core import access_aws
+            from ._settings import settings
 
-            storage_root_info = access_aws(path_str, access_token=access_token)
+            if settings.user.handle != "anonymous" or access_token is not None:
+                storage_root_info = access_aws(path_str, access_token=access_token)
+            else:
+                storage_root_info = {"credentials": {}, "accessibility": {}}
+
             accessibility = storage_root_info["accessibility"]
-
             is_managed = accessibility.get("is_managed", False)
             if is_managed:
                 credentials = storage_root_info["credentials"]
