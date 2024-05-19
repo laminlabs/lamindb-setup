@@ -583,6 +583,8 @@ def to_url(upath):
     Returns:
     - A string containing the public URL to the S3 object.
     """
+    print(upath)
+    print(upath._kwargs)
     if upath.protocol != "s3":
         raise ValueError("The provided UPath must be an S3 path.")
     key = "/".join(upath.parts[1:])
