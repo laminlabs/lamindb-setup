@@ -22,6 +22,10 @@ else:
     HOSTED_BUCKETS = ("s3://lamin-hosted-test",)  # type: ignore
 
 
+def _keep_trailing_slash(path_str: str):
+    return path_str if path_str[-1] == "/" else path_str + "/"
+
+
 AWS_CREDENTIALS_EXPIRATION = 11 * 60 * 60  # refresh credentials after 11 hours
 
 
@@ -81,7 +85,10 @@ class AWSCredentialsManager:
         return S3Path(path, cache_regions=cache_regions, **connection_options)
 
     def enrich_path(self, path: S3Path, access_token: str | None = None) -> S3Path:
-        path_str = path.as_posix().rstrip("/")
+        # trailing slash is needed to avoid returning incorrect results
+        # with .startswith
+        # for example s3://lamindata-eu should not receive cache for s3://lamindata
+        path_str = _keep_trailing_slash(path.as_posix())
         root = self._find_root(path_str)
 
         if root is not None:
@@ -127,7 +134,7 @@ class AWSCredentialsManager:
                         # write the bucket for everything else
                         root = path._url.netloc
                     root = "s3://" + root
-                self._set_cached_credentials(root, credentials)
+                self._set_cached_credentials(_keep_trailing_slash(root), credentials)
 
         return self._path_inject_options(path, credentials)
 
