@@ -5,6 +5,7 @@ import shutil
 from pathlib import Path
 from typing import TYPE_CHECKING, Literal
 
+from django.db.utils import ProgrammingError
 from lamin_utils import logger
 
 from ._hub_client import call_with_fallback
@@ -106,8 +107,15 @@ class InstanceSettings:
             local_records = Storage.objects.filter(root=local_root)
         else:
             local_records = Storage.objects.filter(type="local")
+        all_local_records = local_records.all()
+        try:
+            # trigger an error in case of a migration issue
+            all_local_records.first()
+        except ProgrammingError:
+            logger.error("not able to load Storage registry: please migrate")
+            return None
         found = False
-        for record in local_records.all():
+        for record in all_local_records:
             root_path = Path(record.root)
             if root_path.exists():
                 marker_path = root_path / ".lamindb/_is_initialized"
