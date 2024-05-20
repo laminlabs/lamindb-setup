@@ -3,6 +3,7 @@
 <!-- prettier-ignore -->
 Name | PR | Developer | Date | Version
 --- | --- | --- | --- | ---
+🐛 Deal with migration errors when keep-artifacts-local is true | [767](https://github.com/laminlabs/lamindb-setup/pull/767) | [falexwolf](https://github.com/falexwolf) | 2024-05-20 |
 ♻️ Do not error if empty dict in `access_aws` | [764](https://github.com/laminlabs/lamindb-setup/pull/764) | [falexwolf](https://github.com/falexwolf) | 2024-05-19 | 0.72.1
 🐛 Keep training slash in aws cache keys | [766](https://github.com/laminlabs/lamindb-setup/pull/766) | [Koncopd](https://github.com/Koncopd) | 2024-05-19 |
 🐛 Check empty after storage record root init in delete | [763](https://github.com/laminlabs/lamindb-setup/pull/763) | [Koncopd](https://github.com/Koncopd) | 2024-05-18 |
