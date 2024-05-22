@@ -3,6 +3,7 @@
 <!-- prettier-ignore -->
 Name | PR | Developer | Date | Version
 --- | --- | --- | --- | ---
+✨ Resolve s3 bucket region even without access rights | [771](https://github.com/laminlabs/lamindb-setup/pull/771) | [Koncopd](https://github.com/Koncopd) | 2024-05-22 |
 💚 Coverage fix | [770](https://github.com/laminlabs/lamindb-setup/pull/770) | [falexwolf](https://github.com/falexwolf) | 2024-05-22 |
 👷 Fix coverage compute | [769](https://github.com/laminlabs/lamindb-setup/pull/769) | [falexwolf](https://github.com/falexwolf) | 2024-05-22 |
 🐛 Deal with migration errors when keep-artifacts-local is true | [767](https://github.com/laminlabs/lamindb-setup/pull/767) | [falexwolf](https://github.com/falexwolf) | 2024-05-20 | 0.72.2
