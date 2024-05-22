@@ -12,15 +12,12 @@ jobs:
   # tests only on production hub
   hub-prod:
     runs-on: ubuntu-latest
-    strategy:
-      matrix:
-        python-version: ["3.9", "3.11"]
     timeout-minutes: 10
     steps:
       - uses: actions/checkout@v3
       - uses: actions/setup-python@v4
         with:
-          python-version: ${{ matrix.python-version }}
+          python-version: "3.11"
           cache: "pip"
       - uses: aws-actions/configure-aws-credentials@v2
         with:
@@ -31,7 +28,6 @@ jobs:
       - run: nox -s "install(group='hub-prod')"
       - run: nox -s "build(lamin_env='prod', group='hub-prod')"
       - uses: actions/upload-artifact@v2
-        if: ${{ matrix.python-version == '3.11' }}
         with:
           name: coverage--hub-prod
           path: .coverage
