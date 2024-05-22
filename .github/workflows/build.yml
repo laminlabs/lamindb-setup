@@ -12,7 +12,7 @@ jobs:
   # tests only on production hub
   hub-prod:
     runs-on: ubuntu-latest
-    timeout-minutes: 10
+    timeout-minutes: 6
     steps:
       - uses: actions/checkout@v3
       - uses: actions/setup-python@v4
@@ -43,7 +43,7 @@ jobs:
             python-version: "3.11"
           - lamin_env: "staging"
             python-version: "3.10" # simply use to also test on 3.10
-    timeout-minutes: 15
+    timeout-minutes: 6
     steps:
       - uses: aws-actions/configure-aws-credentials@v2
         with:
@@ -93,7 +93,7 @@ jobs:
   # test user access to storage
   storage:
     runs-on: ubuntu-latest
-    timeout-minutes: 10
+    timeout-minutes: 6
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v4
@@ -117,7 +117,7 @@ jobs:
   # test low-level hub functionality
   hub-local:
     runs-on: ubuntu-latest
-    timeout-minutes: 10
+    timeout-minutes: 6
     steps:
       - uses: aws-actions/configure-aws-credentials@v2
         with:
