@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+from lamindb_setup.core._aws_credentials import HOSTED_REGIONS
+from lamindb_setup.core._settings_storage import get_storage_region
 from lamindb_setup.core.upath import UPath, compute_file_tree, get_stat_dir_cloud
 
 
@@ -22,3 +24,8 @@ def test_get_stat_dir_cloud_gcp():
     assert hash == "6r5Hkce0UTy7X6gLeaqzBA"
     assert hash_type == "md5-d"
     assert size == 994441606
+
+
+def test_get_storage_region():
+    for region in HOSTED_REGIONS:
+        assert get_storage_region(f"s3://lamin-{region}") == region

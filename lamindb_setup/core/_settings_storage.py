@@ -37,33 +37,36 @@ def base62(n_char: int) -> str:
     return id
 
 
-def get_storage_region(storage_root: UPathStr) -> str | None:
-    storage_root_str = str(storage_root)
-    if storage_root_str.startswith("s3://"):
-        import botocore.session as session
+def get_storage_region(path: UPathStr) -> str | None:
+    path_str = str(path)
+    if path_str.startswith("s3://"):
+        import botocore.session
         from botocore.config import Config
-        from botocore.exceptions import NoCredentialsError
+        from botocore.exceptions import ClientError
 
         # strip the prefix and any suffixes of the bucket name
-        bucket = storage_root_str.replace("s3://", "").split("/")[0]
-        s3_session = session.get_session()
-        s3_client = s3_session.create_client("s3")
+        bucket = path_str.replace("s3://", "").split("/")[0]
+        session = botocore.session.get_session()
+        credentials = session.get_credentials()
+        if credentials is None or credentials.access_key is None:
+            config = Config(signature_version=botocore.session.UNSIGNED)
+        else:
+            config = None
+        s3_client = session.create_client("s3", config=config)
         try:
             response = s3_client.head_bucket(Bucket=bucket)
-        except NoCredentialsError:  # deal with anonymous access
-            s3_client = s3_session.create_client(
-                "s3", config=Config(signature_version=session.UNSIGNED)
-            )
-            response = s3_client.head_bucket(Bucket=bucket)
-        storage_region = response["ResponseMetadata"].get("HTTPHeaders", {})[
-            "x-amz-bucket-region"
-        ]
-        # if we want to except botcore.exceptions.ClientError to reformat an
-        # error message, this is how to do test for the "NoSuchBucket" error:
-        #     exc.response["Error"]["Code"] == "NoSuchBucket"
+        except ClientError as exc:
+            response = getattr(exc, "response", {})
+            if response.get("Error", {}).get("Code") == "404":
+                raise exc
+        region = (
+            response.get("ResponseMetadata", {})
+            .get("HTTPHeaders", {})
+            .get("x-amz-bucket-region")
+        )
     else:
-        storage_region = None
-    return storage_region
+        region = None
+    return region
 
 
 def mark_storage_root(root: UPathStr, uid: str):
