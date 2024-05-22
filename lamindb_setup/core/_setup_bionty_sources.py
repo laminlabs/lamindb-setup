@@ -53,6 +53,7 @@ def write_bionty_sources(isettings: InstanceSettings) -> None:
             kwargs["species"] = kwargs.pop("organism")
         elif hasattr(PublicSource, "organism") and "species" in kwargs:
             kwargs["organism"] = kwargs.pop("species")
+        kwargs["run"] = None  # can't yet access tracking information
         record = PublicSource(**kwargs)
         all_records.append(record)
 

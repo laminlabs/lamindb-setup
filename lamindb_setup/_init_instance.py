@@ -56,6 +56,7 @@ def register_storage_in_instance(ssettings: StorageSettings):
         "region": ssettings.region,
         "instance_uid": instance_uid,
         "created_by_id": current_user_id(),
+        "run": None,
     }
     if ssettings._uid is not None:
         defaults["uid"] = ssettings._uid
