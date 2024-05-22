@@ -3,6 +3,7 @@
 <!-- prettier-ignore -->
 Name | PR | Developer | Date | Version
 --- | --- | --- | --- | ---
+💚 Coverage fix | [770](https://github.com/laminlabs/lamindb-setup/pull/770) | [falexwolf](https://github.com/falexwolf) | 2024-05-22 |
 👷 Fix coverage compute | [769](https://github.com/laminlabs/lamindb-setup/pull/769) | [falexwolf](https://github.com/falexwolf) | 2024-05-22 |
 🐛 Deal with migration errors when keep-artifacts-local is true | [767](https://github.com/laminlabs/lamindb-setup/pull/767) | [falexwolf](https://github.com/falexwolf) | 2024-05-20 | 0.72.2
 ♻️ Do not error if empty dict in `access_aws` | [764](https://github.com/laminlabs/lamindb-setup/pull/764) | [falexwolf](https://github.com/falexwolf) | 2024-05-19 | 0.72.1
