@@ -257,7 +257,7 @@ def download_to(self, path: UPathStr, print_progress: bool = True, **kwargs):
 def upload_from(
     self,
     local_path: UPathStr,
-    create_folder: bool = True,
+    create_folder: bool | None = None,
     print_progress: bool = True,
 ) -> UPath:
     """Upload from a local path to `self` (a destination in the cloud).
@@ -266,10 +266,10 @@ def upload_from(
 
     Args:
         local_path: A local path of a file or directory.
-        create_folder: Only applies if `local_path` is a directory. If `True`,
-            make a new folder in the destination using the directory name of
-            `local_path`. If `False`, upload the contents of the directory to
-            to the root-level of the destination.
+        create_folder: Only applies if `local_path` is a directory and then
+            defaults to `True`. If `True`, make a new folder in the destination
+            using the directory name of `local_path`. If `False`, upload the
+            contents of the directory to to the root-level of the destination.
         print_progress: Print progress.
 
     Returns:
@@ -277,12 +277,10 @@ def upload_from(
     """
     local_path = Path(local_path)
     local_path_is_dir = local_path.is_dir()
-    recursive = False
-    if local_path_is_dir:
-        if not create_folder:
-            recursive = True
-    if not local_path_is_dir:
-        create_folder = False
+    if create_folder is None:
+        create_folder = local_path_is_dir
+    if create_folder and not local_path_is_dir:
+        raise ValueError("create_folder can only be True if local_path is a directory")
 
     callback = None
     if print_progress:
@@ -311,7 +309,7 @@ def upload_from(
     else:
         cleanup_cache = False
 
-    self.fs.upload(source, destination, callback=callback, recursive=recursive)
+    self.fs.upload(source, destination, callback=callback, recursive=create_folder)
 
     if cleanup_cache:
         # normally this is invalidated after the upload but still better to check
