@@ -241,7 +241,10 @@ class ChildProgressCallback(fsspec.callbacks.Callback):
         self.parent.update_relative_value(inc)
 
     def relative_update(self, inc=1):
-        self.parent_update(inc / self.size)
+        if self.size != 0:
+            self.parent_update(inc / self.size)
+        else:
+            self.parent_update(1)
 
 
 def download_to(self, path: UPathStr, print_progress: bool = True, **kwargs):
