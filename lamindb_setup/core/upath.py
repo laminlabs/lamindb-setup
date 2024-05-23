@@ -254,32 +254,45 @@ def download_to(self, path: UPathStr, print_progress: bool = False, **kwargs):
 
 def upload_from(
     self,
-    path: UPathStr,
+    local_path: UPathStr,
     dir_inplace: bool = False,
-    print_progress: bool = False,
-    **kwargs,
+    print_progress: bool = True,
+    recursive: bool = True,
 ):
-    """Upload from a local path."""
-    path = Path(path)
-    path_is_dir = path.is_dir()
-    if not path_is_dir:
+    """Upload from a local path to `self` (a destination in the cloud).
+
+    Both `recursive` and `dir_inplace` have no effect for non-directory paths.
+
+    Args:
+        local_path: A local path of a file or directory.
+        recursive: If `True`, upload all files in a directory-like path. If
+            `False`, do nothing if `local_path` is directory-like.
+        dir_inplace: If `False`, make a new
+            folder in the destination based on the directory name of `path`. If
+            `True`, upload the contents of the directory to the root level of
+            the destination.
+        print_progress: Print progress.
+    """
+    local_path = Path(local_path)
+    local_path_is_dir = local_path.is_dir()
+    if not local_path_is_dir:
         dir_inplace = False
 
-    if print_progress and "callback" not in kwargs:
-        callback = ProgressCallback(path.name, "uploading")
-        kwargs["callback"] = callback
+    callback = None
+    if print_progress:
+        callback = ProgressCallback(local_path.name, "uploading")
 
     if dir_inplace:
-        source = [f for f in path.rglob("*") if f.is_file()]
-        destination = [str(self / f.relative_to(path)) for f in source]
+        source = [f for f in local_path.rglob("*") if f.is_file()]
+        destination = [str(self / f.relative_to(local_path)) for f in source]
         source = [str(f) for f in source]  # type: ignore
     else:
-        source = str(path)  # type: ignore
+        source = str(local_path)  # type: ignore
         destination = str(self)  # type: ignore
-    # this weird thing is to avoid s3fs triggering create_bucket in upload
-    # if dirs are present
-    # it allows to avoid permission error
-    if self.protocol != "s3" or not path_is_dir or dir_inplace:
+
+    # the below lines are to avoid s3fs triggering create_bucket in upload if
+    # dirs are present it allows to avoid permission error
+    if self.protocol != "s3" or not local_path_is_dir or dir_inplace:
         cleanup_cache = False
     else:
         bucket = self._url.netloc
@@ -291,7 +304,7 @@ def upload_from(
         else:
             cleanup_cache = False
 
-    self.fs.upload(source, destination, **kwargs)
+    self.fs.upload(source, destination, callback=callback, recursive=recursive)
 
     if cleanup_cache:
         # normally this is invalidated after the upload but still better to check
