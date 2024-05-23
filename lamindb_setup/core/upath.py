@@ -287,6 +287,13 @@ def upload_from(
         create_folder = local_path_is_dir
     if create_folder and not local_path_is_dir:
         raise ValueError("create_folder can only be True if local_path is a directory")
+    # there is a bug in UPath 0.1.4 -- this messes up the return value if create_folder is True
+    # >>> ln.UPath("hello/") / "hi.txt"
+    # PosixUPath('hello/hi.txt')
+    # >>> ln.UPath("s3://lamindata/hello/") / "hi.txt"
+    # S3Path('s3://lamindata/hello//hi.txt')
+    if create_folder and self._url.path.endswith(TRAILING_SEP):
+        raise ValueError("Please remove trailing slash from the destination path")
 
     callback = None
     if print_progress:
