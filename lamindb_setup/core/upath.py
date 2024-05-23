@@ -155,7 +155,10 @@ def create_mapper(
 
 
 def print_hook(size: int, value: int, objectname: str, action: str):
-    progress_in_percent = (value / size) * 100
+    if size == 0:
+        progress_in_percent = 100.0
+    else:
+        progress_in_percent = (value / size) * 100
     out = f"... {action} {objectname}:" f" {min(progress_in_percent, 100):4.1f}%"
     if "NBPRJ_TEST_NBPATH" not in os.environ:
         end = "\n" if progress_in_percent >= 100 else "\r"
@@ -238,11 +241,16 @@ class ChildProgressCallback(fsspec.callbacks.Callback):
         self.parent.update_relative_value(inc)
 
     def relative_update(self, inc=1):
-        self.parent_update(inc / self.size)
+        if self.size != 0:
+            self.parent_update(inc / self.size)
+        else:
+            self.parent_update(1)
 
 
-def download_to(self, path: UPathStr, print_progress: bool = False, **kwargs):
-    """Download to a path."""
+def download_to(self, path: UPathStr, print_progress: bool = True, **kwargs):
+    """Download from self (a destination in the cloud) to a local path."""
+    if "recursive" not in kwargs:
+        kwargs["recursive"] = True
     if print_progress and "callback" not in kwargs:
         callback = ProgressCallback(
             PurePosixPath(path).name, "downloading", adjust_size=True
@@ -254,34 +262,57 @@ def download_to(self, path: UPathStr, print_progress: bool = False, **kwargs):
 
 def upload_from(
     self,
-    path: UPathStr,
-    dir_inplace: bool = False,
-    print_progress: bool = False,
-    **kwargs,
-):
-    """Upload from a local path."""
-    path = Path(path)
-    path_is_dir = path.is_dir()
-    if not path_is_dir:
-        dir_inplace = False
+    local_path: UPathStr,
+    create_folder: bool | None = None,
+    print_progress: bool = True,
+) -> UPath:
+    """Upload from a local path to `self` (a destination in the cloud).
 
-    if print_progress and "callback" not in kwargs:
-        callback = ProgressCallback(path.name, "uploading")
-        kwargs["callback"] = callback
+    If the local path is a directory, recursively upload its contents.
 
-    if dir_inplace:
-        source = [f for f in path.rglob("*") if f.is_file()]
-        destination = [str(self / f.relative_to(path)) for f in source]
+    Args:
+        local_path: A local path of a file or directory.
+        create_folder: Only applies if `local_path` is a directory and then
+            defaults to `True`. If `True`, make a new folder in the destination
+            using the directory name of `local_path`. If `False`, upload the
+            contents of the directory to to the root-level of the destination.
+        print_progress: Print progress.
+
+    Returns:
+        The destination path.
+    """
+    local_path = Path(local_path)
+    local_path_is_dir = local_path.is_dir()
+    if create_folder is None:
+        create_folder = local_path_is_dir
+    if create_folder and not local_path_is_dir:
+        raise ValueError("create_folder can only be True if local_path is a directory")
+    # there is a bug in UPath 0.1.4 -- this messes up the return value if create_folder is True
+    # >>> ln.UPath("hello/") / "hi.txt"
+    # PosixUPath('hello/hi.txt')
+    # >>> ln.UPath("s3://lamindata/hello/") / "hi.txt"
+    # S3Path('s3://lamindata/hello//hi.txt')
+    if create_folder and self._url.path.endswith(TRAILING_SEP):
+        raise ValueError("Please remove trailing slash from the destination path")
+
+    kwargs = {}
+    if print_progress:
+        # Alex: I tried to not use kwargs here, but if I pass `callback=None` to
+        # `fsspec.upload()`, it errors
+        kwargs["callback"] = ProgressCallback(local_path.name, "uploading")
+
+    if local_path_is_dir and not create_folder:
+        source = [f for f in local_path.rglob("*") if f.is_file()]
+        destination = [str(self / f.relative_to(local_path)) for f in source]
         source = [str(f) for f in source]  # type: ignore
     else:
-        source = str(path)  # type: ignore
+        source = str(local_path)  # type: ignore
         destination = str(self)  # type: ignore
-    # this weird thing is to avoid s3fs triggering create_bucket in upload
-    # if dirs are present
-    # it allows to avoid permission error
-    if self.protocol != "s3" or not path_is_dir or dir_inplace:
-        cleanup_cache = False
-    else:
+
+    # the below lines are to avoid s3fs triggering create_bucket in upload if
+    # dirs are present it allows to avoid permission error
+    # would be easier to just
+    if self.protocol == "s3" and local_path_is_dir and create_folder:
         bucket = self._url.netloc
         if bucket not in self.fs.dircache:
             self.fs.dircache[bucket] = [{}]
@@ -290,13 +321,20 @@ def upload_from(
             cleanup_cache = True
         else:
             cleanup_cache = False
+    else:
+        cleanup_cache = False
 
-    self.fs.upload(source, destination, **kwargs)
+    self.fs.upload(source, destination, recursive=create_folder, **kwargs)
 
     if cleanup_cache:
         # normally this is invalidated after the upload but still better to check
         if bucket in self.fs.dircache:
             del self.fs.dircache[bucket]
+
+    if local_path_is_dir and create_folder:
+        return self / local_path.name
+    else:
+        return self
 
 
 def synchronize(
@@ -408,7 +446,9 @@ def synchronize(
         objectpath.parent.mkdir(parents=True, exist_ok=True)
         need_synchronize = True
     if need_synchronize:
-        self.download_to(objectpath, **kwargs)
+        if "recursive" not in kwargs:
+            kwargs["recursive"] = False
+        self.download_to(objectpath, print_progress=False, **kwargs)
         os.utime(objectpath, times=(cloud_mts, cloud_mts))
     else:
         # nothing happens if parent_update is not defined
@@ -477,7 +517,7 @@ def compute_file_tree(
             if child_path.is_dir():
                 if include_dirs and child_path not in include_dirs:
                     continue
-                yield prefix + pointer + child_path.name
+                yield prefix + pointer + child_path.name + "/"
                 n_directories += 1
                 n_files_per_dir_and_type = defaultdict(lambda: 0)
                 extension = branch if pointer == tee else space
