@@ -247,17 +247,17 @@ class ChildProgressCallback(fsspec.callbacks.Callback):
             self.parent_update(1)
 
 
-def download_to(self, path: UPathStr, print_progress: bool = True, **kwargs):
-    """Download from self (a destination in the cloud) to a local path."""
+def download_to(self, local_path: UPathStr, print_progress: bool = True, **kwargs):
+    """Download from self (a destination in the cloud) to the local path."""
     if "recursive" not in kwargs:
         kwargs["recursive"] = True
     if print_progress and "callback" not in kwargs:
         callback = ProgressCallback(
-            PurePosixPath(path).name, "downloading", adjust_size=True
+            PurePosixPath(local_path).name, "downloading", adjust_size=True
         )
         kwargs["callback"] = callback
 
-    self.fs.download(str(self), str(path), **kwargs)
+    self.fs.download(str(self), str(local_path), **kwargs)
 
 
 def upload_from(
@@ -265,6 +265,7 @@ def upload_from(
     local_path: UPathStr,
     create_folder: bool | None = None,
     print_progress: bool = True,
+    **kwargs,
 ) -> UPath:
     """Upload from a local path to `self` (a destination in the cloud).
 
@@ -295,11 +296,9 @@ def upload_from(
     if create_folder and self._url.path.endswith(TRAILING_SEP):
         raise ValueError("Please remove trailing slash from the destination path")
 
-    kwargs = {}
-    if print_progress:
-        # Alex: I tried to not use kwargs here, but if I pass `callback=None` to
-        # `fsspec.upload()`, it errors
-        kwargs["callback"] = ProgressCallback(local_path.name, "uploading")
+    if print_progress and "callback" not in kwargs:
+        callback = ProgressCallback(local_path.name, "uploading")
+        kwargs["callback"] = callback
 
     if local_path_is_dir and not create_folder:
         source = [f for f in local_path.rglob("*") if f.is_file()]
@@ -343,14 +342,14 @@ def synchronize(
     error_no_origin: bool = True,
     print_progress: bool = False,
     callback: fsspec.callbacks.Callback | None = None,
-    **kwargs,
+    timestamp: float | None = None,
 ):
     """Sync to a local destination path."""
     # optimize the number of network requests
-    if "timestamp" in kwargs:
+    if timestamp is not None:
         is_dir = False
         exists = True
-        cloud_mts = kwargs.pop("timestamp")
+        cloud_mts = timestamp
     else:
         # perform only one network request to check existence, type and timestamp
         try:
@@ -417,7 +416,7 @@ def synchronize(
                 destination = objectpath / file_key
                 child = callback.branched(origin, destination.as_posix())
                 UPath(origin, **self._kwargs).synchronize(
-                    destination, timestamp=timestamp, callback=child, **kwargs
+                    destination, callback=child, timestamp=timestamp
                 )
                 child.close()
             if destination_exists:
@@ -438,17 +437,16 @@ def synchronize(
     callback = ProgressCallback.requires_progress(
         callback, print_progress, objectpath.name, "synchronizing"
     )
-    kwargs["callback"] = callback
     if objectpath.exists():
-        local_mts = objectpath.stat().st_mtime  # type: ignore
-        need_synchronize = cloud_mts > local_mts
+        local_mts_obj = objectpath.stat().st_mtime  # type: ignore
+        need_synchronize = cloud_mts > local_mts_obj
     else:
         objectpath.parent.mkdir(parents=True, exist_ok=True)
         need_synchronize = True
     if need_synchronize:
-        if "recursive" not in kwargs:
-            kwargs["recursive"] = False
-        self.download_to(objectpath, print_progress=False, **kwargs)
+        self.download_to(
+            objectpath, recursive=False, print_progress=False, callback=callback
+        )
         os.utime(objectpath, times=(cloud_mts, cloud_mts))
     else:
         # nothing happens if parent_update is not defined
