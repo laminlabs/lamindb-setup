@@ -11,9 +11,9 @@ def test_get_stat_dir_cloud_aws():
     _, n_objects_file_tree = compute_file_tree(path)
     size, hash, hash_type, n_objects = get_stat_dir_cloud(path)
     assert n_objects == n_objects_file_tree
-    assert hash == "wVYKPpEsmmrqSpAZIRXCFg"
+    assert hash == "IVKGMfNwi8zKvnpaD_gG7w"
     assert hash_type == "md5-d"
-    assert size == 656692
+    assert size == 658465
 
 
 def test_get_stat_dir_cloud_gcp():
