@@ -295,9 +295,11 @@ def upload_from(
     if create_folder and self._url.path.endswith(TRAILING_SEP):
         raise ValueError("Please remove trailing slash from the destination path")
 
-    callback = None
+    kwargs = {}
     if print_progress:
-        callback = ProgressCallback(local_path.name, "uploading")
+        # Alex: I tried to not use kwargs here, but if I pass `callback=None` to
+        # `fsspec.upload()`, it errors
+        kwargs["callback"] = ProgressCallback(local_path.name, "uploading")
 
     if local_path_is_dir and not create_folder:
         source = [f for f in local_path.rglob("*") if f.is_file()]
@@ -322,7 +324,7 @@ def upload_from(
     else:
         cleanup_cache = False
 
-    self.fs.upload(source, destination, callback=callback, recursive=create_folder)
+    self.fs.upload(source, destination, recursive=create_folder, **kwargs)
 
     if cleanup_cache:
         # normally this is invalidated after the upload but still better to check
