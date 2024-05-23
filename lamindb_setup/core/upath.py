@@ -241,8 +241,10 @@ class ChildProgressCallback(fsspec.callbacks.Callback):
         self.parent_update(inc / self.size)
 
 
-def download_to(self, path: UPathStr, print_progress: bool = False, **kwargs):
-    """Download to a path."""
+def download_to(self, path: UPathStr, print_progress: bool = True, **kwargs):
+    """Download from self (a destination in the cloud) to a local path."""
+    if "recursive" not in kwargs:
+        kwargs["recursive"] = True
     if print_progress and "callback" not in kwargs:
         callback = ProgressCallback(
             PurePosixPath(path).name, "downloading", adjust_size=True
@@ -255,34 +257,35 @@ def download_to(self, path: UPathStr, print_progress: bool = False, **kwargs):
 def upload_from(
     self,
     local_path: UPathStr,
-    dir_inplace: bool = False,
+    create_folder: bool = True,
     print_progress: bool = True,
-    recursive: bool = True,
 ):
     """Upload from a local path to `self` (a destination in the cloud).
 
-    Both `recursive` and `dir_inplace` have no effect for non-directory paths.
+    If the local path is a directory, recursively upload its contents.
 
     Args:
         local_path: A local path of a file or directory.
-        recursive: If `True`, upload all files in a directory-like path. If
-            `False`, do nothing if `local_path` is directory-like.
-        dir_inplace: If `False`, make a new
-            folder in the destination based on the directory name of `path`. If
-            `True`, upload the contents of the directory to the root level of
-            the destination.
+        create_folder: Only applies if `local_path` is folder-like. If `True`,
+            make a new folder in the destination using the directory name of
+            `local_path`. If `False`, upload the contents of the directory to
+            the root level of the destination.
         print_progress: Print progress.
     """
     local_path = Path(local_path)
     local_path_is_dir = local_path.is_dir()
+    recursive = False
+    if local_path_is_dir:
+        if not create_folder:
+            recursive = True
     if not local_path_is_dir:
-        dir_inplace = False
+        create_folder = False
 
     callback = None
     if print_progress:
         callback = ProgressCallback(local_path.name, "uploading")
 
-    if dir_inplace:
+    if create_folder:
         source = [f for f in local_path.rglob("*") if f.is_file()]
         destination = [str(self / f.relative_to(local_path)) for f in source]
         source = [str(f) for f in source]  # type: ignore
@@ -292,7 +295,7 @@ def upload_from(
 
     # the below lines are to avoid s3fs triggering create_bucket in upload if
     # dirs are present it allows to avoid permission error
-    if self.protocol != "s3" or not local_path_is_dir or dir_inplace:
+    if self.protocol != "s3" or not local_path_is_dir or create_folder:
         cleanup_cache = False
     else:
         bucket = self._url.netloc
@@ -421,7 +424,9 @@ def synchronize(
         objectpath.parent.mkdir(parents=True, exist_ok=True)
         need_synchronize = True
     if need_synchronize:
-        self.download_to(objectpath, **kwargs)
+        if "recursive" not in kwargs:
+            kwargs["recursive"] = False
+        self.download_to(objectpath, print_progress=False, **kwargs)
         os.utime(objectpath, times=(cloud_mts, cloud_mts))
     else:
         # nothing happens if parent_update is not defined
