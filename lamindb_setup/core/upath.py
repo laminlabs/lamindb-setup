@@ -155,7 +155,10 @@ def create_mapper(
 
 
 def print_hook(size: int, value: int, objectname: str, action: str):
-    progress_in_percent = (value / size) * 100
+    if size == 0:
+        progress_in_percent = 100.0
+    else:
+        progress_in_percent = (value / size) * 100
     out = f"... {action} {objectname}:" f" {min(progress_in_percent, 100):4.1f}%"
     if "NBPRJ_TEST_NBPATH" not in os.environ:
         end = "\n" if progress_in_percent >= 100 else "\r"
