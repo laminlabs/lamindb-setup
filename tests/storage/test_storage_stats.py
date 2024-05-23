@@ -14,6 +14,7 @@ def test_get_stat_dir_cloud_aws():
     assert hash == "IVKGMfNwi8zKvnpaD_gG7w"
     assert hash_type == "md5-d"
     assert size == 658465
+    assert n_objects == 51
 
 
 def test_get_stat_dir_cloud_gcp():
