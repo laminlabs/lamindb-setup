@@ -259,18 +259,21 @@ def upload_from(
     local_path: UPathStr,
     create_folder: bool = True,
     print_progress: bool = True,
-):
+) -> UPath:
     """Upload from a local path to `self` (a destination in the cloud).
 
     If the local path is a directory, recursively upload its contents.
 
     Args:
         local_path: A local path of a file or directory.
-        create_folder: Only applies if `local_path` is folder-like. If `True`,
+        create_folder: Only applies if `local_path` is a directory. If `True`,
             make a new folder in the destination using the directory name of
             `local_path`. If `False`, upload the contents of the directory to
-            the root level of the destination.
+            to the root-level of the destination.
         print_progress: Print progress.
+
+    Returns:
+        The destination path.
     """
     local_path = Path(local_path)
     local_path_is_dir = local_path.is_dir()
@@ -286,18 +289,17 @@ def upload_from(
         callback = ProgressCallback(local_path.name, "uploading")
 
     if create_folder:
-        source = [f for f in local_path.rglob("*") if f.is_file()]
-        destination = [str(self / f.relative_to(local_path)) for f in source]
-        source = [str(f) for f in source]  # type: ignore
-    else:
         source = str(local_path)  # type: ignore
         destination = str(self)  # type: ignore
+    else:
+        source = [f for f in local_path.rglob("*") if f.is_file()]  # type: ignore
+        destination = [str(self / f.relative_to(local_path)) for f in source]  # type: ignore
+        source = [str(f) for f in source]  # type: ignore
 
     # the below lines are to avoid s3fs triggering create_bucket in upload if
     # dirs are present it allows to avoid permission error
-    if self.protocol != "s3" or not local_path_is_dir or create_folder:
-        cleanup_cache = False
-    else:
+    # would be easier to just
+    if self.protocol == "s3" and local_path_is_dir and create_folder:
         bucket = self._url.netloc
         if bucket not in self.fs.dircache:
             self.fs.dircache[bucket] = [{}]
@@ -306,6 +308,8 @@ def upload_from(
             cleanup_cache = True
         else:
             cleanup_cache = False
+    else:
+        cleanup_cache = False
 
     self.fs.upload(source, destination, callback=callback, recursive=recursive)
 
@@ -313,6 +317,11 @@ def upload_from(
         # normally this is invalidated after the upload but still better to check
         if bucket in self.fs.dircache:
             del self.fs.dircache[bucket]
+
+    if local_path_is_dir and create_folder:
+        return self / local_path.name
+    else:
+        return self
 
 
 def synchronize(
