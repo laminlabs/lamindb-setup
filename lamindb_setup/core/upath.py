@@ -267,7 +267,7 @@ def upload_from(
     print_progress: bool = True,
     **kwargs,
 ) -> UPath:
-    """Upload from a local path to `self` (a destination in the cloud).
+    """Upload from the local path to `self` (a destination in the cloud).
 
     If the local path is a directory, recursively upload its contents.
 
@@ -288,13 +288,6 @@ def upload_from(
         create_folder = local_path_is_dir
     if create_folder and not local_path_is_dir:
         raise ValueError("create_folder can only be True if local_path is a directory")
-    # there is a bug in UPath 0.1.4 -- this messes up the return value if create_folder is True
-    # >>> ln.UPath("hello/") / "hi.txt"
-    # PosixUPath('hello/hi.txt')
-    # >>> ln.UPath("s3://lamindata/hello/") / "hi.txt"
-    # S3Path('s3://lamindata/hello//hi.txt')
-    if create_folder and self._url.path.endswith(TRAILING_SEP):
-        raise ValueError("Please remove trailing slash from the destination path")
 
     if print_progress and "callback" not in kwargs:
         callback = ProgressCallback(local_path.name, "uploading")
@@ -302,7 +295,12 @@ def upload_from(
 
     if local_path_is_dir and not create_folder:
         source = [f for f in local_path.rglob("*") if f.is_file()]
-        destination = [str(self / f.relative_to(local_path)) for f in source]
+        # convert_pathlike is needed to remove the trailing slash because
+        # UPath("s3://some-bucket/some-folder/") / "some-key"
+        # results in UPath("s3://some-bucket/some-folder//some-key")
+        # for upath 0.1.4
+        dest_root = convert_pathlike(self) if self._parts[-1] == "" else self
+        destination = [str(dest_root / f.relative_to(local_path)) for f in source]
         source = [str(f) for f in source]  # type: ignore
     else:
         source = str(local_path)  # type: ignore
@@ -331,7 +329,9 @@ def upload_from(
             del self.fs.dircache[bucket]
 
     if local_path_is_dir and create_folder:
-        return self / local_path.name
+        # convert_pathlike is needed to remove the trailing slash
+        dest_root = convert_pathlike(self) if self._parts[-1] == "" else self
+        return dest_root / local_path.name
     else:
         return self
 
