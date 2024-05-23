@@ -490,7 +490,7 @@ def compute_file_tree(
             if child_path.is_dir():
                 if include_dirs and child_path not in include_dirs:
                     continue
-                yield prefix + pointer + child_path.name
+                yield prefix + pointer + child_path.name + "/"
                 n_directories += 1
                 n_files_per_dir_and_type = defaultdict(lambda: 0)
                 extension = branch if pointer == tee else space
