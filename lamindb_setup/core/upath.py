@@ -289,13 +289,13 @@ def upload_from(
     if print_progress:
         callback = ProgressCallback(local_path.name, "uploading")
 
-    if create_folder:
+    if local_path_is_dir and not create_folder:
+        source = [f for f in local_path.rglob("*") if f.is_file()]
+        destination = [str(self / f.relative_to(local_path)) for f in source]
+        source = [str(f) for f in source]  # type: ignore
+    else:
         source = str(local_path)  # type: ignore
         destination = str(self)  # type: ignore
-    else:
-        source = [f for f in local_path.rglob("*") if f.is_file()]  # type: ignore
-        destination = [str(self / f.relative_to(local_path)) for f in source]  # type: ignore
-        source = [str(f) for f in source]  # type: ignore
 
     # the below lines are to avoid s3fs triggering create_bucket in upload if
     # dirs are present it allows to avoid permission error
