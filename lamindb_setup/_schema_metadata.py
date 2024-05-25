@@ -1,15 +1,46 @@
+import hashlib
 import importlib
+import json
+from dataclasses import dataclass
+from typing import Dict
+from uuid import UUID
 
 import sqlparse
 from django.contrib.postgres.expressions import ArraySubquery
-from django.db.models import Field, OuterRef, QuerySet, Subquery
+from django.db.models import Field, ForeignObjectRel, OuterRef, QuerySet, Subquery
 from django.db.models.functions import JSONObject
 from lnschema_core.models import LinkORM, Registry
 from sqlparse.sql import Identifier, IdentifierList
 from sqlparse.tokens import DML, Keyword
+from supabase import Client
 
 from lamindb_setup import settings
 from lamindb_setup._init_instance import get_schema_module_name
+from lamindb_setup.core._hub_client import call_with_fallback_auth
+
+
+def synchronize_schema() -> None:
+    call_with_fallback_auth(_synchronize_schema)
+
+
+def _synchronize_schema(client: Client) -> None:
+    schema_metadata_dict = schema_metadata.to_json()
+
+    schema_encoded = json.dumps(schema_metadata_dict, sort_keys=True).encode("utf-8")
+    schema_hash = hashlib.sha256(schema_encoded).digest()
+    schema_uuid = UUID(bytes=schema_hash[:16])
+
+    module_set_info = schema_metadata._get_module_set_info()
+    module_ids = "-".join(str(module_info["id"]) for module_info in module_set_info)
+
+    new_row = {
+        "id": schema_uuid.hex,
+        "module_ids": module_ids,
+        "module_set_info": module_set_info,
+        "json": schema_metadata_dict,
+    }
+
+    client.table("schema").insert(new_row).execute()
 
 
 class SchemaMetadata:
@@ -49,13 +80,37 @@ class SchemaMetadata:
             for module_name in self.included_modules
         }
 
+    def _get_module_set_info(self):
+        # TODO: rely on schemamodule table for this
+        module_set_info = []
+        for module_name in self.included_modules:
+            module = self._get_schema_module(module_name)
+            module_set_info.append(
+                {"id": 0, "name": module_name, "version": module.__version__}
+            )
+        return module_set_info
+
     @staticmethod
     def _get_schema_module(module_name):
         return importlib.import_module(get_schema_module_name(module_name))
 
 
+@dataclass
+class FieldMetadata:
+    schema_name: str
+    model_name: str
+    field_name: str
+    type: str
+    is_link_table: bool
+    column: str | None = None
+    relation_type: str | None = None
+    related_schema_name: str | None = None
+    related_model_name: str | None = None
+    related_field_name: str | None = None
+
+
 class ModelRelations:
-    def __init__(self, fields) -> None:
+    def __init__(self, fields: list[ForeignObjectRel]) -> None:
         self.many_to_one = {}
         self.one_to_many = {}
         self.many_to_many = {}
@@ -95,18 +150,19 @@ class ModelMetadata:
         self, include_django_objects: bool = True, include_select_terms: bool = True
     ):
         _dict = {
-            "fields": self.fields,
+            "fields": self.fields.copy(),
             "class_name": self.class_name,
             "table_name": self.table_name,
         }
 
-        if include_select_terms:
-            select_terms = self.select_terms
-            for field_name in self.fields.keys():
-                if field_name in select_terms:
-                    _dict["fields"][field_name].update(
-                        {"select_term": select_terms[field_name]}
-                    )
+        select_terms = self.select_terms if include_select_terms else []
+
+        for field_name in self.fields.keys():
+            _dict["fields"][field_name] = _dict["fields"][field_name].__dict__
+            if field_name in select_terms:
+                _dict["fields"][field_name].update(
+                    {"select_term": select_terms[field_name]}
+                )
 
         if include_django_objects:
             _dict.update({"model": self.model})
@@ -123,16 +179,16 @@ class ModelMetadata:
 
     def _get_fields_metadata(self, model: Registry):
         related_fields = []
-        fields_metadata = {}
+        fields_metadata: Dict[str, FieldMetadata] = {}
 
         for field in model._meta.get_fields():
             field_metadata = self._get_field_metadata(model, field)
-            if field_metadata["related_schema_name"] is None:
+            if field_metadata.related_schema_name is None:
                 fields_metadata.update({field.name: field_metadata})
 
             if (
-                field_metadata["related_schema_name"] in self.included_modules
-                and field_metadata["schema_name"] in self.included_modules
+                field_metadata.related_schema_name in self.included_modules
+                and field_metadata.schema_name in self.included_modules
             ):
                 related_fields.append(field)
 
@@ -149,7 +205,7 @@ class ModelMetadata:
     def _get_related_fields_metadata(
         self, model, model_relations_metadata: ModelRelations
     ):
-        related_fields = {}
+        related_fields: Dict[str, FieldMetadata] = {}
 
         # Many to one (foreign key defined in the model)
         for link_field_name, link_field in model_relations_metadata.many_to_one.items():
@@ -231,18 +287,18 @@ class ModelMetadata:
         else:
             column = field.column
 
-        return {
-            "schema_name": schema_name,
-            "related_schema_name": related_schema_name,
-            "model_name": model_name,
-            "related_model_name": related_model_name,
-            "field_name": field_name,
-            "related_field_name": related_field_name,
-            "column": column,
-            "type": internal_type,
-            "relation_type": relation_type,
-            "is_link_table": issubclass(field.model, LinkORM),
-        }
+        return FieldMetadata(
+            schema_name,
+            model_name,
+            field_name,
+            internal_type,
+            issubclass(field.model, LinkORM),
+            column,
+            relation_type,
+            related_schema_name,
+            related_model_name,
+            related_field_name,
+        )
 
     def _get_relation_type(self, model: Registry, field: Field):
         if field.many_to_one:
@@ -275,13 +331,11 @@ class DjangoQueryBuilder:
         self.query_set = query_set if query_set else self.model_metadata.model.objects
 
     def add_all_sub_queries(self):
-        all_fields = schema_metadata.modules[self.module_name][
-            self.model_name
-        ].fields.items()
+        all_fields = schema_metadata.modules[self.module_name][self.model_name].fields
         included_relations = [
             field_name
-            for field_name, field in all_fields
-            if field["relation_type"] is not None
+            for field_name, field in all_fields.items()
+            if field.relation_type is not None
         ]
         self.add_sub_queries(included_relations)
         return self
@@ -319,32 +373,30 @@ class DjangoQueryBuilder:
 
         return select_terms
 
-    def _get_sub_query(self, field_metadata):
-        related_schema_name = field_metadata["related_schema_name"]
-        related_model_name = field_metadata["related_model_name"]
-        related_field_name = field_metadata["related_field_name"]
-        related_model_metadata = schema_metadata.modules[related_schema_name][
-            related_model_name
-        ]
-        query_set = related_model_metadata.model.objects.get_queryset()
+    def _get_sub_query(self, field_metadata: FieldMetadata):
+        module_name = field_metadata.related_schema_name
+        model_name = field_metadata.related_model_name
+        field_name = field_metadata.related_field_name
+        model_metadata = schema_metadata.modules[module_name][model_name]
+        query_set = model_metadata.model.objects.get_queryset()
         select = {
             field_name: field_name
-            for field_name in related_model_metadata.fields.keys()
-            if related_model_metadata.fields[field_name]["relation_type"] is None
+            for field_name in model_metadata.fields.keys()
+            if model_metadata.fields[field_name].relation_type is None
             and "__" not in field_name
         }
 
-        if field_metadata["relation_type"] in ["many-to-many", "one-to-many"]:
+        if field_metadata.relation_type in ["many-to-many", "one-to-many"]:
             return ArraySubquery(
                 Subquery(
-                    query_set.filter(**{related_field_name: OuterRef("pk")}).values(
+                    query_set.filter(**{field_name: OuterRef("pk")}).values(
                         data=JSONObject(**select)
                     )[:5]
                 )
             )
-        if field_metadata["relation_type"] in ["many-to-one", "one-to-one"]:
+        if field_metadata.relation_type in ["many-to-one", "one-to-one"]:
             return Subquery(
-                query_set.filter(**{related_field_name: OuterRef("pk")}).values(
+                query_set.filter(**{field_name: OuterRef("pk")}).values(
                     data=JSONObject(**select)
                 )[:5]
             )
