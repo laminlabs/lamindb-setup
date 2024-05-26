@@ -19,28 +19,52 @@ from lamindb_setup._init_instance import get_schema_module_name
 from lamindb_setup.core._hub_client import call_with_fallback_auth
 
 
-def synchronize_schema() -> None:
-    call_with_fallback_auth(_synchronize_schema)
+def synchronize_schema():
+    return call_with_fallback_auth(_synchronize_schema)
 
 
-def _synchronize_schema(client: Client) -> None:
+def _synchronize_schema(client: Client):
     schema_metadata_dict = schema_metadata.to_json()
 
     schema_encoded = json.dumps(schema_metadata_dict, sort_keys=True).encode("utf-8")
     schema_hash = hashlib.sha256(schema_encoded).digest()
     schema_uuid = UUID(bytes=schema_hash[:16])
 
+    existing_schema = _get_schema_by_id(schema_uuid, client)
+
+    is_new = existing_schema is None
+    if not is_new:
+        return is_new, existing_schema
+
     module_set_info = schema_metadata._get_module_set_info()
     module_ids = "-".join(str(module_info["id"]) for module_info in module_set_info)
 
-    new_row = {
-        "id": schema_uuid.hex,
-        "module_ids": module_ids,
-        "module_set_info": module_set_info,
-        "json": schema_metadata_dict,
-    }
+    new_schema = (
+        client.table("schema")
+        .insert(
+            {
+                "id": schema_uuid.hex,
+                "module_ids": module_ids,
+                "module_set_info": module_set_info,
+                "json": schema_metadata_dict,
+            }
+        )
+        .execute()
+        .data[0]
+    )
 
-    client.table("schema").insert(new_row).execute()
+    return is_new, new_schema
+
+
+def get_schema_by_id(id: UUID):
+    return call_with_fallback_auth(_get_schema_by_id, id=id)
+
+
+def _get_schema_by_id(id: UUID, client: Client):
+    response = client.table("schema").select("*").eq("id", id.hex).execute()
+    if len(response.data) == 0:
+        return None
+    return response.data[0]
 
 
 class SchemaMetadata:
