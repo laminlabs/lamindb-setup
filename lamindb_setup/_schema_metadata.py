@@ -30,30 +30,37 @@ def _synchronize_schema(client: Client):
     schema_hash = hashlib.sha256(schema_encoded).digest()
     schema_uuid = UUID(bytes=schema_hash[:16])
 
-    existing_schema = _get_schema_by_id(schema_uuid, client)
+    schema = _get_schema_by_id(schema_uuid, client)
 
-    is_new = existing_schema is None
-    if not is_new:
-        return is_new, existing_schema
-
-    module_set_info = schema_metadata._get_module_set_info()
-    module_ids = "-".join(str(module_info["id"]) for module_info in module_set_info)
-
-    new_schema = (
-        client.table("schema")
-        .insert(
-            {
-                "id": schema_uuid.hex,
-                "module_ids": module_ids,
-                "module_set_info": module_set_info,
-                "json": schema_metadata_dict,
-            }
+    is_new = schema is None
+    if is_new:
+        module_set_info = schema_metadata._get_module_set_info()
+        module_ids = "-".join(str(module_info["id"]) for module_info in module_set_info)
+        schema = (
+            client.table("schema")
+            .insert(
+                {
+                    "id": schema_uuid.hex,
+                    "module_ids": module_ids,
+                    "module_set_info": module_set_info,
+                    "json": schema_metadata_dict,
+                }
+            )
+            .execute()
+            .data[0]
         )
-        .execute()
-        .data[0]
-    )
 
-    return is_new, new_schema
+    instance_response = (
+        client.table("instance")
+        .update({"schema_id": schema_uuid.hex})
+        .eq("id", settings.instance._id.hex)
+        .execute()
+    )
+    assert (
+        len(instance_response.data) == 1
+    ), f"Instance {settings.instance._id.hex} was not properly linked to schema {schema_uuid.hex}"
+
+    return is_new, schema
 
 
 def get_schema_by_id(id: UUID):
