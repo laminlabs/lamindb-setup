@@ -7,7 +7,15 @@ from uuid import UUID
 
 import sqlparse
 from django.contrib.postgres.expressions import ArraySubquery
-from django.db.models import Field, ForeignObjectRel, OuterRef, QuerySet, Subquery
+from django.db.models import (
+    Field,
+    ForeignObjectRel,
+    ManyToManyField,
+    ManyToManyRel,
+    OuterRef,
+    QuerySet,
+    Subquery,
+)
 from django.db.models.functions import JSONObject
 from lnschema_core.models import LinkORM, Registry
 from sqlparse.sql import Identifier, IdentifierList
@@ -138,6 +146,7 @@ class FieldMetadata:
     related_schema_name: str | None = None
     related_model_name: str | None = None
     related_field_name: str | None = None
+    through: dict | None = None
 
 
 class ModelRelations:
@@ -304,19 +313,22 @@ class ModelMetadata:
             field_name = field.name
 
         if relation_type in ["one-to-many"]:
-            # For one-to-many relation, the field belong
+            # For a one-to-many relation, the field belong
             # to the other model as a foreign key.
-            # To make usage similar to other relation type
+            # To make usage similar to other relation types
             # we need to invert model and related model.
             schema_name, related_schema_name = related_schema_name, schema_name
             model_name, related_model_name = related_model_name, model_name
             field_name, related_field_name = related_field_name, field_name
             pass
 
-        if relation_type in ["many-to-many", "one-to-one", "one-to-many"]:
-            column = None
-        else:
+        column = None
+        if relation_type not in ["many-to-many", "one-to-one", "one-to-many"]:
             column = field.column
+
+        through = None
+        if relation_type == "many-to-many":
+            through = self._get_through(model, field)
 
         return FieldMetadata(
             schema_name,
@@ -329,9 +341,34 @@ class ModelMetadata:
             related_schema_name,
             related_model_name,
             related_field_name,
+            through,
         )
 
-    def _get_relation_type(self, model: Registry, field: Field):
+    @staticmethod
+    def _get_through(model: Registry, field_or_rel: ManyToManyField | ManyToManyRel):
+        table_name = model._meta.db_table
+        related_table_name = field_or_rel.related_model._meta.db_table
+
+        if isinstance(field_or_rel, ManyToManyField):
+            return {
+                "through": {
+                    "link_table_name": field_or_rel.remote_field.through._meta.db_table,
+                    table_name: field_or_rel.m2m_column_name(),
+                    related_table_name: field_or_rel.m2m_reverse_name(),
+                }
+            }
+
+        if isinstance(field_or_rel, ManyToManyRel):
+            return {
+                "through": {
+                    "link_table_name": field_or_rel.through._meta.db_table,
+                    "table_name_column": field_or_rel.field.m2m_column_name(),
+                    "related_table_name_column": field_or_rel.field.m2m_reverse_name(),
+                }
+            }
+
+    @staticmethod
+    def _get_relation_type(model: Registry, field: Field):
         if field.many_to_one:
             # defined in the model
             if model == field.model:
