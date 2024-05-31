@@ -351,20 +351,16 @@ class ModelMetadata:
 
         if isinstance(field_or_rel, ManyToManyField):
             return {
-                "through": {
-                    "link_table_name": field_or_rel.remote_field.through._meta.db_table,
-                    table_name: field_or_rel.m2m_column_name(),
-                    related_table_name: field_or_rel.m2m_reverse_name(),
-                }
+                "link_table_name": field_or_rel.remote_field.through._meta.db_table,
+                table_name: field_or_rel.m2m_column_name(),
+                related_table_name: field_or_rel.m2m_reverse_name(),
             }
 
         if isinstance(field_or_rel, ManyToManyRel):
             return {
-                "through": {
-                    "link_table_name": field_or_rel.through._meta.db_table,
-                    "table_name_column": field_or_rel.field.m2m_column_name(),
-                    "related_table_name_column": field_or_rel.field.m2m_reverse_name(),
-                }
+                "link_table_name": field_or_rel.through._meta.db_table,
+                "table_name_column": field_or_rel.field.m2m_column_name(),
+                "related_table_name_column": field_or_rel.field.m2m_reverse_name(),
             }
 
     @staticmethod
