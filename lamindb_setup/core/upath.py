@@ -698,15 +698,16 @@ def create_path(path: UPath, access_token: str | None = None) -> UPath:
 
 def get_stat_file_cloud(stat: dict) -> tuple[int, str, str]:
     size = stat["size"]
+    etag = stat["ETag"]
     # small files
-    if "-" not in stat["ETag"]:
+    if "-" not in etag:
         # only store hash for non-multipart uploads
         # we can't rapidly validate multi-part uploaded files client-side
         # we can add more logic later down-the-road
-        hash = b16_to_b64(stat["ETag"])
+        hash = b16_to_b64(etag)
         hash_type = "md5"
     else:
-        stripped_etag, suffix = stat["ETag"].split("-")
+        stripped_etag, suffix = etag.split("-")
         suffix = suffix.strip('"')
         hash = f"{b16_to_b64(stripped_etag)}-{suffix}"
         hash_type = "md5-n"  # this is the S3 chunk-hashing strategy
