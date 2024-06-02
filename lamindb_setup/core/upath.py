@@ -408,7 +408,7 @@ def synchronize(
                 origin = f"{self.protocol}://{file}"
                 destination = objectpath / file_key
                 child = callback.branched(origin, destination.as_posix())
-                UPath(origin, **self._kwargs).synchronize(
+                UPath(origin, **self.storage_options).synchronize(
                     destination, callback=child, timestamp=timestamp
                 )
                 child.close()
