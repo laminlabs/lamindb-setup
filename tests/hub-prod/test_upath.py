@@ -5,6 +5,11 @@ from pathlib import Path
 from lamindb_setup.core.upath import ProgressCallback, UPath, create_path
 
 
+def test_trailing_slash():
+    assert UPath("s3://bucket/key/").path[-1] != "/"
+    assert (UPath("s3://bucket/") / "key/").path[-1] != "/"
+
+
 def test_create_path():
     upath = UPath("s3://lamindb-ci/xyz/", default_fill_cache=False)
     assert "default_fill_cache" in upath._kwargs
