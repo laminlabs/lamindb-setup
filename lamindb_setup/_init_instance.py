@@ -16,7 +16,7 @@ from ._silence_loggers import silence_loggers
 from .core import InstanceSettings
 from .core._settings import settings
 from .core._settings_storage import StorageSettings, init_storage
-from .core.upath import convert_pathlike
+from .core.upath import UPath
 
 if TYPE_CHECKING:
     from pydantic import PostgresDsn
@@ -351,7 +351,7 @@ def infer_instance_name(
         return str(db).split("/")[-1]
     if storage == "create-s3":
         raise ValueError("pass name to init if storage = 'create-s3'")
-    storage_path = convert_pathlike(storage)
+    storage_path = UPath(storage)
     if storage_path.name != "":
         name = storage_path.name
     else:

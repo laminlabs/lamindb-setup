@@ -18,7 +18,7 @@ from .cloud_sqlite_locker import (
     EXPIRATION_TIME,
     InstanceLockedException,
 )
-from .upath import LocalPathClasses, UPath, convert_pathlike
+from .upath import LocalPathClasses, UPath
 
 if TYPE_CHECKING:
     from uuid import UUID
@@ -205,7 +205,7 @@ class InstanceSettings:
                 )
             if response != "y":
                 return None
-        local_root = convert_pathlike(local_root)
+        local_root = UPath(local_root)
         assert isinstance(local_root, LocalPathClasses)
         self._storage_local = init_storage(local_root, self._id, register_hub=True)  # type: ignore
         register_storage_in_instance(self._storage_local)  # type: ignore
