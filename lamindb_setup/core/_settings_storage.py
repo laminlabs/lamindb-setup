@@ -17,7 +17,6 @@ from ._settings_store import system_storage_settings_file
 from .upath import (
     LocalPathClasses,
     UPath,
-    convert_pathlike,
     create_path,
 )
 
@@ -73,7 +72,7 @@ def mark_storage_root(root: UPathStr, uid: str):
     # we need to touch a 0-byte object in folder-like storage location on S3 to avoid
     # permission errors from leveraging s3fs on an empty hosted storage location
     # for consistency, we write this file everywhere
-    root_upath = convert_pathlike(root)
+    root_upath = UPath(root)
     mark_upath = root_upath / IS_INITIALIZED_KEY
     mark_upath.write_text(uid)
 
@@ -159,7 +158,7 @@ class StorageSettings:
     ):
         self._uid = uid
         self._uuid_ = uuid
-        self._root_init = convert_pathlike(root)
+        self._root_init = UPath(root)
         if isinstance(self._root_init, LocalPathClasses):  # local paths
             try:
                 (self._root_init / ".lamindb").mkdir(parents=True, exist_ok=True)

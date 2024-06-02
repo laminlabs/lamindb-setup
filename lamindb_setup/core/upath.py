@@ -295,12 +295,7 @@ def upload_from(
 
     if local_path_is_dir and not create_folder:
         source = [f for f in local_path.rglob("*") if f.is_file()]
-        # convert_pathlike is needed to remove the trailing slash because
-        # UPath("s3://some-bucket/some-folder/") / "some-key"
-        # results in UPath("s3://some-bucket/some-folder//some-key")
-        # for upath 0.1.4
-        dest_root = convert_pathlike(self) if self._parts[-1] == "" else self
-        destination = [str(dest_root / f.relative_to(local_path)) for f in source]
+        destination = [str(self / f.relative_to(local_path)) for f in source]
         source = [str(f) for f in source]  # type: ignore
     else:
         source = str(local_path)  # type: ignore
@@ -329,9 +324,7 @@ def upload_from(
             del self.fs.dircache[bucket]
 
     if local_path_is_dir and create_folder:
-        # convert_pathlike is needed to remove the trailing slash
-        dest_root = convert_pathlike(self) if self._parts[-1] == "" else self
-        return dest_root / local_path.name
+        return self / local_path.name
     else:
         return self
 
@@ -695,22 +688,8 @@ Args:
 """
 
 
-def convert_pathlike(pathlike: UPathStr) -> UPath:
-    """Convert pathlike to Path or UPath inheriting options from root."""
-    if isinstance(pathlike, (str, UPath)):
-        path = UPath(pathlike)
-    elif isinstance(pathlike, Path):
-        path = UPath(str(pathlike))  # UPath applied on Path gives Path back
-    else:
-        raise ValueError("pathlike should be of type UPathStr")
-    # remove trailing slash
-    if path._parts and path._parts[-1] == "":
-        path._parts = path._parts[:-1]
-    return path
-
-
 def create_path(path: UPath, access_token: str | None = None) -> UPath:
-    path = convert_pathlike(path)
+    path = UPath(path)
     # test whether we have an AWS S3 path
     if not isinstance(path, S3Path):
         return path
@@ -759,7 +738,7 @@ class InstanceNotEmpty(Exception):
 def check_storage_is_empty(
     root: UPathStr, *, raise_error: bool = True, account_for_sqlite_file: bool = False
 ) -> int:
-    root_upath = convert_pathlike(root)
+    root_upath = UPath(root)
     root_string = root_upath.as_posix()  # type: ignore
     # we currently touch a 0-byte file in the root of a hosted storage location
     # ({storage_root}/.lamindb/_is_initialized) during storage initialization
