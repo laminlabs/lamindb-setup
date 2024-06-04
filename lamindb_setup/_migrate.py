@@ -6,7 +6,6 @@ from lamin_utils import logger
 from packaging import version
 
 from ._check_setup import _check_instance_setup
-from ._schema_metadata import update_schema_in_hub
 from .core._settings import settings
 from .core.django import setup_django
 
@@ -69,6 +68,8 @@ class migrate:
     @classmethod
     def deploy(cls) -> None:
         """Deploy a migration."""
+        from ._schema_metadata import update_schema_in_hub
+
         if _check_instance_setup():
             raise RuntimeError("Restart Python session to migrate or use CLI!")
         from lamindb_setup.core._hub_client import call_with_fallback_auth
