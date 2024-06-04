@@ -6,6 +6,7 @@ from lamindb_setup._schema_metadata import synchronize_schema
 @pytest.fixture
 def setup_instance():
     ln_setup.init(storage="./testdb", schema="bionty,wetlab")
+    ln_setup.register()
     yield
     ln_setup.delete("testdb", force=True)
 
@@ -15,11 +16,11 @@ def test_synchronize_new_schema(setup_instance):
 
     assert is_new is True
 
-    assert len(schema["module_set_info"]) == 1
+    assert len(schema["module_set_info"]) == 3
     assert schema["module_set_info"][0]["id"] == 0
     assert schema["module_set_info"][0]["name"] == "core"
 
-    assert len(schema["json"].keys()) == 1
+    assert len(schema["json"].keys()) == 3
     assert "core" in schema["json"]
 
     assert schema["json"]["core"]["artifact"]["fields"]["id"] == {
@@ -34,6 +35,7 @@ def test_synchronize_new_schema(setup_instance):
         "related_field_name": None,
         "related_model_name": None,
         "related_schema_name": None,
+        "through": None,
     }
 
     assert schema["json"]["core"]["artifact"]["fields"]["created_by"] == {
@@ -48,4 +50,5 @@ def test_synchronize_new_schema(setup_instance):
         "related_field_name": "artifact",
         "related_model_name": "user",
         "related_schema_name": "core",
+        "through": None,
     }
