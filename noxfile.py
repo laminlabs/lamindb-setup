@@ -27,7 +27,7 @@ def lint(session: nox.Session) -> None:
     ["hub-local", "hub-prod", "hub-cloud", "storage", "docs"],
 )
 def install(session: nox.Session, group: str) -> None:
-    no_deps_packages = "git+https://github.com/laminlabs/lnschema-bionty git+https://github.com/laminlabs/lnschema-core lamin-cli"
+    no_deps_packages = "git+https://github.com/laminlabs/lnschema-bionty git+https://github.com/laminlabs/lnschema-core git+https://github.com/laminlabs/wetlab lamin-cli"
     schema_deps = f"""uv pip install --system bionty git+https://github.com/laminlabs/bionty-base
 uv pip install --system --no-deps {no_deps_packages}
 """
@@ -40,10 +40,7 @@ uv pip install --system --no-deps {no_deps_packages}
     elif group == "storage":
         cmds = """uv pip install --system gcsfs"""
     elif group == "hub-prod":
-        cmds = (
-            schema_deps
-            + "uv pip install --system --no-deps git+https://github.com/laminlabs/wetlab"
-        )
+        cmds = schema_deps
     elif group == "hub-local":
         cmds = schema_deps + """uv pip install --system -e ./laminhub/rest-hub"""
     # current package

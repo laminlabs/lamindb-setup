@@ -5,7 +5,7 @@ from lamindb_setup._schema_metadata import synchronize_schema
 
 @pytest.fixture
 def setup_instance():
-    ln_setup.init(storage="./testdb", schema="bionty")
+    ln_setup.init(storage="./testdb", schema="bionty,wetlab")
     yield
     ln_setup.delete("testdb", force=True)
 
