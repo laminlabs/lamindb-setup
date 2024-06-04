@@ -2,7 +2,7 @@ import hashlib
 import importlib
 import json
 from dataclasses import dataclass
-from typing import Dict
+from typing import TYPE_CHECKING, Dict
 from uuid import UUID
 
 import sqlparse
@@ -17,7 +17,6 @@ from django.db.models import (
     Subquery,
 )
 from django.db.models.functions import JSONObject
-from lnschema_core.models import LinkORM, Registry
 from sqlparse.sql import Identifier, IdentifierList
 from sqlparse.tokens import DML, Keyword
 from supabase import Client
@@ -26,12 +25,16 @@ from lamindb_setup import settings
 from lamindb_setup._init_instance import get_schema_module_name
 from lamindb_setup.core._hub_client import call_with_fallback_auth
 
+if TYPE_CHECKING:
+    from lnschema_core.models import Registry
+
 
 def synchronize_schema():
     return call_with_fallback_auth(_synchronize_schema)
 
 
 def _synchronize_schema(client: Client):
+    schema_metadata = SchemaMetadata()
     schema_metadata_dict = schema_metadata.to_json()
 
     schema_encoded = json.dumps(schema_metadata_dict, sort_keys=True).encode("utf-8")
@@ -176,9 +179,7 @@ class ModelRelations:
 
 
 class ModelMetadata:
-    def __init__(
-        self, model: Registry, module_name: str, included_modules: list[str]
-    ) -> None:
+    def __init__(self, model, module_name: str, included_modules: list[str]) -> None:
         self.model = model
         self.class_name = model.__name__
         self.module_name = module_name
@@ -218,7 +219,7 @@ class ModelMetadata:
             .extract_select_terms()
         )
 
-    def _get_fields_metadata(self, model: Registry):
+    def _get_fields_metadata(self, model):
         related_fields = []
         fields_metadata: Dict[str, FieldMetadata] = {}
 
@@ -296,7 +297,9 @@ class ModelMetadata:
 
         return related_fields
 
-    def _get_field_metadata(self, model: Registry, field: Field):
+    def _get_field_metadata(self, model, field: Field):
+        from lnschema_core.models import LinkORM
+
         internal_type = field.get_internal_type()
         model_name = field.model._meta.model_name
         relation_type = self._get_relation_type(model, field)
@@ -346,7 +349,7 @@ class ModelMetadata:
         )
 
     @staticmethod
-    def _get_through(model: Registry, field_or_rel: ManyToManyField | ManyToManyRel):
+    def _get_through(model, field_or_rel: ManyToManyField | ManyToManyRel):
         table_name = model._meta.db_table
         related_table_name = field_or_rel.related_model._meta.db_table
 
@@ -365,7 +368,7 @@ class ModelMetadata:
             }
 
     @staticmethod
-    def _get_relation_type(model: Registry, field: Field):
+    def _get_relation_type(model, field: Field):
         if field.many_to_one:
             # defined in the model
             if model == field.model:
@@ -383,20 +386,18 @@ class ModelMetadata:
             return None
 
 
-schema_metadata = SchemaMetadata()
-
-
 class DjangoQueryBuilder:
     def __init__(
         self, module_name: str, model_name: str, query_set: QuerySet | None = None
     ) -> None:
+        self.schema_metadata = SchemaMetadata()
         self.module_name = module_name
         self.model_name = model_name
-        self.model_metadata = schema_metadata.modules[module_name][model_name]
+        self.model_metadata = self.schema_metadata.modules[module_name][model_name]
         self.query_set = query_set if query_set else self.model_metadata.model.objects
 
     def add_all_sub_queries(self):
-        all_fields = schema_metadata.modules[self.module_name][self.model_name].fields
+        all_fields = self.model_metadata.fields
         included_relations = [
             field_name
             for field_name, field in all_fields.items()
@@ -442,7 +443,7 @@ class DjangoQueryBuilder:
         module_name = field_metadata.related_schema_name
         model_name = field_metadata.related_model_name
         field_name = field_metadata.related_field_name
-        model_metadata = schema_metadata.modules[module_name][model_name]
+        model_metadata = self.schema_metadata.modules[module_name][model_name]
         query_set = model_metadata.model.objects.get_queryset()
         select = {
             field_name: field_name
