@@ -6,6 +6,7 @@ from lamin_utils import logger
 from packaging import version
 
 from ._check_setup import _check_instance_setup
+from ._schema_metadata import update_schema_in_hub
 from .core._settings import settings
 from .core.django import setup_django
 
@@ -104,6 +105,8 @@ class migrate:
         # this populates the hub
         if instance_is_on_hub:
             logger.important(f"updating lamindb version in hub: {lamindb.__version__}")
+            # TODO: integrate update of instance table within update_schema_in_hub & below
+            update_schema_in_hub()
             call_with_fallback_auth(
                 update_instance,
                 instance_id=settings.instance._id.hex,

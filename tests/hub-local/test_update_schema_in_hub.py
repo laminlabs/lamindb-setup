@@ -1,6 +1,6 @@
 import lamindb_setup as ln_setup
 import pytest
-from lamindb_setup._schema_metadata import _dict_to_uuid, synchronize_schema
+from lamindb_setup._schema_metadata import _dict_to_uuid, update_schema_in_hub
 
 
 @pytest.fixture
@@ -16,8 +16,8 @@ def setup_instance():
     ln_setup.delete("testdb", force=True)
 
 
-def test_synchronize_new_schema(setup_instance):
-    is_new, schema_uuid, schema = synchronize_schema()
+def test_update_schema_in_hub(setup_instance):
+    is_new, schema_uuid, schema = update_schema_in_hub()
 
     assert is_new is True
     assert _dict_to_uuid(schema["json"]) == schema_uuid
