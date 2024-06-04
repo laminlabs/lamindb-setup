@@ -25,9 +25,15 @@ def test_synchronize_new_schema(setup_instance):
     assert len(schema["module_set_info"]) == 3
     assert schema["module_set_info"][0]["id"] == 0
     assert schema["module_set_info"][0]["name"] == "core"
+    assert schema["module_set_info"][1]["id"] == 0
+    assert schema["module_set_info"][1]["name"] == "bionty"
+    assert schema["module_set_info"][2]["id"] == 0
+    assert schema["module_set_info"][2]["name"] == "wetlab"
 
     assert len(schema["json"].keys()) == 3
     assert "core" in schema["json"]
+    assert "bionty" in schema["json"]
+    assert "wetlab" in schema["json"]
 
     assert schema["json"]["core"]["artifact"]["fields"]["id"] == {
         "type": "AutoField",
