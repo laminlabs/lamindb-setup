@@ -1,7 +1,16 @@
+import lamindb_setup as ln_setup
+import pytest
 from lamindb_setup._schema_metadata import synchronize_schema
 
 
-def test_synchronize_new_schema():
+@pytest.fixture
+def setup_instance():
+    ln_setup.init(storage="./testdb", schema="bionty")
+    yield
+    ln_setup.delete("testdb", force=True)
+
+
+def test_synchronize_new_schema(setup_instance):
     is_new, schema = synchronize_schema()
 
     assert is_new is True
