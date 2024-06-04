@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import hashlib
 import importlib
 import json
@@ -19,7 +21,6 @@ from django.db.models import (
 from django.db.models.functions import JSONObject
 from sqlparse.sql import Identifier, IdentifierList
 from sqlparse.tokens import DML, Keyword
-from supabase import Client
 
 from lamindb_setup import settings
 from lamindb_setup._init_instance import get_schema_module_name
@@ -27,6 +28,7 @@ from lamindb_setup.core._hub_client import call_with_fallback_auth
 
 if TYPE_CHECKING:
     from lnschema_core.models import Registry
+    from supabase import Client
 
 
 def update_schema_in_hub() -> tuple[bool, UUID, dict]:
@@ -224,7 +226,7 @@ class ModelMetadata:
 
     def _get_fields_metadata(self, model):
         related_fields = []
-        fields_metadata: Dict[str, FieldMetadata] = {}
+        fields_metadata: dict[str, FieldMetadata] = {}
 
         for field in model._meta.get_fields():
             field_metadata = self._get_field_metadata(model, field)
@@ -250,7 +252,7 @@ class ModelMetadata:
     def _get_related_fields_metadata(
         self, model, model_relations_metadata: ModelRelations
     ):
-        related_fields: Dict[str, FieldMetadata] = {}
+        related_fields: dict[str, FieldMetadata] = {}
 
         # Many to one (foreign key defined in the model)
         for link_field_name, link_field in model_relations_metadata.many_to_one.items():
