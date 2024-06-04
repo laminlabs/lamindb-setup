@@ -107,7 +107,8 @@ class migrate:
         if instance_is_on_hub:
             logger.important(f"updating lamindb version in hub: {lamindb.__version__}")
             # TODO: integrate update of instance table within update_schema_in_hub & below
-            update_schema_in_hub()
+            if settings.instance.dialect != "sqlite":
+                update_schema_in_hub()
             call_with_fallback_auth(
                 update_instance,
                 instance_id=settings.instance._id.hex,
