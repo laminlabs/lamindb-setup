@@ -377,8 +377,8 @@ class ModelMetadata:
         if isinstance(field_or_rel, ManyToManyRel):
             return {
                 "link_table_name": field_or_rel.through._meta.db_table,
-                "table_column_name": field_or_rel.field.m2m_column_name(),
-                "related_table_column_name": field_or_rel.field.m2m_reverse_name(),
+                table_name: field_or_rel.field.m2m_column_name(),
+                related_table_name: field_or_rel.field.m2m_reverse_name(),
             }
 
     @staticmethod

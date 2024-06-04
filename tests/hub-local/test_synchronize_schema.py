@@ -23,12 +23,15 @@ def test_synchronize_new_schema(setup_instance):
     assert _dict_to_uuid(schema["json"]) == schema_uuid
 
     assert len(schema["module_set_info"]) == 3
-    assert schema["module_set_info"][0]["id"] == 0
-    assert schema["module_set_info"][0]["name"] == "core"
-    assert schema["module_set_info"][1]["id"] == 0
-    assert schema["module_set_info"][1]["name"] == "bionty"
-    assert schema["module_set_info"][2]["id"] == 0
-    assert schema["module_set_info"][2]["name"] == "wetlab"
+    module_set_info = sorted(
+        schema["module_set_info"], key=lambda module: module["name"]
+    )
+    assert module_set_info[0]["id"] == 0
+    assert module_set_info[0]["name"] == "bionty"
+    assert module_set_info[1]["id"] == 0
+    assert module_set_info[1]["name"] == "core"
+    assert module_set_info[2]["id"] == 0
+    assert module_set_info[2]["name"] == "wetlab"
 
     assert len(schema["json"].keys()) == 3
     assert "core" in schema["json"]
@@ -79,8 +82,8 @@ def test_synchronize_new_schema(setup_instance):
         "related_schema_name": "bionty",
         "through": {
             "link_table_name": "lnschema_bionty_pathway_genes",
-            "table_column_name": "pathway_id",
-            "related_table_column_name": "gene_id",
+            "lnschema_bionty_gene": "pathway_id",
+            "lnschema_bionty_pathway": "gene_id",
         },
     }
 
