@@ -44,14 +44,10 @@ def synchronize_schema():
     return call_with_fallback_auth(_synchronize_schema)
 
 
-def _synchronize_schema(client: Client):
+def _synchronize_schema(client: Client) -> tuple[bool, UUID, dict]:
     schema_metadata = SchemaMetadata()
     schema_metadata_dict = schema_metadata.to_json()
-
-    schema_encoded = json.dumps(schema_metadata_dict, sort_keys=True).encode("utf-8")
-    schema_hash = hashlib.sha256(schema_encoded).digest()
-    schema_uuid = UUID(bytes=schema_hash[:16])
-
+    schema_uuid = _dict_to_uuid(schema_metadata_dict)
     schema = _get_schema_by_id(schema_uuid, client)
 
     is_new = schema is None
@@ -82,7 +78,7 @@ def _synchronize_schema(client: Client):
         len(instance_response.data) == 1
     ), f"Instance {settings.instance._id.hex} was not properly linked to schema {schema_uuid.hex}"
 
-    return is_new, schema
+    return is_new, schema_uuid, schema
 
 
 def get_schema_by_id(id: UUID):
@@ -94,6 +90,13 @@ def _get_schema_by_id(id: UUID, client: Client):
     if len(response.data) == 0:
         return None
     return response.data[0]
+
+
+def _dict_to_uuid(dict: dict):
+    encoded = json.dumps(dict, sort_keys=True).encode("utf-8")
+    hash = hashlib.md5(encoded).digest()
+    uuid = UUID(bytes=hash[:16])
+    return uuid
 
 
 class SchemaMetadata:
