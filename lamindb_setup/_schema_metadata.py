@@ -24,12 +24,23 @@ from supabase import Client
 from lamindb_setup import settings
 from lamindb_setup._init_instance import get_schema_module_name
 from lamindb_setup.core._hub_client import call_with_fallback_auth
+from lamindb_setup.core._hub_crud import select_collaborator
 
 if TYPE_CHECKING:
     from lnschema_core.models import Registry
 
 
 def synchronize_schema():
+    collaborator = call_with_fallback_auth(
+        select_collaborator,
+        instance_id=settings.instance._id.hex,
+        account_id=settings.user._uuid,
+    )
+    if collaborator is None or collaborator["role"] != "admin":
+        raise SystemExit(
+            "❌ Only admins can synchronize schemas, please ensure that you're an"
+            f" admin: https://lamin.ai/{settings.instance.slug}/settings"
+        )
     return call_with_fallback_auth(_synchronize_schema)
 
 
