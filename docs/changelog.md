@@ -3,6 +3,7 @@
 <!-- prettier-ignore -->
 Name | PR | Developer | Date | Version
 --- | --- | --- | --- | ---
+⬆️ Migrate to upath 0.2.2 | [723](https://github.com/laminlabs/lamindb-setup/pull/723) | [Koncopd](https://github.com/Koncopd) | 2024-06-02 |
 🐛 Fix trailing slash in upload_from source | [773](https://github.com/laminlabs/lamindb-setup/pull/773) | [Koncopd](https://github.com/Koncopd) | 2024-05-23 | 0.73.0
 🚸 Make `upload_from()`, `download_to()`, and `view_tree()` more user friendly | [772](https://github.com/laminlabs/lamindb-setup/pull/772) | [falexwolf](https://github.com/falexwolf) | 2024-05-23 |
 ✨ Resolve s3 bucket region even without access rights | [771](https://github.com/laminlabs/lamindb-setup/pull/771) | [Koncopd](https://github.com/Koncopd) | 2024-05-22 |
