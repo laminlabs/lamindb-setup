@@ -5,7 +5,11 @@ from lamindb_setup._schema_metadata import _dict_to_uuid, synchronize_schema
 
 @pytest.fixture
 def setup_instance():
-    ln_setup.init(storage="./testdb", schema="bionty,wetlab")
+    ln_setup.init(
+        storage="./testdb",
+        schema="bionty,wetlab",
+        db="postgresql://postgres:postgres@127.0.0.1:54322/postgres",
+    )
     ln_setup.register()
     yield
     ln_setup.delete("testdb", force=True)
