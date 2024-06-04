@@ -28,11 +28,11 @@ def lint(session: nox.Session) -> None:
 )
 def install(session: nox.Session, group: str) -> None:
     no_deps_packages = "git+https://github.com/laminlabs/lnschema-bionty git+https://github.com/laminlabs/lnschema-core lamin-cli"
-    cloud_prod_installs = f"""uv pip install --system bionty git+https://github.com/laminlabs/bionty-base
+    schema_deps = f"""uv pip install --system bionty git+https://github.com/laminlabs/bionty-base
 uv pip install --system --no-deps {no_deps_packages}
 """
     if group == "hub-cloud":
-        cmds = cloud_prod_installs + "uv pip install --system ./laminhub/rest-hub"
+        cmds = schema_deps + "uv pip install --system ./laminhub/rest-hub"
     elif group == "docs":
         cmds = (
             """uv pip install --system git+https://github.com/laminlabs/lnschema-core"""
@@ -41,11 +41,11 @@ uv pip install --system --no-deps {no_deps_packages}
         cmds = """uv pip install --system gcsfs"""
     elif group == "hub-prod":
         cmds = (
-            cloud_prod_installs
+            schema_deps
             + "uv pip install --system --no-deps git+https://github.com/laminlabs/wetlab"
         )
     elif group == "hub-local":
-        cmds = """uv pip install --system -e ./laminhub/rest-hub"""
+        cmds = schema_deps + """uv pip install --system -e ./laminhub/rest-hub"""
     # current package
     cmds += """\nuv pip install --system -e '.[aws,dev]' lamin-cli"""
 
