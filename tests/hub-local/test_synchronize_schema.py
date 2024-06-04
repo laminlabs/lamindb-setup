@@ -73,8 +73,8 @@ def test_synchronize_new_schema(setup_instance):
         "related_schema_name": "bionty",
         "through": {
             "link_table_name": "lnschema_bionty_pathway_genes",
-            "table_name_column": "pathway_id",
-            "related_table_name_column": "gene_id",
+            "table_column_name": "pathway_id",
+            "related_table_column_name": "gene_id",
         },
     }
 
