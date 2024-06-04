@@ -115,6 +115,7 @@ class SchemaMetadata:
                 if model.__class__.__name__ == "ModelBase"
                 and model.__name__ not in ["Registry", "ORM"]
                 and not model._meta.abstract
+                and model.__get_schema_name__() == module_name
             }
             for module_name in self.included_modules
         }
