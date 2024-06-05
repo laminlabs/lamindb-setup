@@ -59,6 +59,7 @@ VALID_SUFFIXES = {
 VALID_COMPOSITE_SUFFIXES = {
     ".anndata.zarr",
     ".spatialdata.zarr",
+    ".ome.zarr",
 }
 
 TRAILING_SEP = (os.sep, os.altsep) if os.altsep is not None else os.sep
