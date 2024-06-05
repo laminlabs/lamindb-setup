@@ -3,6 +3,7 @@
 <!-- prettier-ignore -->
 Name | PR | Developer | Date | Version
 --- | --- | --- | --- | ---
+✨ Add .ome.zarr as composite suffix | [775](https://github.com/laminlabs/lamindb-setup/pull/775) | [sunnyosun](https://github.com/sunnyosun) | 2024-06-05 |
 🏗️ Update instance schema in the hub | [774](https://github.com/laminlabs/lamindb-setup/pull/774) | [fredericenard](https://github.com/fredericenard) | 2024-06-04 |
 ⬆️ Migrate to upath 0.2.2 | [723](https://github.com/laminlabs/lamindb-setup/pull/723) | [Koncopd](https://github.com/Koncopd) | 2024-06-02 |
 🐛 Fix trailing slash in upload_from source | [773](https://github.com/laminlabs/lamindb-setup/pull/773) | [Koncopd](https://github.com/Koncopd) | 2024-05-23 | 0.73.0
