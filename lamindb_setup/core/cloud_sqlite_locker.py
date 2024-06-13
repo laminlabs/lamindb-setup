@@ -111,6 +111,7 @@ class Locker:
         if self._counter <= MAX_MSG_COUNTER:
             self._counter += 1
 
+    # Lamport's bakery algorithm
     def _lock_unsafe(self):
         if self._has_lock:
             return None
