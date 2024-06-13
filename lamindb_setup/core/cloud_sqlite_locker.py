@@ -111,6 +111,7 @@ class Locker:
         if self._counter <= MAX_MSG_COUNTER:
             self._counter += 1
 
+    # Lamport's bakery algorithm
     def _lock_unsafe(self):
         if self._has_lock:
             return None
@@ -186,7 +187,7 @@ def get_locker(isettings) -> Locker:
     if (
         _locker is None
         or _locker.user != user_uid
-        or _locker.root is not storage_root
+        or _locker.root != storage_root
         or _locker.instance_id != isettings._id
     ):
         _locker = Locker(user_uid, storage_root, isettings._id)
