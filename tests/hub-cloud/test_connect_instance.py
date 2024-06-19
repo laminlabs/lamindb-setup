@@ -28,7 +28,7 @@ def test_connect_after_revoked_access():
             # if a previous test run failed, this will
             # error with a violation of a unique constraint
             collaborator_handler.add_by_slug(
-                "laminlabs/static-test-instance-private-sqlite",
+                "testuser1/static-test-instance-private-sqlite",
                 "testuser2",
                 "write",
                 "default",
@@ -38,19 +38,19 @@ def test_connect_after_revoked_access():
             pass
         ln_setup.login("testuser2@lamin.ai")
         ln_setup.connect(
-            "https://lamin.ai/laminlabs/static-test-instance-private-sqlite", _test=True
+            "https://lamin.ai/testuser1/static-test-instance-private-sqlite", _test=True
         )
         assert (
             ln_setup.settings.instance.storage.root_as_str
             == "s3://lamindb-setup-private-bucket"
         )
         collaborator_handler.delete_by_slug(
-            "laminlabs/static-test-instance-private-sqlite", "testuser2"
+            "testuser1/static-test-instance-private-sqlite", "testuser2"
         )
         # make the instance private
         with pytest.raises(InstanceNotFoundError):
             ln_setup.connect(
-                "https://lamin.ai/laminlabs/static-test-instance-private-sqlite",
+                "https://lamin.ai/testuser1/static-test-instance-private-sqlite",
                 _test=True,
             )
 
@@ -61,7 +61,7 @@ def test_connect_after_private_public_switch():
         # this assumes that testuser1 is an admin of static-test-instance-private-sqlite
         ln_setup.login("testuser1@lamin.ai")
         ln_setup.connect(
-            "https://lamin.ai/laminlabs/static-test-instance-private-sqlite", _test=True
+            "https://lamin.ai/testuser1/static-test-instance-private-sqlite", _test=True
         )
         admin_hub = connect_hub_with_auth()
         # make the instance private
@@ -74,7 +74,7 @@ def test_connect_after_private_public_switch():
         ln_setup.login("testuser2")
         with pytest.raises(InstanceNotFoundError):
             ln_setup.connect(
-                "https://lamin.ai/laminlabs/static-test-instance-private-sqlite",
+                "https://lamin.ai/testuser1/static-test-instance-private-sqlite",
                 _test=True,
             )
         # make the instance public
@@ -85,7 +85,7 @@ def test_connect_after_private_public_switch():
         )
         # load instance with non-collaborator user, should work now
         ln_setup.connect(
-            "https://lamin.ai/laminlabs/static-test-instance-private-sqlite", _test=True
+            "https://lamin.ai/testuser1/static-test-instance-private-sqlite", _test=True
         )
         # make the instance private again
         update_instance(

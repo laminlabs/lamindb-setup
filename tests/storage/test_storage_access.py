@@ -17,7 +17,7 @@ def test_connect_instance_with_private_storage_and_no_storage_access():
     # this should fail because of insufficient AWS permission for the storage bucket
     # that has the SQLite file on it, but because _test=True, we don't actually try to
     # pull the SQLite file -> see the line below to proxy this
-    ln_setup.connect("laminlabs/static-test-instance-private-sqlite", _test=True)
+    ln_setup.connect("testuser1/static-test-instance-private-sqlite", _test=True)
     with pytest.raises(PermissionError):
         (ln_setup.settings.storage.root / "test_file").exists()
     # connecting to a postgres instance should work because it doesn't touch
