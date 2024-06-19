@@ -131,8 +131,14 @@ class InstanceSettings:
                         found = True
                         break
                     elif uid == "":
-                        # legacy instance that was not yet marked properly
-                        mark_storage_root(record.root, record.uid)
+                        try:
+                            # legacy instance that was not yet marked properly
+                            mark_storage_root(record.root, record.uid)
+                        except PermissionError:
+                            logger.warning(
+                                f"ignoring the following location because no permission to write to it: {marker_path}"
+                            )
+                            continue
                     else:
                         continue
                 else:
