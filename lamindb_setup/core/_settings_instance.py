@@ -120,7 +120,13 @@ class InstanceSettings:
             if root_path.exists():
                 marker_path = root_path / ".lamindb/_is_initialized"
                 if marker_path.exists():
-                    uid = marker_path.read_text()
+                    try:
+                        uid = marker_path.read_text()
+                    except PermissionError:
+                        logger.warning(
+                            f"ignoring the following location because no permission to read it: {marker_path}"
+                        )
+                        continue
                     if uid == record.uid:
                         found = True
                         break
