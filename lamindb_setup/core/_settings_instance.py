@@ -120,13 +120,25 @@ class InstanceSettings:
             if root_path.exists():
                 marker_path = root_path / ".lamindb/_is_initialized"
                 if marker_path.exists():
-                    uid = marker_path.read_text()
+                    try:
+                        uid = marker_path.read_text()
+                    except PermissionError:
+                        logger.warning(
+                            f"ignoring the following location because no permission to read it: {marker_path}"
+                        )
+                        continue
                     if uid == record.uid:
                         found = True
                         break
                     elif uid == "":
-                        # legacy instance that was not yet marked properly
-                        mark_storage_root(record.root, record.uid)
+                        try:
+                            # legacy instance that was not yet marked properly
+                            mark_storage_root(record.root, record.uid)
+                        except PermissionError:
+                            logger.warning(
+                                f"ignoring the following location because no permission to write to it: {marker_path}"
+                            )
+                            continue
                     else:
                         continue
                 else:
