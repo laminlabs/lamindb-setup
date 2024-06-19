@@ -3,6 +3,7 @@
 <!-- prettier-ignore -->
 Name | PR | Developer | Date | Version
 --- | --- | --- | --- | ---
+⚡ A smaller json representation of the schema for the UI | [779](https://github.com/laminlabs/lamindb-setup/pull/779) | [fredericenard](https://github.com/fredericenard) | 2024-06-19 |
 🐛 Fix permission error when screening for local storage root | [778](https://github.com/laminlabs/lamindb-setup/pull/778) | [falexwolf](https://github.com/falexwolf) | 2024-06-19 |
 🐛 Fix same root check in get_locker | [777](https://github.com/laminlabs/lamindb-setup/pull/777) | [Koncopd](https://github.com/Koncopd) | 2024-06-13 |
 ✨ Add .ome.zarr as composite suffix | [775](https://github.com/laminlabs/lamindb-setup/pull/775) | [sunnyosun](https://github.com/sunnyosun) | 2024-06-05 |
