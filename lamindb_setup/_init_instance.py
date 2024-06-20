@@ -33,8 +33,7 @@ def get_schema_module_name(schema_name) -> str:
         if module_spec is not None:
             return name
     raise ImportError(
-        f"Python package for '{schema_name}' is not installed, tried two package names:"
-        f" {name_attempts}\nHave you installed the schema package using `pip install`?"
+        f"Python package for '{schema_name}' is not installed.\nIf your package is on PyPI, run `pip install {schema_name}`"
     )
 
 
