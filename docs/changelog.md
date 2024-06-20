@@ -3,6 +3,7 @@
 <!-- prettier-ignore -->
 Name | PR | Developer | Date | Version
 --- | --- | --- | --- | ---
+Better error message | [780](https://github.com/laminlabs/lamindb-setup/pull/780) | [falexwolf](https://github.com/falexwolf) | 2024-06-20 |
 🐛 Fix permission error when screening for local storage root | [778](https://github.com/laminlabs/lamindb-setup/pull/778) | [falexwolf](https://github.com/falexwolf) | 2024-06-19 | 0.73.2
 🐛 Fix same root check in get_locker | [777](https://github.com/laminlabs/lamindb-setup/pull/777) | [Koncopd](https://github.com/Koncopd) | 2024-06-13 |
 ✨ Add .ome.zarr as composite suffix | [775](https://github.com/laminlabs/lamindb-setup/pull/775) | [sunnyosun](https://github.com/sunnyosun) | 2024-06-05 |
