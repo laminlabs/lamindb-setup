@@ -51,7 +51,11 @@ class SetupSettings:
     @property
     def user(self) -> UserSettings:
         """:class:`~lamindb.setup.core.UserSettings`."""
-        if self._user_settings is None or self._user_settings_env != get_env_name():
+        env_changed = (
+            self._user_settings_env is not None
+            and self._user_settings_env != get_env_name()
+        )
+        if self._user_settings is None or env_changed:
             self._user_settings = load_or_create_user_settings()
             self._user_settings_env = get_env_name()
             if self._user_settings and self._user_settings.uid is None:
@@ -61,10 +65,11 @@ class SetupSettings:
     @property
     def instance(self) -> InstanceSettings:
         """:class:`~lamindb.setup.core.InstanceSettings`."""
-        if (
-            self._instance_settings is None
-            or self._instance_settings_env != get_env_name()
-        ):
+        env_changed = (
+            self._instance_settings_env is not None
+            and self._instance_settings_env != get_env_name()
+        )
+        if self._instance_settings is None or env_changed:
             self._instance_settings = load_instance_settings()
             self._instance_settings_env = get_env_name()
         return self._instance_settings  # type: ignore
