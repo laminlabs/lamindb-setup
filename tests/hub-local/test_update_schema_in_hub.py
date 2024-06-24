@@ -9,11 +9,11 @@ def setup_instance():
         storage="./test_storage",
         schema="bionty,wetlab",
         db="postgresql://postgres:postgres@127.0.0.1:54322/postgres",
-        name="testdb",
+        name="test-update-schema",
     )
     ln_setup.register()
     yield
-    ln_setup.delete("testdb", force=True)
+    ln_setup.delete("test-update-schema", force=True)
 
 
 def test_update_schema_in_hub(setup_instance):
@@ -94,20 +94,20 @@ def test_update_schema_in_hub(setup_instance):
     assert schema["json"]["wetlab"]["well"]["fields"]["artifacts"] == {
         "type": "ManyToManyField",
         "column": None,
-        "field_name": "artifacts",
-        "model_name": "well",
-        "schema_name": "wetlab",
-        "select_term": 'ARRAY(SELECT JSONB_BUILD_OBJECT((\'version\')::text, U0."version", (\'created_at\')::text, U0."created_at", (\'updated_at\')::text, U0."updated_at", (\'id\')::text, U0."id", (\'uid\')::text, U0."uid", (\'description\')::text, U0."description", (\'key\')::text, U0."key", (\'suffix\')::text, U0."suffix", (\'accessor\')::text, U0."accessor", (\'size\')::text, U0."size", (\'hash\')::text, U0."hash", (\'hash_type\')::text, U0."hash_type", (\'n_objects\')::text, U0."n_objects", (\'n_observations\')::text, U0."n_observations", (\'visibility\')::text, U0."visibility", (\'key_is_virtual\')::text, U0."key_is_virtual") AS "data" FROM "lnschema_core_artifact" U0 INNER JOIN "wetlab_well_artifacts" U1 ON (U0."id" = U1."artifact_id") WHERE U1."well_id" = ("wetlab_well"."id") LIMIT 5) AS "artifacts"',
-        "is_link_table": False,
-        "relation_type": "many-to-many",
-        "related_field_name": "wells",
-        "related_model_name": "artifact",
-        "related_schema_name": "core",
         "through": {
             "wetlab_well": "well_id",
             "link_table_name": "wetlab_well_artifacts",
             "lnschema_core_artifact": "artifact_id",
         },
+        "field_name": "artifacts",
+        "model_name": "well",
+        "schema_name": "wetlab",
+        "select_term": 'ARRAY(SELECT JSONB_BUILD_OBJECT((\'version\')::text, U0."version", (\'created_at\')::text, U0."created_at", (\'updated_at\')::text, U0."updated_at", (\'id\')::text, U0."id", (\'uid\')::text, U0."uid", (\'description\')::text, U0."description", (\'key\')::text, U0."key", (\'suffix\')::text, U0."suffix", (\'type\')::text, U0."type", (\'accessor\')::text, U0."accessor", (\'size\')::text, U0."size", (\'hash\')::text, U0."hash", (\'hash_type\')::text, U0."hash_type", (\'n_objects\')::text, U0."n_objects", (\'n_observations\')::text, U0."n_observations", (\'visibility\')::text, U0."visibility", (\'key_is_virtual\')::text, U0."key_is_virtual") AS "data" FROM "lnschema_core_artifact" U0 INNER JOIN "wetlab_well_artifacts" U1 ON (U0."id" = U1."artifact_id") WHERE U1."well_id" = ("wetlab_well"."id") LIMIT 5) AS "artifacts"',
+        "is_link_table": False,
+        "relation_type": "many-to-many",
+        "related_field_name": "wells",
+        "related_model_name": "artifact",
+        "related_schema_name": "core",
     }
 
 
