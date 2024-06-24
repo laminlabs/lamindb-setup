@@ -105,11 +105,6 @@ def setup_django(
         IS_MIGRATING = True
         call_command("migrate", verbosity=0)
         IS_MIGRATING = False
-        # below is called for `deploy_migrations` from within the migrate class
-        if isettings.dialect != "sqlite":
-            from .._schema_metadata import update_schema_in_hub
-
-            update_schema_in_hub()
 
     global IS_SETUP
     IS_SETUP = True

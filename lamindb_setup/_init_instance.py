@@ -269,8 +269,10 @@ def init(
                 "locked instance (to unlock and push changes to the cloud SQLite file,"
                 " call: lamin close)"
             )
-        # we can debate whether this is the right setting, but this is how
-        # things have been and we'd like to not easily break backward compat
+        if isettings.dialect != "sqlite":
+            from ._schema_metadata import update_schema_in_hub
+
+            update_schema_in_hub()
         settings.auto_connect = True
     except Exception as e:
         from ._delete import delete_by_isettings
