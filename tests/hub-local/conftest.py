@@ -14,10 +14,8 @@ local_setup_state = setup_local_hub()
 
 
 def pytest_configure():
-    if os.environ["LAMIN_ENV"] == "local":
-        local_setup_state.__enter__()
-    else:
-        logger.warning("you're running non-local tests")
+    assert os.environ["LAMIN_ENV"] == "local"
+    local_setup_state.__enter__()
 
 
 def pytest_unconfigure():
