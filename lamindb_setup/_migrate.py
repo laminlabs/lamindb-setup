@@ -75,21 +75,15 @@ class migrate:
         from lamindb_setup.core._hub_client import call_with_fallback_auth
         from lamindb_setup.core._hub_crud import (
             select_collaborator,
-            select_instance_by_id,
             update_instance,
         )
 
-        instance_id_str = settings.instance._id.hex
-        instance = call_with_fallback_auth(
-            select_instance_by_id, instance_id=instance_id_str
-        )
-        instance_is_on_hub = instance is not None
-        if instance_is_on_hub:
+        if settings.instance.is_on_hub:
             # double check that user is an admin, otherwise will fail below
-            # without idempotence
+            # due to insufficient SQL permissions with cryptic error
             collaborator = call_with_fallback_auth(
                 select_collaborator,
-                instance_id=instance_id_str,
+                instance_id=settings.instance._id,
                 account_id=settings.user._uuid,
             )
             if collaborator is None or collaborator["role"] != "admin":
@@ -104,7 +98,7 @@ class migrate:
         # this sets up django and deploys the migrations
         setup_django(settings.instance, deploy_migrations=True)
         # this populates the hub
-        if instance_is_on_hub:
+        if settings.instance.is_on_hub:
             logger.important(f"updating lamindb version in hub: {lamindb.__version__}")
             # TODO: integrate update of instance table within update_schema_in_hub & below
             if settings.instance.dialect != "sqlite":
