@@ -27,3 +27,7 @@ def register(_test: bool = False):
     init_instance_hub(isettings)
     isettings._is_on_hub = True
     isettings._persist()
+    if isettings.dialect != "sqlite":
+        from ._schema_metadata import update_schema_in_hub
+
+        update_schema_in_hub()
