@@ -121,6 +121,8 @@ def init_storage(
         init_storage_hub(ssettings)
     # below comes last only if everything else was successful
     try:
+        # (federated) credentials for AWS access are provisioned under-the-hood
+        # discussion: https://laminlabs.slack.com/archives/C04FPE8V01W/p1719260587167489
         mark_storage_root(ssettings.root, ssettings.uid)  # type: ignore
     except Exception:
         logger.important(
