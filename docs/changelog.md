@@ -3,7 +3,7 @@
 <!-- prettier-ignore -->
 Name | PR | Developer | Date | Version
 --- | --- | --- | --- | ---
-💚 Fix test | [784](https://github.com/laminlabs/lamindb-setup/pull/784) | [falexwolf](https://github.com/falexwolf) | 2024-06-26 |
+💚 Fix test | [784](https://github.com/laminlabs/lamindb-setup/pull/784) | [falexwolf](https://github.com/falexwolf) | 2024-06-26 | 0.73.3
 ♻️ Save schema to hub upon init | [782](https://github.com/laminlabs/lamindb-setup/pull/782) | [falexwolf](https://github.com/falexwolf) | 2024-06-24 |
 💚 Fix schema serialization test | [781](https://github.com/laminlabs/lamindb-setup/pull/781) | [falexwolf](https://github.com/falexwolf) | 2024-06-24 |
 Better error message | [780](https://github.com/laminlabs/lamindb-setup/pull/780) | [falexwolf](https://github.com/falexwolf) | 2024-06-20 |
