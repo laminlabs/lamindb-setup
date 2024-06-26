@@ -19,7 +19,10 @@ def setup_instance():
 def test_update_schema_in_hub(setup_instance):
     is_new, schema_uuid, schema = update_schema_in_hub()
 
-    assert is_new is True
+    # TODO: construct a test in which is_new is true
+    # currently it's false because the schema is already registered
+    # via `lamin register` earlier in the test
+    assert not is_new
     assert _dict_to_uuid(schema["json"]) == schema_uuid
 
     assert len(schema["module_set_info"]) == 3
