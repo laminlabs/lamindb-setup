@@ -88,8 +88,8 @@ def test_update_schema_in_hub(setup_instance):
         "related_schema_name": "bionty",
         "through": {
             "link_table_name": "lnschema_bionty_pathway_genes",
-            "lnschema_bionty_gene": "pathway_id",
-            "lnschema_bionty_pathway": "gene_id",
+            "lnschema_bionty_gene": "gene_id",
+            "lnschema_bionty_pathway": "pathway_id",
         },
     }
 
