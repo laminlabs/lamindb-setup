@@ -88,8 +88,8 @@ def test_update_schema_in_hub(setup_instance):
         "related_schema_name": "bionty",
         "through": {
             "link_table_name": "lnschema_bionty_pathway_genes",
-            "lnschema_bionty_gene": "gene_id",
-            "lnschema_bionty_pathway": "pathway_id",
+            "table_field_name": "gene_id",
+            "related_table_field_name": "pathway_id",
         },
     }
 
@@ -98,9 +98,9 @@ def test_update_schema_in_hub(setup_instance):
         "type": "ManyToManyField",
         "column": None,
         "through": {
-            "wetlab_well": "well_id",
             "link_table_name": "wetlab_well_artifacts",
-            "lnschema_core_artifact": "artifact_id",
+            "table_field_name": "well_id",
+            "related_table_field_name": "artifact_id",
         },
         "field_name": "artifacts",
         "model_name": "well",
@@ -110,6 +110,46 @@ def test_update_schema_in_hub(setup_instance):
         "relation_type": "many-to-many",
         "related_field_name": "wells",
         "related_model_name": "artifact",
+        "related_schema_name": "core",
+    }
+
+    print(schema["json"]["core"]["transform"]["fields"]["parents"])
+    assert schema["json"]["core"]["transform"]["fields"]["parents"] == {
+        "type": "ManyToManyField",
+        "column": None,
+        "through": {
+            "link_table_name": "lnschema_core_transform_parents",
+            "table_field_name": "from_transform_id",
+            "related_table_field_name": "to_transform_id",
+        },
+        "field_name": "parents",
+        "model_name": "transform",
+        "schema_name": "core",
+        "select_term": 'ARRAY(SELECT JSONB_BUILD_OBJECT((\'version\')::text, U0."version", (\'id\')::text, U0."id", (\'uid\')::text, U0."uid", (\'name\')::text, U0."name", (\'key\')::text, U0."key", (\'description\')::text, U0."description", (\'type\')::text, U0."type", (\'reference\')::text, U0."reference", (\'reference_type\')::text, U0."reference_type", (\'created_at\')::text, U0."created_at", (\'updated_at\')::text, U0."updated_at") AS "data" FROM "lnschema_core_transform" U0 INNER JOIN "lnschema_core_transform_parents" U1 ON (U0."id" = U1."to_transform_id") WHERE U1."from_transform_id" = ("lnschema_core_transform"."id") LIMIT 5) AS "parents"',
+        "is_link_table": False,
+        "relation_type": "many-to-many",
+        "related_field_name": "children",
+        "related_model_name": "transform",
+        "related_schema_name": "core",
+    }
+
+    print(schema["json"]["core"]["transform"]["fields"]["children"])
+    assert schema["json"]["core"]["transform"]["fields"]["children"] == {
+        "type": "ManyToManyField",
+        "column": None,
+        "through": {
+            "link_table_name": "lnschema_core_transform_parents",
+            "table_field_name": "to_transform_id",
+            "related_table_field_name": "from_transform_id",
+        },
+        "field_name": "children",
+        "model_name": "transform",
+        "schema_name": "core",
+        "select_term": 'ARRAY(SELECT JSONB_BUILD_OBJECT((\'version\')::text, U0."version", (\'id\')::text, U0."id", (\'uid\')::text, U0."uid", (\'name\')::text, U0."name", (\'key\')::text, U0."key", (\'description\')::text, U0."description", (\'type\')::text, U0."type", (\'reference\')::text, U0."reference", (\'reference_type\')::text, U0."reference_type", (\'created_at\')::text, U0."created_at", (\'updated_at\')::text, U0."updated_at") AS "data" FROM "lnschema_core_transform" U0 INNER JOIN "lnschema_core_transform_parents" U1 ON (U0."id" = U1."from_transform_id") WHERE U1."to_transform_id" = ("lnschema_core_transform"."id") LIMIT 5) AS "children"',
+        "is_link_table": False,
+        "relation_type": "many-to-many",
+        "related_field_name": "parents",
+        "related_model_name": "transform",
         "related_schema_name": "core",
     }
 

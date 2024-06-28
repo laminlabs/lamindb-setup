@@ -27,7 +27,6 @@ from lamindb_setup._init_instance import get_schema_module_name
 from lamindb_setup.core._hub_client import call_with_fallback_auth
 
 if TYPE_CHECKING:
-    from lnschema_core.models import Registry
     from supabase import Client
 
 
@@ -355,29 +354,35 @@ class ModelMetadata:
 
     @staticmethod
     def _get_through(model, field_or_rel: ManyToManyField | ManyToManyRel):
-        table_name = model._meta.db_table
-        related_table_name = field_or_rel.related_model._meta.db_table
+        from lnschema_core.models import Registry
 
         if isinstance(field_or_rel, ManyToManyField):
-            if field_or_rel.model == model:
+            if field_or_rel.model != Registry:
                 return {
                     "link_table_name": field_or_rel.remote_field.through._meta.db_table,
-                    table_name: field_or_rel.m2m_column_name(),
-                    related_table_name: field_or_rel.m2m_reverse_name(),
+                    "table_field_name": field_or_rel.m2m_column_name(),
+                    "related_table_field_name": field_or_rel.m2m_reverse_name(),
                 }
             else:
                 return {
                     "link_table_name": field_or_rel.remote_field.through._meta.db_table,
-                    table_name: field_or_rel.m2m_reverse_name(),
-                    related_table_name: field_or_rel.m2m_column_name(),
+                    "table_field_name": field_or_rel.m2m_reverse_name(),
+                    "related_table_field_name": field_or_rel.m2m_column_name(),
                 }
 
         if isinstance(field_or_rel, ManyToManyRel):
-            return {
-                "link_table_name": field_or_rel.through._meta.db_table,
-                table_name: field_or_rel.field.m2m_column_name(),
-                related_table_name: field_or_rel.field.m2m_reverse_name(),
-            }
+            if field_or_rel.model != Registry:
+                return {
+                    "link_table_name": field_or_rel.through._meta.db_table,
+                    "table_field_name": field_or_rel.field.m2m_reverse_name(),
+                    "related_table_field_name": field_or_rel.field.m2m_column_name(),
+                }
+            else:
+                return {
+                    "link_table_name": field_or_rel.through._meta.db_table,
+                    "table_field_name": field_or_rel.field.m2m_column_name(),
+                    "related_table_field_name": field_or_rel.field.m2m_reverse_name(),
+                }
 
     @staticmethod
     def _get_relation_type(model, field: Field):
