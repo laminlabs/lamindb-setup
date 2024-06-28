@@ -362,14 +362,14 @@ class ModelMetadata:
             if field_or_rel.model == model:
                 return {
                     "link_table_name": field_or_rel.remote_field.through._meta.db_table,
-                    table_name: field_or_rel.m2m_reverse_name(),
-                    related_table_name: field_or_rel.m2m_column_name(),
+                    table_name: field_or_rel.m2m_column_name(),
+                    related_table_name: field_or_rel.m2m_reverse_name(),
                 }
             else:
                 return {
                     "link_table_name": field_or_rel.remote_field.through._meta.db_table,
-                    table_name: field_or_rel.m2m_column_name(),
-                    related_table_name: field_or_rel.m2m_reverse_name(),
+                    table_name: field_or_rel.m2m_reverse_name(),
+                    related_table_name: field_or_rel.m2m_column_name(),
                 }
 
         if isinstance(field_or_rel, ManyToManyRel):
