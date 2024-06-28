@@ -38,6 +38,7 @@ def update_schema_in_hub() -> tuple[bool, UUID, dict]:
 def _synchronize_schema(client: Client) -> tuple[bool, UUID, dict]:
     schema_metadata = SchemaMetadata()
     schema_metadata_dict = schema_metadata.to_json()
+    schema_metadata_dict_for_ui = schema_metadata.to_json(include_select_terms=False)
     schema_uuid = _dict_to_uuid(schema_metadata_dict)
     schema = _get_schema_by_id(schema_uuid, client)
 
@@ -53,6 +54,7 @@ def _synchronize_schema(client: Client) -> tuple[bool, UUID, dict]:
                     "module_ids": module_ids,
                     "module_set_info": module_set_info,
                     "json": schema_metadata_dict,
+                    "json_for_ui": schema_metadata_dict_for_ui,
                 }
             )
             .execute()
