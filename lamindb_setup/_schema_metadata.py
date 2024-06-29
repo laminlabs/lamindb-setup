@@ -4,23 +4,19 @@ import hashlib
 import importlib
 import json
 from dataclasses import dataclass
-from typing import TYPE_CHECKING, Dict
+from typing import TYPE_CHECKING
 from uuid import UUID
 
-import sqlparse
-from django.contrib.postgres.expressions import ArraySubquery
 from django.db.models import (
     Field,
+    ForeignKey,
     ForeignObjectRel,
     ManyToManyField,
     ManyToManyRel,
-    OuterRef,
-    QuerySet,
-    Subquery,
+    ManyToOneRel,
+    OneToOneField,
+    OneToOneRel,
 )
-from django.db.models.functions import JSONObject
-from sqlparse.sql import Identifier, IdentifierList
-from sqlparse.tokens import DML, Keyword
 
 from lamindb_setup import settings
 from lamindb_setup._init_instance import get_schema_module_name
@@ -94,21 +90,17 @@ class SchemaMetadata:
         self.included_modules = ["core"] + list(settings.instance.schema)
         self.modules = self._get_modules_metadata()
 
-    def to_dict(
-        self, include_django_objects: bool = True, include_select_terms: bool = True
-    ):
+    def to_dict(self, include_django_objects: bool = True):
         return {
             module_name: {
-                model_name: model.to_dict(include_django_objects, include_select_terms)
+                model_name: model.to_dict(include_django_objects)
                 for model_name, model in module.items()
             }
             for module_name, module in self.modules.items()
         }
 
-    def to_json(self, include_select_terms: bool = True):
-        return self.to_dict(
-            include_django_objects=False, include_select_terms=include_select_terms
-        )
+    def to_json(self):
+        return self.to_dict(include_django_objects=False)
 
     def _get_modules_metadata(self):
         return {
@@ -157,31 +149,6 @@ class FieldMetadata:
     through: dict | None = None
 
 
-class ModelRelations:
-    def __init__(self, fields: list[ForeignObjectRel]) -> None:
-        self.many_to_one = {}
-        self.one_to_many = {}
-        self.many_to_many = {}
-        self.one_to_one = {}
-
-        for field in fields:
-            if field.many_to_one:
-                self.many_to_one.update({field.name: field})
-            elif field.one_to_many:
-                self.one_to_many.update({field.name: field})
-            elif field.many_to_many:
-                self.many_to_many.update({field.name: field})
-            elif field.one_to_one:
-                self.one_to_one.update({field.name: field})
-
-        self.all = {
-            **self.many_to_one,
-            **self.one_to_many,
-            **self.many_to_many,
-            **self.one_to_one,
-        }
-
-
 class ModelMetadata:
     def __init__(self, model, module_name: str, included_modules: list[str]) -> None:
         self.model = model
@@ -190,38 +157,22 @@ class ModelMetadata:
         self.model_name = model._meta.model_name
         self.table_name = model._meta.db_table
         self.included_modules = included_modules
-        self.fields, self.relations = self._get_fields_metadata(self.model)
+        self.fields = self._get_fields_metadata(self.model)
 
-    def to_dict(
-        self, include_django_objects: bool = True, include_select_terms: bool = True
-    ):
+    def to_dict(self, include_django_objects: bool = True):
         _dict = {
             "fields": self.fields.copy(),
             "class_name": self.class_name,
             "table_name": self.table_name,
         }
 
-        select_terms = self.select_terms if include_select_terms else []
-
         for field_name in self.fields.keys():
             _dict["fields"][field_name] = _dict["fields"][field_name].__dict__
-            if field_name in select_terms:
-                _dict["fields"][field_name].update(
-                    {"select_term": select_terms[field_name]}
-                )
 
         if include_django_objects:
             _dict.update({"model": self.model})
 
         return _dict
-
-    @property
-    def select_terms(self):
-        return (
-            DjangoQueryBuilder(self.module_name, self.model_name)
-            .add_all_sub_queries()
-            .extract_select_terms()
-        )
 
     def _get_fields_metadata(self, model):
         related_fields = []
@@ -238,66 +189,37 @@ class ModelMetadata:
             ):
                 related_fields.append(field)
 
-        model_relations_metadata = ModelRelations(related_fields)
-
         related_fields_metadata = self._get_related_fields_metadata(
-            model, model_relations_metadata
+            model, related_fields
         )
 
         fields_metadata = {**fields_metadata, **related_fields_metadata}
 
-        return fields_metadata, model_relations_metadata
+        return fields_metadata
 
-    def _get_related_fields_metadata(
-        self, model, model_relations_metadata: ModelRelations
-    ):
+    def _get_related_fields_metadata(self, model, fields: list[ForeignObjectRel]):
         related_fields: dict[str, FieldMetadata] = {}
 
-        # Many to one (foreign key defined in the model)
-        for link_field_name, link_field in model_relations_metadata.many_to_one.items():
-            related_fields.update(
-                {f"{link_field_name}": self._get_field_metadata(model, link_field)}
-            )
-            for field in link_field.related_model._meta.fields:
+        for field in fields:
+            if field.many_to_one:
                 related_fields.update(
-                    {
-                        f"{link_field_name}__{field.name}": self._get_field_metadata(
-                            model, field
-                        )
-                    }
+                    {f"{field.name}": self._get_field_metadata(model, field)}
                 )
-
-        # One to many (foreign key defined in the related model)
-        for relation_name, relation in model_relations_metadata.one_to_many.items():
-            # exclude self reference as it is already included in the many to one
-            if relation.related_model == model:
-                continue
-            related_fields.update(
-                {f"{relation_name}": self._get_field_metadata(model, relation.field)}
-            )
-
-        # One to one
-        for link_field_name, link_field in model_relations_metadata.one_to_one.items():
-            related_fields.update(
-                {f"{link_field_name}": self._get_field_metadata(model, link_field)}
-            )
-            for field in link_field.related_model._meta.fields:
+            elif field.one_to_many:
+                # exclude self reference as it is already included in the many to one
+                if field.related_model == model:
+                    continue
                 related_fields.update(
-                    {
-                        f"{link_field_name}__{field.name}": self._get_field_metadata(
-                            model, field
-                        )
-                    }
+                    {f"{field.name}": self._get_field_metadata(model, field.field)}
                 )
-
-        # Many to many
-        for (
-            link_field_name,
-            link_field,
-        ) in model_relations_metadata.many_to_many.items():
-            related_fields.update(
-                {f"{link_field_name}": self._get_field_metadata(model, link_field)}
-            )
+            elif field.many_to_many:
+                related_fields.update(
+                    {f"{field.name}": self._get_field_metadata(model, field)}
+                )
+            elif field.one_to_one:
+                related_fields.update(
+                    {f"{field.name}": self._get_field_metadata(model, field)}
+                )
 
         return related_fields
 
@@ -331,12 +253,16 @@ class ModelMetadata:
             pass
 
         column = None
-        if relation_type not in ["many-to-many", "one-to-one", "one-to-many"]:
-            column = field.column
+        if relation_type not in ["many-to-many", "one-to-many"]:
+            if not isinstance(field, ForeignObjectRel):
+                column = field.column
 
-        through = None
-        if relation_type == "many-to-many":
-            through = self._get_through(model, field)
+        if relation_type is None:
+            through = None
+        elif relation_type == "many-to-many":
+            through = self._get_through_many_to_many(field)
+        else:
+            through = self._get_through(field)
 
         return FieldMetadata(
             schema_name,
@@ -353,36 +279,57 @@ class ModelMetadata:
         )
 
     @staticmethod
-    def _get_through(model, field_or_rel: ManyToManyField | ManyToManyRel):
+    def _get_through_many_to_many(field_or_rel: ManyToManyField | ManyToManyRel):
         from lnschema_core.models import Registry
 
         if isinstance(field_or_rel, ManyToManyField):
             if field_or_rel.model != Registry:
                 return {
                     "link_table_name": field_or_rel.remote_field.through._meta.db_table,
-                    "table_field_name": field_or_rel.m2m_column_name(),
-                    "related_table_field_name": field_or_rel.m2m_reverse_name(),
+                    "left_key": field_or_rel.m2m_column_name(),
+                    "right_key": field_or_rel.m2m_reverse_name(),
                 }
             else:
                 return {
                     "link_table_name": field_or_rel.remote_field.through._meta.db_table,
-                    "table_field_name": field_or_rel.m2m_reverse_name(),
-                    "related_table_field_name": field_or_rel.m2m_column_name(),
+                    "left_key": field_or_rel.m2m_reverse_name(),
+                    "right_key": field_or_rel.m2m_column_name(),
                 }
 
         if isinstance(field_or_rel, ManyToManyRel):
             if field_or_rel.model != Registry:
                 return {
                     "link_table_name": field_or_rel.through._meta.db_table,
-                    "table_field_name": field_or_rel.field.m2m_reverse_name(),
-                    "related_table_field_name": field_or_rel.field.m2m_column_name(),
+                    "left_key": field_or_rel.field.m2m_reverse_name(),
+                    "right_key": field_or_rel.field.m2m_column_name(),
                 }
             else:
                 return {
                     "link_table_name": field_or_rel.through._meta.db_table,
-                    "table_field_name": field_or_rel.field.m2m_column_name(),
-                    "related_table_field_name": field_or_rel.field.m2m_reverse_name(),
+                    "left_key": field_or_rel.field.m2m_column_name(),
+                    "right_key": field_or_rel.field.m2m_reverse_name(),
                 }
+
+    def _get_through(
+        self, field_or_rel: ForeignKey | OneToOneField | ManyToOneRel | OneToOneRel
+    ):
+        if isinstance(field_or_rel, ForeignObjectRel):
+            rel_1 = field_or_rel.field.related_fields[0][0]
+            rel_2 = field_or_rel.field.related_fields[0][1]
+        else:
+            rel_1 = field_or_rel.related_fields[0][0]
+            rel_2 = field_or_rel.related_fields[0][1]
+
+        if rel_1.model._meta.model_name == self.model._meta.model_name:
+            return {
+                "left_key": rel_1.column,
+                "right_key": rel_2.column,
+            }
+        else:
+            return {
+                "left_key": rel_2.column,
+                "right_key": rel_1.column,
+            }
 
     @staticmethod
     def _get_relation_type(model, field: Field):
@@ -401,91 +348,3 @@ class ModelMetadata:
             return "one-to-one"
         else:
             return None
-
-
-class DjangoQueryBuilder:
-    def __init__(
-        self, module_name: str, model_name: str, query_set: QuerySet | None = None
-    ) -> None:
-        self.schema_metadata = SchemaMetadata()
-        self.module_name = module_name
-        self.model_name = model_name
-        self.model_metadata = self.schema_metadata.modules[module_name][model_name]
-        self.query_set = query_set if query_set else self.model_metadata.model.objects
-
-    def add_all_sub_queries(self):
-        all_fields = self.model_metadata.fields
-        included_relations = [
-            field_name
-            for field_name, field in all_fields.items()
-            if field.relation_type is not None
-        ]
-        self.add_sub_queries(included_relations)
-        return self
-
-    def add_sub_queries(self, included_relations: list[str]):
-        sub_queries = {
-            f"annotated_{relation_name}": self._get_sub_query(
-                self.model_metadata.fields[relation_name]
-            )
-            for relation_name in included_relations
-        }
-        self.query_set = self.query_set.annotate(**sub_queries)
-        return self
-
-    def extract_select_terms(self):
-        parsed = sqlparse.parse(self.sql_query)
-        select_found = False
-        select_terms = {}
-
-        def get_name(identifier):
-            name = identifier.get_name()
-            return name if name is not None else str(identifier).split(".")
-
-        for token in parsed[0].tokens:
-            if token.ttype is DML and token.value.upper() == "SELECT":
-                select_found = True
-            elif select_found and isinstance(token, IdentifierList):
-                for identifier in token.get_identifiers():
-                    select_terms[get_name(identifier)] = str(identifier)
-            elif select_found and isinstance(token, Identifier):
-                select_terms[get_name(token)] = str(token)
-            elif token.ttype is Keyword:
-                if token.value.upper() in ["FROM", "WHERE", "GROUP BY", "ORDER BY"]:
-                    break
-
-        return select_terms
-
-    def _get_sub_query(self, field_metadata: FieldMetadata):
-        module_name = field_metadata.related_schema_name
-        model_name = field_metadata.related_model_name
-        field_name = field_metadata.related_field_name
-        model_metadata = self.schema_metadata.modules[module_name][model_name]
-        query_set = model_metadata.model.objects.get_queryset()
-        select = {
-            field_name: field_name
-            for field_name in model_metadata.fields.keys()
-            if model_metadata.fields[field_name].relation_type is None
-            and "__" not in field_name
-        }
-
-        if field_metadata.relation_type in ["many-to-many", "one-to-many"]:
-            return ArraySubquery(
-                Subquery(
-                    query_set.filter(**{field_name: OuterRef("pk")}).values(
-                        data=JSONObject(**select)
-                    )[:5]
-                )
-            )
-        if field_metadata.relation_type in ["many-to-one", "one-to-one"]:
-            return Subquery(
-                query_set.filter(**{field_name: OuterRef("pk")}).values(
-                    data=JSONObject(**select)
-                )[:5]
-            )
-
-    @property
-    def sql_query(self):
-        sql_template, params = self.query_set.query.sql_with_params()
-        sql_query = sql_template % tuple(f"'{p}'" for p in params)
-        return sql_query.replace("annotated_", "")
