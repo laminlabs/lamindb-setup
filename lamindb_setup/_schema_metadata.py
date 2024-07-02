@@ -4,7 +4,7 @@ import hashlib
 import importlib
 import json
 from dataclasses import dataclass
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Literal
 from uuid import UUID
 
 from django.db.models import (
@@ -17,6 +17,7 @@ from django.db.models import (
     OneToOneField,
     OneToOneRel,
 )
+from pydantic import BaseModel
 
 from lamindb_setup import settings
 from lamindb_setup._init_instance import get_schema_module_name
@@ -31,7 +32,7 @@ def update_schema_in_hub() -> tuple[bool, UUID, dict]:
 
 
 def _synchronize_schema(client: Client) -> tuple[bool, UUID, dict]:
-    schema_metadata = SchemaMetadata()
+    schema_metadata = _SchemaHandler()
     schema_metadata_dict = schema_metadata.to_json()
     schema_uuid = _dict_to_uuid(schema_metadata_dict)
     schema = _get_schema_by_id(schema_uuid, client)
@@ -85,71 +86,47 @@ def _dict_to_uuid(dict: dict):
     return uuid
 
 
-class SchemaMetadata:
-    def __init__(self) -> None:
-        self.included_modules = ["core"] + list(settings.instance.schema)
-        self.modules = self._get_modules_metadata()
-
-    def to_dict(self, include_django_objects: bool = True):
-        return {
-            module_name: {
-                model_name: model.to_dict(include_django_objects)
-                for model_name, model in module.items()
-            }
-            for module_name, module in self.modules.items()
-        }
-
-    def to_json(self):
-        return self.to_dict(include_django_objects=False)
-
-    def _get_modules_metadata(self):
-        return {
-            module_name: {
-                model._meta.model_name: ModelMetadata(
-                    model, module_name, self.included_modules
-                )
-                for model in self._get_schema_module(
-                    module_name
-                ).models.__dict__.values()
-                if model.__class__.__name__ == "ModelBase"
-                and model.__name__ not in ["Registry", "ORM"]
-                and not model._meta.abstract
-                and model.__get_schema_name__() == module_name
-            }
-            for module_name in self.included_modules
-        }
-
-    def _get_module_set_info(self):
-        # TODO: rely on schemamodule table for this
-        module_set_info = []
-        for module_name in self.included_modules:
-            module = self._get_schema_module(module_name)
-            module_set_info.append(
-                {"id": 0, "name": module_name, "version": module.__version__}
-            )
-        return module_set_info
-
-    @staticmethod
-    def _get_schema_module(module_name):
-        return importlib.import_module(get_schema_module_name(module_name))
+RelationType = Literal["many-to-one", "one-to-many", "many-to-many", "one-to-one"]
+Type = Literal[
+    "ForeignKey",
+    "CharField",
+    "DateTimeField",
+    "AutoField",
+    "BooleanField",
+    "BigIntegerField",
+    "SmallIntegerField",
+    "TextField",
+    "BigAutoField",
+    "ManyToManyField",
+    "IntegerField",
+    "OneToOneField",
+    "JSONField",
+    "DateField",
+    "FloatField",
+]
 
 
-@dataclass
-class FieldMetadata:
-    schema_name: str
-    model_name: str
-    field_name: str
-    type: str
-    is_link_table: bool
+class Through(BaseModel):
+    left_key: str
+    right_key: str
+    link_table_name: str | None = None
+
+
+class FieldMetadata(BaseModel):
+    type: Type
     column: str | None = None
-    relation_type: str | None = None
-    related_schema_name: str | None = None
-    related_model_name: str | None = None
+    through: Through | None = None
+    field_name: str
+    model_name: str
+    schema_name: str
+    is_link_table: bool
+    relation_type: RelationType | None = None
     related_field_name: str | None = None
-    through: dict | None = None
+    related_model_name: str | None = None
+    related_schema_name: str | None = None
 
 
-class ModelMetadata:
+class _ModelHandler:
     def __init__(self, model, module_name: str, included_modules: list[str]) -> None:
         self.model = model
         self.class_name = model.__name__
@@ -168,6 +145,9 @@ class ModelMetadata:
 
         for field_name in self.fields.keys():
             _dict["fields"][field_name] = _dict["fields"][field_name].__dict__
+            through = _dict["fields"][field_name]["through"]
+            if through is not None:
+                _dict["fields"][field_name]["through"] = through.__dict__
 
         if include_django_objects:
             _dict.update({"model": self.model})
@@ -265,17 +245,17 @@ class ModelMetadata:
             through = self._get_through(field)
 
         return FieldMetadata(
-            schema_name,
-            model_name,
-            field_name,
-            internal_type,
-            issubclass(field.model, LinkORM),
-            column,
-            relation_type,
-            related_schema_name,
-            related_model_name,
-            related_field_name,
-            through,
+            schema_name=schema_name,
+            model_name=model_name,
+            field_name=field_name,
+            type=internal_type,
+            is_link_table=issubclass(field.model, LinkORM),
+            column=column,
+            relation_type=relation_type,
+            related_schema_name=related_schema_name,
+            related_model_name=related_model_name,
+            related_field_name=related_field_name,
+            through=through,
         )
 
     @staticmethod
@@ -284,31 +264,31 @@ class ModelMetadata:
 
         if isinstance(field_or_rel, ManyToManyField):
             if field_or_rel.model != Registry:
-                return {
-                    "link_table_name": field_or_rel.remote_field.through._meta.db_table,
-                    "left_key": field_or_rel.m2m_column_name(),
-                    "right_key": field_or_rel.m2m_reverse_name(),
-                }
+                return Through(
+                    left_key=field_or_rel.m2m_column_name(),
+                    right_key=field_or_rel.m2m_reverse_name(),
+                    link_table_name=field_or_rel.remote_field.through._meta.db_table,
+                )
             else:
-                return {
-                    "link_table_name": field_or_rel.remote_field.through._meta.db_table,
-                    "left_key": field_or_rel.m2m_reverse_name(),
-                    "right_key": field_or_rel.m2m_column_name(),
-                }
+                return Through(
+                    left_key=field_or_rel.m2m_reverse_name(),
+                    right_key=field_or_rel.m2m_column_name(),
+                    link_table_name=field_or_rel.remote_field.through._meta.db_table,
+                )
 
         if isinstance(field_or_rel, ManyToManyRel):
             if field_or_rel.model != Registry:
-                return {
-                    "link_table_name": field_or_rel.through._meta.db_table,
-                    "left_key": field_or_rel.field.m2m_reverse_name(),
-                    "right_key": field_or_rel.field.m2m_column_name(),
-                }
+                return Through(
+                    left_key=field_or_rel.field.m2m_reverse_name(),
+                    right_key=field_or_rel.field.m2m_column_name(),
+                    link_table_name=field_or_rel.through._meta.db_table,
+                )
             else:
-                return {
-                    "link_table_name": field_or_rel.through._meta.db_table,
-                    "left_key": field_or_rel.field.m2m_column_name(),
-                    "right_key": field_or_rel.field.m2m_reverse_name(),
-                }
+                return Through(
+                    left_key=field_or_rel.field.m2m_column_name(),
+                    right_key=field_or_rel.field.m2m_reverse_name(),
+                    link_table_name=field_or_rel.through._meta.db_table,
+                )
 
     def _get_through(
         self, field_or_rel: ForeignKey | OneToOneField | ManyToOneRel | OneToOneRel
@@ -321,15 +301,15 @@ class ModelMetadata:
             rel_2 = field_or_rel.related_fields[0][1]
 
         if rel_1.model._meta.model_name == self.model._meta.model_name:
-            return {
-                "left_key": rel_1.column,
-                "right_key": rel_2.column,
-            }
+            return Through(
+                left_key=rel_1.column,
+                right_key=rel_2.column,
+            )
         else:
-            return {
-                "left_key": rel_2.column,
-                "right_key": rel_1.column,
-            }
+            return Through(
+                left_key=rel_2.column,
+                right_key=rel_1.column,
+            )
 
     @staticmethod
     def _get_relation_type(model, field: Field):
@@ -348,3 +328,52 @@ class ModelMetadata:
             return "one-to-one"
         else:
             return None
+
+
+class _SchemaHandler:
+    def __init__(self) -> None:
+        self.included_modules = ["core"] + list(settings.instance.schema)
+        self.modules = self._get_modules_metadata()
+
+    def to_dict(self, include_django_objects: bool = True):
+        return {
+            module_name: {
+                model_name: model.to_dict(include_django_objects)
+                for model_name, model in module.items()
+            }
+            for module_name, module in self.modules.items()
+        }
+
+    def to_json(self):
+        return self.to_dict(include_django_objects=False)
+
+    def _get_modules_metadata(self):
+        return {
+            module_name: {
+                model._meta.model_name: _ModelHandler(
+                    model, module_name, self.included_modules
+                )
+                for model in self._get_schema_module(
+                    module_name
+                ).models.__dict__.values()
+                if model.__class__.__name__ == "ModelBase"
+                and model.__name__ not in ["Registry", "ORM"]
+                and not model._meta.abstract
+                and model.__get_schema_name__() == module_name
+            }
+            for module_name in self.included_modules
+        }
+
+    def _get_module_set_info(self):
+        # TODO: rely on schemamodule table for this
+        module_set_info = []
+        for module_name in self.included_modules:
+            module = self._get_schema_module(module_name)
+            module_set_info.append(
+                {"id": 0, "name": module_name, "version": module.__version__}
+            )
+        return module_set_info
+
+    @staticmethod
+    def _get_schema_module(module_name):
+        return importlib.import_module(get_schema_module_name(module_name))
