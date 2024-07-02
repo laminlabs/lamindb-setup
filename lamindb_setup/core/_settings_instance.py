@@ -106,7 +106,8 @@ class InstanceSettings:
         if local_root is not None:
             local_records = Storage.objects.filter(root=local_root)
         else:
-            local_records = Storage.objects.filter(type="local")
+            # only search local managed storage locations (instance_uid=self.uid)
+            local_records = Storage.objects.filter(type="local", instance_uid=self.uid)
         all_local_records = local_records.all()
         try:
             # trigger an error in case of a migration issue
