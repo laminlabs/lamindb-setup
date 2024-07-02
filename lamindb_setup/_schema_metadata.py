@@ -3,7 +3,6 @@ from __future__ import annotations
 import hashlib
 import importlib
 import json
-from dataclasses import dataclass
 from typing import TYPE_CHECKING, Literal
 from uuid import UUID
 
