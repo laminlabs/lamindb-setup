@@ -41,7 +41,6 @@ def test_update_schema_in_hub(setup_instance):
     assert "bionty" in schema["json"]
     assert "wetlab" in schema["json"]
 
-    print(schema["json"]["core"]["artifact"]["fields"]["id"])
     assert schema["json"]["core"]["artifact"]["fields"]["id"] == {
         "type": "AutoField",
         "column": "id",
@@ -56,7 +55,6 @@ def test_update_schema_in_hub(setup_instance):
         "related_schema_name": None,
     }
 
-    print(schema["json"]["core"]["artifact"]["fields"]["created_by"])
     assert schema["json"]["core"]["artifact"]["fields"]["created_by"] == {
         "type": "ForeignKey",
         "column": "created_by_id",
@@ -75,7 +73,6 @@ def test_update_schema_in_hub(setup_instance):
         "related_schema_name": "core",
     }
 
-    print(schema["json"]["bionty"]["gene"]["fields"]["pathways"])
     assert schema["json"]["bionty"]["gene"]["fields"]["pathways"] == {
         "type": "ManyToManyField",
         "column": None,
@@ -94,7 +91,6 @@ def test_update_schema_in_hub(setup_instance):
         "related_schema_name": "bionty",
     }
 
-    print(schema["json"]["wetlab"]["well"]["fields"]["artifacts"])
     assert schema["json"]["wetlab"]["well"]["fields"]["artifacts"] == {
         "type": "ManyToManyField",
         "column": None,
@@ -113,7 +109,6 @@ def test_update_schema_in_hub(setup_instance):
         "related_schema_name": "core",
     }
 
-    print(schema["json"]["core"]["transform"]["fields"]["parents"])
     assert schema["json"]["core"]["transform"]["fields"]["parents"] == {
         "type": "ManyToManyField",
         "column": None,
@@ -132,7 +127,6 @@ def test_update_schema_in_hub(setup_instance):
         "related_schema_name": "core",
     }
 
-    print(schema["json"]["core"]["transform"]["fields"]["children"])
     assert schema["json"]["core"]["transform"]["fields"]["children"] == {
         "type": "ManyToManyField",
         "column": None,
