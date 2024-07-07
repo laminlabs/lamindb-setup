@@ -3,7 +3,7 @@ from __future__ import annotations
 import os
 
 from lamin_utils import logger
-from laminhub_rest.dev._setup_laminapp_rest.py import setup_local
+from laminhub_rest.dev._setup_laminapp_rest import setup_local
 
 pytest_plugins = [
     "laminhub_rest.core.account.user.test.fixtures",
