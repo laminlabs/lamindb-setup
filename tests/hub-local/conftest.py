@@ -3,14 +3,14 @@ from __future__ import annotations
 import os
 
 from lamin_utils import logger
-from laminhub_rest.dev._setup_local_hub import setup_local_hub
+from laminhub_rest.dev._setup_laminapp_rest import setup_local
 
 pytest_plugins = [
     "laminhub_rest.core.account.user.test.fixtures",
     "laminhub_rest.test.fixtures.run_id",
 ]
 
-local_setup_state = setup_local_hub()
+local_setup_state = setup_local()
 
 
 def pytest_configure():

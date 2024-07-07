@@ -56,10 +56,9 @@ jobs:
           python-version: ${{ matrix.python-version }}
           cache: "pip"
           cache-dependency-path: ".github/workflows/build.yml"
-      - name: checkout laminhub
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
         with:
-          repository: laminlabs/laminapp-ui
+          repository: laminlabs/laminhub
           token: ${{ secrets.GH_TOKEN_DEPLOY_LAMINAPP }}
           path: laminhub
           ref: main
@@ -125,10 +124,9 @@ jobs:
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           aws-region: eu-central-1
       - uses: actions/checkout@v4
-      - name: checkout laminhub
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
         with:
-          repository: laminlabs/laminapp-ui
+          repository: laminlabs/laminhub
           token: ${{ secrets.GH_TOKEN_DEPLOY_LAMINAPP }}
           path: laminhub
           ref: main
