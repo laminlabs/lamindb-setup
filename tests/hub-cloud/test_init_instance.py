@@ -121,6 +121,23 @@ def test_init_instance_cloud_aws_europe():
 
 
 def test_init_instance_sqlite():
+    user_settings_original = ln_setup.settings.user
+    # here we test dynamically switching the user
+    # it will lead to an error
+    ln_setup.settings._user_settings = ln_setup.core._settings_user.UserSettings(
+        handle="my_special_test_user"
+    )
+    with pytest.raises(ValueError) as error:
+        ln_setup.init(
+            storage="./mydatasqlite",
+            name="local-sqlite-instance",
+            _test=True,
+        )
+    assert (
+        "Neither bearer token or basic authentication scheme is provided"
+        in error.exconly()
+    )
+    ln_setup.settings._user_settings = user_settings_original
     ln_setup.init(
         storage="./mydatasqlite",
         name="local-sqlite-instance",
@@ -128,7 +145,7 @@ def test_init_instance_sqlite():
     )
     assert ln_setup.settings.instance.name == "local-sqlite-instance"
     assert not ln_setup.settings.instance.storage.type_is_cloud
-    assert ln_setup.settings.instance.owner == ln_setup.settings.user.handle
+    assert ln_setup.settings.instance.owner == user_settings_original.handle
     assert ln_setup.settings.instance.dialect == "sqlite"
     ln_setup.delete("local-sqlite-instance", force=True)
 
