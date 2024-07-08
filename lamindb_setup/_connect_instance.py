@@ -121,6 +121,7 @@ def _connect_instance(
         isettings = load_instance_settings(settings_file)
         # skip hub request for a purely local instance
         make_hub_request = isettings.is_remote
+        print(make_hub_request)
     if make_hub_request:
         # the following will return a string if the instance does not exist
         # on the hub
