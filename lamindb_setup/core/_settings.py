@@ -28,6 +28,8 @@ class SetupSettings:
 
     _auto_connect_path: Path = settings_dir / "auto_connect"
 
+    strip_django_api: bool = False
+
     @property
     def _instance_settings_path(self) -> Path:
         return current_instance_settings_file()
