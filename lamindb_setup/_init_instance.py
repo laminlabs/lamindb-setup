@@ -59,26 +59,18 @@ def register_storage_in_instance(ssettings: StorageSettings):
     }
     if ssettings._uid is not None:
         defaults["uid"] = ssettings._uid
-    does_not_exist_stripped = not hasattr(Storage, "DoesNotExist")
-    if does_not_exist_stripped:
-        Storage.DoesNotExist = Storage._DoesNotExist
     storage, _ = Storage.objects.update_or_create(
         root=ssettings.root_as_str,
         defaults=defaults,
     )
-    if does_not_exist_stripped:
-        delattr(Storage, "DoesNotExist")
     return storage
 
 
 def register_user(usettings):
     from lnschema_core.models import User
 
-    does_not_exist_stripped = not hasattr(User, "DoesNotExist")
-    if does_not_exist_stripped:
-        User.DoesNotExist = User._DoesNotExist
-
     try:
+        # need to have try except because of integer primary key migration
         user, created = User.objects.update_or_create(
             uid=usettings.uid,
             defaults={
@@ -90,9 +82,6 @@ def register_user(usettings):
     # ProgrammingError: permission denied for table lnschema_core_user
     except (OperationalError, FieldError, ProgrammingError):
         pass
-
-    if does_not_exist_stripped:
-        delattr(User, "DoesNotExist")
 
 
 def register_user_and_storage_in_instance(isettings: InstanceSettings, usettings):
