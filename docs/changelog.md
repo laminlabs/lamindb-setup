@@ -3,6 +3,7 @@
 <!-- prettier-ignore -->
 Name | PR | Developer | Date | Version
 --- | --- | --- | --- | ---
+🐛 Only search local managed storage locations | [788](https://github.com/laminlabs/lamindb-setup/pull/788) | [falexwolf](https://github.com/falexwolf) | 2024-07-03 |
 💚 Fix test | [784](https://github.com/laminlabs/lamindb-setup/pull/784) | [falexwolf](https://github.com/falexwolf) | 2024-06-26 | 0.73.3
 ♻️ Save schema to hub upon init | [782](https://github.com/laminlabs/lamindb-setup/pull/782) | [falexwolf](https://github.com/falexwolf) | 2024-06-24 |
 💚 Fix schema serialization test | [781](https://github.com/laminlabs/lamindb-setup/pull/781) | [falexwolf](https://github.com/falexwolf) | 2024-06-24 |

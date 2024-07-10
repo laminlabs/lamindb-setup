@@ -119,8 +119,8 @@ def call_with_fallback_auth(
     for renew_token, fallback_env in [(False, False), (True, False), (False, True)]:
         try:
             if renew_token:
-                logger.important(
-                    "Renewing expired lamin token: call lamin login to avoid this"
+                logger.warning(
+                    "renewing expired lamin token: call `lamin login` to avoid this"
                 )
             client = connect_hub_with_auth(
                 renew_token=renew_token, fallback_env=fallback_env
