@@ -47,7 +47,7 @@ def _synchronize_schema(client: Client) -> tuple[bool, UUID, dict]:
                     "id": schema_uuid.hex,
                     "module_ids": module_ids,
                     "module_set_info": module_set_info,
-                    "json": schema_metadata_dict,
+                    "schema_json": schema_metadata_dict,
                 }
             )
             .execute()

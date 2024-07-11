@@ -23,7 +23,7 @@ def test_update_schema_in_hub(setup_instance):
     # currently it's false because the schema is already registered
     # via `lamin register` earlier in the test
     assert not is_new
-    assert _dict_to_uuid(schema["json"]) == schema_uuid
+    assert _dict_to_uuid(schema["schema_json"]) == schema_uuid
 
     assert len(schema["module_set_info"]) == 3
     module_set_info = sorted(
@@ -36,12 +36,12 @@ def test_update_schema_in_hub(setup_instance):
     assert module_set_info[2]["id"] == 0
     assert module_set_info[2]["name"] == "wetlab"
 
-    assert len(schema["json"].keys()) == 3
-    assert "core" in schema["json"]
-    assert "bionty" in schema["json"]
-    assert "wetlab" in schema["json"]
+    assert len(schema["schema_json"].keys()) == 3
+    assert "core" in schema["schema_json"]
+    assert "bionty" in schema["schema_json"]
+    assert "wetlab" in schema["schema_json"]
 
-    assert schema["json"]["core"]["artifact"]["fields"]["id"] == {
+    assert schema["schema_json"]["core"]["artifact"]["fields"]["id"] == {
         "type": "AutoField",
         "column": "id",
         "through": None,
@@ -55,7 +55,7 @@ def test_update_schema_in_hub(setup_instance):
         "related_schema_name": None,
     }
 
-    assert schema["json"]["core"]["artifact"]["fields"]["created_by"] == {
+    assert schema["schema_json"]["core"]["artifact"]["fields"]["created_by"] == {
         "type": "ForeignKey",
         "column": "created_by_id",
         "through": {
@@ -73,7 +73,7 @@ def test_update_schema_in_hub(setup_instance):
         "related_schema_name": "core",
     }
 
-    assert schema["json"]["bionty"]["gene"]["fields"]["pathways"] == {
+    assert schema["schema_json"]["bionty"]["gene"]["fields"]["pathways"] == {
         "type": "ManyToManyField",
         "column": None,
         "through": {
@@ -91,7 +91,7 @@ def test_update_schema_in_hub(setup_instance):
         "related_schema_name": "bionty",
     }
 
-    assert schema["json"]["wetlab"]["well"]["fields"]["artifacts"] == {
+    assert schema["schema_json"]["wetlab"]["well"]["fields"]["artifacts"] == {
         "type": "ManyToManyField",
         "column": None,
         "through": {
@@ -109,7 +109,7 @@ def test_update_schema_in_hub(setup_instance):
         "related_schema_name": "core",
     }
 
-    assert schema["json"]["core"]["transform"]["fields"]["parents"] == {
+    assert schema["schema_json"]["core"]["transform"]["fields"]["parents"] == {
         "type": "ManyToManyField",
         "column": None,
         "through": {
@@ -127,7 +127,7 @@ def test_update_schema_in_hub(setup_instance):
         "related_schema_name": "core",
     }
 
-    assert schema["json"]["core"]["transform"]["fields"]["children"] == {
+    assert schema["schema_json"]["core"]["transform"]["fields"]["children"] == {
         "type": "ManyToManyField",
         "column": None,
         "through": {
