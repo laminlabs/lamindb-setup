@@ -27,8 +27,7 @@ class SetupSettings:
     _instance_settings_env: str | None = None
 
     _auto_connect_path: Path = settings_dir / "auto_connect"
-
-    strip_django_api: bool = False
+    _prune_django_api_path: Path = settings_dir / "prune_django_api"
 
     @property
     def _instance_settings_path(self) -> Path:
@@ -51,8 +50,20 @@ class SetupSettings:
             self._auto_connect_path.unlink(missing_ok=True)
 
     @property
+    def prune_django_api(self) -> bool:
+        """Auto-connect to loaded instance upon lamindb import."""
+        return self._prune_django_api_path.exists()
+
+    @prune_django_api.setter
+    def prune_django_api(self, value: bool) -> None:
+        if value:
+            self._prune_django_api_path.touch()
+        else:
+            self._prune_django_api_path.unlink(missing_ok=True)
+
+    @property
     def user(self) -> UserSettings:
-        """:class:`~lamindb.setup.core.UserSettings`."""
+        """Settings of current user."""
         env_changed = (
             self._user_settings_env is not None
             and self._user_settings_env != get_env_name()
@@ -66,7 +77,7 @@ class SetupSettings:
 
     @property
     def instance(self) -> InstanceSettings:
-        """:class:`~lamindb.setup.core.InstanceSettings`."""
+        """Settings of current LaminDB instance."""
         env_changed = (
             self._instance_settings_env is not None
             and self._instance_settings_env != get_env_name()
@@ -78,7 +89,7 @@ class SetupSettings:
 
     @property
     def storage(self) -> StorageSettings:
-        """:class:`~lamindb.setup.core.StorageSettings`."""
+        """Settings of default storage."""
         return self.instance.storage
 
     @property
