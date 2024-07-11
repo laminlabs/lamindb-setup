@@ -35,6 +35,7 @@ class SetupSettings:
 
     @property
     def settings_dir(self) -> Path:
+        """The directory that holds locally persisted settings."""
         return settings_dir
 
     @property
