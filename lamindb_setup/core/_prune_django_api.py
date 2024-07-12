@@ -39,5 +39,8 @@ def prune_django_api(reverse=False):
             new_name = attr if reverse else f"_{attr}"
             content = content.replace(old_name, new_name)
 
+        if not reverse:
+            content = content.replace("Field_DoesNotExist", "FieldDoesNotExist")
+
         if content != original_content:
             file_path.write_text(content)
