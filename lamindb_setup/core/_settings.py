@@ -57,9 +57,13 @@ class SetupSettings:
 
     @prune_django_api.setter
     def prune_django_api(self, value: bool) -> None:
+        from ._prune_django_api import prune_django_api
+
         if value:
+            prune_django_api()
             self._prune_django_api_path.touch()
         else:
+            prune_django_api(reverse=True)
             self._prune_django_api_path.unlink(missing_ok=True)
 
     @property
