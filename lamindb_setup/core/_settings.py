@@ -59,10 +59,11 @@ class SetupSettings:
     def prune_django_api(self, value: bool) -> None:
         from ._prune_django_api import prune_django_api
 
-        if value:
+        # we don't want to call prune_django_api() twice
+        if value and not self.prune_django_api:
             prune_django_api()
             self._prune_django_api_path.touch()
-        else:
+        elif not value and self.prune_django_api:
             prune_django_api(reverse=True)
             self._prune_django_api_path.unlink(missing_ok=True)
 
@@ -110,6 +111,7 @@ class SetupSettings:
         """Rich string representation."""
         repr = self.user.__repr__()
         repr += f"\nAuto-connect in Python: {self.auto_connect}\n"
+        repr += f"\nPrune Django API: {self.prune_django_api}\n"
         if self._instance_exists:
             repr += self.instance.__repr__()
         else:
