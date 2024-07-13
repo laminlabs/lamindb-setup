@@ -41,6 +41,7 @@ def prune_django_api(reverse=False):
 
         if not reverse:
             content = content.replace("Field_DoesNotExist", "FieldDoesNotExist")
+            content = content.replace("Object_DoesNotExist", "ObjectDoesNotExist")
 
         if content != original_content:
             file_path.write_text(content)
