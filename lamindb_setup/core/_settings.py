@@ -40,7 +40,12 @@ class SetupSettings:
 
     @property
     def auto_connect(self) -> bool:
-        """Auto-connect to loaded instance upon lamindb import."""
+        """Auto-connect to loaded instance upon lamindb import.
+
+        `lamin init` and `lamin load` switch this to `True`.
+
+        `ln.connect()` doesn't change the value of this setting.
+        """
         return self._auto_connect_path.exists()
 
     @auto_connect.setter
@@ -52,7 +57,11 @@ class SetupSettings:
 
     @property
     def private_django_api(self) -> bool:
-        """Auto-connect to loaded instance upon lamindb import."""
+        """Turn internal Django API private to clean up the API (default `False`).
+
+        This patches your local pip-installed django installation. You can undo
+        the patch by setting this back to `False`.
+        """
         return self._private_django_api_path.exists()
 
     @private_django_api.setter
