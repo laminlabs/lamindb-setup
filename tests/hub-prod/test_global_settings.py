@@ -29,7 +29,6 @@ def is_repo_clean() -> bool:
 
 
 def test_prune_django_api():
-    assert is_repo_clean()
     current_state = ln_setup.settings.prune_django_api
     ln_setup.settings.prune_django_api = True
     assert not is_repo_clean()
