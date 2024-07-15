@@ -20,7 +20,12 @@ def is_repo_clean() -> bool:
 
     django_dir = Path(db.__file__).parent.parent
     result = subprocess.run(
-        ["git", "diff"], capture_output=True, text=True, check=True, cwd=django_dir
+        ["git", "diff"],
+        capture_output=True,
+        text=True,
+        check=True,
+        cwd=django_dir,
+        shell=True,
     )
     print(result.stdout)
     print(result.stderr)
