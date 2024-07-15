@@ -1,24 +1,5 @@
-import importlib
 import os
-from pathlib import Path
 from uuid import UUID
-
-import django
-from django import db
-
-print(db.__file__)
-print(Path(db.__file__).parent.parent / "__init__.py")
-print((Path(db.__file__).parent.parent / "__init__.py").read_text())
-
-importlib.reload(django)
-
-try:
-    from django import setup
-
-    print("Django setup function found")
-except ImportError as e:
-    print(f"Failed to import Django setup: {e}")
-    quit()
 
 import lamindb_setup
 import pytest
