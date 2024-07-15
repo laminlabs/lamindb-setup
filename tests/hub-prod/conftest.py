@@ -2,9 +2,11 @@ import os
 from pathlib import Path
 from uuid import UUID
 
-import django
+from django import db
 
-print(Path(django.__file__).read_text())
+print(db.__file__)
+print(Path(db.__file__).parent.parent / "__init__.py")
+print((Path(db.__file__).parent.parent / "__init__.py").read_text())
 
 
 try:
