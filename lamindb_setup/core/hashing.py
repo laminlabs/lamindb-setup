@@ -12,7 +12,10 @@ from __future__ import annotations
 
 import base64
 import hashlib
-from typing import TYPE_CHECKING
+from concurrent.futures import ThreadPoolExecutor
+from typing import TYPE_CHECKING, Iterable
+
+import psutil
 
 if TYPE_CHECKING:
     from .types import Path, UPathStr
@@ -40,7 +43,7 @@ def hash_set(s: set[str]) -> str:
     return to_b64_str(hashlib.md5(bstr).digest())[:20]
 
 
-def hash_md5s_from_dir(hashes: list[str]) -> tuple[str, str]:
+def hash_md5s_from_dir(hashes: Iterable[str]) -> tuple[str, str]:
     # need to sort below because we don't want the order of parsing the dir to
     # affect the hash
     digests = b"".join(
@@ -83,3 +86,27 @@ def hash_file(
             ).digest()
             hash_type = "sha1-fl"
     return to_b64_str(digest)[:22], hash_type
+
+
+def hash_dir(path: Path):
+    files = (subpath for subpath in path.rglob("*") if subpath.is_file())
+
+    def hash_size(file):
+        file_size = file.stat().st_size
+        return hash_file(file, file_size)[0], file_size
+
+    try:
+        n_workers = len(psutil.Process().cpu_affinity())
+    except AttributeError:
+        n_workers = psutil.cpu_count()
+    if n_workers > 1:
+        with ThreadPoolExecutor(n_workers) as pool:
+            hashes_sizes = pool.map(hash_size, files)
+    else:
+        hashes_sizes = map(hash_size, files)
+    hashes, sizes = zip(*hashes_sizes)
+
+    hash, hash_type = hash_md5s_from_dir(hashes)
+    n_objects = len(hashes)
+    size = sum(sizes)
+    return size, hash, hash_type, n_objects
