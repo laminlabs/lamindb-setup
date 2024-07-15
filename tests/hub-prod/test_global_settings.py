@@ -16,28 +16,29 @@ def test_auto_connect():
     ln_setup.settings.auto_connect = current_state
 
 
-def is_repo_clean() -> bool:
-    from django import db
-
-    django_dir = Path(db.__file__).parent.parent
-    print(django_dir)
-    result = subprocess.run(
-        ["git", "diff"],
-        capture_output=True,
-        text=True,
-        cwd=django_dir,
-    )
-    print(result.stdout)
-    print(result.stderr)
-    return result.stdout.strip() == "" and result.stderr.strip() == ""
-
-
 def test_private_django_api():
     from django import db
 
     django_dir = Path(db.__file__).parent.parent
 
-    orig_size, orig_hash, _, _ = hash_dir(django_dir)
+    # below, we're checking whether a repo is clean via the internal hashing
+    # function
+    # def is_repo_clean() -> bool:
+    #     from django import db
+
+    #     django_dir = Path(db.__file__).parent.parent
+    #     print(django_dir)
+    #     result = subprocess.run(
+    #         ["git", "diff"],
+    #         capture_output=True,
+    #         text=True,
+    #         cwd=django_dir,
+    #     )
+    #     print(result.stdout)
+    #     print(result.stderr)
+    #     return result.stdout.strip() == "" and result.stderr.strip() == ""
+
+    _, orig_hash, _, _ = hash_dir(django_dir)
     current_state = ln_setup.settings.private_django_api
     ln_setup.settings.private_django_api = True
     # do not run below on CI, but only locally
