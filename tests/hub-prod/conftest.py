@@ -4,6 +4,14 @@ from uuid import UUID
 from django import db
 
 print(db.__file__)
+
+try:
+    from django import setup
+
+    print("Django setup function found")
+except ImportError as e:
+    print(f"Failed to import Django setup: {e}")
+
 import lamindb_setup
 import pytest
 from lamin_utils import logger
