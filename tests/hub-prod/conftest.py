@@ -1,9 +1,11 @@
 import os
+from pathlib import Path
 from uuid import UUID
 
-from django import db
+import django
 
-print(db.__file__)
+print(Path(django.__file__).read_text())
+
 
 try:
     from django import setup
@@ -11,6 +13,7 @@ try:
     print("Django setup function found")
 except ImportError as e:
     print(f"Failed to import Django setup: {e}")
+    quit()
 
 import lamindb_setup
 import pytest
