@@ -1,13 +1,16 @@
+import importlib
 import os
 from pathlib import Path
 from uuid import UUID
 
+import django
 from django import db
 
 print(db.__file__)
 print(Path(db.__file__).parent.parent / "__init__.py")
 print((Path(db.__file__).parent.parent / "__init__.py").read_text())
 
+importlib.reload(django)
 
 try:
     from django import setup
