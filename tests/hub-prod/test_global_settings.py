@@ -19,14 +19,12 @@ def is_repo_clean() -> bool:
     from django import db
 
     django_dir = Path(db.__file__).parent.parent
-    try:
-        result = subprocess.run(
-            ["git", "diff"], capture_output=True, text=True, check=True, cwd=django_dir
-        )
-        print(result.stdout)
-        return result.stdout.strip() == "" and result.stderr.strip() == ""
-    except subprocess.CalledProcessError:
-        return False
+    result = subprocess.run(
+        ["git", "diff"], capture_output=True, text=True, check=True, cwd=django_dir
+    )
+    print(result.stdout)
+    print(result.stderr)
+    return result.stdout.strip() == "" and result.stderr.strip() == ""
 
 
 def test_private_django_api():
