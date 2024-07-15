@@ -48,6 +48,8 @@ uv pip install --system --no-deps {no_deps_packages}
     # current package
     cmds += """\nuv pip install --system -e '.[aws,dev]' lamin-cli"""
 
+    from django import db
+
     [run(session, line) for line in cmds.splitlines()]
 
 
