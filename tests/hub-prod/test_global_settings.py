@@ -28,12 +28,12 @@ def is_repo_clean() -> bool:
         return False
 
 
-def test_prune_django_api():
-    current_state = ln_setup.settings.prune_django_api
-    ln_setup.settings.prune_django_api = True
+def test_private_django_api():
+    current_state = ln_setup.settings.private_django_api
+    ln_setup.settings.private_django_api = True
     assert not is_repo_clean()
-    assert ln_setup.settings._prune_django_api_path.exists()
-    ln_setup.settings.prune_django_api = False
+    assert ln_setup.settings._private_django_api_path.exists()
+    ln_setup.settings.private_django_api = False
     assert is_repo_clean()
-    assert not ln_setup.settings._prune_django_api_path.exists()
-    ln_setup.settings.prune_django_api = current_state
+    assert not ln_setup.settings._private_django_api_path.exists()
+    ln_setup.settings.private_django_api = current_state

@@ -27,7 +27,7 @@ class SetupSettings:
     _instance_settings_env: str | None = None
 
     _auto_connect_path: Path = settings_dir / "auto_connect"
-    _prune_django_api_path: Path = settings_dir / "prune_django_api"
+    _private_django_api_path: Path = settings_dir / "private_django_api"
 
     @property
     def _instance_settings_path(self) -> Path:
@@ -51,21 +51,21 @@ class SetupSettings:
             self._auto_connect_path.unlink(missing_ok=True)
 
     @property
-    def prune_django_api(self) -> bool:
+    def private_django_api(self) -> bool:
         """Auto-connect to loaded instance upon lamindb import."""
-        return self._prune_django_api_path.exists()
+        return self._private_django_api_path.exists()
 
-    @prune_django_api.setter
-    def prune_django_api(self, value: bool) -> None:
-        from ._prune_django_api import prune_django_api
+    @private_django_api.setter
+    def private_django_api(self, value: bool) -> None:
+        from ._private_django_api import private_django_api
 
-        # we don't want to call prune_django_api() twice
-        if value and not self.prune_django_api:
-            prune_django_api()
-            self._prune_django_api_path.touch()
-        elif not value and self.prune_django_api:
-            prune_django_api(reverse=True)
-            self._prune_django_api_path.unlink(missing_ok=True)
+        # we don't want to call private_django_api() twice
+        if value and not self.private_django_api:
+            private_django_api()
+            self._private_django_api_path.touch()
+        elif not value and self.private_django_api:
+            private_django_api(reverse=True)
+            self._private_django_api_path.unlink(missing_ok=True)
 
     @property
     def user(self) -> UserSettings:
@@ -111,7 +111,7 @@ class SetupSettings:
         """Rich string representation."""
         repr = self.user.__repr__()
         repr += f"\nAuto-connect in Python: {self.auto_connect}\n"
-        repr += f"\nPrune Django API: {self.prune_django_api}\n"
+        repr += f"\nPrune Django API: {self.private_django_api}\n"
         if self._instance_exists:
             repr += self.instance.__repr__()
         else:

@@ -28,7 +28,7 @@ def find_vscode_stubs_folder() -> Path | None:
     return None
 
 
-def prune_django_api(reverse=False):
+def private_django_api(reverse=False):
     from django import db
 
     attributes = [
