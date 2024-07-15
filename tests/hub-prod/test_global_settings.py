@@ -23,6 +23,7 @@ def is_repo_clean() -> bool:
         result = subprocess.run(
             ["git", "diff"], capture_output=True, text=True, check=True, cwd=django_dir
         )
+        print(result.stdout)
         return result.stdout.strip() == "" and result.stderr.strip() == ""
     except subprocess.CalledProcessError:
         return False
