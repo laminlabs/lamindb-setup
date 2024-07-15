@@ -1,6 +1,9 @@
 import os
 from uuid import UUID
 
+from django import db
+
+print(db.__file__)
 import lamindb_setup
 import pytest
 from lamin_utils import logger
