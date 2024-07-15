@@ -58,8 +58,10 @@ def private_django_api(reverse=False):
 
     django_path = Path(db.__file__).parent.parent
 
+    encoding = "utf8" if os.name == "nt" else None
+
     def prune_file(file_path):
-        content = file_path.read_text()
+        content = file_path.read_text(encoding=encoding)
         original_content = content
 
         for attr in attributes:
@@ -72,7 +74,7 @@ def private_django_api(reverse=False):
             content = content.replace("Object_DoesNotExist", "ObjectDoesNotExist")
 
         if content != original_content:
-            file_path.write_text(content)
+            file_path.write_text(content, encoding=encoding)
 
     for file_path in django_path.rglob("*.py"):
         prune_file(file_path)
