@@ -41,7 +41,7 @@ uv pip install --system --no-deps {no_deps_packages}
         cmds = """uv pip install --system gcsfs"""
     elif group == "hub-prod":
         cmds = "git clone --depth 1 https://github.com/django/django\n"
-        cmds += "uv pip install --system ./django\n"
+        cmds += "uv pip install --system -e ./django\n"
         cmds += schema_deps.strip()
     elif group == "hub-local":
         cmds = schema_deps + """uv pip install --system -e ./laminhub/rest-hub"""
