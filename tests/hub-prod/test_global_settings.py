@@ -25,7 +25,6 @@ def is_repo_clean() -> bool:
         text=True,
         check=True,
         cwd=django_dir,
-        shell=True,
     )
     print(result.stdout)
     print(result.stderr)
