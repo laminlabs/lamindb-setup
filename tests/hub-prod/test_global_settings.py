@@ -23,7 +23,6 @@ def is_repo_clean() -> bool:
         ["git", "diff"],
         capture_output=True,
         text=True,
-        check=True,
         cwd=django_dir,
     )
     print(result.stdout)
