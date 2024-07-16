@@ -120,7 +120,7 @@ class SetupSettings:
         """Rich string representation."""
         repr = self.user.__repr__()
         repr += f"\nAuto-connect in Python: {self.auto_connect}\n"
-        repr += f"\nPrune Django API: {self.private_django_api}\n"
+        repr += f"Private Django API: {self.private_django_api}\n"
         if self._instance_exists:
             repr += self.instance.__repr__()
         else:
