@@ -31,6 +31,9 @@ def update_schema_in_hub() -> tuple[bool, UUID, dict]:
 
 
 def _synchronize_schema(client: Client) -> tuple[bool, UUID, dict]:
+    # To be removed after migration
+    from ._schema_metadata_legacy import _get_legacy_schema_json
+
     schema_metadata = _SchemaHandler()
     schema_metadata_dict = schema_metadata.to_json()
     schema_uuid = _dict_to_uuid(schema_metadata_dict)
@@ -48,6 +51,7 @@ def _synchronize_schema(client: Client) -> tuple[bool, UUID, dict]:
                     "module_ids": module_ids,
                     "module_set_info": module_set_info,
                     "schema_json": schema_metadata_dict,
+                    "json": _get_legacy_schema_json(),  # To be removed after migration
                 }
             )
             .execute()
