@@ -85,7 +85,7 @@ def _get_schema_by_id(id: UUID, client: Client):
 def _dict_to_uuid(dict: dict):
     encoded = json.dumps(dict, sort_keys=True).encode("utf-8")
     hash = hashlib.md5(encoded).digest()
-    uuid = UUID(bytes=hash[:16])
+    uuid = UUID(bytes=hash[::-1])
     return uuid
 
 
