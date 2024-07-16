@@ -31,6 +31,8 @@ def find_vscode_stubs_folder() -> Path | None:
 def private_django_api(reverse=False):
     from django import db
 
+    # the order here matters
+    # changing it might break the tests
     attributes = [
         "DoesNotExist",
         "MultipleObjectsReturned",
@@ -41,7 +43,6 @@ def private_django_api(reverse=False):
         "clean",
         "clean_fields",
         "date_error_message",
-        "full_clean",
         "get_constraints",
         "get_deferred_fields",
         "prepare_database_save",
@@ -51,10 +52,12 @@ def private_django_api(reverse=False):
         "validate_constraints",
         "validate_unique",
     ]
-    if not reverse:
-        attributes.append("a_refresh_from_db")
-    else:
+    if reverse:
         attributes.append("arefresh_from_db")
+        attributes.append("full_clean")
+    else:
+        attributes.append("a_refresh_from_db")
+        attributes.append("full__clean")
 
     django_path = Path(db.__file__).parent.parent
 
