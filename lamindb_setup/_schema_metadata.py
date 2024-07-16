@@ -355,7 +355,7 @@ class _SchemaHandler:
                 for model in self._get_schema_module(
                     module_name
                 ).models.__dict__.values()
-                if model.__class__.__name__ == "ModelBase"
+                if model.__class__.__name__ == "RegistryMeta"
                 and model.__name__ not in ["Registry", "ORM"]
                 and not model._meta.abstract
                 and model.__get_schema_name__() == module_name
