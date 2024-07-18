@@ -117,7 +117,7 @@ class Through(BaseModel):
 
 class FieldMetadata(BaseModel):
     type: Type
-    column: str | None = None
+    column_name: str | None = None
     through: Through | None = None
     field_name: str
     model_name: str
@@ -253,7 +253,7 @@ class _ModelHandler:
             field_name=field_name,
             type=internal_type,
             is_link_table=issubclass(field.model, LinkORM),
-            column=column,
+            column_name=column,
             relation_type=relation_type,
             related_schema_name=related_schema_name,
             related_model_name=related_model_name,
@@ -359,8 +359,8 @@ class _SchemaHandler:
                 for model in self._get_schema_module(
                     module_name
                 ).models.__dict__.values()
-                if model.__class__.__name__ == "RegistryMeta"
-                and model.__name__ not in ["Registry", "ORM"]
+                if model.__class__.__name__ == "RecordMeta"
+                and model.__name__ not in ["Record", "ORM"]
                 and not model._meta.abstract
                 and model.__get_schema_name__() == module_name
             }

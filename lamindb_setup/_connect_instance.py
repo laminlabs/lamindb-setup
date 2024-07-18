@@ -270,12 +270,6 @@ def load(
     This is exactly the same as ``ln.connect()`` except for that
     ``ln.connect()`` doesn't change the state of ``auto-connect``.
     """
-    # enable the message in the next release
-    logger.warning(
-        "`lamin connect` replaces `lamin load`, which will be removed in a future"
-        " version\nif you still want to auto-connect to an instance upon lamindb"
-        " import, call: `lamin load` on the CLI"
-    )
     result = connect(slug, db=db, storage=storage)
     settings.auto_connect = True
     return result
