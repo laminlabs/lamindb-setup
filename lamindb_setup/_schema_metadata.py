@@ -113,7 +113,7 @@ class Through(BaseModel):
 
 class FieldMetadata(BaseModel):
     type: Type
-    column: str | None = None
+    column_name: str | None = None
     through: Through | None = None
     field_name: str
     model_name: str
@@ -249,7 +249,7 @@ class _ModelHandler:
             field_name=field_name,
             type=internal_type,
             is_link_table=issubclass(field.model, LinkORM),
-            column=column,
+            column_name=column,
             relation_type=relation_type,
             related_schema_name=related_schema_name,
             related_model_name=related_model_name,

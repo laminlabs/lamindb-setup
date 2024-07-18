@@ -43,7 +43,7 @@ def test_update_schema_in_hub(setup_instance):
 
     assert schema["schema_json"]["core"]["artifact"]["fields"]["id"] == {
         "type": "AutoField",
-        "column": "id",
+        "column_name": "id",
         "through": None,
         "field_name": "id",
         "model_name": "artifact",
@@ -57,7 +57,7 @@ def test_update_schema_in_hub(setup_instance):
 
     assert schema["schema_json"]["core"]["artifact"]["fields"]["created_by"] == {
         "type": "ForeignKey",
-        "column": "created_by_id",
+        "column_name": "created_by_id",
         "through": {
             "left_key": "created_by_id",
             "right_key": "id",
@@ -75,7 +75,7 @@ def test_update_schema_in_hub(setup_instance):
 
     assert schema["schema_json"]["bionty"]["gene"]["fields"]["pathways"] == {
         "type": "ManyToManyField",
-        "column": None,
+        "column_name": None,
         "through": {
             "left_key": "gene_id",
             "right_key": "pathway_id",
@@ -93,7 +93,7 @@ def test_update_schema_in_hub(setup_instance):
 
     assert schema["schema_json"]["wetlab"]["well"]["fields"]["artifacts"] == {
         "type": "ManyToManyField",
-        "column": None,
+        "column_name": None,
         "through": {
             "left_key": "well_id",
             "right_key": "artifact_id",
@@ -111,7 +111,7 @@ def test_update_schema_in_hub(setup_instance):
 
     assert schema["schema_json"]["core"]["transform"]["fields"]["parents"] == {
         "type": "ManyToManyField",
-        "column": None,
+        "column_name": None,
         "through": {
             "left_key": "from_transform_id",
             "right_key": "to_transform_id",
@@ -129,7 +129,7 @@ def test_update_schema_in_hub(setup_instance):
 
     assert schema["schema_json"]["core"]["transform"]["fields"]["children"] == {
         "type": "ManyToManyField",
-        "column": None,
+        "column_name": None,
         "through": {
             "left_key": "to_transform_id",
             "right_key": "from_transform_id",
