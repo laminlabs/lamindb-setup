@@ -1,9 +1,9 @@
 from __future__ import annotations
 
-from typing import Optional
+from typing import Any, Optional
 
-from pydantic import BaseModel, field_validator
-from pydantic_core import MultiHostUrl as MultiHostDsn
+from pydantic import BaseModel, ConfigDict, field_validator
+from pydantic_core import CoreSchema, MultiHostUrl, core_schema
 
 
 def validate_schema_arg(schema: str | None = None) -> str:
@@ -20,14 +20,7 @@ def validate_db_arg(db: str | None) -> None:
         LaminDsnModel(db=db)
 
 
-class LaminDsn(MultiHostDsn):
-    """Custom DSN Type for Lamin.
-
-    This class allows us to customize the allowed schemes for databases
-    and also handles the parsing and building of DSN strings with the
-    database name instead of URL path.
-    """
-
+class LaminDsn(MultiHostUrl):
     allowed_schemes = {
         "postgresql",
         # future enabled schemes
@@ -35,7 +28,6 @@ class LaminDsn(MultiHostDsn):
         # "bigquery"
     }
     user_required = True
-    __slots__ = ()
 
     @property
     def database(self):
@@ -66,9 +58,40 @@ class LaminDsn(MultiHostDsn):
             fragment=fragment,
         )
 
+    @classmethod
+    def __get_pydantic_core_schema__(
+        cls, _source_type: Any, _handler: Any
+    ) -> CoreSchema:
+        return core_schema.json_or_python_schema(
+            json_schema=core_schema.str_schema(),
+            python_schema=core_schema.union_schema(
+                [
+                    core_schema.is_instance_schema(cls),
+                    core_schema.chain_schema(
+                        [
+                            core_schema.str_schema(),
+                            core_schema.no_info_plain_validator_function(cls.validate),
+                        ]
+                    ),
+                ]
+            ),
+            serialization=core_schema.plain_serializer_function_ser_schema(str),
+        )
+
+    @classmethod
+    def validate(cls, v: Any) -> LaminDsn:
+        if isinstance(v, cls):
+            return v
+        elif isinstance(v, str):
+            return cls(v)
+        else:
+            raise ValueError(f"Invalid value for LaminDsn: {v}")
+
 
 class LaminDsnModel(BaseModel):
     db: LaminDsn
+
+    model_config = ConfigDict(arbitrary_types_allowed=True)
 
     @field_validator("db")
     @classmethod
