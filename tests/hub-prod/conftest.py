@@ -20,4 +20,5 @@ def pytest_sessionstart(session: pytest.Session):
 
 
 def pytest_sessionfinish(session: pytest.Session):
-    pass
+    logger.set_verbosity(1)
+    lamindb_setup.delete("testuser2/lamindb-setup-unit-tests", force=True)
