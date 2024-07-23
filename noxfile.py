@@ -45,7 +45,7 @@ uv pip install --system --no-deps {no_deps_packages}
         cmds = ""
         cmds += schema_deps.strip()
     elif group == "hub-local":
-        cmds = schema_deps
+        cmds = schema_deps.strip()
     # current package
     cmds += """\nuv pip install --system -e '.[aws,dev]' lamin-cli"""
 
