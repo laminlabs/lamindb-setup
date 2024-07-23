@@ -1,9 +1,10 @@
 from __future__ import annotations
 
 from typing import Any, Optional
+from urllib.parse import urlparse, urlunparse
 
-from pydantic import AnyUrl, BaseModel, ConfigDict, field_validator
-from pydantic_core import CoreSchema, MultiHostUrl, core_schema
+from pydantic import BaseModel, Field
+from pydantic_core import CoreSchema, core_schema
 
 
 def validate_schema_arg(schema: str | None = None) -> str:
@@ -20,18 +21,53 @@ def validate_db_arg(db: str | None) -> None:
         LaminDsnModel(db=db)
 
 
-class LaminDsn(AnyUrl):
+class LaminDsn(str):
     allowed_schemes = {
         "postgresql",
         # future enabled schemes
         # "snowflake",
         # "bigquery"
     }
-    user_required = True
+
+    @classmethod
+    def __get_validators__(cls):
+        yield cls.validate
+
+    @classmethod
+    def validate(cls, v: Any) -> LaminDsn:
+        if isinstance(v, str):
+            parsed = urlparse(v)
+            if parsed.scheme not in cls.allowed_schemes:
+                raise ValueError(f"Invalid scheme: {parsed.scheme}")
+            return cls(v)
+        elif isinstance(v, cls):
+            return v
+        else:
+            raise ValueError(f"Invalid value for LaminDsn: {v}")
 
     @property
-    def database(self):
-        return self.path[1:]
+    def user(self) -> str | None:
+        return urlparse(self).username
+
+    @property
+    def password(self) -> str | None:
+        return urlparse(self).password
+
+    @property
+    def host(self) -> str | None:
+        return urlparse(self).hostname
+
+    @property
+    def port(self) -> int | None:
+        return urlparse(self).port
+
+    @property
+    def database(self) -> str:
+        return urlparse(self).path.lstrip("/")
+
+    @property
+    def scheme(self) -> str:
+        return urlparse(self).scheme
 
     @classmethod
     def build(
@@ -41,55 +77,27 @@ class LaminDsn(AnyUrl):
         user: str | None = None,
         password: str | None = None,
         host: str,
-        port: str | None = None,
+        port: int | None = None,
         database: str | None = None,
         query: str | None = None,
         fragment: str | None = None,
-        **_kwargs: str,
-    ) -> str:
-        auth = f"{user}:{password}@" if user else ""
-        port_str = f":{port}" if port else ""
+    ) -> LaminDsn:
+        netloc = host
+        if port is not None:
+            netloc = f"{netloc}:{port}"
+        if user is not None:
+            auth = user
+            if password is not None:
+                auth = f"{auth}:{password}"
+            netloc = f"{auth}@{netloc}"
+
         path = f"/{database}" if database else ""
-        query_str = f"?{query}" if query else ""
-        fragment_str = f"#{fragment}" if fragment else ""
 
-        return f"{scheme}://{auth}{host}{port_str}{path}{query_str}{fragment_str}"
-
-    @classmethod
-    def validate(cls, value: Any) -> LaminDsn:
-        if isinstance(value, str):
-            return cls(value)
-        elif isinstance(value, cls):
-            return value
-        else:
-            raise ValueError(f"Invalid value for LaminDsn: {value}")
-
-    @classmethod
-    def __get_pydantic_core_schema__(cls, source_type: Any, handler: Any) -> CoreSchema:
-        return core_schema.json_or_python_schema(
-            json_schema=core_schema.str_schema(),
-            python_schema=core_schema.union_schema(
-                [
-                    core_schema.is_instance_schema(cls),
-                    core_schema.chain_schema(
-                        [
-                            core_schema.str_schema(),
-                            core_schema.no_info_plain_validator_function(cls.validate),
-                        ]
-                    ),
-                ]
-            ),
-            serialization=core_schema.plain_serializer_function_ser_schema(str),
-        )
+        url = urlunparse((scheme, netloc, path, "", query or "", fragment or ""))
+        return cls(url)
 
 
 class LaminDsnModel(BaseModel):
-    db: LaminDsn
+    db: LaminDsn = Field(..., description="The database DSN")
 
-    model_config = ConfigDict(arbitrary_types_allowed=True)
-
-    @field_validator("db")
-    @classmethod
-    def check_db_name(cls, v):
-        assert v.path and len(v.path) > 1, "database must be provided"
-        return v
+    model_config = {"arbitrary_types_allowed": True}
