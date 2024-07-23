@@ -43,7 +43,7 @@ jobs:
             python-version: "3.11"
           - lamin_env: "staging"
             python-version: "3.10" # test on 3.9
-    timeout-minutes: 6
+    timeout-minutes: 7
     steps:
       - uses: aws-actions/configure-aws-credentials@v2
         with:
@@ -61,7 +61,7 @@ jobs:
           repository: laminlabs/laminhub
           token: ${{ secrets.GH_TOKEN_DEPLOY_LAMINAPP }}
           path: laminhub
-          ref: main
+          ref: pydanticv2
       - uses: actions/cache@v3
         with:
           path: ~/.cache/pre-commit
@@ -129,7 +129,7 @@ jobs:
           repository: laminlabs/laminhub
           token: ${{ secrets.GH_TOKEN_DEPLOY_LAMINAPP }}
           path: laminhub
-          ref: main
+          ref: pydanticv2
       - name: Set env file for local test of edge functions
         run: |
           touch .env.local

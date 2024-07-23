@@ -44,6 +44,8 @@ def save_settings(
             if type == Optional[bool]:
                 type = bool
             if "__" not in store_key:
+                if store_key == "model_config":
+                    continue
                 if store_key == "storage_root":
                     value = settings.storage.root_as_str
                 elif store_key == "storage_region":

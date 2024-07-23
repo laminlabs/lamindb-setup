@@ -74,7 +74,8 @@ def update_db_using_local(
             # read from a cached settings file in case the hub result is only
             # read level or inexistent
             elif settings_file.exists() and (
-                "read" in db_dsn_hub.db.user or db_dsn_hub.db.user is None
+                db_dsn_hub.db.user is None
+                or (db_dsn_hub.db.user is not None and "read" in db_dsn_hub.db.user)
             ):
                 isettings = load_instance_settings(settings_file)
                 db_dsn_local = LaminDsnModel(db=isettings.db)
@@ -101,7 +102,7 @@ def update_db_using_local(
             scheme=db_dsn_hub.db.scheme,
             user=db_dsn_local.db.user,
             password=db_dsn_local.db.password,
-            host=db_dsn_hub.db.host,
+            host=db_dsn_hub.db.host,  # type: ignore
             port=db_dsn_hub.db.port,
             database=db_dsn_hub.db.database,
         )
