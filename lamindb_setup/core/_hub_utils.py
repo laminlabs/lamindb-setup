@@ -3,7 +3,7 @@ from __future__ import annotations
 from typing import Optional
 
 from pydantic import BaseModel, field_validator
-from pydantic.networks import MultiHostDsn
+from pydantic_core import MultiHostUrl as MultiHostDsn
 
 
 def validate_schema_arg(schema: str | None = None) -> str:
