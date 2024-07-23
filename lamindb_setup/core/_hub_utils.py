@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from typing import Any, Optional
 
-from pydantic import BaseModel, ConfigDict, field_validator
+from pydantic import AnyUrl, BaseModel, ConfigDict, field_validator
 from pydantic_core import CoreSchema, MultiHostUrl, core_schema
 
 
@@ -20,7 +20,7 @@ def validate_db_arg(db: str | None) -> None:
         LaminDsnModel(db=db)
 
 
-class LaminDsn(MultiHostUrl):
+class LaminDsn(AnyUrl):
     allowed_schemes = {
         "postgresql",
         # future enabled schemes
@@ -47,21 +47,25 @@ class LaminDsn(MultiHostUrl):
         fragment: str | None = None,
         **_kwargs: str,
     ) -> str:
-        return super().build(
-            scheme=scheme,
-            user=user,
-            password=password,
-            host=host,
-            port=str(port),
-            path=f"/{database}",
-            query=query,
-            fragment=fragment,
-        )
+        auth = f"{user}:{password}@" if user else ""
+        port_str = f":{port}" if port else ""
+        path = f"/{database}" if database else ""
+        query_str = f"?{query}" if query else ""
+        fragment_str = f"#{fragment}" if fragment else ""
+
+        return f"{scheme}://{auth}{host}{port_str}{path}{query_str}{fragment_str}"
 
     @classmethod
-    def __get_pydantic_core_schema__(
-        cls, _source_type: Any, _handler: Any
-    ) -> CoreSchema:
+    def validate(cls, value: Any) -> LaminDsn:
+        if isinstance(value, str):
+            return cls(value)
+        elif isinstance(value, cls):
+            return value
+        else:
+            raise ValueError(f"Invalid value for LaminDsn: {value}")
+
+    @classmethod
+    def __get_pydantic_core_schema__(cls, source_type: Any, handler: Any) -> CoreSchema:
         return core_schema.json_or_python_schema(
             json_schema=core_schema.str_schema(),
             python_schema=core_schema.union_schema(
@@ -77,15 +81,6 @@ class LaminDsn(MultiHostUrl):
             ),
             serialization=core_schema.plain_serializer_function_ser_schema(str),
         )
-
-    @classmethod
-    def validate(cls, v: Any) -> LaminDsn:
-        if isinstance(v, cls):
-            return v
-        elif isinstance(v, str):
-            return cls(v)
-        else:
-            raise ValueError(f"Invalid value for LaminDsn: {v}")
 
 
 class LaminDsnModel(BaseModel):
