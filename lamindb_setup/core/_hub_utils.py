@@ -1,9 +1,9 @@
 from __future__ import annotations
 
-from typing import Any, Optional
+from typing import Any, ClassVar, Optional
 from urllib.parse import urlparse, urlunparse
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, GetCoreSchemaHandler
 from pydantic_core import CoreSchema, core_schema
 
 
@@ -22,7 +22,7 @@ def validate_db_arg(db: str | None) -> None:
 
 
 class LaminDsn(str):
-    allowed_schemes = {
+    allowed_schemes: ClassVar[set[str]] = {
         "postgresql",
         # future enabled schemes
         # "snowflake",
@@ -30,8 +30,14 @@ class LaminDsn(str):
     }
 
     @classmethod
-    def __get_validators__(cls):
-        yield cls.validate
+    def __get_pydantic_core_schema__(
+        cls, source_type: Any, handler: GetCoreSchemaHandler
+    ) -> CoreSchema:
+        return core_schema.no_info_after_validator_function(
+            cls.validate,
+            core_schema.str_schema(),
+            serialization=core_schema.plain_serializer_function_ser_schema(str),
+        )
 
     @classmethod
     def validate(cls, v: Any) -> LaminDsn:
