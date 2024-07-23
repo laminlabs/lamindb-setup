@@ -63,6 +63,7 @@ def connect_hub(
 ) -> Client:
     env = Environment(fallback=fallback_env)
     client_options.auto_refresh_token = False
+    client_options.persist_session = False
     return create_client(env.supabase_api_url, env.supabase_anon_key, client_options)
 
 
