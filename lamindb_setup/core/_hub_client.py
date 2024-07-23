@@ -5,7 +5,7 @@ from urllib.request import urlretrieve
 
 from gotrue.errors import AuthUnknownError
 from lamin_utils import logger
-from pydantic import BaseSettings
+from pydantic_settings import BaseSettings
 from supabase import Client, create_client  # type: ignore
 from supabase.lib.client_options import ClientOptions
 

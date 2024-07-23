@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from typing import Optional
 
-from pydantic import BaseModel, validator
+from pydantic import BaseModel, field_validator
 from pydantic.networks import MultiHostDsn
 
 
@@ -70,7 +70,8 @@ class LaminDsn(MultiHostDsn):
 class LaminDsnModel(BaseModel):
     db: LaminDsn
 
-    @validator("db")
+    @field_validator("db")
+    @classmethod
     def check_db_name(cls, v):
         assert v.path and len(v.path) > 1, "database must be provided"
         return v

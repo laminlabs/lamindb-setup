@@ -2,7 +2,7 @@ import os
 from pathlib import Path
 from typing import Optional
 
-from pydantic import BaseSettings
+from pydantic_settings import BaseSettings, SettingsConfigDict
 
 if "LAMIN_SETTINGS_DIR" in os.environ:
     # Needed when running with AWS Lambda, as only tmp/ directory has a write access
@@ -58,10 +58,7 @@ class InstanceSettingsStore(BaseSettings):
     id: str
     git_repo: Optional[str]
     keep_artifacts_local: Optional[bool]
-
-    class Config:
-        env_prefix = "lamindb_instance_"
-        env_file = ".env"
+    model_config = SettingsConfigDict(env_prefix="lamindb_instance_", env_file=".env")
 
 
 class UserSettingsStore(BaseSettings):
@@ -72,7 +69,4 @@ class UserSettingsStore(BaseSettings):
     uuid: str
     handle: str
     name: str
-
-    class Config:
-        env_prefix = "lamin_user_"
-        env_file = ".env"
+    model_config = SettingsConfigDict(env_prefix="lamin_user_", env_file=".env")
