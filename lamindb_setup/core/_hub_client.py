@@ -59,9 +59,11 @@ class Environment:
 
 # runs ~0.5s
 def connect_hub(
-    fallback_env: bool = False, client_options: ClientOptions = ClientOptions()
+    fallback_env: bool = False, client_options: ClientOptions | None = None
 ) -> Client:
     env = Environment(fallback=fallback_env)
+    if client_options is None:
+        client_options = ClientOptions(auto_refresh_token=False)
     return create_client(env.supabase_api_url, env.supabase_anon_key, client_options)
 
 
