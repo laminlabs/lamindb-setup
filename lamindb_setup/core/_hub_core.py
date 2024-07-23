@@ -405,7 +405,6 @@ def sign_up_local_hub(email) -> str | tuple[str, str, str]:
     sign_up_kwargs = {"email": email, "password": password}
     client = connect_hub()
     auth_response = client.auth.sign_up(sign_up_kwargs)
-    client.auth.sign_out()
     return (
         password,
         auth_response.session.user.id,

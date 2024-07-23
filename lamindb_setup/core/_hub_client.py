@@ -62,6 +62,7 @@ def connect_hub(
     fallback_env: bool = False, client_options: ClientOptions = ClientOptions()
 ) -> Client:
     env = Environment(fallback=fallback_env)
+    client_options.auto_refresh_token = False
     return create_client(env.supabase_api_url, env.supabase_anon_key, client_options)
 
 
@@ -87,16 +88,13 @@ def connect_hub_with_auth(
 # runs ~0.5s
 def get_access_token(email: str | None = None, password: str | None = None):
     hub = connect_hub()
-    try:
-        auth_response = hub.auth.sign_in_with_password(
-            {
-                "email": email,
-                "password": password,
-            }
-        )
-        return auth_response.session.access_token
-    finally:
-        hub.auth.sign_out()
+    auth_response = hub.auth.sign_in_with_password(
+        {
+            "email": email,
+            "password": password,
+        }
+    )
+    return auth_response.session.access_token
 
 
 def call_with_fallback_auth(
@@ -106,14 +104,8 @@ def call_with_fallback_auth(
     access_token = kwargs.pop("access_token", None)
 
     if access_token is not None:
-        try:
-            client = connect_hub_with_auth(access_token=access_token)
-            result = callable(**kwargs, client=client)
-        finally:
-            try:
-                client.auth.sign_out()
-            except NameError:
-                pass
+        client = connect_hub_with_auth(access_token=access_token)
+        result = callable(**kwargs, client=client)
         return result
 
     for renew_token, fallback_env in [(False, False), (True, False), (False, True)]:
@@ -133,11 +125,6 @@ def call_with_fallback_auth(
         except Exception as e:
             if fallback_env:
                 raise e
-        finally:
-            try:
-                client.auth.sign_out()
-            except NameError:
-                pass
     return result
 
 
@@ -153,7 +140,4 @@ def call_with_fallback(
         except AuthUnknownError as e:
             if fallback_env:
                 raise e
-        finally:
-            # in case there was sign in
-            client.auth.sign_out()
     return result
