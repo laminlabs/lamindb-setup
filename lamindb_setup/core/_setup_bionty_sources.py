@@ -9,14 +9,14 @@ if TYPE_CHECKING:
 
 
 def write_bionty_sources(isettings: InstanceSettings) -> None:
-    """Write bionty sources to PublicSource table."""
+    """Write bionty sources to Source table."""
     if "bionty" not in isettings.schema:
         return None
     import shutil
 
     import bionty_base
     from bionty_base.dev._handle_sources import parse_sources_yaml
-    from lnschema_bionty.models import PublicSource
+    from lnschema_bionty.models import Source
 
     shutil.copy(
         bionty_base.settings.current_sources, bionty_base.settings.lamindb_sources
@@ -32,16 +32,11 @@ def write_bionty_sources(isettings: InstanceSettings) -> None:
             .set_index(["entity", key])
         )
 
-    try:
-        currently_used = _get_currently_used("organism")
-        key = "organism"
-    except KeyError:
-        currently_used = _get_currently_used("species")
-        key = "species"
+    currently_used = _get_currently_used("organism")
 
     all_records = []
     for kwargs in all_sources_dict:
-        act = currently_used.loc[(kwargs["entity"], kwargs[key])].to_dict()
+        act = currently_used.loc[(kwargs["entity"], kwargs["organism"])].to_dict()
         if (act["source"] == kwargs["source"]) and (
             act["version"] == kwargs["version"]
         ):
@@ -49,15 +44,12 @@ def write_bionty_sources(isettings: InstanceSettings) -> None:
 
         # when the database is not yet migrated but setup is updated
         # won't need this once lamindb is released with the new pin
-        if hasattr(PublicSource, "species") and "organism" in kwargs:
-            kwargs["species"] = kwargs.pop("organism")
-        elif hasattr(PublicSource, "organism") and "species" in kwargs:
-            kwargs["organism"] = kwargs.pop("species")
         kwargs["run"] = None  # can't yet access tracking information
-        record = PublicSource(**kwargs)
+        kwargs["in_db"] = False
+        record = Source(**kwargs)
         all_records.append(record)
 
-    PublicSource.objects.bulk_create(all_records, ignore_conflicts=True)
+    Source.objects.bulk_create(all_records, ignore_conflicts=True)
 
 
 def load_bionty_sources(isettings: InstanceSettings):
@@ -68,11 +60,11 @@ def load_bionty_sources(isettings: InstanceSettings):
     import bionty_base
     from bionty_base.dev._handle_sources import parse_currently_used_sources
     from bionty_base.dev._io import write_yaml
-    from lnschema_bionty.models import PublicSource
+    from lnschema_bionty.models import Source
 
     try:
         # need try except because of integer primary key migration
-        active_records = PublicSource.objects.filter(currently_used=True).all().values()
+        active_records = Source.objects.filter(currently_used=True).all().values()
         write_yaml(
             parse_currently_used_sources(active_records),
             bionty_base.settings.lamindb_sources,
