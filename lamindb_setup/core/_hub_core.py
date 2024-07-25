@@ -108,11 +108,11 @@ def _select_storage(
                 # if the request is agnostic of the instance, that's alright,
                 # we'll update the instance_id with what's stored in the hub
                 ssettings._instance_id = UUID(existing_storage["instance_id"])
-            ssettings._uuid_ = UUID(existing_storage["id"])
-            if update_uid:
-                ssettings._uid = existing_storage["lnid"]
-            else:
-                assert ssettings._uid == existing_storage["lnid"]
+        ssettings._uuid_ = UUID(existing_storage["id"])
+        if update_uid:
+            ssettings._uid = existing_storage["lnid"]
+        else:
+            assert ssettings._uid == existing_storage["lnid"]
         return True
 
 
