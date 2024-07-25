@@ -46,6 +46,7 @@ def write_bionty_sources(isettings: InstanceSettings) -> None:
         # won't need this once lamindb is released with the new pin
         kwargs["run"] = None  # can't yet access tracking information
         kwargs["in_db"] = False
+        kwargs["name"] = kwargs.pop("source")
         record = Source(**kwargs)
         all_records.append(record)
 
