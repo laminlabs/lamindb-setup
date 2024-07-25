@@ -118,8 +118,9 @@ def create_myinstance(create_testadmin1_session):  # -> Dict
         id=instance_id,
         owner=usettings.handle,
         name="myinstance",
+        # cannot yet pass instance_id here as it does not yet exist
         storage=init_storage_base(
-            "s3://lamindb-ci/myinstance", instance_id=instance_id
+            "s3://lamindb-ci/myinstance",
         ),
         db=db_str,
     )

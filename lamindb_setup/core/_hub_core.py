@@ -145,11 +145,9 @@ def _init_storage(ssettings: StorageSettings, client: Client) -> None:
         id = uuid.uuid5(uuid.NAMESPACE_URL, root)
     else:
         id = uuid.uuid4()
-    if ssettings._instance_id is None:
-        logger.warning(
-            f"will manage storage location {ssettings.root_as_str} with instance {settings.instance.slug}"
-        )
-        ssettings._instance_id = settings.instance._id
+    instance_id_hex = (
+        None if ssettings._instance_id is None else ssettings._instance_id.hex
+    )
     fields = {
         "id": id.hex,
         "lnid": ssettings.uid,
@@ -157,7 +155,7 @@ def _init_storage(ssettings: StorageSettings, client: Client) -> None:
         "root": root,
         "region": ssettings.region,
         "type": ssettings.type,
-        "instance_id": ssettings._instance_id.hex,
+        "instance_id": instance_id_hex,
         # the empty string is important as we want the user flow to be through LaminHub
         # if this errors with unique constraint error, the user has to update
         # the description in LaminHub
