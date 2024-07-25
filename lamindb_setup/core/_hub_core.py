@@ -93,20 +93,21 @@ def _select_storage(
         return False
     else:
         existing_storage = response.data[0]
-        if ssettings._instance_id is not None:
-            # consider storage settings that are meant to be managed by an instance
-            if UUID(existing_storage["instance_id"]) != ssettings._instance_id:
-                # everything is alright if the instance_id matches
-                # we're probably just switching storage locations
-                # below can be turned into a warning and then delegate the error
-                # to a unique constraint violation below
-                raise ValueError(
-                    f"Storage root {root} is already managed by instance {existing_storage['instance_id']}."
-                )
-        else:
-            # if the request is agnostic of the instance, that's alright,
-            # we'll update the instance_id with what's stored in the hub
-            ssettings._instance_id = UUID(existing_storage["instance_id"])
+        if existing_storage["instance_id"] is not None:
+            if ssettings._instance_id is not None:
+                # consider storage settings that are meant to be managed by an instance
+                if UUID(existing_storage["instance_id"]) != ssettings._instance_id:
+                    # everything is alright if the instance_id matches
+                    # we're probably just switching storage locations
+                    # below can be turned into a warning and then delegate the error
+                    # to a unique constraint violation below
+                    raise ValueError(
+                        f"Storage root {root} is already managed by instance {existing_storage['instance_id']}."
+                    )
+            else:
+                # if the request is agnostic of the instance, that's alright,
+                # we'll update the instance_id with what's stored in the hub
+                ssettings._instance_id = UUID(existing_storage["instance_id"])
         ssettings._uuid_ = UUID(existing_storage["id"])
         if update_uid:
             ssettings._uid = existing_storage["lnid"]
@@ -145,11 +146,9 @@ def _init_storage(ssettings: StorageSettings, client: Client) -> None:
         id = uuid.uuid5(uuid.NAMESPACE_URL, root)
     else:
         id = uuid.uuid4()
-    if ssettings._instance_id is None:
-        logger.warning(
-            f"will manage storage location {ssettings.root_as_str} with instance {settings.instance.slug}"
-        )
-        ssettings._instance_id = settings.instance._id
+    instance_id_hex = (
+        None if ssettings._instance_id is None else ssettings._instance_id.hex
+    )
     fields = {
         "id": id.hex,
         "lnid": ssettings.uid,
@@ -157,7 +156,7 @@ def _init_storage(ssettings: StorageSettings, client: Client) -> None:
         "root": root,
         "region": ssettings.region,
         "type": ssettings.type,
-        "instance_id": ssettings._instance_id.hex,
+        "instance_id": instance_id_hex,
         # the empty string is important as we want the user flow to be through LaminHub
         # if this errors with unique constraint error, the user has to update
         # the description in LaminHub
