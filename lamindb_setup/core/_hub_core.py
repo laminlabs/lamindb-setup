@@ -118,11 +118,13 @@ def _select_storage(
 
 def init_storage(
     ssettings: StorageSettings,
+    auto_populate_instance: bool = True,
 ) -> None:
     if settings.user.handle != "anonymous":
         return call_with_fallback_auth(
             _init_storage,
             ssettings=ssettings,
+            auto_populate_instance=auto_populate_instance,
         )
     else:
         storage_exists = call_with_fallback(
@@ -134,7 +136,9 @@ def init_storage(
             raise ValueError("Log in to create a storage location on the hub.")
 
 
-def _init_storage(ssettings: StorageSettings, client: Client) -> None:
+def _init_storage(
+    ssettings: StorageSettings, auto_populate_instance: bool, client: Client
+) -> None:
     from lamindb_setup import settings
 
     # storage roots are always stored without the trailing slash in the SQL
@@ -146,7 +150,11 @@ def _init_storage(ssettings: StorageSettings, client: Client) -> None:
         id = uuid.uuid5(uuid.NAMESPACE_URL, root)
     else:
         id = uuid.uuid4()
-    if ssettings._instance_id is None and settings._instance_exists:
+    if (
+        ssettings._instance_id is None
+        and settings._instance_exists
+        and auto_populate_instance
+    ):
         logger.warning(
             f"will manage storage location {ssettings.root_as_str} with instance {settings.instance.slug}"
         )
