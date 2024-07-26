@@ -25,6 +25,7 @@ def register(_test: bool = False):
         ssettings._uid = base62(8)
     # cannot yet populate the instance id here
     ssettings._instance_id = None
+    # flag auto_populate_instance can be removed once FK migration is over
     init_storage_hub(ssettings, auto_populate_instance=False)
     init_instance_hub(isettings)
     isettings._is_on_hub = True
