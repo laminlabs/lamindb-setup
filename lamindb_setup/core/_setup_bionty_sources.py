@@ -15,8 +15,8 @@ def write_bionty_sources(isettings: InstanceSettings) -> None:
     import shutil
 
     import bionty_base
+    from bionty.models import Source
     from bionty_base.dev._handle_sources import parse_sources_yaml
-    from lnschema_bionty.models import Source
 
     shutil.copy(
         bionty_base.settings.current_sources, bionty_base.settings.lamindb_sources
@@ -59,9 +59,9 @@ def load_bionty_sources(isettings: InstanceSettings):
         return None
 
     import bionty_base
+    from bionty.models import Source
     from bionty_base.dev._handle_sources import parse_currently_used_sources
     from bionty_base.dev._io import write_yaml
-    from lnschema_bionty.models import Source
 
     try:
         # need try except because of integer primary key migration
