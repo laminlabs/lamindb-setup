@@ -25,7 +25,7 @@ def register(_test: bool = False):
         ssettings._uid = base62(8)
     # cannot yet populate the instance id here
     ssettings._instance_id = None
-    init_storage_hub(ssettings)
+    init_storage_hub(ssettings, auto_populate_instance=False)
     init_instance_hub(isettings)
     isettings._is_on_hub = True
     isettings._persist()
