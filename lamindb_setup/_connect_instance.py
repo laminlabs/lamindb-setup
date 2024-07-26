@@ -350,7 +350,7 @@ def migrate_lnschema_bionty(isettings: InstanceSettings):
         # Commit the changes
         conn.commit()
 
-    except (sqlite3.Error, psycopg2.Error) as e:
+    except Exception as e:
         print(f"An error occurred: {e}")
         conn.rollback()
 
