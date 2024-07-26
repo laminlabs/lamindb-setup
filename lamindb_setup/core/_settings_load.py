@@ -4,7 +4,7 @@ from typing import TYPE_CHECKING, Optional
 from uuid import UUID, uuid4
 
 from lamin_utils import logger
-from pydantic.error_wrappers import ValidationError
+from pydantic import ValidationError
 
 from ._settings_instance import InstanceSettings
 from ._settings_storage import StorageSettings
