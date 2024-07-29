@@ -14,9 +14,9 @@ def write_bionty_sources(isettings: InstanceSettings) -> None:
         return None
     import shutil
 
-    import bionty_base
+    import bionty.base as bionty_base
+    from bionty.base.dev._handle_sources import parse_sources_yaml
     from bionty.models import Source
-    from bionty_base.dev._handle_sources import parse_sources_yaml
 
     shutil.copy(
         bionty_base.settings.current_sources, bionty_base.settings.lamindb_sources
@@ -58,10 +58,10 @@ def load_bionty_sources(isettings: InstanceSettings):
     if "bionty" not in isettings.schema:
         return None
 
-    import bionty_base
+    import bionty.base as bionty_base
+    from bionty.base.dev._handle_sources import parse_currently_used_sources
+    from bionty.base.dev._io import write_yaml
     from bionty.models import Source
-    from bionty_base.dev._handle_sources import parse_currently_used_sources
-    from bionty_base.dev._io import write_yaml
 
     try:
         # need try except because of integer primary key migration
@@ -77,7 +77,7 @@ def load_bionty_sources(isettings: InstanceSettings):
 def delete_bionty_sources_yaml():
     """Delete LAMINDB_SOURCES_PATH in bionty."""
     try:
-        import bionty_base
+        import bionty.base as bionty_base
 
         bionty_base.settings.lamindb_sources.unlink(missing_ok=True)
     except ModuleNotFoundError:
