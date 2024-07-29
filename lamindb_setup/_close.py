@@ -24,8 +24,8 @@ def close(mute: bool = False) -> None:
                 logger.warning("did not upload cache file - not enough permissions")
             else:
                 raise e
-        current_instance_settings_file().unlink()
         delete_bionty_sources_yaml()
+        current_instance_settings_file().unlink()
         clear_locker()
         if not mute:
             logger.success(f"closed instance: {instance}")
