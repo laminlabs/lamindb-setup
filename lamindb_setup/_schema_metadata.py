@@ -103,6 +103,7 @@ Type = Literal[
     "DateField",
     "FloatField",
     "PositiveIntegerField",
+    "PositiveBigIntegerField",
 ]
 
 
