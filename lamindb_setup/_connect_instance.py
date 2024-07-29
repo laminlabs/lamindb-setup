@@ -4,7 +4,6 @@ import os
 from typing import TYPE_CHECKING
 from uuid import UUID
 
-from django.db import ProgrammingError
 from lamin_utils import logger
 
 from ._check_setup import _check_instance_setup
@@ -259,12 +258,15 @@ def connect(
         raise e
     # rename lnschema_bionty to bionty for sql tables
     if "bionty" in isettings.schema:
-        if not (settings_dir / "no_lnschema_bionty").exists():
-            migrate_lnschema_bionty(isettings)
+        no_lnschema_bionty_file = (
+            settings_dir / f"no_lnschema_bionty-{isettings.slug.replace('/', '')}"
+        )
+        if not no_lnschema_bionty_file.exists():
+            migrate_lnschema_bionty(isettings, no_lnschema_bionty_file)
     return None
 
 
-def migrate_lnschema_bionty(isettings: InstanceSettings):
+def migrate_lnschema_bionty(isettings: InstanceSettings, no_lnschema_bionty_file: Path):
     """Migrate lnschema_bionty tables to bionty tables if bionty_source doesn't exist.
 
     :param db_uri: str, database URI (e.g., 'sqlite:///path/to/db.sqlite' or 'postgresql://user:password@host:port/dbname')
@@ -288,14 +290,14 @@ def migrate_lnschema_bionty(isettings: InstanceSettings):
     cur = conn.cursor()
 
     try:
-        # Check if bionty_source table exists
+        # check if bionty_source table exists
         if db_type == "sqlite":
             cur.execute(
                 "SELECT name FROM sqlite_master WHERE type='table' AND name='bionty_source'"
             )
             migrated = cur.fetchone() is not None
 
-            # Get tables to rename
+            # tables that need to be renamed
             cur.execute(
                 "SELECT name FROM sqlite_master WHERE type='table' AND name LIKE 'lnschema_bionty_%'"
             )
@@ -308,7 +310,7 @@ def migrate_lnschema_bionty(isettings: InstanceSettings):
             )
             migrated = cur.fetchone()[0]
 
-            # Get tables to rename
+            # tables that need to be renamed
             cur.execute(
                 "SELECT table_name FROM information_schema.tables WHERE table_name LIKE 'lnschema_bionty_%'"
             )
@@ -317,13 +319,10 @@ def migrate_lnschema_bionty(isettings: InstanceSettings):
             ]
 
         if migrated:
-            (settings_dir / "no_lnschema_bionty").touch(exist_ok=True)
+            no_lnschema_bionty_file.touch(exist_ok=True)
         else:
-            from ._migrate import migrate
-
             try:
-                migrate.deploy()
-                # Rename tables only if bionty_source doesn't exist and there are tables to rename
+                # rename tables only if bionty_source doesn't exist and there are tables to rename
                 for table in tables_to_rename:
                     if db_type == "sqlite":
                         cur.execute(
@@ -334,20 +333,20 @@ def migrate_lnschema_bionty(isettings: InstanceSettings):
                             f"ALTER TABLE lnschema_bionty_{table} RENAME TO bionty_{table};"
                         )
 
-                # Update django_migrations table
+                # update django_migrations table
                 cur.execute(
                     "UPDATE django_migrations SET app = 'bionty' WHERE app = 'lnschema_bionty'"
                 )
 
-                print(
+                logger.warning(
                     "Please uninstall lnschema-bionty via `pip uninstall lnschema-bionty`!"
                 )
 
-                (settings_dir / "no_lnschema_bionty").touch(exist_ok=True)
-            except SystemExit:
+                no_lnschema_bionty_file.touch(exist_ok=True)
+            except Exception:
+                # read-only users can't rename tables
                 pass
 
-        # Commit the changes
         conn.commit()
 
     except Exception as e:
@@ -355,7 +354,7 @@ def migrate_lnschema_bionty(isettings: InstanceSettings):
         conn.rollback()
 
     finally:
-        # Close the cursor and connection
+        # close the cursor and connection
         cur.close()
         conn.close()
 
