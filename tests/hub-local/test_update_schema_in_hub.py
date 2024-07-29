@@ -79,7 +79,7 @@ def test_update_schema_in_hub(setup_instance):
         "through": {
             "left_key": "gene_id",
             "right_key": "pathway_id",
-            "link_table_name": "lnschema_bionty_pathway_genes",
+            "link_table_name": "bionty_pathway_genes",
         },
         "field_name": "pathways",
         "model_name": "gene",

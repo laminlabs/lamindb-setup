@@ -4,7 +4,6 @@ import os
 from typing import TYPE_CHECKING
 from uuid import UUID
 
-from django.db import ProgrammingError
 from lamin_utils import logger
 
 from ._check_setup import _check_instance_setup
@@ -21,7 +20,7 @@ from .core._settings import settings
 from .core._settings_instance import InstanceSettings
 from .core._settings_load import load_instance_settings
 from .core._settings_storage import StorageSettings
-from .core._settings_store import instance_settings_file
+from .core._settings_store import instance_settings_file, settings_dir
 from .core.cloud_sqlite_locker import unlock_cloud_sqlite_upon_exception
 
 if TYPE_CHECKING:
@@ -257,7 +256,107 @@ def connect(
         if isettings is not None:
             isettings._get_settings_file().unlink(missing_ok=True)  # type: ignore
         raise e
+    # rename lnschema_bionty to bionty for sql tables
+    if "bionty" in isettings.schema:
+        no_lnschema_bionty_file = (
+            settings_dir / f"no_lnschema_bionty-{isettings.slug.replace('/', '')}"
+        )
+        if not no_lnschema_bionty_file.exists():
+            migrate_lnschema_bionty(isettings, no_lnschema_bionty_file)
     return None
+
+
+def migrate_lnschema_bionty(isettings: InstanceSettings, no_lnschema_bionty_file: Path):
+    """Migrate lnschema_bionty tables to bionty tables if bionty_source doesn't exist.
+
+    :param db_uri: str, database URI (e.g., 'sqlite:///path/to/db.sqlite' or 'postgresql://user:password@host:port/dbname')
+    """
+    from urllib.parse import urlparse
+
+    parsed_uri = urlparse(isettings.db)
+    db_type = parsed_uri.scheme
+
+    if db_type == "sqlite":
+        import sqlite3
+
+        conn = sqlite3.connect(parsed_uri.path)
+    elif db_type in ["postgresql", "postgres"]:
+        import psycopg2
+
+        conn = psycopg2.connect(isettings.db)
+    else:
+        raise ValueError("Unsupported database type. Use 'sqlite' or 'postgresql' URI.")
+
+    cur = conn.cursor()
+
+    try:
+        # check if bionty_source table exists
+        if db_type == "sqlite":
+            cur.execute(
+                "SELECT name FROM sqlite_master WHERE type='table' AND name='bionty_source'"
+            )
+            migrated = cur.fetchone() is not None
+
+            # tables that need to be renamed
+            cur.execute(
+                "SELECT name FROM sqlite_master WHERE type='table' AND name LIKE 'lnschema_bionty_%'"
+            )
+            tables_to_rename = [
+                row[0][len("lnschema_bionty_") :] for row in cur.fetchall()
+            ]
+        else:  # postgres
+            cur.execute(
+                "SELECT EXISTS (SELECT FROM information_schema.tables WHERE table_name = 'bionty_source')"
+            )
+            migrated = cur.fetchone()[0]
+
+            # tables that need to be renamed
+            cur.execute(
+                "SELECT table_name FROM information_schema.tables WHERE table_name LIKE 'lnschema_bionty_%'"
+            )
+            tables_to_rename = [
+                row[0][len("lnschema_bionty_") :] for row in cur.fetchall()
+            ]
+
+        if migrated:
+            no_lnschema_bionty_file.touch(exist_ok=True)
+        else:
+            try:
+                # rename tables only if bionty_source doesn't exist and there are tables to rename
+                for table in tables_to_rename:
+                    if db_type == "sqlite":
+                        cur.execute(
+                            f"ALTER TABLE lnschema_bionty_{table} RENAME TO bionty_{table}"
+                        )
+                    else:  # postgres
+                        cur.execute(
+                            f"ALTER TABLE lnschema_bionty_{table} RENAME TO bionty_{table};"
+                        )
+
+                # update django_migrations table
+                cur.execute(
+                    "UPDATE django_migrations SET app = 'bionty' WHERE app = 'lnschema_bionty'"
+                )
+
+                logger.warning(
+                    "Please uninstall lnschema-bionty via `pip uninstall lnschema-bionty`!"
+                )
+
+                no_lnschema_bionty_file.touch(exist_ok=True)
+            except Exception:
+                # read-only users can't rename tables
+                pass
+
+        conn.commit()
+
+    except Exception as e:
+        print(f"An error occurred: {e}")
+        conn.rollback()
+
+    finally:
+        # close the cursor and connection
+        cur.close()
+        conn.close()
 
 
 def load(
