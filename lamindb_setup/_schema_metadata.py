@@ -102,6 +102,7 @@ Type = Literal[
     "JSONField",
     "DateField",
     "FloatField",
+    "PositiveIntegerField",
 ]
 
 
