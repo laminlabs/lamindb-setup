@@ -26,4 +26,4 @@ def pytest_configure():
 
 def pytest_unconfigure():
     if supabase_resources.edge_function_process:
-        supabase_resources.start_local_edge_functions()
+        supabase_resources.stop_local_edge_functions()
