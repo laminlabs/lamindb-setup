@@ -772,7 +772,7 @@ def check_storage_is_empty(
     hint += " ignored"
     message = (
         f"Storage {directory_string} contains {n_objects - n_offset_objects} objects "
-        f"({hint}) - {ask_for_deletion}\n{objects}"
+        f"({hint}) - {ask_for_deletion}"
     )
     if n_diff > 0:
         if raise_error:
