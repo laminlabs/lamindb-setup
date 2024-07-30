@@ -15,6 +15,7 @@ from ._close import close as close_instance
 from ._silence_loggers import silence_loggers
 from .core import InstanceSettings
 from .core._settings import settings
+from .core._settings_instance import is_local_db_url
 from .core._settings_storage import StorageSettings, init_storage
 from .core.upath import UPath
 
@@ -245,10 +246,16 @@ def init(
         if instance_state == "connected":
             settings.auto_connect = True  # we can also debate this switch here
             return None
-        # cannot past instance_id here because instance does not yet exist!
-        # the instance_id field of the storage table is populated at the end of
-        # init_instance_hub
-        ssettings = init_storage(storage, instance_id=instance_id, init_instance=True)
+        # the conditions here match `isettings.is_remote`, but I currently don't
+        # see a way of making this more elegant; should become possible if we
+        # remove the instance.storage_id FK on the hub
+        prevent_register_hub = is_local_db_url(db) if db is not None else False
+        ssettings = init_storage(
+            storage,
+            instance_id=instance_id,
+            init_instance=True,
+            prevent_register_hub=prevent_register_hub,
+        )
         isettings = InstanceSettings(
             id=instance_id,  # type: ignore
             owner=settings.user.handle,

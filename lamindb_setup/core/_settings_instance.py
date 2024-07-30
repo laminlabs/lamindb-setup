@@ -29,6 +29,16 @@ def sanitize_git_repo_url(repo_url: str) -> str:
     return repo_url.replace(".git", "")
 
 
+def is_local_db_url(db_url: str) -> bool:
+    if "@localhost:" in db_url:
+        return True
+    if "@0.0.0.0:" in db_url:
+        return True
+    if "@127.0.0.1" in db_url:
+        return True
+    return False
+
+
 class InstanceSettings:
     """Instance settings."""
 
@@ -370,17 +380,8 @@ class InstanceSettings:
         if not self.storage.type_is_cloud:
             return False
 
-        def is_local_uri(uri: str):
-            if "@localhost:" in uri:
-                return True
-            if "@0.0.0.0:" in uri:
-                return True
-            if "@127.0.0.1" in uri:
-                return True
-            return False
-
         if self.dialect == "postgresql":
-            if is_local_uri(self.db):
+            if is_local_db_url(self.db):
                 return False
         # returns True for cloud SQLite
         # and remote postgres
