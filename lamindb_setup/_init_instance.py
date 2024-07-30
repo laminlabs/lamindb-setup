@@ -248,7 +248,7 @@ def init(
         # cannot past instance_id here because instance does not yet exist!
         # the instance_id field of the storage table is populated at the end of
         # init_instance_hub
-        ssettings = init_storage(storage)
+        ssettings = init_storage(storage, instance_id=instance_id, init_instance=True)
         isettings = InstanceSettings(
             id=instance_id,  # type: ignore
             owner=settings.user.handle,
