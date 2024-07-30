@@ -160,7 +160,9 @@ def _init_storage(
         )
         ssettings._instance_id = settings.instance._id
     instance_id_hex = (
-        None if ssettings._instance_id is None else ssettings._instance_id.hex
+        ssettings._instance_id.hex
+        if (ssettings._instance_id is not None and auto_populate_instance)
+        else None
     )
     fields = {
         "id": id.hex,
