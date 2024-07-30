@@ -117,7 +117,7 @@ def init_storage(
         instance_id=instance_id,
     )
     # the below might update the uid with one that's already taken on the hub
-    if ssettings.type_is_cloud or register_hub:
+    if ssettings.type_is_cloud and register_hub:
         from ._hub_core import delete_storage_record
         from ._hub_core import init_storage as init_storage_hub
 
