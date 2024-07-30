@@ -81,6 +81,7 @@ def init_storage(
     root: UPathStr,
     instance_id: UUID | None = None,
     register_hub: bool | None = None,
+    prevent_register_hub: bool = False,
     init_instance: bool = False,
 ) -> StorageSettings:
     if root is None:
@@ -117,11 +118,12 @@ def init_storage(
         instance_id=instance_id,
     )
     # the below might update the uid with one that's already taken on the hub
-    if ssettings.type_is_cloud or register_hub:
-        from ._hub_core import delete_storage_record
-        from ._hub_core import init_storage as init_storage_hub
+    if not prevent_register_hub:
+        if ssettings.type_is_cloud or register_hub:
+            from ._hub_core import delete_storage_record
+            from ._hub_core import init_storage as init_storage_hub
 
-        init_storage_hub(ssettings, auto_populate_instance=not init_instance)
+            init_storage_hub(ssettings, auto_populate_instance=not init_instance)
     # below comes last only if everything else was successful
     try:
         # (federated) credentials for AWS access are provisioned under-the-hood
