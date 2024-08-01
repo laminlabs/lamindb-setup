@@ -50,14 +50,18 @@ def write_bionty_sources(isettings: InstanceSettings) -> None:
         # won't need this once lamindb is released with the new pin
         kwargs["run"] = None  # can't yet access tracking information
         kwargs["in_db"] = False
-        kwargs["name"] = kwargs.pop("source")
-        kwargs["description"] = kwargs.pop("source_name")
+        for db_field, base_col in RENAME.items():
+            kwargs[db_field] = kwargs.pop(base_col)
         if kwargs["entity"] in bionty_models:
             kwargs["entity"] = f"bionty.{kwargs['entity']}"
         record = Source(**kwargs)
         all_records.append(record)
 
     Source.objects.bulk_create(all_records, ignore_conflicts=True)
+
+
+# bionty.Source -> bionty.base
+RENAME = {"name": "source", "description": "source_name"}
 
 
 def load_bionty_sources(isettings: InstanceSettings):
@@ -73,6 +77,12 @@ def load_bionty_sources(isettings: InstanceSettings):
     try:
         # need try except because of integer primary key migration
         active_records = Source.objects.filter(currently_used=True).all().values()
+        for key in active_records:
+            if key in RENAME:
+                active_records[RENAME[key]] = active_records.pop(key)
+            # TODO: non-bionty schema?
+            if key == "entity":
+                active_records["entity"] = active_records["entity"].split(".")[1]
         write_yaml(
             parse_currently_used_sources(active_records),
             bionty_base.settings.lamindb_sources,
