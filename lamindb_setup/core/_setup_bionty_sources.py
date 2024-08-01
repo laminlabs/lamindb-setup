@@ -7,6 +7,9 @@ from django.db.utils import OperationalError, ProgrammingError
 if TYPE_CHECKING:
     from ._settings_instance import InstanceSettings
 
+# bionty.Source -> bionty.base
+RENAME = {"name": "source", "description": "source_name"}
+
 
 def write_bionty_sources(isettings: InstanceSettings) -> None:
     """Write bionty sources to Source table."""
@@ -14,9 +17,13 @@ def write_bionty_sources(isettings: InstanceSettings) -> None:
         return None
     import shutil
 
+    import bionty
     import bionty.base as bionty_base
+    from bionty._bionty import list_biorecord_models
     from bionty.base.dev._handle_sources import parse_sources_yaml
     from bionty.models import Source
+
+    bionty_models = list_biorecord_models(bionty)
 
     shutil.copy(
         bionty_base.settings.current_sources, bionty_base.settings.lamindb_sources
@@ -46,7 +53,10 @@ def write_bionty_sources(isettings: InstanceSettings) -> None:
         # won't need this once lamindb is released with the new pin
         kwargs["run"] = None  # can't yet access tracking information
         kwargs["in_db"] = False
-        # kwargs["name"] = kwargs.pop("source")
+        for db_field, base_col in RENAME.items():
+            kwargs[db_field] = kwargs.pop(base_col)
+        if kwargs["entity"] in bionty_models:
+            kwargs["entity"] = f"bionty.{kwargs['entity']}"
         record = Source(**kwargs)
         all_records.append(record)
 
@@ -66,6 +76,12 @@ def load_bionty_sources(isettings: InstanceSettings):
     try:
         # need try except because of integer primary key migration
         active_records = Source.objects.filter(currently_used=True).all().values()
+        for kwargs in active_records:
+            for db_field, base_col in RENAME.items():
+                kwargs[base_col] = kwargs.pop(db_field)
+                # TODO: non-bionty schema?
+                if db_field == "entity":
+                    kwargs["entity"] = kwargs["entity"].split(".")[1]
         write_yaml(
             parse_currently_used_sources(active_records),
             bionty_base.settings.lamindb_sources,
