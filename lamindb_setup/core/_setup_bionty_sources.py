@@ -7,6 +7,9 @@ from django.db.utils import OperationalError, ProgrammingError
 if TYPE_CHECKING:
     from ._settings_instance import InstanceSettings
 
+# bionty.Source -> bionty.base
+RENAME = {"name": "source", "description": "source_name"}
+
 
 def write_bionty_sources(isettings: InstanceSettings) -> None:
     """Write bionty sources to Source table."""
@@ -58,10 +61,6 @@ def write_bionty_sources(isettings: InstanceSettings) -> None:
         all_records.append(record)
 
     Source.objects.bulk_create(all_records, ignore_conflicts=True)
-
-
-# bionty.Source -> bionty.base
-RENAME = {"name": "source", "description": "source_name"}
 
 
 def load_bionty_sources(isettings: InstanceSettings):
