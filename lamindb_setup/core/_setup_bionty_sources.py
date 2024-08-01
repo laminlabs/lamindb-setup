@@ -76,12 +76,12 @@ def load_bionty_sources(isettings: InstanceSettings):
     try:
         # need try except because of integer primary key migration
         active_records = Source.objects.filter(currently_used=True).all().values()
-        for key in active_records:
-            if key in RENAME:
-                active_records[RENAME[key]] = active_records.pop(key)
-            # TODO: non-bionty schema?
-            if key == "entity":
-                active_records["entity"] = active_records["entity"].split(".")[1]
+        for kwargs in active_records:
+            for db_field, base_col in RENAME.items():
+                kwargs[base_col] = kwargs.pop(db_field)
+                # TODO: non-bionty schema?
+                if db_field == "entity":
+                    kwargs["entity"] = kwargs["entity"].split(".")[1]
         write_yaml(
             parse_currently_used_sources(active_records),
             bionty_base.settings.lamindb_sources,
