@@ -12,11 +12,20 @@ def write_bionty_sources(isettings: InstanceSettings) -> None:
     """Write bionty sources to Source table."""
     if "bionty" not in isettings.schema:
         return None
+    import inspect
     import shutil
 
+    import bionty
     import bionty.base as bionty_base
     from bionty.base.dev._handle_sources import parse_sources_yaml
-    from bionty.models import Source
+    from bionty.models import BioRecord, Source
+
+    bionty_classes = [
+        attr
+        for attr in dir(bionty.models)
+        if inspect.isclass(getattr(bionty.models, attr))
+        and issubclass(getattr(bionty.models, attr), BioRecord)
+    ]
 
     shutil.copy(
         bionty_base.settings.current_sources, bionty_base.settings.lamindb_sources
@@ -46,7 +55,10 @@ def write_bionty_sources(isettings: InstanceSettings) -> None:
         # won't need this once lamindb is released with the new pin
         kwargs["run"] = None  # can't yet access tracking information
         kwargs["in_db"] = False
-        # kwargs["name"] = kwargs.pop("source")
+        kwargs["name"] = kwargs.pop("source")
+        kwargs["description"] = kwargs.pop("source_name")
+        if kwargs["entity"] in bionty_classes:
+            kwargs["entity"] = f"bionty.{kwargs['entity']}"
         record = Source(**kwargs)
         all_records.append(record)
 
