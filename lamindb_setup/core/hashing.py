@@ -17,6 +17,8 @@ from typing import TYPE_CHECKING, Iterable
 
 import psutil
 
+HASH_LENGTH = 22
+
 if TYPE_CHECKING:
     from .types import Path, UPathStr
 
@@ -39,8 +41,8 @@ def b16_to_b64(s: str):
 # a lot to read about this: lamin-notes/2022/hashing
 def hash_set(s: set[str]) -> str:
     bstr = ":".join(sorted(s)).encode("utf-8")
-    # as we're truncating at 20 b64, we choose md5 over sha512
-    return to_b64_str(hashlib.md5(bstr).digest())[:20]
+    # as we're truncating at 22 b64, we choose md5 over sha512
+    return to_b64_str(hashlib.md5(bstr).digest())[:HASH_LENGTH]
 
 
 def hash_md5s_from_dir(hashes: Iterable[str]) -> tuple[str, str]:
@@ -50,7 +52,7 @@ def hash_md5s_from_dir(hashes: Iterable[str]) -> tuple[str, str]:
         hashlib.md5(hash.encode("utf-8")).digest() for hash in sorted(hashes)
     )
     digest = hashlib.md5(digests).digest()
-    return to_b64_str(digest)[:22], "md5-d"
+    return to_b64_str(digest)[:HASH_LENGTH], "md5-d"
 
 
 def hash_code(file_path: UPathStr):
@@ -85,7 +87,7 @@ def hash_file(
                 hashlib.sha1(first_chunk).digest() + hashlib.sha1(last_chunk).digest()
             ).digest()
             hash_type = "sha1-fl"
-    return to_b64_str(digest)[:22], hash_type
+    return to_b64_str(digest)[:HASH_LENGTH], hash_type
 
 
 def hash_dir(path: Path):
