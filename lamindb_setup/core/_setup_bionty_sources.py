@@ -12,20 +12,15 @@ def write_bionty_sources(isettings: InstanceSettings) -> None:
     """Write bionty sources to Source table."""
     if "bionty" not in isettings.schema:
         return None
-    import inspect
     import shutil
 
     import bionty
     import bionty.base as bionty_base
+    from bionty._bionty import list_biorecord_models
     from bionty.base.dev._handle_sources import parse_sources_yaml
-    from bionty.models import BioRecord, Source
+    from bionty.models import Source
 
-    bionty_classes = [
-        attr
-        for attr in dir(bionty.models)
-        if inspect.isclass(getattr(bionty.models, attr))
-        and issubclass(getattr(bionty.models, attr), BioRecord)
-    ]
+    bionty_models = list_biorecord_models(bionty)
 
     shutil.copy(
         bionty_base.settings.current_sources, bionty_base.settings.lamindb_sources
@@ -57,7 +52,7 @@ def write_bionty_sources(isettings: InstanceSettings) -> None:
         kwargs["in_db"] = False
         kwargs["name"] = kwargs.pop("source")
         kwargs["description"] = kwargs.pop("source_name")
-        if kwargs["entity"] in bionty_classes:
+        if kwargs["entity"] in bionty_models:
             kwargs["entity"] = f"bionty.{kwargs['entity']}"
         record = Source(**kwargs)
         all_records.append(record)
