@@ -123,38 +123,38 @@ def test_update_schema_in_hub(setup_instance):
         "related_schema_name": "core",
     }
 
-    assert schema["schema_json"]["core"]["transform"]["fields"]["parents"] == {
+    assert schema["schema_json"]["core"]["transform"]["fields"]["predecessors"] == {
         "type": "ManyToManyField",
         "column_name": None,
         "through": {
             "left_key": "from_transform_id",
             "right_key": "to_transform_id",
-            "link_table_name": "lnschema_core_transform_parents",
+            "link_table_name": "lnschema_core_transform_predecessors",
         },
-        "field_name": "parents",
+        "field_name": "predecessors",
         "model_name": "transform",
         "schema_name": "core",
         "is_link_table": False,
         "relation_type": "many-to-many",
-        "related_field_name": "children",
+        "related_field_name": "successors",
         "related_model_name": "transform",
         "related_schema_name": "core",
     }
 
-    assert schema["schema_json"]["core"]["transform"]["fields"]["children"] == {
+    assert schema["schema_json"]["core"]["transform"]["fields"]["successors"] == {
         "type": "ManyToManyField",
         "column_name": None,
         "through": {
             "left_key": "to_transform_id",
             "right_key": "from_transform_id",
-            "link_table_name": "lnschema_core_transform_parents",
+            "link_table_name": "lnschema_core_transform_predecessors",
         },
-        "field_name": "children",
+        "field_name": "successors",
         "model_name": "transform",
         "schema_name": "core",
         "is_link_table": False,
         "relation_type": "many-to-many",
-        "related_field_name": "parents",
+        "related_field_name": "predecessors",
         "related_model_name": "transform",
         "related_schema_name": "core",
     }

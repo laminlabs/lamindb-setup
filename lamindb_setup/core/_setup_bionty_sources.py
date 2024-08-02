@@ -79,9 +79,8 @@ def load_bionty_sources(isettings: InstanceSettings):
         for kwargs in active_records:
             for db_field, base_col in RENAME.items():
                 kwargs[base_col] = kwargs.pop(db_field)
-                # TODO: non-bionty schema?
-                if db_field == "entity":
-                    kwargs["entity"] = kwargs["entity"].split(".")[1]
+            # TODO: non-bionty schema?
+            kwargs["entity"] = kwargs["entity"].replace("bionty.", "")
         write_yaml(
             parse_currently_used_sources(active_records),
             bionty_base.settings.lamindb_sources,
