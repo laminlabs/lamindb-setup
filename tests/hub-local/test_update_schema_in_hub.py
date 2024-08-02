@@ -55,6 +55,20 @@ def test_update_schema_in_hub(setup_instance):
         "related_schema_name": None,
     }
 
+    assert schema["schema_json"]["core"]["artifact"]["fields"]["_accessor"] == {
+        "type": "CharField",
+        "column_name": "accessor",
+        "through": None,
+        "field_name": "_accessor",
+        "model_name": "artifact",
+        "schema_name": "core",
+        "is_link_table": False,
+        "relation_type": None,
+        "related_field_name": None,
+        "related_model_name": None,
+        "related_schema_name": None,
+    }
+
     assert schema["schema_json"]["core"]["artifact"]["fields"]["created_by"] == {
         "type": "ForeignKey",
         "column_name": "created_by_id",
