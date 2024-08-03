@@ -22,6 +22,13 @@ from lamindb_setup import settings
 from lamindb_setup._init_instance import get_schema_module_name
 from lamindb_setup.core._hub_client import call_with_fallback_auth
 
+# surpress pydantic warning about `model_` namespace
+try:
+    BaseModel.model_config["protected_namespaces"] = ()
+except Exception:
+    pass
+
+
 if TYPE_CHECKING:
     from supabase import Client
 
