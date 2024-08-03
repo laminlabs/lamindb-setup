@@ -57,7 +57,7 @@ def test_update_schema_in_hub(setup_instance):
 
     assert schema["schema_json"]["core"]["artifact"]["fields"]["_accessor"] == {
         "type": "CharField",
-        "column_name": "accessor",
+        "column_name": "_accessor",
         "through": None,
         "field_name": "_accessor",
         "model_name": "artifact",
