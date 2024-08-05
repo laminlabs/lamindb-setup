@@ -356,6 +356,8 @@ class _SchemaHandler:
         return self.to_dict(include_django_objects=False)
 
     def _get_modules_metadata(self):
+        from lnschema_core.models import Record, Registry
+
         all_models = {
             module_name: {
                 model._meta.model_name: _ModelHandler(
@@ -364,8 +366,8 @@ class _SchemaHandler:
                 for model in self._get_schema_module(
                     module_name
                 ).models.__dict__.values()
-                if model.__class__.__name__ == "Registry"
-                and model.__name__ != "Record"
+                if model.__class__ is Registry
+                and model is not Record
                 and not model._meta.abstract
                 and model.__get_schema_name__() == module_name
             }
