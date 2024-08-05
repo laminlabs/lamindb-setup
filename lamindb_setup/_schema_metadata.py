@@ -356,7 +356,9 @@ class _SchemaHandler:
         return self.to_dict(include_django_objects=False)
 
     def _get_modules_metadata(self):
-        return {
+        from lnschema_core.models import Record, Registry
+
+        all_models = {
             module_name: {
                 model._meta.model_name: _ModelHandler(
                     model, module_name, self.included_modules
@@ -364,13 +366,15 @@ class _SchemaHandler:
                 for model in self._get_schema_module(
                     module_name
                 ).models.__dict__.values()
-                if model.__class__.__name__ == "RecordMeta"
-                and model.__name__ not in ["Record", "ORM"]
+                if model.__class__ is Registry
+                and model is not Record
                 and not model._meta.abstract
                 and model.__get_schema_name__() == module_name
             }
             for module_name in self.included_modules
         }
+        assert all_models
+        return all_models
 
     def _get_module_set_info(self):
         # TODO: rely on schemamodule table for this
