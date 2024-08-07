@@ -56,11 +56,7 @@ VALID_SUFFIXES = {
     ".zarr",
     ".json",
 }
-VALID_COMPOSITE_SUFFIXES = {
-    ".anndata.zarr",
-    ".spatialdata.zarr",
-    ".ome.zarr",
-}
+VALID_COMPOSITE_SUFFIXES: set[str] = set()
 
 TRAILING_SEP = (os.sep, os.altsep) if os.altsep is not None else os.sep
 
