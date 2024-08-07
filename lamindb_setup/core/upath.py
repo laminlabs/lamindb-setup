@@ -56,7 +56,8 @@ VALID_SUFFIXES = {
     ".zarr",
     ".json",
 }
-VALID_COMPOSITE_SUFFIXES: set[str] = set()
+# below gets updated within lamindb because it's frequently changing
+VALID_COMPOSITE_SUFFIXES = {".anndata.zarr"}
 
 TRAILING_SEP = (os.sep, os.altsep) if os.altsep is not None else os.sep
 

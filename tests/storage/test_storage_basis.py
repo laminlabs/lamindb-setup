@@ -19,7 +19,7 @@ def test_extract_suffix_from_path():
         ("logs/date.log.123", ""),  # digits are no valid suffixes
         ("salmon.merged.gene_counts.tsv", ".tsv"),
         ("salmon.merged.gene_counts.tsv.gz", ".tsv.gz"),
-        ("filename.v1.1.0.spatialdata.zarr", ".spatialdata.zarr"),
+        ("filename.v1.1.0.anndata.zarr", ".anndata.zarr"),
     ]
     for path, suffix in collection:
         filepath = Path(path)
