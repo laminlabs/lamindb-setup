@@ -28,7 +28,7 @@ LocalPathClasses = (PosixUPath, WindowsUPath, LocalPath)
 # also see https://gist.github.com/securifera/e7eed730cbe1ce43d0c29d7cd2d582f4
 #    ".gz" is not listed here as it typically occurs with another suffix
 # the complete list is at lamindb.core.storage._suffixes
-VALID_SUFFIXES = {
+VALID_SIMPLE_SUFFIXES = {
     #
     # without readers
     #
@@ -73,7 +73,7 @@ def extract_suffix_from_path(path: Path, arg_name: str | None = None) -> str:
         return process_digits(path.suffix)
 
     total_suffix = "".join(path.suffixes)
-    if total_suffix in VALID_SUFFIXES:
+    if total_suffix in VALID_SIMPLE_SUFFIXES:
         return total_suffix
     elif total_suffix.endswith(tuple(VALID_COMPOSITE_SUFFIXES)):
         # below seems slow but OK for now
@@ -91,7 +91,7 @@ def extract_suffix_from_path(path: Path, arg_name: str | None = None) -> str:
         # in COMPRESSION_SUFFIXES to detect something like .random.gz and then
         # add ".random.gz" but concluded it's too dangerous it's safer to just
         # use ".gz" in such a case
-        if path.suffixes[-2] in VALID_SUFFIXES:
+        if path.suffixes[-2] in VALID_SIMPLE_SUFFIXES:
             suffix = "".join(path.suffixes[-2:])
             msg += f"inferring: '{suffix}'"
             # do not print a warning for things like .tar.gz, .fastq.gz
@@ -102,7 +102,7 @@ def extract_suffix_from_path(path: Path, arg_name: str | None = None) -> str:
             msg += (
                 f"using only last suffix: '{suffix}' - if you want your composite"
                 " suffix to be recognized add it to"
-                " lamindb.core.storage.VALID_SUFFIXES.add()"
+                " lamindb.core.storage.VALID_SIMPLE_SUFFIXES.add()"
             )
         if print_hint:
             logger.hint(msg)
