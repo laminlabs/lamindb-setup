@@ -19,11 +19,11 @@ from ._hub_crud import (
     _delete_instance_record,
     select_account_by_handle,
     select_db_user_by_instance,
+    select_default_storage_by_instance_id,
     select_default_storage_by_owner_instance_name,
     select_instance_by_id_with_storage,
     select_instance_by_name,
     select_instance_by_owner_name,
-    select_storage,
 )
 from ._hub_crud import update_instance as _update_instance_record
 from ._hub_utils import (
@@ -341,7 +341,7 @@ def _connect_instance(
         if instance is None:
             return "instance-not-found"
         # get default storage
-        storage = select_storage(instance["storage_id"], client)
+        storage = select_default_storage_by_instance_id(instance["id"], client)
         if storage is None:
             return "storage-does-not-exist-on-hub"
     else:
