@@ -7,6 +7,28 @@ from lamin_utils import logger
 from supabase.client import Client  # noqa
 
 
+def select_default_storage_by_owner_instance_name(
+    owner: str,
+    name: str,
+    client: Client,
+) -> dict | None:
+    try:
+        data = (
+            client.table("storage")
+            .select("*, instance:instance_id!inner(*), account(*)")
+            .eq("account.handle", owner)
+            .eq("instance.name", name)
+            .eq("is_default", True)
+            .execute()
+            .data
+        )
+    except Exception:
+        return None
+    if len(data) == 0:
+        return None
+    return data[0]
+
+
 def select_instance_by_owner_name(
     owner: str,
     name: str,

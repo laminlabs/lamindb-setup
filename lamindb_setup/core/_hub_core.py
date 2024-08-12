@@ -19,6 +19,7 @@ from ._hub_crud import (
     _delete_instance_record,
     select_account_by_handle,
     select_db_user_by_instance,
+    select_default_storage_by_owner_instance_name,
     select_instance_by_id_with_storage,
     select_instance_by_name,
     select_instance_by_owner_name,
@@ -328,8 +329,10 @@ def _connect_instance(
     name: str,  # instance_name
     client: Client,
 ) -> tuple[dict, dict] | str:
-    instance_account_storage = select_instance_by_owner_name(owner, name, client)
-    if instance_account_storage is None:
+    storage_instance_account = select_default_storage_by_owner_instance_name(
+        owner, name, client
+    )
+    if storage_instance_account is None:
         # try the via single requests, will take more time
         account = select_account_by_handle(owner, client)
         if account is None:
@@ -342,9 +345,9 @@ def _connect_instance(
         if storage is None:
             return "storage-does-not-exist-on-hub"
     else:
-        account = instance_account_storage.pop("account")
-        storage = instance_account_storage.pop("storage")
-        instance = instance_account_storage
+        instance = storage_instance_account.pop("instance")
+        account = storage_instance_account.pop("account")
+        storage = storage_instance_account
     # check if is postgres instance
     # this used to be a check for `instance["db"] is not None` in earlier versions
     # removed this on 2022-10-25 and can remove from the hub probably for lamindb 1.0
