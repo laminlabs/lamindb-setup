@@ -15,7 +15,7 @@ def select_default_storage_by_owner_instance_name(
     try:
         data = (
             client.table("storage")
-            .select("*, instance:instance_id!inner(*), account(*)")
+            .select("*, instance:instance_id!inner(*), account!inner(*)")
             .eq("account.handle", owner)
             .eq("instance.name", name)
             .eq("is_default", True)
