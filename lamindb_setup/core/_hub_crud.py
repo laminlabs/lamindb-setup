@@ -136,13 +136,6 @@ def select_collaborator(
 # --------------- STORAGE ----------------------
 
 
-def select_storage(id: str, client: Client):
-    data = client.table("storage").select("*").eq("id", id).execute().data
-    if len(data) == 0:
-        return None
-    return data[0]
-
-
 def select_default_storage_by_instance_id(
     instance_id: str, client: Client
 ) -> dict | None:
