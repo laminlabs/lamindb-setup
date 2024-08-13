@@ -13,7 +13,7 @@ from lamindb_setup.core.upath import (
 def test_get_stat_file_cloud_aws():
     string_path = "s3://bionty-assets/df_all__ncbitaxon__2023-06-20__Organism.parquet"
     path = UPath(string_path, anon=True)
-    size, hash, hash_type = get_stat_dir_cloud(path.stat())
+    size, hash, hash_type = get_stat_file_cloud(path.stat().as_info())
     assert hash == "zQxieeCkNGNJWhPl3OfM8A"
     assert hash_type == "md5-5"
     assert size == 78148228
