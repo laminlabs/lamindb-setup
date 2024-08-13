@@ -18,7 +18,7 @@ from upath.implementations.cloud import CloudPath, S3Path  # keep CloudPath!
 from upath.implementations.local import LocalPath, PosixUPath, WindowsUPath
 
 from ._aws_credentials import HOSTED_BUCKETS, get_aws_credentials_manager
-from .hashing import b16_to_b64, hash_md5s_from_dir
+from .hashing import HASH_LENGTH, b16_to_b64, hash_md5s_from_dir
 
 if TYPE_CHECKING:
     from .types import UPathStr
@@ -709,7 +709,7 @@ def get_stat_file_cloud(stat: dict) -> tuple[int, str, str]:
         suffix = suffix.strip('"')
         hash = b16_to_b64(stripped_etag)
         hash_type = f"md5-{suffix}"  # this is the S3 chunk-hashing strategy
-    return size, hash, hash_type
+    return size, hash[:HASH_LENGTH], hash_type
 
 
 def get_stat_dir_cloud(path: UPath) -> tuple[int, str, str, int]:
