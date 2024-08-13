@@ -707,8 +707,8 @@ def get_stat_file_cloud(stat: dict) -> tuple[int, str, str]:
     else:
         stripped_etag, suffix = etag.split("-")
         suffix = suffix.strip('"')
-        hash = f"{b16_to_b64(stripped_etag)}-{suffix}"
-        hash_type = "md5-n"  # this is the S3 chunk-hashing strategy
+        hash = b16_to_b64(stripped_etag)
+        hash_type = f"md5-{suffix}"  # this is the S3 chunk-hashing strategy
     return size, hash, hash_type
 
 
