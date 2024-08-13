@@ -7,47 +7,6 @@ from lamin_utils import logger
 from supabase.client import Client  # noqa
 
 
-def select_default_storage_by_owner_instance_name(
-    owner: str,
-    name: str,
-    client: Client,
-) -> dict | None:
-    try:
-        data = (
-            client.table("storage")
-            .select("*, instance:instance_id!inner(*), account!inner(*)")
-            .eq("account.handle", owner)
-            .eq("instance.name", name)
-            .eq("is_default", True)
-            .execute()
-            .data
-        )
-    except Exception:
-        return None
-    if len(data) == 0:
-        return None
-    return data[0]
-
-
-def select_default_storage_by_instance_id(
-    instance_id: str, client: Client
-) -> dict | None:
-    try:
-        data = (
-            client.table("storage")
-            .select("*")
-            .eq("instance_id", instance_id)
-            .eq("is_default", True)
-            .execute()
-            .data
-        )
-    except Exception:
-        return None
-    if len(data) == 0:
-        return None
-    return data[0]
-
-
 def select_instance_by_owner_name(
     owner: str,
     name: str,
@@ -58,10 +17,11 @@ def select_instance_by_owner_name(
             client.table("instance")
             .select(
                 "*, account!inner!instance_account_id_28936e8f_fk_account_id(*),"
-                " storage!instance_storage_id_87963cc8_fk_storage_id(*)"
+                " storage!inner!storage_instance_id_359fca71_fk_instance_id(*)"
             )
-            .eq("account.handle", owner)
             .eq("name", name)
+            .eq("account.handle", owner)
+            .eq("storage.is_default", True)
             .execute()
             .data
         )
@@ -174,6 +134,25 @@ def select_collaborator(
 
 def select_storage(id: str, client: Client):
     data = client.table("storage").select("*").eq("id", id).execute().data
+    if len(data) == 0:
+        return None
+    return data[0]
+
+
+def select_default_storage_by_instance_id(
+    instance_id: str, client: Client
+) -> dict | None:
+    try:
+        data = (
+            client.table("storage")
+            .select("*")
+            .eq("instance_id", instance_id)
+            .eq("is_default", True)
+            .execute()
+            .data
+        )
+    except Exception:
+        return None
     if len(data) == 0:
         return None
     return data[0]

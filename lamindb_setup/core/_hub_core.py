@@ -20,7 +20,6 @@ from ._hub_crud import (
     select_account_by_handle,
     select_db_user_by_instance,
     select_default_storage_by_instance_id,
-    select_default_storage_by_owner_instance_name,
     select_instance_by_id_with_storage,
     select_instance_by_name,
     select_instance_by_owner_name,
@@ -329,10 +328,8 @@ def _connect_instance(
     name: str,  # instance_name
     client: Client,
 ) -> tuple[dict, dict] | str:
-    storage_instance_account = select_default_storage_by_owner_instance_name(
-        owner, name, client
-    )
-    if storage_instance_account is None:
+    instance_account_storage = select_instance_by_owner_name(owner, name, client)
+    if instance_account_storage is None:
         # try the via single requests, will take more time
         account = select_account_by_handle(owner, client)
         if account is None:
@@ -345,9 +342,9 @@ def _connect_instance(
         if storage is None:
             return "storage-does-not-exist-on-hub"
     else:
-        instance = storage_instance_account.pop("instance")
-        account = storage_instance_account.pop("account")
-        storage = storage_instance_account
+        account = instance_account_storage.pop("account")
+        storage = instance_account_storage.pop("storage")
+        instance = instance_account_storage
     # check if is postgres instance
     # this used to be a check for `instance["db"] is not None` in earlier versions
     # removed this on 2022-10-25 and can remove from the hub probably for lamindb 1.0
@@ -367,7 +364,7 @@ def _connect_instance(
             database=instance["db_database"],
         )
         instance["db"] = db_dsn
-    return instance, storage
+    return instance, storage  # type: ignore
 
 
 def access_aws(storage_root: str, access_token: str | None = None) -> dict[str, dict]:
