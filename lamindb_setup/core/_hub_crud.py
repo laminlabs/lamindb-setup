@@ -29,7 +29,11 @@ def select_instance_by_owner_name(
         return None
     if len(data) == 0:
         return None
-    return data[0]
+    result = data[0]
+    # this is now a list
+    # assume only one default storage
+    result["storage"] = result["storage"][0]
+    return result
 
 
 # --------------- ACCOUNT ----------------------

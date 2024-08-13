@@ -343,9 +343,7 @@ def _connect_instance(
             return "storage-does-not-exist-on-hub"
     else:
         account = instance_account_storage.pop("account")
-        # this is now a list
-        # assume only one default storage
-        storage = instance_account_storage.pop("storage")[0]
+        storage = instance_account_storage.pop("storage")
         instance = instance_account_storage
     # check if is postgres instance
     # this used to be a check for `instance["db"] is not None` in earlier versions
