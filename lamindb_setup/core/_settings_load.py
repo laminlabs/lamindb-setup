@@ -36,14 +36,9 @@ def load_instance_settings(instance_settings_file: Path | None = None):
             content = f.read()
         raise SettingsEnvFileOutdated(
             f"\n\n{error}\n\nYour instance settings file with\n\n{content}\nis invalid"
-            f" (likely outdated), please delete {instance_settings_file} &"
-            " re-initialize (local) or re-connect to the instance (remote)"
+            f" (likely outdated), see validation error. Please delete {instance_settings_file} &"
+            " reload (remote) or re-initialize (local) the instance with the same name & storage location."
         ) from error
-    if settings_store.id == "null":
-        raise ValueError(
-            "Your instance._id is undefined, please either load your instance from the"
-            f" hub or update {instance_settings_file} with a new id: {uuid4().hex}"
-        )
     isettings = setup_instance_from_store(settings_store)
     return isettings
 
