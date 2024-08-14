@@ -4,7 +4,7 @@ import json
 import os
 import uuid
 from importlib import metadata
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Literal
 from uuid import UUID
 
 from lamin_utils import logger
@@ -119,7 +119,7 @@ def _select_storage(
 def init_storage(
     ssettings: StorageSettings,
     auto_populate_instance: bool = True,
-) -> None:
+) -> Literal["hub_record_retrieved", "hub_record_created"]:
     if settings.user.handle != "anonymous":
         return call_with_fallback_auth(
             _init_storage,
@@ -131,21 +131,21 @@ def init_storage(
             _select_storage, ssettings=ssettings, update_uid=True
         )
         if storage_exists:
-            return None
+            return "hub_record_retrieved"
         else:
             raise ValueError("Log in to create a storage location on the hub.")
 
 
 def _init_storage(
     ssettings: StorageSettings, auto_populate_instance: bool, client: Client
-) -> None:
+) -> Literal["hub_record_retrieved", "hub_record_created"]:
     from lamindb_setup import settings
 
     # storage roots are always stored without the trailing slash in the SQL
     # database
     root = ssettings.root_as_str
     if _select_storage(ssettings, update_uid=True, client=client):
-        return None
+        return "hub_record_retrieved"
     if ssettings.type_is_cloud:
         id = uuid.uuid5(uuid.NAMESPACE_URL, root)
     else:
@@ -181,7 +181,7 @@ def _init_storage(
     # on root & description
     client.table("storage").upsert(fields).execute()
     ssettings._uuid_ = id
-    return None
+    return "hub_record_created"
 
 
 def delete_instance(identifier: UUID | str, require_empty: bool = True) -> str | None:

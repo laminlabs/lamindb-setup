@@ -117,13 +117,19 @@ def init_storage(
         region=region,
         instance_id=instance_id,
     )
+    # this stores the result of init_storage_hub
+    hub_record_status: Literal["hub_record_retrieved", "hub_record_created"] | None = (
+        None
+    )
     # the below might update the uid with one that's already taken on the hub
     if not prevent_register_hub:
         if ssettings.type_is_cloud or register_hub:
             from ._hub_core import delete_storage_record
             from ._hub_core import init_storage as init_storage_hub
 
-            init_storage_hub(ssettings, auto_populate_instance=not init_instance)
+            hub_record_status = init_storage_hub(
+                ssettings, auto_populate_instance=not init_instance
+            )
     # below comes last only if everything else was successful
     try:
         # (federated) credentials for AWS access are provisioned under-the-hood
@@ -133,7 +139,11 @@ def init_storage(
         logger.important(
             f"due to lack of write access, LaminDB won't manage storage location: {ssettings.root}"
         )
-        if ssettings._uuid is not None:
+        # we have to check hub_record_status here because
+        # _select_storage inside init_storage_hub also populates ssettings._uuid
+        # and we don't want to delete an existing storage record here
+        # only newly created
+        if hub_record_status == "hub_record_created" and ssettings._uuid is not None:
             delete_storage_record(ssettings._uuid)  # type: ignore
         ssettings._instance_id = None
     return ssettings
