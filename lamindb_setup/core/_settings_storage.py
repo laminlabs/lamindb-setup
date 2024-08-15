@@ -83,7 +83,10 @@ def init_storage(
     register_hub: bool | None = None,
     prevent_register_hub: bool = False,
     init_instance: bool = False,
-) -> StorageSettings:
+) -> tuple[
+    StorageSettings,
+    Literal["hub_record_not_created", "hub_record_retrieved", "hub_record_created"],
+]:
     if root is None:
         raise ValueError("`storage` argument can't be `None`")
     root_str = str(root)  # ensure we have a string
@@ -118,9 +121,9 @@ def init_storage(
         instance_id=instance_id,
     )
     # this stores the result of init_storage_hub
-    hub_record_status: Literal["hub_record_retrieved", "hub_record_created"] | None = (
-        None
-    )
+    hub_record_status: Literal[
+        "hub_record_not_created", "hub_record_retrieved", "hub_record_created"
+    ] = "hub_record_not_created"
     # the below might update the uid with one that's already taken on the hub
     if not prevent_register_hub:
         if ssettings.type_is_cloud or register_hub:
@@ -146,7 +149,7 @@ def init_storage(
         if hub_record_status == "hub_record_created" and ssettings._uuid is not None:
             delete_storage_record(ssettings._uuid)  # type: ignore
         ssettings._instance_id = None
-    return ssettings
+    return ssettings, hub_record_status
 
 
 def _process_cache_path(cache_path: str | Path | UPath | None):

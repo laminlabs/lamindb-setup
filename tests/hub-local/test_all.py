@@ -121,7 +121,7 @@ def create_myinstance(create_testadmin1_session):  # -> Dict
         # cannot yet pass instance_id here as it does not yet exist
         storage=init_storage_base(
             "s3://lamindb-ci/myinstance",
-        ),
+        )[0],
         db=db_str,
     )
     init_instance(isettings)
@@ -329,6 +329,6 @@ def test_init_storage_with_non_existing_bucket(create_testadmin1_session):
         init_storage(
             ssettings=init_storage_base(
                 "s3://non_existing_storage_root", instance_id=uuid4()
-            )
+            )[0]
         )
     assert error.exconly().endswith("Not Found")
