@@ -31,8 +31,11 @@ def set_managed_storage(root: UPathStr, **fs_kwargs):
             "Can't add additional managed storage locations for instances that aren't managed through the hub."
         )
 
+    #    ssettings = init_storage(
+    #        root=root, instance_id=settings.instance._id, prevent_register_hub=True
+    #    )
     ssettings = init_storage(
-        root=root, instance_id=settings.instance._id, prevent_register_hub=True
+        root=root, instance_id=settings.instance._id, register_hub=True
     )
     if ssettings._instance_id is None:
         raise ValueError(
@@ -40,16 +43,16 @@ def set_managed_storage(root: UPathStr, **fs_kwargs):
         )
 
     # this stores the result of init_storage_hub
-    hub_record_status: Literal["hub_record_retrieved", "hub_record_created"] | None = (
-        None
-    )
-    if settings.instance.is_on_hub:
-        hub_record_status = init_storage_hub(ssettings, auto_populate_instance=True)
+    #    hub_record_status: Literal["hub_record_retrieved", "hub_record_created"] | None = (
+    #        None
+    #    )
+    #    if settings.instance.is_on_hub:
+    #        hub_record_status = init_storage_hub(ssettings, auto_populate_instance=True)
     try:
         register_storage_in_instance(ssettings)
     except Exception as e:
-        if hub_record_status == "hub_record_created":
-            delete_storage_record(ssettings._uuid)  # type: ignore
+        #        if hub_record_status == "hub_record_created":
+        delete_storage_record(ssettings._uuid)  # type: ignore
         raise e
 
     settings.instance._storage = ssettings
