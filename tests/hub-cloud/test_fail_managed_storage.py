@@ -9,4 +9,6 @@ def test_fail_managed_storage():
             shell=True,
             capture_output=True,
         )
+        print(result.stdout.decode())
+        print(result.stderr.decode())
         assert result.returncode == 0

@@ -9,7 +9,7 @@ from lamindb_setup.core._hub_client import connect_hub_with_auth
 # a user should have read-only access to laminlabs/lamin-site-assets
 ln_setup.connect("laminlabs/lamin-site-assets")
 
-test_root = Path("./testuser1_ci_storage").resolve().as_posix()
+test_root = Path("./test_script_ci_storage").resolve().as_posix()
 
 with pytest.raises(ProgrammingError) as error:
     set_managed_storage(test_root)
