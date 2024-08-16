@@ -250,7 +250,7 @@ def init(
         # see a way of making this more elegant; should become possible if we
         # remove the instance.storage_id FK on the hub
         prevent_register_hub = is_local_db_url(db) if db is not None else False
-        ssettings = init_storage(
+        ssettings, _ = init_storage(
             storage,
             instance_id=instance_id,
             init_instance=True,
