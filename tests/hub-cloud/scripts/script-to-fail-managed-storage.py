@@ -6,6 +6,7 @@ from django.db.utils import ProgrammingError
 from lamindb_setup._set_managed_storage import set_managed_storage
 from lamindb_setup.core._hub_client import connect_hub_with_auth
 
+# a user should have read-only access to laminlabs/lamin-site-assets
 ln_setup.connect("laminlabs/lamin-site-assets")
 
 test_root = Path("./testuser1_ci_storage").resolve().as_posix()
@@ -22,5 +23,3 @@ records = hub_client.table("storage").select("*").eq("root", test_root).execute(
 assert len(records) == 0
 
 hub_client.auth.sign_out()
-
-ln_setup.close()
