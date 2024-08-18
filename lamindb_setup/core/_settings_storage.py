@@ -85,7 +85,7 @@ def init_storage(
     init_instance: bool = False,
 ) -> tuple[
     StorageSettings,
-    Literal["hub_record_not_created", "hub_record_retrieved", "hub_record_created"],
+    Literal["hub-record-not-created", "hub-record-retireved", "hub-record-created"],
 ]:
     if root is None:
         raise ValueError("`storage` argument can't be `None`")
@@ -122,8 +122,8 @@ def init_storage(
     )
     # this stores the result of init_storage_hub
     hub_record_status: Literal[
-        "hub_record_not_created", "hub_record_retrieved", "hub_record_created"
-    ] = "hub_record_not_created"
+        "hub-record-not-created", "hub-record-retireved", "hub-record-created"
+    ] = "hub-record-not-created"
     # the below might update the uid with one that's already taken on the hub
     if not prevent_register_hub:
         if ssettings.type_is_cloud or register_hub:
@@ -146,7 +146,7 @@ def init_storage(
         # _select_storage inside init_storage_hub also populates ssettings._uuid
         # and we don't want to delete an existing storage record here
         # only newly created
-        if hub_record_status == "hub_record_created" and ssettings._uuid is not None:
+        if hub_record_status == "hub-record-created" and ssettings._uuid is not None:
             delete_storage_record(ssettings._uuid)  # type: ignore
         ssettings._instance_id = None
     return ssettings, hub_record_status
