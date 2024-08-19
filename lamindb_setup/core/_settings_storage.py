@@ -90,6 +90,10 @@ def init_storage(
     if root is None:
         raise ValueError("`storage` argument can't be `None`")
     root_str = str(root)  # ensure we have a string
+    if ".lamindb" in root_str:
+        raise ValueError(
+            'Please pass a folder name that does not end or contain ".lamindb"'
+        )
     uid = base62(12)
     region = None
     lamin_env = os.getenv("LAMIN_ENV")
