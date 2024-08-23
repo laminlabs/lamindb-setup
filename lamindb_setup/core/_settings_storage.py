@@ -188,7 +188,7 @@ class StorageSettings:
                 (self._root_init / ".lamindb").mkdir(parents=True, exist_ok=True)
                 self._root_init = self._root_init.resolve()
             except Exception:
-                logger.warning("unable to create .lamindb folder")
+                logger.warning(f"unable to create .lamindb folder in {self._root_init}")
                 pass
         self._root = None
         self._instance_id = instance_id
