@@ -31,7 +31,10 @@ def check_whether_migrations_in_sync(db_version_str: str):
         db_version_upper = f"{db_version.major}.{db_version.minor + 1}"
         logger.warning(
             f"your database ({db_version_str}) is ahead of your installed lamindb"
-            f" package ({installed_version_str}) \n❗ please update lamindb: pip install"
+            f" package ({installed_version_str})"
+        )
+        logger.important(
+            "please update lamindb: pip install"
             f' "lamindb>={db_version_lower},<{db_version_upper}"'
         )
     elif (
@@ -40,9 +43,9 @@ def check_whether_migrations_in_sync(db_version_str: str):
     ):
         logger.warning(
             f"your database ({db_version_str}) is behind your installed lamindb package"
-            f" ({installed_version_str}) \n❗ please migrate your database: lamin"
-            " migrate deploy"
+            f" ({installed_version_str})"
         )
+        logger.important("please migrate your database: lamin migrate deploy")
 
 
 # for tests, see lamin-cli

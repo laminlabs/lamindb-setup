@@ -161,8 +161,9 @@ class InstanceSettings:
         elif not mute_warning:
             logger.warning(
                 f"none of the registered local storage locations were found in your environment: {local_records}"
-                "\n❗ please register a new local storage location via `ln.settings.storage_local = local_root_path` "
-                "and re-load/connect the instance"
+            )
+            logger.important(
+                "please register a new local storage location via `ln.settings.storage_local = local_root_path` and re-load/connect the instance"
             )
         return None
 
