@@ -61,7 +61,7 @@ jobs:
           repository: laminlabs/laminhub
           token: ${{ secrets.GH_TOKEN_DEPLOY_LAMINAPP }}
           path: laminhub
-          ref: main
+          ref: fix_lnsetup_ci
       - uses: actions/cache@v3
         with:
           path: ~/.cache/pre-commit
@@ -129,7 +129,7 @@ jobs:
           repository: laminlabs/laminhub
           token: ${{ secrets.GH_TOKEN_DEPLOY_LAMINAPP }}
           path: laminhub
-          ref: main
+          ref: fix_lnsetup_ci
       - name: Set env file for local test of edge functions
         run: |
           touch .env.local
