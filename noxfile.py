@@ -32,7 +32,7 @@ def install(session: nox.Session, group: str) -> None:
 uv pip install --system --no-deps {no_deps_packages}
 """
     if group == "hub-cloud":
-        cmds = schema_deps + "uv pip install --system ./laminhub/rest-hub"
+        cmds = schema_deps + "uv pip install --system line_profiler ./laminhub/rest-hub"
     elif group == "docs":
         cmds = (
             """uv pip install --system git+https://github.com/laminlabs/lnschema-core"""
