@@ -98,7 +98,7 @@ def get_access_token(email: str | None = None, password: str | None = None):
         )
         return auth_response.session.access_token
     finally:
-        hub.auth.sign_out()
+        hub.auth.sign_out(options={"scope": "local"})
 
 
 def call_with_fallback_auth(
@@ -113,7 +113,7 @@ def call_with_fallback_auth(
             result = callable(**kwargs, client=client)
         finally:
             try:
-                client.auth.sign_out()
+                client.auth.sign_out(options={"scope": "local"})
             except NameError:
                 pass
         return result
@@ -137,7 +137,7 @@ def call_with_fallback_auth(
                 raise e
         finally:
             try:
-                client.auth.sign_out()
+                client.auth.sign_out(options={"scope": "local"})
             except NameError:
                 pass
     return result
@@ -156,6 +156,9 @@ def call_with_fallback(
             if fallback_env:
                 raise e
         finally:
-            # in case there was sign in
-            client.auth.sign_out()
+            try:
+                # in case there was sign in
+                client.auth.sign_out(options={"scope": "local"})
+            except NameError:
+                pass
     return result
