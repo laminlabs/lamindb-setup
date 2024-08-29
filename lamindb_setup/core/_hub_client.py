@@ -156,6 +156,9 @@ def call_with_fallback(
             if fallback_env:
                 raise e
         finally:
-            # in case there was sign in
-            client.auth.sign_out(options={"scope": "local"})
+            try:
+                # in case there was sign in
+                client.auth.sign_out(options={"scope": "local"})
+            except NameError:
+                pass
     return result
