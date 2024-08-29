@@ -32,7 +32,7 @@ aws = [
     "s3fs==2024.6.1"
 ]
 gcp = [
-    "s3fs==2024.6.1"
+    "gcsfs==2024.6.1"
 ]
 erdiagram = [
     "django-schema-graph",
