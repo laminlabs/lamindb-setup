@@ -75,7 +75,9 @@ def load_bionty_sources(isettings: InstanceSettings):
 
     try:
         # need try except because of integer primary key migration
-        active_records = Source.objects.filter(currently_used=True).all().values()
+        active_records = (
+            Source.objects.filter(currently_used=True).order_by("id").all().values()
+        )
         for kwargs in active_records:
             for db_field, base_col in RENAME.items():
                 kwargs[base_col] = kwargs.pop(db_field)
