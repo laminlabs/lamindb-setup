@@ -111,6 +111,7 @@ Type = Literal[
     "FloatField",
     "PositiveIntegerField",
     "PositiveBigIntegerField",
+    "DurationField",
 ]
 
 
