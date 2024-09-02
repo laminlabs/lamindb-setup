@@ -17,6 +17,7 @@ hub-prod/test-empty-init
 hub-prod/test-import-schema
 hub-prod/test-invalid-schema
 hub-prod/test-insufficient-user-info
+hub-prod/test-init-load-local-anonymously
 hub-prod/test-connect-anonymously
 hub-prod/test-sqlite-lock
 hub-prod/test-cloud-sync
