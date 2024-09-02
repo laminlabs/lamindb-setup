@@ -18,6 +18,15 @@ from postgrest.exceptions import APIError
 #     ln_setup.delete("load_remote_instance", force=True)
 
 
+# do not call hub if the owner is set to anonymous
+def test_connect_anonymous_owned_instance_from_hub():
+    with pytest.raises(InstanceNotFoundError) as error:
+        ln_setup.connect("anonymous/random-instance-not-exists")
+    assert error.exconly().endswith(
+        "It is not possible to load an anonymous-owned instance from the hub"
+    )
+
+
 def test_connect_after_revoked_access():
     # can't currently test this on staging as I'm missing the accounts
     if os.getenv("LAMIN_ENV") == "prod":
