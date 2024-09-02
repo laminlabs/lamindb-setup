@@ -124,7 +124,11 @@ def _connect_instance(
     if make_hub_request:
         # the following will return a string if the instance does not exist
         # on the hub
-        hub_result = load_instance_from_hub(owner=owner, name=name)
+        # do not call hub if the user is anonymous
+        if owner != "anonymous":
+            hub_result = load_instance_from_hub(owner=owner, name=name)
+        else:
+            hub_result = "anonymous-user"
         # if hub_result is not a string, it means it made a request
         # that successfully returned metadata
         if not isinstance(hub_result, str):
@@ -155,9 +159,12 @@ def _connect_instance(
             )
             check_whether_migrations_in_sync(instance_result["lamindb_version"])
         else:
-            message = INSTANCE_NOT_FOUND_MESSAGE.format(
-                owner=owner, name=name, hub_result=hub_result
-            )
+            if hub_result != "anonymous-user":
+                message = INSTANCE_NOT_FOUND_MESSAGE.format(
+                    owner=owner, name=name, hub_result=hub_result
+                )
+            else:
+                message = "It is not possible to load an anonymous-owned instance from the hub"
             if settings_file.exists():
                 isettings = load_instance_settings(settings_file)
                 if isettings.is_remote:
