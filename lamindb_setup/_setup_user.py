@@ -47,14 +47,12 @@ def login(
     user: str,
     *,
     key: str | None = None,
-    password: str | None = None,  # for backward compat
 ) -> None:
     """Log in user.
 
     Args:
         user: handle or email
-        key: API key or legacy passward
-        password: Backward compat, will be removed
+        key: API key
     """
     if "@" in user:
         email, handle = user, None
@@ -63,13 +61,6 @@ def login(
     load_user(email, handle)
 
     user_settings = load_or_create_user_settings()
-
-    if password is not None:
-        logger.warning(
-            "please use --key instead of --password, "
-            "passwords are deprecated and replaced with API keys"
-        )
-        key = password
 
     if key is not None:
         # within UserSettings, we still call it "password" for a while
