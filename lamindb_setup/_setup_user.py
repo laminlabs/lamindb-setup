@@ -28,8 +28,8 @@ def load_user(email: str | None = None, handle: str | None = None) -> str | None
     else:
         user_settings = load_or_create_user_settings()
         if email is None:
-            raise RuntimeError(
-                "Use your email for your first login in a compute environment. "
+            raise SystemExit(
+                "✗ Use your email for your first login in a compute environment. "
                 "After that, you can use your handle."
             )
         user_settings.email = email
@@ -76,11 +76,11 @@ def login(
         user_settings.password = key
 
     if user_settings.email is None:
-        raise RuntimeError("No stored user email, please call: lamin login {user}")
+        raise SystemExit("✗ No stored user email, please call: lamin login {user}")
 
     if user_settings.password is None:
-        raise RuntimeError(
-            "No stored API key, please call: lamin login <your-email> --key <API-key>"
+        raise SystemExit(
+            "✗ No stored API key, please call: lamin login <your-email> --key <API-key>"
         )
 
     from .core._hub_core import sign_in_hub
