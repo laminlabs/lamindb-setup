@@ -458,7 +458,7 @@ def _sign_in_hub(email: str, password: str, handle: str | None, client: Client):
 
 def sign_in_hub(
     email: str, password: str, handle: str | None = None
-) -> Exception | tuple[UUID, str, str, str, str]:
+) -> Exception | str | tuple[UUID, str, str, str, str]:
     try:
         result = call_with_fallback(
             _sign_in_hub, email=email, password=password, handle=handle
@@ -469,5 +469,39 @@ def sign_in_hub(
             "Could not login. Probably your password is wrong or you didn't complete"
             " signup."
         )
+        return exception
+    return result
+
+
+def _sign_in_hub_api_token(api_token: str, client: Client):
+    response = client.functions.invoke(
+        "create-jwt",
+        invoke_options={"body": {"api_key": api_token}},
+    )
+    access_token = json.loads(response)["accessToken"]
+    # probably need more info here to avoid additional queries
+    # like handle, uid etc
+    user_id = client.auth._decode_jwt(access_token)["sub"]
+    client.postgrest.auth(access_token)
+    data = client.table("account").select("*").eq("user_id", user_id).execute().data
+    if data:
+        user_uuid = UUID(data[0]["id"])
+        user_id = data[0]["lnid"]
+        user_handle = data[0]["handle"]
+        user_name = data[0]["name"]
+    else:
+        logger.error("Invalid API token.")
+        return "invalid-api-token"
+    return (user_uuid, user_id, user_handle, user_name, access_token)
+
+
+def sign_in_hub_api_token(
+    api_token: str,
+) -> Exception | str | tuple[UUID, str, str, str, str]:
+    try:
+        result = call_with_fallback(_sign_in_hub_api_token, api_token=api_token)
+    except Exception as exception:
+        logger.error(exception)
+        logger.error("Could not login. Probably your API token is wrong.")
         return exception
     return result

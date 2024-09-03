@@ -65,6 +65,7 @@ class UserSettingsStore(BaseSettings):
     email: str
     password: str
     access_token: str
+    api_token: str
     uid: str
     uuid: str
     handle: str

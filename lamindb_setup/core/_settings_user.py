@@ -21,8 +21,10 @@ class UserSettings:
 
     handle: str = "anonymous"
     """Unique handle."""
-    email: str = None  # type: ignore
+    email: str | None = None
     """User email."""
+    api_token: str | None = None
+    """API token."""
     password: str | None = None
     """API key or legacy password."""
     access_token: str | None = None

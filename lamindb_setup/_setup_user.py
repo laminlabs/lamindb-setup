@@ -44,46 +44,61 @@ def load_user(email: str | None = None, handle: str | None = None) -> str | None
 
 
 def login(
-    user: str,
-    *,
-    key: str | None = None,
+    user: str | None, *, key: str | None = None, api_token: str | None = None
 ) -> None:
     """Log in user.
 
     Args:
         user: handle or email
         key: API key
+        api_token: API token
     """
-    if "@" in user:
-        email, handle = user, None
-    else:
-        email, handle = None, user
-    load_user(email, handle)
+    if user is None and api_token is None:
+        raise ValueError("Both `user` and `api_token` should not be `None`.")
 
     user_settings = load_or_create_user_settings()
 
-    if key is not None:
-        # within UserSettings, we still call it "password" for a while
-        user_settings.password = key
+    if api_token is None:
+        if "@" in user:  # type: ignore
+            email, handle = user, None
+        else:
+            email, handle = None, user
+        load_user(email, handle)
 
-    if user_settings.email is None:
-        raise SystemExit("✗ No stored user email, please call: lamin login {user}")
+        if key is not None:
+            # within UserSettings, we still call it "password" for a while
+            user_settings.password = key
 
-    if user_settings.password is None:
-        raise SystemExit(
-            "✗ No stored API key, please call: lamin login <your-email> --key <API-key>"
+        if user_settings.email is None:
+            raise SystemExit(f"✗ No stored user email, please call: lamin login {user}")
+
+        if user_settings.password is None:
+            raise SystemExit(
+                "✗ No stored API key, please call: lamin login <your-email> --key <API-key>"
+            )
+
+    from .core._hub_core import sign_in_hub, sign_in_hub_api_token
+
+    if api_token is None:
+        response = sign_in_hub(
+            user_settings.email,  # type: ignore
+            user_settings.password,  # type: ignore
+            user_settings.handle,
         )
+    else:
+        response = sign_in_hub_api_token(api_token)
 
-    from .core._hub_core import sign_in_hub
-
-    response = sign_in_hub(
-        user_settings.email, user_settings.password, user_settings.handle
-    )
     if isinstance(response, Exception):
         raise response
+    elif isinstance(response, str):
+        raise SystemExit(f"✗ Unsuccessful login: {response}.")
     else:
         user_uuid, user_id, user_handle, user_name, access_token = response
-    if handle is None:
+    if api_token is not None:
+        logger.success(
+            f"logged in with API Token (handle: {user_handle}, uid: {user_id})"
+        )
+    elif handle is None:
         logger.success(f"logged in with handle {user_handle} (uid: {user_id})")
     else:
         logger.success(f"logged in with email {user_settings.email} (uid: {user_id})")
@@ -92,6 +107,7 @@ def login(
     user_settings.name = user_name
     user_settings._uuid = user_uuid
     user_settings.access_token = access_token
+    user_settings.api_token = api_token
     save_user_settings(user_settings)
 
     if settings._instance_exists and _check_instance_setup():
