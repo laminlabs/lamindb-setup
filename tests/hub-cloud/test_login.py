@@ -4,7 +4,9 @@ import json
 from datetime import datetime, timedelta, timezone
 
 import lamindb_setup as ln_setup
+import pytest
 from lamindb_setup.core._hub_client import connect_hub_with_auth
+from supafunc.errors import FunctionsHttpError
 
 
 def test_login():
@@ -42,11 +44,19 @@ def test_login_api_key():
     ln_setup.logout()
     assert ln_setup.settings.user.handle == "anonymous"
 
+    with pytest.raises(FunctionsHttpError):
+        ln_setup.login(user=None, api_key="invalid-key")
+
+    with pytest.raises(ValueError):
+        ln_setup.login(user=None, api_key=None)
+
     ln_setup.login(user=None, api_key=api_key)
     assert ln_setup.settings.user.handle == "testuser1"
+    assert ln_setup.settings.user.api_key is not None
 
     # clean up
-    hub = connect_hub_with_auth()  # uses jwt from api_key
+    # here checks also refreshing access token with api_key
+    hub = connect_hub_with_auth(renew_token=True)
     hub.table("api_key").delete().eq("description", "test_login_api_key").execute()
     hub.auth.sign_out({"scope": "local"})
 
