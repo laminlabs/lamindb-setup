@@ -79,7 +79,7 @@ def connect_hub_with_auth(
 
         if renew_token:
             settings.user.access_token = get_access_token(
-                settings.user.email, settings.user.password, settings.user.api_token
+                settings.user.email, settings.user.password, settings.user.api_key
             )
         access_token = settings.user.access_token
     hub.postgrest.auth(access_token)
@@ -89,14 +89,14 @@ def connect_hub_with_auth(
 
 # runs ~0.5s
 def get_access_token(
-    email: str | None = None, password: str | None = None, api_token: str | None = None
+    email: str | None = None, password: str | None = None, api_key: str | None = None
 ):
     hub = connect_hub()
     try:
-        if api_token is not None:
+        if api_key is not None:
             auth_response = hub.functions.invoke(
                 "create-jwt",
-                invoke_options={"body": {"api_key": api_token}},
+                invoke_options={"body": {"api_key": api_key}},
             )
             return json.loads(auth_response)["accessToken"]
         auth_response = hub.auth.sign_in_with_password(

@@ -47,19 +47,19 @@ def load_user(email: str | None = None, handle: str | None = None) -> UserSettin
 
 
 def login(
-    user: str | None, *, key: str | None = None, api_token: str | None = None
+    user: str | None, *, key: str | None = None, api_key: str | None = None
 ) -> None:
     """Log in user.
 
     Args:
         user: handle or email
-        key: API key
-        api_token: API token
+        key: legacy key
+        api_key: API key
     """
-    if user is None and api_token is None:
-        raise ValueError("Both `user` and `api_token` should not be `None`.")
+    if user is None and api_key is None:
+        raise ValueError("Both `user` and `api_key` should not be `None`.")
 
-    if api_token is None:
+    if api_key is None:
         if "@" in user:  # type: ignore
             email, handle = user, None
         else:
@@ -80,16 +80,16 @@ def login(
     else:
         user_settings = load_or_create_user_settings()
 
-    from .core._hub_core import sign_in_hub, sign_in_hub_api_token
+    from .core._hub_core import sign_in_hub, sign_in_hub_api_key
 
-    if api_token is None:
+    if api_key is None:
         response = sign_in_hub(
             user_settings.email,  # type: ignore
             user_settings.password,  # type: ignore
             user_settings.handle,
         )
     else:
-        response = sign_in_hub_api_token(api_token)
+        response = sign_in_hub_api_key(api_key)
 
     if isinstance(response, Exception):
         raise response
@@ -97,9 +97,9 @@ def login(
         raise SystemExit(f"✗ Unsuccessful login: {response}.")
     else:
         user_uuid, user_id, user_handle, user_name, access_token = response
-    if api_token is not None:
+    if api_key is not None:
         logger.success(
-            f"logged in with API Token (handle: {user_handle}, uid: {user_id})"
+            f"logged in with API key (handle: {user_handle}, uid: {user_id})"
         )
     elif handle is None:
         logger.success(f"logged in with handle {user_handle} (uid: {user_id})")
@@ -110,7 +110,7 @@ def login(
     user_settings.name = user_name
     user_settings._uuid = user_uuid
     user_settings.access_token = access_token
-    user_settings.api_token = api_token
+    user_settings.api_key = api_key
     save_user_settings(user_settings)
 
     if settings._instance_exists and _check_instance_setup():

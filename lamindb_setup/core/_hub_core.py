@@ -473,10 +473,10 @@ def sign_in_hub(
     return result
 
 
-def _sign_in_hub_api_token(api_token: str, client: Client):
+def _sign_in_hub_api_key(api_key: str, client: Client):
     response = client.functions.invoke(
         "create-jwt",
-        invoke_options={"body": {"api_key": api_token}},
+        invoke_options={"body": {"api_key": api_key}},
     )
     access_token = json.loads(response)["accessToken"]
     # probably need more info here to avoid additional queries
@@ -490,18 +490,18 @@ def _sign_in_hub_api_token(api_token: str, client: Client):
         user_handle = data[0]["handle"]
         user_name = data[0]["name"]
     else:
-        logger.error("Invalid API token.")
-        return "invalid-api-token"
+        logger.error("Invalid API key.")
+        return "invalid-api-key"
     return (user_uuid, user_id, user_handle, user_name, access_token)
 
 
-def sign_in_hub_api_token(
-    api_token: str,
+def sign_in_hub_api_key(
+    api_key: str,
 ) -> Exception | str | tuple[UUID, str, str, str, str]:
     try:
-        result = call_with_fallback(_sign_in_hub_api_token, api_token=api_token)
+        result = call_with_fallback(_sign_in_hub_api_key, api_key=api_key)
     except Exception as exception:
         logger.error(exception)
-        logger.error("Could not login. Probably your API token is wrong.")
+        logger.error("Could not login. Probably your API key is wrong.")
         return exception
     return result

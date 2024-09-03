@@ -23,8 +23,8 @@ class UserSettings:
     """Unique handle."""
     email: str | None = None
     """User email."""
-    api_token: str | None = None
-    """API token."""
+    api_key: str | None = None
+    """API key."""
     password: str | None = None
     """API key or legacy password."""
     access_token: str | None = None
