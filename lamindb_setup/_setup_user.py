@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import Optional, Union
+from typing import TYPE_CHECKING, Optional, Union
 
 from lamin_utils import logger
 
@@ -15,8 +15,11 @@ from .core._settings_store import (
     user_settings_file_handle,
 )
 
+if TYPE_CHECKING:
+    from lamindb_setup.core._settings_save import UserSettings
 
-def load_user(email: str | None = None, handle: str | None = None) -> str | None:
+
+def load_user(email: str | None = None, handle: str | None = None) -> UserSettings:
     if email is not None:
         settings_file = user_settings_file_email(email)
     if handle is not None:
@@ -40,7 +43,7 @@ def load_user(email: str | None = None, handle: str | None = None) -> str | None
 
     settings._user_settings = None  # this is to refresh a settings instance
 
-    return None
+    return user_settings
 
 
 def login(
@@ -56,14 +59,12 @@ def login(
     if user is None and api_token is None:
         raise ValueError("Both `user` and `api_token` should not be `None`.")
 
-    user_settings = load_or_create_user_settings()
-
     if api_token is None:
         if "@" in user:  # type: ignore
             email, handle = user, None
         else:
             email, handle = None, user
-        load_user(email, handle)
+        user_settings = load_user(email, handle)
 
         if key is not None:
             # within UserSettings, we still call it "password" for a while
@@ -76,6 +77,8 @@ def login(
             raise SystemExit(
                 "✗ No stored API key, please call: lamin login <your-email> --key <API-key>"
             )
+    else:
+        user_settings = load_or_create_user_settings()
 
     from .core._hub_core import sign_in_hub, sign_in_hub_api_token
 
