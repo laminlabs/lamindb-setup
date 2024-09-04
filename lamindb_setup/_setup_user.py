@@ -53,8 +53,8 @@ def login(
 
     Args:
         user: handle or email
-        key: legacy key
-        api_key: API key
+        key: permanent API key
+        api_key: new API key
     """
     if user is None and api_key is None:
         raise ValueError("Both `user` and `api_key` should not be `None`.")
