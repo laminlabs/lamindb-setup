@@ -50,7 +50,7 @@ def test_login_api_key():
     with pytest.raises(ValueError):
         ln_setup.login(user=None, api_key=None)
 
-    ln_setup.login(user=None, api_key=api_key)
+    ln_setup.login(api_key=api_key)
     assert ln_setup.settings.user.handle == "testuser1"
     assert ln_setup.settings.user.api_key is not None
 

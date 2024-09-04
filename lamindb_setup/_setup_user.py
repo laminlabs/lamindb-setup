@@ -47,7 +47,7 @@ def load_user(email: str | None = None, handle: str | None = None) -> UserSettin
 
 
 def login(
-    user: str | None, *, key: str | None = None, api_key: str | None = None
+    user: str | None = None, *, key: str | None = None, api_key: str | None = None
 ) -> None:
     """Log in user.
 
