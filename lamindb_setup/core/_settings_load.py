@@ -78,7 +78,7 @@ def _null_to_value(field, value=None):
 def setup_instance_from_store(store: InstanceSettingsStore) -> InstanceSettings:
     ssettings = StorageSettings(
         root=store.storage_root,
-        region=store.storage_region if store.storage_region != "null" else None,
+        region=_null_to_value(store.storage_region),
     )
     return InstanceSettings(
         id=UUID(store.id),
