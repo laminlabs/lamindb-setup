@@ -436,10 +436,11 @@ def _sign_in_hub(email: str, password: str, handle: str | None, client: Client):
     )
     data = client.table("account").select("*").eq("id", auth.user.id).execute().data
     if data:  # sync data from hub to local cache in case it was updated on the hub
-        user_uuid = UUID(data[0]["id"])
-        user_id = data[0]["lnid"]
-        user_handle = data[0]["handle"]
-        user_name = data[0]["name"]
+        user = data[0]
+        user_uuid = UUID(user["id"])
+        user_id = user["lnid"]
+        user_handle = user["handle"]
+        user_name = user["name"]
         if handle is not None and handle != user_handle:
             logger.warning(
                 f"using account handle {user_handle} (cached handle was {handle})"
@@ -458,7 +459,7 @@ def _sign_in_hub(email: str, password: str, handle: str | None, client: Client):
 
 def sign_in_hub(
     email: str, password: str, handle: str | None = None
-) -> Exception | tuple[UUID, str, str, str, str]:
+) -> Exception | str | tuple[UUID, str, str, str, str]:
     try:
         result = call_with_fallback(
             _sign_in_hub, email=email, password=password, handle=handle
@@ -469,5 +470,41 @@ def sign_in_hub(
             "Could not login. Probably your password is wrong or you didn't complete"
             " signup."
         )
+        return exception
+    return result
+
+
+def _sign_in_hub_api_key(api_key: str, client: Client):
+    response = client.functions.invoke(
+        "create-jwt",
+        invoke_options={"body": {"api_key": api_key}},
+    )
+    access_token = json.loads(response)["accessToken"]
+    # probably need more info here to avoid additional queries
+    # like handle, uid etc
+    account_id = client.auth._decode_jwt(access_token)["sub"]
+    client.postgrest.auth(access_token)
+    # normally public.account.id is equal to auth.user.id
+    data = client.table("account").select("*").eq("id", account_id).execute().data
+    if data:
+        user = data[0]
+        user_uuid = UUID(user["id"])
+        user_id = user["lnid"]
+        user_handle = user["handle"]
+        user_name = user["name"]
+    else:
+        logger.error("Invalid API key.")
+        return "invalid-api-key"
+    return (user_uuid, user_id, user_handle, user_name, access_token)
+
+
+def sign_in_hub_api_key(
+    api_key: str,
+) -> Exception | str | tuple[UUID, str, str, str, str]:
+    try:
+        result = call_with_fallback(_sign_in_hub_api_key, api_key=api_key)
+    except Exception as exception:
+        logger.error(exception)
+        logger.error("Could not login. Probably your API key is wrong.")
         return exception
     return result

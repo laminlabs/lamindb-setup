@@ -71,30 +71,35 @@ def load_user_settings(user_settings_file: Path):
     return settings
 
 
+def _null_to_value(field, value=None):
+    return field if field != "null" else value
+
+
 def setup_instance_from_store(store: InstanceSettingsStore) -> InstanceSettings:
     ssettings = StorageSettings(
         root=store.storage_root,
-        region=store.storage_region if store.storage_region != "null" else None,
+        region=_null_to_value(store.storage_region),
     )
     return InstanceSettings(
         id=UUID(store.id),
         owner=store.owner,
         name=store.name,
         storage=ssettings,
-        db=store.db if store.db != "null" else None,  # type: ignore
-        schema=store.schema_str if store.schema_str != "null" else None,
-        git_repo=store.git_repo if store.git_repo != "null" else None,
+        db=_null_to_value(store.db),
+        schema=_null_to_value(store.schema_str),
+        git_repo=_null_to_value(store.git_repo),
         keep_artifacts_local=store.keep_artifacts_local,  # type: ignore
     )
 
 
 def setup_user_from_store(store: UserSettingsStore) -> UserSettings:
     settings = UserSettings()
-    settings.email = store.email
-    settings.password = store.password if store.password != "null" else None
+    settings.email = _null_to_value(store.email)
+    settings.password = _null_to_value(store.password)
     settings.access_token = store.access_token
+    settings.api_key = _null_to_value(store.api_key)
     settings.uid = store.uid
-    settings.handle = store.handle if store.handle != "null" else "anonymous"
-    settings.name = store.name if store.name != "null" else None
+    settings.handle = _null_to_value(store.handle, value="anonymous")
+    settings.name = _null_to_value(store.name)
     settings._uuid = UUID(store.uuid) if store.uuid != "null" else None
     return settings
