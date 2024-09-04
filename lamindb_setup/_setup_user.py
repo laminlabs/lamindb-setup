@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import os
 from typing import TYPE_CHECKING, Optional, Union
 
 from lamin_utils import logger
@@ -57,7 +58,10 @@ def login(
         api_key: Beta API key
     """
     if user is None and api_key is None:
-        raise ValueError("Both `user` and `api_key` should not be `None`.")
+        if "LAMIN_API_KEY" in os.environ:
+            api_key = os.environ["LAMIN_API_KEY"]
+        else:
+            raise ValueError("Both `user` and `api_key` should not be `None`.")
 
     if api_key is None:
         if "@" in user:  # type: ignore

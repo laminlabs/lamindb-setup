@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+import os
 from datetime import datetime, timedelta, timezone
 
 import lamindb_setup as ln_setup
@@ -45,14 +46,21 @@ def test_login_api_key():
     assert ln_setup.settings.user.handle == "anonymous"
 
     with pytest.raises(FunctionsHttpError):
-        ln_setup.login(user=None, api_key="invalid-key")
+        ln_setup.login(api_key="invalid-key")
 
     with pytest.raises(ValueError):
         ln_setup.login(user=None, api_key=None)
 
+    os.environ["LAMIN_API_KEY"] = api_key
+    ln_setup.login()
+    assert ln_setup.settings.user.handle == "testuser1"
+    assert ln_setup.settings.user.api_key == api_key
+
+    ln_setup.logout()
+
     ln_setup.login(api_key=api_key)
     assert ln_setup.settings.user.handle == "testuser1"
-    assert ln_setup.settings.user.api_key is not None
+    assert ln_setup.settings.user.api_key == api_key
 
     # clean up
     # here checks also refreshing access token with api_key
