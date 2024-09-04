@@ -436,10 +436,11 @@ def _sign_in_hub(email: str, password: str, handle: str | None, client: Client):
     )
     data = client.table("account").select("*").eq("id", auth.user.id).execute().data
     if data:  # sync data from hub to local cache in case it was updated on the hub
-        user_uuid = UUID(data[0]["id"])
-        user_id = data[0]["lnid"]
-        user_handle = data[0]["handle"]
-        user_name = data[0]["name"]
+        user = data[0]
+        user_uuid = UUID(user["id"])
+        user_id = user["lnid"]
+        user_handle = user["handle"]
+        user_name = user["name"]
         if handle is not None and handle != user_handle:
             logger.warning(
                 f"using account handle {user_handle} (cached handle was {handle})"
@@ -481,14 +482,16 @@ def _sign_in_hub_api_key(api_key: str, client: Client):
     access_token = json.loads(response)["accessToken"]
     # probably need more info here to avoid additional queries
     # like handle, uid etc
-    user_id = client.auth._decode_jwt(access_token)["sub"]
+    account_id = client.auth._decode_jwt(access_token)["sub"]
     client.postgrest.auth(access_token)
-    data = client.table("account").select("*").eq("user_id", user_id).execute().data
+    # normally public.account.id is equal to auth.user.id
+    data = client.table("account").select("*").eq("id", account_id).execute().data
     if data:
-        user_uuid = UUID(data[0]["id"])
-        user_id = data[0]["lnid"]
-        user_handle = data[0]["handle"]
-        user_name = data[0]["name"]
+        user = data[0]
+        user_uuid = UUID(user["id"])
+        user_id = user["lnid"]
+        user_handle = user["handle"]
+        user_name = user["name"]
     else:
         logger.error("Invalid API key.")
         return "invalid-api-key"
