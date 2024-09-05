@@ -508,3 +508,17 @@ def sign_in_hub_api_key(
         logger.error("Could not login. Probably your API key is wrong.")
         return exception
     return result
+
+
+def _create_api_key(body: dict, client: Client) -> str:
+    response = client.functions.invoke(
+        "create-api-key",
+        invoke_options={"body": body},
+    )
+    api_key = json.loads(response)["apiKey"]
+    return api_key
+
+
+def create_api_key(body: dict) -> str:
+    api_key = call_with_fallback_auth(_create_api_key, body=body)
+    return api_key
