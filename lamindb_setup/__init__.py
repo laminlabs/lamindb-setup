@@ -36,8 +36,8 @@ Modules & settings:
 
 __version__ = "0.76.8"  # denote a release candidate for 0.1.0 with 0.1rc1
 
-import sys
-from os import name as _os_name
+import os as _os
+import sys as _sys
 
 from . import core
 from ._check_setup import _check_instance_setup
@@ -51,12 +51,11 @@ from ._register_instance import register
 from ._setup_user import login, logout
 from .core._settings import settings
 
-dev = core  # backward compat
-_TESTING = False  # used in lamindb tests
+_TESTING = _os.getenv("LAMIN_TESTING") is not None
 
 # hide the supabase error in a thread on windows
-if _os_name == "nt":
-    if sys.version_info.minor > 7:
+if _os.name == "nt":
+    if _sys.version_info.minor > 7:
         import threading
 
         _original_excepthook = threading.excepthook
