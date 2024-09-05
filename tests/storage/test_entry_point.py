@@ -61,3 +61,16 @@ def test_on_import_entry_point(output, install_custom, request):
     assert out.returncode == 0
     assert out.stderr == b""
     assert out.stdout == output
+
+
+def test_call_registered_entry_points(installed_custom_module):
+    from lamindb_setup._entry_points import call_registered_entry_points
+
+    call_registered_entry_points("lamindb_setup.on_import")
+
+
+def test_broken_entry_points_does_not_crash(installed_custom_module):
+    from lamindb_setup._entry_points import call_registered_entry_points
+
+    with pytest.warns(RuntimeWarning, match="Error loading entry point"):
+        call_registered_entry_points("lamindb_setup.on_import", broken_kwarg=object())
