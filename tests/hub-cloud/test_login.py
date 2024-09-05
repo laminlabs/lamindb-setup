@@ -7,6 +7,7 @@ from datetime import datetime, timedelta, timezone
 import lamindb_setup as ln_setup
 import pytest
 from lamindb_setup.core._hub_client import connect_hub_with_auth
+from lamindb_setup.core._hub_core import create_api_key
 from supafunc.errors import FunctionsHttpError
 
 
@@ -29,18 +30,12 @@ def test_login():
 def test_login_api_key():
     ln_setup.login("testuser1")
     # obtain API key
-    hub = connect_hub_with_auth()
     expires_at = (datetime.now(tz=timezone.utc) + timedelta(days=1)).strftime(
         "%Y-%m-%d"
     )
-    response = hub.functions.invoke(
-        "create-api-key",
-        invoke_options={
-            "body": {"expires_at": expires_at, "description": "test_login_api_key"}
-        },
+    api_key = create_api_key(
+        {"expires_at": expires_at, "description": "test_login_api_key"}
     )
-    api_key = json.loads(response)["apiKey"]
-    hub.auth.sign_out({"scope": "local"})
 
     ln_setup.logout()
     assert ln_setup.settings.user.handle == "anonymous"
