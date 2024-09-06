@@ -11,8 +11,8 @@ from lamindb_setup.core._hub_client import (
     connect_hub_with_auth,
 )
 from lamindb_setup.core._hub_core import (
-    _connect_instance_remote,
     connect_instance,
+    connect_instance_remote,
     init_instance,
     init_storage,
     sign_in_hub,
@@ -163,14 +163,6 @@ def create_myinstance(create_testadmin1_session):  # -> Dict
     yield instance
 
 
-def test_connect_instance_remote(create_myinstance, create_testadmin1_session):
-    client, usettings = create_testadmin1_session
-
-    owner, name = usettings.handle, create_myinstance["name"]
-    instance = _connect_instance_remote(owner=owner, name=name, client=client)
-    assert instance["name"] == name
-
-
 def test_connection_string_decomp(create_myinstance, create_testadmin1_session):
     client, _ = create_testadmin1_session
     assert create_myinstance["db_scheme"] == "postgresql"
@@ -313,6 +305,15 @@ def test_connect_instance(create_myinstance, create_testadmin1_session):
         instance_fields={"public": False},
         client=client,
     )
+
+
+def test_connect_instance_remote(create_myinstance, create_testadmin1_session):
+    owner, name = ln_setup.settings.user.handle, create_myinstance["name"]
+    instance = connect_instance_remote(owner=owner, name=name)
+    assert instance["name"] == name
+    assert instance["owner"] == owner
+    assert instance["api_url"] == "http://localhost:8000"
+    assert instance["db_permissions"] == "write"
 
 
 def test_connect_instance_corrupted_or_expired_credentials(
