@@ -148,6 +148,31 @@ def create_myinstance(create_testadmin1_session):  # -> Dict
         instance_id=instance_id,
         client=admin_client,
     )
+
+    # add dummy db_server, api_server
+    api_server_id = uuid4().hex
+    admin_client.table("api_server").insert(
+        {
+            "id": api_server_id,
+            "name": "test-api-server",
+            "url": "https://some.url.com",
+            "region": "us-east-1",
+            "on_prem": False,
+        }
+    ).execute()
+    db_server_id = uuid4().hex
+    admin_client.table("db_server").insert(
+        {
+            "id": db_server_id,
+            "key": "test-db-server",
+            "region": "us-east-1",
+            "api_server_id": api_server_id,
+        }
+    ).execute()
+    admin_client.table("instance").update({"db_server_id": db_server_id}).eq(
+        "id", instance_id.hex
+    ).execute()
+
     instance = select_instance_by_name(
         account_id=ln_setup.settings.user._uuid,
         name="myinstance",
