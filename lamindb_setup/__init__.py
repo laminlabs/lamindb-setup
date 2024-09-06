@@ -45,6 +45,7 @@ from ._close import close
 from ._connect_instance import connect, load
 from ._delete import delete
 from ._django import django
+from ._entry_points import call_registered_entry_points as _call_registered_entry_points
 from ._init_instance import init
 from ._migrate import migrate
 from ._register_instance import register
@@ -67,5 +68,8 @@ if _os.name == "nt":
                 _original_excepthook(args)
 
         threading.excepthook = _except_hook
+
+# provide a way for other packages to run custom code on import
+_call_registered_entry_points("lamindb_setup.on_import")
 
 settings.__doc__ = """Global :class:`~lamindb.setup.core.SetupSettings`."""
