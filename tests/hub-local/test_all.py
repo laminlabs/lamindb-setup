@@ -149,7 +149,7 @@ def create_myinstance(create_testadmin1_session):  # -> Dict
         client=admin_client,
     )
 
-    # add db_server
+    # add db_server from seed_local_test
     admin_client.table("instance").update(
         {"db_server_id": "e36c7069-2129-4c78-b2c6-323e2354b741"}
     ).eq("id", instance_id.hex).execute()
