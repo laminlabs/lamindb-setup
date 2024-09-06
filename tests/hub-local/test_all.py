@@ -156,6 +156,15 @@ def create_myinstance(create_testadmin1_session):  # -> Dict
     yield instance
 
 
+def test_get_instance_settings(create_myinstance, create_testadmin1_session):
+    client, usettings = create_testadmin1_session
+
+    owner, name = usettings.handle, create_myinstance["name"]
+    client.functions.invoke(
+        "get-instance-settings", invoke_options={"body": {"owner": owner, "name": name}}
+    )
+
+
 def test_connection_string_decomp(create_myinstance, create_testadmin1_session):
     client, _ = create_testadmin1_session
     assert create_myinstance["db_scheme"] == "postgresql"
