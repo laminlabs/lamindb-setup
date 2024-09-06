@@ -166,10 +166,9 @@ def test_get_instance_settings(create_myinstance, create_testadmin1_session):
     client, usettings = create_testadmin1_session
 
     owner, name = usettings.handle, create_myinstance["name"]
-    response = client.functions.invoke(
+    client.functions.invoke(
         "get-instance-settings", invoke_options={"body": {"owner": owner, "name": name}}
     )
-    raise ValueError(response)
 
 
 def test_connection_string_decomp(create_myinstance, create_testadmin1_session):
