@@ -367,6 +367,30 @@ def _connect_instance(
     return instance, storage  # type: ignore
 
 
+def _connect_instance_remote(
+    owner: str,  # account_handle
+    name: str,  # instance_name
+    client: Client,
+):
+    response = client.functions.invoke(
+        "get-instance-settings", invoke_options={"body": {"owner": owner, "name": name}}
+    )
+    return json.loads(response)
+
+
+def connect_instance_remote(
+    *,
+    owner: str,  # account_handle
+    name: str,  # instance_name
+) -> tuple[dict, dict] | str:
+    from ._settings import settings
+
+    if settings.user.handle != "anonymous":
+        return call_with_fallback_auth(_connect_instance_remote, owner=owner, name=name)
+    else:
+        return call_with_fallback(_connect_instance_remote, owner=owner, name=name)
+
+
 def access_aws(storage_root: str, access_token: str | None = None) -> dict[str, dict]:
     from ._settings import settings
 

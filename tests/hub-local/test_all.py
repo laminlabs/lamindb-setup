@@ -11,6 +11,7 @@ from lamindb_setup.core._hub_client import (
     connect_hub_with_auth,
 )
 from lamindb_setup.core._hub_core import (
+    _connect_instance_remote,
     connect_instance,
     init_instance,
     init_storage,
@@ -162,13 +163,12 @@ def create_myinstance(create_testadmin1_session):  # -> Dict
     yield instance
 
 
-def test_get_instance_settings(create_myinstance, create_testadmin1_session):
+def test_connect_instance_remote(create_myinstance, create_testadmin1_session):
     client, usettings = create_testadmin1_session
 
     owner, name = usettings.handle, create_myinstance["name"]
-    client.functions.invoke(
-        "get-instance-settings", invoke_options={"body": {"owner": owner, "name": name}}
-    )
+    instance = _connect_instance_remote(owner=owner, name=name, client=client)
+    assert instance["name"] == name
 
 
 def test_connection_string_decomp(create_myinstance, create_testadmin1_session):
