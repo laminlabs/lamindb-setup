@@ -55,7 +55,7 @@ def save_settings(
                         settings_key = f"_{store_key.rstrip('_')}"
                     else:
                         settings_key = store_key
-                    value = getattr(settings, settings_key)
+                    value = getattr(settings, settings_key, None)
                 if value is None:
                     value = "null"
                 elif isinstance(value, UUID):

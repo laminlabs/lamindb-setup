@@ -49,6 +49,7 @@ def system_storage_settings_file():
 
 
 class InstanceSettingsStore(BaseSettings):
+    api_url: Optional[str] = None
     owner: str
     name: str
     storage_root: str
