@@ -149,12 +149,6 @@ def create_myinstance(create_testadmin1_session):  # -> Dict
         instance_id=instance_id,
         client=admin_client,
     )
-
-    # add db_server from seed_local_test
-    admin_client.table("instance").update(
-        {"db_server_id": "e36c7069-2129-4c78-b2c6-323e2354b741"}
-    ).eq("id", instance_id.hex).execute()
-
     instance = select_instance_by_name(
         account_id=ln_setup.settings.user._uuid,
         name="myinstance",
@@ -308,12 +302,22 @@ def test_connect_instance(create_myinstance, create_testadmin1_session):
 
 
 def test_connect_instance_remote(create_myinstance, create_testadmin1_session):
+    admin_client, _ = create_testadmin1_session
+
     owner, name = ln_setup.settings.user.handle, create_myinstance["name"]
     instance = connect_instance_remote(owner=owner, name=name)
     assert instance["name"] == name
     assert instance["owner"] == owner
-    assert instance["api_url"] == "http://localhost:8000"
+    assert instance["api_url"] is None
     assert instance["db_permissions"] == "write"
+
+    # add db_server from seed_local_test
+    admin_client.table("instance").update(
+        {"db_server_id": "e36c7069-2129-4c78-b2c6-323e2354b741"}
+    ).eq("id", instance["id"]).execute()
+
+    instance = connect_instance_remote(owner=owner, name=name)
+    assert instance["api_url"] == "http://localhost:8000"
 
 
 def test_connect_instance_corrupted_or_expired_credentials(
