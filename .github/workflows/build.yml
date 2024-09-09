@@ -27,7 +27,7 @@ jobs:
       - run: pip install "laminci@git+https://x-access-token:${{ secrets.LAMIN_BUILD_DOCS }}@github.com/laminlabs/laminci"
       - run: nox -s "install(group='hub-prod')"
       - run: nox -s "build(lamin_env='prod', group='hub-prod')"
-      - uses: actions/upload-artifact@v2
+      - uses: actions/upload-artifact@v4
         with:
           name: coverage--hub-prod
           path: .coverage
@@ -83,7 +83,7 @@ jobs:
       # - uses: "google-github-actions/setup-gcloud@v0"
       - run: nox -s "install(group='hub-cloud')"
       - run: nox -s "build(lamin_env='${{ matrix.lamin_env }}', group='hub-cloud')"
-      - uses: actions/upload-artifact@v2
+      - uses: actions/upload-artifact@v4
         if: ${{ matrix.lamin_env == 'prod' }}
         with:
           name: coverage--hub-cloud
@@ -108,7 +108,7 @@ jobs:
           TEST_INSTANCE_PRIVATE_POSTGRES: ${{ secrets.TEST_INSTANCE_PRIVATE_POSTGRES }}
           TMP_AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
           TMP_AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-      - uses: actions/upload-artifact@v2
+      - uses: actions/upload-artifact@v4
         with:
           name: coverage--storage
           path: .coverage
@@ -152,7 +152,7 @@ jobs:
       - run: nox -s hub_local
         env:
           LAMIN_ENV: "local"
-      - uses: actions/upload-artifact@v2
+      - uses: actions/upload-artifact@v4
         with:
           name: coverage--hub-local
           path: .coverage
@@ -169,7 +169,7 @@ jobs:
       - run: |
           pip install coverage[toml]
           pip install --no-deps .
-      - uses: actions/download-artifact@v2
+      - uses: actions/download-artifact@v4
       - name: run coverage
         run: |
           coverage combine coverage--*/.coverage*
@@ -206,7 +206,7 @@ jobs:
           cache-dependency-path: ".github/workflows/build.yml"
       - run: pip install "laminci@git+https://x-access-token:${{ secrets.LAMIN_BUILD_DOCS }}@github.com/laminlabs/laminci"
       - run: nox -s "install(group='docs')"
-      - uses: actions/download-artifact@v2
+      - uses: actions/download-artifact@v4
       - run: nox -s docs
       - uses: nwtgck/actions-netlify@v1.2
         with:
