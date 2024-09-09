@@ -30,11 +30,12 @@ def test_login():
 def test_login_api_key():
     ln_setup.login("testuser1")
     # obtain API key
-    expires_at = (datetime.now(tz=timezone.utc) + timedelta(days=1)).strftime(
-        "%Y-%m-%d"
-    )
+    expires_at = datetime.now(tz=timezone.utc) + timedelta(days=1)
     api_key = create_api_key(
-        {"expires_at": expires_at, "description": "test_login_api_key"}
+        {
+            "expires_at": expires_at.strftime("%Y-%m-%d"),
+            "description": "test_login_api_key",
+        }
     )
 
     ln_setup.logout()
