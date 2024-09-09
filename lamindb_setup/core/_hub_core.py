@@ -371,11 +371,28 @@ def _connect_instance_remote(
     owner: str,  # account_handle
     name: str,  # instance_name
     client: Client,
-):
+) -> tuple[dict, dict]:
     response = client.functions.invoke(
         "get-instance-settings", invoke_options={"body": {"owner": owner, "name": name}}
     )
-    return json.loads(response)
+    instance = json.loads(response)
+    storage = instance.pop("storage")
+    if instance["db_scheme"] is not None:
+        name, password = instance["db_user_name"], instance["db_user_password"]
+        if name is None:
+            name = "none"
+        if password is None:
+            password = "none"
+        db_dsn = LaminDsn.build(
+            scheme=instance["db_scheme"],
+            user=name,
+            password=password,
+            host=instance["db_host"],
+            port=instance["db_port"],
+            database=instance["db_database"],
+        )
+        instance["db"] = db_dsn
+    return instance, storage
 
 
 def connect_instance_remote(

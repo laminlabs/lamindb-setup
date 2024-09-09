@@ -305,18 +305,19 @@ def test_connect_instance_remote(create_myinstance, create_testadmin1_session):
     admin_client, _ = create_testadmin1_session
 
     owner, name = ln_setup.settings.user.handle, create_myinstance["name"]
-    instance = connect_instance_remote(owner=owner, name=name)
+    instance, storage = connect_instance_remote(owner=owner, name=name)
     assert instance["name"] == name
     assert instance["owner"] == owner
     assert instance["api_url"] is None
     assert instance["db_permissions"] == "write"
+    assert storage["root"] == "s3://lamindb-ci/myinstance"
 
     # add db_server from seed_local_test
     admin_client.table("instance").update(
         {"db_server_id": "e36c7069-2129-4c78-b2c6-323e2354b741"}
     ).eq("id", instance["id"]).execute()
 
-    instance = connect_instance_remote(owner=owner, name=name)
+    instance, _ = connect_instance_remote(owner=owner, name=name)
     assert instance["api_url"] == "http://localhost:8000"
 
 
