@@ -31,6 +31,7 @@ jobs:
         with:
           name: coverage--hub-prod
           path: .coverage
+          include-hidden-files: true
 
   # tests both on production and staging hub
   hub-cloud:
@@ -88,6 +89,7 @@ jobs:
         with:
           name: coverage--hub-cloud
           path: .coverage
+          include-hidden-files: true
 
   # test user access to storage
   storage:
@@ -112,6 +114,7 @@ jobs:
         with:
           name: coverage--storage
           path: .coverage
+          include-hidden-files: true
 
   # test low-level hub functionality
   hub-local:
@@ -156,6 +159,7 @@ jobs:
         with:
           name: coverage--hub-local
           path: .coverage
+          include-hidden-files: true
 
   coverage:
     needs: [hub-prod, hub-cloud, storage, hub-local]
