@@ -376,18 +376,13 @@ def _connect_instance_remote(
         "get-instance-settings", invoke_options={"body": {"owner": owner, "name": name}}
     )
     instance = json.loads(response)
-    raise ValueError(instance)
     storage = instance.pop("storage")
     if instance["db_scheme"] is not None:
         name, password = instance["db_user_name"], instance["db_user_password"]
-        if name is None:
-            name = "none"
-        if password is None:
-            password = "none"
         db_dsn = LaminDsn.build(
             scheme=instance["db_scheme"],
-            user=name,
-            password=password,
+            user=name if name is not None else "none",
+            password=password if password is not None else "none",
             host=instance["db_host"],
             port=instance["db_port"],
             database=instance["db_database"],
