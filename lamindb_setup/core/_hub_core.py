@@ -340,7 +340,7 @@ def _connect_instance(
         # get default storage
         storage = select_default_storage_by_instance_id(instance["id"], client)
         if storage is None:
-            return "storage-does-not-exist-on-hub"
+            return "default-storage-does-not-exist-on-hub"
     else:
         account = instance_account_storage.pop("account")
         storage = instance_account_storage.pop("storage")
@@ -365,6 +365,61 @@ def _connect_instance(
         )
         instance["db"] = db_dsn
     return instance, storage  # type: ignore
+
+
+def _connect_instance_new(
+    owner: str,  # account_handle
+    name: str,  # instance_name
+    client: Client,
+) -> tuple[dict, dict] | str:
+    response = client.functions.invoke(
+        "get-instance-settings", invoke_options={"body": {"owner": owner, "name": name}}
+    )
+    # no instance found, check why is that
+    if response == b"{}":
+        # try the via single requests, will take more time
+        account = select_account_by_handle(owner, client)
+        if account is None:
+            return "account-not-exists"
+        instance = select_instance_by_name(account["id"], name, client)
+        if instance is None:
+            return "instance-not-found"
+        # get default storage
+        storage = select_default_storage_by_instance_id(instance["id"], client)
+        if storage is None:
+            return "default-storage-does-not-exist-on-hub"
+    else:
+        instance = json.loads(response)
+        storage = instance.pop("storage")
+
+    if instance["db_scheme"] is not None:
+        db_user_name, db_user_password = (
+            instance["db_user_name"],
+            instance["db_user_password"],
+        )
+        db_dsn = LaminDsn.build(
+            scheme=instance["db_scheme"],
+            user=db_user_name if db_user_name is not None else "none",
+            password=db_user_password if db_user_password is not None else "none",
+            host=instance["db_host"],
+            port=instance["db_port"],
+            database=instance["db_database"],
+        )
+        instance["db"] = db_dsn
+    return instance, storage  # type: ignore
+
+
+def connect_instance_new(
+    *,
+    owner: str,  # account_handle
+    name: str,  # instance_name
+) -> tuple[dict, dict] | str:
+    from ._settings import settings
+
+    if settings.user.handle != "anonymous":
+        return call_with_fallback_auth(_connect_instance_new, owner=owner, name=name)
+    else:
+        return call_with_fallback(_connect_instance_new, owner=owner, name=name)
 
 
 def access_aws(storage_root: str, access_token: str | None = None) -> dict[str, dict]:

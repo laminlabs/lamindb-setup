@@ -82,7 +82,7 @@ def test_update_schema_in_hub(setup_instance):
         "schema_name": "core",
         "is_link_table": False,
         "relation_type": "many-to-one",
-        "related_field_name": "artifact",
+        "related_field_name": "created_artifacts",
         "related_model_name": "user",
         "related_schema_name": "core",
     }
