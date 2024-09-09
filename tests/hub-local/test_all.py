@@ -320,6 +320,11 @@ def test_connect_instance_remote(create_myinstance, create_testadmin1_session):
     instance, _ = connect_instance_remote(owner=owner, name=name)
     assert instance["api_url"] == "http://localhost:8000"
 
+    result = connect_instance_remote(owner="user-not-exists", name=name)
+    assert result == "account-not-exists"
+    result = connect_instance_remote(owner=owner, name="instance-not-exists")
+    assert result == "instance-not-found"
+
 
 def test_connect_instance_corrupted_or_expired_credentials(
     create_myinstance, create_testadmin1_session
