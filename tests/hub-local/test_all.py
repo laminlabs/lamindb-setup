@@ -12,7 +12,7 @@ from lamindb_setup.core._hub_client import (
 )
 from lamindb_setup.core._hub_core import (
     connect_instance,
-    connect_instance_remote,
+    connect_instance_new,
     init_instance,
     init_storage,
     sign_in_hub,
@@ -301,11 +301,11 @@ def test_connect_instance(create_myinstance, create_testadmin1_session):
     )
 
 
-def test_connect_instance_remote(create_myinstance, create_testadmin1_session):
+def test_connect_instance_new(create_myinstance, create_testadmin1_session):
     admin_client, _ = create_testadmin1_session
 
     owner, name = ln_setup.settings.user.handle, create_myinstance["name"]
-    instance, storage = connect_instance_remote(owner=owner, name=name)
+    instance, storage = connect_instance_new(owner=owner, name=name)
     assert instance["name"] == name
     assert instance["owner"] == owner
     assert instance["api_url"] is None
@@ -318,12 +318,12 @@ def test_connect_instance_remote(create_myinstance, create_testadmin1_session):
         {"db_server_id": "e36c7069-2129-4c78-b2c6-323e2354b741"}
     ).eq("id", instance["id"]).execute()
 
-    instance, _ = connect_instance_remote(owner=owner, name=name)
+    instance, _ = connect_instance_new(owner=owner, name=name)
     assert instance["api_url"] == "http://localhost:8000"
 
-    result = connect_instance_remote(owner="user-not-exists", name=name)
+    result = connect_instance_new(owner="user-not-exists", name=name)
     assert result == "account-not-exists"
-    result = connect_instance_remote(owner=owner, name="instance-not-exists")
+    result = connect_instance_new(owner=owner, name="instance-not-exists")
     assert result == "instance-not-found"
 
 
