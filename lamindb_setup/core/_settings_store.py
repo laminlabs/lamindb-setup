@@ -56,6 +56,7 @@ class InstanceSettingsStore(BaseSettings):
     storage_region: Optional[str]  # take old type annotations here because pydantic
     db: Optional[str]  # doesn't like new types on 3.9 even with future annotations
     schema_str: Optional[str]
+    schema_id: Optional[str] = None
     id: str
     git_repo: Optional[str]
     keep_artifacts_local: Optional[bool]

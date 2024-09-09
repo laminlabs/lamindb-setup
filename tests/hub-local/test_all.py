@@ -311,6 +311,7 @@ def test_connect_instance_remote(create_myinstance, create_testadmin1_session):
     assert instance["api_url"] is None
     assert instance["db_permissions"] == "write"
     assert storage["root"] == "s3://lamindb-ci/myinstance"
+    assert "schema_id" in instance
 
     # add db_server from seed_local_test
     admin_client.table("instance").update(
