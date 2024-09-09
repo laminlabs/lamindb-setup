@@ -376,6 +376,7 @@ def _connect_instance_remote(
         "get-instance-settings", invoke_options={"body": {"owner": owner, "name": name}}
     )
     instance = json.loads(response)
+    raise ValueError(instance)
     storage = instance.pop("storage")
     if instance["db_scheme"] is not None:
         name, password = instance["db_user_name"], instance["db_user_password"]
