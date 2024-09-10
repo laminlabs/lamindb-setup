@@ -8,9 +8,11 @@ import pytest
 from gotrue.errors import AuthApiError
 from lamindb_setup.core._hub_client import (
     Environment,
+    connect_hub,
     connect_hub_with_auth,
 )
 from lamindb_setup.core._hub_core import (
+    _connect_instance_new,
     connect_instance,
     connect_instance_new,
     init_instance,
@@ -256,6 +258,48 @@ def test_db_user(
     assert db_user["name"] == "write"
 
 
+def test_connect_instance_new(create_myinstance, create_testadmin1_session):
+    admin_client, _ = create_testadmin1_session
+
+    owner, name = ln_setup.settings.user.handle, create_myinstance["name"]
+    instance, storage = connect_instance_new(owner=owner, name=name)
+    assert instance["name"] == name
+    assert instance["owner"] == owner
+    assert instance["api_url"] is None
+    assert instance["db_permissions"] == "write"
+    assert storage["root"] == "s3://lamindb-ci/myinstance"
+    assert "schema_id" in instance
+
+    # add db_server from seed_local_test
+    admin_client.table("instance").update(
+        {"db_server_id": "e36c7069-2129-4c78-b2c6-323e2354b741"}
+    ).eq("id", instance["id"]).execute()
+
+    instance, _ = connect_instance_new(owner=owner, name=name)
+    assert instance["api_url"] == "http://localhost:8000"
+
+    # test anon access to public instance
+    update_instance(
+        instance_id=create_myinstance["id"],
+        instance_fields={"public": True},
+        client=admin_client,
+    )
+
+    anon_client = connect_hub()
+    instance, _ = _connect_instance_new(owner=owner, name=name, client=anon_client)
+
+    update_instance(
+        instance_id=create_myinstance["id"],
+        instance_fields={"public": False},
+        client=admin_client,
+    )
+    # test non-existent
+    result = connect_instance_new(owner="user-not-exists", name=name)
+    assert result == "account-not-exists"
+    result = connect_instance_new(owner=owner, name="instance-not-exists")
+    assert result == "instance-not-found"
+
+
 def test_connect_instance(create_myinstance, create_testadmin1_session):
     # trigger return for inexistent handle
     assert "account-not-exists" == connect_instance(
@@ -299,32 +343,6 @@ def test_connect_instance(create_myinstance, create_testadmin1_session):
         instance_fields={"public": False},
         client=client,
     )
-
-
-def test_connect_instance_new(create_myinstance, create_testadmin1_session):
-    admin_client, _ = create_testadmin1_session
-
-    owner, name = ln_setup.settings.user.handle, create_myinstance["name"]
-    instance, storage = connect_instance_new(owner=owner, name=name)
-    assert instance["name"] == name
-    assert instance["owner"] == owner
-    assert instance["api_url"] is None
-    assert instance["db_permissions"] == "write"
-    assert storage["root"] == "s3://lamindb-ci/myinstance"
-    assert "schema_id" in instance
-
-    # add db_server from seed_local_test
-    admin_client.table("instance").update(
-        {"db_server_id": "e36c7069-2129-4c78-b2c6-323e2354b741"}
-    ).eq("id", instance["id"]).execute()
-
-    instance, _ = connect_instance_new(owner=owner, name=name)
-    assert instance["api_url"] == "http://localhost:8000"
-
-    result = connect_instance_new(owner="user-not-exists", name=name)
-    assert result == "account-not-exists"
-    result = connect_instance_new(owner=owner, name="instance-not-exists")
-    assert result == "instance-not-found"
 
 
 def test_connect_instance_corrupted_or_expired_credentials(
