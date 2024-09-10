@@ -286,10 +286,6 @@ def test_connect_instance_new(create_myinstance, create_testadmin1_session):
     )
 
     anon_client = connect_hub()
-    response = anon_client.functions.invoke(
-        "get-instance-settings", invoke_options={"body": {"owner": owner, "name": name}}
-    )
-    raise ValueError(response)
     instance, _ = _connect_instance_new(owner=owner, name=name, client=anon_client)
 
     update_instance(
