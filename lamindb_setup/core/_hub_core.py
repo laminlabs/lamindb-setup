@@ -388,15 +388,27 @@ def _connect_instance_new(
         storage = select_default_storage_by_instance_id(instance["id"], client)
         if storage is None:
             return "default-storage-does-not-exist-on-hub"
+        logger.warning(
+            "Could not find instance via API, but found directly querying hub."
+        )
     else:
         instance = json.loads(response)
         storage = instance.pop("storage")
 
     if instance["db_scheme"] is not None:
-        db_user_name, db_user_password = (
-            instance["db_user_name"],
-            instance["db_user_password"],
-        )
+        db_user_name, db_user_password = None, None
+        if "db_user_name" in instance and "db_user_password" in instance:
+            db_user_name, db_user_password = (
+                instance["db_user_name"],
+                instance["db_user_password"],
+            )
+        else:
+            db_user = select_db_user_by_instance(instance["id"], client)
+            if db_user is not None:
+                db_user_name, db_user_password = (
+                    db_user["db_user_name"],
+                    db_user["db_user_password"],
+                )
         db_dsn = LaminDsn.build(
             scheme=instance["db_scheme"],
             user=db_user_name if db_user_name is not None else "none",
