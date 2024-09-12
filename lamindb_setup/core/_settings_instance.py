@@ -333,9 +333,11 @@ class InstanceSettings:
     @property
     def db(self) -> str:
         """Database connection string (URI)."""
-        if "LAMINDB_DATABASE_URL" in os.environ:
+        if "LAMINDB_DJANGO_DATABASE_URL" in os.environ:
             logger.warning(
-                f"LAMINDB_DATABASE_URL env variable is set to {os.environ['LAMINDB_DATABASE_URL']}"
+                "LAMINDB_DJANGO_DATABASE_URL env variable "
+                f"is set to {os.environ['LAMINDB_DJANGO_DATABASE_URL']}. "
+                "It overwrites all db connections and is used instead of `instance.db`."
             )
         if self._db is None:
             # here, we want the updated sqlite file
