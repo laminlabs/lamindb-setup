@@ -42,6 +42,7 @@ def setup_django(
     # configuration
     if not settings.configured:
         default_db = dj_database_url.config(
+            env="LAMINDB_DJANGO_DATABASE_URL",
             default=isettings.db,
             # see comment next to patching BaseDatabaseWrapper below
             conn_max_age=CONN_MAX_AGE,
