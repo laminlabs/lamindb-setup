@@ -333,6 +333,10 @@ class InstanceSettings:
     @property
     def db(self) -> str:
         """Database connection string (URI)."""
+        if "LAMINDB_DATABASE_URL" in os.environ:
+            logger.warning(
+                f"LAMINDB_DATABASE_URL env variable is set to {os.environ['LAMINDB_DATABASE_URL']}"
+            )
         if self._db is None:
             # here, we want the updated sqlite file
             # hence, we don't use self._sqlite_file_local()
