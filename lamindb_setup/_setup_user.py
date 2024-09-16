@@ -28,7 +28,7 @@ def load_user(email: str | None = None, handle: str | None = None) -> UserSettin
     if settings_file.exists():
         user_settings = load_user_settings(settings_file)
         save_user_settings(user_settings)  # needed to save to current_user.env
-        assert user_settings.email is not None
+        assert user_settings.email is not None or user_settings.api_key is not None
     else:
         user_settings = load_or_create_user_settings()
         if email is None:
@@ -74,13 +74,15 @@ def login(
             # within UserSettings, we still call it "password" for a while
             user_settings.password = key
 
-        if user_settings.email is None:
-            raise SystemExit(f"✗ No stored user email, please call: lamin login {user}")
-
         if user_settings.password is None:
-            raise SystemExit(
-                "✗ No stored API key, please call: lamin login <your-email> --key <API-key>"
-            )
+            api_key = user_settings.api_key
+            if api_key is None:
+                raise SystemExit(
+                    "✗ No stored API key, please call: "
+                    "`lamin login` or `lamin login <your-email> --key <API-key>`"
+                )
+        elif user_settings.email is None:
+            raise SystemExit(f"✗ No stored user email, please call: lamin login {user}")
     else:
         user_settings = load_or_create_user_settings()
 
