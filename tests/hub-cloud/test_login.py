@@ -77,3 +77,6 @@ def test_login_api_key():
 
     # login back with email to populate all fields
     ln_setup.login("testuser1@lamin.ai", key=save_password)
+    assert ln_setup.settings.user.handle == "testuser1"
+    assert ln_setup.settings.user.api_key is None
+    assert ln_setup.settings.user.password == save_password
