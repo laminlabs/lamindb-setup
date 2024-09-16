@@ -96,6 +96,7 @@ def login(
         )
     else:
         response = sign_in_hub_api_key(api_key)
+        user_settings.password = None
 
     if isinstance(response, Exception):
         raise response
