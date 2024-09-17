@@ -277,7 +277,6 @@ def _init_instance(isettings: InstanceSettings, client: Client) -> None:
         "id": isettings._id.hex,
         "account_id": settings.user._uuid.hex,  # type: ignore
         "name": isettings.name,
-        "storage_id": isettings.storage._uuid.hex,  # type: ignore
         "lnid": isettings.uid,
         "schema_str": isettings._schema_str,
         "lamindb_version": lamindb_version,
