@@ -111,7 +111,7 @@ def test_update_schema_in_hub(setup_instance):
         "through": {
             "left_key": "well_id",
             "right_key": "artifact_id",
-            "link_table_name": "wetlab_well_artifacts",
+            "link_table_name": "wetlab_artifactwell",
         },
         "field_name": "artifacts",
         "model_name": "well",
