@@ -180,12 +180,7 @@ def _connect_instance(
 
 @unlock_cloud_sqlite_upon_exception(ignore_prev_locker=True)
 def connect(
-    slug: str,
-    *,
-    db: str | None = None,
-    storage: UPathStr | None = None,
-    _raise_not_found_error: bool = True,
-    _test: bool = False,
+    slug: str, *, db: str | None = None, storage: UPathStr | None = None, **kwargs
 ) -> str | tuple | None:
     """Connect to instance.
 
@@ -196,6 +191,11 @@ def connect(
         storage: Load the instance with an updated default storage.
     """
     isettings: InstanceSettings = None  # type: ignore
+
+    kwargs.get("access_token", None)
+    _raise_not_found_error = kwargs.get("_raise_not_found_error", True)
+    _test = kwargs.get("_test", False)
+
     try:
         owner, name = get_owner_name_from_identifier(slug)
 

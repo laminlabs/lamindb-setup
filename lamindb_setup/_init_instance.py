@@ -213,7 +213,7 @@ def init(
     name: str | None = None,
     db: PostgresDsn | None = None,
     schema: str | None = None,
-    _test: bool = False,
+    **kwargs,
 ) -> None:
     """Create and load a LaminDB instance.
 
@@ -226,6 +226,10 @@ def init(
     """
     isettings = None
     ssettings = None
+
+    kwargs.get("access_token", None)
+    _test = kwargs.get("_test", False)
+
     try:
         silence_loggers()
         from ._check_setup import _check_instance_setup
