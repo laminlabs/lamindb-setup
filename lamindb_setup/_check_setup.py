@@ -41,7 +41,7 @@ def _get_current_instance_settings() -> InstanceSettings | None:
         except Exception as e:
             # user will get more detailed traceback once they run the CLI
             logger.error(
-                "Current instance cannot be reached, close it: `lamin close`\n"
+                "Current instance cannot be reached, unload it: `lamin load --unload`\n"
                 "Alternatively, init or load a connectable instance on the"
                 " command line: `lamin load <instance>` or `lamin init <...>`"
             )

@@ -280,7 +280,7 @@ def init(
             isettings._cloud_sqlite_locker.lock()
             logger.warning(
                 "locked instance (to unlock and push changes to the cloud SQLite file,"
-                " call: lamin close)"
+                " call: lamin load --unload)"
             )
         if register_on_hub and isettings.dialect != "sqlite":
             from ._schema_metadata import update_schema_in_hub
