@@ -312,11 +312,14 @@ def connect_instance(
     *,
     owner: str,  # account_handle
     name: str,  # instance_name
+    access_token: str | None = None,
 ) -> tuple[dict, dict] | str:
     from ._settings import settings
 
-    if settings.user.handle != "anonymous":
-        return call_with_fallback_auth(_connect_instance, owner=owner, name=name)
+    if settings.user.handle != "anonymous" or access_token is not None:
+        return call_with_fallback_auth(
+            _connect_instance, owner=owner, name=name, access_token=access_token
+        )
     else:
         return call_with_fallback(_connect_instance, owner=owner, name=name)
 
@@ -424,11 +427,14 @@ def connect_instance_new(
     *,
     owner: str,  # account_handle
     name: str,  # instance_name
+    access_token: str | None = None,
 ) -> tuple[dict, dict] | str:
     from ._settings import settings
 
-    if settings.user.handle != "anonymous":
-        return call_with_fallback_auth(_connect_instance_new, owner=owner, name=name)
+    if settings.user.handle != "anonymous" or access_token is not None:
+        return call_with_fallback_auth(
+            _connect_instance_new, owner=owner, name=name, access_token=access_token
+        )
     else:
         return call_with_fallback(_connect_instance_new, owner=owner, name=name)
 

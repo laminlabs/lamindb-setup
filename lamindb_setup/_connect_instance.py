@@ -115,6 +115,7 @@ def _connect_instance(
     *,
     db: str | None = None,
     raise_permission_error: bool = True,
+    access_token: str | None = None,
 ) -> InstanceSettings:
     settings_file = instance_settings_file(name, owner)
     make_hub_request = True
@@ -128,9 +129,13 @@ def _connect_instance(
         # do not call hub if the user is anonymous
         if owner != "anonymous":
             if settings.user.handle in {"Koncopd", "sunnyosun", "falexwolf"}:
-                hub_result = load_instance_from_hub_edge(owner=owner, name=name)
+                hub_result = load_instance_from_hub_edge(
+                    owner=owner, name=name, access_token=access_token
+                )
             else:
-                hub_result = load_instance_from_hub(owner=owner, name=name)
+                hub_result = load_instance_from_hub(
+                    owner=owner, name=name, access_token=access_token
+                )
         else:
             hub_result = "anonymous-user"
         # if hub_result is not a string, it means it made a request
@@ -192,7 +197,7 @@ def connect(
     """
     isettings: InstanceSettings = None  # type: ignore
 
-    kwargs.get("access_token", None)
+    access_token = kwargs.get("access_token", None)
     _raise_not_found_error = kwargs.get("_raise_not_found_error", True)
     _test = kwargs.get("_test", False)
 
@@ -212,7 +217,7 @@ def connect(
             close_instance(mute=True)
 
         try:
-            isettings = _connect_instance(owner, name, db=db)
+            isettings = _connect_instance(owner, name, db=db, access_token=access_token)
         except InstanceNotFoundError as e:
             if _raise_not_found_error:
                 raise e
