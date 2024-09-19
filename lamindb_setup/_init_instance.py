@@ -167,6 +167,7 @@ def validate_init_args(
     db: PostgresDsn | None = None,
     schema: str | None = None,
     _test: bool = False,
+    _write_settings: bool = True,
     _user: UserSettings | None = None,
 ) -> tuple[
     str,
@@ -194,6 +195,7 @@ def validate_init_args(
         db=db,
         _raise_not_found_error=False,
         _test=_test,
+        _write_settings=_write_settings,
         _user=_user,
     )
     instance_state: Literal[
@@ -267,6 +269,7 @@ def init(
             db=db,
             schema=schema,
             _test=_test,
+            _write_settings=_write_settings,
             _user=_user,  # will get from settings.user if _user is None
         )
         if instance_state == "connected":
