@@ -244,9 +244,11 @@ def init(
     # contains access_token
     _user: UserSettings | None = kwargs.get("_user", None)
     if _user is None:
-        user_handle, user__uuid = settings.user.handle, settings.user._uuid.hex  # type: ignore
+        user_handle = settings.user.handle
+        user__uuid = None if settings.user._uuid is None else settings.user._uuid.hex
     else:
-        user_handle, user__uuid = _user.handle, _user._uuid.hex  # type: ignore
+        user_handle = _user.handle
+        user__uuid = None if _user._uuid is None else _user._uuid.hex
         access_token = _user.access_token
 
     try:
