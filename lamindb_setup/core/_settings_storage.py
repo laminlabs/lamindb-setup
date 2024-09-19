@@ -83,6 +83,7 @@ def init_storage(
     register_hub: bool | None = None,
     prevent_register_hub: bool = False,
     init_instance: bool = False,
+    created_by: str | None = None,
     access_token: str | None = None,
 ) -> tuple[
     StorageSettings,
@@ -145,6 +146,7 @@ def init_storage(
             hub_record_status = init_storage_hub(
                 ssettings,
                 auto_populate_instance=not init_instance,
+                created_by=created_by,
                 access_token=access_token,
             )
     # below comes last only if everything else was successful

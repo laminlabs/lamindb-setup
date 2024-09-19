@@ -27,6 +27,7 @@ from .core.cloud_sqlite_locker import unlock_cloud_sqlite_upon_exception
 if TYPE_CHECKING:
     from pathlib import Path
 
+    from .core._settings_user import UserSettings
     from .core.types import UPathStr
 
 # this is for testing purposes only
@@ -197,10 +198,17 @@ def connect(
     """
     isettings: InstanceSettings = None  # type: ignore
 
-    access_token = kwargs.get("access_token", None)
-    _write_settings = kwargs.get("_write_settings", True)
-    _raise_not_found_error = kwargs.get("_raise_not_found_error", True)
-    _test = kwargs.get("_test", False)
+    _write_settings: bool = kwargs.get("_write_settings", True)
+    _raise_not_found_error: bool = kwargs.get("_raise_not_found_error", True)
+    _test: bool = kwargs.get("_test", False)
+
+    access_token: str | None = None
+    _user: UserSettings | None = kwargs.get("_user", None)
+    if _user is None:
+        user = settings.user
+    else:
+        user = _user
+        access_token = user.access_token
 
     try:
         owner, name = get_owner_name_from_identifier(slug)
@@ -272,7 +280,7 @@ def connect(
         #     # raised by django when the access is denied
         #     except ProgrammingError:
         #         pass
-        load_from_isettings(isettings, write_settings=_write_settings)
+        load_from_isettings(isettings, user=user, write_settings=_write_settings)
     except Exception as e:
         if isettings is not None:
             if _write_settings:
