@@ -267,6 +267,7 @@ def init(
             instance_id=instance_id,
             init_instance=True,
             prevent_register_hub=prevent_register_hub,
+            access_token=access_token,
         )
         isettings = InstanceSettings(
             id=instance_id,  # type: ignore
@@ -281,7 +282,7 @@ def init(
             isettings.is_remote and instance_state != "instance-corrupted-or-deleted"
         )
         if register_on_hub:
-            init_instance_hub(isettings)
+            init_instance_hub(isettings, access_token=access_token)
         validate_sqlite_state(isettings)
         isettings._persist()
         if _test:
@@ -297,7 +298,7 @@ def init(
         if register_on_hub and isettings.dialect != "sqlite":
             from ._schema_metadata import update_schema_in_hub
 
-            update_schema_in_hub()
+            update_schema_in_hub(access_token=access_token)
         settings.auto_connect = True
     except Exception as e:
         from ._delete import delete_by_isettings
@@ -305,15 +306,17 @@ def init(
 
         if isettings is not None:
             delete_by_isettings(isettings)
-            if settings.user.handle != "anonymous" and isettings.is_on_hub:
-                delete_instance_record(isettings._id)
+            if (
+                settings.user.handle != "anonymous" or access_token is not None
+            ) and isettings.is_on_hub:
+                delete_instance_record(isettings._id, access_token=access_token)
             isettings._get_settings_file().unlink(missing_ok=True)  # type: ignore
         if (
             ssettings is not None
-            and settings.user.handle != "anonymous"
+            and (settings.user.handle != "anonymous" or access_token is not None)
             and ssettings.is_on_hub
         ):
-            delete_storage_record(ssettings._uuid)  # type: ignore
+            delete_storage_record(ssettings._uuid, access_token=access_token)  # type: ignore
         raise e
     return None
 

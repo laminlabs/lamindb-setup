@@ -38,12 +38,9 @@ if TYPE_CHECKING:
     from ._settings_instance import InstanceSettings
 
 
-def delete_storage_record(
-    storage_uuid: UUID,
-) -> None:
+def delete_storage_record(storage_uuid: UUID, access_token: str | None = None) -> None:
     return call_with_fallback_auth(
-        _delete_storage_record,
-        storage_uuid=storage_uuid,
+        _delete_storage_record, storage_uuid=storage_uuid, access_token=access_token
     )
 
 
@@ -119,12 +116,14 @@ def _select_storage(
 def init_storage(
     ssettings: StorageSettings,
     auto_populate_instance: bool = True,
+    access_token: str | None = None,
 ) -> Literal["hub-record-retireved", "hub-record-created"]:
-    if settings.user.handle != "anonymous":
+    if settings.user.handle != "anonymous" or access_token is not None:
         return call_with_fallback_auth(
             _init_storage,
             ssettings=ssettings,
             auto_populate_instance=auto_populate_instance,
+            access_token=access_token,
         )
     else:
         storage_exists = call_with_fallback(
@@ -253,17 +252,16 @@ def _delete_instance(
     return None
 
 
-def delete_instance_record(
-    instance_id: UUID,
-) -> None:
+def delete_instance_record(instance_id: UUID, access_token: str | None = None) -> None:
     return call_with_fallback_auth(
-        _delete_instance_record,
-        instance_id=instance_id,
+        _delete_instance_record, instance_id=instance_id, access_token=access_token
     )
 
 
-def init_instance(isettings: InstanceSettings) -> None:
-    return call_with_fallback_auth(_init_instance, isettings=isettings)
+def init_instance(isettings: InstanceSettings, access_token: str | None = None) -> None:
+    return call_with_fallback_auth(
+        _init_instance, isettings=isettings, access_token=access_token
+    )
 
 
 def _init_instance(isettings: InstanceSettings, client: Client) -> None:
