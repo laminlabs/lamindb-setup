@@ -283,7 +283,8 @@ class InstanceSettings:
         if self._is_cloud_sqlite:
             sqlite_file = self._sqlite_file
             logger.warning(
-                f"updating & unlocking cloud SQLite '{sqlite_file}' of instance"
+                f"updating{' & unlocking' if unlock_cloud_sqlite else ''} cloud SQLite "
+                f"'{sqlite_file}' of instance"
                 f" '{self.slug}'"
             )
             cache_file = self.storage.cloud_to_local_no_update(sqlite_file)
