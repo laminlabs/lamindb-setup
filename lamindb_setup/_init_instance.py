@@ -166,6 +166,7 @@ def validate_init_args(
     db: PostgresDsn | None = None,
     schema: str | None = None,
     _test: bool = False,
+    access_token: str | None = None,
 ) -> tuple[
     str,
     UUID | None,
@@ -186,7 +187,13 @@ def validate_init_args(
     name_str = infer_instance_name(storage=storage, name=name, db=db)
     # test whether instance exists by trying to load it
     instance_slug = f"{settings.user.handle}/{name_str}"
-    response = connect(instance_slug, db=db, _raise_not_found_error=False, _test=_test)
+    response = connect(
+        instance_slug,
+        db=db,
+        _raise_not_found_error=False,
+        _test=_test,
+        access_token=access_token,
+    )
     instance_state: Literal[
         "connected",
         "instance-corrupted-or-deleted",
@@ -227,7 +234,7 @@ def init(
     isettings = None
     ssettings = None
 
-    kwargs.get("access_token", None)
+    access_token = kwargs.get("access_token", None)
     _test = kwargs.get("_test", False)
 
     try:
@@ -246,6 +253,7 @@ def init(
             db=db,
             schema=schema,
             _test=_test,
+            access_token=access_token,
         )
         if instance_state == "connected":
             settings.auto_connect = True  # we can also debate this switch here
