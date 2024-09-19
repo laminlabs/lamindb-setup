@@ -235,6 +235,7 @@ def init(
     ssettings = None
 
     access_token = kwargs.get("access_token", None)
+    _write_settings = kwargs.get("_write_settings", True)
     _test = kwargs.get("_test", False)
 
     try:
@@ -243,7 +244,7 @@ def init(
 
         if _check_instance_setup() and not _test:
             raise RuntimeError(MESSAGE_NO_MULTIPLE_INSTANCE)
-        else:
+        elif _write_settings:
             close_instance(mute=True)
         from .core._hub_core import init_instance as init_instance_hub
 
@@ -284,11 +285,12 @@ def init(
         if register_on_hub:
             init_instance_hub(isettings, access_token=access_token)
         validate_sqlite_state(isettings)
-        isettings._persist()
+        # why call it here if it is also called in load_from_isettings?
+        isettings._persist(write=_write_settings)
         if _test:
             return None
         isettings._init_db()
-        load_from_isettings(isettings, init=True)
+        load_from_isettings(isettings, init=True, write_settings=_write_settings)
         if isettings._is_cloud_sqlite:
             isettings._cloud_sqlite_locker.lock()
             logger.warning(
@@ -305,12 +307,14 @@ def init(
         from .core._hub_core import delete_instance_record, delete_storage_record
 
         if isettings is not None:
-            delete_by_isettings(isettings)
+            if _write_settings:
+                delete_by_isettings(isettings)
+            else:
+                settings._instance_settings = None
             if (
                 settings.user.handle != "anonymous" or access_token is not None
             ) and isettings.is_on_hub:
                 delete_instance_record(isettings._id, access_token=access_token)
-            isettings._get_settings_file().unlink(missing_ok=True)  # type: ignore
         if (
             ssettings is not None
             and (settings.user.handle != "anonymous" or access_token is not None)
@@ -322,9 +326,7 @@ def init(
 
 
 def load_from_isettings(
-    isettings: InstanceSettings,
-    *,
-    init: bool = False,
+    isettings: InstanceSettings, *, init: bool = False, write_settings: bool = True
 ) -> None:
     from .core._setup_bionty_sources import load_bionty_sources, write_bionty_sources
 
@@ -343,7 +345,7 @@ def load_from_isettings(
         if not isettings._get_settings_file().exists():
             register_user(settings.user)
         load_bionty_sources(isettings)
-    isettings._persist()
+    isettings._persist(write=write_settings)
     reload_lamindb(isettings)
 
 

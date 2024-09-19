@@ -198,6 +198,7 @@ def connect(
     isettings: InstanceSettings = None  # type: ignore
 
     access_token = kwargs.get("access_token", None)
+    _write_settings = kwargs.get("_write_settings", True)
     _raise_not_found_error = kwargs.get("_raise_not_found_error", True)
     _test = kwargs.get("_test", False)
 
@@ -213,7 +214,11 @@ def connect(
                 return None
             else:
                 raise RuntimeError(MESSAGE_NO_MULTIPLE_INSTANCE)
-        elif settings._instance_exists and f"{owner}/{name}" != settings.instance.slug:
+        elif (
+            _write_settings
+            and settings._instance_exists
+            and f"{owner}/{name}" != settings.instance.slug
+        ):
             close_instance(mute=True)
 
         try:
@@ -227,7 +232,7 @@ def connect(
             return isettings
         if storage is not None:
             update_isettings_with_storage(isettings, storage)
-        isettings._persist()
+        isettings._persist(write=_write_settings)
         if _test:
             return None
         silence_loggers()
@@ -267,10 +272,12 @@ def connect(
         #     # raised by django when the access is denied
         #     except ProgrammingError:
         #         pass
-        load_from_isettings(isettings)
+        load_from_isettings(isettings, write_settings=_write_settings)
     except Exception as e:
         if isettings is not None:
-            isettings._get_settings_file().unlink(missing_ok=True)  # type: ignore
+            if _write_settings:
+                isettings._get_settings_file().unlink(missing_ok=True)  # type: ignore
+            settings._instance_settings = None
         raise e
     # rename lnschema_bionty to bionty for sql tables
     if "bionty" in isettings.schema:

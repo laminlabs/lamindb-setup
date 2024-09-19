@@ -424,16 +424,16 @@ class InstanceSettings:
     def _get_settings_file(self) -> Path:
         return instance_settings_file(self.name, self.owner)
 
-    def _persist(self) -> None:
-        assert self.name is not None
-
-        filepath = self._get_settings_file()
-        # persist under filepath for later reference
-        save_instance_settings(self, filepath)
-        # persist under current file for auto load
-        shutil.copy2(filepath, current_instance_settings_file())
-        # persist under settings class for same session reference
-        # need to import here to avoid circular import
+    def _persist(self, write: bool = True) -> None:
+        if write:
+            assert self.name is not None
+            filepath = self._get_settings_file()
+            # persist under filepath for later reference
+            save_instance_settings(self, filepath)
+            # persist under current file for auto load
+            shutil.copy2(filepath, current_instance_settings_file())
+            # persist under settings class for same session reference
+            # need to import here to avoid circular import
         from ._settings import settings
 
         settings._instance_settings = self
