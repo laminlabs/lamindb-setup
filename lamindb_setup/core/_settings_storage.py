@@ -372,28 +372,34 @@ class StorageSettings:
         else:
             return True
 
-    def key_to_filepath(self, filekey: Path | UPath | str) -> UPath:
-        """Cloud or local filepath from filekey."""
-        return self.root / filekey
-
-    def cloud_to_local(self, filepath: Path | UPath, **kwargs) -> UPath:
-        """Local (cache) filepath from filepath."""
-        local_filepath = self.cloud_to_local_no_update(filepath)  # type: ignore
+    def cloud_to_local(
+        self, filepath: UPathStr, cache_key: UPathStr | None = None, **kwargs
+    ) -> UPath:
+        """Local (or local cache) filepath from filepath."""
+        # cache_key is ignored in cloud_to_local_no_update if filepath is local
+        local_filepath = self.cloud_to_local_no_update(filepath, cache_key)
         if isinstance(filepath, UPath) and not isinstance(filepath, LocalPathClasses):
             local_filepath.parent.mkdir(parents=True, exist_ok=True)
             filepath.synchronize(local_filepath, **kwargs)
         return local_filepath
 
-    # conversion to Path via cloud_to_local() would trigger download
-    # of remote file to cache if there already is one
-    # in pure write operations that update the cloud, we don't want this
-    # hence, we manually construct the local file path
-    # using the `.parts` attribute in the following line
-    def cloud_to_local_no_update(self, filepath: UPath) -> UPath:
+    def cloud_to_local_no_update(
+        self, filepath: UPathStr, cache_key: UPathStr | None = None
+    ) -> UPath:
+        # cache_key is ignored if filepath is local
         if isinstance(filepath, UPath) and not isinstance(filepath, LocalPathClasses):
-            return self.cache_dir.joinpath(filepath._url.netloc, *filepath.parts[1:])  # type: ignore
-        return filepath
+            # Path / UPath discards protocol from UPath if present
+            local_filepath = self.cache_dir / (
+                filepath if cache_key is None else cache_key
+            )
+        else:
+            local_filepath = filepath
+        return UPath(local_filepath)
 
-    def local_filepath(self, filekey: Path | UPath | str) -> UPath:
+    def key_to_filepath(self, filekey: UPathStr) -> UPath:
+        """Cloud or local filepath from filekey."""
+        return self.root / filekey
+
+    def local_filepath(self, filekey: UPathStr) -> UPath:
         """Local (cache) filepath from filekey: `local(filepath(...))`."""
         return self.cloud_to_local(self.key_to_filepath(filekey))
