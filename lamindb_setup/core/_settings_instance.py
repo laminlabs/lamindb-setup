@@ -23,6 +23,8 @@ from .upath import LocalPathClasses, UPath
 if TYPE_CHECKING:
     from uuid import UUID
 
+    from ._settings_user import UserSettings
+
 
 def sanitize_git_repo_url(repo_url: str) -> str:
     assert repo_url.startswith("https://")
@@ -54,6 +56,7 @@ class InstanceSettings:
         schema: str | None = None,  # comma-separated string of schema names
         git_repo: str | None = None,  # a git repo URL
         is_on_hub: bool | None = None,  # initialized from hub
+        _locker_user: UserSettings | None = None,  # user to lock for if cloud sqlite
     ):
         from ._hub_utils import validate_db_arg
 
@@ -70,6 +73,8 @@ class InstanceSettings:
         self._keep_artifacts_local = keep_artifacts_local
         self._storage_local: StorageSettings | None = None
         self._is_on_hub = is_on_hub
+        # if None then settings.user is used
+        self._locker_user = _locker_user
 
     def __repr__(self):
         """Rich string representation."""
@@ -375,7 +380,8 @@ class InstanceSettings:
 
         if self._is_cloud_sqlite:
             try:
-                return get_locker(self)
+                # if _locker_user is None then settings.user is used
+                return get_locker(self, self._locker_user)
             except PermissionError:
                 logger.warning("read-only access - did not access locker")
                 return empty_locker

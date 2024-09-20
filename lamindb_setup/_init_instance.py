@@ -296,6 +296,8 @@ def init(
             db=db,
             schema=schema,
             uid=ssettings.uid,
+            # to lock passed user in isettings._cloud_sqlite_locker.lock()
+            _locker_user=_user,  # only has effect if cloud sqlite
         )
         register_on_hub = (
             isettings.is_remote and instance_state != "instance-corrupted-or-deleted"
@@ -314,10 +316,7 @@ def init(
             isettings, init=True, user=_user, write_settings=_write_settings
         )
         if _write_settings and isettings._is_cloud_sqlite:
-            from .core.cloud_sqlite_locker import get_locker
-
-            # lock passed user if _user is not None
-            get_locker(isettings, _user).lock()
+            isettings._cloud_sqlite_locker.lock()
             logger.warning(
                 "locked instance (to unlock and push changes to the cloud SQLite file,"
                 " call: lamin load --unload)"

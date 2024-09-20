@@ -204,11 +204,8 @@ def connect(
 
     access_token: str | None = None
     _user: UserSettings | None = kwargs.get("_user", None)
-    if _user is None:
-        user = settings.user
-    else:
-        user = _user
-        access_token = user.access_token
+    if _user is not None:
+        access_token = _user.access_token
 
     try:
         owner, name = get_owner_name_from_identifier(slug)
@@ -238,6 +235,10 @@ def connect(
                 return "instance-not-found"
         if isinstance(isettings, str):
             return isettings
+        # after we checked that isettings is not a string
+        # to lock passed user in isettings._load_db()
+        # has no effect if None or if not cloud sqlite
+        isettings._locker_user = _user
         if storage is not None:
             update_isettings_with_storage(isettings, storage)
         isettings._persist(write=_write_settings)
@@ -280,7 +281,7 @@ def connect(
         #     # raised by django when the access is denied
         #     except ProgrammingError:
         #         pass
-        load_from_isettings(isettings, user=user, write_settings=_write_settings)
+        load_from_isettings(isettings, user=_user, write_settings=_write_settings)
     except Exception as e:
         if isettings is not None:
             if _write_settings:
