@@ -1,5 +1,5 @@
 import lamindb_setup as ln_setup
-from lamindb_setup.core._settings_load import load_user_settings
+from lamindb_setup.core._settings_load import load_instance_settings, load_user_settings
 from lamindb_setup.core._settings_store import user_settings_file_handle
 
 ln_setup.logout()
@@ -18,3 +18,6 @@ ln_setup.init(
 assert ln_setup.settings.instance.name == "test-init-no-writes"
 assert ln_setup.settings.instance.owner == "testuser1"
 assert not ln_setup.settings.instance._get_settings_file().exists()
+# load current_instance.env
+current_instance = load_instance_settings()
+assert current_instance.name != "test-init-no-writes"
