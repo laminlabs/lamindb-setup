@@ -94,7 +94,7 @@ def init_storage(
         raise ValueError(
             'Please pass a folder name that does not end or contain ".lamindb"'
         )
-    uid = os.getenv("LAMINDB_STORAGE_UID_INIT")
+    uid = os.getenv("LAMINDB_STORAGE_LNID_INIT")
     if uid is None:
         uid = base62(12)
     else:
