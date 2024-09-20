@@ -94,7 +94,9 @@ def init_storage(
         raise ValueError(
             'Please pass a folder name that does not end or contain ".lamindb"'
         )
-    uid = base62(12)
+    uid = os.getenv("LAMINDB_STORAGE_UID_INIT")
+    if uid is None:
+        uid = base62(12)
     region = None
     lamin_env = os.getenv("LAMIN_ENV")
     if root_str.startswith("create-s3"):
