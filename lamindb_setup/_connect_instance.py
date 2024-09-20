@@ -293,11 +293,15 @@ def connect(
             settings_dir / f"no_lnschema_bionty-{isettings.slug.replace('/', '')}"
         )
         if not no_lnschema_bionty_file.exists():
-            migrate_lnschema_bionty(isettings, no_lnschema_bionty_file)
+            migrate_lnschema_bionty(
+                isettings, no_lnschema_bionty_file, write_file=_write_settings
+            )
     return None
 
 
-def migrate_lnschema_bionty(isettings: InstanceSettings, no_lnschema_bionty_file: Path):
+def migrate_lnschema_bionty(
+    isettings: InstanceSettings, no_lnschema_bionty_file: Path, write_file: bool = True
+):
     """Migrate lnschema_bionty tables to bionty tables if bionty_source doesn't exist.
 
     :param db_uri: str, database URI (e.g., 'sqlite:///path/to/db.sqlite' or 'postgresql://user:password@host:port/dbname')
@@ -350,7 +354,8 @@ def migrate_lnschema_bionty(isettings: InstanceSettings, no_lnschema_bionty_file
             ]
 
         if migrated:
-            no_lnschema_bionty_file.touch(exist_ok=True)
+            if write_file:
+                no_lnschema_bionty_file.touch(exist_ok=True)
         else:
             try:
                 # rename tables only if bionty_source doesn't exist and there are tables to rename
@@ -372,8 +377,8 @@ def migrate_lnschema_bionty(isettings: InstanceSettings, no_lnschema_bionty_file
                 logger.warning(
                     "Please uninstall lnschema-bionty via `pip uninstall lnschema-bionty`!"
                 )
-
-                no_lnschema_bionty_file.touch(exist_ok=True)
+                if write_file:
+                    no_lnschema_bionty_file.touch(exist_ok=True)
             except Exception:
                 # read-only users can't rename tables
                 pass
