@@ -383,9 +383,16 @@ class StorageSettings:
     # in pure write operations that update the cloud, we don't want this
     # hence, we manually construct the local file path
     # using the `.parts` attribute in the following line
-    def cloud_to_local_no_update(self, filepath: UPath) -> UPath:
+    def cloud_to_local_no_update(self, filepath: UPath, virtual_path: str | None = None) -> UPath:
+        # virtual_path = lamin-us-east-1/298jfOijf0/mydatasets/adata1.h5ad
+        # if filepath is a cloud path, create a cache_path
         if isinstance(filepath, UPath) and not isinstance(filepath, LocalPathClasses):
-            return self.cache_dir.joinpath(filepath._url.netloc, *filepath.parts[1:])  # type: ignore
+            if virtual_path is None:
+                cache_path = self.cache_dir.joinpath(filepath._url.netloc, *filepath.parts[1:])  # type: ignore
+            else:
+                cache_path = self.cache_dir.joinpath(relative_path)
+            return cache_path
+        # if filepath is a local path, it returns the filepath
         return filepath
 
     def local_filepath(self, filekey: Path | UPath | str) -> UPath:
