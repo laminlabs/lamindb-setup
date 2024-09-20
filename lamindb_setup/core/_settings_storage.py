@@ -97,6 +97,10 @@ def init_storage(
     uid = os.getenv("LAMINDB_STORAGE_UID_INIT")
     if uid is None:
         uid = base62(12)
+    else:
+        # this means we constructed a hosted location of shape s3://bucket-name/uid
+        # within LaminHub
+        assert root_str.endswith(uid)
     region = None
     lamin_env = os.getenv("LAMIN_ENV")
     if root_str.startswith("create-s3"):
