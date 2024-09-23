@@ -12,7 +12,7 @@ from .core._hub_core import delete_instance as delete_instance_on_hub
 from .core._hub_core import get_storage_records_for_instance
 from .core._settings import settings
 from .core._settings_storage import StorageSettings
-from .core.upath import check_storage_is_empty
+from .core.upath import LocalPathClasses, check_storage_is_empty
 
 if TYPE_CHECKING:
     from pathlib import Path
@@ -22,9 +22,11 @@ if TYPE_CHECKING:
 
 def delete_cache(isettings: InstanceSettings):
     # avoid init of root
-    cache_dir = isettings.storage.cache_dir / isettings.storage._root_init
-    if cache_dir.exists():
-        shutil.rmtree(cache_dir)
+    root = isettings.storage._root_init
+    if not isinstance(root, LocalPathClasses):
+        cache_dir = isettings.storage.cache_dir / root
+        if cache_dir.exists():
+            shutil.rmtree(cache_dir)
 
 
 def delete_exclusion_dir(isettings: InstanceSettings) -> None:
