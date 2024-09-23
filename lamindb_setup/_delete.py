@@ -20,8 +20,10 @@ if TYPE_CHECKING:
     from .core._settings_instance import InstanceSettings
 
 
-def delete_cache(cache_dir: Path):
-    if cache_dir is not None and cache_dir.exists():
+def delete_cache(isettings: InstanceSettings):
+    # avoid init of root
+    cache_dir = isettings.storage.cache_dir / isettings.storage._root_init
+    if cache_dir.exists():
         shutil.rmtree(cache_dir)
 
 
@@ -35,7 +37,7 @@ def delete_by_isettings(isettings: InstanceSettings) -> None:
     settings_file = isettings._get_settings_file()
     if settings_file.exists():
         settings_file.unlink()
-    delete_cache(isettings.storage.cache_dir)
+    delete_cache(isettings)
     if isettings.dialect == "sqlite":
         try:
             if isettings._sqlite_file.exists():
