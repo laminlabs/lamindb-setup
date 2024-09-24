@@ -12,6 +12,9 @@ if TYPE_CHECKING:
     from pathlib import Path
     from uuid import UUID
 
+    from ._settings_instance import InstanceSettings
+    from ._settings_user import UserSettings
+
 EXPIRATION_TIME = 24 * 60 * 60 * 7  # 7 days
 
 MAX_MSG_COUNTER = 100  # print the msg after this number of iterations
@@ -176,12 +179,14 @@ class Locker:
 _locker: Locker | None = None
 
 
-def get_locker(isettings) -> Locker:
+def get_locker(
+    isettings: InstanceSettings, usettings: UserSettings | None = None
+) -> Locker:
     from ._settings import settings
 
     global _locker
 
-    user_uid = settings.user.uid
+    user_uid = settings.user.uid if usettings is None else usettings.uid
     storage_root = isettings.storage.root
 
     if (

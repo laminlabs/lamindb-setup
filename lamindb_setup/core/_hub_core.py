@@ -38,12 +38,9 @@ if TYPE_CHECKING:
     from ._settings_instance import InstanceSettings
 
 
-def delete_storage_record(
-    storage_uuid: UUID,
-) -> None:
+def delete_storage_record(storage_uuid: UUID, access_token: str | None = None) -> None:
     return call_with_fallback_auth(
-        _delete_storage_record,
-        storage_uuid=storage_uuid,
+        _delete_storage_record, storage_uuid=storage_uuid, access_token=access_token
     )
 
 
@@ -119,12 +116,16 @@ def _select_storage(
 def init_storage(
     ssettings: StorageSettings,
     auto_populate_instance: bool = True,
+    created_by: UUID | None = None,
+    access_token: str | None = None,
 ) -> Literal["hub-record-retireved", "hub-record-created"]:
-    if settings.user.handle != "anonymous":
+    if settings.user.handle != "anonymous" or access_token is not None:
         return call_with_fallback_auth(
             _init_storage,
             ssettings=ssettings,
             auto_populate_instance=auto_populate_instance,
+            created_by=created_by,
+            access_token=access_token,
         )
     else:
         storage_exists = call_with_fallback(
@@ -137,10 +138,14 @@ def init_storage(
 
 
 def _init_storage(
-    ssettings: StorageSettings, auto_populate_instance: bool, client: Client
+    client: Client,
+    ssettings: StorageSettings,
+    auto_populate_instance: bool,
+    created_by: UUID | None = None,
 ) -> Literal["hub-record-retireved", "hub-record-created"]:
     from lamindb_setup import settings
 
+    created_by = settings.user._uuid if created_by is None else created_by
     # storage roots are always stored without the trailing slash in the SQL
     # database
     root = ssettings.root_as_str
@@ -167,7 +172,7 @@ def _init_storage(
     fields = {
         "id": id.hex,
         "lnid": ssettings.uid,
-        "created_by": settings.user._uuid.hex,  # type: ignore
+        "created_by": created_by.hex,  # type: ignore
         "root": root,
         "region": ssettings.region,
         "type": ssettings.type,
@@ -253,21 +258,31 @@ def _delete_instance(
     return None
 
 
-def delete_instance_record(
-    instance_id: UUID,
-) -> None:
+def delete_instance_record(instance_id: UUID, access_token: str | None = None) -> None:
     return call_with_fallback_auth(
-        _delete_instance_record,
-        instance_id=instance_id,
+        _delete_instance_record, instance_id=instance_id, access_token=access_token
     )
 
 
-def init_instance(isettings: InstanceSettings) -> None:
-    return call_with_fallback_auth(_init_instance, isettings=isettings)
+def init_instance(
+    isettings: InstanceSettings,
+    account_id: UUID | None = None,
+    access_token: str | None = None,
+) -> None:
+    return call_with_fallback_auth(
+        _init_instance,
+        isettings=isettings,
+        account_id=account_id,
+        access_token=access_token,
+    )
 
 
-def _init_instance(isettings: InstanceSettings, client: Client) -> None:
+def _init_instance(
+    client: Client, isettings: InstanceSettings, account_id: UUID | None = None
+) -> None:
     from ._settings import settings
+
+    account_id = settings.user._uuid if account_id is None else account_id
 
     try:
         lamindb_version = metadata.version("lamindb")
@@ -275,7 +290,7 @@ def _init_instance(isettings: InstanceSettings, client: Client) -> None:
         lamindb_version = None
     fields = {
         "id": isettings._id.hex,
-        "account_id": settings.user._uuid.hex,  # type: ignore
+        "account_id": account_id.hex,  # type: ignore
         "name": isettings.name,
         "lnid": isettings.uid,
         "schema_str": isettings._schema_str,
@@ -312,11 +327,14 @@ def connect_instance(
     *,
     owner: str,  # account_handle
     name: str,  # instance_name
+    access_token: str | None = None,
 ) -> tuple[dict, dict] | str:
     from ._settings import settings
 
-    if settings.user.handle != "anonymous":
-        return call_with_fallback_auth(_connect_instance, owner=owner, name=name)
+    if settings.user.handle != "anonymous" or access_token is not None:
+        return call_with_fallback_auth(
+            _connect_instance, owner=owner, name=name, access_token=access_token
+        )
     else:
         return call_with_fallback(_connect_instance, owner=owner, name=name)
 
@@ -424,11 +442,14 @@ def connect_instance_new(
     *,
     owner: str,  # account_handle
     name: str,  # instance_name
+    access_token: str | None = None,
 ) -> tuple[dict, dict] | str:
     from ._settings import settings
 
-    if settings.user.handle != "anonymous":
-        return call_with_fallback_auth(_connect_instance_new, owner=owner, name=name)
+    if settings.user.handle != "anonymous" or access_token is not None:
+        return call_with_fallback_auth(
+            _connect_instance_new, owner=owner, name=name, access_token=access_token
+        )
     else:
         return call_with_fallback(_connect_instance_new, owner=owner, name=name)
 

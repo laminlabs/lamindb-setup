@@ -33,8 +33,8 @@ if TYPE_CHECKING:
     from supabase import Client
 
 
-def update_schema_in_hub() -> tuple[bool, UUID, dict]:
-    return call_with_fallback_auth(_synchronize_schema)
+def update_schema_in_hub(access_token: str | None = None) -> tuple[bool, UUID, dict]:
+    return call_with_fallback_auth(_synchronize_schema, access_token=access_token)
 
 
 def _synchronize_schema(client: Client) -> tuple[bool, UUID, dict]:

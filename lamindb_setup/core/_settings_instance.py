@@ -23,6 +23,8 @@ from .upath import LocalPathClasses, UPath
 if TYPE_CHECKING:
     from uuid import UUID
 
+    from ._settings_user import UserSettings
+
 
 def sanitize_git_repo_url(repo_url: str) -> str:
     assert repo_url.startswith("https://")
@@ -54,6 +56,7 @@ class InstanceSettings:
         schema: str | None = None,  # comma-separated string of schema names
         git_repo: str | None = None,  # a git repo URL
         is_on_hub: bool | None = None,  # initialized from hub
+        _locker_user: UserSettings | None = None,  # user to lock for if cloud sqlite
     ):
         from ._hub_utils import validate_db_arg
 
@@ -70,6 +73,8 @@ class InstanceSettings:
         self._keep_artifacts_local = keep_artifacts_local
         self._storage_local: StorageSettings | None = None
         self._is_on_hub = is_on_hub
+        # if None then settings.user is used
+        self._locker_user = _locker_user
 
     def __repr__(self):
         """Rich string representation."""
@@ -283,7 +288,8 @@ class InstanceSettings:
         if self._is_cloud_sqlite:
             sqlite_file = self._sqlite_file
             logger.warning(
-                f"updating & unlocking cloud SQLite '{sqlite_file}' of instance"
+                f"updating{' & unlocking' if unlock_cloud_sqlite else ''} cloud SQLite "
+                f"'{sqlite_file}' of instance"
                 f" '{self.slug}'"
             )
             cache_file = self.storage.cloud_to_local_no_update(sqlite_file)
@@ -374,7 +380,8 @@ class InstanceSettings:
 
         if self._is_cloud_sqlite:
             try:
-                return get_locker(self)
+                # if _locker_user is None then settings.user is used
+                return get_locker(self, self._locker_user)
             except PermissionError:
                 logger.warning("read-only access - did not access locker")
                 return empty_locker
@@ -424,16 +431,22 @@ class InstanceSettings:
     def _get_settings_file(self) -> Path:
         return instance_settings_file(self.name, self.owner)
 
-    def _persist(self) -> None:
-        assert self.name is not None
+    def _persist(self, write_to_disk: bool = True) -> None:
+        """Set these instance settings as the current instance.
 
-        filepath = self._get_settings_file()
-        # persist under filepath for later reference
-        save_instance_settings(self, filepath)
-        # persist under current file for auto load
-        shutil.copy2(filepath, current_instance_settings_file())
-        # persist under settings class for same session reference
-        # need to import here to avoid circular import
+        Args:
+            write_to_disk: Save these instance settings to disk and
+                overwrite the current instance settings file.
+        """
+        if write_to_disk:
+            assert self.name is not None
+            filepath = self._get_settings_file()
+            # persist under filepath for later reference
+            save_instance_settings(self, filepath)
+            # persist under current file for auto load
+            shutil.copy2(filepath, current_instance_settings_file())
+            # persist under settings class for same session reference
+            # need to import here to avoid circular import
         from ._settings import settings
 
         settings._instance_settings = self

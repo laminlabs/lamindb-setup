@@ -27,6 +27,7 @@ from .core.cloud_sqlite_locker import unlock_cloud_sqlite_upon_exception
 if TYPE_CHECKING:
     from pathlib import Path
 
+    from .core._settings_user import UserSettings
     from .core.types import UPathStr
 
 # this is for testing purposes only
@@ -115,6 +116,7 @@ def _connect_instance(
     *,
     db: str | None = None,
     raise_permission_error: bool = True,
+    access_token: str | None = None,
 ) -> InstanceSettings:
     settings_file = instance_settings_file(name, owner)
     make_hub_request = True
@@ -128,9 +130,13 @@ def _connect_instance(
         # do not call hub if the user is anonymous
         if owner != "anonymous":
             if settings.user.handle in {"Koncopd", "sunnyosun", "falexwolf"}:
-                hub_result = load_instance_from_hub_edge(owner=owner, name=name)
+                hub_result = load_instance_from_hub_edge(
+                    owner=owner, name=name, access_token=access_token
+                )
             else:
-                hub_result = load_instance_from_hub(owner=owner, name=name)
+                hub_result = load_instance_from_hub(
+                    owner=owner, name=name, access_token=access_token
+                )
         else:
             hub_result = "anonymous-user"
         # if hub_result is not a string, it means it made a request
@@ -180,12 +186,7 @@ def _connect_instance(
 
 @unlock_cloud_sqlite_upon_exception(ignore_prev_locker=True)
 def connect(
-    slug: str,
-    *,
-    db: str | None = None,
-    storage: UPathStr | None = None,
-    _raise_not_found_error: bool = True,
-    _test: bool = False,
+    slug: str, *, db: str | None = None, storage: UPathStr | None = None, **kwargs
 ) -> str | tuple | None:
     """Connect to instance.
 
@@ -196,6 +197,16 @@ def connect(
         storage: Load the instance with an updated default storage.
     """
     isettings: InstanceSettings = None  # type: ignore
+
+    _write_settings: bool = kwargs.get("_write_settings", True)
+    _raise_not_found_error: bool = kwargs.get("_raise_not_found_error", True)
+    _test: bool = kwargs.get("_test", False)
+
+    access_token: str | None = None
+    _user: UserSettings | None = kwargs.get("_user", None)
+    if _user is not None:
+        access_token = _user.access_token
+
     try:
         owner, name = get_owner_name_from_identifier(slug)
 
@@ -208,11 +219,15 @@ def connect(
                 return None
             else:
                 raise RuntimeError(MESSAGE_NO_MULTIPLE_INSTANCE)
-        elif settings._instance_exists and f"{owner}/{name}" != settings.instance.slug:
+        elif (
+            _write_settings
+            and settings._instance_exists
+            and f"{owner}/{name}" != settings.instance.slug
+        ):
             close_instance(mute=True)
 
         try:
-            isettings = _connect_instance(owner, name, db=db)
+            isettings = _connect_instance(owner, name, db=db, access_token=access_token)
         except InstanceNotFoundError as e:
             if _raise_not_found_error:
                 raise e
@@ -220,9 +235,13 @@ def connect(
                 return "instance-not-found"
         if isinstance(isettings, str):
             return isettings
+        # at this point we have checked already that isettings is not a string
+        # _user is passed to lock cloud sqite for this user in isettings._load_db()
+        # has no effect if _user is None or if not cloud sqlite instance
+        isettings._locker_user = _user
         if storage is not None:
             update_isettings_with_storage(isettings, storage)
-        isettings._persist()
+        isettings._persist(write_to_disk=_write_settings)
         if _test:
             return None
         silence_loggers()
@@ -262,10 +281,12 @@ def connect(
         #     # raised by django when the access is denied
         #     except ProgrammingError:
         #         pass
-        load_from_isettings(isettings)
+        load_from_isettings(isettings, user=_user, write_settings=_write_settings)
     except Exception as e:
         if isettings is not None:
-            isettings._get_settings_file().unlink(missing_ok=True)  # type: ignore
+            if _write_settings:
+                isettings._get_settings_file().unlink(missing_ok=True)  # type: ignore
+            settings._instance_settings = None
         raise e
     # rename lnschema_bionty to bionty for sql tables
     if "bionty" in isettings.schema:
@@ -273,11 +294,15 @@ def connect(
             settings_dir / f"no_lnschema_bionty-{isettings.slug.replace('/', '')}"
         )
         if not no_lnschema_bionty_file.exists():
-            migrate_lnschema_bionty(isettings, no_lnschema_bionty_file)
+            migrate_lnschema_bionty(
+                isettings, no_lnschema_bionty_file, write_file=_write_settings
+            )
     return None
 
 
-def migrate_lnschema_bionty(isettings: InstanceSettings, no_lnschema_bionty_file: Path):
+def migrate_lnschema_bionty(
+    isettings: InstanceSettings, no_lnschema_bionty_file: Path, write_file: bool = True
+):
     """Migrate lnschema_bionty tables to bionty tables if bionty_source doesn't exist.
 
     :param db_uri: str, database URI (e.g., 'sqlite:///path/to/db.sqlite' or 'postgresql://user:password@host:port/dbname')
@@ -330,7 +355,8 @@ def migrate_lnschema_bionty(isettings: InstanceSettings, no_lnschema_bionty_file
             ]
 
         if migrated:
-            no_lnschema_bionty_file.touch(exist_ok=True)
+            if write_file:
+                no_lnschema_bionty_file.touch(exist_ok=True)
         else:
             try:
                 # rename tables only if bionty_source doesn't exist and there are tables to rename
@@ -352,8 +378,8 @@ def migrate_lnschema_bionty(isettings: InstanceSettings, no_lnschema_bionty_file
                 logger.warning(
                     "Please uninstall lnschema-bionty via `pip uninstall lnschema-bionty`!"
                 )
-
-                no_lnschema_bionty_file.touch(exist_ok=True)
+                if write_file:
+                    no_lnschema_bionty_file.touch(exist_ok=True)
             except Exception:
                 # read-only users can't rename tables
                 pass

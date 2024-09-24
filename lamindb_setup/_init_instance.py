@@ -22,6 +22,7 @@ from .core.upath import UPath
 if TYPE_CHECKING:
     from pydantic import PostgresDsn
 
+    from .core._settings_user import UserSettings
     from .core.types import UPathStr
 
 
@@ -166,6 +167,8 @@ def validate_init_args(
     db: PostgresDsn | None = None,
     schema: str | None = None,
     _test: bool = False,
+    _write_settings: bool = True,
+    _user: UserSettings | None = None,
 ) -> tuple[
     str,
     UUID | None,
@@ -184,9 +187,17 @@ def validate_init_args(
 
     # should be called as the first thing
     name_str = infer_instance_name(storage=storage, name=name, db=db)
+    owner_str = settings.user.handle if _user is None else _user.handle
     # test whether instance exists by trying to load it
-    instance_slug = f"{settings.user.handle}/{name_str}"
-    response = connect(instance_slug, db=db, _raise_not_found_error=False, _test=_test)
+    instance_slug = f"{owner_str}/{name_str}"
+    response = connect(
+        instance_slug,
+        db=db,
+        _raise_not_found_error=False,
+        _test=_test,
+        _write_settings=_write_settings,
+        _user=_user,
+    )
     instance_state: Literal[
         "connected",
         "instance-corrupted-or-deleted",
@@ -213,7 +224,7 @@ def init(
     name: str | None = None,
     db: PostgresDsn | None = None,
     schema: str | None = None,
-    _test: bool = False,
+    **kwargs,
 ) -> None:
     """Create and load a LaminDB instance.
 
@@ -226,13 +237,24 @@ def init(
     """
     isettings = None
     ssettings = None
+
+    _write_settings: bool = kwargs.get("_write_settings", True)
+    _test: bool = kwargs.get("_test", False)
+
+    # use this user instead of settings.user
+    # contains access_token
+    _user: UserSettings | None = kwargs.get("_user", None)
+    user_handle: str = settings.user.handle if _user is None else _user.handle
+    user__uuid: UUID = settings.user._uuid if _user is None else _user._uuid  # type: ignore
+    access_token: str | None = None if _user is None else _user.access_token
+
     try:
         silence_loggers()
         from ._check_setup import _check_instance_setup
 
         if _check_instance_setup() and not _test:
             raise RuntimeError(MESSAGE_NO_MULTIPLE_INSTANCE)
-        else:
+        elif _write_settings:
             close_instance(mute=True)
         from .core._hub_core import init_instance as init_instance_hub
 
@@ -242,9 +264,12 @@ def init(
             db=db,
             schema=schema,
             _test=_test,
+            _write_settings=_write_settings,
+            _user=_user,  # will get from settings.user if _user is None
         )
         if instance_state == "connected":
-            settings.auto_connect = True  # we can also debate this switch here
+            if _write_settings:
+                settings.auto_connect = True  # we can also debate this switch here
             return None
         # the conditions here match `isettings.is_remote`, but I currently don't
         # see a way of making this more elegant; should become possible if we
@@ -255,28 +280,37 @@ def init(
             instance_id=instance_id,
             init_instance=True,
             prevent_register_hub=prevent_register_hub,
+            created_by=user__uuid,
+            access_token=access_token,
         )
         isettings = InstanceSettings(
             id=instance_id,  # type: ignore
-            owner=settings.user.handle,
+            owner=user_handle,
             name=name_str,
             storage=ssettings,
             db=db,
             schema=schema,
             uid=ssettings.uid,
+            # to lock passed user in isettings._cloud_sqlite_locker.lock()
+            _locker_user=_user,  # only has effect if cloud sqlite
         )
         register_on_hub = (
             isettings.is_remote and instance_state != "instance-corrupted-or-deleted"
         )
         if register_on_hub:
-            init_instance_hub(isettings)
+            init_instance_hub(
+                isettings, account_id=user__uuid, access_token=access_token
+            )
         validate_sqlite_state(isettings)
-        isettings._persist()
+        # why call it here if it is also called in load_from_isettings?
+        isettings._persist(write_to_disk=_write_settings)
         if _test:
             return None
         isettings._init_db()
-        load_from_isettings(isettings, init=True)
-        if isettings._is_cloud_sqlite:
+        load_from_isettings(
+            isettings, init=True, user=_user, write_settings=_write_settings
+        )
+        if _write_settings and isettings._is_cloud_sqlite:
             isettings._cloud_sqlite_locker.lock()
             logger.warning(
                 "locked instance (to unlock and push changes to the cloud SQLite file,"
@@ -285,23 +319,28 @@ def init(
         if register_on_hub and isettings.dialect != "sqlite":
             from ._schema_metadata import update_schema_in_hub
 
-            update_schema_in_hub()
-        settings.auto_connect = True
+            update_schema_in_hub(access_token=access_token)
+        if _write_settings:
+            settings.auto_connect = True
     except Exception as e:
         from ._delete import delete_by_isettings
         from .core._hub_core import delete_instance_record, delete_storage_record
 
         if isettings is not None:
-            delete_by_isettings(isettings)
-            if settings.user.handle != "anonymous" and isettings.is_on_hub:
-                delete_instance_record(isettings._id)
-            isettings._get_settings_file().unlink(missing_ok=True)  # type: ignore
+            if _write_settings:
+                delete_by_isettings(isettings)
+            else:
+                settings._instance_settings = None
+            if (
+                user_handle != "anonymous" or access_token is not None
+            ) and isettings.is_on_hub:
+                delete_instance_record(isettings._id, access_token=access_token)
         if (
             ssettings is not None
-            and settings.user.handle != "anonymous"
+            and (user_handle != "anonymous" or access_token is not None)
             and ssettings.is_on_hub
         ):
-            delete_storage_record(ssettings._uuid)  # type: ignore
+            delete_storage_record(ssettings._uuid, access_token=access_token)  # type: ignore
         raise e
     return None
 
@@ -310,12 +349,16 @@ def load_from_isettings(
     isettings: InstanceSettings,
     *,
     init: bool = False,
+    user: UserSettings | None = None,
+    write_settings: bool = True,
 ) -> None:
     from .core._setup_bionty_sources import load_bionty_sources, write_bionty_sources
 
+    user = settings.user if user is None else user
+
     if init:
         # during init both user and storage need to be registered
-        register_user_and_storage_in_instance(isettings, settings.user)
+        register_user_and_storage_in_instance(isettings, user)
         write_bionty_sources(isettings)
         isettings._update_cloud_sqlite_file(unlock_cloud_sqlite=False)
     else:
@@ -326,9 +369,9 @@ def load_from_isettings(
         # this is our best proxy for that the user might not
         # yet be registered
         if not isettings._get_settings_file().exists():
-            register_user(settings.user)
+            register_user(user)
         load_bionty_sources(isettings)
-    isettings._persist()
+    isettings._persist(write_to_disk=write_settings)
     reload_lamindb(isettings)
 
 

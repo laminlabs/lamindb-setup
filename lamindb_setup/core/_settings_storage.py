@@ -83,6 +83,8 @@ def init_storage(
     register_hub: bool | None = None,
     prevent_register_hub: bool = False,
     init_instance: bool = False,
+    created_by: UUID | None = None,
+    access_token: str | None = None,
 ) -> tuple[
     StorageSettings,
     Literal["hub-record-not-created", "hub-record-retireved", "hub-record-created"],
@@ -129,6 +131,7 @@ def init_storage(
         root=root_str,
         region=region,
         instance_id=instance_id,
+        access_token=access_token,
     )
     # this stores the result of init_storage_hub
     hub_record_status: Literal[
@@ -141,12 +144,16 @@ def init_storage(
             from ._hub_core import init_storage as init_storage_hub
 
             hub_record_status = init_storage_hub(
-                ssettings, auto_populate_instance=not init_instance
+                ssettings,
+                auto_populate_instance=not init_instance,
+                created_by=created_by,
+                access_token=access_token,
             )
     # below comes last only if everything else was successful
     try:
         # (federated) credentials for AWS access are provisioned under-the-hood
         # discussion: https://laminlabs.slack.com/archives/C04FPE8V01W/p1719260587167489
+        # if access_token was passed in ssettings, it is used here
         mark_storage_root(ssettings.root, ssettings.uid)  # type: ignore
     except Exception:
         logger.important(
@@ -157,7 +164,7 @@ def init_storage(
         # and we don't want to delete an existing storage record here
         # only newly created
         if hub_record_status == "hub-record-created" and ssettings._uuid is not None:
-            delete_storage_record(ssettings._uuid)  # type: ignore
+            delete_storage_record(ssettings._uuid, access_token=access_token)  # type: ignore
         ssettings._instance_id = None
     return ssettings, hub_record_status
 
