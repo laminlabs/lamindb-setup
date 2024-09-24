@@ -192,7 +192,7 @@ def validate_init_args(
     instance_slug = f"{owner_str}/{name_str}"
     response = connect(
         instance_slug,
-        db=db,
+        _db=db,
         _raise_not_found_error=False,
         _test=_test,
         _write_settings=_write_settings,
