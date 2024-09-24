@@ -105,6 +105,11 @@ def test_connect_after_private_public_switch():
 
 
 def test_connect_with_db_parameter():
+    # no more db parameter, it is _db now and is hidden in kwargs
+    # this also tests that only allowed kwargs can be used
+    with pytest.raises(TypeError):
+        ln_setup.connect("laminlabs/lamindata", db="some_db")
+
     if os.getenv("LAMIN_ENV") == "prod":
         # take a write-level access collaborator
         ln_setup.login("testuser1")
