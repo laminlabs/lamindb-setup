@@ -113,7 +113,7 @@ def test_connect_with_db_parameter():
         assert "root" in ln_setup.settings.instance.db
         # test load from provided db argument
         db = "postgresql://testdbuser:testpwd@database2.cmyfs24wugc3.us-east-1.rds.amazonaws.com:5432/db1"
-        ln_setup.connect("laminlabs/lamindata", db=db, _test=True)
+        ln_setup.connect("laminlabs/lamindata", _db=db, _test=True)
         assert "testdbuser" in ln_setup.settings.instance.db
         # test ignore loading from cache because hub result has >read access
         ln_setup.connect("laminlabs/lamindata", _test=True)
@@ -125,7 +125,7 @@ def test_connect_with_db_parameter():
         ln_setup.connect("laminlabs/lamindata", _test=True)
         assert "root" in ln_setup.settings.instance.db
         # now pass the connection string
-        ln_setup.connect("laminlabs/lamindata", db=db, _test=True)
+        ln_setup.connect("laminlabs/lamindata", _db=db, _test=True)
         assert "testdbuser" in ln_setup.settings.instance.db
         # now the cache is used
         ln_setup.connect("laminlabs/lamindata", _test=True)
@@ -134,7 +134,7 @@ def test_connect_with_db_parameter():
         # test corrupted input
         db_corrupted = "postgresql://testuser:testpwd@wrongserver:5432/db1"
         with pytest.raises(ValueError) as error:
-            ln_setup.connect("laminlabs/lamindata", db=db_corrupted, _test=True)
+            ln_setup.connect("laminlabs/lamindata", _db=db_corrupted, _test=True)
         assert error.exconly().startswith(
             "ValueError: The local differs from the hub database information"
         )
