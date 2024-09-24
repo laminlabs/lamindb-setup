@@ -246,7 +246,7 @@ def init(
     # contains access_token
     _user: UserSettings | None = kwargs.get("_user", None)
     user_handle: str = settings.user.handle if _user is None else _user.handle
-    user__uuid: UUID = settings.user._uuid if _user is None else settings.user._uuid  # type: ignore
+    user__uuid: UUID = settings.user._uuid if _user is None else _user._uuid  # type: ignore
 
     try:
         silence_loggers()
