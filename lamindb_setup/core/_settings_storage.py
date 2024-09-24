@@ -83,7 +83,7 @@ def init_storage(
     register_hub: bool | None = None,
     prevent_register_hub: bool = False,
     init_instance: bool = False,
-    created_by: str | None = None,
+    created_by: UUID | None = None,
     access_token: str | None = None,
 ) -> tuple[
     StorageSettings,

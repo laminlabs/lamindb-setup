@@ -116,7 +116,7 @@ def _select_storage(
 def init_storage(
     ssettings: StorageSettings,
     auto_populate_instance: bool = True,
-    created_by: str | None = None,
+    created_by: UUID | None = None,
     access_token: str | None = None,
 ) -> Literal["hub-record-retireved", "hub-record-created"]:
     if settings.user.handle != "anonymous" or access_token is not None:
@@ -141,11 +141,11 @@ def _init_storage(
     client: Client,
     ssettings: StorageSettings,
     auto_populate_instance: bool,
-    created_by: str | None = None,
+    created_by: UUID | None = None,
 ) -> Literal["hub-record-retireved", "hub-record-created"]:
     from lamindb_setup import settings
 
-    created_by = settings.user._uuid.hex if created_by is None else created_by  # type: ignore
+    created_by = settings.user._uuid if created_by is None else created_by
     # storage roots are always stored without the trailing slash in the SQL
     # database
     root = ssettings.root_as_str
@@ -172,7 +172,7 @@ def _init_storage(
     fields = {
         "id": id.hex,
         "lnid": ssettings.uid,
-        "created_by": created_by,
+        "created_by": created_by.hex,  # type: ignore
         "root": root,
         "region": ssettings.region,
         "type": ssettings.type,
@@ -266,7 +266,7 @@ def delete_instance_record(instance_id: UUID, access_token: str | None = None) -
 
 def init_instance(
     isettings: InstanceSettings,
-    account_id: str | None = None,
+    account_id: UUID | None = None,
     access_token: str | None = None,
 ) -> None:
     return call_with_fallback_auth(
@@ -278,11 +278,11 @@ def init_instance(
 
 
 def _init_instance(
-    client: Client, isettings: InstanceSettings, account_id: str | None = None
+    client: Client, isettings: InstanceSettings, account_id: UUID | None = None
 ) -> None:
     from ._settings import settings
 
-    account_id = settings.user._uuid.hex if account_id is None else account_id  # type: ignore
+    account_id = settings.user._uuid if account_id is None else account_id
 
     try:
         lamindb_version = metadata.version("lamindb")
@@ -290,7 +290,7 @@ def _init_instance(
         lamindb_version = None
     fields = {
         "id": isettings._id.hex,
-        "account_id": account_id,
+        "account_id": account_id.hex,  # type: ignore
         "name": isettings.name,
         "lnid": isettings.uid,
         "schema_str": isettings._schema_str,

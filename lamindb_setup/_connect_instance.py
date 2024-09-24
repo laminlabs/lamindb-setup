@@ -235,9 +235,9 @@ def connect(
                 return "instance-not-found"
         if isinstance(isettings, str):
             return isettings
-        # after we checked that isettings is not a string
-        # to lock passed user in isettings._load_db()
-        # has no effect if None or if not cloud sqlite
+        # at this point we have checked already that isettings is not a string
+        # _user is passed to lock cloud sqite for this user in isettings._load_db()
+        # has no effect if _user is None or if not cloud sqlite instance
         isettings._locker_user = _user
         if storage is not None:
             update_isettings_with_storage(isettings, storage)

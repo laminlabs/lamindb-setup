@@ -245,13 +245,8 @@ def init(
     # use this user instead of settings.user
     # contains access_token
     _user: UserSettings | None = kwargs.get("_user", None)
-    if _user is None:
-        user_handle = settings.user.handle
-        user__uuid = None if settings.user._uuid is None else settings.user._uuid.hex
-    else:
-        user_handle = _user.handle
-        user__uuid = None if _user._uuid is None else _user._uuid.hex
-        access_token = _user.access_token
+    user_handle: str = settings.user.handle if _user is None else _user.handle
+    user__uuid: UUID = settings.user._uuid if _user is None else settings.user._uuid  # type: ignore
 
     try:
         silence_loggers()
