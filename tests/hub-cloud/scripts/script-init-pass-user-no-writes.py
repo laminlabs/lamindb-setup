@@ -24,6 +24,7 @@ ln_setup.init(
 assert ln_setup.settings.instance.name == "test-init-no-writes"
 assert ln_setup.settings.instance.owner == "testuser1"
 assert not ln_setup.settings.instance._get_settings_file().exists()
+assert ln_setup.settings.instance._cloud_sqlite_locker.user == testuser1.uid
 # check that there were no change in current_instance.env
 # here in CI tests current_instance.env is just not present at the time of execution
 assert current_instance_exists == current_instance_file.exists()
