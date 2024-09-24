@@ -303,7 +303,7 @@ def init(
             )
         validate_sqlite_state(isettings)
         # why call it here if it is also called in load_from_isettings?
-        isettings._persist(write=_write_settings)
+        isettings._persist(write_to_disk=_write_settings)
         if _test:
             return None
         isettings._init_db()
@@ -371,7 +371,7 @@ def load_from_isettings(
         if not isettings._get_settings_file().exists():
             register_user(user)
         load_bionty_sources(isettings)
-    isettings._persist(write=write_settings)
+    isettings._persist(write_to_disk=write_settings)
     reload_lamindb(isettings)
 
 

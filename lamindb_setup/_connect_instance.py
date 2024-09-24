@@ -241,7 +241,7 @@ def connect(
         isettings._locker_user = _user
         if storage is not None:
             update_isettings_with_storage(isettings, storage)
-        isettings._persist(write=_write_settings)
+        isettings._persist(write_to_disk=_write_settings)
         if _test:
             return None
         silence_loggers()

@@ -431,8 +431,14 @@ class InstanceSettings:
     def _get_settings_file(self) -> Path:
         return instance_settings_file(self.name, self.owner)
 
-    def _persist(self, write: bool = True) -> None:
-        if write:
+    def _persist(self, write_to_disk: bool = True) -> None:
+        """Set these instance settings as the current instance.
+
+        Args:
+            write_to_disk: Save these instance settings to disk and
+                overwrite the current instance settings file.
+        """
+        if write_to_disk:
             assert self.name is not None
             filepath = self._get_settings_file()
             # persist under filepath for later reference
