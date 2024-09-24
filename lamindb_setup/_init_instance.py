@@ -241,12 +241,12 @@ def init(
     _write_settings: bool = kwargs.get("_write_settings", True)
     _test: bool = kwargs.get("_test", False)
 
-    access_token: str | None = None
     # use this user instead of settings.user
     # contains access_token
     _user: UserSettings | None = kwargs.get("_user", None)
     user_handle: str = settings.user.handle if _user is None else _user.handle
     user__uuid: UUID = settings.user._uuid if _user is None else _user._uuid  # type: ignore
+    access_token: str | None = None if _user is None else _user.access_token
 
     try:
         silence_loggers()
