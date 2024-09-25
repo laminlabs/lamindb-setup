@@ -24,7 +24,7 @@ def test_connect_instance_with_private_storage_and_no_storage_access():
     # storage during connection
     ln_setup.connect(
         "laminlabs/test-instance-private-postgres",
-        db=os.environ["TEST_INSTANCE_PRIVATE_POSTGRES"],
+        _db=os.environ["TEST_INSTANCE_PRIVATE_POSTGRES"],
         _test=True,
     )
     # accessing storage in the instance should fail:

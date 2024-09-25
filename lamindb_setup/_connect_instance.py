@@ -185,19 +185,28 @@ def _connect_instance(
 
 
 @unlock_cloud_sqlite_upon_exception(ignore_prev_locker=True)
-def connect(
-    slug: str, *, db: str | None = None, storage: UPathStr | None = None, **kwargs
-) -> str | tuple | None:
+def connect(slug: str, **kwargs) -> str | tuple | None:
     """Connect to instance.
 
     Args:
         slug: The instance slug `account_handle/instance_name` or URL.
             If the instance is owned by you, it suffices to pass the instance name.
-        db: Load the instance with an updated database URL.
-        storage: Load the instance with an updated default storage.
     """
-    isettings: InstanceSettings = None  # type: ignore
+    # validate kwargs
+    valid_kwargs = {
+        "_db",
+        "_write_settings",
+        "_raise_not_found_error",
+        "_test",
+        "_user",
+    }
+    for kwarg in kwargs:
+        if kwarg not in valid_kwargs:
+            raise TypeError(f"connect() got unexpected keyword argument '{kwarg}'")
 
+    isettings: InstanceSettings = None  # type: ignore
+    # _db is still needed because it is called in init
+    _db: str | None = kwargs.get("_db", None)
     _write_settings: bool = kwargs.get("_write_settings", True)
     _raise_not_found_error: bool = kwargs.get("_raise_not_found_error", True)
     _test: bool = kwargs.get("_test", False)
@@ -227,7 +236,9 @@ def connect(
             close_instance(mute=True)
 
         try:
-            isettings = _connect_instance(owner, name, db=db, access_token=access_token)
+            isettings = _connect_instance(
+                owner, name, db=_db, access_token=access_token
+            )
         except InstanceNotFoundError as e:
             if _raise_not_found_error:
                 raise e
@@ -239,8 +250,6 @@ def connect(
         # _user is passed to lock cloud sqite for this user in isettings._load_db()
         # has no effect if _user is None or if not cloud sqlite instance
         isettings._locker_user = _user
-        if storage is not None:
-            update_isettings_with_storage(isettings, storage)
         isettings._persist(write_to_disk=_write_settings)
         if _test:
             return None
@@ -268,8 +277,6 @@ def connect(
         if _TEST_FAILED_LOAD:
             raise RuntimeError("Technical testing error.")
 
-        if storage is not None and isettings.dialect == "sqlite":
-            update_root_field_in_default_storage(isettings)
         # below is for backfilling the instance_uid value
         # we'll enable it once more people migrated to 0.71.0
         # ssettings_record = isettings.storage.record
@@ -298,6 +305,17 @@ def connect(
                 isettings, no_lnschema_bionty_file, write_file=_write_settings
             )
     return None
+
+
+def load(slug: str) -> str | tuple | None:
+    """Connect to instance and set ``auto-connect`` to true.
+
+    This is exactly the same as ``ln.connect()`` except for that
+    ``ln.connect()`` doesn't change the state of ``auto-connect``.
+    """
+    result = connect(slug)
+    settings.auto_connect = True
+    return result
 
 
 def migrate_lnschema_bionty(
@@ -396,22 +414,6 @@ def migrate_lnschema_bionty(
         conn.close()
 
 
-def load(
-    slug: str,
-    *,
-    db: str | None = None,
-    storage: UPathStr | None = None,
-) -> str | tuple | None:
-    """Connect to instance and set ``auto-connect`` to true.
-
-    This is exactly the same as ``ln.connect()`` except for that
-    ``ln.connect()`` doesn't change the state of ``auto-connect``.
-    """
-    result = connect(slug, db=db, storage=storage)
-    settings.auto_connect = True
-    return result
-
-
 def get_owner_name_from_identifier(identifier: str):
     if "/" in identifier:
         if identifier.startswith("https://lamin.ai/"):
@@ -427,44 +429,3 @@ def get_owner_name_from_identifier(identifier: str):
         owner = settings.user.handle
         name = identifier
     return owner, name
-
-
-def update_isettings_with_storage(
-    isettings: InstanceSettings, storage: UPathStr
-) -> None:
-    ssettings = StorageSettings(storage)
-    if ssettings.type_is_cloud:
-        try:  # triggering ssettings.id makes a lookup in the storage table
-            logger.success(f"loaded storage: {ssettings.id} / {ssettings.root_as_str}")
-        except RuntimeError as e:
-            logger.error(
-                "storage not registered!\n"
-                "load instance without the `storage` arg and register storage root: "
-                f"`lamin set storage --storage {storage}`"
-            )
-            raise e
-    else:
-        # local storage
-        # assumption is you want to merely update the storage location
-        isettings._storage = ssettings  # need this here already
-    # update isettings in place
-    isettings._storage = ssettings
-
-
-# this is different from register!
-# register registers a new storage location
-# update_root_field_in_default_storage updates the root
-# field in the default storage locations
-def update_root_field_in_default_storage(isettings: InstanceSettings):
-    from lnschema_core.models import Storage
-
-    storages = Storage.objects.all()
-    if len(storages) != 1:
-        raise RuntimeError(
-            "You have several storage locations: Can't identify in which storage"
-            " location the root column is to be updated!"
-        )
-    storage = storages[0]
-    storage.root = isettings.storage.root_as_str
-    storage.save()
-    logger.save(f"updated storage root {storage.id} to {isettings.storage.root_as_str}")
