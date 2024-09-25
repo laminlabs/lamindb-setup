@@ -390,7 +390,8 @@ def _connect_instance_new(
     client: Client,
 ) -> tuple[dict, dict] | str:
     response = client.functions.invoke(
-        "get-instance-settings", invoke_options={"body": {"owner": owner, "name": name}}
+        "get-instance-settings-v1",
+        invoke_options={"body": {"owner": owner, "name": name}},
     )
     # no instance found, check why is that
     if response == b"{}":
@@ -471,7 +472,7 @@ def _access_aws(*, storage_root: str, client: Client) -> dict[str, dict]:
 
     storage_root_info: dict[str, dict] = {"credentials": {}, "accessibility": {}}
     response = client.functions.invoke(
-        "access-aws",
+        "get-cloud-access-v1",
         invoke_options={"body": {"storage_root": storage_root}},
     )
     if response is not None and response != b"{}":
@@ -563,7 +564,7 @@ def sign_in_hub(
 
 def _sign_in_hub_api_key(api_key: str, client: Client):
     response = client.functions.invoke(
-        "create-jwt",
+        "get-jwt-v1",
         invoke_options={"body": {"api_key": api_key}},
     )
     access_token = json.loads(response)["accessToken"]
@@ -599,7 +600,7 @@ def sign_in_hub_api_key(
 
 def _create_api_key(body: dict, client: Client) -> str:
     response = client.functions.invoke(
-        "create-api-key",
+        "create-api-key-v1",
         invoke_options={"body": body},
     )
     api_key = json.loads(response)["apiKey"]

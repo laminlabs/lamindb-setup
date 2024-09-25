@@ -95,7 +95,7 @@ def get_access_token(
     try:
         if api_key is not None:
             auth_response = hub.functions.invoke(
-                "create-jwt",
+                "get-jwt-v1",
                 invoke_options={"body": {"api_key": api_key}},
             )
             return json.loads(auth_response)["accessToken"]
