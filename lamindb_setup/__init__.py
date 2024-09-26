@@ -34,7 +34,7 @@ Modules & settings:
 
 """
 
-__version__ = "0.77.4"  # denote a release candidate for 0.1.0 with 0.1rc1
+__version__ = "0.77.5"  # denote a release candidate for 0.1.0 with 0.1rc1
 
 import os as _os
 import sys as _sys
