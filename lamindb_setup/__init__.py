@@ -21,7 +21,6 @@ Instance operations:
    :toctree:
 
    migrate
-   register
 
 Modules & settings:
 
