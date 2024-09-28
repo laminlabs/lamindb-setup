@@ -10,6 +10,8 @@ from uuid import UUID
 from lamin_utils import logger
 from postgrest.exceptions import APIError
 
+from lamindb_setup._migrate import check_whether_migrations_in_sync
+
 from ._hub_client import (
     call_with_fallback,
     call_with_fallback_auth,
@@ -381,6 +383,7 @@ def _connect_instance(
             database=instance["db_database"],
         )
         instance["db"] = db_dsn
+    check_whether_migrations_in_sync(instance["lamindb_version"])
     return instance, storage  # type: ignore
 
 

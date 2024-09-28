@@ -9,7 +9,6 @@ from lamin_utils import logger
 from ._check_setup import _check_instance_setup
 from ._close import close as close_instance
 from ._init_instance import MESSAGE_NO_MULTIPLE_INSTANCE, load_from_isettings
-from ._migrate import check_whether_migrations_in_sync
 from ._silence_loggers import silence_loggers
 from .core._hub_core import connect_instance as load_instance_from_hub
 from .core._hub_core import connect_instance_new as load_instance_from_hub_edge
@@ -167,7 +166,6 @@ def _connect_instance(
                 keep_artifacts_local=bool(instance_result["keep_artifacts_local"]),
                 is_on_hub=True,
             )
-            check_whether_migrations_in_sync(instance_result["lamindb_version"])
         else:
             if hub_result != "anonymous-user":
                 message = INSTANCE_NOT_FOUND_MESSAGE.format(
@@ -313,6 +311,7 @@ def load(slug: str) -> str | tuple | None:
     This is exactly the same as ``ln.connect()`` except for that
     ``ln.connect()`` doesn't change the state of ``auto-connect``.
     """
+    print("Warning: This is deprecated and will be removed.")
     result = connect(slug)
     settings.auto_connect = True
     return result
