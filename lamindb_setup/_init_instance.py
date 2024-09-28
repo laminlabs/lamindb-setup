@@ -214,7 +214,7 @@ def validate_init_args(
 MESSAGE_NO_MULTIPLE_INSTANCE = """
 Currently don't support subsequent connection to different databases in the same
 Python session.\n
-Try running on the CLI: lamin set auto-connect false
+Try running on the CLI: lamin settings set auto-connect false
 """
 
 
