@@ -10,6 +10,8 @@ from uuid import UUID
 from lamin_utils import logger
 from postgrest.exceptions import APIError
 
+from lamindb_setup._migrate import check_whether_migrations_in_sync
+
 from ._hub_client import (
     call_with_fallback,
     call_with_fallback_auth,
@@ -29,7 +31,6 @@ from ._hub_utils import (
     LaminDsn,
     LaminDsnModel,
 )
-from ._migrate import check_whether_migrations_in_sync
 from ._settings import settings
 from ._settings_storage import StorageSettings, base62
 
