@@ -105,7 +105,6 @@ def reload_schema_modules(isettings: InstanceSettings, include_core: bool = True
 
     for schema_module_name in schema_module_names:
         if schema_module_name in sys.modules:
-            print(f"reloading {schema_module_name} in reload_schema_modules")
             schema_module = importlib.import_module(schema_module_name)
             importlib.reload(schema_module)
 
@@ -116,7 +115,6 @@ def reload_lamindb_itself(isettings) -> bool:
     if "lamindb" in sys.modules:
         import lamindb
 
-        print("reloading lamindb in reload_lamindb_itself")
         importlib.reload(lamindb)
         reloaded = True
     return reloaded
