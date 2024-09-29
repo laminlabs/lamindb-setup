@@ -50,4 +50,6 @@ class UserSettings:
         """Integer id valid in current intance."""
         from lnschema_core.users import current_user_id
 
+        # there is no cache needed here because current_user_id()
+        # has its own cache
         return current_user_id()
