@@ -109,7 +109,6 @@ def reload_schema_modules(isettings: InstanceSettings, include_core: bool = True
             importlib.reload(schema_module)
 
 
-@profile
 def reload_lamindb_itself(isettings) -> bool:
     reloaded = False
     if "lamindb" in sys.modules:
@@ -120,7 +119,6 @@ def reload_lamindb_itself(isettings) -> bool:
     return reloaded
 
 
-@profile
 def reload_lamindb(isettings: InstanceSettings):
     log_message = settings.auto_connect
     if not reload_lamindb_itself(isettings):
@@ -343,7 +341,6 @@ def init(
     return None
 
 
-@profile
 def load_from_isettings(
     isettings: InstanceSettings,
     *,

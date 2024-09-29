@@ -8,6 +8,7 @@ from typing import TYPE_CHECKING, Literal
 from uuid import UUID
 
 from lamin_utils import logger
+from line_profiler import profile
 from postgrest.exceptions import APIError
 
 from lamindb_setup._migrate import check_whether_migrations_in_sync
@@ -341,6 +342,7 @@ def connect_instance(
         return call_with_fallback(_connect_instance, owner=owner, name=name)
 
 
+@profile
 def _connect_instance(
     *,
     owner: str,  # account_handle

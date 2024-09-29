@@ -9,6 +9,7 @@ from lamin_utils import logger
 from ._settings_store import current_instance_settings_file
 from ._settings_instance import InstanceSettings
 import sys
+from line_profiler import profile
 
 IS_RUN_FROM_IPYTHON = getattr(builtins, "__IPYTHON__", False)
 IS_SETUP = False
@@ -24,6 +25,7 @@ def close_if_health_check_failed(self) -> None:
 
 
 # this bundles set up and migration management
+@profile
 def setup_django(
     isettings: InstanceSettings,
     deploy_migrations: bool = False,
