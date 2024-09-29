@@ -57,6 +57,7 @@ def _get_current_instance_settings() -> InstanceSettings | None:
 def _check_instance_setup(
     from_lamindb: bool = False, from_module: str | None = None
 ) -> bool:
+    reload_package = from_lamindb or from_module is not None
     from ._init_instance import get_schema_module_name, reload_schema_modules
 
     if django.IS_SETUP:
@@ -74,7 +75,7 @@ def _check_instance_setup(
         return True
     isettings = _get_current_instance_settings()
     if isettings is not None:
-        if from_lamindb and settings.auto_connect:
+        if reload_package and settings.auto_connect:
             if not django.IS_SETUP:
                 django.setup_django(isettings)
                 if from_module is not None:
@@ -86,6 +87,6 @@ def _check_instance_setup(
                 logger.important(f"connected lamindb: {isettings.slug}")
         return django.IS_SETUP
     else:
-        if from_lamindb and settings.auto_connect:
+        if reload_package and settings.auto_connect:
             logger.warning(InstanceNotSetupError.default_message)
         return False
