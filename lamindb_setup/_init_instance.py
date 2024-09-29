@@ -351,7 +351,7 @@ def load_from_isettings(
     user: UserSettings | None = None,
     write_settings: bool = True,
 ) -> None:
-    from .core._setup_bionty_sources import load_bionty_sources, write_bionty_sources
+    from .core._setup_bionty_sources import write_bionty_sources
 
     user = settings.user if user is None else user
 
@@ -369,7 +369,6 @@ def load_from_isettings(
         # yet be registered
         if not isettings._get_settings_file().exists():
             register_user(user)
-        load_bionty_sources(isettings)
     isettings._persist(write_to_disk=write_settings)
     reload_lamindb(isettings)
 
