@@ -39,6 +39,7 @@ erdiagram = [
     "django-schema-graph",
 ]
 dev = [
+    "line_profiler",
     "pyjwt<3.0.0",
     "psycopg2-binary",
     "python-dotenv",

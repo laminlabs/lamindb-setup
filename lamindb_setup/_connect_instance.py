@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import os
+import sys
 from typing import TYPE_CHECKING
 from uuid import UUID
 
@@ -10,8 +11,7 @@ from ._check_setup import _check_instance_setup
 from ._close import close as close_instance
 from ._init_instance import MESSAGE_NO_MULTIPLE_INSTANCE, load_from_isettings
 from ._silence_loggers import silence_loggers
-from .core._hub_core import connect_instance as load_instance_from_hub
-from .core._hub_core import connect_instance_new as load_instance_from_hub_edge
+from .core._hub_core import connect_instance as connect_instance_from_hub
 from .core._hub_utils import (
     LaminDsn,
     LaminDsnModel,
@@ -128,14 +128,9 @@ def _connect_instance(
         # on the hub
         # do not call hub if the user is anonymous
         if owner != "anonymous":
-            if settings.user.handle in {"Koncopd", "sunnyosun", "falexwolf"}:
-                hub_result = load_instance_from_hub_edge(
-                    owner=owner, name=name, access_token=access_token
-                )
-            else:
-                hub_result = load_instance_from_hub(
-                    owner=owner, name=name, access_token=access_token
-                )
+            hub_result = connect_instance_from_hub(
+                owner=owner, name=name, access_token=access_token
+            )
         else:
             hub_result = "anonymous-user"
         # if hub_result is not a string, it means it made a request

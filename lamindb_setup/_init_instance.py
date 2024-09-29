@@ -97,8 +97,9 @@ def register_user_and_storage_in_instance(isettings: InstanceSettings, usettings
         logger.warning(f"instance seems not set up ({error})")
 
 
-def reload_schema_modules(isettings: InstanceSettings):
-    schema_names = ["core"] + list(isettings.schema)
+def reload_schema_modules(isettings: InstanceSettings, include_core: bool = True):
+    schema_names = ["core"] if include_core else []
+    # schema_names += list(isettings.schema)
     schema_module_names = [get_schema_module_name(n) for n in schema_names]
 
     for schema_module_name in schema_module_names:
@@ -114,16 +115,10 @@ def reload_lamindb_itself(isettings) -> bool:
 
         importlib.reload(lamindb)
         reloaded = True
-    if "bionty" in isettings.schema and "bionty" in sys.modules:
-        schema_module = importlib.import_module("bionty")
-        importlib.reload(schema_module)
-        reloaded = True
     return reloaded
 
 
 def reload_lamindb(isettings: InstanceSettings):
-    # only touch lamindb if we're operating from lamindb
-    reload_schema_modules(isettings)
     log_message = settings.auto_connect
     if not reload_lamindb_itself(isettings):
         log_message = True
@@ -352,7 +347,7 @@ def load_from_isettings(
     user: UserSettings | None = None,
     write_settings: bool = True,
 ) -> None:
-    from .core._setup_bionty_sources import load_bionty_sources, write_bionty_sources
+    from .core._setup_bionty_sources import write_bionty_sources
 
     user = settings.user if user is None else user
 
@@ -370,7 +365,6 @@ def load_from_isettings(
         # yet be registered
         if not isettings._get_settings_file().exists():
             register_user(user)
-        load_bionty_sources(isettings)
     isettings._persist(write_to_disk=write_settings)
     reload_lamindb(isettings)
 
