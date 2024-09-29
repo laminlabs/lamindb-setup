@@ -10,7 +10,6 @@ from uuid import UUID
 from django.core.exceptions import FieldError
 from django.db.utils import OperationalError, ProgrammingError
 from lamin_utils import logger
-from line_profiler import profile
 
 from ._close import close as close_instance
 from ._silence_loggers import silence_loggers

@@ -7,7 +7,6 @@ from typing import TYPE_CHECKING, Literal
 
 from django.db.utils import ProgrammingError
 from lamin_utils import logger
-from line_profiler import profile
 
 from ._hub_client import call_with_fallback
 from ._hub_crud import select_account_handle_name_by_lnid
@@ -457,7 +456,6 @@ class InstanceSettings:
 
         setup_django(self, init=True)
 
-    @profile
     def _load_db(self) -> tuple[bool, str]:
         # Is the database available and initialized as LaminDB?
         # returns a tuple of status code and message
