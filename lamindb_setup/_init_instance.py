@@ -10,6 +10,7 @@ from uuid import UUID
 from django.core.exceptions import FieldError
 from django.db.utils import OperationalError, ProgrammingError
 from lamin_utils import logger
+from line_profiler import profile
 
 from ._close import close as close_instance
 from ._silence_loggers import silence_loggers
@@ -107,6 +108,7 @@ def reload_schema_modules(isettings: InstanceSettings):
             importlib.reload(schema_module)
 
 
+@profile
 def reload_lamindb_itself(isettings) -> bool:
     reloaded = False
     if "lamindb" in sys.modules:
@@ -121,6 +123,7 @@ def reload_lamindb_itself(isettings) -> bool:
     return reloaded
 
 
+@profile
 def reload_lamindb(isettings: InstanceSettings):
     # only touch lamindb if we're operating from lamindb
     reload_schema_modules(isettings)
@@ -345,6 +348,7 @@ def init(
     return None
 
 
+@profile
 def load_from_isettings(
     isettings: InstanceSettings,
     *,
