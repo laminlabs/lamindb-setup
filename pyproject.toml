@@ -18,7 +18,7 @@ dependencies = [
     "requests",
     "universal_pathlib==0.2.2",  # is still experimental, need pinning
     "botocore<2.0.0",
-    "gotrue>=2.1.0", # for options in auth.sign_out
+    "gotrue>=2.1.0,<2.9.0", # lower - for options in auth.sign_out, upper - 2.9.0 fails
     "supabase==2.2.1",
     "psutil"
 ]
