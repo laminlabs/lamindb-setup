@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-import importlib
+import importlib as il
 import os
 from typing import TYPE_CHECKING, Optional
 
@@ -57,14 +57,14 @@ def _get_current_instance_settings() -> InstanceSettings | None:
 def _check_instance_setup(
     from_lamindb: bool = False, from_module: str | None = None
 ) -> bool:
-    reload_package = from_lamindb or from_module is not None
+    reload_module = from_lamindb or from_module is not None
     from ._init_instance import get_schema_module_name, reload_schema_modules
 
     if django.IS_SETUP:
+        # reload logic here because module might not yet have been imported
+        # upon first setup
         if from_module is not None:
-            module_name = get_schema_module_name(from_module)
-            schema_module = importlib.import_module(module_name)
-            importlib.reload(schema_module)
+            il.reload(il.import_module(from_module))
         return True
     silence_loggers()
     if os.environ.get("LAMINDB_MULTI_INSTANCE") == "true":
@@ -75,18 +75,18 @@ def _check_instance_setup(
         return True
     isettings = _get_current_instance_settings()
     if isettings is not None:
-        if reload_package and settings.auto_connect:
+        if reload_module and settings.auto_connect:
             if not django.IS_SETUP:
                 django.setup_django(isettings)
                 if from_module is not None:
-                    module_name = get_schema_module_name(from_module)
-                    schema_module = importlib.import_module(module_name)
-                    importlib.reload(schema_module)
+                    # this only reloads `from_module`
+                    il.reload(il.import_module(from_module))
                 else:
+                    # this bulk reloads all schema modules
                     reload_schema_modules(isettings)
                 logger.important(f"connected lamindb: {isettings.slug}")
         return django.IS_SETUP
     else:
-        if reload_package and settings.auto_connect:
+        if reload_module and settings.auto_connect:
             logger.warning(InstanceNotSetupError.default_message)
         return False
