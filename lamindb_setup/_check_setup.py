@@ -52,7 +52,7 @@ def _get_current_instance_settings() -> InstanceSettings | None:
 
 
 # we make this a private function because in all the places it's used,
-# users should see it
+# users should not see it
 def _check_instance_setup(from_lamindb: bool = False) -> bool:
     if django.IS_SETUP:
         return True
@@ -70,6 +70,7 @@ def _check_instance_setup(from_lamindb: bool = False) -> bool:
                 from ._init_instance import reload_schema_modules
 
                 django.setup_django(isettings)
+                print("reload_schema_modules from _check_instance_setup")
                 reload_schema_modules(isettings)
                 logger.important(f"connected lamindb: {isettings.slug}")
         return django.IS_SETUP

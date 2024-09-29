@@ -98,12 +98,14 @@ def register_user_and_storage_in_instance(isettings: InstanceSettings, usettings
         logger.warning(f"instance seems not set up ({error})")
 
 
-def reload_schema_modules(isettings: InstanceSettings):
-    schema_names = ["core"] + list(isettings.schema)
+def reload_schema_modules(isettings: InstanceSettings, include_core: bool = True):
+    schema_names = ["core"] if include_core else []
+    schema_names += list(isettings.schema)
     schema_module_names = [get_schema_module_name(n) for n in schema_names]
 
     for schema_module_name in schema_module_names:
         if schema_module_name in sys.modules:
+            print(f"reloading {schema_module_name} in reload_schema_modules")
             schema_module = importlib.import_module(schema_module_name)
             importlib.reload(schema_module)
 
@@ -114,19 +116,14 @@ def reload_lamindb_itself(isettings) -> bool:
     if "lamindb" in sys.modules:
         import lamindb
 
+        print("reloading lamindb in reload_lamindb_itself")
         importlib.reload(lamindb)
-        reloaded = True
-    if "bionty" in isettings.schema and "bionty" in sys.modules:
-        schema_module = importlib.import_module("bionty")
-        importlib.reload(schema_module)
         reloaded = True
     return reloaded
 
 
 @profile
 def reload_lamindb(isettings: InstanceSettings):
-    # only touch lamindb if we're operating from lamindb
-    reload_schema_modules(isettings)
     log_message = settings.auto_connect
     if not reload_lamindb_itself(isettings):
         log_message = True
