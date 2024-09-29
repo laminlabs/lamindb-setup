@@ -100,7 +100,7 @@ def register_user_and_storage_in_instance(isettings: InstanceSettings, usettings
 
 def reload_schema_modules(isettings: InstanceSettings, include_core: bool = True):
     schema_names = ["core"] if include_core else []
-    schema_names += list(isettings.schema)
+    # schema_names += list(isettings.schema)
     schema_module_names = [get_schema_module_name(n) for n in schema_names]
 
     for schema_module_name in schema_module_names:

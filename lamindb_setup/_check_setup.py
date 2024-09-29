@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import importlib
 import os
 from typing import TYPE_CHECKING, Optional
 
@@ -53,8 +54,16 @@ def _get_current_instance_settings() -> InstanceSettings | None:
 
 # we make this a private function because in all the places it's used,
 # users should not see it
-def _check_instance_setup(from_lamindb: bool = False) -> bool:
+def _check_instance_setup(
+    from_lamindb: bool = False, from_module: str | None = None
+) -> bool:
+    from ._init_instance import get_schema_module_name, reload_schema_modules
+
     if django.IS_SETUP:
+        if from_module is not None:
+            module_name = get_schema_module_name(from_module)
+            schema_module = importlib.import_module(module_name)
+            importlib.reload(schema_module)
         return True
     silence_loggers()
     if os.environ.get("LAMINDB_MULTI_INSTANCE") == "true":
@@ -67,11 +76,13 @@ def _check_instance_setup(from_lamindb: bool = False) -> bool:
     if isettings is not None:
         if from_lamindb and settings.auto_connect:
             if not django.IS_SETUP:
-                from ._init_instance import reload_schema_modules
-
                 django.setup_django(isettings)
-                print("reload_schema_modules from _check_instance_setup")
-                reload_schema_modules(isettings)
+                if from_module is not None:
+                    module_name = get_schema_module_name(from_module)
+                    schema_module = importlib.import_module(module_name)
+                    importlib.reload(schema_module)
+                else:
+                    reload_schema_modules(isettings)
                 logger.important(f"connected lamindb: {isettings.slug}")
         return django.IS_SETUP
     else:
