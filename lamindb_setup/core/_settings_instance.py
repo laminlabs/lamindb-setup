@@ -306,7 +306,7 @@ class InstanceSettings:
         if self._is_cloud_sqlite:
             logger.warning(
                 "updating local SQLite & locking cloud SQLite (sync back & unlock:"
-                " lamin load --unload)"
+                " lamin disconnect)"
             )
             if lock_cloud_sqlite:
                 self._cloud_sqlite_locker.lock()
