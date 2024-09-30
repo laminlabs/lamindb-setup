@@ -256,7 +256,7 @@ def connect(slug: str, **kwargs) -> str | tuple | None:
                 logger.warning(
                     "SQLite file does not exist in the cloud, but exists locally:"
                     f" {isettings._sqlite_file_local}\nTo push the file to the cloud,"
-                    " call: lamin load --unload"
+                    " call: lamin disconnect"
                 )
             elif _raise_not_found_error:
                 raise SystemExit(msg)
