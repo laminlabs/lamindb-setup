@@ -380,7 +380,7 @@ class StorageSettings:
             return True
 
     def cloud_to_local(
-        self, filepath: UPathStr, cache_key: UPathStr | None = None, **kwargs
+        self, filepath: UPathStr, cache_key: str | None = None, **kwargs
     ) -> UPath:
         """Local (or local cache) filepath from filepath."""
         # cache_key is ignored in cloud_to_local_no_update if filepath is local
@@ -391,13 +391,12 @@ class StorageSettings:
         return local_filepath
 
     def cloud_to_local_no_update(
-        self, filepath: UPathStr, cache_key: UPathStr | None = None
+        self, filepath: UPathStr, cache_key: str | None = None
     ) -> UPath:
         # cache_key is ignored if filepath is local
         if isinstance(filepath, UPath) and not isinstance(filepath, LocalPathClasses):
-            # Path / UPath discards protocol from UPath if present
             local_filepath = self.cache_dir / (
-                filepath if cache_key is None else cache_key
+                filepath.path if cache_key is None else cache_key
             )
         else:
             local_filepath = filepath
