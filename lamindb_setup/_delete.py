@@ -24,7 +24,7 @@ def delete_cache(isettings: InstanceSettings):
     # avoid init of root
     root = isettings.storage._root_init
     if not isinstance(root, LocalPathClasses):
-        cache_dir = isettings.storage.cache_dir / root
+        cache_dir = isettings.storage.cache_dir / root.path
         if cache_dir.exists():
             shutil.rmtree(cache_dir)
 
