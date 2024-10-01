@@ -21,7 +21,7 @@ if TYPE_CHECKING:
     from .types import UPathStr
 
 
-DIRS = AppDirs("lamindb", "laminlabs")
+DEFAULT_CACHE_DIR = UPath(AppDirs("lamindb", "laminlabs").user_cache_dir)
 
 
 def _process_cache_path(cache_path: UPathStr | None):
@@ -146,7 +146,7 @@ class SetupSettings:
             return False
 
     @property
-    def cache_dir(self):
+    def cache_dir(self) -> UPath:
         """Cache root, a local directory to cache cloud files."""
         if "LAMIN_CACHE_DIR" in os.environ:
             cache_dir = UPath(os.environ["LAMIN_CACHE_DIR"])
@@ -154,7 +154,7 @@ class SetupSettings:
             cache_path = load_system_storage_settings().get("lamindb_cache_path", None)
             cache_dir = _process_cache_path(cache_path)
             if cache_dir is None:
-                cache_dir = UPath(DIRS.user_cache_dir)
+                cache_dir = DEFAULT_CACHE_DIR
             self._cache_dir = cache_dir
         else:
             cache_dir = self._cache_dir

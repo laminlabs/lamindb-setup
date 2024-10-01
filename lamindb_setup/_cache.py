@@ -29,10 +29,16 @@ def get_cache_dir():
 
 
 def set_cache_dir(cache_dir: str):
-    from lamindb_setup.core._settings import _process_cache_path, settings
+    from lamindb_setup.core._settings import (
+        DEFAULT_CACHE_DIR,
+        _process_cache_path,
+        settings,
+    )
 
     old_cache_dir = settings.cache_dir
     new_cache_dir = _process_cache_path(cache_dir)
+    if new_cache_dir is None:
+        new_cache_dir = DEFAULT_CACHE_DIR
     if new_cache_dir != old_cache_dir:
         shutil.copytree(old_cache_dir, new_cache_dir, dirs_exist_ok=True)
         shutil.rmtree(old_cache_dir)
