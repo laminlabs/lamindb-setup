@@ -33,8 +33,10 @@ def set_cache_dir(cache_dir: str):
 
     old_cache_dir = settings.cache_dir
     new_cache_dir = _process_cache_path(cache_dir)
-    shutil.move(old_cache_dir, new_cache_dir)
-
+    if new_cache_dir != old_cache_dir:
+        shutil.copytree(old_cache_dir, new_cache_dir, dirs_exist_ok=True)
+        shutil.rmtree(old_cache_dir)
+        logger.info("The current cache directory was moved to the specified location")
     new_cache_dir = new_cache_dir.resolve()
     save_system_storage_settings(new_cache_dir)
     settings._cache_dir = new_cache_dir
