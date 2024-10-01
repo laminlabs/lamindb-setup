@@ -30,5 +30,23 @@ def test_edge_request():
         # Make the POST request
         response = httpx.post(url, json=body, headers=headers)
         instance = response.json()
+        # instance id
+        assert instance["id"] == "037ba1e0-8d80-4f91-a902-75a47735076a"
         assert instance["owner"] == "laminlabs"
         assert instance["name"] == "lamindata"
+        assert instance["api_url"] == "https://us-east-1.api.lamin.ai"
+        assert instance["schema_str"] == "bionty,wetlab"
+        assert "schema_id" in instance
+        assert "git_repo" in instance
+        assert "keep_artifacts_local" in instance
+        assert "lamindb_version" in instance
+        # this is a dict with default storage info
+        assert "storage" in instance
+        # db related info
+        assert "db_scheme" in instance
+        assert "db_host" in instance
+        assert "db_port" in instance
+        assert "db_database" in instance
+        assert "db_permissions" in instance
+        assert "db_user_name" in instance
+        assert "db_user_password" in instance
