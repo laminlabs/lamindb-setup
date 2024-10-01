@@ -3,6 +3,7 @@ from __future__ import annotations
 from typing import TYPE_CHECKING, Optional
 from uuid import UUID, uuid4
 
+from dotenv import dotenv_values
 from lamin_utils import logger
 from pydantic import ValidationError
 
@@ -13,6 +14,7 @@ from ._settings_store import (
     UserSettingsStore,
     current_instance_settings_file,
     current_user_settings_file,
+    system_storage_settings_file,
 )
 from ._settings_user import UserSettings
 
@@ -22,6 +24,16 @@ if TYPE_CHECKING:
 
 class SettingsEnvFileOutdated(Exception):
     pass
+
+
+def load_system_storage_settings(system_storage_settings: Path | None = None) -> dict:
+    if system_storage_settings is None:
+        system_storage_settings = system_storage_settings_file()
+
+    if system_storage_settings.exists():
+        return dotenv_values(system_storage_settings)
+    else:
+        return {}
 
 
 def load_instance_settings(instance_settings_file: Path | None = None):

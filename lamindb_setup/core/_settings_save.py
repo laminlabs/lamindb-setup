@@ -8,13 +8,14 @@ from ._settings_store import (
     InstanceSettingsStore,
     UserSettingsStore,
     current_user_settings_file,
+    system_storage_settings_file,
     user_settings_file_email,
     user_settings_file_handle,
 )
 
 if TYPE_CHECKING:
     from ._settings_user import UserSettings
-    from .upath import UPath
+    from .types import UPathStr
 
 
 def save_user_settings(settings: UserSettings):
@@ -72,10 +73,12 @@ def save_instance_settings(settings: Any, settings_file: Path):
 
 
 def save_system_storage_settings(
-    cache_path: str | Path | UPath | None, settings_file: Path
+    cache_path: UPathStr | None, settings_file: UPathStr | None = None
 ):
     cache_path = "null" if cache_path is None else cache_path
     if isinstance(cache_path, Path):  # also True for UPath
         cache_path = cache_path.as_posix()
+    if settings_file is None:
+        settings_file = system_storage_settings_file()
     with open(settings_file, "w") as f:
         f.write(f"lamindb_cache_path={cache_path}")
