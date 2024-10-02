@@ -7,7 +7,7 @@ import lamindb_setup as ln_setup
 import pytest
 from lamindb_setup._connect_instance import InstanceNotFoundError
 from lamindb_setup.core._hub_client import connect_hub_with_auth
-from lamindb_setup.core._hub_core import _connect_instance
+from lamindb_setup.core._hub_core import _connect_instance_hub
 from lamindb_setup.core._hub_crud import (
     Client,
     select_account_by_handle,
@@ -38,7 +38,7 @@ def test_init_instance_postgres_default_name(get_hub_client):
     ln_setup.register(_test=True)
     assert ln_setup.settings.instance.slug == "testuser2/pgtest"
     # and check
-    instance, storage = _connect_instance(
+    instance, storage = _connect_instance_hub(
         owner="testuser2", name=instance_name, client=hub
     )
     # hub checks

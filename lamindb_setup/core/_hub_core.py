@@ -325,69 +325,7 @@ def _init_instance(
     logger.important(f"go to: https://lamin.ai/{isettings.owner}/{isettings.name}")
 
 
-def connect_instance(
-    *,
-    owner: str,  # account_handle
-    name: str,  # instance_name
-    access_token: str | None = None,
-) -> tuple[dict, dict] | str:
-    from ._settings import settings
-
-    if settings.user.handle != "anonymous" or access_token is not None:
-        return call_with_fallback_auth(
-            _connect_instance, owner=owner, name=name, access_token=access_token
-        )
-    else:
-        return call_with_fallback(_connect_instance, owner=owner, name=name)
-
-
-def _connect_instance(
-    *,
-    owner: str,  # account_handle
-    name: str,  # instance_name
-    client: Client,
-) -> tuple[dict, dict] | str:
-    instance_account_storage = select_instance_by_owner_name(owner, name, client)
-    if instance_account_storage is None:
-        # try the via single requests, will take more time
-        account = select_account_by_handle(owner, client)
-        if account is None:
-            return "account-not-exists"
-        instance = select_instance_by_name(account["id"], name, client)
-        if instance is None:
-            return "instance-not-found"
-        # get default storage
-        storage = select_default_storage_by_instance_id(instance["id"], client)
-        if storage is None:
-            return "default-storage-does-not-exist-on-hub"
-    else:
-        account = instance_account_storage.pop("account")
-        storage = instance_account_storage.pop("storage")
-        instance = instance_account_storage
-    # check if is postgres instance
-    # this used to be a check for `instance["db"] is not None` in earlier versions
-    # removed this on 2022-10-25 and can remove from the hub probably for lamindb 1.0
-    if instance["db_scheme"] is not None:
-        db_user = select_db_user_by_instance(instance["id"], client)
-        if db_user is None:
-            name, password = "none", "none"
-        else:
-            name, password = db_user["db_user_name"], db_user["db_user_password"]
-        # construct dsn from instance and db_account fields
-        db_dsn = LaminDsn.build(
-            scheme=instance["db_scheme"],
-            user=name,
-            password=password,
-            host=instance["db_host"],
-            port=instance["db_port"],
-            database=instance["db_database"],
-        )
-        instance["db"] = db_dsn
-    check_whether_migrations_in_sync(instance["lamindb_version"])
-    return instance, storage  # type: ignore
-
-
-def _connect_instance_new(
+def _connect_instance_hub(
     owner: str,  # account_handle
     name: str,  # instance_name
     client: Client,
@@ -442,7 +380,7 @@ def _connect_instance_new(
     return instance, storage  # type: ignore
 
 
-def connect_instance_new(
+def connect_instance_hub(
     *,
     owner: str,  # account_handle
     name: str,  # instance_name
@@ -452,10 +390,10 @@ def connect_instance_new(
 
     if settings.user.handle != "anonymous" or access_token is not None:
         return call_with_fallback_auth(
-            _connect_instance_new, owner=owner, name=name, access_token=access_token
+            _connect_instance_hub, owner=owner, name=name, access_token=access_token
         )
     else:
-        return call_with_fallback(_connect_instance_new, owner=owner, name=name)
+        return call_with_fallback(_connect_instance_hub, owner=owner, name=name)
 
 
 def access_aws(storage_root: str, access_token: str | None = None) -> dict[str, dict]:

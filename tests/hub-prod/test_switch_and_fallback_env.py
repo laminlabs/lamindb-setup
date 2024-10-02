@@ -7,7 +7,7 @@ import pytest
 from gotrue.errors import AuthRetryableError
 from lamindb_setup import login, settings
 from lamindb_setup.core._hub_core import (
-    connect_instance,
+    connect_instance_hub,
     sign_in_hub,
 )
 
@@ -43,7 +43,7 @@ def test_connect_instance_fallbacks():
         ),
         str,
     )
-    connect_instance(
+    connect_instance_hub(
         owner="static-testuser1",
         name="static-testinstance1",
     )
