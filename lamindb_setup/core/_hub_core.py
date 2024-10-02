@@ -377,6 +377,7 @@ def _connect_instance_hub(
             database=instance["db_database"],
         )
         instance["db"] = db_dsn
+    check_whether_migrations_in_sync(instance["lamindb_version"])
     return instance, storage  # type: ignore
 
 
