@@ -3,16 +3,36 @@ from __future__ import annotations
 import os
 from typing import TYPE_CHECKING
 
+from appdirs import AppDirs
+
 from ._settings_load import (
     load_instance_settings,
     load_or_create_user_settings,
+    load_system_storage_settings,
 )
 from ._settings_store import current_instance_settings_file, settings_dir
+from .upath import LocalPathClasses, UPath
 
 if TYPE_CHECKING:
     from pathlib import Path
 
     from lamindb_setup.core import InstanceSettings, StorageSettings, UserSettings
+
+    from .types import UPathStr
+
+
+DEFAULT_CACHE_DIR = UPath(AppDirs("lamindb", "laminlabs").user_cache_dir)
+
+
+def _process_cache_path(cache_path: UPathStr | None):
+    if cache_path is None or cache_path == "null":
+        return None
+    cache_dir = UPath(cache_path)
+    if not isinstance(cache_dir, LocalPathClasses):
+        raise ValueError("cache dir should be a local path.")
+    if cache_dir.exists() and not cache_dir.is_dir():
+        raise ValueError("cache dir should be a directory.")
+    return cache_dir
 
 
 class SetupSettings:
@@ -28,6 +48,8 @@ class SetupSettings:
 
     _auto_connect_path: Path = settings_dir / "auto_connect"
     _private_django_api_path: Path = settings_dir / "private_django_api"
+
+    _cache_dir: Path | None = None
 
     @property
     def _instance_settings_path(self) -> Path:
@@ -123,11 +145,28 @@ class SetupSettings:
         except SystemExit:
             return False
 
+    @property
+    def cache_dir(self) -> UPath:
+        """Cache root, a local directory to cache cloud files."""
+        if "LAMIN_CACHE_DIR" in os.environ:
+            cache_dir = UPath(os.environ["LAMIN_CACHE_DIR"])
+        elif self._cache_dir is None:
+            cache_path = load_system_storage_settings().get("lamindb_cache_path", None)
+            cache_dir = _process_cache_path(cache_path)
+            if cache_dir is None:
+                cache_dir = DEFAULT_CACHE_DIR
+            self._cache_dir = cache_dir
+        else:
+            cache_dir = self._cache_dir
+        cache_dir.mkdir(parents=True, exist_ok=True)
+        return cache_dir
+
     def __repr__(self) -> str:
         """Rich string representation."""
         repr = self.user.__repr__()
         repr += f"\nAuto-connect in Python: {self.auto_connect}\n"
         repr += f"Private Django API: {self.private_django_api}\n"
+        repr += f"Cache directory: {self.cache_dir}\n"
         if self._instance_exists:
             repr += self.instance.__repr__()
         else:

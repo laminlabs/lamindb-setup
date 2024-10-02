@@ -7,13 +7,10 @@ import string
 from pathlib import Path
 from typing import TYPE_CHECKING, Any, Literal, Optional, Union
 
-from appdirs import AppDirs
 from lamin_utils import logger
 
 from ._aws_credentials import HOSTED_REGIONS, get_aws_credentials_manager
 from ._aws_storage import find_closest_aws_region
-from ._settings_save import save_system_storage_settings
-from ._settings_store import system_storage_settings_file
 from .upath import (
     LocalPathClasses,
     UPath,
@@ -25,7 +22,6 @@ if TYPE_CHECKING:
 
     from .types import UPathStr
 
-DIRS = AppDirs("lamindb", "laminlabs")
 IS_INITIALIZED_KEY = ".lamindb/_is_initialized"
 
 
@@ -169,17 +165,6 @@ def init_storage(
     return ssettings, hub_record_status
 
 
-def _process_cache_path(cache_path: str | Path | UPath | None):
-    if cache_path is None or cache_path == "null":
-        return None
-    cache_dir = UPath(cache_path)
-    if not isinstance(cache_dir, LocalPathClasses):
-        raise ValueError("cache dir should be a local path.")
-    if cache_dir.exists() and not cache_dir.is_dir():
-        raise ValueError("cache dir should be a directory.")
-    return cache_dir
-
-
 class StorageSettings:
     """Settings for a given storage location (local or cloud)."""
 
@@ -209,17 +194,6 @@ class StorageSettings:
         self._region = region
         # would prefer to type below as Registry, but need to think through import order
         self._record: Any | None = None
-        # cache settings
-        self._storage_settings_file = system_storage_settings_file()
-        if self._storage_settings_file.exists():
-            from dotenv import dotenv_values
-
-            cache_path = dotenv_values(self._storage_settings_file)[
-                "lamindb_cache_path"
-            ]
-            self._cache_dir = _process_cache_path(cache_path)
-        else:
-            self._cache_dir = None
         # save access_token here for use in self.root
         self.access_token = access_token
 
@@ -305,44 +279,9 @@ class StorageSettings:
         self,
     ) -> UPath:
         """Cache root, a local directory to cache cloud files."""
-        if "LAMIN_CACHE_DIR" in os.environ:
-            cache_dir = UPath(os.environ["LAMIN_CACHE_DIR"])
-        elif self._cache_dir is None:
-            cache_dir = UPath(DIRS.user_cache_dir)
-        else:
-            cache_dir = self._cache_dir
-        cache_dir.mkdir(parents=True, exist_ok=True)
-        return cache_dir
-
-    @cache_dir.setter
-    def cache_dir(self, cache_dir: UPathStr):
-        """Set cache root."""
         from lamindb_setup import settings
 
-        if settings.instance._is_cloud_sqlite:
-            src_sqlite_file = settings.instance._sqlite_file_local
-        else:
-            src_sqlite_file = None
-
-        save_cache_dir = self._cache_dir
-
-        new_cache_dir = _process_cache_path(cache_dir)
-        if new_cache_dir is not None:
-            new_cache_dir.mkdir(parents=True, exist_ok=True)
-            new_cache_dir = new_cache_dir.resolve()
-        self._cache_dir = new_cache_dir
-
-        try:
-            if src_sqlite_file is not None:
-                dst_sqlite_file = settings.instance._sqlite_file_local
-                dst_sqlite_file.parent.mkdir(parents=True, exist_ok=True)
-                if dst_sqlite_file.exists():
-                    dst_sqlite_file.unlink()
-                shutil.move(src_sqlite_file, dst_sqlite_file)  # type: ignore
-            save_system_storage_settings(self._cache_dir, self._storage_settings_file)
-        except Exception as e:
-            self._cache_dir = save_cache_dir
-            raise e
+        return settings.cache_dir
 
     @property
     def type_is_cloud(self) -> bool:
