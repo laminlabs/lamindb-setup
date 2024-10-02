@@ -38,6 +38,7 @@ from lamindb_setup.core._settings_storage import init_storage as init_storage_ba
 from lamindb_setup.core._settings_user import UserSettings
 from laminhub_rest.core.instance.collaborator import InstanceCollaboratorHandler
 from postgrest.exceptions import APIError
+from supafunc.errors import FunctionsHttpError
 
 
 def sign_up_user(email: str, handle: str, save_as_settings: bool = False):
@@ -323,7 +324,7 @@ def test_connect_instance_hub_corrupted_or_expired_credentials(
     ln_setup.settings.user.access_token = "corrupted_or_expired_token"
     correct_password = ln_setup.settings.user.password
     ln_setup.settings.user.password = "corrupted_password"
-    with pytest.raises(APIError):
+    with pytest.raises(FunctionsHttpError):
         connect_instance_hub(
             owner="testadmin1",
             name=create_myinstance["name"],
