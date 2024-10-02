@@ -269,6 +269,7 @@ def test_connect_instance_hub(create_myinstance, create_testadmin1_session):
     assert instance["db_permissions"] == "write"
     assert storage["root"] == "s3://lamindb-ci/myinstance"
     assert "schema_id" in instance
+    assert "lnid" in instance
 
     db_user = select_db_user_by_instance(
         instance_id=create_myinstance["id"],
