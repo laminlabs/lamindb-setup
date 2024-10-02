@@ -160,6 +160,10 @@ def _connect_instance(
                 git_repo=instance_result["git_repo"],
                 keep_artifacts_local=bool(instance_result["keep_artifacts_local"]),
                 is_on_hub=True,
+                api_url=instance_result["api_url"],
+                schema_id=None
+                if (schema_id := instance_result["schema_id"]) is None
+                else UUID(schema_id),
             )
         else:
             if hub_result != "anonymous-user":
