@@ -1,7 +1,5 @@
 from __future__ import annotations
 
-from typing import Optional
-
 
 class DefaultMessageException(Exception):
     default_message: str | None = None

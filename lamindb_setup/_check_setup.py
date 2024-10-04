@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import importlib as il
 import os
-from typing import TYPE_CHECKING, Optional
+from typing import TYPE_CHECKING
 
 from lamin_utils import logger
 
