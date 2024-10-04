@@ -3,6 +3,7 @@ from uuid import UUID
 
 import httpx
 import lamindb_setup as ln_setup
+from lamindb_setup.core.hashing import hash_and_encode_as_b62
 
 
 def test_edge_request():
@@ -33,6 +34,9 @@ def test_edge_request():
         instance = response.json()
         # instance id
         assert instance["id"] == "037ba1e0-8d80-4f91-a902-75a47735076a"
+        assert "lnid" in instance
+        # check correctness of lnid
+        assert instance["lnid"] == hash_and_encode_as_b62(UUID(instance["id"]).hex)[:12]
         assert instance["owner"] == "laminlabs"
         assert instance["name"] == "lamindata"
         assert instance["api_url"] == "https://us-east-1.api.lamin.ai"
