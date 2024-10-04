@@ -1,4 +1,5 @@
 import os
+from uuid import UUID
 
 import httpx
 import lamindb_setup as ln_setup
@@ -37,6 +38,9 @@ def test_edge_request():
         assert instance["api_url"] == "https://us-east-1.api.lamin.ai"
         assert instance["schema_str"] == "bionty,wetlab"
         assert "schema_id" in instance
+        # check that schema_id is well-formed UUID
+        # if not, throws ValueError
+        UUID(instance["schema_id"])
         assert "git_repo" in instance
         assert "keep_artifacts_local" in instance
         assert "lamindb_version" in instance
