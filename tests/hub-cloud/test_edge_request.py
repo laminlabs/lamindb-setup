@@ -6,6 +6,9 @@ import lamindb_setup as ln_setup
 from lamindb_setup.core.hashing import hash_and_encode_as_b62
 
 
+# This shows how to make a request to execute get-instance-settings-v1 edge function
+# This edge function is used in lamindb_setup.core._hub_core.connect_instance_hub
+# connect_instance_hub is tested in hub-local tests, in test_all.py test_connect_instance_hub
 def test_edge_request():
     if os.environ["LAMIN_ENV"] == "prod":
         # login to have access_token in ln_setup.settings.user

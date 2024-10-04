@@ -258,6 +258,9 @@ def test_db_user(
     assert db_user["name"] == "write"
 
 
+# This tests lamindb_setup.core._hub_core.connect_instance_hub
+# This functions makes a request to execute get-instance-settings-v1 edge function
+# see how to make a request without using supabase in hub-cloud tests, in test_edge_request.py
 def test_connect_instance_hub(create_myinstance, create_testadmin1_session):
     admin_client, _ = create_testadmin1_session
 
