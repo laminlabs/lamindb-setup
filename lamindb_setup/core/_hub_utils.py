@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import Any, ClassVar, Optional
+from typing import Any, ClassVar
 from urllib.parse import urlparse, urlunparse
 
 from pydantic import BaseModel, Field, GetCoreSchemaHandler

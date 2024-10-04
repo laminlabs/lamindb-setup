@@ -13,13 +13,15 @@ from __future__ import annotations
 import base64
 import hashlib
 from concurrent.futures import ThreadPoolExecutor
-from typing import TYPE_CHECKING, Iterable
+from typing import TYPE_CHECKING
 
 import psutil
 
 HASH_LENGTH = 22
 
 if TYPE_CHECKING:
+    from collections.abc import Iterable
+
     from .types import Path, UPathStr
 
 

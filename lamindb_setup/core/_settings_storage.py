@@ -5,7 +5,7 @@ import secrets
 import shutil
 import string
 from pathlib import Path
-from typing import TYPE_CHECKING, Any, Literal, Optional, Union
+from typing import TYPE_CHECKING, Any, Literal
 
 from lamin_utils import logger
 
