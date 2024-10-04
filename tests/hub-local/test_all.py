@@ -12,9 +12,8 @@ from lamindb_setup.core._hub_client import (
     connect_hub_with_auth,
 )
 from lamindb_setup.core._hub_core import (
-    _connect_instance_new,
-    connect_instance,
-    connect_instance_new,
+    _connect_instance_hub,
+    connect_instance_hub,
     init_instance,
     init_storage,
     sign_in_hub,
@@ -39,6 +38,7 @@ from lamindb_setup.core._settings_storage import init_storage as init_storage_ba
 from lamindb_setup.core._settings_user import UserSettings
 from laminhub_rest.core.instance.collaborator import InstanceCollaboratorHandler
 from postgrest.exceptions import APIError
+from supafunc.errors import FunctionsHttpError
 
 
 def sign_up_user(email: str, handle: str, save_as_settings: bool = False):
@@ -258,24 +258,43 @@ def test_db_user(
     assert db_user["name"] == "write"
 
 
-def test_connect_instance_new(create_myinstance, create_testadmin1_session):
+# This tests lamindb_setup.core._hub_core.connect_instance_hub
+# This functions makes a request to execute get-instance-settings-v1 edge function
+# see how to make a request without using supabase in hub-cloud tests, in test_edge_request.py
+def test_connect_instance_hub(create_myinstance, create_testadmin1_session):
     admin_client, _ = create_testadmin1_session
 
     owner, name = ln_setup.settings.user.handle, create_myinstance["name"]
-    instance, storage = connect_instance_new(owner=owner, name=name)
+    instance, storage = connect_instance_hub(owner=owner, name=name)
     assert instance["name"] == name
     assert instance["owner"] == owner
     assert instance["api_url"] is None
     assert instance["db_permissions"] == "write"
     assert storage["root"] == "s3://lamindb-ci/myinstance"
     assert "schema_id" in instance
+    assert "lnid" in instance
+
+    db_user = select_db_user_by_instance(
+        instance_id=create_myinstance["id"],
+        client=admin_client,
+    )
+    expected_dsn = LaminDsn.build(
+        scheme=create_myinstance["db_scheme"],
+        user=db_user["db_user_name"],
+        password=db_user["db_user_password"],
+        host=create_myinstance["db_host"],
+        port=str(create_myinstance["db_port"]),
+        database=create_myinstance["db_database"],
+    )
+    assert instance["name"] == create_myinstance["name"]
+    assert instance["db"] == expected_dsn
 
     # add db_server from seed_local_test
     admin_client.table("instance").update(
         {"db_server_id": "e36c7069-2129-4c78-b2c6-323e2354b741"}
     ).eq("id", instance["id"]).execute()
 
-    instance, _ = connect_instance_new(owner=owner, name=name)
+    instance, _ = connect_instance_hub(owner=owner, name=name)
     assert instance["api_url"] == "http://localhost:8000"
 
     # test anon access to public instance
@@ -286,7 +305,9 @@ def test_connect_instance_new(create_myinstance, create_testadmin1_session):
     )
 
     anon_client = connect_hub()
-    instance, _ = _connect_instance_new(owner=owner, name=name, client=anon_client)
+    instance, _ = _connect_instance_hub(owner=owner, name=name, client=anon_client)
+    assert instance["name"] == name
+    assert instance["owner"] == owner
 
     update_instance(
         instance_id=create_myinstance["id"],
@@ -294,66 +315,21 @@ def test_connect_instance_new(create_myinstance, create_testadmin1_session):
         client=admin_client,
     )
     # test non-existent
-    result = connect_instance_new(owner="user-not-exists", name=name)
+    result = connect_instance_hub(owner="user-not-exists", name=name)
     assert result == "account-not-exists"
-    result = connect_instance_new(owner=owner, name="instance-not-exists")
+    result = connect_instance_hub(owner=owner, name="instance-not-exists")
     assert result == "instance-not-found"
 
 
-def test_connect_instance(create_myinstance, create_testadmin1_session):
-    # trigger return for inexistent handle
-    assert "account-not-exists" == connect_instance(
-        owner="testusr1",  # testadmin1 with a typo
-        name=create_myinstance["name"],
-    )
-    # trigger misspelled name
-    assert "instance-not-found" == connect_instance(
-        owner="testadmin1",
-        name="inexistent-name",  # inexistent name
-    )
-    # make instance public so that we can also test connection string
-    client, _ = create_testadmin1_session
-    update_instance(
-        instance_id=create_myinstance["id"],
-        instance_fields={"public": True},
-        client=client,
-    )
-    result = connect_instance(
-        owner="testadmin1",
-        name=create_myinstance["name"],
-    )
-    db_user = select_db_user_by_instance(
-        instance_id=create_myinstance["id"],
-        client=client,
-    )
-    expected_dsn = LaminDsn.build(
-        scheme=create_myinstance["db_scheme"],
-        user=db_user["db_user_name"],
-        password=db_user["db_user_password"],
-        host=create_myinstance["db_host"],
-        port=str(create_myinstance["db_port"]),
-        database=create_myinstance["db_database"],
-    )
-    loaded_instance, _ = result
-    assert loaded_instance["name"] == create_myinstance["name"]
-    assert loaded_instance["db"] == expected_dsn
-    # make instance private again
-    update_instance(
-        instance_id=create_myinstance["id"],
-        instance_fields={"public": False},
-        client=client,
-    )
-
-
-def test_connect_instance_corrupted_or_expired_credentials(
+def test_connect_instance_hub_corrupted_or_expired_credentials(
     create_myinstance, create_testadmin1_session
 ):
     # assume token & password are corrupted or expired
     ln_setup.settings.user.access_token = "corrupted_or_expired_token"
     correct_password = ln_setup.settings.user.password
     ln_setup.settings.user.password = "corrupted_password"
-    with pytest.raises(APIError):
-        connect_instance(
+    with pytest.raises(FunctionsHttpError):
+        connect_instance_hub(
             owner="testadmin1",
             name=create_myinstance["name"],
         )
@@ -362,7 +338,7 @@ def test_connect_instance_corrupted_or_expired_credentials(
     # excepts the error assuming the token is expired
     ln_setup.settings.user.access_token = "corrupted_or_expired_token"
     ln_setup.settings.user.password = correct_password
-    connect_instance(
+    connect_instance_hub(
         owner="testadmin1",
         name=create_myinstance["name"],
     )

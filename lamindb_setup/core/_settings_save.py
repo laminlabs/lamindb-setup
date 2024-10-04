@@ -39,11 +39,11 @@ def save_settings(
     prefix: str,
 ):
     with open(settings_file, "w") as f:
-        for store_key, type in type_hints.items():
-            if type == Optional[str]:
-                type = str
-            if type == Optional[bool]:
-                type = bool
+        for store_key, type_ in type_hints.items():
+            if type_ == Optional[str]:
+                type_ = str
+            if type_ == Optional[bool]:
+                type_ = bool
             if "__" not in store_key:
                 if store_key == "model_config":
                     continue
@@ -52,7 +52,15 @@ def save_settings(
                 elif store_key == "storage_region":
                     value = settings.storage.region
                 else:
-                    if store_key in {"db", "schema_str", "name_", "uuid", "id"}:
+                    if store_key in {
+                        "db",
+                        "schema_str",
+                        "name_",
+                        "uuid",
+                        "id",
+                        "api_url",
+                        "schema_id",
+                    }:
                         settings_key = f"_{store_key.rstrip('_')}"
                     else:
                         settings_key = store_key
@@ -62,7 +70,7 @@ def save_settings(
                 elif isinstance(value, UUID):
                     value = value.hex
                 else:
-                    value = type(value)
+                    value = type_(value)
                 f.write(f"{prefix}{store_key}={value}\n")
 
 

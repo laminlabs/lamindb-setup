@@ -56,6 +56,8 @@ class InstanceSettings:
         schema: str | None = None,  # comma-separated string of schema names
         git_repo: str | None = None,  # a git repo URL
         is_on_hub: bool | None = None,  # initialized from hub
+        api_url: str | None = None,
+        schema_id: UUID | None = None,
         _locker_user: UserSettings | None = None,  # user to lock for if cloud sqlite
     ):
         from ._hub_utils import validate_db_arg
@@ -73,6 +75,9 @@ class InstanceSettings:
         self._keep_artifacts_local = keep_artifacts_local
         self._storage_local: StorageSettings | None = None
         self._is_on_hub = is_on_hub
+        # private, needed for writing instance settings
+        self._api_url = api_url
+        self._schema_id = schema_id
         # if None then settings.user is used
         self._locker_user = _locker_user
 
