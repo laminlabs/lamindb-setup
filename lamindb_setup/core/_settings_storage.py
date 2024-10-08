@@ -85,8 +85,8 @@ def init_storage(
     StorageSettings,
     Literal["hub-record-not-created", "hub-record-retireved", "hub-record-created"],
 ]:
-    if root is None:
-        raise ValueError("`storage` argument can't be `None`")
+    assert root is not None, "`root` argument can't be `None`"
+
     root_str = str(root)  # ensure we have a string
     if ".lamindb" in root_str:
         raise ValueError(
