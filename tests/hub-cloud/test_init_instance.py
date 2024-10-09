@@ -32,6 +32,12 @@ def test_init_instance_postgres_default_name(get_hub_client):
         ln_setup.delete(instance_name, force=True)
     except InstanceNotFoundError:
         pass
+    # test init with storage=None
+    # this happens when calling CLI lamin init or lamin init --name smth
+    with pytest.raises(SystemExit):
+        ln_setup.init(storage=None, _test=True)
+    with pytest.raises(SystemExit):
+        ln_setup.init(storage=None, name="init-to-fail", _test=True)
     # now, run init
     ln_setup.init(storage="./mydatapg", db=pgurl, _test=True)
     assert ln_setup.settings.instance.slug == "testuser2/pgtest"

@@ -180,6 +180,8 @@ def validate_init_args(
         validate_schema_arg,
     )
 
+    if storage is None:
+        raise SystemExit("✗ `storage` argument can't be `None`")
     # should be called as the first thing
     name_str = infer_instance_name(storage=storage, name=name, db=db)
     owner_str = settings.user.handle if _user is None else _user.handle
