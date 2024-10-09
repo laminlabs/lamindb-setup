@@ -208,7 +208,11 @@ def validate_init_args(
     return name_str, instance_id, instance_state, instance_slug
 
 
-MESSAGE_NO_MULTIPLE_INSTANCE = """
+class CannotSwitchDefaultInstance(SystemExit):
+    pass
+
+
+MESSAGE_CANNOT_SWITCH_DEFAULT_INSTANCE = """
 You cannot write to different instances in the same Python session.
 
 Likely, you want to read from other another instance via `Record.using()`, e.g.,
@@ -254,7 +258,7 @@ def init(
         from ._check_setup import _check_instance_setup
 
         if _check_instance_setup() and not _test:
-            raise SystemExit(MESSAGE_NO_MULTIPLE_INSTANCE)
+            raise CannotSwitchDefaultInstance(MESSAGE_CANNOT_SWITCH_DEFAULT_INSTANCE)
         elif _write_settings:
             close_instance(mute=True)
         from .core._hub_core import init_instance as init_instance_hub
