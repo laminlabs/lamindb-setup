@@ -209,13 +209,13 @@ def validate_init_args(
 
 
 MESSAGE_NO_MULTIPLE_INSTANCE = """
-You cannot write to different instances in the same Python session.\n
+You cannot write to different instances in the same Python session.
 
-Likely, you want to read from other instances via `Record.using()`, e.g.,
+Likely, you want to read from other another instance via `Record.using()`, e.g.,
 
-artifacts = ln.Artifact.using("laminlabs/cellxgene").filter()
+ln.Artifact.using("laminlabs/cellxgene").filter()
 
-Also not you can switch auto-connect off on the CLI: lamin settings set auto-connect false
+Also: note you can switch off auto-connect via `lamin settings set auto-connect false`
 """
 
 

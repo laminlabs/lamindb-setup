@@ -224,7 +224,7 @@ def connect(slug: str, **kwargs) -> str | tuple | None:
                 logger.info(f"connected lamindb: {settings.instance.slug}")
                 return None
             else:
-                raise RuntimeError(MESSAGE_NO_MULTIPLE_INSTANCE)
+                raise SystemExit(MESSAGE_NO_MULTIPLE_INSTANCE)
         elif (
             _write_settings
             and settings._instance_exists
