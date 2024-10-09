@@ -209,9 +209,13 @@ def validate_init_args(
 
 
 MESSAGE_NO_MULTIPLE_INSTANCE = """
-Currently don't support subsequent connection to different databases in the same
-Python session.\n
-Try running on the CLI: lamin settings set auto-connect false
+You cannot write to different instances in the same Python session.\n
+
+Likely, you want to read from other instances via `Record.using()`, e.g.,
+
+artifacts = ln.Artifact.using("laminlabs/cellxgene").filter()
+
+Also not you can switch auto-connect off on the CLI: lamin settings set auto-connect false
 """
 
 
@@ -250,7 +254,7 @@ def init(
         from ._check_setup import _check_instance_setup
 
         if _check_instance_setup() and not _test:
-            raise RuntimeError(MESSAGE_NO_MULTIPLE_INSTANCE)
+            raise SystemExit(MESSAGE_NO_MULTIPLE_INSTANCE)
         elif _write_settings:
             close_instance(mute=True)
         from .core._hub_core import init_instance as init_instance_hub
