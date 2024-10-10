@@ -215,11 +215,11 @@ class CannotSwitchDefaultInstance(SystemExit):
 MESSAGE_CANNOT_SWITCH_DEFAULT_INSTANCE = """
 You cannot write to different instances in the same Python session.
 
-Likely, you want to read from other another instance via `Record.using()`, e.g.,
+Do you want to read from another instance via `Record.using()`? For example:
 
 ln.Artifact.using("laminlabs/cellxgene").filter()
 
-Also: note you can switch off auto-connect via `lamin settings set auto-connect false`
+Or do you want to switch off auto-connect via `lamin settings set auto-connect false`?
 """
 
 
