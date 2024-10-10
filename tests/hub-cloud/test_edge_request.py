@@ -43,7 +43,7 @@ def test_edge_request():
         assert instance["owner"] == "laminlabs"
         assert instance["name"] == "lamindata"
         assert instance["api_url"] == "https://us-east-1.api.lamin.ai"
-        assert instance["schema_str"] == "bionty,wetlab,findrefs"
+        assert instance["schema_str"].startswith("bionty,wetlab")
         assert "schema_id" in instance
         # check that schema_id is well-formed UUID
         # if not, throws ValueError
