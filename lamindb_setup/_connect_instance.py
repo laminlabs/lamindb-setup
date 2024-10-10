@@ -9,7 +9,11 @@ from lamin_utils import logger
 
 from ._check_setup import _check_instance_setup
 from ._close import close as close_instance
-from ._init_instance import MESSAGE_NO_MULTIPLE_INSTANCE, load_from_isettings
+from ._init_instance import (
+    MESSAGE_CANNOT_SWITCH_DEFAULT_INSTANCE,
+    CannotSwitchDefaultInstance,
+    load_from_isettings,
+)
 from ._silence_loggers import silence_loggers
 from .core._hub_core import connect_instance_hub
 from .core._hub_utils import (
@@ -224,7 +228,9 @@ def connect(slug: str, **kwargs) -> str | tuple | None:
                 logger.info(f"connected lamindb: {settings.instance.slug}")
                 return None
             else:
-                raise RuntimeError(MESSAGE_NO_MULTIPLE_INSTANCE)
+                raise CannotSwitchDefaultInstance(
+                    MESSAGE_CANNOT_SWITCH_DEFAULT_INSTANCE
+                )
         elif (
             _write_settings
             and settings._instance_exists
