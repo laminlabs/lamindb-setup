@@ -58,7 +58,8 @@ def setup_django(
         installed_apps = [
             package_name
             for n in schema_names
-            if (package_name := get_schema_module_name(n)) is not None
+            if (package_name := get_schema_module_name(n, raise_import_error=False))
+            is not None
         ]
         if view_schema:
             installed_apps = installed_apps[::-1]  # to fix how apps appear

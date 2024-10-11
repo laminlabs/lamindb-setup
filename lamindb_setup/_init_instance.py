@@ -26,7 +26,7 @@ if TYPE_CHECKING:
     from .core.types import UPathStr
 
 
-def get_schema_module_name(schema_name) -> str | None:
+def get_schema_module_name(schema_name, raise_import_error: bool = True) -> str | None:
     import importlib.util
 
     name_attempts = [f"lnschema_{schema_name.replace('-', '_')}", schema_name]
@@ -34,10 +34,10 @@ def get_schema_module_name(schema_name) -> str | None:
         module_spec = importlib.util.find_spec(name)
         if module_spec is not None:
             return name
-    logger.warning(
-        f"schema module '{schema_name}' is not installed → no access to its registries"
-        f" (resolve via `pip install {schema_name}`)"
-    )
+    message = f"Schema module '{schema_name}' is not installed → no access to its registries (resolve via `pip install {schema_name}`)"
+    if raise_import_error:
+        raise ImportError(message)
+    logger.warning(message.lower())
     return None
 
 
