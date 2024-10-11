@@ -55,10 +55,15 @@ def setup_django(
         from .._init_instance import get_schema_module_name
 
         schema_names = ["core"] + list(isettings.schema)
+        raise_import_error = True if init else False
         installed_apps = [
             package_name
             for n in schema_names
-            if (package_name := get_schema_module_name(n, raise_import_error=False))
+            if (
+                package_name := get_schema_module_name(
+                    n, raise_import_error=raise_import_error
+                )
+            )
             is not None
         ]
         if view_schema:
