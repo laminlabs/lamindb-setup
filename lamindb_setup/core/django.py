@@ -55,7 +55,11 @@ def setup_django(
         from .._init_instance import get_schema_module_name
 
         schema_names = ["core"] + list(isettings.schema)
-        installed_apps = [get_schema_module_name(n) for n in schema_names]
+        installed_apps = [
+            package_name
+            for n in schema_names
+            if (package_name := get_schema_module_name(n)) is not None
+        ]
         if view_schema:
             installed_apps = installed_apps[::-1]  # to fix how apps appear
             installed_apps += ["schema_graph", "django.contrib.staticfiles"]

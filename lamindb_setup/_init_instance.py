@@ -26,7 +26,7 @@ if TYPE_CHECKING:
     from .core.types import UPathStr
 
 
-def get_schema_module_name(schema_name) -> str:
+def get_schema_module_name(schema_name) -> str | None:
     import importlib.util
 
     name_attempts = [f"lnschema_{schema_name.replace('-', '_')}", schema_name]
@@ -34,9 +34,11 @@ def get_schema_module_name(schema_name) -> str:
         module_spec = importlib.util.find_spec(name)
         if module_spec is not None:
             return name
-    raise ImportError(
-        f"Python package for '{schema_name}' is not installed.\nIf your package is on PyPI, run `pip install {schema_name}`"
+    logger.warning(
+        f"schema module '{schema_name}' is not installed → no access to its registries"
+        f" (resolve via `pip install {schema_name}`)"
     )
+    return None
 
 
 def register_storage_in_instance(ssettings: StorageSettings):
