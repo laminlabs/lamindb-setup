@@ -342,6 +342,12 @@ def test_connect_instance_hub_corrupted_or_expired_credentials(
         owner="testadmin1",
         name=create_myinstance["name"],
     )
+    # check access_token renewal
+    access_token = ln_setup.settings.user.access_token
+    assert access_token != "corrupted_or_expired_token"
+    # check that the access_token was written to the settings
+    ln_setup.settings._user_settings = None
+    assert ln_setup.settings.user.access_token == access_token
 
 
 def test_init_storage_with_non_existing_bucket(create_testadmin1_session):
