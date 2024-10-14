@@ -10,6 +10,8 @@ from pydantic_settings import BaseSettings
 from supabase import Client, create_client  # type: ignore
 from supabase.lib.client_options import ClientOptions
 
+from ._settings_save import save_user_settings
+
 
 class Connector(BaseSettings):
     url: str
@@ -129,14 +131,17 @@ def call_with_fallback_auth(
 
     for renew_token, fallback_env in [(False, False), (True, False), (False, True)]:
         try:
-            if renew_token:
-                logger.warning(
-                    "renewing expired lamin token: call `lamin login <your-handle>` to avoid this"
-                )
             client = connect_hub_with_auth(
                 renew_token=renew_token, fallback_env=fallback_env
             )
             result = callable(**kwargs, client=client)
+            # we update access_token here
+            # because at this point the call has been successfully resolved
+            if renew_token:
+                from lamindb_setup import settings
+
+                # here settings.user contains an updated access_token
+                save_user_settings(settings.user)
             break
         # we use Exception here as the ways in which the client fails upon 401
         # are not consistent and keep changing
