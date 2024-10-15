@@ -48,14 +48,14 @@ def load_user(email: str | None = None, handle: str | None = None) -> UserSettin
 
 
 def login(
-    user: str | None = None, *, key: str | None = None, api_key: str | None = None
+    user: str | None = None, *, api_key: str | None = None, key: str | None = None
 ) -> None:
     """Log in user.
 
     Args:
         user: handle or email
-        key: API key
-        api_key: Beta API key
+        api_key: API key
+        key: legacy API key
     """
     if user is None and api_key is None:
         if "LAMIN_API_KEY" in os.environ:
