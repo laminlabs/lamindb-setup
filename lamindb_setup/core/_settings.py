@@ -161,6 +161,15 @@ class SetupSettings:
         cache_dir.mkdir(parents=True, exist_ok=True)
         return cache_dir
 
+    @property
+    def paths(self) -> type[SetupPaths]:
+        """Convert cloud paths to lamidb local paths.
+
+        Use `settings.paths.cloud_to_local_no_update`
+        or `settings.paths.cloud_to_local`.
+        """
+        return SetupPaths
+
     def __repr__(self) -> str:
         """Rich string representation."""
         repr = self.user.__repr__()
@@ -172,6 +181,38 @@ class SetupSettings:
         else:
             repr += "\nNo instance connected"
         return repr
+
+
+class SetupPaths:
+    """A static class for conversion of cloud paths to lamindb local paths."""
+
+    @staticmethod
+    def cloud_to_local_no_update(
+        filepath: UPathStr, cache_key: str | None = None
+    ) -> UPath:
+        """Local (or local cache) filepath from filepath without synchronization."""
+        # cache_key is ignored if filepath is a string or a local path
+        # ignores a mere string even if it represents a cloud path
+        if isinstance(filepath, UPath) and not isinstance(filepath, LocalPathClasses):
+            # settings is defined further in this file
+            local_filepath = settings.cache_dir / (
+                filepath.path if cache_key is None else cache_key
+            )
+        else:
+            local_filepath = filepath
+        return UPath(local_filepath)
+
+    @staticmethod
+    def cloud_to_local(
+        filepath: UPathStr, cache_key: str | None = None, **kwargs
+    ) -> UPath:
+        """Local (or local cache) filepath from filepath."""
+        # cache_key is ignored in cloud_to_local_no_update if filepath is local or a string
+        local_filepath = SetupPaths.cloud_to_local_no_update(filepath, cache_key)
+        if isinstance(filepath, UPath) and not isinstance(filepath, LocalPathClasses):
+            local_filepath.parent.mkdir(parents=True, exist_ok=True)
+            filepath.synchronize(local_filepath, **kwargs)
+        return local_filepath
 
 
 def get_env_name():

@@ -322,24 +322,20 @@ class StorageSettings:
         self, filepath: UPathStr, cache_key: str | None = None, **kwargs
     ) -> UPath:
         """Local (or local cache) filepath from filepath."""
-        # cache_key is ignored in cloud_to_local_no_update if filepath is local
-        local_filepath = self.cloud_to_local_no_update(filepath, cache_key)
-        if isinstance(filepath, UPath) and not isinstance(filepath, LocalPathClasses):
-            local_filepath.parent.mkdir(parents=True, exist_ok=True)
-            filepath.synchronize(local_filepath, **kwargs)
-        return local_filepath
+        from lamindb_setup import settings
+
+        return settings.paths.cloud_to_local(
+            filepath=filepath, cache_key=cache_key, **kwargs
+        )
 
     def cloud_to_local_no_update(
         self, filepath: UPathStr, cache_key: str | None = None
     ) -> UPath:
-        # cache_key is ignored if filepath is local
-        if isinstance(filepath, UPath) and not isinstance(filepath, LocalPathClasses):
-            local_filepath = self.cache_dir / (
-                filepath.path if cache_key is None else cache_key
-            )
-        else:
-            local_filepath = filepath
-        return UPath(local_filepath)
+        from lamindb_setup import settings
+
+        return settings.paths.cloud_to_local_no_update(
+            filepath=filepath, cache_key=cache_key
+        )
 
     def key_to_filepath(self, filekey: UPathStr) -> UPath:
         """Cloud or local filepath from filekey."""
