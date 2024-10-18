@@ -764,7 +764,7 @@ def check_storage_is_empty(
         else "consider deleting them"
     )
     message = (
-        f"Storage {directory_string} contains {n_objects - n_offset_objects} objects "
+        f"Storage '{directory_string}' contains {n_objects - n_offset_objects} objects"
         f" - {ask_for_deletion}"
     )
     if n_diff > 0:
