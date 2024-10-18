@@ -147,7 +147,7 @@ class AWSCredentialsManager:
                         root = "/".join(path.path.rstrip("/").split("/")[:2])
                     else:
                         # write the bucket for everything else
-                        root = path._url.netloc
+                        root = path.drive
                     root = "s3://" + root
                 self._set_cached_credentials(_keep_trailing_slash(root), credentials)
 
