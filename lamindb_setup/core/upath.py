@@ -763,13 +763,9 @@ def check_storage_is_empty(
         if raise_error
         else "consider deleting them"
     )
-    hint = "'_is_initialized'"
-    if n_offset_objects == 2:
-        hint += " & SQLite file"
-    hint += " ignored"
     message = (
         f"Storage {directory_string} contains {n_objects - n_offset_objects} objects "
-        f"({hint}) - {ask_for_deletion}"
+        f" - {ask_for_deletion}"
     )
     if n_diff > 0:
         if raise_error:
