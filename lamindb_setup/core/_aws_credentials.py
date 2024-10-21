@@ -15,9 +15,7 @@ HOSTED_REGIONS = [
 ]
 lamin_env = os.getenv("LAMIN_ENV")
 if lamin_env is None or lamin_env == "prod":
-    hosted_buckets_list = [f"s3://lamin-{region}" for region in HOSTED_REGIONS]
-    hosted_buckets_list.append("s3://scverse-spatial-eu-central-1")
-    HOSTED_BUCKETS = tuple(hosted_buckets_list)
+    HOSTED_BUCKETS = tuple([f"s3://lamin-{region}" for region in HOSTED_REGIONS])
 else:
     HOSTED_BUCKETS = ("s3://lamin-hosted-test",)  # type: ignore
 
