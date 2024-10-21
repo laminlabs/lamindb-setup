@@ -15,9 +15,7 @@ HOSTED_REGIONS = [
 ]
 lamin_env = os.getenv("LAMIN_ENV")
 if lamin_env is None or lamin_env == "prod":
-    hosted_buckets_list = [f"s3://lamin-{region}" for region in HOSTED_REGIONS]
-    hosted_buckets_list.append("s3://scverse-spatial-eu-central-1")
-    HOSTED_BUCKETS = tuple(hosted_buckets_list)
+    HOSTED_BUCKETS = tuple([f"s3://lamin-{region}" for region in HOSTED_REGIONS])
 else:
     HOSTED_BUCKETS = ("s3://lamin-hosted-test",)  # type: ignore
 
@@ -29,6 +27,11 @@ def _keep_trailing_slash(path_str: str):
 AWS_CREDENTIALS_EXPIRATION = 11 * 60 * 60  # refresh credentials after 11 hours
 
 
+# set anon=True for these buckets if credentials fail for a public bucket
+# to be expanded
+PUBLIC_BUCKETS = ("cellxgene-data-public",)
+
+
 class AWSCredentialsManager:
     def __init__(self):
         self._credentials_cache = {}
@@ -38,7 +41,15 @@ class AWSCredentialsManager:
         # this is cached so will be resued with the connection initialized
         fs = S3FileSystem(cache_regions=True)
         fs.connect()
-        self.anon = fs.session._credentials is None
+        self.anon: bool = fs.session._credentials is None
+        self.anon_public: bool | None = None
+        if not self.anon:
+            try:
+                # use lamindata public bucket for this test
+                fs.call_s3("head_bucket", Bucket="lamindata")
+                self.anon_public = False
+            except Exception as e:
+                self.anon_public = isinstance(e, PermissionError)
 
     def _find_root(self, path_str: str) -> str | None:
         roots = self._credentials_cache.keys()
@@ -73,6 +84,8 @@ class AWSCredentialsManager:
                 anon = False
             else:
                 anon = self.anon
+                if not anon and self.anon_public and path.drive in PUBLIC_BUCKETS:
+                    anon = True
             connection_options = {"anon": anon}
         else:
             connection_options = credentials
@@ -132,7 +145,7 @@ class AWSCredentialsManager:
                         root = "/".join(path.path.rstrip("/").split("/")[:2])
                     else:
                         # write the bucket for everything else
-                        root = path._url.netloc
+                        root = path.drive
                     root = "s3://" + root
                 self._set_cached_credentials(_keep_trailing_slash(root), credentials)
 
