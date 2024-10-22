@@ -30,7 +30,7 @@ def test_connect_instance_with_private_storage_and_no_storage_access():
     # accessing storage in the instance should fail:
     with pytest.raises(PermissionError):
         path = ln_setup.settings.storage.root
-        path.fs.call_s3("head_bucket", Bucket=path._url.netloc)
+        path.fs.call_s3("head_bucket", Bucket=path.drive)
 
 
 def test_connect_instance_with_public_storage():
