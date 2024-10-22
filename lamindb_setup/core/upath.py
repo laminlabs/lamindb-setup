@@ -8,14 +8,14 @@ from collections import defaultdict
 from datetime import datetime, timezone
 from functools import partial
 from itertools import islice
-from pathlib import Path, PurePosixPath
+from pathlib import Path, PosixPath, PurePosixPath, WindowsPath
 from typing import TYPE_CHECKING, Any, Literal
 
 import fsspec
 from lamin_utils import logger
 from upath import UPath
 from upath.implementations.cloud import CloudPath, S3Path  # keep CloudPath!
-from upath.implementations.local import LocalPath, PosixUPath, WindowsUPath
+from upath.implementations.local import LocalPath
 
 from ._aws_credentials import HOSTED_BUCKETS, get_aws_credentials_manager
 from .hashing import HASH_LENGTH, b16_to_b64, hash_md5s_from_dir
@@ -23,7 +23,7 @@ from .hashing import HASH_LENGTH, b16_to_b64, hash_md5s_from_dir
 if TYPE_CHECKING:
     from .types import UPathStr
 
-LocalPathClasses = (PosixUPath, WindowsUPath, LocalPath)
+LocalPathClasses = (PosixPath, WindowsPath, LocalPath)
 
 # also see https://gist.github.com/securifera/e7eed730cbe1ce43d0c29d7cd2d582f4
 #    ".gz" is not listed here as it typically occurs with another suffix
