@@ -303,7 +303,7 @@ def upload_from(
     # dirs are present it allows to avoid permission error
     # would be easier to just
     if self.protocol == "s3" and local_path_is_dir and create_folder:
-        bucket = self._url.netloc
+        bucket = self.drive
         if bucket not in self.fs.dircache:
             self.fs.dircache[bucket] = [{}]
             if not destination.endswith(TRAILING_SEP):  # type: ignore
@@ -615,11 +615,11 @@ def to_url(upath):
     if upath.protocol != "s3":
         raise ValueError("The provided UPath must be an S3 path.")
     key = "/".join(upath.parts[1:])
-    bucket = upath._url.netloc
+    bucket = upath.drive
     if bucket == "scverse-spatial-eu-central-1":
         region = "eu-central-1"
     elif f"s3://{bucket}" not in HOSTED_BUCKETS:
-        response = upath.fs.call_s3("head_bucket", Bucket=upath._url.netloc)
+        response = upath.fs.call_s3("head_bucket", Bucket=bucket)
         headers = response["ResponseMetadata"]["HTTPHeaders"]
         region = headers.get("x-amz-bucket-region")
     else:
