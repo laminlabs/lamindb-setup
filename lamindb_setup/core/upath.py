@@ -310,7 +310,7 @@ def upload_from(
         if bucket not in self.fs.dircache:
             self.fs.dircache[bucket] = [{}]
             assert isinstance(destination, str)
-            if not destination.endswith(TRAILING_SEP):
+            if not destination.endswith(TRAILING_SEP):  # type: ignore
                 destination += "/"
             cleanup_cache = True
         else:
