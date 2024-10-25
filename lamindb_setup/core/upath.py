@@ -306,11 +306,11 @@ def upload_from(
     # dirs are present it allows to avoid permission error
     # would be easier to just
     if self.protocol == "s3" and local_path_is_dir and create_folder:
-        assert isinstance(destination, str)
         bucket = self.drive
         if bucket not in self.fs.dircache:
             self.fs.dircache[bucket] = [{}]
-            if not destination.endswith(TRAILING_SEP):  # type: ignore
+            assert isinstance(destination, str)
+            if not destination.endswith(TRAILING_SEP):
                 destination += "/"
             cleanup_cache = True
         else:
