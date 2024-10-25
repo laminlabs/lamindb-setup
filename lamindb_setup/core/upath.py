@@ -291,18 +291,22 @@ def upload_from(
         callback = ProgressCallback(local_path.name, "uploading")
         kwargs["callback"] = callback
 
+    source: str | list[str]
+    destination: str | list[str]
     if local_path_is_dir and not create_folder:
-        source = [f for f in local_path.rglob("*") if f.is_file()]
-        destination = [str(self / f.relative_to(local_path)) for f in source]
-        source = [str(f) for f in source]  # type: ignore
+        source = [f.as_posix() for f in local_path.rglob("*") if f.is_file()]
+        destination = fsspec.utils.other_paths(
+            source, self.as_posix(), exists=False, flatten=False
+        )
     else:
-        source = str(local_path)  # type: ignore
-        destination = str(self)  # type: ignore
+        source = local_path.as_posix()
+        destination = self.as_posix()
 
     # the below lines are to avoid s3fs triggering create_bucket in upload if
     # dirs are present it allows to avoid permission error
     # would be easier to just
     if self.protocol == "s3" and local_path_is_dir and create_folder:
+        assert isinstance(destination, str)
         bucket = self.drive
         if bucket not in self.fs.dircache:
             self.fs.dircache[bucket] = [{}]
@@ -399,8 +403,8 @@ def synchronize(
             callback.set_size(len(files))
             origin_file_keys = []
             for file, stat in callback.wrap(files.items()):
-                file_key = PurePosixPath(file).relative_to(self.path)
-                origin_file_keys.append(file_key.as_posix())
+                file_key = PurePosixPath(file).relative_to(self.path).as_posix()
+                origin_file_keys.append(file_key)
                 timestamp = stat[modified_key].timestamp()
 
                 origin = f"{self.protocol}://{file}"
