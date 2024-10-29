@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import os
+import sys
 from typing import TYPE_CHECKING
 
 from appdirs import AppDirs
@@ -172,6 +173,9 @@ class SetupSettings:
 
     def __repr__(self) -> str:
         """Rich string representation."""
+        # do not show current setting representation when building docs
+        if "sphinx" in sys.modules:
+            return object.__repr__(self)
         repr = self.user.__repr__()
         repr += f"\nAuto-connect in Python: {self.auto_connect}\n"
         repr += f"Private Django API: {self.private_django_api}\n"
