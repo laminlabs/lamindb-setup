@@ -47,7 +47,7 @@ uv pip install --system --no-deps {no_deps_packages}
     elif group == "hub-local":
         cmds = schema_deps.strip()
     # current package
-    cmds += """\nuv pip install --system -e '.[aws,dev]' lamin-cli"""
+    cmds += """\nuv pip install --system -e '.[aws,dev]'"""
 
     # above downgrades django, I don't understand why, try this
     if group == "hub-local":
