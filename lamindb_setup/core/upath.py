@@ -354,7 +354,7 @@ def synchronize(
                 is_dir = stat_hf["type"] == "directory"
                 exists = True
                 if not is_dir:
-                    cloud_mts = self["last_commit"].date.timestamp()
+                    cloud_mts = stat_hf["last_commit"].date.timestamp()
             except FileNotFoundError:
                 exists = False
         else:
