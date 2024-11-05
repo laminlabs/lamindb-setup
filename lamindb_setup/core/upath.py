@@ -738,13 +738,13 @@ def get_stat_file_cloud(stat: dict) -> tuple[int, str, str]:
 def get_stat_dir_cloud(path: UPath) -> tuple[int, str | None, str | None, int]:
     objects = path.fs.find(path.as_posix(), detail=True)
     hash, hash_type = None, None
-    compute_hash = False
+    compute_list_hash = False
     if path.protocol == "s3":
         accessor = "ETag"
-        compute_hash = True
+        compute_list_hash = True
     elif path.protocol == "gs":
         accessor = "md5Hash"
-        compute_hash = True
+        compute_list_hash = True
     elif path.protocol == "hf":
         hash = b16_to_b64(path.stat().as_info()["last_commit"].oid)[:HASH_LENGTH]
         hash_type = "sha1"
@@ -752,11 +752,11 @@ def get_stat_dir_cloud(path: UPath) -> tuple[int, str | None, str | None, int]:
     md5s = []
     for object in objects.values():
         sizes.append(object["size"])
-        if compute_hash:
+        if compute_list_hash:
             md5s.append(object[accessor].strip('"='))
     size = sum(sizes)
     n_objects = len(sizes)
-    if compute_hash:
+    if compute_list_hash:
         hash, hash_type = hash_md5s_from_dir(md5s)
     return size, hash, hash_type, n_objects
 
