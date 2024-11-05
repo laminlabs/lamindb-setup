@@ -44,6 +44,7 @@ uv pip install --system --no-deps {no_deps_packages}
         # cmds += "uv pip install --system -e ./django\n"
         cmds = ""
         cmds += schema_deps.strip()
+        cmds += """\nuv pip install --system huggingface_hub"""
     elif group == "hub-local":
         cmds = schema_deps.strip()
     # current package
