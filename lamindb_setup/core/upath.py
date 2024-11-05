@@ -746,7 +746,7 @@ def get_stat_dir_cloud(path: UPath) -> tuple[int, str | None, str | None, int]:
         accessor = "md5Hash"
         compute_hash = True
     elif path.protocol == "hf":
-        hash = b16_to_b64(path.stat().as_info()["last_commit"].oid)
+        hash = b16_to_b64(path.stat().as_info()["last_commit"].oid)[:HASH_LENGTH]
         hash_type = "sha1"
     sizes = []
     md5s = []
