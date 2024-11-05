@@ -340,22 +340,34 @@ def synchronize(
     timestamp: float | None = None,
 ):
     """Sync to a local destination path."""
+    protocol = self.protocol
     # optimize the number of network requests
     if timestamp is not None:
         is_dir = False
         exists = True
         cloud_mts = timestamp
     else:
-        # perform only one network request to check existence, type and timestamp
-        try:
-            cloud_mts = self.modified.timestamp()
-            is_dir = False
-            exists = True
-        except FileNotFoundError:
-            exists = False
-        except IsADirectoryError:
-            is_dir = True
-            exists = True
+        # hf requires special treatment
+        if protocol == "hf":
+            try:
+                stat_hf = self.stat().as_info()
+                is_dir = stat_hf["type"] == "directory"
+                exists = True
+                if not is_dir:
+                    cloud_mts = stat_hf["last_commit"].date.timestamp()
+            except FileNotFoundError:
+                exists = False
+        else:
+            # perform only one network request to check existence, type and timestamp
+            try:
+                cloud_mts = self.modified.timestamp()
+                is_dir = False
+                exists = True
+            except FileNotFoundError:
+                exists = False
+            except IsADirectoryError:
+                is_dir = True
+                exists = True
 
     if not exists:
         warn_or_error = f"The original path {self} does not exist anymore."
@@ -373,14 +385,18 @@ def synchronize(
     # synchronization logic for directories
     if is_dir:
         files = self.fs.find(str(self), detail=True)
-        protocol_modified = {"s3": "LastModified", "gs": "mtime"}
-        modified_key = protocol_modified.get(self.protocol, None)
-        if modified_key is None:
-            raise ValueError(f"Can't synchronize a directory for {self.protocol}.")
+        if protocol == "s3":
+            get_modified = lambda file_stat: file_stat["LastModified"]
+        elif protocol == "gs":
+            get_modified = lambda file_stat: file_stat["mtime"]
+        elif protocol == "hf":
+            get_modified = lambda file_stat: file_stat["last_commit"].date
+        else:
+            raise ValueError(f"Can't synchronize a directory for {protocol}.")
         if objectpath.exists():
             destination_exists = True
             cloud_mts_max = max(
-                file[modified_key] for file in files.values()
+                get_modified(file) for file in files.values()
             ).timestamp()
             local_mts = [
                 file.stat().st_mtime for file in objectpath.rglob("*") if file.is_file()
@@ -405,9 +421,8 @@ def synchronize(
             for file, stat in callback.wrap(files.items()):
                 file_key = PurePosixPath(file).relative_to(self.path).as_posix()
                 origin_file_keys.append(file_key)
-                timestamp = stat[modified_key].timestamp()
-
-                origin = f"{self.protocol}://{file}"
+                timestamp = get_modified(stat).timestamp()
+                origin = f"{protocol}://{file}"
                 destination = objectpath / file_key
                 child = callback.branched(origin, destination.as_posix())
                 UPath(origin, **self.storage_options).synchronize(
@@ -439,6 +454,10 @@ def synchronize(
         objectpath.parent.mkdir(parents=True, exist_ok=True)
         need_synchronize = True
     if need_synchronize:
+        # hf has sync filesystem
+        # on sync filesystems ChildProgressCallback.branched()
+        # returns the default callback
+        # this is why a difference between s3 and hf in progress bars
         self.download_to(
             objectpath, recursive=False, print_progress=False, callback=callback
         )
@@ -716,20 +735,29 @@ def get_stat_file_cloud(stat: dict) -> tuple[int, str, str]:
     return size, hash[:HASH_LENGTH], hash_type
 
 
-def get_stat_dir_cloud(path: UPath) -> tuple[int, str, str, int]:
-    sizes = []
-    md5s = []
+def get_stat_dir_cloud(path: UPath) -> tuple[int, str | None, str | None, int]:
     objects = path.fs.find(path.as_posix(), detail=True)
+    hash, hash_type = None, None
+    compute_list_hash = False
     if path.protocol == "s3":
         accessor = "ETag"
+        compute_list_hash = True
     elif path.protocol == "gs":
         accessor = "md5Hash"
+        compute_list_hash = True
+    elif path.protocol == "hf":
+        hash = b16_to_b64(path.stat().as_info()["last_commit"].oid)[:HASH_LENGTH]
+        hash_type = "sha1"
+    sizes = []
+    md5s = []
     for object in objects.values():
         sizes.append(object["size"])
-        md5s.append(object[accessor].strip('"='))
+        if compute_list_hash:
+            md5s.append(object[accessor].strip('"='))
     size = sum(sizes)
-    hash, hash_type = hash_md5s_from_dir(md5s)
-    n_objects = len(md5s)
+    n_objects = len(sizes)
+    if compute_list_hash:
+        hash, hash_type = hash_md5s_from_dir(md5s)
     return size, hash, hash_type, n_objects
 
 
