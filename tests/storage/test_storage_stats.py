@@ -33,12 +33,22 @@ def test_get_stat_dir_cloud_aws():
 
 def test_get_stat_dir_cloud_gcp():
     string_path = "gs://rxrx1-europe-west4/images/test/HEPG2-08"
-    path = UPath(string_path, anon=True)
+    path = UPath(string_path)
     size, hash, hash_type, n_objects = get_stat_dir_cloud(path)
     assert n_objects == 14772
     assert hash == "6r5Hkce0UTy7X6gLeaqzBA"
     assert hash_type == "md5-d"
     assert size == 994441606
+
+
+def test_get_stat_dir_cloud_hf():
+    string_path = "hf://datasets/Koncopd/lamindb-test@main/sharded_parquet"
+    path = UPath(string_path)
+    size, hash, hash_type, n_objects = get_stat_dir_cloud(path)
+    assert n_objects == 11
+    assert hash == "HHevwGbTQKDpN9yUSj-8m6"
+    assert hash_type == "sha1"
+    assert size == 42767
 
 
 def test_get_storage_region():
