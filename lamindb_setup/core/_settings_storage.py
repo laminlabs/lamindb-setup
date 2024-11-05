@@ -163,6 +163,7 @@ def init_storage(
         # only newly created
         if hub_record_status == "hub-record-created" and ssettings._uuid is not None:
             delete_storage_record(ssettings._uuid, access_token=access_token)  # type: ignore
+            hub_record_status = "hub-record-not-created"
         ssettings._instance_id = None
     return ssettings, hub_record_status
 
