@@ -114,13 +114,15 @@ def init_storage(
             root_str = f"s3://lamin-{region}/{uid}"
         else:
             root_str = f"s3://lamin-hosted-test/{uid}"
-    elif root_str.startswith(("gs://", "s3://")):
+    elif root_str.startswith(("gs://", "s3://", "hf://")):
         pass
     else:  # local path
         try:
             _ = Path(root_str)
         except Exception as e:
-            logger.error("`storage` is not a valid local, GCP storage or AWS S3 path")
+            logger.error(
+                "`storage` is not a valid local, GCP storage, AWS S3 path or Hugging Face path"
+            )
             raise e
     ssettings = StorageSettings(
         uid=uid,
