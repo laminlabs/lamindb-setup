@@ -19,6 +19,24 @@ def test_get_stat_file_cloud_aws():
     assert size == 78148228
 
 
+def test_get_stat_file_cloud_gcp():
+    string_path = "gs://rxrx1-europe-west4/images/test/HEPG2-08/Plate1/B02_s1_w1.png"
+    path = UPath(string_path)
+    size, hash, hash_type = get_stat_file_cloud(path.stat().as_info())
+    assert hash == "foEgLjmuUHO62CazxN97rA"
+    assert hash_type == "md5"
+    assert size == 65122
+
+
+def test_get_stat_file_cloud_hf():
+    string_path = "hf://datasets/Koncopd/lamindb-test/anndata/pbmc68k_test.h5ad"
+    path = UPath(string_path)
+    size, hash, hash_type = get_stat_file_cloud(path.stat().as_info())
+    assert hash is None
+    assert hash_type is None
+    assert size == 267036
+
+
 def test_get_stat_dir_cloud_aws():
     string_path = "s3://lamindata/iris_studies/study0_raw_images"
     path = UPath(string_path, anon=True)
@@ -46,8 +64,8 @@ def test_get_stat_dir_cloud_hf():
     path = UPath(string_path)
     size, hash, hash_type, n_objects = get_stat_dir_cloud(path)
     assert n_objects == 11
-    assert hash == "HHevwGbTQKDpN9yUSj-8m6"
-    assert hash_type == "sha1"
+    assert hash is None
+    assert hash_type is None
     assert size == 42767
 
 

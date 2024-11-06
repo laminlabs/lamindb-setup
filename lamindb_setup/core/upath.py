@@ -727,8 +727,12 @@ def get_stat_file_cloud(stat: dict) -> tuple[int, str | None, str | None]:
         hash_type = "md5"
     # hf
     elif "last_commit" in stat:
-        hash = b16_to_b64(stat["last_commit"].oid)
-        hash_type = "sha1"
+        # hash computation is explicitly turned off for huggingface
+        # because hash only provided for commits
+        # but different files and folders can be added with one commit
+        #        hash = b16_to_b64(stat["last_commit"].oid)
+        #        hash_type = "sha1"
+        pass
     # s3
     elif "ETag" in stat:
         etag = stat["ETag"]
@@ -760,8 +764,12 @@ def get_stat_dir_cloud(path: UPath) -> tuple[int, str | None, str | None, int]:
         accessor = "md5Hash"
         compute_list_hash = True
     elif path.protocol == "hf":
-        hash = b16_to_b64(path.stat().as_info()["last_commit"].oid)[:HASH_LENGTH]
-        hash_type = "sha1"
+        # hash computation is explicitly turned off for huggingface
+        # because hash only provided for commits
+        # but different files and folders can be added with one commit
+        #        hash = b16_to_b64(path.stat().as_info()["last_commit"].oid)[:HASH_LENGTH]
+        #        hash_type = "sha1"
+        pass
     sizes = []
     md5s = []
     for object in objects.values():
