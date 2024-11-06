@@ -717,22 +717,36 @@ def create_path(path: UPath, access_token: str | None = None) -> UPath:
     return get_aws_credentials_manager().enrich_path(path, access_token)
 
 
-def get_stat_file_cloud(stat: dict) -> tuple[int, str, str]:
+def get_stat_file_cloud(stat: dict) -> tuple[int, str | None, str | None]:
     size = stat["size"]
-    etag = stat["ETag"]
-    # small files
-    if "-" not in etag:
-        # only store hash for non-multipart uploads
-        # we can't rapidly validate multi-part uploaded files client-side
-        # we can add more logic later down-the-road
-        hash = b16_to_b64(etag)
+    hash, hash_type = None, None
+    # gs, use md5Hash instead of etag for now
+    if "md5Hash" in stat:
+        # gs hash is already in base64
+        hash = stat["md5Hash"].strip('"=')
         hash_type = "md5"
-    else:
-        stripped_etag, suffix = etag.split("-")
-        suffix = suffix.strip('"')
-        hash = b16_to_b64(stripped_etag)
-        hash_type = f"md5-{suffix}"  # this is the S3 chunk-hashing strategy
-    return size, hash[:HASH_LENGTH], hash_type
+    # hf
+    elif "last_commit" in stat:
+        hash = b16_to_b64(stat["last_commit"].oid)
+        hash_type = "sha1"
+    # s3
+    elif "ETag" in stat:
+        etag = stat["ETag"]
+        # small files
+        if "-" not in etag:
+            # only store hash for non-multipart uploads
+            # we can't rapidly validate multi-part uploaded files client-side
+            # we can add more logic later down-the-road
+            hash = b16_to_b64(etag)
+            hash_type = "md5"
+        else:
+            stripped_etag, suffix = etag.split("-")
+            suffix = suffix.strip('"')
+            hash = b16_to_b64(stripped_etag)
+            hash_type = f"md5-{suffix}"  # this is the S3 chunk-hashing strategy
+    if hash is not None:
+        hash = hash[:HASH_LENGTH]
+    return size, hash, hash_type
 
 
 def get_stat_dir_cloud(path: UPath) -> tuple[int, str | None, str | None, int]:
