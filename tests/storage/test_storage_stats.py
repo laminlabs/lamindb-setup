@@ -65,7 +65,7 @@ def test_get_stat_dir_cloud_hf():
     size, hash, hash_type, n_objects = get_stat_dir_cloud(path)
     assert n_objects == 11
     assert hash == "oj6I3nNKj_eiX2I1q26qaw"
-    assert hash_type == "sha1-md5-d"
+    assert hash_type == "md5-d"
     assert size == 42767
 
 
