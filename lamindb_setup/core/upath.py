@@ -756,7 +756,7 @@ def get_stat_dir_cloud(path: UPath) -> tuple[int, str | None, str | None, int]:
     if path.protocol == "s3":
         accessor = "ETag"
     elif path.protocol == "gs":
-        hash_type = "md5-d"
+        accessor = "md5Hash"
     elif path.protocol == "hf":
         accessor = "blob_id"
     else:
