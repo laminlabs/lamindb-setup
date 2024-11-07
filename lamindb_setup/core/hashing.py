@@ -47,14 +47,14 @@ def hash_set(s: set[str]) -> str:
     return to_b64_str(hashlib.md5(bstr).digest())[:HASH_LENGTH]
 
 
-def hash_md5s_from_dir(hashes: Iterable[str]) -> tuple[str, str]:
+def hash_from_hashes_list(hashes: Iterable[str]) -> str:
     # need to sort below because we don't want the order of parsing the dir to
     # affect the hash
     digests = b"".join(
         hashlib.md5(hash.encode("utf-8")).digest() for hash in sorted(hashes)
     )
     digest = hashlib.md5(digests).digest()
-    return to_b64_str(digest)[:HASH_LENGTH], "md5-d"
+    return to_b64_str(digest)[:HASH_LENGTH]
 
 
 def hash_code(file_path: UPathStr):
@@ -110,7 +110,7 @@ def hash_dir(path: Path):
         hashes_sizes = map(hash_size, files)
     hashes, sizes = zip(*hashes_sizes)
 
-    hash, hash_type = hash_md5s_from_dir(hashes)
+    hash, hash_type = hash_from_hashes_list(hashes), "md5-d"
     n_objects = len(hashes)
     size = sum(sizes)
     return size, hash, hash_type, n_objects

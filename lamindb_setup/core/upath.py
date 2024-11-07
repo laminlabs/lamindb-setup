@@ -18,7 +18,7 @@ from upath.implementations.cloud import CloudPath, S3Path  # keep CloudPath!
 from upath.implementations.local import LocalPath
 
 from ._aws_credentials import HOSTED_BUCKETS, get_aws_credentials_manager
-from .hashing import HASH_LENGTH, b16_to_b64, hash_md5s_from_dir
+from .hashing import HASH_LENGTH, b16_to_b64, hash_from_hashes_list
 
 if TYPE_CHECKING:
     from .types import UPathStr
@@ -717,47 +717,60 @@ def create_path(path: UPath, access_token: str | None = None) -> UPath:
     return get_aws_credentials_manager().enrich_path(path, access_token)
 
 
-def get_stat_file_cloud(stat: dict) -> tuple[int, str, str]:
+def get_stat_file_cloud(stat: dict) -> tuple[int, str | None, str | None]:
     size = stat["size"]
-    etag = stat["ETag"]
-    # small files
-    if "-" not in etag:
-        # only store hash for non-multipart uploads
-        # we can't rapidly validate multi-part uploaded files client-side
-        # we can add more logic later down-the-road
-        hash = b16_to_b64(etag)
+    hash, hash_type = None, None
+    # gs, use md5Hash instead of etag for now
+    if "md5Hash" in stat:
+        # gs hash is already in base64
+        hash = stat["md5Hash"].strip('"=')
         hash_type = "md5"
-    else:
-        stripped_etag, suffix = etag.split("-")
-        suffix = suffix.strip('"')
-        hash = b16_to_b64(stripped_etag)
-        hash_type = f"md5-{suffix}"  # this is the S3 chunk-hashing strategy
-    return size, hash[:HASH_LENGTH], hash_type
+    # hf
+    elif "blob_id" in stat:
+        hash = b16_to_b64(stat["blob_id"])
+        hash_type = "sha1"
+    # s3
+    elif "ETag" in stat:
+        etag = stat["ETag"]
+        # small files
+        if "-" not in etag:
+            # only store hash for non-multipart uploads
+            # we can't rapidly validate multi-part uploaded files client-side
+            # we can add more logic later down-the-road
+            hash = b16_to_b64(etag)
+            hash_type = "md5"
+        else:
+            stripped_etag, suffix = etag.split("-")
+            suffix = suffix.strip('"')
+            hash = b16_to_b64(stripped_etag)
+            hash_type = f"md5-{suffix}"  # this is the S3 chunk-hashing strategy
+    if hash is not None:
+        hash = hash[:HASH_LENGTH]
+    return size, hash, hash_type
 
 
 def get_stat_dir_cloud(path: UPath) -> tuple[int, str | None, str | None, int]:
     objects = path.fs.find(path.as_posix(), detail=True)
     hash, hash_type = None, None
-    compute_list_hash = False
+    compute_list_hash = True
     if path.protocol == "s3":
         accessor = "ETag"
-        compute_list_hash = True
     elif path.protocol == "gs":
         accessor = "md5Hash"
-        compute_list_hash = True
     elif path.protocol == "hf":
-        hash = b16_to_b64(path.stat().as_info()["last_commit"].oid)[:HASH_LENGTH]
-        hash_type = "sha1"
+        accessor = "blob_id"
+    else:
+        compute_list_hash = False
     sizes = []
-    md5s = []
+    hashes = []
     for object in objects.values():
         sizes.append(object["size"])
         if compute_list_hash:
-            md5s.append(object[accessor].strip('"='))
+            hashes.append(object[accessor].strip('"='))
     size = sum(sizes)
     n_objects = len(sizes)
     if compute_list_hash:
-        hash, hash_type = hash_md5s_from_dir(md5s)
+        hash, hash_type = hash_from_hashes_list(hashes), "md5-d"
     return size, hash, hash_type, n_objects
 
 
