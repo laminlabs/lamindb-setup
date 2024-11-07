@@ -18,7 +18,7 @@ from upath.implementations.cloud import CloudPath, S3Path  # keep CloudPath!
 from upath.implementations.local import LocalPath
 
 from ._aws_credentials import HOSTED_BUCKETS, get_aws_credentials_manager
-from .hashing import HASH_LENGTH, b16_to_b64, hash_md5s_from_dir
+from .hashing import HASH_LENGTH, b16_to_b64, hash_from_hashes_list
 
 if TYPE_CHECKING:
     from .types import UPathStr
@@ -726,13 +726,9 @@ def get_stat_file_cloud(stat: dict) -> tuple[int, str | None, str | None]:
         hash = stat["md5Hash"].strip('"=')
         hash_type = "md5"
     # hf
-    elif "last_commit" in stat:
-        # hash computation is explicitly turned off for huggingface
-        # because hash only provided for commits
-        # but different files and folders can be added with one commit
-        #        hash = b16_to_b64(stat["last_commit"].oid)
-        #        hash_type = "sha1"
-        pass
+    elif "blob_id" in stat:
+        hash = b16_to_b64(stat["blob_id"])
+        hash_type = "sha1"
     # s3
     elif "ETag" in stat:
         etag = stat["ETag"]
@@ -756,30 +752,25 @@ def get_stat_file_cloud(stat: dict) -> tuple[int, str | None, str | None]:
 def get_stat_dir_cloud(path: UPath) -> tuple[int, str | None, str | None, int]:
     objects = path.fs.find(path.as_posix(), detail=True)
     hash, hash_type = None, None
-    compute_list_hash = False
+    compute_list_hash = True
     if path.protocol == "s3":
         accessor = "ETag"
-        compute_list_hash = True
     elif path.protocol == "gs":
-        accessor = "md5Hash"
-        compute_list_hash = True
+        hash_type = "md5-d"
     elif path.protocol == "hf":
-        # hash computation is explicitly turned off for huggingface
-        # because hash only provided for commits
-        # but different files and folders can be added with one commit
-        #        hash = b16_to_b64(path.stat().as_info()["last_commit"].oid)[:HASH_LENGTH]
-        #        hash_type = "sha1"
-        pass
+        accessor = "blob_id"
+    else:
+        compute_list_hash = False
     sizes = []
-    md5s = []
+    hashes = []
     for object in objects.values():
         sizes.append(object["size"])
         if compute_list_hash:
-            md5s.append(object[accessor].strip('"='))
+            hashes.append(object[accessor].strip('"='))
     size = sum(sizes)
     n_objects = len(sizes)
     if compute_list_hash:
-        hash, hash_type = hash_md5s_from_dir(md5s)
+        hash, hash_type = hash_from_hashes_list(hashes), "md5-d"
     return size, hash, hash_type, n_objects
 
 

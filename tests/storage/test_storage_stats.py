@@ -32,8 +32,8 @@ def test_get_stat_file_cloud_hf():
     string_path = "hf://datasets/Koncopd/lamindb-test/anndata/pbmc68k_test.h5ad"
     path = UPath(string_path)
     size, hash, hash_type = get_stat_file_cloud(path.stat().as_info())
-    assert hash is None
-    assert hash_type is None
+    assert hash == "zY4nvir5FtTHY2f0GKn9Ac"
+    assert hash_type == "sha1"
     assert size == 267036
 
 
@@ -64,8 +64,8 @@ def test_get_stat_dir_cloud_hf():
     path = UPath(string_path)
     size, hash, hash_type, n_objects = get_stat_dir_cloud(path)
     assert n_objects == 11
-    assert hash is None
-    assert hash_type is None
+    assert hash == "oj6I3nNKj_eiX2I1q26qaw"
+    assert hash_type == "sha1-md5-d"
     assert size == 42767
 
 
