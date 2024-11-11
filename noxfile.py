@@ -38,7 +38,7 @@ uv pip install --system --no-deps {no_deps_packages}
             """uv pip install --system git+https://github.com/laminlabs/lnschema-core"""
         )
     elif group == "storage":
-        cmds = """uv pip install --system gcsfs==2024.10.0"""
+        cmds = """uv pip install --system gcsfs"""
         cmds += """\nuv pip install --system huggingface_hub"""
     elif group == "hub-prod":
         # cmds = "git clone --depth 1 https://github.com/django/django\n"

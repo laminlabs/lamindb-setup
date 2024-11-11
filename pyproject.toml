@@ -31,10 +31,10 @@ Home = "https://github.com/laminlabs/lamindb-setup"
 aws = [
     "urllib3<2", # for botocore, TODO: check that really required
     "aiobotocore[boto3]>=2.5.4,<3.0.0",
-    "s3fs==2024.10.0"
+    "s3fs>=2023.12.2,<=2024.10.0"
 ]
 gcp = [
-    "gcsfs==2024.10.0"
+    "gcsfs>=2023.12.2,<=2024.10.0"
 ]
 erdiagram = [
     "django-schema-graph",
