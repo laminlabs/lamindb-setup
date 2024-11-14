@@ -17,4 +17,3 @@ def test_fail_managed_storage():
                 + "stderr: "
                 + result.stderr.decode()
             )
-        assert result.returncode == 0
