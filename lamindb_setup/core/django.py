@@ -39,6 +39,7 @@ def setup_django(
     import django
     from django.conf import settings
     from django.core.management import call_command
+    from django.db import models
 
     # configuration
     if not settings.configured:
@@ -76,6 +77,11 @@ def setup_django(
             DEFAULT_AUTO_FIELD="django.db.models.BigAutoField",
             TIME_ZONE="UTC",
             USE_TZ=True,
+            DJANGO_DEFAULT_FIELD_OPTIONS={
+                models.CharField: {
+                    "blank": True,
+                },
+            },
         )
         if view_schema:
             kwargs.update(
