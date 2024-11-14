@@ -11,6 +11,10 @@ def test_fail_managed_storage():
         )
         if result.returncode != 0:
             raise Exception(
-                "stdout: " + result.stdout + "\n" + "stderr: " + result.stderr
+                "stdout: "
+                + result.stdout.decode()
+                + "\n"
+                + "stderr: "
+                + result.stderr.decode()
             )
         assert result.returncode == 0
