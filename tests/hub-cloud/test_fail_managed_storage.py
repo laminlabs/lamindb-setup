@@ -9,5 +9,8 @@ def test_fail_managed_storage():
             shell=True,
             capture_output=True,
         )
-        raise Exception("stdout: " + result.stdout + "\n" + "stderr: " + result.stderr)
+        if result.returncode != 1:
+            raise Exception(
+                "stdout: " + result.stdout + "\n" + "stderr: " + result.stderr
+            )
         assert result.returncode == 0
