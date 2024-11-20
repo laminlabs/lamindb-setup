@@ -4,6 +4,7 @@
 from __future__ import annotations
 
 import os
+import warnings
 from collections import defaultdict
 from datetime import datetime, timezone
 from functools import partial
@@ -707,6 +708,12 @@ Paths are based on keys that offer the typical access patterns of file systems
 Args:
     pathlike: A string or Path to a local/cloud file/directory/folder.
 """
+
+# suppress the warning from upath about hf (huggingface) filesystem
+# not being explicitly implemented in upath
+warnings.filterwarnings(
+    "ignore", module="upath", message=".*'hf' filesystem not explicitly implemented.*"
+)
 
 
 def create_path(path: UPath, access_token: str | None = None) -> UPath:
