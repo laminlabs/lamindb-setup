@@ -46,6 +46,7 @@ VALID_SIMPLE_SUFFIXES = {
     ".tsv",
     ".zip",
     ".xml",
+    ".qs",  # https://cran.r-project.org/web/packages/qs/vignettes/vignette.html
     #
     # with readers (see below)
     #
