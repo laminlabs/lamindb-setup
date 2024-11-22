@@ -2,7 +2,10 @@ import subprocess
 
 
 def test_init_no_writes():
-    subprocess.run("lamin login testuser1", shell=True)
+    result = subprocess.run("lamin login testuser1", shell=True, capture_output=True)
+    if result.returncode != 0:
+        raise Exception("stderr: " + result.stderr.decode())
+
     subprocess.run("lamin delete testuser1/test-init-no-writes --force", shell=True)
 
     # calls logout
@@ -11,7 +14,18 @@ def test_init_no_writes():
         shell=True,
         capture_output=True,
     )
-    assert result.returncode == 0
+    if result.returncode != 0:
+        raise Exception("stderr: " + result.stderr.decode())
 
-    subprocess.run("lamin login testuser1", shell=True)
-    subprocess.run("lamin delete testuser1/test-init-no-writes --force", shell=True)
+    result = subprocess.run("lamin login testuser1", shell=True, capture_output=True)
+    if result.returncode != 0:
+        raise Exception("stderr: " + result.stderr.decode())
+
+    result = subprocess.run(
+        "lamin delete testuser1/test-init-no-writes --force",
+        shell=True,
+        capture_output=True,
+    )
+
+    if result.returncode != 0:
+        raise Exception("stderr: " + result.stderr.decode())
