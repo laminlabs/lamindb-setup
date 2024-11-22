@@ -27,6 +27,5 @@ def test_init_no_writes():
         capture_output=True,
     )
 
-
-#    if result.returncode != 0:
-#        raise Exception("stderr: " + result.stderr.decode())
+    if result.returncode != 0:
+        raise Exception("stderr: " + result.stderr.decode())
