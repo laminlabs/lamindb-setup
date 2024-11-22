@@ -47,6 +47,7 @@ VALID_SIMPLE_SUFFIXES = {
     ".zip",
     ".xml",
     ".qs",  # https://cran.r-project.org/web/packages/qs/vignettes/vignette.html
+    ".rds",
     #
     # with readers (see below)
     #
