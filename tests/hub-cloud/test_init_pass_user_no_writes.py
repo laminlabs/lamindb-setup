@@ -12,23 +12,11 @@ def test_init_no_writes():
         capture_output=True,
     )
     if result.returncode != 0:
-        raise Exception(
-            "stdout: " + result.stdout.decode()
-            if result.stdout is not None
-            else "" + "\n" + "stderr: " + result.stderr.decode()
-            if result.stderr is not None
-            else ""
-        )
+        raise Exception("stderr: " + result.stderr.decode())
 
     subprocess.run("lamin login testuser1", shell=True)
     result = subprocess.run(
         "lamin delete testuser1/test-init-no-writes --force", shell=True
     )
     if result.returncode != 0:
-        raise Exception(
-            "stdout: " + result.stdout.decode()
-            if result.stdout is not None
-            else "" + "\n" + "stderr: " + result.stderr.decode()
-            if result.stderr is not None
-            else ""
-        )
+        raise Exception("stderr: " + result.stderr.decode())

@@ -10,10 +10,4 @@ def test_fail_managed_storage():
             capture_output=True,
         )
         if result.returncode != 0:
-            raise Exception(
-                "stdout: " + result.stdout.decode()
-                if result.stdout is not None
-                else "" + "\n" + "stderr: " + result.stderr.decode()
-                if result.stderr is not None
-                else ""
-            )
+            raise Exception("stderr: " + result.stderr.decode())
