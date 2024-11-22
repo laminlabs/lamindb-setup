@@ -14,4 +14,7 @@ def test_init_no_writes():
     assert result.returncode == 0
 
     subprocess.run("lamin login testuser1", shell=True)
-    subprocess.run("lamin delete testuser1/test-init-no-writes --force", shell=True)
+    result = subprocess.run(
+        "lamin delete testuser1/test-init-no-writes --force", shell=True
+    )
+    assert result.returncode == 0
