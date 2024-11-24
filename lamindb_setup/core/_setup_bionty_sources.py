@@ -1,8 +1,12 @@
 from __future__ import annotations
 
+import os
 from typing import TYPE_CHECKING
 
 from django.db.utils import OperationalError, ProgrammingError
+from lamin_utils import logger
+
+from ._settings import settings as setup_settings
 
 if TYPE_CHECKING:
     from ._settings_instance import InstanceSettings
@@ -63,10 +67,21 @@ def write_bionty_sources(isettings: InstanceSettings) -> None:
     Source.objects.bulk_create(all_records, ignore_conflicts=True)
 
 
-def load_bionty_sources(isettings: InstanceSettings):
+def load_bionty_sources(isettings: InstanceSettings | None = None):
     """Write currently_used bionty sources to LAMINDB_VERSIONS_PATH in bionty."""
-    if "bionty" not in isettings.schema:
-        return None
+    if isettings is None:
+        if setup_settings._instance_settings is not None:
+            isettings = setup_settings.instance
+        else:
+            logger.warning(
+                f"Ignoring bionty setup because running in LAMINDB_MULTI_INSTANCE mode = {os.environ.get('LAMINDB_MULTI_INSTANCE')}"
+            )
+            # not setting up bionty sources
+            return None
+    if isettings is not None:
+        if "bionty" not in isettings.schema:
+            # no need to setup anything
+            return None
 
     import bionty.base as bionty_base
     from bionty.base.dev._handle_sources import parse_currently_used_sources
