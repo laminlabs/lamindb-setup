@@ -195,27 +195,30 @@ class SetupPaths:
         filepath: UPathStr, cache_key: str | None = None
     ) -> UPath:
         """Local (or local cache) filepath from filepath without synchronization."""
-        # cache_key is ignored if filepath is a string or a local path
-        # ignores a mere string even if it represents a cloud path
-        if isinstance(filepath, UPath) and not isinstance(filepath, LocalPathClasses):
+        if not isinstance(filepath, UPath):
+            filepath = UPath(filepath)
+        # cache_key is ignored if filepath is a local path
+        if not isinstance(filepath, LocalPathClasses):
             # settings is defined further in this file
             local_filepath = settings.cache_dir / (
-                filepath.path if cache_key is None else cache_key
+                filepath.path if cache_key is None else cache_key  # type: ignore
             )
         else:
             local_filepath = filepath
-        return UPath(local_filepath)
+        return local_filepath
 
     @staticmethod
     def cloud_to_local(
         filepath: UPathStr, cache_key: str | None = None, **kwargs
     ) -> UPath:
         """Local (or local cache) filepath from filepath."""
-        # cache_key is ignored in cloud_to_local_no_update if filepath is local or a string
+        if not isinstance(filepath, UPath):
+            filepath = UPath(filepath)
+        # cache_key is ignored in cloud_to_local_no_update if filepath is local
         local_filepath = SetupPaths.cloud_to_local_no_update(filepath, cache_key)
-        if isinstance(filepath, UPath) and not isinstance(filepath, LocalPathClasses):
+        if not isinstance(filepath, LocalPathClasses):
             local_filepath.parent.mkdir(parents=True, exist_ok=True)
-            filepath.synchronize(local_filepath, **kwargs)
+            filepath.synchronize(local_filepath, **kwargs)  # type: ignore
         return local_filepath
 
 
