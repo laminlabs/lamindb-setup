@@ -30,7 +30,8 @@ Home = "https://github.com/laminlabs/lamindb-setup"
 aws = [
     "urllib3<2", # for botocore, TODO: check that really required
     "aiobotocore[boto3]>=2.5.4,<3.0.0",
-    "s3fs>=2023.12.2,<=2024.10.0"
+    # exclude 2024.10.0 due to https://github.com/fsspec/s3fs/pull/910
+    "s3fs>=2023.12.2,<=2024.10.0,!=2024.10.0"
 ]
 gcp = [
     "gcsfs>=2023.12.2,<=2024.10.0"
