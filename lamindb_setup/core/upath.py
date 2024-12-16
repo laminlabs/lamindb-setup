@@ -350,27 +350,19 @@ def synchronize(
         exists = True
         cloud_mts = timestamp
     else:
-        # hf requires special treatment
-        if protocol == "hf":
-            try:
-                stat_hf = self.stat().as_info()
-                is_dir = stat_hf["type"] == "directory"
-                exists = True
-                if not is_dir:
-                    cloud_mts = stat_hf["last_commit"].date.timestamp()
-            except FileNotFoundError:
-                exists = False
-        else:
-            # perform only one network request to check existence, type and timestamp
-            try:
-                cloud_mts = self.modified.timestamp()
-                is_dir = False
-                exists = True
-            except FileNotFoundError:
-                exists = False
-            except IsADirectoryError:
-                is_dir = True
-                exists = True
+        try:
+            path_stat = self.stat()
+            path_info = path_stat.as_info()
+            exists = True
+            is_dir = path_info["type"] == "directory"
+            if not is_dir:
+                # hf requires special treatment
+                if protocol == "hf":
+                    cloud_mts = path_info["last_commit"].date.timestamp()
+                else:
+                    cloud_mts = path_stat.st_mtime
+        except FileNotFoundError:
+            exists = False
 
     if not exists:
         warn_or_error = f"The original path {self} does not exist anymore."
