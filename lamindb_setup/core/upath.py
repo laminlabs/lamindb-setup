@@ -384,6 +384,7 @@ def synchronize(
         return None
 
     # synchronization logic for directories
+    # to synchronize directories, it should be possible to get modification times
     if is_dir:
         files = self.fs.find(str(self), detail=True)
         if protocol == "s3":
