@@ -190,7 +190,13 @@ class ProgressCallback(fsspec.callbacks.Callback):
         pass
 
     def update_relative_value(self, inc=1):
-        self.value += inc
+        if inc != 0:
+            self.value += inc
+        # this is specific to http filesystem
+        # for some reason the last update is 0 always
+        # here 100% is forced manually in this case
+        elif self.value >= 0.999:
+            self.value = self.size
         self.call()
 
     def branch(self, path_1, path_2, kwargs):
@@ -351,16 +357,16 @@ def synchronize(
         cloud_mts = timestamp
     else:
         try:
-            path_stat = self.stat()
-            path_info = path_stat.as_info()
+            cloud_stat = self.stat()
+            cloud_info = cloud_stat.as_info()
             exists = True
-            is_dir = path_info["type"] == "directory"
+            is_dir = cloud_info["type"] == "directory"
             if not is_dir:
                 # hf requires special treatment
                 if protocol == "hf":
-                    cloud_mts = path_info["last_commit"].date.timestamp()
+                    cloud_mts = cloud_info["last_commit"].date.timestamp()
                 else:
-                    cloud_mts = path_stat.st_mtime
+                    cloud_mts = cloud_stat.st_mtime
         except FileNotFoundError:
             exists = False
 
@@ -443,8 +449,16 @@ def synchronize(
         callback, print_progress, objectpath.name, "synchronizing"
     )
     if objectpath.exists():
-        local_mts_obj = objectpath.stat().st_mtime  # type: ignore
-        need_synchronize = cloud_mts > local_mts_obj
+        if cloud_mts != 0:
+            local_mts_obj = objectpath.stat().st_mtime
+            need_synchronize = cloud_mts > local_mts_obj
+        else:
+            # this is true for http for example
+            # where size is present but st_mtime is not
+            # we assume that any change without the change in size is unlikely
+            cloud_size = cloud_stat.st_size
+            local_size_obj = objectpath.stat().st_size
+            need_synchronize = cloud_size != local_size_obj
     else:
         objectpath.parent.mkdir(parents=True, exist_ok=True)
         need_synchronize = True
@@ -456,7 +470,8 @@ def synchronize(
         self.download_to(
             objectpath, recursive=False, print_progress=False, callback=callback
         )
-        os.utime(objectpath, times=(cloud_mts, cloud_mts))
+        if cloud_mts != 0:
+            os.utime(objectpath, times=(cloud_mts, cloud_mts))
     else:
         # nothing happens if parent_update is not defined
         # because of Callback.no_op
