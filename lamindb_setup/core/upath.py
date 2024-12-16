@@ -747,7 +747,9 @@ def get_stat_file_cloud(stat: dict) -> tuple[int, str | None, str | None]:
         hash = b16_to_b64(stat["blob_id"])
         hash_type = "sha1"
     # s3
-    elif "ETag" in stat:
+    # StorageClass is checked to be sure that it is indeed s3
+    # because http also has ETag
+    elif "ETag" in stat and "StorageClass" in stat:
         etag = stat["ETag"]
         # small files
         if "-" not in etag:
