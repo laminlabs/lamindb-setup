@@ -200,9 +200,14 @@ class SetupPaths:
         # cache_key is ignored if filepath is a local path
         if not isinstance(filepath, LocalPathClasses):
             # settings is defined further in this file
-            local_filepath = settings.cache_dir / (
-                filepath.path if cache_key is None else cache_key  # type: ignore
-            )
+            if cache_key is None:
+                local_key = filepath.path  # type: ignore
+                protocol = filepath.protocol  # type: ignore
+                if protocol in {"http", "https"}:
+                    local_key = local_key.removeprefix(protocol + "://")
+            else:
+                local_key = cache_key
+            local_filepath = settings.cache_dir / local_key
         else:
             local_filepath = filepath
         return local_filepath
