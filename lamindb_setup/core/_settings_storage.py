@@ -307,6 +307,7 @@ class StorageSettings:
         import fsspec
 
         convert = {"file": "local"}
+        # init_storage checks that the root protocol belongs to VALID_PROTOCOLS
         protocol = fsspec.utils.get_protocol(self.root_as_str)
         return convert.get(protocol, protocol)  # type: ignore
 
