@@ -25,6 +25,10 @@ if TYPE_CHECKING:
 
 IS_INITIALIZED_KEY = ".lamindb/_is_initialized"
 
+# a list of supported fsspec protocols
+# rename file to local before showing to a user
+VALID_PROTOCOLS = ("file", "gs", "s3", "hf", "http", "https")
+
 
 def base62(n_char: int) -> str:
     """Like nanoid without hyphen and underscore."""
@@ -115,10 +119,8 @@ def init_storage(
             root_str = f"s3://lamin-{region}/{uid}"
         else:
             root_str = f"s3://lamin-hosted-test/{uid}"
-    elif (input_protocol := fsspec.utils.get_protocol(root_str)) not in (
-        valid_protocols := ("file", "gs", "s3", "hf", "http", "https")
-    ):
-        valid_protocols = ("local",) + valid_protocols[1:]  # local instead of file
+    elif (input_protocol := fsspec.utils.get_protocol(root_str)) not in VALID_PROTOCOLS:
+        valid_protocols = ("local",) + VALID_PROTOCOLS[1:]  # show local instead of file
         raise ValueError(
             f"Protocol {input_protocol} is not supported, valid protocols are {', '.join(valid_protocols)}"
         )
