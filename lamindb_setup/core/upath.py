@@ -190,7 +190,13 @@ class ProgressCallback(fsspec.callbacks.Callback):
         pass
 
     def update_relative_value(self, inc=1):
-        self.value += inc
+        if inc != 0:
+            self.value += inc
+        # this is specific to http filesystem
+        # for some reason the last update is 0 always
+        # here 100% is forced manually in this case
+        elif self.value >= 0.999:
+            self.value = self.size
         self.call()
 
     def branch(self, path_1, path_2, kwargs):
@@ -350,27 +356,19 @@ def synchronize(
         exists = True
         cloud_mts = timestamp
     else:
-        # hf requires special treatment
-        if protocol == "hf":
-            try:
-                stat_hf = self.stat().as_info()
-                is_dir = stat_hf["type"] == "directory"
-                exists = True
-                if not is_dir:
-                    cloud_mts = stat_hf["last_commit"].date.timestamp()
-            except FileNotFoundError:
-                exists = False
-        else:
-            # perform only one network request to check existence, type and timestamp
-            try:
-                cloud_mts = self.modified.timestamp()
-                is_dir = False
-                exists = True
-            except FileNotFoundError:
-                exists = False
-            except IsADirectoryError:
-                is_dir = True
-                exists = True
+        try:
+            cloud_stat = self.stat()
+            cloud_info = cloud_stat.as_info()
+            exists = True
+            is_dir = cloud_info["type"] == "directory"
+            if not is_dir:
+                # hf requires special treatment
+                if protocol == "hf":
+                    cloud_mts = cloud_info["last_commit"].date.timestamp()
+                else:
+                    cloud_mts = cloud_stat.st_mtime
+        except FileNotFoundError:
+            exists = False
 
     if not exists:
         warn_or_error = f"The original path {self} does not exist anymore."
@@ -386,6 +384,7 @@ def synchronize(
         return None
 
     # synchronization logic for directories
+    # to synchronize directories, it should be possible to get modification times
     if is_dir:
         files = self.fs.find(str(self), detail=True)
         if protocol == "s3":
@@ -451,8 +450,16 @@ def synchronize(
         callback, print_progress, objectpath.name, "synchronizing"
     )
     if objectpath.exists():
-        local_mts_obj = objectpath.stat().st_mtime  # type: ignore
-        need_synchronize = cloud_mts > local_mts_obj
+        if cloud_mts != 0:
+            local_mts_obj = objectpath.stat().st_mtime
+            need_synchronize = cloud_mts > local_mts_obj
+        else:
+            # this is true for http for example
+            # where size is present but st_mtime is not
+            # we assume that any change without the change in size is unlikely
+            cloud_size = cloud_stat.st_size
+            local_size_obj = objectpath.stat().st_size
+            need_synchronize = cloud_size != local_size_obj
     else:
         objectpath.parent.mkdir(parents=True, exist_ok=True)
         need_synchronize = True
@@ -464,7 +471,8 @@ def synchronize(
         self.download_to(
             objectpath, recursive=False, print_progress=False, callback=callback
         )
-        os.utime(objectpath, times=(cloud_mts, cloud_mts))
+        if cloud_mts != 0:
+            os.utime(objectpath, times=(cloud_mts, cloud_mts))
     else:
         # nothing happens if parent_update is not defined
         # because of Callback.no_op
@@ -739,7 +747,9 @@ def get_stat_file_cloud(stat: dict) -> tuple[int, str | None, str | None]:
         hash = b16_to_b64(stat["blob_id"])
         hash_type = "sha1"
     # s3
-    elif "ETag" in stat:
+    # StorageClass is checked to be sure that it is indeed s3
+    # because http also has ETag
+    elif "ETag" in stat and "StorageClass" in stat:
         etag = stat["ETag"]
         # small files
         if "-" not in etag:

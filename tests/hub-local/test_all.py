@@ -360,3 +360,9 @@ def test_init_storage_with_non_existing_bucket(create_testadmin1_session):
             )[0]
         )
     assert error.exconly().endswith("Not Found")
+
+
+def test_init_storage_incorrect_protocol():
+    with pytest.raises(ValueError) as error:
+        init_storage_base("incorrect-protocol://some-path/some-path-level")
+    assert "Protocol incorrect-protocol is not supported" in error.exconly()

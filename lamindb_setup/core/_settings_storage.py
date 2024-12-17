@@ -7,6 +7,7 @@ import string
 from pathlib import Path
 from typing import TYPE_CHECKING, Any, Literal
 
+import fsspec
 from lamin_utils import logger
 
 from ._aws_credentials import HOSTED_REGIONS, get_aws_credentials_manager
@@ -23,6 +24,10 @@ if TYPE_CHECKING:
     from .types import UPathStr
 
 IS_INITIALIZED_KEY = ".lamindb/_is_initialized"
+
+# a list of supported fsspec protocols
+# rename file to local before showing to a user
+VALID_PROTOCOLS = ("file", "gs", "s3", "hf", "http", "https")
 
 
 def base62(n_char: int) -> str:
@@ -114,16 +119,11 @@ def init_storage(
             root_str = f"s3://lamin-{region}/{uid}"
         else:
             root_str = f"s3://lamin-hosted-test/{uid}"
-    elif root_str.startswith(("gs://", "s3://", "hf://")):
-        pass
-    else:  # local path
-        try:
-            _ = Path(root_str)
-        except Exception as e:
-            logger.error(
-                "`storage` is not a valid local, GCP storage, AWS S3 path or Hugging Face path"
-            )
-            raise e
+    elif (input_protocol := fsspec.utils.get_protocol(root_str)) not in VALID_PROTOCOLS:
+        valid_protocols = ("local",) + VALID_PROTOCOLS[1:]  # show local instead of file
+        raise ValueError(
+            f"Protocol {input_protocol} is not supported, valid protocols are {', '.join(valid_protocols)}"
+        )
     ssettings = StorageSettings(
         uid=uid,
         root=root_str,
@@ -227,7 +227,7 @@ class StorageSettings:
 
     @property
     def record(self) -> Any:
-        """Storage record in current instance."""
+        """Storage record in the current instance."""
         if self._record is None:
             # dynamic import because of import order
             from lnschema_core.models import Storage
@@ -299,14 +299,15 @@ class StorageSettings:
         return self._region
 
     @property
-    def type(self) -> Literal["local", "s3", "gs"]:
+    def type(self) -> Literal["local", "s3", "gs", "hf", "http", "https"]:
         """AWS S3 vs. Google Cloud vs. local.
 
-        Returns the protocol as a string: "local", "s3", "gs".
+        Returns the protocol as a string: "local", "s3", "gs", "http", "https".
         """
         import fsspec
 
         convert = {"file": "local"}
+        # init_storage checks that the root protocol belongs to VALID_PROTOCOLS
         protocol = fsspec.utils.get_protocol(self.root_as_str)
         return convert.get(protocol, protocol)  # type: ignore
 
@@ -345,5 +346,5 @@ class StorageSettings:
         return self.root / filekey
 
     def local_filepath(self, filekey: UPathStr) -> UPath:
-        """Local (cache) filepath from filekey: `local(filepath(...))`."""
+        """Local (cache) filepath from filekey."""
         return self.cloud_to_local(self.key_to_filepath(filekey))
