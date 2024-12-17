@@ -7,6 +7,7 @@ import string
 from pathlib import Path
 from typing import TYPE_CHECKING, Any, Literal
 
+import fsspec
 from lamin_utils import logger
 
 from ._aws_credentials import HOSTED_REGIONS, get_aws_credentials_manager
@@ -114,16 +115,12 @@ def init_storage(
             root_str = f"s3://lamin-{region}/{uid}"
         else:
             root_str = f"s3://lamin-hosted-test/{uid}"
-    elif root_str.startswith(("gs://", "s3://", "hf://", "http://", "https://")):
-        pass
-    else:  # local path
-        try:
-            _ = Path(root_str)
-        except Exception as e:
-            logger.error(
-                "`storage` is not a valid local, GCP storage, AWS S3 path or Hugging Face path"
-            )
-            raise e
+    elif (input_protocol := fsspec.utils.get_protocol(root_str)) not in (
+        valid_protocols := ("file", "gs", "s3", "hf", "http", "https")
+    ):
+        raise ValueError(
+            f"Protocol {input_protocol} is not supported, valid prootocols are {', '.join(('local',) + valid_protocols[1:])}"
+        )
     ssettings = StorageSettings(
         uid=uid,
         root=root_str,
