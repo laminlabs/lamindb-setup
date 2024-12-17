@@ -118,8 +118,9 @@ def init_storage(
     elif (input_protocol := fsspec.utils.get_protocol(root_str)) not in (
         valid_protocols := ("file", "gs", "s3", "hf", "http", "https")
     ):
+        valid_protocols = ("local",) + valid_protocols[1:]  # local instead of file
         raise ValueError(
-            f"Protocol {input_protocol} is not supported, valid prootocols are {', '.join(('local',) + valid_protocols[1:])}"
+            f"Protocol {input_protocol} is not supported, valid protocols are {', '.join(valid_protocols)}"
         )
     ssettings = StorageSettings(
         uid=uid,
