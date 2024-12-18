@@ -12,6 +12,7 @@ def select_instance_by_owner_name(
     name: str,
     client: Client,
 ) -> dict | None:
+    # this won't find an instance without the default storage
     data = (
         client.table("instance")
         .select(
@@ -86,6 +87,7 @@ def select_instance_by_id_with_storage(
     instance_id: str,
     client: Client,
 ):
+    # this won't find an instance without the default storage
     data = (
         client.table("instance")
         .select("*, storage!inner!storage_instance_id_359fca71_fk_instance_id(*)")
