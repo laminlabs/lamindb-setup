@@ -239,6 +239,10 @@ def _delete_instance(
             )
             root_string = storage_record["root"]
             # gate storage and instance deletion on empty storage location for
+            # normally auth.get_session() doesn't have access_token
+            # so this block is useless i think (Sergei)
+            # the token is received from user settings inside create_path
+            # might be needed in the hub though
             if client.auth.get_session() is not None:
                 access_token = client.auth.get_session().access_token
             else:
@@ -251,7 +255,6 @@ def _delete_instance(
             check_storage_is_empty(
                 root_path, account_for_sqlite_file=account_for_sqlite_file
             )
-    _update_instance_record(instance_with_storage["id"], {"storage_id": None}, client)
     # first delete the storage records because we will turn instance_id on
     # storage into a FK soon
     for storage_record in storage_records:

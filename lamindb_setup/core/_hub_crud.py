@@ -12,25 +12,23 @@ def select_instance_by_owner_name(
     name: str,
     client: Client,
 ) -> dict | None:
-    try:
-        data = (
-            client.table("instance")
-            .select(
-                "*, account!inner!instance_account_id_28936e8f_fk_account_id(*),"
-                " storage!inner!storage_instance_id_359fca71_fk_instance_id(*)"
-            )
-            .eq("name", name)
-            .eq("account.handle", owner)
-            .eq("storage.is_default", True)
-            .execute()
-            .data
+    # this won't find an instance without the default storage
+    data = (
+        client.table("instance")
+        .select(
+            "*, account!inner!instance_account_id_28936e8f_fk_account_id(*),"
+            " storage!inner!storage_instance_id_359fca71_fk_instance_id(*)"
         )
-    except Exception:
-        return None
+        .eq("name", name)
+        .eq("account.handle", owner)
+        .eq("storage.is_default", True)
+        .execute()
+        .data
+    )
     if len(data) == 0:
         return None
     result = data[0]
-    # this is now a list
+    # this is a list
     # assume only one default storage
     result["storage"] = result["storage"][0]
     return result
@@ -89,15 +87,22 @@ def select_instance_by_id_with_storage(
     instance_id: str,
     client: Client,
 ):
-    response = (
+    # this won't find an instance without the default storage
+    data = (
         client.table("instance")
-        .select("*, storage!instance_storage_id_87963cc8_fk_storage_id(*)")
+        .select("*, storage!inner!storage_instance_id_359fca71_fk_instance_id(*)")
         .eq("id", instance_id)
+        .eq("storage.is_default", True)
         .execute()
+        .data
     )
-    if len(response.data) == 0:
+    if len(data) == 0:
         return None
-    return response.data[0]
+    result = data[0]
+    # this is a list
+    # assume only one default storage
+    result["storage"] = result["storage"][0]
+    return result
 
 
 def update_instance(instance_id: str, instance_fields: dict, client: Client):
