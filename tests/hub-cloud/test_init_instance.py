@@ -83,6 +83,20 @@ def test_init_instance_postgres_custom_name():
     ln_setup.delete("mydata2", force=True)
 
 
+def test_init_instance_cwd():
+    prev_wd = Path.cwd()
+    storage = Path("./mystorage_cwd")
+    storage.mkdir()
+    os.chdir(storage)
+    assert Path.cwd() == storage.resolve()
+    ln_setup.init(storage=".", _test=True)
+    assert ln_setup.settings.instance.name == "mystorage_cwd"
+    assert not ln_setup.settings.instance.storage.type_is_cloud
+    assert ln_setup.settings.instance.storage.root.as_posix() == Path.cwd().as_posix()
+    os.chdir(prev_wd)
+    ln_setup.delete("mystorage_cwd", force=True)
+
+
 def test_init_instance_cloud_aws_us():
     storage = (
         f"s3://lamindb-ci/{os.environ['LAMIN_ENV']}_test/init_instance_cloud_aws_us"
