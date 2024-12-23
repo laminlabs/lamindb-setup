@@ -358,7 +358,7 @@ class InstanceSettings:
             sqlite_filepath = self.storage.cloud_to_local(
                 self._sqlite_file, error_no_origin=False
             )
-            return f"sqlite:///{sqlite_filepath}"
+            return f"sqlite:///{sqlite_filepath.as_posix()}"
         else:
             return self._db
 

@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import os
 from pathlib import Path
 from uuid import UUID
 
@@ -11,6 +12,7 @@ from lamindb_setup.core._hub_core import _connect_instance_hub
 from lamindb_setup.core._hub_crud import (
     Client,
     select_account_by_handle,
+    select_default_storage_by_instance_id,
     select_instance_by_name,
 )
 
@@ -82,8 +84,30 @@ def test_init_instance_postgres_custom_name():
     ln_setup.delete("mydata2", force=True)
 
 
+def test_init_instance_cwd():
+    # can't make it via fixture because need to chnage dir back before ln_setup.delete
+    prev_wd = Path.cwd()
+    storage = Path("./mystorage_cwd")
+    storage.mkdir()
+    storage = storage.resolve()
+    os.chdir(storage)
+    assert Path.cwd() == storage
+    ln_setup.init(storage=".", _test=True)
+    assert ln_setup.settings.instance.name == "mystorage_cwd"
+    assert not ln_setup.settings.instance.storage.type_is_cloud
+    assert ln_setup.settings.instance.storage.root.as_posix() == Path.cwd().as_posix()
+    os.chdir(prev_wd)
+    ln_setup.delete("mystorage_cwd", force=True)
+
+
 def test_init_instance_cloud_aws_us():
-    ln_setup.init(storage="s3://lamindb-ci/init_instance_cloud_aws_us", _test=True)
+    storage = (
+        f"s3://lamindb-ci/{os.environ['LAMIN_ENV']}_test/init_instance_cloud_aws_us"
+    )
+    ln_setup.init(storage=storage, _test=True)
+    # run for the second time
+    # just loads an already existing instance
+    ln_setup.init(storage=storage, _test=True)
     hub = connect_hub_with_auth()
     account = select_account_by_handle(
         handle=ln_setup.settings.instance.owner, client=hub
@@ -93,27 +117,27 @@ def test_init_instance_cloud_aws_us():
         name=ln_setup.settings.instance.name,
         client=hub,
     )
+    # test default storage record is correct
+    storage_record = select_default_storage_by_instance_id(instance["id"], hub)
+    assert storage_record["root"] == storage
+    # test instance settings
     assert ln_setup.settings.instance._id == UUID(instance["id"])
     assert ln_setup.settings.storage.type_is_cloud
-    assert (
-        str(ln_setup.settings.storage.root)
-        == "s3://lamindb-ci/init_instance_cloud_aws_us"
-    )
-    assert (
-        ln_setup.settings.storage.root_as_str
-        == "s3://lamindb-ci/init_instance_cloud_aws_us"
-    )
+    assert str(ln_setup.settings.storage.root) == storage
+    assert ln_setup.settings.storage.root_as_str == storage
     assert ln_setup.settings.storage.region == "us-west-1"
     assert (
         str(ln_setup.settings.instance._sqlite_file)
-        == f"s3://lamindb-ci/init_instance_cloud_aws_us/{ln_setup.settings.instance._id.hex}.lndb"
+        == f"{storage}/{ln_setup.settings.instance._id.hex}.lndb"
     )
+    ln_setup.delete("init_instance_cloud_aws_us", force=True)
 
 
 def test_init_instance_cloud_aws_europe():
     # do the same for an S3 bucket in Europe
+    storage = f"s3://lndb-setup-ci-eu-central-1/{os.environ['LAMIN_ENV']}_test"
     ln_setup.init(
-        storage="s3://lndb-setup-ci-eu-central-1",
+        storage=storage,
         name="lamindb-ci-europe",
         _test=True,
     )
@@ -122,8 +146,9 @@ def test_init_instance_cloud_aws_europe():
     assert ln_setup.settings.instance.name == "lamindb-ci-europe"
     assert (
         str(ln_setup.settings.instance._sqlite_file)
-        == f"s3://lndb-setup-ci-eu-central-1/{ln_setup.settings.instance._id.hex}.lndb"
+        == f"{storage}/{ln_setup.settings.instance._id.hex}.lndb"
     )
+    ln_setup.delete("lamindb-ci-europe", force=True)
 
 
 def test_init_instance_sqlite():

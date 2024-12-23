@@ -144,17 +144,14 @@ def select_collaborator(
 def select_default_storage_by_instance_id(
     instance_id: str, client: Client
 ) -> dict | None:
-    try:
-        data = (
-            client.table("storage")
-            .select("*")
-            .eq("instance_id", instance_id)
-            .eq("is_default", True)
-            .execute()
-            .data
-        )
-    except Exception:
-        return None
+    data = (
+        client.table("storage")
+        .select("*")
+        .eq("instance_id", instance_id)
+        .eq("is_default", True)
+        .execute()
+        .data
+    )
     if len(data) == 0:
         return None
     return data[0]

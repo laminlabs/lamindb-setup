@@ -414,7 +414,7 @@ def infer_instance_name(
         return str(db).split("/")[-1]
     if storage == "create-s3":
         raise ValueError("pass name to init if storage = 'create-s3'")
-    storage_path = UPath(storage)
+    storage_path = UPath(storage).resolve()
     # not sure if name is ever ""
     if storage_path.name != "":
         name = storage_path.name
