@@ -83,12 +83,14 @@ def test_init_instance_postgres_custom_name():
     ln_setup.delete("mydata2", force=True)
 
 
-def test_init_instance_cwd():
+def test_init_instance_cwd(make_chdir):
+    # can't make it via fixture because need to chnage dir back before ln_setup.delete
     prev_wd = Path.cwd()
     storage = Path("./mystorage_cwd")
     storage.mkdir()
+    storage = storage.resolve()
     os.chdir(storage)
-    assert Path.cwd() == storage.resolve()
+    assert Path.cwd() == storage
     ln_setup.init(storage=".", _test=True)
     assert ln_setup.settings.instance.name == "mystorage_cwd"
     assert not ln_setup.settings.instance.storage.type_is_cloud
