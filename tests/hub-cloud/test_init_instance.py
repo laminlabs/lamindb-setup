@@ -12,6 +12,7 @@ from lamindb_setup.core._hub_core import _connect_instance_hub
 from lamindb_setup.core._hub_crud import (
     Client,
     select_account_by_handle,
+    select_default_storage_by_instance_id,
     select_instance_by_name,
 )
 
@@ -116,6 +117,10 @@ def test_init_instance_cloud_aws_us():
         name=ln_setup.settings.instance.name,
         client=hub,
     )
+    # test default storage record is correct
+    storage_record = select_default_storage_by_instance_id(instance["id"], hub)
+    assert storage_record["root"] == storage
+    # test instance settings
     assert ln_setup.settings.instance._id == UUID(instance["id"])
     assert ln_setup.settings.storage.type_is_cloud
     assert str(ln_setup.settings.storage.root) == storage
