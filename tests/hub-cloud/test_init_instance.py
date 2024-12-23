@@ -108,6 +108,7 @@ def test_init_instance_cloud_aws_us():
         str(ln_setup.settings.instance._sqlite_file)
         == f"s3://lamindb-ci/init_instance_cloud_aws_us/{ln_setup.settings.instance._id.hex}.lndb"
     )
+    ln_setup.delete("init_instance_cloud_aws_us", force=True)
 
 
 def test_init_instance_cloud_aws_europe():
@@ -124,6 +125,7 @@ def test_init_instance_cloud_aws_europe():
         str(ln_setup.settings.instance._sqlite_file)
         == f"s3://lndb-setup-ci-eu-central-1/{ln_setup.settings.instance._id.hex}.lndb"
     )
+    ln_setup.delete("lamindb-ci-europe", force=True)
 
 
 def test_init_instance_sqlite():
