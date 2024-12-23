@@ -104,6 +104,9 @@ def test_init_instance_cloud_aws_us():
         f"s3://lamindb-ci/{os.environ['LAMIN_ENV']}_test/init_instance_cloud_aws_us"
     )
     ln_setup.init(storage=storage, _test=True)
+    # run for the second time
+    # just loads an already existing instance
+    ln_setup.init(storage=storage, _test=True)
     hub = connect_hub_with_auth()
     account = select_account_by_handle(
         handle=ln_setup.settings.instance.owner, client=hub
