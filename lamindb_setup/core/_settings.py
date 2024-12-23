@@ -179,7 +179,7 @@ class SetupSettings:
         repr = self.user.__repr__()
         repr += f"\nAuto-connect in Python: {self.auto_connect}\n"
         repr += f"Private Django API: {self.private_django_api}\n"
-        repr += f"Cache directory: {self.cache_dir}\n"
+        repr += f"Cache directory: {self.cache_dir.as_posix()}\n"
         if self._instance_exists:
             repr += self.instance.__repr__()
         else:
