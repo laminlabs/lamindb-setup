@@ -192,12 +192,15 @@ class ProgressCallback(fsspec.callbacks.Callback):
     def update_relative_value(self, inc=1):
         if inc != 0:
             self.value += inc
-        # this is specific to http filesystem
-        # for some reason the last update is 0 always
-        # here 100% is forced manually in this case
-        elif self.value >= 0.999:
-            self.value = self.size
-        self.call()
+            self.call()
+        else:
+            # this is specific to http filesystem
+            # for some reason the last update is 0 always
+            # sometimes the reported result is less that 100%
+            # here 100% is forced manually in this case
+            if self.value < 1.0 and self.value >= 0.999:
+                self.value = self.size
+                self.call()
 
     def branch(self, path_1, path_2, kwargs):
         if self.adjust_size:
