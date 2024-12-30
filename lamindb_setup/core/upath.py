@@ -269,6 +269,7 @@ def download_to(self, local_path: UPathStr, print_progress: bool = True, **kwarg
 
     # otherwise fsspec calls fs._ls_real where it reads the body and parses links
     # so the file is downloaded 2 times
+    # upath doesn't call fs.ls to infer type
     if self.protocol in {"http", "https"} and self.stat().as_info()["type"] == "file":
         self.fs.use_listings_cache = True
         self.fs.dircache[cloud_path_str] = []
