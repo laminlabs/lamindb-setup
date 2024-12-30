@@ -269,7 +269,6 @@ def download_to(self, local_path: UPathStr, print_progress: bool = True, **kwarg
 
     cloud_path_str = str(self)
     local_path_str = str(local_path)
-
     # otherwise fsspec calls fs._ls_real where it reads the body and parses links
     # so the file is downloaded 2 times
     # upath doesn't call fs.ls to infer type
@@ -325,8 +324,7 @@ def upload_from(
         destination = self.as_posix()
 
     # the below lines are to avoid s3fs triggering create_bucket in upload if
-    # dirs are present it allows to avoid permission error
-    # would be easier to just
+    # dirs are present, it allows to avoid permission error
     if self.protocol == "s3" and local_path_is_dir and create_folder:
         bucket = self.drive
         if bucket not in self.fs.dircache:
