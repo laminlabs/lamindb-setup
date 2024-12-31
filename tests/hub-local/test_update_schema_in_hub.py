@@ -129,7 +129,7 @@ def test_update_schema_in_hub(setup_instance):
         "through": {
             "left_key": "from_transform_id",
             "right_key": "to_transform_id",
-            "link_table_name": "lnschema_core_transform_predecessors",
+            "link_table_name": "lamindb_transform_predecessors",
         },
         "field_name": "predecessors",
         "model_name": "transform",
@@ -147,7 +147,7 @@ def test_update_schema_in_hub(setup_instance):
         "through": {
             "left_key": "to_transform_id",
             "right_key": "from_transform_id",
-            "link_table_name": "lnschema_core_transform_predecessors",
+            "link_table_name": "lamindb_transform_predecessors",
         },
         "field_name": "successors",
         "model_name": "transform",
