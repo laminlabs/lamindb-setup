@@ -99,35 +99,6 @@ def register_user_and_storage_in_instance(isettings: InstanceSettings, usettings
         logger.warning(f"instance seems not set up ({error})")
 
 
-def reload_schema_modules(isettings: InstanceSettings, include_core: bool = True):
-    schema_names = ["lamindb"] if include_core else []
-    # schema_names += list(isettings.schema)
-    schema_module_names = [get_schema_module_name(n) for n in schema_names]
-
-    for schema_module_name in schema_module_names:
-        if schema_module_name in sys.modules:
-            schema_module = importlib.import_module(schema_module_name)
-            importlib.reload(schema_module)
-
-
-def reload_lamindb_itself(isettings) -> bool:
-    reloaded = False
-    if "lamindb" in sys.modules:
-        import lamindb
-
-        importlib.reload(lamindb)
-        reloaded = True
-    return reloaded
-
-
-def reload_lamindb(isettings: InstanceSettings):
-    log_message = settings.auto_connect
-    if not reload_lamindb_itself(isettings):
-        log_message = True
-    if log_message:
-        logger.important(f"connected lamindb: {isettings.slug}")
-
-
 ERROR_SQLITE_CACHE = """
 Your cached local SQLite file exists, while your cloud SQLite file ({}) doesn't.
 Either delete your cache ({}) or add it back to the cloud (if delete was accidental).
@@ -378,7 +349,6 @@ def load_from_isettings(
         if not isettings._get_settings_file().exists():
             register_user(user)
     isettings._persist(write_to_disk=write_settings)
-    reload_lamindb(isettings)
 
 
 def validate_sqlite_state(isettings: InstanceSettings) -> None:

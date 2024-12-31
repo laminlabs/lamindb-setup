@@ -205,15 +205,6 @@ def connect(slug: str, **kwargs) -> str | tuple | None:
         if kwarg not in valid_kwargs:
             raise TypeError(f"connect() got unexpected keyword argument '{kwarg}'")
 
-    # migrate away from lnschema_core
-    try:
-        import lnschema_core
-
-        logger.important("found legacy lnschema_core, uninstalling it")
-        subprocess.run("pip uninstall -y lnschema-core", shell=True)
-    except ImportError:
-        pass
-
     isettings: InstanceSettings = None  # type: ignore
     # _db is still needed because it is called in init
     _db: str | None = kwargs.get("_db", None)
