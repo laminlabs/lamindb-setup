@@ -299,11 +299,13 @@ def connect(slug: str, **kwargs) -> str | tuple | None:
             settings._instance_settings = None
         raise e
     # migrate away from lnschema-core
-    (settings_dir / f"no_lnschema_core-{isettings.slug.replace('/', '')}")
-    # if not no_lnschema_core_file.exists():
-    # migrate_lnschema_core(
-    #     isettings, no_lnschema_core_file, write_file=_write_settings
-    # )
+    no_lnschema_core_file = (
+        settings_dir / f"no_lnschema_core-{isettings.slug.replace('/', '--')}"
+    )
+    if not no_lnschema_core_file.exists():
+        migrate_lnschema_core(
+            isettings, no_lnschema_core_file, write_file=_write_settings
+        )
     return None
 
 
@@ -342,7 +344,6 @@ def migrate_lnschema_core(
     cur = conn.cursor()
 
     try:
-        # check if bionty_source table exists
         if db_type == "sqlite":
             cur.execute(
                 "SELECT name FROM sqlite_master WHERE type='table' AND name='lnschema_core_user'"
