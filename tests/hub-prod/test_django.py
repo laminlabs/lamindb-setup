@@ -6,4 +6,4 @@ from lamindb_setup import django
 
 
 def test_django():
-    django("sqlsequencereset", "lnschema_core")
+    django("sqlsequencereset", "lamindb")
