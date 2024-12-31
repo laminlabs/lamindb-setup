@@ -27,16 +27,14 @@ def lint(session: nox.Session) -> None:
     ["hub-local", "hub-prod", "hub-cloud", "storage", "docs"],
 )
 def install(session: nox.Session, group: str) -> None:
-    no_deps_packages = "git+https://github.com/laminlabs/lnschema-core git+https://github.com/laminlabs/wetlab git+https://github.com/laminlabs/lamin-cli"
-    schema_deps = f"""uv pip install --system git+https://github.com/laminlabs/bionty@integrate-lnschema-core git+https://github.com/laminlabs/lamindb
+    no_deps_packages = "git+https://github.com/laminlabs/lamindb@integrate-lnschema-core git+https://github.com/laminlabs/wetlab git+https://github.com/laminlabs/lamin-cli"
+    schema_deps = f"""uv pip install --system git+https://github.com/laminlabs/bionty@integrate-lnschema-core
 uv pip install --system --no-deps {no_deps_packages}
 """
     if group == "hub-cloud":
         cmds = schema_deps + "uv pip install --system ./laminhub/rest-hub line_profiler"
     elif group == "docs":
-        cmds = (
-            """uv pip install --system git+https://github.com/laminlabs/lnschema-core"""
-        )
+        cmds = """uv pip install --system git+https://github.com/laminlabs/lamindb@integrate-lnschema-core"""
     elif group == "storage":
         cmds = """uv pip install --system gcsfs"""
         cmds += """\nuv pip install --system huggingface_hub"""
