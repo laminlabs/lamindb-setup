@@ -42,8 +42,8 @@ def get_schema_module_name(schema_name, raise_import_error: bool = True) -> str 
 
 
 def register_storage_in_instance(ssettings: StorageSettings):
-    from lnschema_core.models import Storage
-    from lnschema_core.users import current_user_id
+    from lamindb.models import Storage
+    from lamindb.users import current_user_id
 
     from .core.hashing import hash_and_encode_as_b62
 
@@ -71,7 +71,7 @@ def register_storage_in_instance(ssettings: StorageSettings):
 
 
 def register_user(usettings):
-    from lnschema_core.models import User
+    from lamindb.models import User
 
     try:
         # need to have try except because of integer primary key migration
@@ -100,7 +100,7 @@ def register_user_and_storage_in_instance(isettings: InstanceSettings, usettings
 
 
 def reload_schema_modules(isettings: InstanceSettings, include_core: bool = True):
-    schema_names = ["core"] if include_core else []
+    schema_names = ["lamindb"] if include_core else []
     # schema_names += list(isettings.schema)
     schema_module_names = [get_schema_module_name(n) for n in schema_names]
 

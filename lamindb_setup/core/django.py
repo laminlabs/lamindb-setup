@@ -54,7 +54,7 @@ def setup_django(
         }
         from .._init_instance import get_schema_module_name
 
-        schema_names = ["core"] + list(isettings.schema)
+        schema_names = ["lamindb"] + list(isettings.schema)
         raise_import_error = True if init else False
         installed_apps = [
             package_name

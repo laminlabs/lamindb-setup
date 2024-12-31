@@ -230,7 +230,7 @@ class StorageSettings:
         """Storage record in the current instance."""
         if self._record is None:
             # dynamic import because of import order
-            from lnschema_core.models import Storage
+            from lamindb.models import Storage
 
             from ._settings import settings
 

@@ -308,13 +308,11 @@ def connect(slug: str, **kwargs) -> str | tuple | None:
             settings._instance_settings = None
         raise e
     # migrate away from lnschema-core
-    no_lnschema_core_file = (
-        settings_dir / f"no_lnschema_core-{isettings.slug.replace('/', '')}"
-    )
-    if not no_lnschema_core_file.exists():
-        migrate_lnschema_core(
-            isettings, no_lnschema_core_file, write_file=_write_settings
-        )
+    (settings_dir / f"no_lnschema_core-{isettings.slug.replace('/', '')}")
+    # if not no_lnschema_core_file.exists():
+    # migrate_lnschema_core(
+    #     isettings, no_lnschema_core_file, write_file=_write_settings
+    # )
     return None
 
 

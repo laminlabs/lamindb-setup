@@ -232,7 +232,7 @@ class _ModelHandler:
         return related_fields
 
     def _get_field_metadata(self, model, field: Field):
-        from lnschema_core.models import LinkORM
+        from lamindb.models import LinkORM
 
         internal_type = field.get_internal_type()
         model_name = field.model._meta.model_name
@@ -288,7 +288,7 @@ class _ModelHandler:
 
     @staticmethod
     def _get_through_many_to_many(field_or_rel: ManyToManyField | ManyToManyRel):
-        from lnschema_core.models import Registry
+        from lamindb.models import Registry
 
         if isinstance(field_or_rel, ManyToManyField):
             if field_or_rel.model != Registry:
@@ -360,7 +360,7 @@ class _ModelHandler:
 
 class _SchemaHandler:
     def __init__(self) -> None:
-        self.included_modules = ["core"] + list(settings.instance.schema)
+        self.included_modules = ["lamindb"] + list(settings.instance.schema)
         self.modules = self._get_modules_metadata()
 
     def to_dict(self, include_django_objects: bool = True):
@@ -376,7 +376,7 @@ class _SchemaHandler:
         return self.to_dict(include_django_objects=False)
 
     def _get_modules_metadata(self):
-        from lnschema_core.models import Record, Registry
+        from lamindb.models import Record, Registry
 
         all_models = {
             module_name: {

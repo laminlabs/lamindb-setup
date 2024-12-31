@@ -4,7 +4,7 @@ from importlib import import_module
 from pathlib import Path
 
 MODELS = {
-    "core": {
+    "lamindb": {
         "Collection": False,
         "Artifact": False,
         "Transform": False,

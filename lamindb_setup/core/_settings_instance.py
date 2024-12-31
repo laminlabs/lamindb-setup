@@ -121,7 +121,7 @@ class InstanceSettings:
     def _search_local_root(
         self, local_root: str | None = None, mute_warning: bool = False
     ) -> StorageSettings | None:
-        from lnschema_core.models import Storage
+        from lamindb.models import Storage
 
         if local_root is not None:
             local_records = Storage.objects.filter(root=local_root)
