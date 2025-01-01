@@ -273,14 +273,16 @@ class _ModelHandler:
             through = self._get_through(field)
 
         return FieldMetadata(
-            schema_name=schema_name,
+            schema_name=schema_name if schema_name != "lamindb" else "core",
             model_name=model_name,
             field_name=field_name,
             type=internal_type,
             is_link_table=issubclass(field.model, LinkORM),
             column_name=column,
             relation_type=relation_type,
-            related_schema_name=related_schema_name,
+            related_schema_name=related_schema_name
+            if related_schema_name != "lamindb"
+            else "core",
             related_model_name=related_model_name,
             related_field_name=related_field_name,
             through=through,
@@ -365,7 +367,7 @@ class _SchemaHandler:
 
     def to_dict(self, include_django_objects: bool = True):
         return {
-            module_name: {
+            module_name if module_name != "lamindb" else "core": {
                 model_name: model.to_dict(include_django_objects)
                 for model_name, model in module.items()
             }
@@ -401,6 +403,8 @@ class _SchemaHandler:
         module_set_info = []
         for module_name in self.included_modules:
             module = self._get_schema_module(module_name)
+            if module_name == "lamindb":
+                module_name = "core"
             module_set_info.append(
                 {"id": 0, "name": module_name, "version": module.__version__}
             )
