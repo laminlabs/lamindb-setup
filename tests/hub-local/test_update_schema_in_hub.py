@@ -41,6 +41,8 @@ def test_update_schema_in_hub(setup_instance):
     assert "bionty" in schema["schema_json"]
     assert "wetlab" in schema["schema_json"]
 
+    print(schema["schema_json"]["core"])
+
     assert schema["schema_json"]["core"]["artifact"]["fields"]["id"] == {
         "type": "AutoField",
         "column_name": "id",
