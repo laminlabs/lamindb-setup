@@ -2,7 +2,6 @@ from __future__ import annotations
 
 import importlib
 import os
-import sys
 import uuid
 from typing import TYPE_CHECKING, Literal
 from uuid import UUID
@@ -302,6 +301,8 @@ def init(
             update_schema_in_hub(access_token=access_token)
         if _write_settings:
             settings.auto_connect = True
+        importlib.reload(importlib.import_module("lamindb"))
+        logger.important(f"initialized lamindb: {isettings.slug}")
     except Exception as e:
         from ._delete import delete_by_isettings
         from .core._hub_core import delete_instance_record, delete_storage_record
