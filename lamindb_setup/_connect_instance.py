@@ -1,7 +1,7 @@
 from __future__ import annotations
 
+import importlib
 import os
-import subprocess
 from typing import TYPE_CHECKING
 from uuid import UUID
 
@@ -292,6 +292,7 @@ def connect(slug: str, **kwargs) -> str | tuple | None:
         #     except ProgrammingError:
         #         pass
         load_from_isettings(isettings, user=_user, write_settings=_write_settings)
+        importlib.reload(importlib.import_module("lamindb"))
     except Exception as e:
         if isettings is not None:
             if _write_settings:
