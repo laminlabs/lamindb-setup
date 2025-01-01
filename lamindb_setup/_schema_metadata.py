@@ -362,7 +362,7 @@ class _ModelHandler:
 
 class _SchemaHandler:
     def __init__(self) -> None:
-        self.included_modules = ["lamindb"] + list(settings.instance.schema)
+        self.included_modules = ["core"] + list(settings.instance.schema)
         self.modules = self._get_modules_metadata()
 
     def to_dict(self, include_django_objects: bool = True):

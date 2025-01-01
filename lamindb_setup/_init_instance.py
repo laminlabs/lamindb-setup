@@ -29,6 +29,8 @@ if TYPE_CHECKING:
 def get_schema_module_name(schema_name, raise_import_error: bool = True) -> str | None:
     import importlib.util
 
+    if schema_name == "core":
+        return "lamindb"
     name_attempts = [f"lnschema_{schema_name.replace('-', '_')}", schema_name]
     for name in name_attempts:
         module_spec = importlib.util.find_spec(name)
