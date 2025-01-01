@@ -457,9 +457,13 @@ class InstanceSettings:
         settings._instance_settings = self
 
     def _init_db(self):
+        from lamindb_setup import _check_setup
+
         from .django import setup_django
 
+        _check_setup.IS_INITIALIZING = True
         setup_django(self, init=True)
+        _check_setup.IS_INITIALIZING = False
 
     def _load_db(self) -> tuple[bool, str]:
         # Is the database available and initialized as LaminDB?
@@ -472,7 +476,6 @@ class InstanceSettings:
                     f" {legacy_file} to {self._sqlite_file}"
                 )
             return False, f"SQLite file {self._sqlite_file} does not exist"
-        from lamindb_setup import settings  # to check user
 
         from .django import setup_django
 

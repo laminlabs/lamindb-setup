@@ -27,6 +27,7 @@ If you used the CLI to set up lamindb in a notebook, restart the Python session.
 
 
 CURRENT_ISETTINGS: InstanceSettings | None = None
+IS_INITIALIZING: bool = False
 
 
 def _get_current_instance_settings() -> InstanceSettings | None:
@@ -70,9 +71,14 @@ def _check_instance_setup(from_module: str | None = None) -> bool:
         return True
     isettings = _get_current_instance_settings()
     if isettings is not None:
-        if from_module is not None and settings.auto_connect and not django.IS_SETUP:
+        if (
+            from_module is not None
+            and settings.auto_connect
+            and not django.IS_SETUP
+            and not IS_INITIALIZING
+        ):
             django.setup_django(isettings)
-            if from_module != "lamindb":
+            if not from_module == "lamindb":
                 il.reload(il.import_module(from_module))
             logger.important(f"connected lamindb: {isettings.slug}")
         return django.IS_SETUP
