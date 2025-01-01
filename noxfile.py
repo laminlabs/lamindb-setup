@@ -51,7 +51,7 @@ uv pip install --system --no-deps {no_deps_packages}
     # above downgrades django, I don't understand why, try this
     if group == "hub-local":
         cmds += "\nuv pip install --system -e ./laminhub/rest-hub line_profiler"
-        cmds += "\nuv pip install git+https://github.com/laminlabs/lamindb@integrate-lnschema-core"
+        cmds += "\nuv pip install --system git+https://github.com/laminlabs/lamindb@integrate-lnschema-core"
 
     [run(session, line) for line in cmds.splitlines()]
 
