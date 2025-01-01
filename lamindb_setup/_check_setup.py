@@ -77,10 +77,13 @@ def _check_instance_setup(from_module: str | None = None) -> bool:
             and not django.IS_SETUP
             and not IS_LOADING
         ):
-            django.setup_django(isettings)
             if not from_module == "lamindb":
+                import lamindb
+
                 il.reload(il.import_module(from_module))
-            logger.important(f"connected lamindb: {isettings.slug}")
+            else:
+                django.setup_django(isettings)
+                logger.important(f"connected lamindb: {isettings.slug}")
         return django.IS_SETUP
     else:
         if from_module is not None and settings.auto_connect:
