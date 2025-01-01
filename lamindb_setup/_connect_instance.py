@@ -377,6 +377,7 @@ def migrate_lnschema_core(
                 no_lnschema_core_file.touch(exist_ok=True)
         else:
             try:
+                print(f"migrating from lnschema_core to lamindb: {tables_to_rename}")
                 for table in tables_to_rename:
                     if db_type == "sqlite":
                         cur.execute(
@@ -390,6 +391,7 @@ def migrate_lnschema_core(
                 cur.execute(
                     "UPDATE django_migrations SET app = 'lamindb' WHERE app = 'lnschema_core'"
                 )
+                print("finished migration")
                 if write_file:
                     no_lnschema_core_file.touch(exist_ok=True)
             except Exception:
