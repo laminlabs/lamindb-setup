@@ -461,11 +461,13 @@ class InstanceSettings:
 
         from .django import setup_django
 
-        _check_setup.IS_INITIALIZING = True
+        _check_setup.IS_LOADING = True
         setup_django(self, init=True)
-        _check_setup.IS_INITIALIZING = False
+        _check_setup.IS_LOADING = False
 
     def _load_db(self) -> tuple[bool, str]:
+        from lamindb_setup import _check_setup
+
         # Is the database available and initialized as LaminDB?
         # returns a tuple of status code and message
         if self.dialect == "sqlite" and not self._sqlite_file.exists():
@@ -484,5 +486,7 @@ class InstanceSettings:
         # setting up django also performs a check for migrations & prints them
         # as warnings
         # this should fail, e.g., if the db is not reachable
+        _check_setup.IS_LOADING = True
         setup_django(self)
+        _check_setup.IS_LOADING = False
         return True, ""

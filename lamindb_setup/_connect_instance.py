@@ -378,10 +378,10 @@ def migrate_lnschema_core(
         else:
             try:
                 response = input(
-                    f"migrating to lamindb 0.78 (integrate lnschema_core into lamindb): will rename {tables_to_rename}"
+                    f"Do you want to migrate to lamindb 0.78 (integrate lnschema_core into lamindb)? (y/n) -- Will rename {tables_to_rename}"
                 )
                 if response != "y":
-                    print("aborted")
+                    print("Aborted.")
                     quit()
                 for table in tables_to_rename:
                     if db_type == "sqlite":
