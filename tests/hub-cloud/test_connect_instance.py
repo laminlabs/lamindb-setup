@@ -108,38 +108,40 @@ def test_connect_with_db_parameter():
     # no more db parameter, it is _db now and is hidden in kwargs
     # this also tests that only allowed kwargs can be used
     with pytest.raises(TypeError):
-        ln_setup.connect("laminlabs/lamindata", db="some_db")
+        ln_setup.connect("laminlabs/lamin-site-assets", db="some_db")
 
     if os.getenv("LAMIN_ENV") == "prod":
         # take a write-level access collaborator
         ln_setup.login("testuser1")
         # test load from hub
-        ln_setup.connect("laminlabs/lamindata", _test=True)
+        ln_setup.connect("laminlabs/lamin-site-assets", _test=True)
         assert "root" in ln_setup.settings.instance.db
         # test load from provided db argument
         db = "postgresql://testdbuser:testpwd@database2.cmyfs24wugc3.us-east-1.rds.amazonaws.com:5432/db1"
-        ln_setup.connect("laminlabs/lamindata", _db=db, _test=True)
+        ln_setup.connect("laminlabs/lamin-site-assets", _db=db, _test=True)
         assert "testdbuser" in ln_setup.settings.instance.db
         # test ignore loading from cache because hub result has >read access
-        ln_setup.connect("laminlabs/lamindata", _test=True)
+        ln_setup.connect("laminlabs/lamin-site-assets", _test=True)
         assert "root" in ln_setup.settings.instance.db
 
         # now take a user that has no collaborator status
         ln_setup.login("testuser2")
         # the cached high priviledge connection string remains active
-        ln_setup.connect("laminlabs/lamindata", _test=True)
+        ln_setup.connect("laminlabs/lamin-site-assets", _test=True)
         assert "root" in ln_setup.settings.instance.db
         # now pass the connection string
-        ln_setup.connect("laminlabs/lamindata", _db=db, _test=True)
+        ln_setup.connect("laminlabs/lamin-site-assets", _db=db, _test=True)
         assert "testdbuser" in ln_setup.settings.instance.db
         # now the cache is used
-        ln_setup.connect("laminlabs/lamindata", _test=True)
+        ln_setup.connect("laminlabs/lamin-site-assets", _test=True)
         assert "testdbuser" in ln_setup.settings.instance.db
 
         # test corrupted input
         db_corrupted = "postgresql://testuser:testpwd@wrongserver:5432/db1"
         with pytest.raises(ValueError) as error:
-            ln_setup.connect("laminlabs/lamindata", _db=db_corrupted, _test=True)
+            ln_setup.connect(
+                "laminlabs/lamin-site-assets", _db=db_corrupted, _test=True
+            )
         assert error.exconly().startswith(
             "ValueError: The local differs from the hub database information"
         )
