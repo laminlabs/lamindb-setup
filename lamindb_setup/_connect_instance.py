@@ -257,6 +257,14 @@ def connect(slug: str, **kwargs) -> str | tuple | None:
         if _test:
             return None
         silence_loggers()
+        # migrate away from lnschema-core
+        no_lnschema_core_file = (
+            settings_dir / f"no_lnschema_core-{isettings.slug.replace('/', '--')}"
+        )
+        if not no_lnschema_core_file.exists():
+            migrate_lnschema_core(
+                isettings, no_lnschema_core_file, write_file=_write_settings
+            )
         check, msg = isettings._load_db()
         if not check:
             local_db = (
@@ -299,14 +307,6 @@ def connect(slug: str, **kwargs) -> str | tuple | None:
                 isettings._get_settings_file().unlink(missing_ok=True)  # type: ignore
             settings._instance_settings = None
         raise e
-    # migrate away from lnschema-core
-    no_lnschema_core_file = (
-        settings_dir / f"no_lnschema_core-{isettings.slug.replace('/', '--')}"
-    )
-    if not no_lnschema_core_file.exists():
-        migrate_lnschema_core(
-            isettings, no_lnschema_core_file, write_file=_write_settings
-        )
     return None
 
 
@@ -347,7 +347,7 @@ def migrate_lnschema_core(
     try:
         if db_type == "sqlite":
             cur.execute(
-                "SELECT name FROM sqlite_master WHERE type='table' AND name='lnschema_core_user'"
+                "SELECT name FROM sqlite_master WHERE type='table' AND name='lamindb_user'"
             )
             migrated = cur.fetchone() is not None
 
@@ -360,7 +360,7 @@ def migrate_lnschema_core(
             ]
         else:  # postgres
             cur.execute(
-                "SELECT EXISTS (SELECT FROM information_schema.tables WHERE table_name = 'lnschema_core_user')"
+                "SELECT EXISTS (SELECT FROM information_schema.tables WHERE table_name = 'lamindb_user')"
             )
             migrated = cur.fetchone()[0]
 
@@ -377,7 +377,12 @@ def migrate_lnschema_core(
                 no_lnschema_core_file.touch(exist_ok=True)
         else:
             try:
-                print(f"migrating from lnschema_core to lamindb: {tables_to_rename}")
+                response = input(
+                    f"migrating to lamindb 0.78 (integrate lnschema_core into lamindb): will rename {tables_to_rename}"
+                )
+                if response != "y":
+                    print("aborted")
+                    quit()
                 for table in tables_to_rename:
                     if db_type == "sqlite":
                         cur.execute(
