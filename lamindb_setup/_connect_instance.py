@@ -396,7 +396,9 @@ def migrate_lnschema_core(
                 cur.execute(
                     "UPDATE django_migrations SET app = 'lamindb' WHERE app = 'lnschema_core'"
                 )
-                print("finished migration")
+                print(
+                    "Renaming tables finished.\nNow, *please* call: lamin migrate deploy"
+                )
                 if write_file:
                     no_lnschema_core_file.touch(exist_ok=True)
             except Exception:
