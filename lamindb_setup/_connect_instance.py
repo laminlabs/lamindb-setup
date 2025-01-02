@@ -1,7 +1,7 @@
 from __future__ import annotations
 
+import importlib
 import os
-import sys
 from typing import TYPE_CHECKING
 from uuid import UUID
 
@@ -257,6 +257,14 @@ def connect(slug: str, **kwargs) -> str | tuple | None:
         if _test:
             return None
         silence_loggers()
+        # migrate away from lnschema-core
+        no_lnschema_core_file = (
+            settings_dir / f"no_lnschema_core-{isettings.slug.replace('/', '--')}"
+        )
+        if not no_lnschema_core_file.exists():
+            migrate_lnschema_core(
+                isettings, no_lnschema_core_file, write_file=_write_settings
+            )
         check, msg = isettings._load_db()
         if not check:
             local_db = (
@@ -292,21 +300,13 @@ def connect(slug: str, **kwargs) -> str | tuple | None:
         #     except ProgrammingError:
         #         pass
         load_from_isettings(isettings, user=_user, write_settings=_write_settings)
+        importlib.reload(importlib.import_module("lamindb"))
     except Exception as e:
         if isettings is not None:
             if _write_settings:
                 isettings._get_settings_file().unlink(missing_ok=True)  # type: ignore
             settings._instance_settings = None
         raise e
-    # rename lnschema_bionty to bionty for sql tables
-    if "bionty" in isettings.schema:
-        no_lnschema_bionty_file = (
-            settings_dir / f"no_lnschema_bionty-{isettings.slug.replace('/', '')}"
-        )
-        if not no_lnschema_bionty_file.exists():
-            migrate_lnschema_bionty(
-                isettings, no_lnschema_bionty_file, write_file=_write_settings
-            )
     return None
 
 
@@ -322,13 +322,10 @@ def load(slug: str) -> str | tuple | None:
     return result
 
 
-def migrate_lnschema_bionty(
-    isettings: InstanceSettings, no_lnschema_bionty_file: Path, write_file: bool = True
+def migrate_lnschema_core(
+    isettings: InstanceSettings, no_lnschema_core_file: Path, write_file: bool = True
 ):
-    """Migrate lnschema_bionty tables to bionty tables if bionty_source doesn't exist.
-
-    :param db_uri: str, database URI (e.g., 'sqlite:///path/to/db.sqlite' or 'postgresql://user:password@host:port/dbname')
-    """
+    """Migrate lnschema_core tables to lamindb tables."""
     from urllib.parse import urlparse
 
     parsed_uri = urlparse(isettings.db)
@@ -348,60 +345,62 @@ def migrate_lnschema_bionty(
     cur = conn.cursor()
 
     try:
-        # check if bionty_source table exists
         if db_type == "sqlite":
             cur.execute(
-                "SELECT name FROM sqlite_master WHERE type='table' AND name='bionty_source'"
+                "SELECT name FROM sqlite_master WHERE type='table' AND name='lamindb_user'"
             )
             migrated = cur.fetchone() is not None
 
             # tables that need to be renamed
             cur.execute(
-                "SELECT name FROM sqlite_master WHERE type='table' AND name LIKE 'lnschema_bionty_%'"
+                "SELECT name FROM sqlite_master WHERE type='table' AND name LIKE 'lnschema_core_%'"
             )
             tables_to_rename = [
-                row[0][len("lnschema_bionty_") :] for row in cur.fetchall()
+                row[0][len("lnschema_core_") :] for row in cur.fetchall()
             ]
         else:  # postgres
             cur.execute(
-                "SELECT EXISTS (SELECT FROM information_schema.tables WHERE table_name = 'bionty_source')"
+                "SELECT EXISTS (SELECT FROM information_schema.tables WHERE table_name = 'lamindb_user')"
             )
             migrated = cur.fetchone()[0]
 
             # tables that need to be renamed
             cur.execute(
-                "SELECT table_name FROM information_schema.tables WHERE table_name LIKE 'lnschema_bionty_%'"
+                "SELECT table_name FROM information_schema.tables WHERE table_name LIKE 'lnschema_core_%'"
             )
             tables_to_rename = [
-                row[0][len("lnschema_bionty_") :] for row in cur.fetchall()
+                row[0][len("lnschema_core_") :] for row in cur.fetchall()
             ]
 
         if migrated:
             if write_file:
-                no_lnschema_bionty_file.touch(exist_ok=True)
+                no_lnschema_core_file.touch(exist_ok=True)
         else:
             try:
-                # rename tables only if bionty_source doesn't exist and there are tables to rename
+                response = input(
+                    f"Do you want to migrate to lamindb 0.78 (integrate lnschema_core into lamindb)? (y/n) -- Will rename {tables_to_rename}"
+                )
+                if response != "y":
+                    print("Aborted.")
+                    quit()
                 for table in tables_to_rename:
                     if db_type == "sqlite":
                         cur.execute(
-                            f"ALTER TABLE lnschema_bionty_{table} RENAME TO bionty_{table}"
+                            f"ALTER TABLE lnschema_core_{table} RENAME TO lamindb_{table}"
                         )
                     else:  # postgres
                         cur.execute(
-                            f"ALTER TABLE lnschema_bionty_{table} RENAME TO bionty_{table};"
+                            f"ALTER TABLE lnschema_core_{table} RENAME TO lamindb_{table};"
                         )
 
-                # update django_migrations table
                 cur.execute(
-                    "UPDATE django_migrations SET app = 'bionty' WHERE app = 'lnschema_bionty'"
+                    "UPDATE django_migrations SET app = 'lamindb' WHERE app = 'lnschema_core'"
                 )
-
-                logger.warning(
-                    "Please uninstall lnschema-bionty via `pip uninstall lnschema-bionty`!"
+                print(
+                    "Renaming tables finished.\nNow, *please* call: lamin migrate deploy"
                 )
                 if write_file:
-                    no_lnschema_bionty_file.touch(exist_ok=True)
+                    no_lnschema_core_file.touch(exist_ok=True)
             except Exception:
                 # read-only users can't rename tables
                 pass

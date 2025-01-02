@@ -27,6 +27,7 @@ If you used the CLI to set up lamindb in a notebook, restart the Python session.
 
 
 CURRENT_ISETTINGS: InstanceSettings | None = None
+IS_LOADING: bool = False
 
 
 def _get_current_instance_settings() -> InstanceSettings | None:
@@ -54,16 +55,11 @@ def _get_current_instance_settings() -> InstanceSettings | None:
 
 # we make this a private function because in all the places it's used,
 # users should not see it
-def _check_instance_setup(
-    from_lamindb: bool = False, from_module: str | None = None
-) -> bool:
-    reload_module = from_lamindb or from_module is not None
-    from ._init_instance import get_schema_module_name, reload_schema_modules
-
+def _check_instance_setup(from_module: str | None = None) -> bool:
     if django.IS_SETUP:
         # reload logic here because module might not yet have been imported
         # upon first setup
-        if from_module is not None:
+        if from_module is not None and from_module != "lamindb":
             il.reload(il.import_module(from_module))
         return True
     silence_loggers()
@@ -75,18 +71,21 @@ def _check_instance_setup(
         return True
     isettings = _get_current_instance_settings()
     if isettings is not None:
-        if reload_module and settings.auto_connect:
-            if not django.IS_SETUP:
+        if (
+            from_module is not None
+            and settings.auto_connect
+            and not django.IS_SETUP
+            and not IS_LOADING
+        ):
+            if not from_module == "lamindb":
+                import lamindb
+
+                il.reload(il.import_module(from_module))
+            else:
                 django.setup_django(isettings)
-                if from_module is not None:
-                    # this only reloads `from_module`
-                    il.reload(il.import_module(from_module))
-                else:
-                    # this bulk reloads all schema modules
-                    reload_schema_modules(isettings)
                 logger.important(f"connected lamindb: {isettings.slug}")
         return django.IS_SETUP
     else:
-        if reload_module and settings.auto_connect:
+        if from_module is not None and settings.auto_connect:
             logger.warning(InstanceNotSetupError.default_message)
         return False

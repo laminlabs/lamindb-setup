@@ -5,10 +5,8 @@ import builtins
 import os
 from pathlib import Path
 import time
-from lamin_utils import logger
-from ._settings_store import current_instance_settings_file
 from ._settings_instance import InstanceSettings
-import sys
+
 
 IS_RUN_FROM_IPYTHON = getattr(builtins, "__IPYTHON__", False)
 IS_SETUP = False

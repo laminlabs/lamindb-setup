@@ -121,7 +121,7 @@ class InstanceSettings:
     def _search_local_root(
         self, local_root: str | None = None, mute_warning: bool = False
     ) -> StorageSettings | None:
-        from lnschema_core.models import Storage
+        from lamindb.models import Storage
 
         if local_root is not None:
             local_records = Storage.objects.filter(root=local_root)
@@ -457,11 +457,17 @@ class InstanceSettings:
         settings._instance_settings = self
 
     def _init_db(self):
+        from lamindb_setup import _check_setup
+
         from .django import setup_django
 
+        _check_setup.IS_LOADING = True
         setup_django(self, init=True)
+        _check_setup.IS_LOADING = False
 
     def _load_db(self) -> tuple[bool, str]:
+        from lamindb_setup import _check_setup
+
         # Is the database available and initialized as LaminDB?
         # returns a tuple of status code and message
         if self.dialect == "sqlite" and not self._sqlite_file.exists():
@@ -472,7 +478,6 @@ class InstanceSettings:
                     f" {legacy_file} to {self._sqlite_file}"
                 )
             return False, f"SQLite file {self._sqlite_file} does not exist"
-        from lamindb_setup import settings  # to check user
 
         from .django import setup_django
 
@@ -481,5 +486,7 @@ class InstanceSettings:
         # setting up django also performs a check for migrations & prints them
         # as warnings
         # this should fail, e.g., if the db is not reachable
+        _check_setup.IS_LOADING = True
         setup_django(self)
+        _check_setup.IS_LOADING = False
         return True, ""

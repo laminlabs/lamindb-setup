@@ -5,7 +5,7 @@ from django.db.migrations.loader import MigrationLoader
 from lamin_utils import logger
 from packaging import version
 
-from ._check_setup import _check_instance_setup
+from . import _check_setup
 from .core._settings import settings
 from .core.django import setup_django
 
@@ -64,16 +64,18 @@ class migrate:
     @classmethod
     def create(cls) -> None:
         """Create a migration."""
-        if _check_instance_setup():
+        if _check_setup._check_instance_setup():
             raise RuntimeError("Restart Python session to create migration or use CLI!")
+        _check_setup.IS_LOADING = True
         setup_django(settings.instance, create_migrations=True)
+        _check_setup.IS_LOADING = False
 
     @classmethod
     def deploy(cls) -> None:
         """Deploy a migration."""
         from ._schema_metadata import update_schema_in_hub
 
-        if _check_instance_setup():
+        if _check_setup._check_instance_setup():
             raise RuntimeError("Restart Python session to migrate or use CLI!")
         from lamindb_setup.core._hub_client import call_with_fallback_auth
         from lamindb_setup.core._hub_crud import (

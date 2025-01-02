@@ -232,7 +232,7 @@ class _ModelHandler:
         return related_fields
 
     def _get_field_metadata(self, model, field: Field):
-        from lnschema_core.models import LinkORM
+        from lamindb.models import LinkORM
 
         internal_type = field.get_internal_type()
         model_name = field.model._meta.model_name
@@ -273,14 +273,16 @@ class _ModelHandler:
             through = self._get_through(field)
 
         return FieldMetadata(
-            schema_name=schema_name,
+            schema_name=schema_name if schema_name != "lamindb" else "core",
             model_name=model_name,
             field_name=field_name,
             type=internal_type,
             is_link_table=issubclass(field.model, LinkORM),
             column_name=column,
             relation_type=relation_type,
-            related_schema_name=related_schema_name,
+            related_schema_name=related_schema_name
+            if related_schema_name != "lamindb"
+            else "core",
             related_model_name=related_model_name,
             related_field_name=related_field_name,
             through=through,
@@ -288,7 +290,7 @@ class _ModelHandler:
 
     @staticmethod
     def _get_through_many_to_many(field_or_rel: ManyToManyField | ManyToManyRel):
-        from lnschema_core.models import Registry
+        from lamindb.models import Registry
 
         if isinstance(field_or_rel, ManyToManyField):
             if field_or_rel.model != Registry:
@@ -365,7 +367,7 @@ class _SchemaHandler:
 
     def to_dict(self, include_django_objects: bool = True):
         return {
-            module_name: {
+            module_name if module_name != "lamindb" else "core": {
                 model_name: model.to_dict(include_django_objects)
                 for model_name, model in module.items()
             }
@@ -376,7 +378,7 @@ class _SchemaHandler:
         return self.to_dict(include_django_objects=False)
 
     def _get_modules_metadata(self):
-        from lnschema_core.models import Record, Registry
+        from lamindb.models import Record, Registry
 
         all_models = {
             module_name: {
@@ -401,6 +403,8 @@ class _SchemaHandler:
         module_set_info = []
         for module_name in self.included_modules:
             module = self._get_schema_module(module_name)
+            if module_name == "lamindb":
+                module_name = "core"
             module_set_info.append(
                 {"id": 0, "name": module_name, "version": module.__version__}
             )

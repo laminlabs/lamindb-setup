@@ -809,7 +809,7 @@ class InstanceNotEmpty(Exception):
     pass
 
 
-# is as fast as boto3: https://lamin.ai/laminlabs/lamindata/transform/krGp3hT1f78N5zKv
+# is as fast as boto3: https://lamin.ai/laminlabs/lamin-site-assets/transform/krGp3hT1f78N5zKv
 def check_storage_is_empty(
     root: UPathStr, *, raise_error: bool = True, account_for_sqlite_file: bool = False
 ) -> int:

@@ -2,7 +2,6 @@ from __future__ import annotations
 
 import importlib
 import os
-import sys
 import uuid
 from typing import TYPE_CHECKING, Literal
 from uuid import UUID
@@ -29,6 +28,8 @@ if TYPE_CHECKING:
 def get_schema_module_name(schema_name, raise_import_error: bool = True) -> str | None:
     import importlib.util
 
+    if schema_name == "core":
+        return "lamindb"
     name_attempts = [f"lnschema_{schema_name.replace('-', '_')}", schema_name]
     for name in name_attempts:
         module_spec = importlib.util.find_spec(name)
@@ -42,8 +43,8 @@ def get_schema_module_name(schema_name, raise_import_error: bool = True) -> str 
 
 
 def register_storage_in_instance(ssettings: StorageSettings):
-    from lnschema_core.models import Storage
-    from lnschema_core.users import current_user_id
+    from lamindb.base.users import current_user_id
+    from lamindb.models import Storage
 
     from .core.hashing import hash_and_encode_as_b62
 
@@ -71,7 +72,7 @@ def register_storage_in_instance(ssettings: StorageSettings):
 
 
 def register_user(usettings):
-    from lnschema_core.models import User
+    from lamindb.models import User
 
     try:
         # need to have try except because of integer primary key migration
@@ -97,35 +98,6 @@ def register_user_and_storage_in_instance(isettings: InstanceSettings, usettings
         register_storage_in_instance(isettings.storage)
     except OperationalError as error:
         logger.warning(f"instance seems not set up ({error})")
-
-
-def reload_schema_modules(isettings: InstanceSettings, include_core: bool = True):
-    schema_names = ["core"] if include_core else []
-    # schema_names += list(isettings.schema)
-    schema_module_names = [get_schema_module_name(n) for n in schema_names]
-
-    for schema_module_name in schema_module_names:
-        if schema_module_name in sys.modules:
-            schema_module = importlib.import_module(schema_module_name)
-            importlib.reload(schema_module)
-
-
-def reload_lamindb_itself(isettings) -> bool:
-    reloaded = False
-    if "lamindb" in sys.modules:
-        import lamindb
-
-        importlib.reload(lamindb)
-        reloaded = True
-    return reloaded
-
-
-def reload_lamindb(isettings: InstanceSettings):
-    log_message = settings.auto_connect
-    if not reload_lamindb_itself(isettings):
-        log_message = True
-    if log_message:
-        logger.important(f"connected lamindb: {isettings.slug}")
 
 
 ERROR_SQLITE_CACHE = """
@@ -329,6 +301,8 @@ def init(
             update_schema_in_hub(access_token=access_token)
         if _write_settings:
             settings.auto_connect = True
+        importlib.reload(importlib.import_module("lamindb"))
+        logger.important(f"initialized lamindb: {isettings.slug}")
     except Exception as e:
         from ._delete import delete_by_isettings
         from .core._hub_core import delete_instance_record, delete_storage_record
@@ -338,16 +312,17 @@ def init(
                 delete_by_isettings(isettings)
             else:
                 settings._instance_settings = None
-            if (
-                user_handle != "anonymous" or access_token is not None
-            ) and isettings.is_on_hub:
-                delete_instance_record(isettings._id, access_token=access_token)
         if (
             ssettings is not None
             and (user_handle != "anonymous" or access_token is not None)
             and ssettings.is_on_hub
         ):
             delete_storage_record(ssettings._uuid, access_token=access_token)  # type: ignore
+        if isettings is not None:
+            if (
+                user_handle != "anonymous" or access_token is not None
+            ) and isettings.is_on_hub:
+                delete_instance_record(isettings._id, access_token=access_token)
         raise e
     return None
 
@@ -378,7 +353,6 @@ def load_from_isettings(
         if not isettings._get_settings_file().exists():
             register_user(user)
     isettings._persist(write_to_disk=write_settings)
-    reload_lamindb(isettings)
 
 
 def validate_sqlite_state(isettings: InstanceSettings) -> None:

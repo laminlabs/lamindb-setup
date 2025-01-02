@@ -15,7 +15,7 @@ test_root = Path("./test_script_ci_storage").resolve().as_posix()
 with pytest.raises(ProgrammingError) as error:
     set_managed_storage(test_root)
 assert error.exconly().endswith(
-    "ProgrammingError: permission denied for table lnschema_core_storage"
+    "ProgrammingError: permission denied for table lamindb_storage"
 )
 
 hub_client = connect_hub_with_auth()
