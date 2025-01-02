@@ -198,6 +198,7 @@ def connect(slug: str, **kwargs) -> str | tuple | None:
         "_db",
         "_write_settings",
         "_raise_not_found_error",
+        "_reload_lamindb",
         "_test",
         "_user",
     }
@@ -210,6 +211,7 @@ def connect(slug: str, **kwargs) -> str | tuple | None:
     _db: str | None = kwargs.get("_db", None)
     _write_settings: bool = kwargs.get("_write_settings", True)
     _raise_not_found_error: bool = kwargs.get("_raise_not_found_error", True)
+    _reload_lamindb: bool = kwargs.get("_reload_lamindb", True)
     _test: bool = kwargs.get("_test", False)
 
     access_token: str | None = None
@@ -300,7 +302,8 @@ def connect(slug: str, **kwargs) -> str | tuple | None:
         #     except ProgrammingError:
         #         pass
         load_from_isettings(isettings, user=_user, write_settings=_write_settings)
-        importlib.reload(importlib.import_module("lamindb"))
+        if _reload_lamindb:
+            importlib.reload(importlib.import_module("lamindb"))
     except Exception as e:
         if isettings is not None:
             if _write_settings:
