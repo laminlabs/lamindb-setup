@@ -43,7 +43,7 @@ def get_schema_module_name(schema_name, raise_import_error: bool = True) -> str 
 
 
 def register_storage_in_instance(ssettings: StorageSettings):
-    from lamidb.base.users import current_user_id
+    from lamindb.base.users import current_user_id
     from lamindb.models import Storage
 
     from .core.hashing import hash_and_encode_as_b62

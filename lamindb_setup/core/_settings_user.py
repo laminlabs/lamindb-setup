@@ -48,7 +48,7 @@ class UserSettings:
     @property
     def id(self):
         """Integer id valid in current intance."""
-        from lamidb.base.users import current_user_id
+        from lamindb.base.users import current_user_id
 
         # there is no cache needed here because current_user_id()
         # has its own cache
