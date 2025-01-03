@@ -3,6 +3,7 @@ from __future__ import annotations
 import os
 import time
 
+from lamin_utils import logger
 from upath.implementations.cloud import S3Path
 
 HOSTED_REGIONS = [
@@ -40,8 +41,15 @@ class AWSCredentialsManager:
 
         # this is cached so will be resued with the connection initialized
         fs = S3FileSystem(cache_regions=True)
-        fs.connect()
-        self.anon: bool = fs.session._credentials is None
+        try:
+            fs.connect()
+            self.anon: bool = fs.session._credentials is None
+        except Exception as e:
+            logger.warning(
+                f"There is a problem with your default AWS Credentials: {e}\n"
+                "`anon` mode will be used for all non-managed buckets."
+            )
+            self.anon = True
         self.anon_public: bool | None = None
         if not self.anon:
             try:
