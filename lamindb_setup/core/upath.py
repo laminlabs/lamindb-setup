@@ -15,7 +15,7 @@ from typing import TYPE_CHECKING, Any, Literal
 import fsspec
 from lamin_utils import logger
 from upath import UPath
-from upath.implementations.cloud import CloudPath, S3Path  # keep CloudPath!
+from upath.implementations.cloud import CloudPath  # keep CloudPath!
 from upath.implementations.local import LocalPath
 
 from ._aws_credentials import HOSTED_BUCKETS, get_aws_credentials_manager
@@ -738,12 +738,26 @@ warnings.filterwarnings(
 )
 
 
-def create_path(path: UPath, access_token: str | None = None) -> UPath:
-    path = UPath(path)
-    # test whether we have an AWS S3 path
-    if not isinstance(path, S3Path):
-        return path
-    return get_aws_credentials_manager().enrich_path(path, access_token)
+def create_path(path: UPathStr, access_token: str | None = None) -> UPath:
+    upath = UPath(path)
+
+    if upath.protocol == "s3":
+        # add managed credentials and other options for AWS s3 paths
+        return get_aws_credentials_manager().enrich_path(upath, access_token)
+
+    if upath.protocol in {"http", "https"}:
+        # this is needed because by default aiohttp drops a connection after 5 min
+        # so it is impossible to download large files
+        client_kwargs = upath.storage_options.get("client_kwargs", {})
+        if "timeout" not in client_kwargs:
+            from aiohttp import ClientTimeout
+
+            client_kwargs = {
+                **client_kwargs,
+                "timeout": ClientTimeout(sock_connect=30, sock_read=30),
+            }
+            return UPath(upath, client_kwargs=client_kwargs)
+    return upath
 
 
 def get_stat_file_cloud(stat: dict) -> tuple[int, str | None, str | None]:

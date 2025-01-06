@@ -233,11 +233,11 @@ def _delete_instance(
     )
     if require_empty:
         for storage_record in storage_records:
+            root_string: str = storage_record["root"]  # type: ignore
             account_for_sqlite_file = (
                 instance_with_storage["db_scheme"] is None
-                and instance_with_storage["storage"]["root"] == storage_record["root"]
+                and instance_with_storage["storage"]["root"] == root_string
             )
-            root_string = storage_record["root"]
             # gate storage and instance deletion on empty storage location for
             # normally auth.get_session() doesn't have access_token
             # so this block is useless i think (Sergei)
