@@ -779,7 +779,7 @@ def get_stat_file_cloud(stat: dict) -> tuple[int, str | None, str | None]:
         etag = stat["ETag"]
         if "mimetype" in stat:
             # http
-            hash = hash_string(etag)
+            hash = hash_string(etag.strip('"'))
             hash_type = "md5-etag"
         else:
             # s3
