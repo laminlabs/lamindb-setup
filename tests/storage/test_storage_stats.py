@@ -37,6 +37,15 @@ def test_get_stat_file_cloud_hf():
     assert size == 267036
 
 
+def test_get_stat_file_cloud_http():
+    string_path = "https://raw.githubusercontent.com/laminlabs/lamindb-setup/refs/heads/main/README.md"
+    path = UPath(string_path)
+    size, hash, hash_type = get_stat_file_cloud(path.stat().as_info())
+    assert hash == "SVadFc4hLwfRINhKC2plKg"
+    assert hash_type == "md5-etag"
+    assert size == 265
+
+
 def test_get_stat_dir_cloud_aws():
     string_path = "s3://lamindata/iris_studies/study0_raw_images"
     path = UPath(string_path, anon=True)

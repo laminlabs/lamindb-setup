@@ -40,11 +40,15 @@ def b16_to_b64(s: str):
     return to_b64_str(base64.b16decode(s.strip('"'), casefold=True))
 
 
+def hash_string(string: str) -> str:
+    # as we're truncating at 22 b64, we choose md5 over sha512
+    return to_b64_str(hashlib.md5(string.encode("utf-8")).digest())
+
+
 # a lot to read about this: lamin-notes/2022/hashing
 def hash_set(s: set[str]) -> str:
-    bstr = ":".join(sorted(s)).encode("utf-8")
-    # as we're truncating at 22 b64, we choose md5 over sha512
-    return to_b64_str(hashlib.md5(bstr).digest())[:HASH_LENGTH]
+    join_s = ":".join(sorted(s))
+    return hash_string(join_s)[:HASH_LENGTH]
 
 
 def hash_from_hashes_list(hashes: Iterable[str]) -> str:

@@ -19,7 +19,7 @@ from upath.implementations.cloud import CloudPath  # keep CloudPath!
 from upath.implementations.local import LocalPath
 
 from ._aws_credentials import HOSTED_BUCKETS, get_aws_credentials_manager
-from .hashing import HASH_LENGTH, b16_to_b64, hash_from_hashes_list
+from .hashing import HASH_LENGTH, b16_to_b64, hash_from_hashes_list, hash_string
 
 if TYPE_CHECKING:
     from .types import UPathStr
@@ -775,20 +775,26 @@ def get_stat_file_cloud(stat: dict) -> tuple[int, str | None, str | None]:
     # s3
     # StorageClass is checked to be sure that it is indeed s3
     # because http also has ETag
-    elif "ETag" in stat and "StorageClass" in stat:
+    elif "ETag" in stat:
         etag = stat["ETag"]
-        # small files
-        if "-" not in etag:
-            # only store hash for non-multipart uploads
-            # we can't rapidly validate multi-part uploaded files client-side
-            # we can add more logic later down-the-road
-            hash = b16_to_b64(etag)
-            hash_type = "md5"
+        if "mimetype" in stat:
+            # http
+            hash = hash_string(etag)
+            hash_type = "md5-etag"
         else:
-            stripped_etag, suffix = etag.split("-")
-            suffix = suffix.strip('"')
-            hash = b16_to_b64(stripped_etag)
-            hash_type = f"md5-{suffix}"  # this is the S3 chunk-hashing strategy
+            # s3
+            # small files
+            if "-" not in etag:
+                # only store hash for non-multipart uploads
+                # we can't rapidly validate multi-part uploaded files client-side
+                # we can add more logic later down-the-road
+                hash = b16_to_b64(etag)
+                hash_type = "md5"
+            else:
+                stripped_etag, suffix = etag.split("-")
+                suffix = suffix.strip('"')
+                hash = b16_to_b64(stripped_etag)
+                hash_type = f"md5-{suffix}"  # this is the S3 chunk-hashing strategy
     if hash is not None:
         hash = hash[:HASH_LENGTH]
     return size, hash, hash_type
