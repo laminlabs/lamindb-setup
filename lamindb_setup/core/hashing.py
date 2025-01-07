@@ -41,7 +41,7 @@ def b16_to_b64(s: str):
 
 
 def hash_string(string: str) -> str:
-    # as we're truncating at 22 b64, we choose md5 over sha512
+    # as we're truncating (not here) at 22 b64, we choose md5 over sha512
     return to_b64_str(hashlib.md5(string.encode("utf-8")).digest())
 
 
