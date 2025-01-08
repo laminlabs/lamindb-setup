@@ -865,7 +865,7 @@ def check_storage_is_empty(
     )
     if n_diff > 0:
         if raise_error:
-            raise InstanceNotEmpty(message)
+            raise InstanceNotEmpty(message) from None
         else:
             logger.warning(message)
     return n_diff
