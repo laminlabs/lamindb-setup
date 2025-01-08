@@ -12,6 +12,7 @@ from __future__ import annotations
 
 import base64
 import hashlib
+import json
 from concurrent.futures import ThreadPoolExecutor
 from typing import TYPE_CHECKING
 
@@ -49,6 +50,12 @@ def hash_string(string: str) -> str:
 def hash_set(s: set[str]) -> str:
     join_s = ":".join(sorted(s))
     return hash_string(join_s)[:HASH_LENGTH]
+
+
+def hash_dict(d: dict) -> str:
+    return to_b64_str(hashlib.md5(json.dumps(d, sort_keys=True).encode()).digest())[
+        :HASH_LENGTH
+    ]
 
 
 def hash_from_hashes_list(hashes: Iterable[str]) -> str:
