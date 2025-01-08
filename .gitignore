@@ -109,3 +109,4 @@ docs/conf.py
 _docs_tmp*
 *.lndb
 _is_initialized
+test.ipynb
