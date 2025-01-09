@@ -122,6 +122,6 @@ def hash_dir(path: Path):
     hashes, sizes = zip(*hashes_sizes)
 
     hash, hash_type = hash_from_hashes_list(hashes), "md5-d"
-    n_objects = len(hashes)
+    n_files = len(hashes)
     size = sum(sizes)
-    return size, hash, hash_type, n_objects
+    return size, hash, hash_type, n_files

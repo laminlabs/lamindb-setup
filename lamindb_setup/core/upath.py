@@ -518,7 +518,7 @@ def compute_file_tree(
         skip_suffixes_tuple = ()
     else:
         skip_suffixes_tuple = tuple(skip_suffixes)  # type: ignore
-    n_objects = 0
+    n_files = 0
     n_directories = 0
 
     # by default only including registered files
@@ -531,7 +531,7 @@ def compute_file_tree(
         include_paths = set()
 
     def inner(dir_path: Path, prefix: str = "", level: int = -1):
-        nonlocal n_objects, n_directories, suffixes
+        nonlocal n_files, n_directories, suffixes
         if level == 0:
             return
         stripped_dir_path = dir_path.as_posix().rstrip("/")
@@ -564,7 +564,7 @@ def compute_file_tree(
                 suffix = extract_suffix_from_path(child_path)
                 suffixes.add(suffix)
                 n_files_per_dir_and_type[suffix] += 1
-                n_objects += 1
+                n_files += 1
                 if n_files_per_dir_and_type[suffix] == n_max_files_per_dir_and_type:
                     yield prefix + "..."
                 elif n_files_per_dir_and_type[suffix] > n_max_files_per_dir_and_type:
@@ -577,15 +577,15 @@ def compute_file_tree(
     for line in islice(iterator, n_max_files):
         folder_tree += f"\n{line}"
     if next(iterator, None):
-        folder_tree += f"\n... only showing {n_max_files} out of {n_objects} files"
+        folder_tree += f"\n... only showing {n_max_files} out of {n_files} files"
     directory_info = "directory" if n_directories == 1 else "directories"
     display_suffixes = ", ".join([f"{suffix!r}" for suffix in suffixes])
-    suffix_message = f" with suffixes {display_suffixes}" if n_objects > 0 else ""
+    suffix_message = f" with suffixes {display_suffixes}" if n_files > 0 else ""
     message = (
         f"{n_directories} sub-{directory_info} &"
-        f" {n_objects} files{suffix_message}\n{path.resolve()}{folder_tree}"
+        f" {n_files} files{suffix_message}\n{path.resolve()}{folder_tree}"
     )
-    return message, n_objects
+    return message, n_files
 
 
 # adapted from: https://stackoverflow.com/questions/9727673
@@ -820,10 +820,10 @@ def get_stat_dir_cloud(path: UPath) -> tuple[int, str | None, str | None, int]:
         if compute_list_hash:
             hashes.append(object[accessor].strip('"='))
     size = sum(sizes)
-    n_objects = len(sizes)
+    n_files = len(sizes)
     if compute_list_hash:
         hash, hash_type = hash_from_hashes_list(hashes), "md5-d"
-    return size, hash, hash_type, n_objects
+    return size, hash, hash_type, n_files
 
 
 class InstanceNotEmpty(click.ClickException):
@@ -854,15 +854,15 @@ def check_storage_is_empty(
             root_string += "/"
         directory_string = root_string + ".lamindb"
     objects = root_upath.fs.find(directory_string)
-    n_objects = len(objects)
-    n_diff = n_objects - n_offset_objects
+    n_files = len(objects)
+    n_diff = n_files - n_offset_objects
     ask_for_deletion = (
         "delete them prior to deleting the instance"
         if raise_error
         else "consider deleting them"
     )
     message = (
-        f"Storage '{directory_string}' contains {n_objects - n_offset_objects} objects"
+        f"Storage '{directory_string}' contains {n_files - n_offset_objects} objects"
         f" - {ask_for_deletion}"
     )
     if n_diff > 0:
