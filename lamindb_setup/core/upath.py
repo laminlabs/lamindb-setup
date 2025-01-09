@@ -12,6 +12,7 @@ from itertools import islice
 from pathlib import Path, PosixPath, PurePosixPath, WindowsPath
 from typing import TYPE_CHECKING, Any, Literal
 
+import click
 import fsspec
 from lamin_utils import logger
 from upath import UPath
@@ -825,8 +826,9 @@ def get_stat_dir_cloud(path: UPath) -> tuple[int, str | None, str | None, int]:
     return size, hash, hash_type, n_objects
 
 
-class InstanceNotEmpty(Exception):
-    pass
+class InstanceNotEmpty(click.ClickException):
+    def show(self, file=None):
+        pass
 
 
 # is as fast as boto3: https://lamin.ai/laminlabs/lamin-site-assets/transform/krGp3hT1f78N5zKv
@@ -865,7 +867,7 @@ def check_storage_is_empty(
     )
     if n_diff > 0:
         if raise_error:
-            raise InstanceNotEmpty(message)
+            raise InstanceNotEmpty(message) from None
         else:
             logger.warning(message)
     return n_diff
