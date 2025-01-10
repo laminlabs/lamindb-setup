@@ -51,7 +51,36 @@ from ._register_instance import register
 from ._setup_user import login, logout
 from .core._settings import settings
 
-_TESTING = _os.getenv("LAMIN_TESTING") is not None
+
+def _is_CI_environment() -> bool:
+    ci_env_vars = [
+        "LAMIN_TESTING",  # Set by our nox configurations
+        "CI",  # Commonly set by many CI systems
+        "TRAVIS",  # Travis CI
+        "GITHUB_ACTIONS",  # GitHub Actions
+        "GITLAB_CI",  # GitLab CI/CD
+        "CIRCLECI",  # CircleCI
+        "JENKINS_URL",  # Jenkins
+        "TEAMCITY_VERSION",  # TeamCity
+        "BUILDKITE",  # Buildkite
+        "BITBUCKET_BUILD_NUMBER",  # Bitbucket Pipelines
+        "APPVEYOR",  # AppVeyor
+        "AZURE_HTTP_USER_AGENT",  # Azure Pipelines
+        "BUDDY",  # Buddy
+        "DRONE",  # Drone CI
+        "HUDSON_URL",  # Hudson
+        "CF_BUILD_ID",  # Codefresh
+        "WERCKER",  # Wercker
+        "NOW_BUILDER",  # ZEIT Now
+        "TASKCLUSTER_ROOT_URL",  # TaskCluster
+        "SEMAPHORE",  # Semaphore CI
+        "BUILD_ID",  # Generic build environments
+    ]
+    return any(env_var in _os.environ for env_var in ci_env_vars)
+
+
+_TESTING = _is_CI_environment()
+
 
 # hide the supabase error in a thread on windows
 if _os.name == "nt":
