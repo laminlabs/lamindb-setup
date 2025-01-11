@@ -212,7 +212,7 @@ def init(
             remote folder (``"s3://..."`` or ``"gs://..."``).
         name: Instance name.
         db: Database connection url, do not pass for SQLite.
-        modules: Comma-separated string of schema modules. None if not set.
+        modules: Comma-separated string of modules. None if the lamindb registries are enough.
     """
     isettings = None
     ssettings = None

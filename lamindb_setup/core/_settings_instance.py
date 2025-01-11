@@ -273,7 +273,10 @@ class InstanceSettings:
 
     @property
     def modules(self) -> set[str]:
-        """schema modules in addition to core modules."""
+        """The set of modules that defines the database schema.
+
+        The core schema contained in lamindb is not included in this set.
+        """
         if self._schema_str is None:
             return {}  # type: ignore
         else:
