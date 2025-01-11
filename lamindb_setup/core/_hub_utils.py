@@ -7,15 +7,6 @@ from pydantic import BaseModel, Field, GetCoreSchemaHandler
 from pydantic_core import CoreSchema, core_schema
 
 
-def validate_modules_arg(modules: str | None = None) -> str:
-    if modules is None or modules == "":
-        return ""
-    # currently no actual validation, can add back if we see a need
-    # the following just strips white spaces
-    to_be_validated = [s.strip() for s in modules.split(",")]
-    return ",".join(to_be_validated)
-
-
 def validate_db_arg(db: str | None) -> None:
     if db is not None:
         LaminDsnModel(db=db)
