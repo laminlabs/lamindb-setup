@@ -56,10 +56,10 @@ def setup_django(
         raise_import_error = True if init else False
         installed_apps = [
             package_name
-            for n in module_names
+            for name in module_names
             if (
                 package_name := get_schema_module_name(
-                    n, raise_import_error=raise_import_error
+                    name, raise_import_error=raise_import_error
                 )
             )
             is not None

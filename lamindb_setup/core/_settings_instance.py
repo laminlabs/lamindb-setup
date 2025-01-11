@@ -54,7 +54,7 @@ class InstanceSettings:
         keep_artifacts_local: bool = False,  # default to local storage
         uid: str | None = None,  # instance uid/lnid
         db: str | None = None,  # DB URI
-        modules: str | None = None,  # comma-separated string of modules names
+        modules: str | None = None,  # comma-separated string of module names
         git_repo: str | None = None,  # a git repo URL
         is_on_hub: bool | None = None,  # initialized from hub
         api_url: str | None = None,
@@ -280,7 +280,7 @@ class InstanceSettings:
         if self._schema_str is None:
             return {}  # type: ignore
         else:
-            return {modules for modules in self._schema_str.split(",") if modules != ""}
+            return {module for module in self._schema_str.split(",") if module != ""}
 
     @property
     @deprecated("modules")
