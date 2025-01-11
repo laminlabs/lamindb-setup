@@ -17,7 +17,7 @@ RENAME = {"name": "source", "description": "source_name"}
 
 def write_bionty_sources(isettings: InstanceSettings) -> None:
     """Write bionty sources to Source table."""
-    if "bionty" not in isettings.schema:
+    if "bionty" not in isettings.modules:
         return None
     import shutil
 
@@ -79,7 +79,7 @@ def load_bionty_sources(isettings: InstanceSettings | None = None):
             # not setting up bionty sources
             return None
     if isettings is not None:
-        if "bionty" not in isettings.schema:
+        if "bionty" not in isettings.modules:
             # no need to setup anything
             return None
 
@@ -96,7 +96,7 @@ def load_bionty_sources(isettings: InstanceSettings | None = None):
         for kwargs in active_records:
             for db_field, base_col in RENAME.items():
                 kwargs[base_col] = kwargs.pop(db_field)
-            # TODO: non-bionty schema?
+            # TODO: non-bionty modules?
             kwargs["entity"] = kwargs["entity"].replace("bionty.", "")
         write_yaml(
             parse_currently_used_sources(active_records),

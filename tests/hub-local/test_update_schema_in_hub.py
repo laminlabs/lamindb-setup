@@ -7,20 +7,20 @@ from lamindb_setup._schema_metadata import _dict_to_uuid, update_schema_in_hub
 def setup_instance():
     ln_setup.init(
         storage="./test_storage",
-        schema="bionty,wetlab",
+        modules="bionty,wetlab",
         db="postgresql://postgres:postgres@127.0.0.1:54322/postgres",
-        name="test-update-schema",
+        name="test-update-modules",
     )
     ln_setup.register()
     yield
-    ln_setup.delete("test-update-schema", force=True)
+    ln_setup.delete("test-update-modules", force=True)
 
 
 def test_update_schema_in_hub(setup_instance):
     is_new, schema_uuid, schema = update_schema_in_hub()
 
     # TODO: construct a test in which is_new is true
-    # currently it's false because the schema is already registered
+    # currently it's false because the modules is already registered
     # via `lamin register` earlier in the test
     assert not is_new
     assert _dict_to_uuid(schema["schema_json"]) == schema_uuid

@@ -160,7 +160,7 @@ def _connect_instance(
                 name=name,
                 storage=ssettings,
                 db=db_updated,
-                schema=instance_result["schema_str"],
+                modules=instance_result["schema_str"],
                 git_repo=instance_result["git_repo"],
                 keep_artifacts_local=bool(instance_result["keep_artifacts_local"]),
                 is_on_hub=True,

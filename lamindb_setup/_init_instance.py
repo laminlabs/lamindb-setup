@@ -25,17 +25,17 @@ if TYPE_CHECKING:
     from .core.types import UPathStr
 
 
-def get_schema_module_name(schema_name, raise_import_error: bool = True) -> str | None:
+def get_schema_module_name(module_name, raise_import_error: bool = True) -> str | None:
     import importlib.util
 
-    if schema_name == "core":
+    if module_name == "core":
         return "lamindb"
-    name_attempts = [f"lnschema_{schema_name.replace('-', '_')}", schema_name]
+    name_attempts = [f"lnschema_{module_name.replace('-', '_')}", module_name]
     for name in name_attempts:
         module_spec = importlib.util.find_spec(name)
         if module_spec is not None:
             return name
-    message = f"Schema module '{schema_name}' is not installed → no access to its labels & registries (resolve via `pip install {schema_name}`)"
+    message = f"schema module '{module_name}' is not installed → no access to its labels & registries (resolve via `pip install {module_name}`)"
     if raise_import_error:
         raise ImportError(message)
     logger.warning(message.lower())
@@ -129,12 +129,21 @@ def process_connect_response(
     return instance_id, instance_state
 
 
+def process_modules_arg(modules: str | None = None) -> str:
+    if modules is None or modules == "":
+        return ""
+    # currently no actual validation, can add back if we see a need
+    # the following just strips white spaces
+    to_be_validated = [s.strip() for s in modules.split(",")]
+    return ",".join(to_be_validated)
+
+
 def validate_init_args(
     *,
     storage: UPathStr,
     name: str | None = None,
     db: PostgresDsn | None = None,
-    schema: str | None = None,
+    modules: str | None = None,
     _test: bool = False,
     _write_settings: bool = True,
     _user: UserSettings | None = None,
@@ -150,9 +159,6 @@ def validate_init_args(
     str,
 ]:
     from ._connect_instance import connect
-    from .core._hub_utils import (
-        validate_schema_arg,
-    )
 
     if storage is None:
         raise SystemExit("✗ `storage` argument can't be `None`")
@@ -178,7 +184,7 @@ def validate_init_args(
     instance_id = None
     if response is not None:
         instance_id, instance_state = process_connect_response(response, instance_slug)
-    schema = validate_schema_arg(schema)
+    modules = process_modules_arg(modules)
     return name_str, instance_id, instance_state, instance_slug
 
 
@@ -202,22 +208,23 @@ def init(
     storage: UPathStr,
     name: str | None = None,
     db: PostgresDsn | None = None,
-    schema: str | None = None,
+    modules: str | None = None,
     **kwargs,
 ) -> None:
     """Create and load a LaminDB instance.
 
     Args:
-        storage: Either ``"create-s3"``, local or
-            remote folder (``"s3://..."`` or ``"gs://..."``).
+        storage: Either local or remote folder (`"s3://..."` or `"gs://..."`).
         name: Instance name.
         db: Database connection url, do not pass for SQLite.
-        schema: Comma-separated string of schema modules. None if not set.
+        modules: Comma-separated string of modules. None if the lamindb registries are enough.
     """
     isettings = None
     ssettings = None
 
     _write_settings: bool = kwargs.get("_write_settings", True)
+    if modules is None:
+        modules = kwargs.get("schema", None)
     _test: bool = kwargs.get("_test", False)
 
     # use this user instead of settings.user
@@ -241,7 +248,7 @@ def init(
             storage=storage,
             name=name,
             db=db,
-            schema=schema,
+            modules=modules,
             _test=_test,
             _write_settings=_write_settings,
             _user=_user,  # will get from settings.user if _user is None
@@ -268,7 +275,7 @@ def init(
             name=name_str,
             storage=ssettings,
             db=db,
-            schema=schema,
+            modules=modules,
             uid=ssettings.uid,
             # to lock passed user in isettings._cloud_sqlite_locker.lock()
             _locker_user=_user,  # only has effect if cloud sqlite

@@ -12,7 +12,7 @@ def pytest_sessionstart(session: pytest.Session):
     assert lamindb_setup.settings.user.handle == "testuser2"
     lamindb_setup.init(
         storage="./default_storage",
-        schema="bionty",
+        modules="bionty",
         name="lamindb-setup-unit-tests",
     )
     assert lamindb_setup.settings.instance._id == lamindb_instance_id

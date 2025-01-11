@@ -98,7 +98,7 @@ def setup_instance_from_store(store: InstanceSettingsStore) -> InstanceSettings:
         name=store.name,
         storage=ssettings,
         db=_null_to_value(store.db),
-        schema=_null_to_value(store.schema_str),
+        modules=_null_to_value(store.schema_str),
         git_repo=_null_to_value(store.git_repo),
         keep_artifacts_local=store.keep_artifacts_local,  # type: ignore
     )
