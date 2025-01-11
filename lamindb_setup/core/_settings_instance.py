@@ -8,6 +8,7 @@ from typing import TYPE_CHECKING, Literal
 from django.db.utils import ProgrammingError
 from lamin_utils import logger
 
+from ._deprecated import deprecated
 from ._hub_client import call_with_fallback
 from ._hub_crud import select_account_handle_name_by_lnid
 from ._hub_utils import LaminDsn, LaminDsnModel
@@ -53,7 +54,7 @@ class InstanceSettings:
         keep_artifacts_local: bool = False,  # default to local storage
         uid: str | None = None,  # instance uid/lnid
         db: str | None = None,  # DB URI
-        schema: str | None = None,  # comma-separated string of schema names
+        modules: str | None = None,  # comma-separated string of modules names
         git_repo: str | None = None,  # a git repo URL
         is_on_hub: bool | None = None,  # initialized from hub
         api_url: str | None = None,
@@ -69,7 +70,7 @@ class InstanceSettings:
         self._storage: StorageSettings = storage
         validate_db_arg(db)
         self._db: str | None = db
-        self._schema_str: str | None = schema
+        self._schema_str: str | None = modules
         self._git_repo = None if git_repo is None else sanitize_git_repo_url(git_repo)
         # local storage
         self._keep_artifacts_local = keep_artifacts_local
@@ -84,7 +85,7 @@ class InstanceSettings:
     def __repr__(self):
         """Rich string representation."""
         representation = f"Current instance: {self.slug}"
-        attrs = ["owner", "name", "storage", "db", "schema", "git_repo"]
+        attrs = ["owner", "name", "storage", "db", "modules", "git_repo"]
         for attr in attrs:
             value = getattr(self, attr)
             if attr == "storage":
@@ -271,12 +272,17 @@ class InstanceSettings:
         return hash_and_encode_as_b62(self._id.hex)[:12]
 
     @property
-    def schema(self) -> set[str]:
-        """Schema modules in addition to core schema."""
+    def modules(self) -> set[str]:
+        """schema modules in addition to core modules."""
         if self._schema_str is None:
             return {}  # type: ignore
         else:
-            return {schema for schema in self._schema_str.split(",") if schema != ""}
+            return {modules for modules in self._schema_str.split(",") if modules != ""}
+
+    @property
+    @deprecated("modules")
+    def schema(self) -> set[str]:
+        return self.modules
 
     @property
     def _sqlite_file(self) -> UPath:

@@ -3,16 +3,16 @@ from __future__ import annotations
 from typing import Any, ClassVar
 from urllib.parse import urlparse, urlunparse
 
-from pydantic import BaseModel, Field, GetCoreSchemaHandler
-from pydantic_core import CoreSchema, core_schema
+from pydantic import BaseModel, Field, GetCoremodulesHandler
+from pydantic_core import Coremodules, core_modules
 
 
-def validate_schema_arg(schema: str | None = None) -> str:
-    if schema is None or schema == "":
+def validate_modules_arg(modules: str | None = None) -> str:
+    if modules is None or modules == "":
         return ""
     # currently no actual validation, can add back if we see a need
     # the following just strips white spaces
-    to_be_validated = [s.strip() for s in schema.split(",")]
+    to_be_validated = [s.strip() for s in modules.split(",")]
     return ",".join(to_be_validated)
 
 
@@ -30,13 +30,13 @@ class LaminDsn(str):
     }
 
     @classmethod
-    def __get_pydantic_core_schema__(
-        cls, source_type: Any, handler: GetCoreSchemaHandler
-    ) -> CoreSchema:
-        return core_schema.no_info_after_validator_function(
+    def __get_pydantic_core_modules__(
+        cls, source_type: Any, handler: GetCoremodulesHandler
+    ) -> Coremodules:
+        return core_modules.no_info_after_validator_function(
             cls.validate,
-            core_schema.str_schema(),
-            serialization=core_schema.plain_serializer_function_ser_schema(str),
+            core_modules.str_modules(),
+            serialization=core_modules.plain_serializer_function_ser_modules(str),
         )
 
     @classmethod

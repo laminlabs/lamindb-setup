@@ -7,20 +7,20 @@ from lamindb_setup._schema_metadata import _dict_to_uuid, update_schema_in_hub
 def setup_instance():
     ln_setup.init(
         storage="./test_storage",
-        schema="bionty,wetlab",
+        modules="bionty,wetlab",
         db="postgresql://postgres:postgres@127.0.0.1:54322/postgres",
-        name="test-update-schema",
+        name="test-update-modules",
     )
     ln_setup.register()
     yield
-    ln_setup.delete("test-update-schema", force=True)
+    ln_setup.delete("test-update-modules", force=True)
 
 
 def test_update_schema_in_hub(setup_instance):
     is_new, schema_uuid, schema = update_schema_in_hub()
 
     # TODO: construct a test in which is_new is true
-    # currently it's false because the schema is already registered
+    # currently it's false because the modules is already registered
     # via `lamin register` earlier in the test
     assert not is_new
     assert _dict_to_uuid(schema["schema_json"]) == schema_uuid
@@ -47,12 +47,12 @@ def test_update_schema_in_hub(setup_instance):
         "through": None,
         "field_name": "id",
         "model_name": "artifact",
-        "schema_name": "core",
+        "module_name": "core",
         "is_link_table": False,
         "relation_type": None,
         "related_field_name": None,
         "related_model_name": None,
-        "related_schema_name": None,
+        "related_module_name": None,
     }
 
     assert schema["schema_json"]["core"]["artifact"]["fields"]["otype"] == {
@@ -61,12 +61,12 @@ def test_update_schema_in_hub(setup_instance):
         "through": None,
         "field_name": "otype",
         "model_name": "artifact",
-        "schema_name": "core",
+        "module_name": "core",
         "is_link_table": False,
         "relation_type": None,
         "related_field_name": None,
         "related_model_name": None,
-        "related_schema_name": None,
+        "related_module_name": None,
     }
 
     assert schema["schema_json"]["core"]["artifact"]["fields"]["created_by"] == {
@@ -79,12 +79,12 @@ def test_update_schema_in_hub(setup_instance):
         },
         "field_name": "created_by",
         "model_name": "artifact",
-        "schema_name": "core",
+        "module_name": "core",
         "is_link_table": False,
         "relation_type": "many-to-one",
         "related_field_name": "created_artifacts",
         "related_model_name": "user",
-        "related_schema_name": "core",
+        "related_module_name": "core",
     }
 
     assert schema["schema_json"]["bionty"]["gene"]["fields"]["pathways"] == {
@@ -97,12 +97,12 @@ def test_update_schema_in_hub(setup_instance):
         },
         "field_name": "pathways",
         "model_name": "gene",
-        "schema_name": "bionty",
+        "module_name": "bionty",
         "is_link_table": False,
         "relation_type": "many-to-many",
         "related_field_name": "genes",
         "related_model_name": "pathway",
-        "related_schema_name": "bionty",
+        "related_module_name": "bionty",
     }
 
     assert schema["schema_json"]["wetlab"]["well"]["fields"]["artifacts"] == {
@@ -115,12 +115,12 @@ def test_update_schema_in_hub(setup_instance):
         },
         "field_name": "artifacts",
         "model_name": "well",
-        "schema_name": "wetlab",
+        "module_name": "wetlab",
         "is_link_table": False,
         "relation_type": "many-to-many",
         "related_field_name": "wells",
         "related_model_name": "artifact",
-        "related_schema_name": "core",
+        "related_module_name": "core",
     }
 
     assert schema["schema_json"]["core"]["transform"]["fields"]["predecessors"] == {
@@ -133,12 +133,12 @@ def test_update_schema_in_hub(setup_instance):
         },
         "field_name": "predecessors",
         "model_name": "transform",
-        "schema_name": "core",
+        "module_name": "core",
         "is_link_table": False,
         "relation_type": "many-to-many",
         "related_field_name": "successors",
         "related_model_name": "transform",
-        "related_schema_name": "core",
+        "related_module_name": "core",
     }
 
     assert schema["schema_json"]["core"]["transform"]["fields"]["successors"] == {
@@ -151,12 +151,12 @@ def test_update_schema_in_hub(setup_instance):
         },
         "field_name": "successors",
         "model_name": "transform",
-        "schema_name": "core",
+        "module_name": "core",
         "is_link_table": False,
         "relation_type": "many-to-many",
         "related_field_name": "predecessors",
         "related_model_name": "transform",
-        "related_schema_name": "core",
+        "related_module_name": "core",
     }
 
 

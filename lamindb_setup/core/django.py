@@ -52,11 +52,11 @@ def setup_django(
         }
         from .._init_instance import get_schema_module_name
 
-        schema_names = ["core"] + list(isettings.schema)
+        module_names = ["core"] + list(isettings.modules)
         raise_import_error = True if init else False
         installed_apps = [
             package_name
-            for n in schema_names
+            for n in module_names
             if (
                 package_name := get_schema_module_name(
                     n, raise_import_error=raise_import_error
@@ -78,7 +78,7 @@ def setup_django(
         if view_schema:
             kwargs.update(
                 DEBUG=True,
-                ROOT_URLCONF="lamindb_setup._schema",
+                ROOT_URLCONF="lamindb_setup._modules",
                 SECRET_KEY="dummy",
                 TEMPLATES=[
                     {

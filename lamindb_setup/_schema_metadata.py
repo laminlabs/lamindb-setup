@@ -40,21 +40,21 @@ def update_schema_in_hub(access_token: str | None = None) -> tuple[bool, UUID, d
 def _synchronize_schema(client: Client) -> tuple[bool, UUID, dict]:
     schema_metadata = _SchemaHandler()
     schema_metadata_dict = schema_metadata.to_json()
-    schema_uuid = _dict_to_uuid(schema_metadata_dict)
-    schema = _get_schema_by_id(schema_uuid, client)
+    modules_uuid = _dict_to_uuid(schema_metadata_dict)
+    modules = _get_schema_by_id(modules_uuid, client)
 
-    is_new = schema is None
+    is_new = modules is None
     if is_new:
         module_set_info = schema_metadata._get_module_set_info()
         module_ids = "-".join(str(module_info["id"]) for module_info in module_set_info)
-        schema = (
-            client.table("schema")
+        modules = (
+            client.table("modules")
             .insert(
                 {
-                    "id": schema_uuid.hex,
+                    "id": modules_uuid.hex,
                     "module_ids": module_ids,
                     "module_set_info": module_set_info,
-                    "schema_json": schema_metadata_dict,
+                    "modules_json": schema_metadata_dict,
                 }
             )
             .execute()
@@ -63,23 +63,23 @@ def _synchronize_schema(client: Client) -> tuple[bool, UUID, dict]:
 
     instance_response = (
         client.table("instance")
-        .update({"schema_id": schema_uuid.hex})
+        .update({"schema_id": modules_uuid.hex})
         .eq("id", settings.instance._id.hex)
         .execute()
     )
     assert (
         len(instance_response.data) == 1
-    ), f"schema of instance {settings.instance._id.hex} could not be updated with schema {schema_uuid.hex}"
+    ), f"modules of instance {settings.instance._id.hex} could not be updated with modules {modules_uuid.hex}"
 
-    return is_new, schema_uuid, schema
+    return is_new, modules_uuid, modules
 
 
-def get_schema_by_id(id: UUID):
+def get_modules_by_id(id: UUID):
     return call_with_fallback_auth(_get_schema_by_id, id=id)
 
 
 def _get_schema_by_id(id: UUID, client: Client):
-    response = client.table("schema").select("*").eq("id", id.hex).execute()
+    response = client.table("modules").select("*").eq("id", id.hex).execute()
     if len(response.data) == 0:
         return None
     return response.data[0]
@@ -146,12 +146,12 @@ class FieldMetadata(BaseModel):
     through: Through | None = None
     field_name: str
     model_name: str
-    schema_name: str
+    module_name: str
     is_link_table: bool
     relation_type: RelationType | None = None
     related_field_name: str | None = None
     related_model_name: str | None = None
-    related_schema_name: str | None = None
+    related_module_name: str | None = None
 
 
 class _ModelHandler:
@@ -188,12 +188,12 @@ class _ModelHandler:
 
         for field in model._meta.get_fields():
             field_metadata = self._get_field_metadata(model, field)
-            if field_metadata.related_schema_name is None:
+            if field_metadata.related_module_name is None:
                 fields_metadata.update({field.name: field_metadata})
 
             if (
-                field_metadata.related_schema_name in self.included_modules
-                and field_metadata.schema_name in self.included_modules
+                field_metadata.related_module_name in self.included_modules
+                and field_metadata.module_name in self.included_modules
             ):
                 related_fields.append(field)
 
@@ -238,15 +238,15 @@ class _ModelHandler:
         model_name = field.model._meta.model_name
         relation_type = self._get_relation_type(model, field)
         if field.related_model is None:
-            schema_name = field.model.__get_schema_name__()
+            module_name = field.model.__get_module_name__()
             related_model_name = None
-            related_schema_name = None
+            related_module_name = None
             related_field_name = None
             field_name = field.name
         else:
             related_model_name = field.related_model._meta.model_name
-            related_schema_name = field.related_model.__get_schema_name__()
-            schema_name = field.model.__get_schema_name__()
+            related_module_name = field.related_model.__get_module_name__()
+            module_name = field.model.__get_module_name__()
             related_field_name = field.remote_field.name
             field_name = field.name
 
@@ -255,7 +255,7 @@ class _ModelHandler:
             # to the other model as a foreign key.
             # To make usage similar to other relation types
             # we need to invert model and related model.
-            schema_name, related_schema_name = related_schema_name, schema_name
+            module_name, related_module_name = related_module_name, module_name
             model_name, related_model_name = related_model_name, model_name
             field_name, related_field_name = related_field_name, field_name
             pass
@@ -273,15 +273,15 @@ class _ModelHandler:
             through = self._get_through(field)
 
         return FieldMetadata(
-            schema_name=schema_name if schema_name != "lamindb" else "core",
+            module_name=module_name if module_name != "lamindb" else "core",
             model_name=model_name,
             field_name=field_name,
             type=internal_type,
             is_link_table=issubclass(field.model, LinkORM),
             column_name=column,
             relation_type=relation_type,
-            related_schema_name=related_schema_name
-            if related_schema_name != "lamindb"
+            related_module_name=related_module_name
+            if related_module_name != "lamindb"
             else "core",
             related_model_name=related_model_name,
             related_field_name=related_field_name,
@@ -362,8 +362,8 @@ class _ModelHandler:
 
 class _SchemaHandler:
     def __init__(self) -> None:
-        self.included_modules = ["core"] + list(settings.instance.schema)
-        self.modules = self._get_modules_metadata()
+        self.included_modules = ["core"] + list(settings.instance.modules)
+        self.modules = self._get_schema_metadata()
 
     def to_dict(self, include_django_objects: bool = True):
         return {
@@ -377,7 +377,7 @@ class _SchemaHandler:
     def to_json(self):
         return self.to_dict(include_django_objects=False)
 
-    def _get_modules_metadata(self):
+    def _get_schema_metadata(self):
         from lamindb.models import Record, Registry
 
         all_models = {
@@ -391,7 +391,7 @@ class _SchemaHandler:
                 if model.__class__ is Registry
                 and model is not Record
                 and not model._meta.abstract
-                and model.__get_schema_name__() == module_name
+                and model.__get_module_name__() == module_name
             }
             for module_name in self.included_modules
         }
@@ -399,7 +399,7 @@ class _SchemaHandler:
         return all_models
 
     def _get_module_set_info(self):
-        # TODO: rely on schemamodule table for this
+        # TODO: rely on modulesmodule table for this
         module_set_info = []
         for module_name in self.included_modules:
             module = self._get_schema_module(module_name)

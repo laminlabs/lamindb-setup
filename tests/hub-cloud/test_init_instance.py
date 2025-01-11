@@ -199,7 +199,7 @@ def test_init_invalid_name():
 # #     with pytest.raises(RuntimeError):
 # #         ln_setup.init(
 # #             storage="s3://lamindb-ci",
-# #             schema="retro, bionty",
+# #             modules="retro, bionty",
 # #             db="postgresql://batman:robin@35.222.187.204:5432/retro",
 # #         )
 
@@ -211,6 +211,6 @@ def test_init_invalid_name():
 # #     ln_setup.init(storage="s3://lamindb-ci")
 
 
-# def test_value_error_schema():
+# def test_value_error_modules():
 #     with pytest.raises(ModuleNotFoundError):
-#         ln_setup.init(storage="tmpstorage1", schema="bionty, xyz1")
+#         ln_setup.init(storage="tmpstorage1", modules="bionty, xyz1")

@@ -28,23 +28,25 @@ def lint(session: nox.Session) -> None:
 )
 def install(session: nox.Session, group: str) -> None:
     no_deps_packages = "git+https://github.com/laminlabs/lamindb git+https://github.com/laminlabs/wetlab git+https://github.com/laminlabs/lamin-cli"
-    schema_deps = f"""uv pip install --system git+https://github.com/laminlabs/bionty
+    modules_deps = f"""uv pip install --system git+https://github.com/laminlabs/bionty
 uv pip install --system --no-deps {no_deps_packages}
 """
     if group == "hub-cloud":
-        cmds = schema_deps + "uv pip install --system ./laminhub/rest-hub line_profiler"
+        cmds = (
+            modules_deps + "uv pip install --system ./laminhub/rest-hub line_profiler"
+        )
     elif group == "docs":
         cmds = """uv pip install --system git+https://github.com/laminlabs/lamindb"""
     elif group == "storage":
-        cmds = schema_deps + "uv pip install --system gcsfs huggingface_hub"
+        cmds = modules_deps + "uv pip install --system gcsfs huggingface_hub"
     elif group == "hub-prod":
         # cmds = "git clone --depth 1 https://github.com/django/django\n"
         # cmds += "uv pip install --system -e ./django\n"
         cmds = ""
-        cmds += schema_deps.strip()
+        cmds += modules_deps.strip()
         cmds += """\nuv pip install --system huggingface_hub"""
     elif group == "hub-local":
-        cmds = schema_deps.strip()
+        cmds = modules_deps.strip()
     # current package
     cmds += """\nuv pip install --system -e '.[aws,dev]'"""
 
