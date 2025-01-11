@@ -36,6 +36,12 @@ def deprecated(new_name: str):
 
     It will also hide the function from the docs.
 
+    Example::
+
+        @property
+        @deprecated("n_files")
+        def n_objects(self) -> int:
+            return self.n_files
 
     """
 
