@@ -3,7 +3,7 @@ from __future__ import annotations
 from typing import Any, ClassVar
 from urllib.parse import urlparse, urlunparse
 
-from pydantic import BaseModel, Field, GetCoremodulesHandler
+from pydantic import BaseModel, Field, GetCoreSchemaHandler
 from pydantic_core import Coremodules, core_modules
 
 
@@ -31,7 +31,7 @@ class LaminDsn(str):
 
     @classmethod
     def __get_pydantic_core_modules__(
-        cls, source_type: Any, handler: GetCoremodulesHandler
+        cls, source_type: Any, handler: GetCoreSchemaHandler
     ) -> Coremodules:
         return core_modules.no_info_after_validator_function(
             cls.validate,
