@@ -51,7 +51,7 @@ def test_connect_after_revoked_access():
         )
         assert (
             ln_setup.settings.instance.storage.root_as_str
-            == "s3://lamindb-setup-private-bucket"
+            == "s3://lamindb-ci/static-test-instance-private-sqlite"
         )
         collaborator_handler.delete_by_slug(
             "testuser1/static-test-instance-private-sqlite", "testuser2"
