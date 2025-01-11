@@ -47,12 +47,12 @@ def test_update_schema_in_hub(setup_instance):
         "through": None,
         "field_name": "id",
         "model_name": "artifact",
-        "module_name": "core",
+        "schema_name": "core",
         "is_link_table": False,
         "relation_type": None,
         "related_field_name": None,
         "related_model_name": None,
-        "related_module_name": None,
+        "related_schema_name": None,
     }
 
     assert schema["schema_json"]["core"]["artifact"]["fields"]["otype"] == {
@@ -61,12 +61,12 @@ def test_update_schema_in_hub(setup_instance):
         "through": None,
         "field_name": "otype",
         "model_name": "artifact",
-        "module_name": "core",
+        "schema_name": "core",
         "is_link_table": False,
         "relation_type": None,
         "related_field_name": None,
         "related_model_name": None,
-        "related_module_name": None,
+        "related_schema_name": None,
     }
 
     assert schema["schema_json"]["core"]["artifact"]["fields"]["created_by"] == {
@@ -79,12 +79,12 @@ def test_update_schema_in_hub(setup_instance):
         },
         "field_name": "created_by",
         "model_name": "artifact",
-        "module_name": "core",
+        "schema_name": "core",
         "is_link_table": False,
         "relation_type": "many-to-one",
         "related_field_name": "created_artifacts",
         "related_model_name": "user",
-        "related_module_name": "core",
+        "related_schema_name": "core",
     }
 
     assert schema["schema_json"]["bionty"]["gene"]["fields"]["pathways"] == {
@@ -97,12 +97,12 @@ def test_update_schema_in_hub(setup_instance):
         },
         "field_name": "pathways",
         "model_name": "gene",
-        "module_name": "bionty",
+        "schema_name": "bionty",
         "is_link_table": False,
         "relation_type": "many-to-many",
         "related_field_name": "genes",
         "related_model_name": "pathway",
-        "related_module_name": "bionty",
+        "related_schema_name": "bionty",
     }
 
     assert schema["schema_json"]["wetlab"]["well"]["fields"]["artifacts"] == {
@@ -115,12 +115,12 @@ def test_update_schema_in_hub(setup_instance):
         },
         "field_name": "artifacts",
         "model_name": "well",
-        "module_name": "wetlab",
+        "schema_name": "wetlab",
         "is_link_table": False,
         "relation_type": "many-to-many",
         "related_field_name": "wells",
         "related_model_name": "artifact",
-        "related_module_name": "core",
+        "related_schema_name": "core",
     }
 
     assert schema["schema_json"]["core"]["transform"]["fields"]["predecessors"] == {
@@ -133,12 +133,12 @@ def test_update_schema_in_hub(setup_instance):
         },
         "field_name": "predecessors",
         "model_name": "transform",
-        "module_name": "core",
+        "schema_name": "core",
         "is_link_table": False,
         "relation_type": "many-to-many",
         "related_field_name": "successors",
         "related_model_name": "transform",
-        "related_module_name": "core",
+        "related_schema_name": "core",
     }
 
     assert schema["schema_json"]["core"]["transform"]["fields"]["successors"] == {
@@ -151,12 +151,12 @@ def test_update_schema_in_hub(setup_instance):
         },
         "field_name": "successors",
         "model_name": "transform",
-        "module_name": "core",
+        "schema_name": "core",
         "is_link_table": False,
         "relation_type": "many-to-many",
         "related_field_name": "predecessors",
         "related_model_name": "transform",
-        "related_module_name": "core",
+        "related_schema_name": "core",
     }
 
 
