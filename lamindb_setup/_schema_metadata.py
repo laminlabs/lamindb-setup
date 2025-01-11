@@ -146,22 +146,22 @@ class FieldMetadata(BaseModel):
     through: Through | None = None
     field_name: str
     model_name: str
-    schema_name: str
+    module_name: str
     is_link_table: bool
     relation_type: RelationType | None = None
     related_field_name: str | None = None
     related_model_name: str | None = None
-    related_schema_name: str | None = None
+    related_module_name: str | None = None
 
 
 class _ModelHandler:
-    def __init__(self, model, schema_name: str, included_schema: list[str]) -> None:
+    def __init__(self, model, module_name: str, included_modules: list[str]) -> None:
         self.model = model
         self.class_name = model.__name__
-        self.schema_name = schema_name
+        self.module_name = module_name
         self.model_name = model._meta.model_name
         self.table_name = model._meta.db_table
-        self.included_schema = included_schema
+        self.included_modules = included_modules
         self.fields = self._get_fields_metadata(self.model)
 
     def to_dict(self, include_django_objects: bool = True):
@@ -188,12 +188,12 @@ class _ModelHandler:
 
         for field in model._meta.get_fields():
             field_metadata = self._get_field_metadata(model, field)
-            if field_metadata.related_schema_name is None:
+            if field_metadata.related_module_name is None:
                 fields_metadata.update({field.name: field_metadata})
 
             if (
-                field_metadata.related_schema_name in self.included_schema
-                and field_metadata.schema_name in self.included_schema
+                field_metadata.related_module_name in self.included_modules
+                and field_metadata.module_name in self.included_modules
             ):
                 related_fields.append(field)
 
@@ -238,15 +238,15 @@ class _ModelHandler:
         model_name = field.model._meta.model_name
         relation_type = self._get_relation_type(model, field)
         if field.related_model is None:
-            schema_name = field.model.__get_schema_name__()
+            module_name = field.model.__get_module_name__()
             related_model_name = None
-            related_schema_name = None
+            related_module_name = None
             related_field_name = None
             field_name = field.name
         else:
             related_model_name = field.related_model._meta.model_name
-            related_schema_name = field.related_model.__get_schema_name__()
-            schema_name = field.model.__get_schema_name__()
+            related_module_name = field.related_model.__get_module_name__()
+            module_name = field.model.__get_module_name__()
             related_field_name = field.remote_field.name
             field_name = field.name
 
@@ -255,7 +255,7 @@ class _ModelHandler:
             # to the other model as a foreign key.
             # To make usage similar to other relation types
             # we need to invert model and related model.
-            schema_name, related_schema_name = related_schema_name, schema_name
+            module_name, related_module_name = related_module_name, module_name
             model_name, related_model_name = related_model_name, model_name
             field_name, related_field_name = related_field_name, field_name
             pass
@@ -273,15 +273,15 @@ class _ModelHandler:
             through = self._get_through(field)
 
         return FieldMetadata(
-            schema_name=schema_name if schema_name != "lamindb" else "core",
+            module_name=module_name if module_name != "lamindb" else "core",
             model_name=model_name,
             field_name=field_name,
             type=internal_type,
             is_link_table=issubclass(field.model, LinkORM),
             column_name=column,
             relation_type=relation_type,
-            related_schema_name=related_schema_name
-            if related_schema_name != "lamindb"
+            related_module_name=related_module_name
+            if related_module_name != "lamindb"
             else "core",
             related_model_name=related_model_name,
             related_field_name=related_field_name,
@@ -362,16 +362,16 @@ class _ModelHandler:
 
 class _SchemaHandler:
     def __init__(self) -> None:
-        self.included_schema = ["core"] + list(settings.instance.schema)
+        self.included_modules = ["core"] + list(settings.instance.schema)
         self.schema = self._get_schema_metadata()
 
     def to_dict(self, include_django_objects: bool = True):
         return {
-            schema_name if schema_name != "lamindb" else "core": {
+            module_name if module_name != "lamindb" else "core": {
                 model_name: model.to_dict(include_django_objects)
                 for model_name, model in module.items()
             }
-            for schema_name, module in self.schema.items()
+            for module_name, module in self.schema.items()
         }
 
     def to_json(self):
@@ -381,19 +381,19 @@ class _SchemaHandler:
         from lamindb.models import Record, Registry
 
         all_models = {
-            schema_name: {
+            module_name: {
                 model._meta.model_name: _ModelHandler(
-                    model, schema_name, self.included_schema
+                    model, module_name, self.included_modules
                 )
                 for model in self._get_schema_module(
-                    schema_name
+                    module_name
                 ).models.__dict__.values()
                 if model.__class__ is Registry
                 and model is not Record
                 and not model._meta.abstract
-                and model.__get_schema_name__() == schema_name
+                and model.__get_module_name__() == module_name
             }
-            for schema_name in self.included_schema
+            for module_name in self.included_modules
         }
         assert all_models
         return all_models
@@ -401,15 +401,15 @@ class _SchemaHandler:
     def _get_module_set_info(self):
         # TODO: rely on schemamodule table for this
         module_set_info = []
-        for schema_name in self.included_schema:
-            module = self._get_schema_module(schema_name)
-            if schema_name == "lamindb":
-                schema_name = "core"
+        for module_name in self.included_modules:
+            module = self._get_schema_module(module_name)
+            if module_name == "lamindb":
+                module_name = "core"
             module_set_info.append(
-                {"id": 0, "name": schema_name, "version": module.__version__}
+                {"id": 0, "name": module_name, "version": module.__version__}
             )
         return module_set_info
 
     @staticmethod
-    def _get_schema_module(schema_name):
-        return importlib.import_module(get_schema_module_name(schema_name))
+    def _get_schema_module(module_name):
+        return importlib.import_module(get_schema_module_name(module_name))
