@@ -4,7 +4,7 @@ from typing import Any, ClassVar
 from urllib.parse import urlparse, urlunparse
 
 from pydantic import BaseModel, Field, GetCoreSchemaHandler
-from pydantic_core import Coremodules, core_modules
+from pydantic_core import CoreSchema, core_schema
 
 
 def validate_modules_arg(modules: str | None = None) -> str:
@@ -30,13 +30,13 @@ class LaminDsn(str):
     }
 
     @classmethod
-    def __get_pydantic_core_modules__(
+    def __get_pydantic_core_schema__(
         cls, source_type: Any, handler: GetCoreSchemaHandler
-    ) -> Coremodules:
-        return core_modules.no_info_after_validator_function(
+    ) -> CoreSchema:
+        return core_schema.no_info_after_validator_function(
             cls.validate,
-            core_modules.str_modules(),
-            serialization=core_modules.plain_serializer_function_ser_modules(str),
+            core_schema.str_modules(),
+            serialization=core_schema.plain_serializer_function_ser_modules(str),
         )
 
     @classmethod
