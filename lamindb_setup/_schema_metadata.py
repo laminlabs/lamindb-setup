@@ -40,21 +40,21 @@ def update_schema_in_hub(access_token: str | None = None) -> tuple[bool, UUID, d
 def _synchronize_schema(client: Client) -> tuple[bool, UUID, dict]:
     schema_metadata = _SchemaHandler()
     schema_metadata_dict = schema_metadata.to_json()
-    modules_uuid = _dict_to_uuid(schema_metadata_dict)
-    modules = _get_schema_by_id(modules_uuid, client)
+    schema_uuid = _dict_to_uuid(schema_metadata_dict)
+    schema = _get_schema_by_id(schema_uuid, client)
 
-    is_new = modules is None
+    is_new = schema is None
     if is_new:
         module_set_info = schema_metadata._get_module_set_info()
         module_ids = "-".join(str(module_info["id"]) for module_info in module_set_info)
-        modules = (
-            client.table("modules")
+        schema = (
+            client.table("schema")
             .insert(
                 {
-                    "id": modules_uuid.hex,
+                    "id": schema_uuid.hex,
                     "module_ids": module_ids,
                     "module_set_info": module_set_info,
-                    "modules_json": schema_metadata_dict,
+                    "schema_json": schema_metadata_dict,
                 }
             )
             .execute()
@@ -63,23 +63,23 @@ def _synchronize_schema(client: Client) -> tuple[bool, UUID, dict]:
 
     instance_response = (
         client.table("instance")
-        .update({"schema_id": modules_uuid.hex})
+        .update({"schema_id": schema_uuid.hex})
         .eq("id", settings.instance._id.hex)
         .execute()
     )
     assert (
         len(instance_response.data) == 1
-    ), f"modules of instance {settings.instance._id.hex} could not be updated with modules {modules_uuid.hex}"
+    ), f"schema of instance {settings.instance._id.hex} could not be updated with schema {schema_uuid.hex}"
 
-    return is_new, modules_uuid, modules
+    return is_new, schema_uuid, schema
 
 
-def get_modules_by_id(id: UUID):
+def get_schema_by_id(id: UUID):
     return call_with_fallback_auth(_get_schema_by_id, id=id)
 
 
 def _get_schema_by_id(id: UUID, client: Client):
-    response = client.table("modules").select("*").eq("id", id.hex).execute()
+    response = client.table("schema").select("*").eq("id", id.hex).execute()
     if len(response.data) == 0:
         return None
     return response.data[0]
@@ -155,13 +155,13 @@ class FieldMetadata(BaseModel):
 
 
 class _ModelHandler:
-    def __init__(self, model, module_name: str, included_modules: list[str]) -> None:
+    def __init__(self, model, module_name: str, included_schema: list[str]) -> None:
         self.model = model
         self.class_name = model.__name__
         self.module_name = module_name
         self.model_name = model._meta.model_name
         self.table_name = model._meta.db_table
-        self.included_modules = included_modules
+        self.included_schema = included_schema
         self.fields = self._get_fields_metadata(self.model)
 
     def to_dict(self, include_django_objects: bool = True):
@@ -192,8 +192,8 @@ class _ModelHandler:
                 fields_metadata.update({field.name: field_metadata})
 
             if (
-                field_metadata.related_module_name in self.included_modules
-                and field_metadata.module_name in self.included_modules
+                field_metadata.related_module_name in self.included_schema
+                and field_metadata.module_name in self.included_schema
             ):
                 related_fields.append(field)
 
@@ -362,8 +362,8 @@ class _ModelHandler:
 
 class _SchemaHandler:
     def __init__(self) -> None:
-        self.included_modules = ["core"] + list(settings.instance.modules)
-        self.modules = self._get_schema_metadata()
+        self.included_schema = ["core"] + list(settings.instance.schema)
+        self.schema = self._get_schema_metadata()
 
     def to_dict(self, include_django_objects: bool = True):
         return {
@@ -371,7 +371,7 @@ class _SchemaHandler:
                 model_name: model.to_dict(include_django_objects)
                 for model_name, model in module.items()
             }
-            for module_name, module in self.modules.items()
+            for module_name, module in self.schema.items()
         }
 
     def to_json(self):
@@ -383,7 +383,7 @@ class _SchemaHandler:
         all_models = {
             module_name: {
                 model._meta.model_name: _ModelHandler(
-                    model, module_name, self.included_modules
+                    model, module_name, self.included_schema
                 )
                 for model in self._get_schema_module(
                     module_name
@@ -393,15 +393,15 @@ class _SchemaHandler:
                 and not model._meta.abstract
                 and model.__get_module_name__() == module_name
             }
-            for module_name in self.included_modules
+            for module_name in self.included_schema
         }
         assert all_models
         return all_models
 
     def _get_module_set_info(self):
-        # TODO: rely on modulesmodule table for this
+        # TODO: rely on schemamodule table for this
         module_set_info = []
-        for module_name in self.included_modules:
+        for module_name in self.included_schema:
             module = self._get_schema_module(module_name)
             if module_name == "lamindb":
                 module_name = "core"
