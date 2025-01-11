@@ -78,7 +78,7 @@ def setup_django(
         if view_schema:
             kwargs.update(
                 DEBUG=True,
-                ROOT_URLCONF="lamindb_setup._modules",
+                ROOT_URLCONF="lamindb_setup._schema",
                 SECRET_KEY="dummy",
                 TEMPLATES=[
                     {
