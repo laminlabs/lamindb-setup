@@ -1,3 +1,5 @@
+import os
+
 import lamindb_setup as ln_setup
 from lamindb_setup.core._settings_load import load_instance_settings, load_user_settings
 from lamindb_setup.core._settings_store import (
@@ -14,9 +16,10 @@ current_instance_exists = current_instance_file.exists()
 testuser1 = load_user_settings(user_settings_file_handle("testuser1"))
 assert testuser1.handle == "testuser1"
 
+storage = f"s3://lamindb-ci/{os.environ['LAMIN_ENV']}_test/test-init-no-writes"
+
 ln_setup.init(
-    storage="create-s3",
-    name="test-init-no-writes",
+    storage=storage,
     _user=testuser1,
     _write_settings=False,
 )
