@@ -36,7 +36,7 @@ class LaminDsn(str):
         return core_schema.no_info_after_validator_function(
             cls.validate,
             core_schema.str_schema(),
-            serialization=core_schema.plain_serializer_function_ser_modules(str),
+            serialization=core_schema.plain_serializer_function_ser_schema(str),
         )
 
     @classmethod
