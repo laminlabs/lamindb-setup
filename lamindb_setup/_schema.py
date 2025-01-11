@@ -6,11 +6,11 @@ from lamin_utils import logger
 try:
     from schema_graph.views import Schema
 except ImportError:
-    logger.error("to view the modules: pip install django-schema-graph")
+    logger.error("to view the schema: pip install django-schema-graph")
 
 
 urlpatterns = [
-    path("modules/", Schema.as_view()),
+    path("schema/", Schema.as_view()),
 ]
 
 
