@@ -465,6 +465,13 @@ class InstanceSettings:
         setup_django(self, init=True)
         _check_setup.IS_LOADING = False
 
+        from lamindb.models import Space
+
+        Space.objects.get_or_create(
+            name="All",
+            description="Every team & user with access to the instance has access.",
+        )
+
     def _load_db(self) -> tuple[bool, str]:
         from lamindb_setup import _check_setup
 

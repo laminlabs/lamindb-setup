@@ -55,11 +55,11 @@ def test_update_schema_in_hub(setup_instance):
         "related_schema_name": None,
     }
 
-    assert schema["schema_json"]["core"]["artifact"]["fields"]["_accessor"] == {
+    assert schema["schema_json"]["core"]["artifact"]["fields"]["otype"] == {
         "type": "CharField",
-        "column_name": "_accessor",
+        "column_name": "otype",
         "through": None,
-        "field_name": "_accessor",
+        "field_name": "otype",
         "model_name": "artifact",
         "schema_name": "core",
         "is_link_table": False,
