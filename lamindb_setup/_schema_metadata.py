@@ -391,7 +391,7 @@ class _SchemaHandler:
                 if model.__class__ is Registry
                 and model is not Record
                 and not model._meta.abstract
-                and model.__get_schema_name__() == module_name
+                and model.__get_module_name__() == module_name
             }
             for module_name in self.included_modules
         }
