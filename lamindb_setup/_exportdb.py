@@ -12,7 +12,7 @@ MODELS = {
         "User": False,
         "Storage": False,
         "Feature": False,
-        "FeatureSet": False,
+        "Schema": False,
         "ULabel": False,
     },
     # "bionty": {
