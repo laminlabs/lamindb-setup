@@ -238,15 +238,15 @@ class _ModelHandler:
         model_name = field.model._meta.model_name
         relation_type = self._get_relation_type(model, field)
         if field.related_model is None:
-            schema_name = field.model.__get_schema_name__()
+            schema_name = field.model.__get_module_name__()
             related_model_name = None
             related_schema_name = None
             related_field_name = None
             field_name = field.name
         else:
             related_model_name = field.related_model._meta.model_name
-            related_schema_name = field.related_model.__get_schema_name__()
-            schema_name = field.model.__get_schema_name__()
+            related_schema_name = field.related_model.__get_module_name__()
+            schema_name = field.model.__get_module_name__()
             related_field_name = field.remote_field.name
             field_name = field.name
 
@@ -362,7 +362,7 @@ class _ModelHandler:
 
 class _SchemaHandler:
     def __init__(self) -> None:
-        self.included_modules = ["core"] + list(settings.instance.schema)
+        self.included_modules = ["core"] + list(settings.instance.modules)
         self.modules = self._get_modules_metadata()
 
     def to_dict(self, include_django_objects: bool = True):
