@@ -67,9 +67,9 @@ def _synchronize_schema(client: Client) -> tuple[bool, UUID, dict]:
         .eq("id", settings.instance._id.hex)
         .execute()
     )
-    assert (
-        len(instance_response.data) == 1
-    ), f"schema of instance {settings.instance._id.hex} could not be updated with schema {schema_uuid.hex}"
+    assert len(instance_response.data) == 1, (
+        f"schema of instance {settings.instance._id.hex} could not be updated with schema {schema_uuid.hex}"
+    )
 
     return is_new, schema_uuid, schema
 

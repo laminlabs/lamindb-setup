@@ -27,36 +27,83 @@ import warnings
 from functools import wraps
 
 
-def deprecated(new_name: str):
-    """Deprecated.
+def deprecated(new_name=None, remove_in_version=None):
+    """Decorator to mark functions as deprecated and hide them from docs.
 
-    This is a decorator which can be used to mark functions, methods and properties
-    as deprecated. It will result in a warning being emitted
-    when the function is used.
-
+    This is a decorator which can be used to mark functions, methods and properties as deprecated.
+    It will result in a warning being emitted when the function is used.
     It will also hide the function from the docs.
 
-    Example::
+    Args:
+        new_name: Name of the new function to use instead.
+        remove_in_version: Version when this will be removed.
 
+    Example:
         @property
         @deprecated("n_files")
         def n_objects(self) -> int:
             return self.n_files
-
     """
 
     def decorator(func):
         @wraps(func)
-        def new_func(*args, **kwargs):
-            warnings.warn(
-                f"Use {new_name} instead of {func.__name__}, "
-                f"{func.__name__} will be removed in the future.",
-                category=FutureWarning,
-                stacklevel=2,
+        def wrapper(*args, **kwargs):
+            base_msg = f"{func.__name__} is deprecated"
+            version_msg = (
+                f" and will be removed in version {remove_in_version}"
+                if remove_in_version
+                else ""
             )
+            migration_msg = f". Use {new_name} instead" if new_name else ""
+            msg = f"{base_msg}{version_msg}{migration_msg}."
+            warnings.warn(msg, category=DeprecationWarning, stacklevel=2)
             return func(*args, **kwargs)
 
-        setattr(new_func, "__deprecated", True)
-        return new_func
+        setattr(wrapper, "__deprecated", True)
+        return wrapper
+
+    return decorator
+
+
+def future_change(change_version=None, change_description=None):
+    """Warns about future behavior changes.
+
+    Args:
+        change_version: Version when behavior will change.
+        change_description: Description of the behavior change.
+    """
+
+    def decorator(func):
+        @wraps(func)
+        def wrapper(*args, **kwargs):
+            base_msg = f"{func.__name__} behavior will change"
+            version_msg = f" in version {change_version}" if change_version else ""
+            desc_msg = f". {change_description}" if change_description else ""
+            msg = f"{base_msg}{version_msg}{desc_msg}."
+            warnings.warn(msg, category=FutureWarning, stacklevel=2)
+            return func(*args, **kwargs)
+
+        return wrapper
+
+    return decorator
+
+
+def experimental(stable_version=None):
+    """Marks function as experimental/unstable API.
+
+    Args:
+        stable_version: Expected version for API stabilization.
+    """
+
+    def decorator(func):
+        @wraps(func)
+        def wrapper(*args, **kwargs):
+            base_msg = f"{func.__name__} is experimental"
+            version_msg = f" until version {stable_version}" if stable_version else ""
+            msg = f"{base_msg}{version_msg}. API may change without warning."
+            warnings.warn(msg, category=UserWarning, stacklevel=2)
+            return func(*args, **kwargs)
+
+        return wrapper
 
     return decorator

@@ -346,7 +346,7 @@ class InstanceSettings:
                 )
             lock_msg += (
                 " The instance will be automatically unlocked after"
-                f" {int(EXPIRATION_TIME/3600/24)}d of no activity."
+                f" {int(EXPIRATION_TIME / 3600 / 24)}d of no activity."
             )
             raise InstanceLockedException(lock_msg)
 
