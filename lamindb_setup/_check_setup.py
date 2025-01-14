@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import functools
 import importlib as il
 import os
 from typing import TYPE_CHECKING
@@ -13,6 +14,8 @@ from .core._settings_store import current_instance_settings_file
 from .core.exceptions import DefaultMessageException
 
 if TYPE_CHECKING:
+    from collections.abc import Callable
+
     from .core._settings_instance import InstanceSettings
 
 
@@ -28,6 +31,20 @@ If you used the CLI to set up lamindb in a notebook, restart the Python session.
 
 CURRENT_ISETTINGS: InstanceSettings | None = None
 IS_LOADING: bool = False
+
+
+# decorator to disable auto-connect when importing a module such as lamindb
+def _loading(func: Callable):
+    @functools.wraps(func)
+    def wrapper(*args, **kwargs):
+        global IS_LOADING
+        IS_LOADING = True
+        try:
+            return func(*args, **kwargs)
+        finally:
+            IS_LOADING = False
+
+    return wrapper
 
 
 def _get_current_instance_settings() -> InstanceSettings | None:
