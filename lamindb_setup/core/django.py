@@ -54,7 +54,8 @@ def setup_django(
 
         module_names = ["core"] + list(isettings.modules)
         raise_import_error = True if init else False
-        installed_apps = [
+        installed_apps = ["django.contrib.contenttypes"]
+        installed_apps += [
             package_name
             for name in module_names
             if (
