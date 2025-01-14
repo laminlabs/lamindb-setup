@@ -54,7 +54,8 @@ def setup_django(
 
         module_names = ["core"] + list(isettings.modules)
         raise_import_error = True if init else False
-        installed_apps = [
+        installed_apps = ["django.contrib.contenttypes"]
+        installed_apps += [
             package_name
             for name in module_names
             if (
@@ -64,7 +65,6 @@ def setup_django(
             )
             is not None
         ]
-        installed_apps += ["django.contrib.contenttypes.models.ContentType"]
         if view_schema:
             installed_apps = installed_apps[::-1]  # to fix how apps appear
             installed_apps += ["schema_graph", "django.contrib.staticfiles"]
