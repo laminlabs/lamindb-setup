@@ -83,6 +83,11 @@ class migrate:
             update_instance,
         )
 
+        if settings.auto_connect:
+            raise SystemExit(
+                "❌ You're in auto-connect mode, please run: lamin settings auto-connect false"
+            )
+
         if settings.instance.is_on_hub:
             # double check that user is an admin, otherwise will fail below
             # due to insufficient SQL permissions with cryptic error
