@@ -85,7 +85,7 @@ class migrate:
 
         if settings.auto_connect:
             raise SystemExit(
-                "❌ You're in auto-connect mode, please run: lamin settings auto-connect false"
+                "❌ You're in auto-connect mode, please run: lamin settings set auto-connect false"
             )
 
         if settings.instance.is_on_hub:
