@@ -152,6 +152,8 @@ jobs:
           path: /var/lib/docker
           key: cache-supabase
       - uses: supabase/setup-cli@v1
+        with:
+          version: "2.2.1"
       - run: nox -s hub_local
         env:
           LAMIN_ENV: "local"
