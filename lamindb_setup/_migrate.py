@@ -5,7 +5,7 @@ from django.db.migrations.loader import MigrationLoader
 from lamin_utils import logger
 from packaging import version
 
-from . import _check_setup
+from ._check_setup import _check_instance_setup, _loading
 from .core._settings import settings
 from .core.django import setup_django
 
@@ -62,31 +62,26 @@ class migrate:
     """
 
     @classmethod
+    @_loading
     def create(cls) -> None:
         """Create a migration."""
-        if _check_setup._check_instance_setup():
+        if _check_instance_setup():
             raise RuntimeError("Restart Python session to create migration or use CLI!")
-        _check_setup.IS_LOADING = True
         setup_django(settings.instance, create_migrations=True)
-        _check_setup.IS_LOADING = False
 
     @classmethod
+    @_loading
     def deploy(cls) -> None:
         """Deploy a migration."""
         from ._schema_metadata import update_schema_in_hub
 
-        if _check_setup._check_instance_setup():
+        if _check_instance_setup():
             raise RuntimeError("Restart Python session to migrate or use CLI!")
         from lamindb_setup.core._hub_client import call_with_fallback_auth
         from lamindb_setup.core._hub_crud import (
             select_collaborator,
             update_instance,
         )
-
-        if settings.auto_connect:
-            raise SystemExit(
-                "❌ You're in auto-connect mode, please run: lamin settings set auto-connect false"
-            )
 
         if settings.instance.is_on_hub:
             # double check that user is an admin, otherwise will fail below
@@ -120,6 +115,7 @@ class migrate:
             )
 
     @classmethod
+    @_loading
     def check(cls) -> bool:
         """Check whether Registry definitions are in sync with migrations."""
         from django.core.management import call_command
@@ -136,6 +132,7 @@ class migrate:
         return True
 
     @classmethod
+    @_loading
     def squash(
         cls, package_name, migration_nr, start_migration_nr: str | None = None
     ) -> None:
@@ -151,6 +148,7 @@ class migrate:
             call_command("squashmigrations", package_name, migration_nr)
 
     @classmethod
+    @_loading
     def show(cls) -> None:
         """Show migrations."""
         from django.core.management import call_command
