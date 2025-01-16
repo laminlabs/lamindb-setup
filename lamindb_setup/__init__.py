@@ -35,8 +35,7 @@ Modules & settings:
 
 __version__ = "1.0.0"  # denote a release candidate for 0.1.0 with 0.1rc1
 
-import os as _os
-import sys as _sys
+import os
 
 from . import core
 from ._check_setup import _check_instance_setup
@@ -76,26 +75,10 @@ def _is_CI_environment() -> bool:
         "SEMAPHORE",  # Semaphore CI
         "BUILD_ID",  # Generic build environments
     ]
-    return any(env_var in _os.environ for env_var in ci_env_vars)
+    return any(env_var in os.environ for env_var in ci_env_vars)
 
 
 _TESTING = _is_CI_environment()
-
-
-# hide the supabase error in a thread on windows
-if _os.name == "nt":
-    if _sys.version_info.minor > 7:
-        import threading
-
-        _original_excepthook = threading.excepthook
-
-        def _except_hook(args):
-            is_overflow = args.exc_type is OverflowError
-            for_timeout = str(args.exc_value) == "timeout value is too large"
-            if not (is_overflow and for_timeout):
-                _original_excepthook(args)
-
-        threading.excepthook = _except_hook
 
 # provide a way for other packages to run custom code on import
 _call_registered_entry_points("lamindb_setup.on_import")

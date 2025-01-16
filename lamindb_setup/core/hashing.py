@@ -119,7 +119,7 @@ def hash_dir(path: Path):
             hashes_sizes = pool.map(hash_size, files)
     else:
         hashes_sizes = map(hash_size, files)
-    hashes, sizes = zip(*hashes_sizes)
+    hashes, sizes = zip(*hashes_sizes, strict=False)
 
     hash, hash_type = hash_from_hashes_list(hashes), "md5-d"
     n_files = len(hashes)

@@ -4,7 +4,7 @@ build-backend = "flit_core.buildapi"
 
 [project]
 name = "lamindb_setup"
-requires-python = ">=3.9"
+requires-python = ">=3.10"
 authors = [{name = "Lamin Labs", email = "open-source@lamin.ai"}]
 readme = "README.md"
 dynamic = ["version", "description"]
@@ -71,6 +71,9 @@ lint.select = [
     "PTH"  # Use pathlib
 ]
 lint.ignore = [
+    # this needs to be refactored as we dropped 3.9
+    # todo: refactor types and remove this
+    "UP007",
     # Do not catch blind exception: `Exception`
     "BLE001",
     # Errors from function calls in argument defaults. These are fine when the result is immutable.

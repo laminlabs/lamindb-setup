@@ -32,7 +32,7 @@ def test_progress_callback_size():
     pcb.set_size(10)
 
     cwd = str(Path.cwd())
-    paths = zip([cwd, cwd], [cwd, cwd])
+    paths = zip([cwd, cwd], [cwd, cwd], strict=False)
     # adjust size for directories in path list
     assert pcb.wrap(paths) == [(cwd, cwd), (cwd, cwd)]
     assert pcb.size == 8
