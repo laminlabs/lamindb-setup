@@ -90,7 +90,7 @@ def _module_name() -> str | None:
     if len(stack) < 3:
         return None
     module = inspect.getmodule(stack[2][0])
-    return module.__name__ if module is not None else None
+    return module.__name__.partition(".")[0] if module is not None else None
 
 
 # we make this a private function because in all the places it's used,
@@ -104,9 +104,12 @@ def _check_instance_setup(from_module: str | None = None) -> bool:
                 _check_in_modules(from_module)
                 il.reload(il.import_module(from_module))
         else:
-            from_module = _module_name()
-            if from_module != "lamindb":
-                _check_in_modules(from_module)  # type: ignore
+            infer_module = _module_name()
+            if infer_module is not None and infer_module not in {
+                "lamindb",
+                "lamindb_setup",
+            }:
+                _check_in_modules(infer_module)
         return True
     silence_loggers()
     if os.environ.get("LAMINDB_MULTI_INSTANCE") == "true":
