@@ -114,9 +114,7 @@ def setup_django(
     elif init:
         global IS_MIGRATING
         IS_MIGRATING = True
-        call_command(
-            "migrate", verbosity=2
-        )  # may change back to verbosity 0 in the future
+        call_command("migrate", verbosity=0)
         IS_MIGRATING = False
 
     global IS_SETUP
