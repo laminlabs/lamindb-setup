@@ -74,8 +74,11 @@ def _get_current_instance_settings() -> InstanceSettings | None:
 def _check_in_modules(module: str, isettings: InstanceSettings | None = None) -> None:
     not_in_instance_msg = f"'{module}' is missing from this instance."
 
-    if isettings is not None and module not in isettings.modules:
-        raise RuntimeError(not_in_instance_msg)
+    if isettings is not None:
+        if module not in isettings.modules:
+            raise RuntimeError(not_in_instance_msg)
+        else:
+            return
 
     from django.apps import apps
 
