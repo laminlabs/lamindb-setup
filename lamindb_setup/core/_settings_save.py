@@ -40,9 +40,9 @@ def save_settings(
 ):
     with open(settings_file, "w") as f:
         for store_key, type_ in type_hints.items():
-            if type_ == Optional[str]:  # noqa: UP007
+            if type_ == Optional[str]:
                 type_ = str
-            if type_ == Optional[bool]:  # noqa: UP007
+            if type_ == Optional[bool]:
                 type_ = bool
             if "__" not in store_key:
                 if store_key == "model_config":
