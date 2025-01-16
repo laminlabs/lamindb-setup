@@ -466,13 +466,11 @@ class InstanceSettings:
         settings._instance_settings = self
 
     def _init_db(self):
-        from lamindb_setup import _check_setup
+        from lamindb_setup._check_setup import _loading
 
         from .django import setup_django
 
-        _check_setup.IS_LOADING = True
-        setup_django(self, init=True)
-        _check_setup.IS_LOADING = False
+        _loading(setup_django)(self, init=True)
 
         from lamindb.models import Space
 
@@ -482,8 +480,6 @@ class InstanceSettings:
         )
 
     def _load_db(self) -> tuple[bool, str]:
-        from lamindb_setup import _check_setup
-
         # Is the database available and initialized as LaminDB?
         # returns a tuple of status code and message
         if self.dialect == "sqlite" and not self._sqlite_file.exists():
@@ -494,15 +490,15 @@ class InstanceSettings:
                     f" {legacy_file} to {self._sqlite_file}"
                 )
             return False, f"SQLite file {self._sqlite_file} does not exist"
-
-        from .django import setup_django
-
         # we need the local sqlite to setup django
         self._update_local_sqlite_file(lock_cloud_sqlite=self._is_cloud_sqlite)
         # setting up django also performs a check for migrations & prints them
         # as warnings
         # this should fail, e.g., if the db is not reachable
-        _check_setup.IS_LOADING = True
-        setup_django(self)
-        _check_setup.IS_LOADING = False
+        from lamindb_setup._check_setup import _loading
+
+        from .django import setup_django
+
+        _loading(setup_django)(self)
+
         return True, ""

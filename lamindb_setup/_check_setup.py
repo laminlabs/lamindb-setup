@@ -2,13 +2,14 @@ from __future__ import annotations
 
 import functools
 import importlib as il
+import inspect
 import os
 from typing import TYPE_CHECKING
 
 from lamin_utils import logger
 
 from ._silence_loggers import silence_loggers
-from .core import django
+from .core import django as django_lamin
 from .core._settings import settings
 from .core._settings_store import current_instance_settings_file
 from .core.exceptions import DefaultMessageException
@@ -70,14 +71,42 @@ def _get_current_instance_settings() -> InstanceSettings | None:
         return None
 
 
+def _check_in_modules(module: str, isettings: InstanceSettings | None = None) -> None:
+    not_in_instance_msg = f"'{module}' is missing from this instance."
+
+    if isettings is not None and module not in isettings.modules:
+        raise RuntimeError(not_in_instance_msg)
+
+    from django.apps import apps
+
+    for app in apps.get_app_configs():
+        if module == app.name:
+            return
+    raise RuntimeError(not_in_instance_msg)
+
+
+def _module_name() -> str | None:
+    stack = inspect.stack()
+    if len(stack) < 3:
+        return None
+    module = inspect.getmodule(stack[2][0])
+    return module.__name__ if module is not None else None
+
+
 # we make this a private function because in all the places it's used,
 # users should not see it
 def _check_instance_setup(from_module: str | None = None) -> bool:
-    if django.IS_SETUP:
+    if django_lamin.IS_SETUP:
         # reload logic here because module might not yet have been imported
         # upon first setup
-        if from_module is not None and from_module != "lamindb":
-            il.reload(il.import_module(from_module))
+        if from_module is not None:
+            if from_module != "lamindb":
+                _check_in_modules(from_module)
+                il.reload(il.import_module(from_module))
+        else:
+            from_module = _module_name()
+            if from_module != "lamindb":
+                _check_in_modules(from_module)  # type: ignore
         return True
     silence_loggers()
     if os.environ.get("LAMINDB_MULTI_INSTANCE") == "true":
@@ -91,17 +120,19 @@ def _check_instance_setup(from_module: str | None = None) -> bool:
         if (
             from_module is not None
             and settings.auto_connect
-            and not django.IS_SETUP
+            and not django_lamin.IS_SETUP
             and not IS_LOADING
         ):
-            if not from_module == "lamindb":
+            if from_module != "lamindb":
+                _check_in_modules(from_module, isettings)
+
                 import lamindb
 
                 il.reload(il.import_module(from_module))
             else:
-                django.setup_django(isettings)
+                django_lamin.setup_django(isettings)
                 logger.important(f"connected lamindb: {isettings.slug}")
-        return django.IS_SETUP
+        return django_lamin.IS_SETUP
     else:
         if from_module is not None and settings.auto_connect:
             logger.warning(InstanceNotSetupError.default_message)
