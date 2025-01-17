@@ -12,7 +12,12 @@ from postgrest.exceptions import APIError
 
 
 def test_connect_pass_none():
-    ln_setup.connect(_test=True)
+    with pytest.raises(SystemExit) as err:
+        ln_setup.connect(_test=True)
+    assert (
+        err.exconly()
+        == "SystemExit: No instance was connected through the CLI, pass a value to `instance` or connect via the CLI."
+    )
 
 
 # do not call hub if the owner is set to anonymous
