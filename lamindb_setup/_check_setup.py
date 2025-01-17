@@ -34,6 +34,10 @@ CURRENT_ISETTINGS: InstanceSettings | None = None
 IS_LOADING: bool = False
 
 
+class ModuleWasntConfigured(RuntimeError):
+    pass
+
+
 # decorator to disable auto-connect when importing a module such as lamindb
 def _loading(func: Callable):
     @functools.wraps(func)
@@ -71,12 +75,16 @@ def _get_current_instance_settings() -> InstanceSettings | None:
         return None
 
 
-def _check_in_modules(module: str, isettings: InstanceSettings | None = None) -> None:
+# checks that the provided modules is in the modules of the provided instance
+# or in the apps setup by django
+def _check_module_in_instance_modules(
+    module: str, isettings: InstanceSettings | None = None
+) -> None:
     not_in_instance_msg = f"'{module}' is missing from this instance."
 
     if isettings is not None:
         if module not in isettings.modules:
-            raise RuntimeError(not_in_instance_msg)
+            raise ModuleWasntConfigured(not_in_instance_msg)
         else:
             return
 
@@ -85,10 +93,11 @@ def _check_in_modules(module: str, isettings: InstanceSettings | None = None) ->
     for app in apps.get_app_configs():
         if module == app.name:
             return
-    raise RuntimeError(not_in_instance_msg)
+    raise ModuleWasntConfigured(not_in_instance_msg)
 
 
-def _module_name() -> str | None:
+# infer the name of the module that calls this function
+def _infer_callers_module_name() -> str | None:
     stack = inspect.stack()
     if len(stack) < 3:
         return None
@@ -104,15 +113,15 @@ def _check_instance_setup(from_module: str | None = None) -> bool:
         # upon first setup
         if from_module is not None:
             if from_module != "lamindb":
-                _check_in_modules(from_module)
+                _check_module_in_instance_modules(from_module)
                 il.reload(il.import_module(from_module))
         else:
-            infer_module = _module_name()
+            infer_module = _infer_callers_module_name()
             if infer_module is not None and infer_module not in {
                 "lamindb",
                 "lamindb_setup",
             }:
-                _check_in_modules(infer_module)
+                _check_module_in_instance_modules(infer_module)
         return True
     silence_loggers()
     if os.environ.get("LAMINDB_MULTI_INSTANCE") == "true":
@@ -130,7 +139,7 @@ def _check_instance_setup(from_module: str | None = None) -> bool:
             and not IS_LOADING
         ):
             if from_module != "lamindb":
-                _check_in_modules(from_module, isettings)
+                _check_module_in_instance_modules(from_module, isettings)
 
                 import lamindb
 
