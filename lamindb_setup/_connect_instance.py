@@ -381,7 +381,7 @@ def migrate_lnschema_core(
         else:
             try:
                 response = input(
-                    f"Do you want to migrate to lamindb 0.78 (integrate lnschema_core into lamindb)? (y/n) -- Will rename {tables_to_rename}"
+                    f"Do you want to migrate to lamindb 1.0 (integrate lnschema_core into lamindb)? (y/n) -- Will rename {tables_to_rename}"
                 )
                 if response != "y":
                     print("Aborted.")
