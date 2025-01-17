@@ -10,12 +10,9 @@ from lamindb_setup.core._hub_crud import update_instance
 from laminhub_rest.core.instance.collaborator import InstanceCollaboratorHandler
 from postgrest.exceptions import APIError
 
-# @pytest.fixture
-# def create_remote_test_instance():
-#     ln_setup.login("testuser1")
-#     ln_setup.init(storage="s3://lamindb-ci/load_remote_instance", _test=True)
-#     yield
-#     ln_setup.delete("load_remote_instance", force=True)
+
+def test_connect_pass_none():
+    ln_setup.connect(_test=True)
 
 
 # do not call hub if the owner is set to anonymous

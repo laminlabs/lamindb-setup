@@ -7,7 +7,7 @@ from uuid import UUID
 
 from lamin_utils import logger
 
-from ._check_setup import _check_instance_setup
+from ._check_setup import _check_instance_setup, _get_current_instance_settings
 from ._close import close as close_instance
 from ._init_instance import (
     MESSAGE_CANNOT_SWITCH_DEFAULT_INSTANCE,
@@ -186,12 +186,12 @@ def _connect_instance(
 
 
 @unlock_cloud_sqlite_upon_exception(ignore_prev_locker=True)
-def connect(slug: str, **kwargs) -> str | tuple | None:
-    """Connect to instance.
+def connect(instance: str | None = None, **kwargs) -> str | tuple | None:
+    """Connect to an instance.
 
     Args:
-        slug: The instance slug `account_handle/instance_name` or URL.
-            If the instance is owned by you, it suffices to pass the instance name.
+        instance: `None` or an instance identifier (URL, slug `account/name`, or `name` if the instance is local or in your account).
+            If `None`, it will connect to the instance that was connected via the CLI.
     """
     # validate kwargs
     valid_kwargs = {
@@ -220,39 +220,46 @@ def connect(slug: str, **kwargs) -> str | tuple | None:
         access_token = _user.access_token
 
     try:
-        owner, name = get_owner_name_from_identifier(slug)
-
-        if _check_instance_setup() and not _test:
-            if (
-                settings._instance_exists
-                and f"{owner}/{name}" == settings.instance.slug
-            ):
-                logger.info(f"connected lamindb: {settings.instance.slug}")
-                return None
-            else:
-                raise CannotSwitchDefaultInstance(
-                    MESSAGE_CANNOT_SWITCH_DEFAULT_INSTANCE
+        if instance is None:
+            isettings_or_none = _get_current_instance_settings()
+            if isettings_or_none is None:
+                raise SystemExit(
+                    "No instance was connected through the CLI, pass a value to `instance` or connect via the CLI."
                 )
-        elif (
-            _write_settings
-            and settings._instance_exists
-            and f"{owner}/{name}" != settings.instance.slug
-        ):
-            close_instance(mute=True)
+            isettings = isettings_or_none
+        else:
+            owner, name = get_owner_name_from_identifier(instance)
+            if _check_instance_setup() and not _test:
+                if (
+                    settings._instance_exists
+                    and f"{owner}/{name}" == settings.instance.slug
+                ):
+                    logger.important(f"connected lamindb: {settings.instance.slug}")
+                    return None
+                else:
+                    raise CannotSwitchDefaultInstance(
+                        MESSAGE_CANNOT_SWITCH_DEFAULT_INSTANCE
+                    )
+            elif (
+                _write_settings
+                and settings._instance_exists
+                and f"{owner}/{name}" != settings.instance.slug
+            ):
+                close_instance(mute=True)
 
-        try:
-            isettings = _connect_instance(
-                owner, name, db=_db, access_token=access_token
-            )
-        except InstanceNotFoundError as e:
-            if _raise_not_found_error:
-                raise e
-            else:
-                return "instance-not-found"
-        if isinstance(isettings, str):
-            return isettings
+            try:
+                isettings = _connect_instance(
+                    owner, name, db=_db, access_token=access_token
+                )
+            except InstanceNotFoundError as e:
+                if _raise_not_found_error:
+                    raise e
+                else:
+                    return "instance-not-found"
+            if isinstance(isettings, str):
+                return isettings
         # at this point we have checked already that isettings is not a string
-        # _user is passed to lock cloud sqite for this user in isettings._load_db()
+        # _user is passed to lock cloud sqlite for this user in isettings._load_db()
         # has no effect if _user is None or if not cloud sqlite instance
         isettings._locker_user = _user
         isettings._persist(write_to_disk=_write_settings)
@@ -304,6 +311,7 @@ def connect(slug: str, **kwargs) -> str | tuple | None:
         load_from_isettings(isettings, user=_user, write_settings=_write_settings)
         if _reload_lamindb:
             importlib.reload(importlib.import_module("lamindb"))
+        logger.important(f"connected lamindb: {isettings.slug}")
     except Exception as e:
         if isettings is not None:
             if _write_settings:
