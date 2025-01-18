@@ -339,25 +339,6 @@ def migrate_lnschema_core(
     """Migrate lnschema_core tables to lamindb tables."""
     from urllib.parse import urlparse
 
-    if isettings.is_on_hub:
-        from lamindb_setup.core._hub_client import call_with_fallback_auth
-        from lamindb_setup.core._hub_crud import (
-            select_collaborator,
-        )
-
-        # double check that user is an admin, otherwise will fail below
-        # due to insufficient SQL permissions with cryptic error
-        collaborator = call_with_fallback_auth(
-            select_collaborator,
-            instance_id=settings.instance._id,
-            account_id=settings.user._uuid,
-        )
-        if collaborator is None or collaborator["role"] != "admin":
-            raise SystemExit(
-                "❌ Only admins can deploy migrations, please ensure that you're an"
-                f" admin: https://lamin.ai/{settings.instance.slug}/settings"
-            )
-
     parsed_uri = urlparse(isettings.db)
     db_type = parsed_uri.scheme
 
@@ -413,6 +394,24 @@ def migrate_lnschema_core(
                 if response != "y":
                     print("Aborted.")
                     quit()
+                if isettings.is_on_hub:
+                    from lamindb_setup.core._hub_client import call_with_fallback_auth
+                    from lamindb_setup.core._hub_crud import (
+                        select_collaborator,
+                    )
+
+                    # double check that user is an admin, otherwise will fail below
+                    # due to insufficient SQL permissions with cryptic error
+                    collaborator = call_with_fallback_auth(
+                        select_collaborator,
+                        instance_id=settings.instance._id,
+                        account_id=settings.user._uuid,
+                    )
+                    if collaborator is None or collaborator["role"] != "admin":
+                        raise SystemExit(
+                            "❌ Only admins can deploy migrations, please ensure that you're an"
+                            f" admin: https://lamin.ai/{settings.instance.slug}/settings"
+                        )
                 for table in tables_to_rename:
                     if db_type == "sqlite":
                         cur.execute(
