@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import base64
 import os
 from uuid import UUID, uuid4
 
@@ -39,6 +40,16 @@ from lamindb_setup.core._settings_user import UserSettings
 from laminhub_rest.core.instance.collaborator import InstanceCollaboratorHandler
 from postgrest.exceptions import APIError
 from supafunc.errors import FunctionsHttpError
+
+
+# needed to make realisticly looking token that passes
+# supafunc is_valid_jwt but is actually not a real token
+# encodes a string as base64url
+def base64url(input_string: str) -> str:
+    byte_data = input_string.encode("utf-8")
+    base64url_bytes = base64.urlsafe_b64encode(byte_data)
+    base64url_string = base64url_bytes.decode("utf-8")
+    return base64url_string
 
 
 def sign_up_user(email: str, handle: str, save_as_settings: bool = False):
@@ -325,7 +336,10 @@ def test_connect_instance_hub_corrupted_or_expired_credentials(
     create_myinstance, create_testadmin1_session
 ):
     # assume token & password are corrupted or expired
-    ln_setup.settings.user.access_token = "corrupted_or_expired_token"
+    # make realisticly looking token that passes
+    # supafunc is_valid_jwt but is actually not a real token
+    invalid_token = f"{base64url('Header')}.{base64url('Payload')}.{base64url('Sign')}"
+    ln_setup.settings.user.access_token = invalid_token
     correct_password = ln_setup.settings.user.password
     ln_setup.settings.user.password = "corrupted_password"
     with pytest.raises(FunctionsHttpError):
@@ -336,7 +350,7 @@ def test_connect_instance_hub_corrupted_or_expired_credentials(
     # now, let's assume only the token is expired or corrupted
     # re-creating the auth client triggers a re-generated token because it
     # excepts the error assuming the token is expired
-    ln_setup.settings.user.access_token = "corrupted_or_expired_token"
+    ln_setup.settings.user.access_token = invalid_token
     ln_setup.settings.user.password = correct_password
     connect_instance_hub(
         owner="testadmin1",
@@ -344,7 +358,7 @@ def test_connect_instance_hub_corrupted_or_expired_credentials(
     )
     # check access_token renewal
     access_token = ln_setup.settings.user.access_token
-    assert access_token != "corrupted_or_expired_token"
+    assert access_token != invalid_token
     # check that the access_token was written to the settings
     ln_setup.settings._user_settings = None
     assert ln_setup.settings.user.access_token == access_token
