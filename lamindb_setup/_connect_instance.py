@@ -271,6 +271,7 @@ def connect(instance: str | None = None, **kwargs) -> str | tuple | None:
             settings_dir / f"no_lnschema_core-{isettings.slug.replace('/', '--')}"
         )
         if not no_lnschema_core_file.exists():
+            # sqlite file for cloud sqlite instances is already updated here
             migrate_lnschema_core(
                 isettings, no_lnschema_core_file, write_file=_write_settings
             )
@@ -338,6 +339,12 @@ def migrate_lnschema_core(
 ):
     """Migrate lnschema_core tables to lamindb tables."""
     from urllib.parse import urlparse
+
+    # we need to do this because the sqlite file should be already synced
+    # has no effect if not cloud sqlite
+    # errors if the sqlite file is not in the cloud and doesn't exist locally
+    # isettings.db syncs but doesn't error in this case due to error_no_origin=False
+    isettings._update_local_sqlite_file()
 
     parsed_uri = urlparse(isettings.db)
     db_type = parsed_uri.scheme
