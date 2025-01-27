@@ -325,7 +325,10 @@ def test_connect_instance_hub_corrupted_or_expired_credentials(
     create_myinstance, create_testadmin1_session
 ):
     # assume token & password are corrupted or expired
-    ln_setup.settings.user.access_token = "corrupted_or_expired_token"
+    # make realisticly looking token that passes
+    # supafunc is_valid_jwt but is actually not a real token
+    invalid_token = "header1.payload1.signature1"
+    ln_setup.settings.user.access_token = invalid_token
     correct_password = ln_setup.settings.user.password
     ln_setup.settings.user.password = "corrupted_password"
     with pytest.raises(FunctionsHttpError):
@@ -336,7 +339,7 @@ def test_connect_instance_hub_corrupted_or_expired_credentials(
     # now, let's assume only the token is expired or corrupted
     # re-creating the auth client triggers a re-generated token because it
     # excepts the error assuming the token is expired
-    ln_setup.settings.user.access_token = "corrupted_or_expired_token"
+    ln_setup.settings.user.access_token = invalid_token
     ln_setup.settings.user.password = correct_password
     connect_instance_hub(
         owner="testadmin1",
@@ -344,7 +347,7 @@ def test_connect_instance_hub_corrupted_or_expired_credentials(
     )
     # check access_token renewal
     access_token = ln_setup.settings.user.access_token
-    assert access_token != "corrupted_or_expired_token"
+    assert access_token != invalid_token
     # check that the access_token was written to the settings
     ln_setup.settings._user_settings = None
     assert ln_setup.settings.user.access_token == access_token
