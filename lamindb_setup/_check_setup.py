@@ -123,6 +123,7 @@ def _check_instance_setup(from_module: str | None = None) -> bool:
             if infer_module is not None and infer_module not in {
                 "lamindb",
                 "lamindb_setup",
+                "lamin_cli",
             }:
                 _check_module_in_instance_modules(infer_module)
         return True
