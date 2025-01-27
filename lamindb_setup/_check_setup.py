@@ -34,7 +34,7 @@ CURRENT_ISETTINGS: InstanceSettings | None = None
 IS_LOADING: bool = False
 
 
-class ModuleWasntConfigured(RuntimeError):
+class ModuleWasntConfigured(SystemExit):
     pass
 
 
