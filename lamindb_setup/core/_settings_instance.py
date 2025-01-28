@@ -466,11 +466,11 @@ class InstanceSettings:
         settings._instance_settings = self
 
     def _init_db(self):
-        from lamindb_setup._check_setup import _loading
+        from lamindb_setup._check_setup import disable_auto_connect
 
         from .django import setup_django
 
-        _loading(setup_django)(self, init=True)
+        disable_auto_connect(setup_django)(self, init=True)
 
         from lamindb.models import Space
 
@@ -495,10 +495,10 @@ class InstanceSettings:
         # setting up django also performs a check for migrations & prints them
         # as warnings
         # this should fail, e.g., if the db is not reachable
-        from lamindb_setup._check_setup import _loading
+        from lamindb_setup._check_setup import disable_auto_connect
 
         from .django import setup_django
 
-        _loading(setup_django)(self)
+        disable_auto_connect(setup_django)(self)
 
         return True, ""

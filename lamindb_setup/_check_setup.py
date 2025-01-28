@@ -39,7 +39,7 @@ class ModuleWasntConfigured(SystemExit):
 
 
 # decorator to disable auto-connect when importing a module such as lamindb
-def _loading(func: Callable):
+def disable_auto_connect(func: Callable):
     @functools.wraps(func)
     def wrapper(*args, **kwargs):
         global IS_LOADING
