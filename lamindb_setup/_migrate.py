@@ -5,7 +5,7 @@ from django.db.migrations.loader import MigrationLoader
 from lamin_utils import logger
 from packaging import version
 
-from ._check_setup import _check_instance_setup, _loading
+from ._check_setup import _check_instance_setup, disable_auto_connect
 from .core._settings import settings
 from .core.django import setup_django
 
@@ -62,7 +62,7 @@ class migrate:
     """
 
     @classmethod
-    @_loading
+    @disable_auto_connect
     def create(cls) -> None:
         """Create a migration."""
         if _check_instance_setup():
@@ -70,7 +70,7 @@ class migrate:
         setup_django(settings.instance, create_migrations=True)
 
     @classmethod
-    @_loading
+    @disable_auto_connect
     def deploy(cls) -> None:
         """Deploy a migration."""
         from ._schema_metadata import update_schema_in_hub
@@ -115,7 +115,7 @@ class migrate:
             )
 
     @classmethod
-    @_loading
+    @disable_auto_connect
     def check(cls) -> bool:
         """Check whether Registry definitions are in sync with migrations."""
         from django.core.management import call_command
@@ -132,7 +132,7 @@ class migrate:
         return True
 
     @classmethod
-    @_loading
+    @disable_auto_connect
     def squash(
         cls, package_name, migration_nr, start_migration_nr: str | None = None
     ) -> None:
@@ -148,7 +148,7 @@ class migrate:
             call_command("squashmigrations", package_name, migration_nr)
 
     @classmethod
-    @_loading
+    @disable_auto_connect
     def show(cls) -> None:
         """Show migrations."""
         from django.core.management import call_command
