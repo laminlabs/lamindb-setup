@@ -19,7 +19,7 @@ dependencies = [
     "universal_pathlib==0.2.5",  # is still experimental, need pinning
     "botocore<2.0.0",
     "supabase>=2.8.1,<=2.11.0", # from 2.8.1 has correct bounds on gotrue
-    "storage3<=0.11.1; python_version < '3.11'" # 0.11.2 breaks python 3.10 through usage of new types
+    "storage3<=0.11.1; python_version < '3.11'", # 0.11.2 breaks python 3.10 through usage of new types
     "psutil"
 ]
 
