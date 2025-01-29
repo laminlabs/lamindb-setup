@@ -54,6 +54,7 @@ uv pip install --system --no-deps {no_deps_packages}
     if group == "hub-local":
         cmds += "\nuv pip install --system -e ./laminhub/rest-hub line_profiler"
 
+    run(session, "uv pip install --system pandera")  # needed to import lamindb
     [run(session, line) for line in cmds.splitlines()]
 
 
