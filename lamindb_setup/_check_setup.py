@@ -90,8 +90,8 @@ def check_connecting_to_v1_instance(isettings: InstanceSettings):
         isv1 = cur.fetchone()[0]
 
     if isv1:
-        raise RuntimeError(
-            "This instance runs lamindb v1. Please run: pip install 'lamindb[bionty,wetlab]'>1.0.5"
+        raise SystemExit(
+            "This instance runs lamindb v1. Please run: pip install 'lamindb[bionty,wetlab,clinicore,ourprojects]'>1.0.0"
         )
 
 
@@ -120,6 +120,7 @@ def _check_instance_setup(
     if isettings is not None:
         if reload_module and settings.auto_connect:
             if not django.IS_SETUP:
+                check_connecting_to_v1_instance(isettings)
                 django.setup_django(isettings)
                 if from_module is not None:
                     # this only reloads `from_module`

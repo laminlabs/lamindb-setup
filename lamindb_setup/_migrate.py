@@ -28,12 +28,11 @@ def check_whether_migrations_in_sync(db_version_str: str):
         or installed_version.minor < db_version.minor
     ):
         db_version_lower = f"{db_version.major}.{db_version.minor}"
-        db_version_upper = f"{db_version.major}.{db_version.minor + 1}"
-        raise RuntimeError(
+        raise SystemExit(
             f"The database ({db_version_str}) is ahead of your installed lamindb"
             f" package ({installed_version_str})\n"
             "Please update lamindb: pip install"
-            f' "lamindb>={db_version_lower},<{db_version_upper}"'
+            f" 'lamindb[bionty,wetlab,clinicore,ourprojects]'>={db_version_lower}"
         )
     elif (
         installed_version.major > db_version.major
