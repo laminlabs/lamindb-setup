@@ -52,6 +52,49 @@ def _get_current_instance_settings() -> InstanceSettings | None:
         return None
 
 
+def check_connecting_to_v1_instance(isettings: InstanceSettings):
+    from urllib.parse import urlparse
+
+    # we need to do this because the sqlite file should be already synced
+    # has no effect if not cloud sqlite
+    # errors if the sqlite file is not in the cloud and doesn't exist locally
+    # isettings.db syncs but doesn't error in this case due to error_no_origin=False
+    isettings._update_local_sqlite_file()
+
+    parsed_uri = urlparse(isettings.db)
+    db_type = parsed_uri.scheme
+
+    if db_type == "sqlite":
+        import sqlite3
+
+        conn = sqlite3.connect(parsed_uri.path)
+    elif db_type in ["postgresql", "postgres"]:
+        import psycopg2
+
+        conn = psycopg2.connect(isettings.db)
+    else:
+        raise ValueError("Unsupported database type. Use 'sqlite' or 'postgresql' URI.")
+
+    cur = conn.cursor()
+
+    if db_type == "sqlite":
+        cur.execute(
+            "SELECT name FROM sqlite_master WHERE type='table' AND name='lamindb_user'"
+        )
+        isv1 = cur.fetchone() is not None
+
+    else:  # postgres
+        cur.execute(
+            "SELECT EXISTS (SELECT FROM information_schema.tables WHERE table_name = 'lamindb_user')"
+        )
+        isv1 = cur.fetchone()[0]
+
+    if isv1:
+        raise RuntimeError(
+            "This instance runs lamindb v1. Please run: pip install 'lamindb[bionty,wetlab]'>1.0.5"
+        )
+
+
 # we make this a private function because in all the places it's used,
 # users should not see it
 def _check_instance_setup(
