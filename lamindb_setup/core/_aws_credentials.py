@@ -99,11 +99,11 @@ class AWSCredentialsManager:
             connection_options = credentials
 
         if "cache_regions" in path.storage_options:
-            cache_regions = path.storage_options["cache_regions"]
-        else:
-            cache_regions = True
+            connection_options["cache_regions"] = path.storage_options["cache_regions"]
+        elif "endpoint_url" not in path.storage_options:
+            connection_options["cache_regions"] = True
 
-        return S3Path(path, cache_regions=cache_regions, **connection_options)
+        return S3Path(path, **connection_options)
 
     def enrich_path(self, path: S3Path, access_token: str | None = None) -> S3Path:
         # trailing slash is needed to avoid returning incorrect results
