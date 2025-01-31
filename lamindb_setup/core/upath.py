@@ -748,7 +748,9 @@ def create_path(path: UPathStr, access_token: str | None = None) -> UPath:
             assert "endpoint_url" not in upath.storage_options
             endpoint_url, _, path = upath.path.partition("?")
             endpoint_url = endpoint_url if endpoint_url != "" else None
-            upath = UPath(path, endpoint_url=endpoint_url, **upath.storage_options)
+            upath = UPath(
+                f"s3://{path}", endpoint_url=endpoint_url, **upath.storage_options
+            )
         # add managed credentials and other options for AWS s3 paths
         return get_aws_credentials_manager().enrich_path(upath, access_token)
 
