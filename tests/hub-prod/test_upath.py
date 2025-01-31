@@ -26,9 +26,9 @@ def test_create_path():
         == create_path("s3://lamindb-ci/xyz/").as_posix()
     )
     # test endpoint_url
-    upath = create_path("s3://bucket?http://localhost:8000/key")
+    upath = create_path("s3://http://localhost:8000/s3?bucket/key")
     assert upath.as_posix() == "s3://bucket/key"
-    assert upath.storage_options["endpoint_url"] == "http://localhost:8000"
+    assert upath.storage_options["endpoint_url"] == "http://localhost:8000/s3"
 
 
 def test_progress_callback_size():

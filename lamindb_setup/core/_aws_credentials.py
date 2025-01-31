@@ -105,8 +105,10 @@ class AWSCredentialsManager:
 
         if "cache_regions" in path.storage_options:
             connection_options["cache_regions"] = path.storage_options["cache_regions"]
-        elif "endpoint_url" not in path.storage_options:
-            connection_options["cache_regions"] = True
+        else:
+            connection_options["cache_regions"] = (
+                path.storage_options.get("endpoint_url", None) is None
+            )
 
         return S3Path(path, **connection_options)
 
