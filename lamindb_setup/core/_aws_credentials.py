@@ -25,12 +25,17 @@ def _keep_trailing_slash(path_str: str):
     return path_str if path_str[-1] == "/" else path_str + "/"
 
 
-AWS_CREDENTIALS_EXPIRATION = 11 * 60 * 60  # refresh credentials after 11 hours
+AWS_CREDENTIALS_EXPIRATION: int = 11 * 60 * 60  # refresh credentials after 11 hours
 
 
 # set anon=True for these buckets if credentials fail for a public bucket
 # to be expanded
-PUBLIC_BUCKETS = ("cellxgene-data-public",)
+PUBLIC_BUCKETS: tuple[str] = ("cellxgene-data-public",)
+
+
+# s3-comaptible endpoints managed by lamin
+# None means the standard aws s3 endpoint
+LAMIN_ENDPOINTS: tuple[str | None] = (None,)
 
 
 class AWSCredentialsManager:
@@ -106,6 +111,9 @@ class AWSCredentialsManager:
         return S3Path(path, **connection_options)
 
     def enrich_path(self, path: S3Path, access_token: str | None = None) -> S3Path:
+        # ignore paths with non-lamin-managed endpoints
+        if path.storage_options.get("endpoint_url", None) not in LAMIN_ENDPOINTS:
+            return path
         # trailing slash is needed to avoid returning incorrect results
         # with .startswith
         # for example s3://lamindata-eu should not receive cache for s3://lamindata
