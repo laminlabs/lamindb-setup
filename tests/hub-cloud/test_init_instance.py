@@ -7,6 +7,7 @@ from uuid import UUID
 import lamindb_setup as ln_setup
 import pytest
 from lamindb_setup._connect_instance import InstanceNotFoundError
+from lamindb_setup._init_instance import infer_instance_name
 from lamindb_setup.core._hub_client import connect_hub_with_auth
 from lamindb_setup.core._hub_core import _connect_instance_hub
 from lamindb_setup.core._hub_crud import (
@@ -25,6 +26,18 @@ def get_hub_client():
     hub = connect_hub_with_auth()
     yield hub
     hub.auth.sign_out()
+
+
+def test_infer_instance_name():
+    assert infer_instance_name("s3://bucket/key") == "key"
+    assert infer_instance_name("s3://bucket/") == "bucket"
+    assert infer_instance_name("s3://bucket/", name="name") == "name"
+    assert infer_instance_name("s3://http:localhost:8000/s3?bucket/key") == "key"
+    assert infer_instance_name("s3://http:localhost:8000/s3?bucket/") == "bucket"
+    assert infer_instance_name("create-s3", name="name") == "name"
+    assert infer_instance_name("some/localpath") == "localpath"
+    with pytest.raises(ValueError):
+        infer_instance_name("create-s3")
 
 
 def test_init_instance_postgres_default_name(get_hub_client):
