@@ -191,6 +191,16 @@ class StorageSettings:
             except Exception:
                 logger.warning(f"unable to create .lamindb folder in {self._root_init}")
                 pass
+        elif (
+            self._root_init.protocol == "s3"
+            and "endpoint_url" in self._root_init.storage_options
+        ):
+            # move endpoint_url from storage_options to the path string
+            storage_options = dict(self._root_init.storage_options)
+            endpoint_url = storage_options.pop("endpoint_url")
+            self._root_init = UPath(
+                f"s3://{endpoint_url}?{self._root_init.path}", **storage_options
+            )
         self._root = None
         self._instance_id = instance_id
         # we don't yet infer region here to make init fast
