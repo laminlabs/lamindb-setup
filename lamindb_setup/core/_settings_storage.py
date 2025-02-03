@@ -44,15 +44,27 @@ def get_storage_region(path: UPathStr) -> str | None:
         from botocore.config import Config
         from botocore.exceptions import ClientError
 
-        # strip the prefix and any suffixes of the bucket name
-        bucket = path_str.replace("s3://", "").split("/")[0]
+        # check for endpoint_url in storage options if upath
+        if isinstance(path, UPath):
+            endpoint_url = path.storage_options.get("endpoint_url", None)
+        else:
+            endpoint_url = None
+        path_part = path_str.replace("s3://", "")
+        # check for endpoint_url in the path string
+        if "?" in path_part:
+            assert endpoint_url is None
+            endpoint_url, _, path_part = path_part.partition("?")
+            endpoint_url = endpoint_url if endpoint_url != "" else None
+        bucket = path_part.split("/")[0]
         session = botocore.session.get_session()
         credentials = session.get_credentials()
         if credentials is None or credentials.access_key is None:
             config = Config(signature_version=botocore.session.UNSIGNED)
         else:
             config = None
-        s3_client = session.create_client("s3", config=config)
+        s3_client = session.create_client(
+            "s3", endpoint_url=endpoint_url, config=config
+        )
         try:
             response = s3_client.head_bucket(Bucket=bucket)
         except ClientError as exc:
@@ -62,7 +74,7 @@ def get_storage_region(path: UPathStr) -> str | None:
         region = (
             response.get("ResponseMetadata", {})
             .get("HTTPHeaders", {})
-            .get("x-amz-bucket-region")
+            .get("x-amz-bucket-region", None)
         )
     else:
         region = None
