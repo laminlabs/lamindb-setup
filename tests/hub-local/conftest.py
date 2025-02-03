@@ -12,8 +12,8 @@ supabase_resources = SupabaseResources()
 
 
 pytest_plugins = [
-    "laminhub_rest.core.account.user.test.fixtures",
-    "laminhub_rest.test.fixtures.run_id",
+    "laminhub_rest.test.account.fixtures",
+    "laminhub_rest.test.common_fixtures",
 ]
 
 
