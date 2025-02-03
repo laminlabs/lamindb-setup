@@ -29,15 +29,19 @@ def get_hub_client():
 
 
 def test_infer_instance_name():
-    assert infer_instance_name("s3://bucket/key") == "key"
-    assert infer_instance_name("s3://bucket/") == "bucket"
-    assert infer_instance_name("s3://bucket/", name="name") == "name"
-    assert infer_instance_name("s3://http:localhost:8000/s3?bucket/key") == "key"
-    assert infer_instance_name("s3://http:localhost:8000/s3?bucket/") == "bucket"
-    assert infer_instance_name("create-s3", name="name") == "name"
-    assert infer_instance_name("some/localpath") == "localpath"
+    assert infer_instance_name(storage="s3://bucket/key") == "key"
+    assert infer_instance_name(storage="s3://bucket/") == "bucket"
+    assert infer_instance_name(storage="s3://bucket/", name="name") == "name"
+    assert (
+        infer_instance_name(storage="s3://http:localhost:8000/s3?bucket/key") == "key"
+    )
+    assert (
+        infer_instance_name(storage="s3://http:localhost:8000/s3?bucket/") == "bucket"
+    )
+    assert infer_instance_name(storage="create-s3", name="name") == "name"
+    assert infer_instance_name(storage="some/localpath") == "localpath"
     with pytest.raises(ValueError):
-        infer_instance_name("create-s3")
+        infer_instance_name(storage="create-s3")
 
 
 def test_init_instance_postgres_default_name(get_hub_client):
