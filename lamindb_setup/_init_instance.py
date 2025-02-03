@@ -399,5 +399,5 @@ def infer_instance_name(
     path_part = storage_path.path
     if storage_path.protocol == "s3" and "?" in path_part:
         _, path_part = _split_endpoint_url(path_part)
-    name = path_part.split("/")[-1]
+    name = path_part.rstrip("/").split("/")[-1]
     return name.lower()
