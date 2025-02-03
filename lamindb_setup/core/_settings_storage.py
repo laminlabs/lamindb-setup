@@ -12,11 +12,7 @@ from lamin_utils import logger
 
 from ._aws_credentials import HOSTED_REGIONS, get_aws_credentials_manager
 from ._aws_storage import find_closest_aws_region
-from .upath import (
-    LocalPathClasses,
-    UPath,
-    create_path,
-)
+from .upath import LocalPathClasses, UPath, _split_endpoint_url, create_path
 
 if TYPE_CHECKING:
     from uuid import UUID
@@ -53,8 +49,7 @@ def get_storage_region(path: UPathStr) -> str | None:
         # check for endpoint_url in the path string
         if "?" in path_part:
             assert endpoint_url is None
-            endpoint_url, _, path_part = path_part.partition("?")
-            endpoint_url = endpoint_url if endpoint_url != "" else None
+            endpoint_url, path_part = _split_endpoint_url(path_part)
         bucket = path_part.split("/")[0]
         session = botocore.session.get_session()
         credentials = session.get_credentials()

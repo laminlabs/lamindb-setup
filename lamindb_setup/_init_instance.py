@@ -16,7 +16,7 @@ from .core import InstanceSettings
 from .core._settings import settings
 from .core._settings_instance import is_local_db_url
 from .core._settings_storage import StorageSettings, init_storage
-from .core.upath import UPath
+from .core.upath import UPath, _split_endpoint_url
 
 if TYPE_CHECKING:
     from pydantic import PostgresDsn
@@ -396,6 +396,7 @@ def infer_instance_name(
     if storage == "create-s3":
         raise ValueError("pass name to init if storage = 'create-s3'")
     storage_path = UPath(storage).resolve()
+    # name = "" if storage_path = s3://buket/
     if storage_path.name != "":
         name = storage_path.name
     else:
@@ -403,5 +404,5 @@ def infer_instance_name(
         # also take enpoint_url into account
         name = storage_path.drive
         if storage_path.protocol == "s3" and "?" in name:
-            _, _, name = name.partition("?")
-    return name.lower()
+            _, name = _split_endpoint_url(name)
+    return name.lower()  # type: ignore

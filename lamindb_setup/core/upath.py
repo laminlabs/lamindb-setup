@@ -739,6 +739,14 @@ warnings.filterwarnings(
 )
 
 
+# assumes protocol was removed
+def _split_endpoint_url(path_part: str) -> tuple[str | None, str]:
+    endpoint_url: str | None
+    endpoint_url, _, path_part = path_part.partition("?")
+    endpoint_url = endpoint_url if endpoint_url != "" else None
+    return endpoint_url, path_part
+
+
 def create_path(path: UPathStr, access_token: str | None = None) -> UPath:
     upath = UPath(path)
 
@@ -746,8 +754,7 @@ def create_path(path: UPathStr, access_token: str | None = None) -> UPath:
         # take care of endpoint_url passed as a part of the path
         if "?" in upath.path:
             assert "endpoint_url" not in upath.storage_options
-            endpoint_url, _, path = upath.path.partition("?")
-            endpoint_url = endpoint_url if endpoint_url != "" else None
+            endpoint_url, path = _split_endpoint_url(upath.path)
             upath = UPath(
                 f"s3://{path}", endpoint_url=endpoint_url, **upath.storage_options
             )
