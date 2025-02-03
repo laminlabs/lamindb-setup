@@ -396,7 +396,7 @@ def infer_instance_name(
     if storage == "create-s3":
         raise ValueError("pass name to init if storage = 'create-s3'")
     storage_path = UPath(storage).resolve()
-    # name = "" if storage_path = s3://buket/
+    # name = "" if storage_path = s3://bucket/
     if storage_path.name != "":
         name = storage_path.name
     else:
