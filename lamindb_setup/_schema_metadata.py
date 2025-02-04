@@ -156,6 +156,8 @@ class FieldMetadata(BaseModel):
 
 class _ModelHandler:
     def __init__(self, model, module_name: str, included_modules: list[str]) -> None:
+        from lamindb.models import LinkORM
+
         self.model = model
         self.class_name = model.__name__
         self.module_name = module_name
@@ -163,12 +165,14 @@ class _ModelHandler:
         self.table_name = model._meta.db_table
         self.included_modules = included_modules
         self.fields = self._get_fields_metadata(self.model)
+        self.is_link_table = issubclass(model, LinkORM)
 
     def to_dict(self, include_django_objects: bool = True):
         _dict = {
             "fields": self.fields.copy(),
             "class_name": self.class_name,
             "table_name": self.table_name,
+            "is_link_table": self.is_link_table,
         }
 
         for field_name in self.fields.keys():
