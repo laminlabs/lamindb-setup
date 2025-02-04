@@ -1,5 +1,5 @@
-from lamindb.setup.core.upath import S3Path, UPath
 from lamindb_setup.core._settings_storage import StorageSettings
+from lamindb_setup.core.upath import S3Path, UPath
 
 
 def test_endpoint_url():
