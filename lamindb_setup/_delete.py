@@ -12,7 +12,7 @@ from .core._hub_core import delete_instance as delete_instance_on_hub
 from .core._hub_core import get_storage_records_for_instance
 from .core._settings import settings
 from .core._settings_storage import StorageSettings
-from .core.upath import LocalPathClasses, _split_endpoint_url, check_storage_is_empty
+from .core.upath import LocalPathClasses, check_storage_is_empty
 
 if TYPE_CHECKING:
     from pathlib import Path

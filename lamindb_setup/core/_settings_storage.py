@@ -12,7 +12,7 @@ from lamin_utils import logger
 
 from ._aws_credentials import HOSTED_REGIONS, get_aws_credentials_manager
 from ._aws_storage import find_closest_aws_region
-from .upath import LocalPathClasses, UPath, _split_endpoint_url, create_path
+from .upath import LocalPathClasses, UPath, _split_path_query, create_path
 
 if TYPE_CHECKING:
     from uuid import UUID
@@ -49,7 +49,8 @@ def get_storage_region(path: UPathStr) -> str | None:
         # check for endpoint_url in the path string
         if "?" in path_part:
             assert endpoint_url is None
-            endpoint_url, path_part = _split_endpoint_url(path_part)
+            path_part, query = _split_path_query(path_part)
+            endpoint_url = query.get("endpoint_url", [None])[0]
         bucket = path_part.split("/")[0]
         session = botocore.session.get_session()
         credentials = session.get_credentials()
@@ -197,15 +198,6 @@ class StorageSettings:
                 self._root_init = self._root_init.resolve()
             except Exception:
                 logger.warning(f"unable to create .lamindb folder in {self._root_init}")
-                pass
-        elif self._root_init.protocol == "s3" and "?" in self._root_init.path:
-            # move endpoint_url from the path string to storage_options
-            storage_options = self._root_init.storage_options
-            assert "endpoint_url" not in storage_options
-            endpoint_url, path = _split_endpoint_url(self._root_init.path)
-            self._root_init = UPath(
-                f"s3://{path}", endpoint_url=endpoint_url, **storage_options
-            )
         self._root = None
         self._instance_id = instance_id
         # we don't yet infer region here to make init fast
@@ -294,7 +286,7 @@ class StorageSettings:
         if self._root_init.protocol == "s3":
             endpoint_url = self._root_init.storage_options.get("endpoint_url", None)
             if endpoint_url is not None:
-                return f"s3://{endpoint_url}?{self._root_init.path.rstrip('/')}"
+                return f"s3://{self._root_init.path.rstrip('/')}?endpoint_url={endpoint_url}"
         return self._root_init.as_posix().rstrip("/")
 
     @property

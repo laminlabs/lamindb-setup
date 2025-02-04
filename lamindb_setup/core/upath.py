@@ -11,13 +11,15 @@ from functools import partial
 from itertools import islice
 from pathlib import Path, PosixPath, PurePosixPath, WindowsPath
 from typing import TYPE_CHECKING, Any, Literal
+from urllib.parse import parse_qs, urlsplit
 
 import click
 import fsspec
 from lamin_utils import logger
 from upath import UPath
-from upath.implementations.cloud import CloudPath  # keep CloudPath!
+from upath.implementations.cloud import CloudPath, S3Path  # keep CloudPath!
 from upath.implementations.local import LocalPath
+from upath.registry import register_implementation
 
 from ._aws_credentials import HOSTED_BUCKETS, get_aws_credentials_manager
 from .hashing import HASH_LENGTH, b16_to_b64, hash_from_hashes_list, hash_string
@@ -740,24 +742,45 @@ warnings.filterwarnings(
 
 
 # assumes protocol was removed
-def _split_endpoint_url(path_part: str) -> tuple[str | None, str]:
-    endpoint_url: str | None
-    endpoint_url, _, path_part = path_part.partition("?")
-    endpoint_url = endpoint_url if endpoint_url != "" else None
-    return endpoint_url, path_part
+def _split_path_query(url: str) -> tuple[str, dict]:
+    split_result = urlsplit(url)
+    query = parse_qs(split_result.query)
+    path = split_result._replace(query="").geturl()
+    return path, query
+
+
+class S3QueryPath(S3Path):
+    @classmethod
+    def _transform_init_args(cls, args, protocol, storage_options):
+        args, protocol, storage_options = super()._transform_init_args(
+            args, protocol, storage_options
+        )
+
+        path, query = _split_path_query(str(args[0]))
+        for param, param_values in query.items():
+            if len(param_values) > 1:
+                raise ValueError(f"Multiple values for {param} query parameter")
+            else:
+                param_value = param_values[0]
+                if (
+                    param in storage_options
+                    and param_value != storage_options["endpoint_url"]
+                ):
+                    raise ValueError(
+                        f"Incompatible {param} in query and storage_options"
+                    )
+                storage_options.setdefault(param, param_value)
+
+        return (path, *args[1:]), protocol, storage_options
+
+
+register_implementation("s3", S3QueryPath, clobber=True)
 
 
 def create_path(path: UPathStr, access_token: str | None = None) -> UPath:
     upath = UPath(path)
 
     if upath.protocol == "s3":
-        # take care of endpoint_url passed as a part of the path
-        if "?" in upath.path:
-            assert "endpoint_url" not in upath.storage_options
-            endpoint_url, path = _split_endpoint_url(upath.path)
-            upath = UPath(
-                f"s3://{path}", endpoint_url=endpoint_url, **upath.storage_options
-            )
         # add managed credentials and other options for AWS s3 paths
         return get_aws_credentials_manager().enrich_path(upath, access_token)
 

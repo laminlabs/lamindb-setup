@@ -33,10 +33,16 @@ def test_infer_instance_name():
     assert infer_instance_name(storage="s3://bucket/") == "bucket"
     assert infer_instance_name(storage="s3://bucket/", name="name") == "name"
     assert (
-        infer_instance_name(storage="s3://http://localhost:8000/s3?bucket/key") == "key"
+        infer_instance_name(
+            storage="s3://bucket/key?endpoint_url=http://localhost:8000/s3"
+        )
+        == "key"
     )
     assert (
-        infer_instance_name(storage="s3://http://localhost:8000/s3?bucket/") == "bucket"
+        infer_instance_name(
+            storage="s3://bucket/?endpoint_url=http://localhost:8000/s3"
+        )
+        == "bucket"
     )
     assert infer_instance_name(storage="create-s3", name="name") == "name"
     assert infer_instance_name(storage="some/localpath") == "localpath"

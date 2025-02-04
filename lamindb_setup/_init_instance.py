@@ -16,7 +16,7 @@ from .core import InstanceSettings
 from .core._settings import settings
 from .core._settings_instance import is_local_db_url
 from .core._settings_storage import StorageSettings, init_storage
-from .core.upath import UPath, _split_endpoint_url
+from .core.upath import UPath
 
 if TYPE_CHECKING:
     from pydantic import PostgresDsn
