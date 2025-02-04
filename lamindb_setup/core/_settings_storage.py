@@ -198,15 +198,13 @@ class StorageSettings:
             except Exception:
                 logger.warning(f"unable to create .lamindb folder in {self._root_init}")
                 pass
-        elif (
-            self._root_init.protocol == "s3"
-            and "endpoint_url" in self._root_init.storage_options
-        ):
-            # move endpoint_url from storage_options to the path string
-            storage_options = dict(self._root_init.storage_options)
-            endpoint_url = storage_options.pop("endpoint_url")
+        elif self._root_init.protocol == "s3" and "?" in self._root_init.path:
+            # move endpoint_url from the path string to storage_options
+            storage_options = self._root_init.storage_options
+            assert "endpoint_url" not in storage_options
+            endpoint_url, path = _split_endpoint_url(self._root_init.path)
             self._root_init = UPath(
-                f"s3://{endpoint_url}?{self._root_init.path}", **storage_options
+                f"s3://{path}", endpoint_url=endpoint_url, **storage_options
             )
         self._root = None
         self._instance_id = instance_id
@@ -292,7 +290,12 @@ class StorageSettings:
     @property
     def root_as_str(self) -> str:
         """Formatted root string."""
-        return self._root_init.as_posix().rstrip("/")
+        # embed endpoint_url into path string for storing and displaying
+        if self._root_init.protocol == "s3":
+            endpoint_url = self._root_init.storage_options.get("endpoint_url", None)
+            if endpoint_url is not None:
+                return f"s3://{endpoint_url}?{self._root_init.path.rstrip('/')}"
+        return self._root_init.as_posix()
 
     @property
     def cache_dir(

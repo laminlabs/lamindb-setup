@@ -23,13 +23,9 @@ if TYPE_CHECKING:
 def delete_cache(isettings: InstanceSettings):
     # avoid init of root
     root = isettings.storage._root_init
-    if not isinstance(root, LocalPathClasses):
-        root_path = root.path
-        if root.protocol == "s3" and "?" in root_path:
-            _, root_path = _split_endpoint_url(root_path)
-        cache_dir = settings.cache_dir / root_path
-        if cache_dir.exists():
-            shutil.rmtree(cache_dir)
+    cache_dir = settings.cache_dir / root.path
+    if cache_dir.exists():
+        shutil.rmtree(cache_dir)
 
 
 def delete_exclusion_dir(isettings: InstanceSettings) -> None:
