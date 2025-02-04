@@ -23,9 +23,10 @@ if TYPE_CHECKING:
 def delete_cache(isettings: InstanceSettings):
     # avoid init of root
     root = isettings.storage._root_init
-    cache_dir = settings.cache_dir / root.path
-    if cache_dir.exists():
-        shutil.rmtree(cache_dir)
+    if not isinstance(root, LocalPathClasses):
+        cache_dir = settings.cache_dir / root.path
+        if cache_dir.exists():
+            shutil.rmtree(cache_dir)
 
 
 def delete_exclusion_dir(isettings: InstanceSettings) -> None:
