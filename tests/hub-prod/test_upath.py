@@ -10,6 +10,16 @@ def test_trailing_slash():
     assert (UPath("s3://bucket/") / "key/").path[-1] != "/"
 
 
+def test_storage_options_s3():
+    upath = UPath("s3://bucket/key?option2=option2", option1="option1")
+    assert upath.storage_options["option1"] == "option1"
+    assert upath.storage_options["option2"] == "option2"
+    upath = UPath(upath, option2="option2_c", option3="option3")
+    assert upath.storage_options["option1"] == "option1"
+    assert upath.storage_options["option2"] == "option2_c"
+    assert upath.storage_options["option3"] == "option3"
+
+
 def test_create_path():
     upath = UPath("s3://lamindb-ci/xyz/", default_fill_cache=False)
     assert "default_fill_cache" in upath.storage_options
@@ -26,7 +36,7 @@ def test_create_path():
         == create_path("s3://lamindb-ci/xyz/").as_posix()
     )
     # test endpoint_url
-    upath = create_path("s3://http://localhost:8000/s3?bucket/key")
+    upath = create_path("s3://bucket/key?endpoint_url=http://localhost:8000/s3")
     assert upath.as_posix() == "s3://bucket/key"
     assert upath.storage_options["endpoint_url"] == "http://localhost:8000/s3"
 

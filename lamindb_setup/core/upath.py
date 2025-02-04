@@ -755,21 +755,20 @@ class S3QueryPath(S3Path):
         args, protocol, storage_options = super()._transform_init_args(
             args, protocol, storage_options
         )
-
-        path, query = _split_path_query(str(args[0]))
+        arg0 = args[0]
+        path, query = _split_path_query(str(arg0))
         for param, param_values in query.items():
             if len(param_values) > 1:
                 raise ValueError(f"Multiple values for {param} query parameter")
             else:
                 param_value = param_values[0]
-                if (
-                    param in storage_options
-                    and param_value != storage_options["endpoint_url"]
-                ):
+                if param in storage_options and param_value != storage_options[param]:
                     raise ValueError(
                         f"Incompatible {param} in query and storage_options"
                     )
                 storage_options.setdefault(param, param_value)
+        if hasattr(arg0, "storage_options"):
+            storage_options = {**arg0.storage_options, **storage_options}
 
         return (path, *args[1:]), protocol, storage_options
 
