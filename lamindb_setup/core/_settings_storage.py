@@ -295,7 +295,7 @@ class StorageSettings:
             endpoint_url = self._root_init.storage_options.get("endpoint_url", None)
             if endpoint_url is not None:
                 return f"s3://{endpoint_url}?{self._root_init.path.rstrip('/')}"
-        return self._root_init.as_posix()
+        return self._root_init.as_posix().rstrip("/")
 
     @property
     def cache_dir(
