@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from pathlib import Path
 
+import pytest
 from lamindb_setup.core.upath import ProgressCallback, UPath, create_path
 
 
@@ -18,6 +19,11 @@ def test_storage_options_s3():
     assert upath.storage_options["option1"] == "option1"
     assert upath.storage_options["option2"] == "option2_c"
     assert upath.storage_options["option3"] == "option3"
+
+    with pytest.raises(ValueError):
+        UPath("s3://bucket?option=option1", option="option2")
+    with pytest.raises(ValueError):
+        UPath("s3://bucket?option=option1&option=option2")
 
 
 def test_create_path():
