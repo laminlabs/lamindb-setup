@@ -128,9 +128,9 @@ def init_storage(
             if region not in HOSTED_REGIONS:
                 raise ValueError(f"region has to be one of {HOSTED_REGIONS}")
         if lamin_env is None or lamin_env == "prod":
-            root_str = f"s3://lamin-{region}/{uid}"
+            root = f"s3://lamin-{region}/{uid}"
         else:
-            root_str = f"s3://lamin-hosted-test/{uid}"
+            root = f"s3://lamin-hosted-test/{uid}"
     elif (input_protocol := fsspec.utils.get_protocol(root_str)) not in VALID_PROTOCOLS:
         valid_protocols = ("local",) + VALID_PROTOCOLS[1:]  # show local instead of file
         raise ValueError(
@@ -138,7 +138,7 @@ def init_storage(
         )
     ssettings = StorageSettings(
         uid=uid,
-        root=root_str,
+        root=root,
         region=region,
         instance_id=instance_id,
         access_token=access_token,
@@ -167,7 +167,7 @@ def init_storage(
         mark_storage_root(ssettings.root, ssettings.uid)  # type: ignore
     except Exception:
         logger.important(
-            f"due to lack of write access, LaminDB won't manage storage location: {ssettings.root}"
+            f"due to lack of write access, LaminDB won't manage storage location: {ssettings.root_as_str}"
         )
         # we have to check hub_record_status here because
         # _select_storage inside init_storage_hub also populates ssettings._uuid
