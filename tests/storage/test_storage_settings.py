@@ -1,5 +1,5 @@
+from lamindb.setup.core.upath import S3Path, UPath
 from lamindb_setup.core._settings_storage import StorageSettings
-from upath.implementations.cloud import S3Path
 
 
 def test_endpoint_url():
@@ -14,7 +14,7 @@ def test_endpoint_url():
     assert isinstance(ssettings.root, S3Path)
     assert ssettings.type == "s3"
     # test passing endpoint_url in storage_options
-    test_root = S3Path("s3://bucket/", endpoint_url="http://localhost:8000/s3")
+    test_root = UPath("s3://bucket/", endpoint_url="http://localhost:8000/s3")
     ssettings = StorageSettings(test_root)
     assert ssettings.root_as_str == "s3://bucket?endpoint_url=http://localhost:8000/s3"
     assert ssettings.root.as_posix() == "s3://bucket/"

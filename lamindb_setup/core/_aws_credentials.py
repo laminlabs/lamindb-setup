@@ -4,7 +4,7 @@ import os
 import time
 
 from lamin_utils import logger
-from upath.implementations.cloud import S3Path
+from upath import UPath
 
 HOSTED_REGIONS = [
     "eu-central-1",
@@ -88,7 +88,7 @@ class AWSCredentialsManager:
     def _get_cached_credentials(self, root: str) -> dict:
         return self._credentials_cache[root]["credentials"]
 
-    def _path_inject_options(self, path: S3Path, credentials: dict) -> S3Path:
+    def _path_inject_options(self, path: UPath, credentials: dict) -> UPath:
         if credentials == {}:
             # credentials were specified manually for the path
             if "anon" in path.storage_options:
@@ -110,9 +110,9 @@ class AWSCredentialsManager:
                 path.storage_options.get("endpoint_url", None) is None
             )
 
-        return S3Path(path, **connection_options)
+        return UPath(path, **connection_options)
 
-    def enrich_path(self, path: S3Path, access_token: str | None = None) -> S3Path:
+    def enrich_path(self, path: UPath, access_token: str | None = None) -> UPath:
         # ignore paths with non-lamin-managed endpoints
         if path.storage_options.get("endpoint_url", None) not in LAMIN_ENDPOINTS:
             return path
