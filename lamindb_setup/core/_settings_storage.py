@@ -10,7 +10,11 @@ from typing import TYPE_CHECKING, Any, Literal
 import fsspec
 from lamin_utils import logger
 
-from ._aws_credentials import HOSTED_REGIONS, get_aws_credentials_manager
+from ._aws_credentials import (
+    HOSTED_REGIONS,
+    LAMIN_ENDPOINTS,
+    get_aws_credentials_manager,
+)
 from ._aws_storage import find_closest_aws_region
 from .upath import LocalPathClasses, UPath, _split_path_query, create_path
 
@@ -285,7 +289,8 @@ class StorageSettings:
         # embed endpoint_url into path string for storing and displaying
         if self._root_init.protocol == "s3":
             endpoint_url = self._root_init.storage_options.get("endpoint_url", None)
-            if endpoint_url is not None:
+            # LAMIN_ENDPOINTS include None
+            if endpoint_url not in LAMIN_ENDPOINTS:
                 return f"s3://{self._root_init.path.rstrip('/')}?endpoint_url={endpoint_url}"
         return self._root_init.as_posix().rstrip("/")
 
