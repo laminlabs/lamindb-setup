@@ -41,11 +41,6 @@ def b16_to_b64(s: str):
     return to_b64_str(base64.b16decode(s.strip('"'), casefold=True))
 
 
-def hash_string(string: str) -> str:
-    # as we're truncating (not here) at 22 b64, we choose md5 over sha512
-    return to_b64_str(hashlib.md5(string.encode("utf-8")).digest())
-
-
 # a lot to read about this: lamin-notes/2022/hashing
 def hash_set(s: set[str]) -> str:
     join_s = ":".join(sorted(s))
@@ -68,13 +63,25 @@ def hash_from_hashes_list(hashes: Iterable[str]) -> str:
     return to_b64_str(digest)[:HASH_LENGTH]
 
 
-def hash_code(file_path: UPathStr):
+# below is only used when comparing with git's sha1 hashes
+# we don't use it for our own hashes
+def hash_code(file_path: UPathStr) -> hashlib._Hash:
     with open(file_path, "rb") as fp:
         data = fp.read()
     data_size = len(data)
     header = f"blob {data_size}\0".encode()
     blob = header + data
     return hashlib.sha1(blob)
+
+
+def hash_small_bytes(data: bytes) -> str:
+    return to_b64_str(hashlib.md5(data).digest())
+
+
+# this is equivalent with hash_file for small files
+def hash_string(string: str) -> str:
+    # as we're truncating (not here) at 22 b64, we choose md5 over sha512
+    return to_b64_str(hashlib.md5(string.encode("utf-8")).digest())[:HASH_LENGTH]
 
 
 def hash_file(

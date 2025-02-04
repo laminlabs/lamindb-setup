@@ -5,10 +5,12 @@ from pathlib import Path
 from uuid import UUID
 
 from lamindb_setup.core.hashing import (
+    HASH_LENGTH,
     b16_to_b64,
     hash_and_encode_as_b62,
     hash_code,
     hash_file,
+    hash_string,
     to_b64_str,
 )
 
@@ -25,8 +27,12 @@ def test_compute_hash():
         ("abc", "p0EbDbQEP1wS-Tw6TuBjKS", 1, "sha1-fl"),
     ]
     for content, hash, chunk_size, hash_type in files:
+        assert len(hash) == HASH_LENGTH
         filepath = Path("file_1")
         filepath.write_text(content)
+        if hash_type == "md5":
+            computed_hash_from_string = hash_string(content)
+            assert computed_hash_from_string == hash
         computed_hash, computed_hash_type = hash_file(filepath, chunk_size=chunk_size)
         assert computed_hash == hash
         assert computed_hash_type == hash_type
