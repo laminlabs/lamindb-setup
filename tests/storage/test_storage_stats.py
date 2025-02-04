@@ -82,4 +82,4 @@ def test_get_storage_region():
     for region in HOSTED_REGIONS:
         assert get_storage_region(f"s3://lamin-{region}") == region
     assert get_storage_region(UPath("s3://lamindata", endpoint_url=None)) == "us-east-1"
-    assert get_storage_region("s3://?lamindata/") == "us-east-1"
+    assert get_storage_region("s3://lamindata/?endpoint_url=") == "us-east-1"
