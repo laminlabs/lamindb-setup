@@ -741,7 +741,7 @@ warnings.filterwarnings(
 )
 
 
-# assumes protocol was removed
+# split query params from path string
 def _split_path_query(url: str) -> tuple[str, dict]:
     split_result = urlsplit(url)
     query = parse_qs(split_result.query)
