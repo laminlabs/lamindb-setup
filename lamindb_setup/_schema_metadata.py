@@ -148,6 +148,7 @@ class FieldMetadata(BaseModel):
     model_name: str
     schema_name: str
     is_link_table: bool
+    is_primary_key: bool
     relation_type: RelationType | None = None
     related_field_name: str | None = None
     related_model_name: str | None = None
@@ -246,13 +247,14 @@ class _ModelHandler:
             related_model_name = None
             related_schema_name = None
             related_field_name = None
-            field_name = field.name
         else:
             related_model_name = field.related_model._meta.model_name
             related_schema_name = field.related_model.__get_module_name__()
             schema_name = field.model.__get_module_name__()
             related_field_name = field.remote_field.name
-            field_name = field.name
+
+        field_name = field.name
+        is_primary_key = field.primary_key
 
         if relation_type in ["one-to-many"]:
             # For a one-to-many relation, the field belong
@@ -282,6 +284,7 @@ class _ModelHandler:
             field_name=field_name,
             type=internal_type,
             is_link_table=issubclass(field.model, LinkORM),
+            is_primary_key=is_primary_key,
             column_name=column,
             relation_type=relation_type,
             related_schema_name=related_schema_name
