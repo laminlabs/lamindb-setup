@@ -254,7 +254,7 @@ class _ModelHandler:
             related_field_name = field.remote_field.name
 
         field_name = field.name
-        is_primary_key = field.__getattribute__("primary_key", False)
+        is_primary_key = getattr(field, "primary_key", False)
 
         if relation_type in ["one-to-many"]:
             # For a one-to-many relation, the field belong
