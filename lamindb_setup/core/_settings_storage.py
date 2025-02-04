@@ -10,13 +10,13 @@ from typing import TYPE_CHECKING, Any, Literal
 import fsspec
 from lamin_utils import logger
 
-from ._aws_credentials import HOSTED_REGIONS, get_aws_credentials_manager
-from ._aws_storage import find_closest_aws_region
-from .upath import (
-    LocalPathClasses,
-    UPath,
-    create_path,
+from ._aws_credentials import (
+    HOSTED_REGIONS,
+    LAMIN_ENDPOINTS,
+    get_aws_credentials_manager,
 )
+from ._aws_storage import find_closest_aws_region
+from .upath import LocalPathClasses, UPath, _split_path_query, create_path
 
 if TYPE_CHECKING:
     from uuid import UUID
@@ -44,15 +44,27 @@ def get_storage_region(path: UPathStr) -> str | None:
         from botocore.config import Config
         from botocore.exceptions import ClientError
 
-        # strip the prefix and any suffixes of the bucket name
-        bucket = path_str.replace("s3://", "").split("/")[0]
+        # check for endpoint_url in storage options if upath
+        if isinstance(path, UPath):
+            endpoint_url = path.storage_options.get("endpoint_url", None)
+        else:
+            endpoint_url = None
+        path_part = path_str.replace("s3://", "")
+        # check for endpoint_url in the path string
+        if "?" in path_part:
+            assert endpoint_url is None
+            path_part, query = _split_path_query(path_part)
+            endpoint_url = query.get("endpoint_url", [None])[0]
+        bucket = path_part.split("/")[0]
         session = botocore.session.get_session()
         credentials = session.get_credentials()
         if credentials is None or credentials.access_key is None:
             config = Config(signature_version=botocore.session.UNSIGNED)
         else:
             config = None
-        s3_client = session.create_client("s3", config=config)
+        s3_client = session.create_client(
+            "s3", endpoint_url=endpoint_url, config=config
+        )
         try:
             response = s3_client.head_bucket(Bucket=bucket)
         except ClientError as exc:
@@ -62,7 +74,7 @@ def get_storage_region(path: UPathStr) -> str | None:
         region = (
             response.get("ResponseMetadata", {})
             .get("HTTPHeaders", {})
-            .get("x-amz-bucket-region")
+            .get("x-amz-bucket-region", None)
         )
     else:
         region = None
@@ -116,9 +128,9 @@ def init_storage(
             if region not in HOSTED_REGIONS:
                 raise ValueError(f"region has to be one of {HOSTED_REGIONS}")
         if lamin_env is None or lamin_env == "prod":
-            root_str = f"s3://lamin-{region}/{uid}"
+            root = f"s3://lamin-{region}/{uid}"
         else:
-            root_str = f"s3://lamin-hosted-test/{uid}"
+            root = f"s3://lamin-hosted-test/{uid}"
     elif (input_protocol := fsspec.utils.get_protocol(root_str)) not in VALID_PROTOCOLS:
         valid_protocols = ("local",) + VALID_PROTOCOLS[1:]  # show local instead of file
         raise ValueError(
@@ -126,7 +138,7 @@ def init_storage(
         )
     ssettings = StorageSettings(
         uid=uid,
-        root=root_str,
+        root=root,
         region=region,
         instance_id=instance_id,
         access_token=access_token,
@@ -155,7 +167,7 @@ def init_storage(
         mark_storage_root(ssettings.root, ssettings.uid)  # type: ignore
     except Exception:
         logger.important(
-            f"due to lack of write access, LaminDB won't manage storage location: {ssettings.root}"
+            f"due to lack of write access, LaminDB won't manage storage location: {ssettings.root_as_str}"
         )
         # we have to check hub_record_status here because
         # _select_storage inside init_storage_hub also populates ssettings._uuid
@@ -190,7 +202,6 @@ class StorageSettings:
                 self._root_init = self._root_init.resolve()
             except Exception:
                 logger.warning(f"unable to create .lamindb folder in {self._root_init}")
-                pass
         self._root = None
         self._instance_id = instance_id
         # we don't yet infer region here to make init fast
@@ -275,6 +286,12 @@ class StorageSettings:
     @property
     def root_as_str(self) -> str:
         """Formatted root string."""
+        # embed endpoint_url into path string for storing and displaying
+        if self._root_init.protocol == "s3":
+            endpoint_url = self._root_init.storage_options.get("endpoint_url", None)
+            # LAMIN_ENDPOINTS include None
+            if endpoint_url not in LAMIN_ENDPOINTS:
+                return f"s3://{self._root_init.path.rstrip('/')}?endpoint_url={endpoint_url}"
         return self._root_init.as_posix().rstrip("/")
 
     @property

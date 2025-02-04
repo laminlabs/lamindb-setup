@@ -2,12 +2,28 @@ from __future__ import annotations
 
 from pathlib import Path
 
+import pytest
 from lamindb_setup.core.upath import ProgressCallback, UPath, create_path
 
 
 def test_trailing_slash():
     assert UPath("s3://bucket/key/").path[-1] != "/"
     assert (UPath("s3://bucket/") / "key/").path[-1] != "/"
+
+
+def test_storage_options_s3():
+    upath = UPath("s3://bucket/key?option2=option2", option1="option1")
+    assert upath.storage_options["option1"] == "option1"
+    assert upath.storage_options["option2"] == "option2"
+    upath = UPath(upath, option2="option2_c", option3="option3")
+    assert upath.storage_options["option1"] == "option1"
+    assert upath.storage_options["option2"] == "option2_c"
+    assert upath.storage_options["option3"] == "option3"
+
+    with pytest.raises(ValueError):
+        UPath("s3://bucket?option=option1", option="option2")
+    with pytest.raises(ValueError):
+        UPath("s3://bucket?option=option1&option=option2")
 
 
 def test_create_path():
@@ -25,6 +41,10 @@ def test_create_path():
         UPath("s3://lamindb-ci/xyz").as_posix()
         == create_path("s3://lamindb-ci/xyz/").as_posix()
     )
+    # test endpoint_url
+    upath = create_path("s3://bucket/key?endpoint_url=http://localhost:8000/s3")
+    assert upath.as_posix() == "s3://bucket/key"
+    assert upath.storage_options["endpoint_url"] == "http://localhost:8000/s3"
 
 
 def test_progress_callback_size():
