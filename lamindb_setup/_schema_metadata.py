@@ -149,6 +149,7 @@ class FieldMetadata(BaseModel):
     schema_name: str
     is_link_table: bool
     is_primary_key: bool
+    is_editable: bool
     relation_type: RelationType | None = None
     related_field_name: str | None = None
     related_model_name: str | None = None
@@ -255,6 +256,7 @@ class _ModelHandler:
 
         field_name = field.name
         is_primary_key = getattr(field, "primary_key", False)
+        is_editable = field.editable
 
         if relation_type in ["one-to-many"]:
             # For a one-to-many relation, the field belong
@@ -285,6 +287,7 @@ class _ModelHandler:
             type=internal_type,
             is_link_table=issubclass(field.model, LinkORM),
             is_primary_key=is_primary_key,
+            is_editable=is_editable,
             column_name=column,
             relation_type=relation_type,
             related_schema_name=related_schema_name
