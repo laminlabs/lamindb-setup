@@ -37,8 +37,6 @@ __version__ = "1.0.3"  # denote a release candidate for 0.1.0 with 0.1rc1
 
 import os
 
-# check that the version of s3fs is higher than the lower bound
-# needed because spatialdata installs old versions of s3fs
 from packaging import version as packaging_version
 
 from . import core
@@ -54,6 +52,8 @@ from ._register_instance import register
 from ._setup_user import login, logout
 from .core._settings import settings
 
+# check that the version of s3fs is higher than the lower bound
+# needed because spatialdata installs old versions of s3fs
 try:
     from s3fs import __version__ as s3fs_version
 
