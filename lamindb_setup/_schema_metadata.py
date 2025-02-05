@@ -248,15 +248,15 @@ class _ModelHandler:
             related_model_name = None
             related_schema_name = None
             related_field_name = None
+            is_editable = field.editable
         else:
             related_model_name = field.related_model._meta.model_name
             related_schema_name = field.related_model.__get_module_name__()
             schema_name = field.model.__get_module_name__()
             related_field_name = field.remote_field.name
-
+            is_editable = False
         field_name = field.name
         is_primary_key = getattr(field, "primary_key", False)
-        is_editable = field.editable
 
         if relation_type in ["one-to-many"]:
             # For a one-to-many relation, the field belong
