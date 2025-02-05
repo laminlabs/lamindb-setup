@@ -255,6 +255,7 @@ class _ModelHandler:
             schema_name = field.model.__get_module_name__()
             related_field_name = field.remote_field.name
             is_editable = False
+
         field_name = field.name
         is_primary_key = getattr(field, "primary_key", False)
 

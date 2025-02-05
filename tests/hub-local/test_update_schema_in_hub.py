@@ -53,7 +53,7 @@ def test_update_schema_in_hub(setup_instance):
         "schema_name": "core",
         "is_link_table": False,
         "is_primary_key": True,
-        "is_editable": False,
+        "is_editable": True,  # Primary key are read-only even if is_editable is True
         "relation_type": None,
         "related_field_name": None,
         "related_model_name": None,
