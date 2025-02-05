@@ -37,6 +37,8 @@ __version__ = "1.0.3"  # denote a release candidate for 0.1.0 with 0.1rc1
 
 import os
 
+from packaging import version as packaging_version
+
 from . import core
 from ._check_setup import _check_instance_setup
 from ._close import close
@@ -49,6 +51,20 @@ from ._migrate import migrate
 from ._register_instance import register
 from ._setup_user import login, logout
 from .core._settings import settings
+
+# check that the version of s3fs is higher than the lower bound
+# needed because spatialdata installs old versions of s3fs
+try:
+    from s3fs import __version__ as s3fs_version
+
+    if packaging_version.parse(s3fs_version) < packaging_version.parse("2023.12.2"):
+        raise RuntimeError(
+            f"The version of s3fs you have ({s3fs_version}) is impompatible "
+            "with lamindb, please upgrade it: pip install s3fs>=2023.12.2"
+        )
+except ImportError:
+    # might be not installed
+    pass
 
 
 def _is_CI_environment() -> bool:
