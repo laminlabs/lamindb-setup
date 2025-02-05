@@ -58,7 +58,7 @@ try:
     from s3fs import __version__ as s3fs_version
 
     if packaging_version.parse(s3fs_version) < packaging_version.parse("2023.12.2"):
-        raise ImportError(
+        raise RuntimeError(
             f"The version of s3fs you have ({s3fs_version}) is impompatible "
             "with lamindb, please upgrade it: pip install s3fs>=2023.12.2"
         )
