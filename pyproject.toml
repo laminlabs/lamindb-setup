@@ -20,7 +20,8 @@ dependencies = [
     "botocore<2.0.0",
     "supabase>=2.8.1,<=2.11.0", # from 2.8.1 has correct bounds on gotrue
     "storage3!=0.11.2; python_version < '3.11'", # 0.11.2 breaks python 3.10 through usage of new types
-    "psutil"
+    "psutil",
+    "packaging"
 ]
 
 [project.urls]
