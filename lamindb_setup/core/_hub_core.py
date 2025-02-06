@@ -311,6 +311,7 @@ def _init_instance(
             "db_database": db_dsn.db.database,
         }
         fields.update(db_fields)
+    slug = isettings.slug
     # I'd like the following to be an upsert, but this seems to violate RLS
     # Similarly, if we don't specify `returning="minimal"`, we'll violate RLS
     # we could make this idempotent by catching an error, but this seems dangerous
@@ -318,15 +319,11 @@ def _init_instance(
     try:
         client.table("instance").insert(fields, returning="minimal").execute()
     except APIError:
-        logger.warning(
-            f"instance already existed at: https://lamin.ai/{isettings.owner}/{isettings.name}"
-        )
+        logger.warning(f"instance already existed at: https://lamin.ai/{slug}")
         return None
     client.table("storage").update(
         {"instance_id": isettings._id.hex, "is_default": True}
     ).eq("id", isettings.storage._uuid.hex).execute()  # type: ignore
-
-    slug = f"{isettings.owner}/{isettings.name}"
     if isettings.dialect != "sqlite" and isettings.is_remote:
         logger.important(f"go to: https://lamin.ai/{slug}")
     else:
