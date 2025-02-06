@@ -148,6 +148,8 @@ class FieldMetadata(BaseModel):
     model_name: str
     schema_name: str
     is_link_table: bool
+    is_primary_key: bool
+    is_editable: bool
     relation_type: RelationType | None = None
     related_field_name: str | None = None
     related_model_name: str | None = None
@@ -156,6 +158,8 @@ class FieldMetadata(BaseModel):
 
 class _ModelHandler:
     def __init__(self, model, module_name: str, included_modules: list[str]) -> None:
+        from lamindb.models import LinkORM
+
         self.model = model
         self.class_name = model.__name__
         self.module_name = module_name
@@ -163,12 +167,14 @@ class _ModelHandler:
         self.table_name = model._meta.db_table
         self.included_modules = included_modules
         self.fields = self._get_fields_metadata(self.model)
+        self.is_link_table = issubclass(model, LinkORM)
 
     def to_dict(self, include_django_objects: bool = True):
         _dict = {
             "fields": self.fields.copy(),
             "class_name": self.class_name,
             "table_name": self.table_name,
+            "is_link_table": self.is_link_table,
         }
 
         for field_name in self.fields.keys():
@@ -242,13 +248,16 @@ class _ModelHandler:
             related_model_name = None
             related_schema_name = None
             related_field_name = None
-            field_name = field.name
+            is_editable = field.editable
         else:
             related_model_name = field.related_model._meta.model_name
             related_schema_name = field.related_model.__get_module_name__()
             schema_name = field.model.__get_module_name__()
             related_field_name = field.remote_field.name
-            field_name = field.name
+            is_editable = False
+
+        field_name = field.name
+        is_primary_key = getattr(field, "primary_key", False)
 
         if relation_type in ["one-to-many"]:
             # For a one-to-many relation, the field belong
@@ -278,6 +287,8 @@ class _ModelHandler:
             field_name=field_name,
             type=internal_type,
             is_link_table=issubclass(field.model, LinkORM),
+            is_primary_key=is_primary_key,
+            is_editable=is_editable,
             column_name=column,
             relation_type=relation_type,
             related_schema_name=related_schema_name
