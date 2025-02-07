@@ -326,8 +326,6 @@ def _init_instance(
     ).eq("id", isettings.storage._uuid.hex).execute()  # type: ignore
     if isettings.dialect != "sqlite" and isettings.is_remote:
         logger.important(f"go to: https://lamin.ai/{slug}")
-    else:
-        logger.important(f"initialized {slug}")
 
 
 def _connect_instance_hub(
