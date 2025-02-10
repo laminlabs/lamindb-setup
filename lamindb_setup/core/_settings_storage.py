@@ -98,6 +98,7 @@ def init_storage(
     init_instance: bool = False,
     created_by: UUID | None = None,
     access_token: str | None = None,
+    read_only: bool = False,
 ) -> tuple[
     StorageSettings,
     Literal["hub-record-not-created", "hub-record-retireved", "hub-record-created"],
@@ -159,6 +160,10 @@ def init_storage(
                 created_by=created_by,
                 access_token=access_token,
             )
+    # we don not need to check that the storage is writable for read-only storages
+    if read_only:
+        return ssettings, hub_record_status
+    # check that the storage is writable
     # below comes last only if everything else was successful
     try:
         # (federated) credentials for AWS access are provisioned under-the-hood
