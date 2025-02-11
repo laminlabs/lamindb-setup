@@ -786,6 +786,7 @@ def create_path(path: UPathStr, access_token: str | None = None) -> UPath:
     if upath.protocol in {"http", "https"}:
         # this is needed because by default aiohttp drops a connection after 5 min
         # so it is impossible to download large files
+        storage_options = {}
         client_kwargs = upath.storage_options.get("client_kwargs", {})
         if "timeout" not in client_kwargs:
             from aiohttp import ClientTimeout
@@ -794,7 +795,12 @@ def create_path(path: UPathStr, access_token: str | None = None) -> UPath:
                 **client_kwargs,
                 "timeout": ClientTimeout(sock_connect=30, sock_read=30),
             }
-            return UPath(upath, client_kwargs=client_kwargs)
+            storage_options["client_kwargs"] = client_kwargs
+        # see download_to for the reason
+        if "use_listings_cache" not in upath.storage_options:
+            storage_options["use_listings_cache"] = True
+        if len(storage_options) > 0:
+            return UPath(upath, **storage_options)
     return upath
 
 
