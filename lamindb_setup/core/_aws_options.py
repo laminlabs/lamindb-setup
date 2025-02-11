@@ -45,7 +45,9 @@ class AWSOptionsManager:
         from s3fs import S3FileSystem
 
         # this is cached so will be resued with the connection initialized
-        fs = S3FileSystem(cache_regions=True)
+        fs = S3FileSystem(
+            cache_regions=True, use_listings_cache=True, version_aware=False
+        )
         try:
             fs.connect()
             self.anon: bool = fs.session._credentials is None
@@ -109,6 +111,15 @@ class AWSOptionsManager:
             connection_options["cache_regions"] = (
                 path.storage_options.get("endpoint_url", None) is None
             )
+        # we use cache to avoid some uneeded downloads or credential problems
+        # see in upload_from
+        connection_options["use_listings_cache"] = path.storage_options.get(
+            "use_listings_cache", True
+        )
+        # normally we want to ignore objects vsrsions in a versioned bucket
+        connection_options["version_aware"] = path.storage_options.get(
+            "version_aware", False
+        )
 
         return UPath(path, **connection_options)
 
