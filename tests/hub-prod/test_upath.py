@@ -32,9 +32,11 @@ def test_create_path():
 
     upath = create_path(upath)
     # test option inheritance
-    assert "default_fill_cache" in upath.storage_options
-    # test cache_regions setting for s3
-    assert "cache_regions" in upath.storage_options
+    assert not upath.storage_options["default_fill_cache"]
+    # test storage_option settings for s3 added inside create_path
+    assert upath.storage_options["cache_regions"]
+    assert not upath.storage_options["version_aware"]
+    assert upath.storage_options["use_listings_cache"]
     # test removal of training slash
     assert upath.as_posix()[-1] != "/"
     assert (
