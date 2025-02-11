@@ -7,7 +7,7 @@ from uuid import UUID
 from lamin_utils import logger
 
 from ._connect_instance import _connect_instance, get_owner_name_from_identifier
-from .core._aws_credentials import HOSTED_BUCKETS
+from .core._aws_options import HOSTED_BUCKETS
 from .core._hub_core import delete_instance as delete_instance_on_hub
 from .core._hub_core import get_storage_records_for_instance
 from .core._settings import settings

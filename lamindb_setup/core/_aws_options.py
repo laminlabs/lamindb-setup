@@ -38,14 +38,16 @@ PUBLIC_BUCKETS: tuple[str] = ("cellxgene-data-public",)
 LAMIN_ENDPOINTS: tuple[str | None] = (None,)
 
 
-class AWSCredentialsManager:
+class AWSOptionsManager:
     def __init__(self):
         self._credentials_cache = {}
 
         from s3fs import S3FileSystem
 
         # this is cached so will be resued with the connection initialized
-        fs = S3FileSystem(cache_regions=True)
+        fs = S3FileSystem(
+            cache_regions=True, use_listings_cache=True, version_aware=False
+        )
         try:
             fs.connect()
             self.anon: bool = fs.session._credentials is None
@@ -109,6 +111,15 @@ class AWSCredentialsManager:
             connection_options["cache_regions"] = (
                 path.storage_options.get("endpoint_url", None) is None
             )
+        # we use cache to avoid some uneeded downloads or credential problems
+        # see in upload_from
+        connection_options["use_listings_cache"] = path.storage_options.get(
+            "use_listings_cache", True
+        )
+        # normally we want to ignore objects vsrsions in a versioned bucket
+        connection_options["version_aware"] = path.storage_options.get(
+            "version_aware", False
+        )
 
         return UPath(path, **connection_options)
 
@@ -170,13 +181,13 @@ class AWSCredentialsManager:
         return self._path_inject_options(path, credentials)
 
 
-_aws_credentials_manager: AWSCredentialsManager | None = None
+_aws_options_manager: AWSOptionsManager | None = None
 
 
-def get_aws_credentials_manager() -> AWSCredentialsManager:
-    global _aws_credentials_manager
+def get_aws_options_manager() -> AWSOptionsManager:
+    global _aws_options_manager
 
-    if _aws_credentials_manager is None:
-        _aws_credentials_manager = AWSCredentialsManager()
+    if _aws_options_manager is None:
+        _aws_options_manager = AWSOptionsManager()
 
-    return _aws_credentials_manager
+    return _aws_options_manager
