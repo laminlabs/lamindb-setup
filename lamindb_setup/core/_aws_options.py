@@ -38,7 +38,7 @@ PUBLIC_BUCKETS: tuple[str] = ("cellxgene-data-public",)
 LAMIN_ENDPOINTS: tuple[str | None] = (None,)
 
 
-class AWSCredentialsManager:
+class AWSOptionsManager:
     def __init__(self):
         self._credentials_cache = {}
 
@@ -170,13 +170,13 @@ class AWSCredentialsManager:
         return self._path_inject_options(path, credentials)
 
 
-_aws_credentials_manager: AWSCredentialsManager | None = None
+_aws_options_manager: AWSOptionsManager | None = None
 
 
-def get_aws_credentials_manager() -> AWSCredentialsManager:
-    global _aws_credentials_manager
+def get_aws_options_manager() -> AWSOptionsManager:
+    global _aws_options_manager
 
-    if _aws_credentials_manager is None:
-        _aws_credentials_manager = AWSCredentialsManager()
+    if _aws_options_manager is None:
+        _aws_options_manager = AWSOptionsManager()
 
-    return _aws_credentials_manager
+    return _aws_options_manager

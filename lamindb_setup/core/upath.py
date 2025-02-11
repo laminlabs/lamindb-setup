@@ -21,7 +21,7 @@ from upath.implementations.cloud import CloudPath, S3Path  # keep CloudPath!
 from upath.implementations.local import LocalPath
 from upath.registry import register_implementation
 
-from ._aws_credentials import HOSTED_BUCKETS, get_aws_credentials_manager
+from ._aws_options import HOSTED_BUCKETS, get_aws_options_manager
 from .hashing import HASH_LENGTH, b16_to_b64, hash_from_hashes_list, hash_string
 
 if TYPE_CHECKING:
@@ -781,7 +781,7 @@ def create_path(path: UPathStr, access_token: str | None = None) -> UPath:
 
     if upath.protocol == "s3":
         # add managed credentials and other options for AWS s3 paths
-        return get_aws_credentials_manager().enrich_path(upath, access_token)
+        return get_aws_options_manager().enrich_path(upath, access_token)
 
     if upath.protocol in {"http", "https"}:
         # this is needed because by default aiohttp drops a connection after 5 min
