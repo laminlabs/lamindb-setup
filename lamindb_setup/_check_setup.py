@@ -90,8 +90,9 @@ def _check_module_in_instance_modules(
     )
 
     if isettings is not None:
-        modules = set(isettings.modules).union(
-            _normalize_module_name(module) for module in isettings.modules
+        modules_raw = isettings.modules
+        modules = set(modules_raw).union(
+            _normalize_module_name(module) for module in modules_raw
         )
         if _normalize_module_name(module) not in modules and module not in modules:
             raise ModuleWasntConfigured(not_in_instance_msg)
