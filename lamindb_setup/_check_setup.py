@@ -75,7 +75,7 @@ def _get_current_instance_settings() -> InstanceSettings | None:
         return None
 
 
-def _denormalize_module_name(module_name: str) -> str:
+def _normalize_module_name(module_name: str) -> str:
     return module_name.replace("lnschema_", "").replace("_", "-")
 
 
@@ -90,8 +90,10 @@ def _check_module_in_instance_modules(
     )
 
     if isettings is not None:
-        modules = isettings.modules
-        if _denormalize_module_name(module) not in modules and module not in modules:
+        modules = set(isettings.modules).union(
+            _normalize_module_name(module) for module in isettings.modules
+        )
+        if _normalize_module_name(module) not in modules and module not in modules:
             raise ModuleWasntConfigured(not_in_instance_msg)
         else:
             return
@@ -99,7 +101,8 @@ def _check_module_in_instance_modules(
     from django.apps import apps
 
     for app in apps.get_app_configs():
-        if module == app.name or _denormalize_module_name(module) == app.name:
+        # app.name is always unnormalized module (python package) name
+        if module == app.name or module == _normalize_module_name(app.name):
             return
     raise ModuleWasntConfigured(not_in_instance_msg)
 
