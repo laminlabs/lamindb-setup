@@ -160,7 +160,7 @@ def init_storage(
                 created_by=created_by,
                 access_token=access_token,
             )
-    # we don not need to check that the storage is writable for read-only storages
+    # we do not need to check that the storage is writable for read-only storages
     if read_only:
         return ssettings, hub_record_status
     # check that the storage is writable
