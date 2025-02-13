@@ -468,7 +468,8 @@ def synchronize(
     callback = ProgressCallback.requires_progress(
         callback, print_progress, objectpath.name, "synchronizing"
     )
-    if objectpath.exists():
+    objectpath_exists = objectpath.exists()
+    if objectpath_exists:
         if cloud_mts != 0:
             local_mts_obj = objectpath.stat().st_mtime
             need_synchronize = cloud_mts > local_mts_obj
@@ -487,6 +488,10 @@ def synchronize(
     if just_check:
         return need_synchronize
     if need_synchronize:
+        # just to be sure that overwriting an existing file doesn't corrupt it
+        # we saw some frequent corruption on some systems for unclear reasons
+        if objectpath_exists:
+            objectpath.unlink()
         # hf has sync filesystem
         # on sync filesystems ChildProgressCallback.branched()
         # returns the default callback
