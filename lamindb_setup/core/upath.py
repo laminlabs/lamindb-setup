@@ -362,7 +362,8 @@ def synchronize(
     print_progress: bool = False,
     callback: fsspec.callbacks.Callback | None = None,
     timestamp: float | None = None,
-):
+    just_check: bool = False,
+) -> bool:
     """Sync to a local destination path."""
     protocol = self.protocol
     # optimize the number of network requests
@@ -396,7 +397,7 @@ def synchronize(
         elif error_no_origin:
             warn_or_error += "\nIt is not possible to synchronize."
             raise FileNotFoundError(warn_or_error)
-        return None
+        return False
 
     # synchronization logic for directories
     # to synchronize directories, it should be possible to get modification times
@@ -429,6 +430,9 @@ def synchronize(
         else:
             destination_exists = False
             need_synchronize = True
+        # just check if synchronization is needed
+        if just_check:
+            return need_synchronize
         if need_synchronize:
             callback = ProgressCallback.requires_progress(
                 callback, print_progress, objectpath.name, "synchronizing"
@@ -458,7 +462,7 @@ def synchronize(
                             parent = file.parent
                             if next(parent.iterdir(), None) is None:
                                 parent.rmdir()
-        return None
+        return need_synchronize
 
     # synchronization logic for files
     callback = ProgressCallback.requires_progress(
@@ -476,8 +480,12 @@ def synchronize(
             local_size_obj = objectpath.stat().st_size
             need_synchronize = cloud_size != local_size_obj
     else:
-        objectpath.parent.mkdir(parents=True, exist_ok=True)
+        if not just_check:
+            objectpath.parent.mkdir(parents=True, exist_ok=True)
         need_synchronize = True
+    # just check if synchronization is needed
+    if just_check:
+        return need_synchronize
     if need_synchronize:
         # hf has sync filesystem
         # on sync filesystems ChildProgressCallback.branched()
@@ -492,6 +500,7 @@ def synchronize(
         # nothing happens if parent_update is not defined
         # because of Callback.no_op
         callback.parent_update()
+    return need_synchronize
 
 
 def modified(self) -> datetime | None:
