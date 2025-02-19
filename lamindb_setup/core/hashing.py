@@ -110,6 +110,27 @@ def hash_file(
     return to_b64_str(digest)[:HASH_LENGTH], hash_type
 
 
+def hash_file_s3(file_path: Path, chunk_size: int | None = 50 * 1024 * 1024):
+    chunk_size = -1 if chunk_size is None else chunk_size
+    md5_digests = []
+    with open(file_path, "rb") as f:
+        while True:
+            data = f.read(chunk_size)
+            if len(data) == 0:
+                break
+            md5_digests.append(hashlib.md5(data).digest())
+            if chunk_size == -1:
+                break
+
+    if len(md5_digests) == 0:
+        return hashlib.md5(b"").hexdigest()
+    if len(md5_digests) == 1:
+        return md5_digests[0].hex()
+
+    combined_digest = hashlib.md5(b"".join(md5_digests)).hexdigest()
+    return f"{combined_digest}-{len(md5_digests)}"
+
+
 def hash_dir(path: Path):
     files = (subpath for subpath in path.rglob("*") if subpath.is_file())
 
