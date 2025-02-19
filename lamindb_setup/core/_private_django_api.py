@@ -34,7 +34,6 @@ def private_django_api(reverse=False):
     # the order here matters
     # changing it might break the tests
     attributes = [
-        "DoesNotExist",
         "MultipleObjectsReturned",
         "add_to_class",
         "adelete",
@@ -71,10 +70,6 @@ def private_django_api(reverse=False):
             old_name = f"_{attr}" if reverse else attr
             new_name = attr if reverse else f"_{attr}"
             content = content.replace(old_name, new_name)
-
-        if not reverse:
-            content = content.replace("Field_DoesNotExist", "FieldDoesNotExist")
-            content = content.replace("Object_DoesNotExist", "ObjectDoesNotExist")
 
         if content != original_content:
             file_path.write_text(content, encoding=encoding)
