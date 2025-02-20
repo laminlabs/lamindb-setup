@@ -69,7 +69,7 @@ def test_update_schema_in_hub(setup_instance):
         "schema_name": "core",
         "is_link_table": False,
         "is_primary_key": False,
-        "is_editable": True,
+        "is_editable": False,
         "relation_type": None,
         "related_field_name": None,
         "related_model_name": None,
