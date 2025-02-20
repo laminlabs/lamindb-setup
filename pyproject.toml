@@ -16,11 +16,12 @@ dependencies = [
     "pydantic-settings",
     "appdirs<2.0.0",
     "requests",
-    "universal_pathlib==0.2.5",  # is still experimental, need pinning
+    "universal_pathlib==0.2.6",  # is still experimental, need pinning
     "botocore<2.0.0",
     "supabase>=2.8.1,<=2.11.0", # from 2.8.1 has correct bounds on gotrue
     "storage3!=0.11.2; python_version < '3.11'", # 0.11.2 breaks python 3.10 through usage of new types
-    "psutil"
+    "psutil",
+    "packaging"
 ]
 
 [project.urls]
@@ -31,10 +32,10 @@ aws = [
     "urllib3<2", # for botocore, TODO: check that really required
     "aiobotocore[boto3]>=2.5.4,<3.0.0",
     # exclude 2024.10.0 due to https://github.com/fsspec/s3fs/pull/910
-    "s3fs>=2023.12.2,<=2024.10.0,!=2024.10.0"
+    "s3fs>=2023.12.2,<=2025.2.0,!=2024.10.0"
 ]
 gcp = [
-    "gcsfs>=2023.12.2,<=2024.10.0"
+    "gcsfs>=2023.12.2,<=2025.2.0"
 ]
 erdiagram = [
     "django-schema-graph",

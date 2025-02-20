@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from lamindb_setup.core._aws_credentials import HOSTED_REGIONS
+from lamindb_setup.core._aws_options import HOSTED_REGIONS
 from lamindb_setup.core._settings_storage import get_storage_region
 from lamindb_setup.core.upath import (
     UPath,

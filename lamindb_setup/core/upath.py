@@ -21,7 +21,7 @@ from upath.implementations.cloud import CloudPath, S3Path  # keep CloudPath!
 from upath.implementations.local import LocalPath
 from upath.registry import register_implementation
 
-from ._aws_credentials import HOSTED_BUCKETS, get_aws_credentials_manager
+from ._aws_options import HOSTED_BUCKETS, get_aws_options_manager
 from .hashing import HASH_LENGTH, b16_to_b64, hash_from_hashes_list, hash_string
 
 if TYPE_CHECKING:
@@ -362,7 +362,8 @@ def synchronize(
     print_progress: bool = False,
     callback: fsspec.callbacks.Callback | None = None,
     timestamp: float | None = None,
-):
+    just_check: bool = False,
+) -> bool:
     """Sync to a local destination path."""
     protocol = self.protocol
     # optimize the number of network requests
@@ -396,7 +397,7 @@ def synchronize(
         elif error_no_origin:
             warn_or_error += "\nIt is not possible to synchronize."
             raise FileNotFoundError(warn_or_error)
-        return None
+        return False
 
     # synchronization logic for directories
     # to synchronize directories, it should be possible to get modification times
@@ -429,6 +430,9 @@ def synchronize(
         else:
             destination_exists = False
             need_synchronize = True
+        # just check if synchronization is needed
+        if just_check:
+            return need_synchronize
         if need_synchronize:
             callback = ProgressCallback.requires_progress(
                 callback, print_progress, objectpath.name, "synchronizing"
@@ -458,13 +462,14 @@ def synchronize(
                             parent = file.parent
                             if next(parent.iterdir(), None) is None:
                                 parent.rmdir()
-        return None
+        return need_synchronize
 
     # synchronization logic for files
     callback = ProgressCallback.requires_progress(
         callback, print_progress, objectpath.name, "synchronizing"
     )
-    if objectpath.exists():
+    objectpath_exists = objectpath.exists()
+    if objectpath_exists:
         if cloud_mts != 0:
             local_mts_obj = objectpath.stat().st_mtime
             need_synchronize = cloud_mts > local_mts_obj
@@ -476,9 +481,17 @@ def synchronize(
             local_size_obj = objectpath.stat().st_size
             need_synchronize = cloud_size != local_size_obj
     else:
-        objectpath.parent.mkdir(parents=True, exist_ok=True)
+        if not just_check:
+            objectpath.parent.mkdir(parents=True, exist_ok=True)
         need_synchronize = True
+    # just check if synchronization is needed
+    if just_check:
+        return need_synchronize
     if need_synchronize:
+        # just to be sure that overwriting an existing file doesn't corrupt it
+        # we saw some frequent corruption on some systems for unclear reasons
+        if objectpath_exists:
+            objectpath.unlink()
         # hf has sync filesystem
         # on sync filesystems ChildProgressCallback.branched()
         # returns the default callback
@@ -492,6 +505,7 @@ def synchronize(
         # nothing happens if parent_update is not defined
         # because of Callback.no_op
         callback.parent_update()
+    return need_synchronize
 
 
 def modified(self) -> datetime | None:
@@ -781,11 +795,12 @@ def create_path(path: UPathStr, access_token: str | None = None) -> UPath:
 
     if upath.protocol == "s3":
         # add managed credentials and other options for AWS s3 paths
-        return get_aws_credentials_manager().enrich_path(upath, access_token)
+        return get_aws_options_manager().enrich_path(upath, access_token)
 
     if upath.protocol in {"http", "https"}:
         # this is needed because by default aiohttp drops a connection after 5 min
         # so it is impossible to download large files
+        storage_options = {}
         client_kwargs = upath.storage_options.get("client_kwargs", {})
         if "timeout" not in client_kwargs:
             from aiohttp import ClientTimeout
@@ -794,7 +809,12 @@ def create_path(path: UPathStr, access_token: str | None = None) -> UPath:
                 **client_kwargs,
                 "timeout": ClientTimeout(sock_connect=30, sock_read=30),
             }
-            return UPath(upath, client_kwargs=client_kwargs)
+            storage_options["client_kwargs"] = client_kwargs
+        # see download_to for the reason
+        if "use_listings_cache" not in upath.storage_options:
+            storage_options["use_listings_cache"] = True
+        if len(storage_options) > 0:
+            return UPath(upath, **storage_options)
     return upath
 
 

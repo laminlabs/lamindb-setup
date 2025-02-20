@@ -75,6 +75,10 @@ def _get_current_instance_settings() -> InstanceSettings | None:
         return None
 
 
+def _normalize_module_name(module_name: str) -> str:
+    return module_name.replace("lnschema_", "").replace("_", "-")
+
+
 # checks that the provided modules is in the modules of the provided instance
 # or in the apps setup by django
 def _check_module_in_instance_modules(
@@ -86,7 +90,11 @@ def _check_module_in_instance_modules(
     )
 
     if isettings is not None:
-        if module not in isettings.modules:
+        modules_raw = isettings.modules
+        modules = set(modules_raw).union(
+            _normalize_module_name(module) for module in modules_raw
+        )
+        if _normalize_module_name(module) not in modules and module not in modules:
             raise ModuleWasntConfigured(not_in_instance_msg)
         else:
             return
@@ -94,7 +102,8 @@ def _check_module_in_instance_modules(
     from django.apps import apps
 
     for app in apps.get_app_configs():
-        if module == app.name:
+        # app.name is always unnormalized module (python package) name
+        if module == app.name or module == _normalize_module_name(app.name):
             return
     raise ModuleWasntConfigured(not_in_instance_msg)
 

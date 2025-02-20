@@ -10,10 +10,10 @@ from typing import TYPE_CHECKING, Any, Literal
 import fsspec
 from lamin_utils import logger
 
-from ._aws_credentials import (
+from ._aws_options import (
     HOSTED_REGIONS,
     LAMIN_ENDPOINTS,
-    get_aws_credentials_manager,
+    get_aws_options_manager,
 )
 from ._aws_storage import find_closest_aws_region
 from .upath import LocalPathClasses, UPath, _split_path_query, create_path
@@ -266,7 +266,7 @@ class StorageSettings:
         elif getattr(self._root, "protocol", "") == "s3":
             # this is needed to be sure that the root always has nonexpired credentials
             # this just checks for time of the cached credentials in most cases
-            return get_aws_credentials_manager().enrich_path(
+            return get_aws_options_manager().enrich_path(
                 self._root, access_token=self.access_token
             )
         return self._root
