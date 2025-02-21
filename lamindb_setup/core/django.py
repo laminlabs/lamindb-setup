@@ -14,17 +14,21 @@ IS_MIGRATING = False
 CONN_MAX_AGE = 299
 
 
-def set_token(token: str):
-    from django.db.backends.base.base import BaseDatabaseWrapper, async_unsafe
+def set_token(token: str | None):
+    # None to reset
+    from django.db.backends.base.base import BaseDatabaseWrapper
     from django.db.backends.postgresql.base import DatabaseWrapper
 
-    @async_unsafe
-    def connect(self):
-        BaseDatabaseWrapper.connect(self)
-        # now the connection should be set
-        # Use a psycopg cursor directly, bypassing Django's utilities.
-        with self.connection.cursor() as cursor:
-            cursor.execute("SELECT set_token(%s, false);", (token,))
+    if token is not None:
+
+        def connect(self):
+            BaseDatabaseWrapper.connect(self)
+            # now the connection should be set
+            # Use a psycopg cursor directly, bypassing Django's utilities.
+            with self.connection.cursor() as cursor:
+                cursor.execute("SELECT set_token(%s, false);", (token,))
+    else:
+        connect = BaseDatabaseWrapper.connect
 
     DatabaseWrapper.connect = connect
 
