@@ -13,7 +13,7 @@ if TYPE_CHECKING:
     from lamindb_setup.core.types import UPathStr
 
 
-def set_managed_storage(root: UPathStr, **fs_kwargs):
+def set_managed_storage(root: UPathStr, read_only: bool = False, **fs_kwargs):
     """Add or switch to another managed storage location.
 
     Args:
