@@ -42,7 +42,7 @@ def test_edge_request():
         assert instance["lnid"] == hash_and_encode_as_b62(UUID(instance["id"]).hex)[:12]
         assert instance["owner"] == "laminlabs"
         assert instance["name"] == "lamindata"
-        assert instance["api_url"] == "https://us-east-1.api.lamin.ai"
+        assert instance["api_url"] == "https://aws.us-east-1.lamin.ai/api"
         assert instance["schema_str"].startswith("bionty,wetlab")
         assert "schema_id" in instance
         # check that schema_id is well-formed UUID
