@@ -44,7 +44,7 @@ uv pip install --system git+https://github.com/laminlabs/bionty
         # cmds += "uv pip install --system -e ./django\n"
         cmds = ""
         cmds += modules_deps.strip()
-        cmds += """\nuv pip install --system huggingface_hub"""
+        cmds += """\nuv pip install --system gcsfs huggingface_hub"""
     elif group == "hub-local":
         cmds = modules_deps.strip()
     # current package
