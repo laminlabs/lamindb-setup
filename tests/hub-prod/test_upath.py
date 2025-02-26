@@ -56,6 +56,10 @@ def test_create_path():
     upath = create_path("http://some_url.com/")
     assert upath.storage_options["use_listings_cache"]
     assert "timeout" in upath.storage_options["client_kwargs"]
+    # test R2
+    upath = create_path("s3://bucket/key?endpoint_url=https://r2.cloudflarestorage.com")
+    assert upath.as_posix() == "s3://bucket/key"
+    assert upath.storage_options["fixed_upload_size"]
 
 
 def test_progress_callback_size():
