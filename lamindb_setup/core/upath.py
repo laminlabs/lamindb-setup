@@ -517,7 +517,7 @@ def modified(self) -> datetime | None:
 
 
 def compute_file_tree(
-    path: Path,
+    path: UPath,
     *,
     level: int = -1,
     only_dirs: bool = False,
@@ -526,9 +526,9 @@ def compute_file_tree(
     include_paths: set[Any] | None = None,
     skip_suffixes: list[str] | None = None,
 ) -> tuple[str, int]:
-    # .exists() also helps to separate files from folders for gcsfs
+    # .exists() helps to separate files from folders for gcsfs
     # otherwise sometimes it has is_dir() True and is_file() True
-    if not path.exists():
+    if path.protocol == "gs" and not path.exists():
         raise FileNotFoundError
 
     space = "    "

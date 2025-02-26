@@ -8,7 +8,7 @@ from lamindb_setup.core.upath import ProgressCallback, UPath, create_path
 
 def test_view_tree():
     with pytest.raises(FileNotFoundError):
-        UPath("s3://no-such-bucket-surely-145/folder").view_tree()
+        UPath("gs://no-such-bucket-surely-145/folder").view_tree()
 
 
 def test_trailing_slash():
