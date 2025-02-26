@@ -526,6 +526,11 @@ def compute_file_tree(
     include_paths: set[Any] | None = None,
     skip_suffixes: list[str] | None = None,
 ) -> tuple[str, int]:
+    # .exists() also helps to separate files from folders for gcsfs
+    # otherwise sometimes it has is_dir() True and is_file() True
+    if not path.exists():
+        raise FileNotFoundError
+
     space = "    "
     branch = "│   "
     tee = "├── "
