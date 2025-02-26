@@ -125,7 +125,13 @@ class AWSOptionsManager:
 
     def enrich_path(self, path: UPath, access_token: str | None = None) -> UPath:
         # ignore paths with non-lamin-managed endpoints
-        if path.storage_options.get("endpoint_url", None) not in LAMIN_ENDPOINTS:
+        if (
+            endpoint_url := path.storage_options.get("endpoint_url", None)
+        ) not in LAMIN_ENDPOINTS:
+            if "r2.cloudflarestorage.com" in endpoint_url:
+                # fixed_upload_size should always be True for R2
+                # this option is needed for correct uploads to R2
+                path = UPath(path, fixed_upload_size=True)
             return path
         # trailing slash is needed to avoid returning incorrect results
         # with .startswith
