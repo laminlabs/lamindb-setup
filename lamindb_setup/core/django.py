@@ -14,11 +14,12 @@ IS_MIGRATING = False
 CONN_MAX_AGE = 299
 
 
-def set_token(token: str | None):
+def set_token(token: str | None, connection_name: str = "default"):
     # None to reset
+    from django.db import connections
     from django.db.backends.base.base import BaseDatabaseWrapper
-    from django.db.backends.postgresql.base import DatabaseWrapper
 
+    connection = connections[connection_name]
     if token is not None:
 
         def connect(self):
@@ -29,8 +30,12 @@ def set_token(token: str | None):
                 cursor.execute("SELECT set_token(%s, false);", (token,))
     else:
         connect = BaseDatabaseWrapper.connect
+        # close the connection to reset the token if it was set already
+        connection.close()
 
-    DatabaseWrapper.connect = connect
+    connection.connect = connect.__get__(connection, connection.__class__)
+    # execute this to set or reset the token
+    connection.connect()
 
 
 def close_if_health_check_failed(self) -> None:
