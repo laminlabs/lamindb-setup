@@ -32,11 +32,10 @@ def set_token(token: str | None, connection_name: str = "default"):
                 cursor.execute("SELECT set_token(%s, false);", (token,))
     else:
         connect = BaseDatabaseWrapper.connect
-        # close the connection to reset the token if it was set already
-        connection.close()
 
     connection.connect = connect.__get__(connection, connection.__class__)
-    # execute this to set or reset the token
+    # execute this to initially set or reset the token
+    connection.close()
     connection.connect()
 
 
