@@ -20,6 +20,8 @@ def set_token(token: str | None, connection_name: str = "default"):
     from django.db.backends.base.base import BaseDatabaseWrapper
 
     connection = connections[connection_name]
+    assert connection.vendor == "postgresql"
+
     if token is not None:
 
         def connect(self):
