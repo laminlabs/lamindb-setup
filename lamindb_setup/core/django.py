@@ -14,6 +14,31 @@ IS_MIGRATING = False
 CONN_MAX_AGE = 299
 
 
+def set_token(token: str | None, connection_name: str = "default"):
+    # None to reset
+    from django.db import connections
+    from django.db.backends.base.base import BaseDatabaseWrapper
+
+    connection = connections[connection_name]
+    assert connection.vendor == "postgresql"
+
+    if token is not None:
+
+        def connect(self):
+            BaseDatabaseWrapper.connect(self)
+            # now the connection should be set
+            # Use a psycopg cursor directly, bypassing Django's utilities.
+            with self.connection.cursor() as cursor:
+                cursor.execute("SELECT set_token(%s, false);", (token,))
+    else:
+        connect = BaseDatabaseWrapper.connect
+
+    connection.connect = connect.__get__(connection, connection.__class__)
+    # execute this to initially set or reset the token
+    connection.close()
+    connection.connect()
+
+
 def close_if_health_check_failed(self) -> None:
     if self.close_at is not None:
         if time.monotonic() >= self.close_at:
