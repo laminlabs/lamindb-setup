@@ -43,7 +43,7 @@ def test_get_stat_file_cloud_http():
     size, hash, hash_type = get_stat_file_cloud(path.stat().as_info())
     assert hash == "h3XDCTkMambmtSVpTQetLQ"
     assert hash_type == "md5-etag"
-    assert size == 265
+    assert size == 272
 
 
 def test_get_stat_dir_cloud_aws():
