@@ -41,9 +41,9 @@ def test_get_stat_file_cloud_http():
     string_path = "https://raw.githubusercontent.com/laminlabs/lamindb-setup/refs/heads/main/README.md"
     path = UPath(string_path)
     size, hash, hash_type = get_stat_file_cloud(path.stat().as_info())
-    assert hash == "jGjepGeCASc6lx1OI23yKw"
+    assert hash == "h3XDCTkMambmtSVpTQetLQ"
     assert hash_type == "md5-etag"
-    assert size == 265
+    assert size == 272
 
 
 def test_get_stat_dir_cloud_aws():
