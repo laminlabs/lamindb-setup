@@ -59,6 +59,7 @@ class InstanceSettings:
         is_on_hub: bool | None = None,  # initialized from hub
         api_url: str | None = None,
         schema_id: UUID | None = None,
+        fine_grained_access: bool = False,
         _locker_user: UserSettings | None = None,  # user to lock for if cloud sqlite
     ):
         from ._hub_utils import validate_db_arg
@@ -79,6 +80,9 @@ class InstanceSettings:
         # private, needed for writing instance settings
         self._api_url = api_url
         self._schema_id = schema_id
+        # private, whether fine grained access is used
+        # needed to be set to request jwt etc
+        self._fine_grained_access = fine_grained_access
         # if None then settings.user is used
         self._locker_user = _locker_user
 
