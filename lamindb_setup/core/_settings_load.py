@@ -101,6 +101,7 @@ def setup_instance_from_store(store: InstanceSettingsStore) -> InstanceSettings:
         modules=_null_to_value(store.schema_str),
         git_repo=_null_to_value(store.git_repo),
         keep_artifacts_local=store.keep_artifacts_local,  # type: ignore
+        fine_grained_access=store.fine_grained_access,
     )
 
 
