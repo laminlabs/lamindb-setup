@@ -14,7 +14,7 @@ from lamindb_setup.core._hub_client import (
 from lamindb_setup.core._hub_core import (
     _connect_instance_hub,
     connect_instance_hub,
-    init_instance,
+    init_instance_hub,
     init_storage,
     sign_in_hub,
     sign_up_local_hub,
@@ -127,7 +127,7 @@ def create_myinstance(create_testadmin1_session):  # -> Dict
         )[0],
         db=db_str,
     )
-    init_instance(isettings)
+    init_instance_hub(isettings)
     # test loading it
     with pytest.raises(PermissionError) as error:
         ln_setup.connect("testadmin1/myinstance", _test=True)

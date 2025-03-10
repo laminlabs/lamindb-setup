@@ -269,20 +269,20 @@ def delete_instance_record(instance_id: UUID, access_token: str | None = None) -
     )
 
 
-def init_instance(
+def init_instance_hub(
     isettings: InstanceSettings,
     account_id: UUID | None = None,
     access_token: str | None = None,
 ) -> None:
     return call_with_fallback_auth(
-        _init_instance,
+        _init_instance_hub,
         isettings=isettings,
         account_id=account_id,
         access_token=access_token,
     )
 
 
-def _init_instance(
+def _init_instance_hub(
     client: Client, isettings: InstanceSettings, account_id: UUID | None = None
 ) -> None:
     from ._settings import settings
