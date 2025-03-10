@@ -115,7 +115,7 @@ def _select_storage(
         return True
 
 
-def init_storage(
+def init_storage_hub(
     ssettings: StorageSettings,
     auto_populate_instance: bool = True,
     created_by: UUID | None = None,
@@ -123,7 +123,7 @@ def init_storage(
 ) -> Literal["hub-record-retireved", "hub-record-created"]:
     if settings.user.handle != "anonymous" or access_token is not None:
         return call_with_fallback_auth(
-            _init_storage,
+            _init_storage_hub,
             ssettings=ssettings,
             auto_populate_instance=auto_populate_instance,
             created_by=created_by,
@@ -139,7 +139,7 @@ def init_storage(
             raise ValueError("Log in to create a storage location on the hub.")
 
 
-def _init_storage(
+def _init_storage_hub(
     client: Client,
     ssettings: StorageSettings,
     auto_populate_instance: bool,

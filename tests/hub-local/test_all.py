@@ -15,7 +15,7 @@ from lamindb_setup.core._hub_core import (
     _connect_instance_hub,
     connect_instance_hub,
     init_instance_hub,
-    init_storage,
+    init_storage_hub,
     sign_in_hub,
     sign_up_local_hub,
 )
@@ -357,7 +357,7 @@ def test_init_storage_with_non_existing_bucket(create_testadmin1_session):
     from botocore.exceptions import ClientError
 
     with pytest.raises(ClientError) as error:
-        init_storage(
+        init_storage_hub(
             ssettings=init_storage_base(
                 "s3://non_existing_storage_root", instance_id=uuid4()
             )[0]
