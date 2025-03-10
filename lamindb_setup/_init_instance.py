@@ -242,7 +242,7 @@ def init(
             raise CannotSwitchDefaultInstance(MESSAGE_CANNOT_SWITCH_DEFAULT_INSTANCE)
         elif _write_settings:
             close_instance(mute=True)
-        from .core._hub_core import init_instance as init_instance_hub
+        from .core._hub_core import init_instance_hub
 
         name_str, instance_id, instance_state, _ = validate_init_args(
             storage=storage,
