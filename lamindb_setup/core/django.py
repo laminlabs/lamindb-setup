@@ -6,7 +6,6 @@ import os
 from pathlib import Path
 import time
 from ._settings_instance import InstanceSettings
-from ._hub_core import access_db
 
 
 IS_RUN_FROM_IPYTHON = getattr(builtins, "__IPYTHON__", False)
@@ -127,6 +126,8 @@ def setup_django(
         BaseDatabaseWrapper.close_if_health_check_failed = close_if_health_check_failed
 
         if isettings._fine_grained_access:
+            from ._hub_core import access_db
+
             set_db_token(access_db(isettings))
 
     if configure_only:
