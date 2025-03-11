@@ -77,7 +77,7 @@ class InstanceSettings:
         self._keep_artifacts_local = keep_artifacts_local
         self._storage_local: StorageSettings | None = None
         self._is_on_hub = is_on_hub
-        # private, needed for writing instance settings
+        # private, needed for api requests
         self._api_url = api_url
         self._schema_id = schema_id
         # private, whether fine grained access is used
