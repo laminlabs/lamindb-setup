@@ -16,6 +16,7 @@ from ._hub_client import (
     call_with_fallback,
     call_with_fallback_auth,
     connect_hub,
+    request_get_auth,
 )
 from ._hub_crud import (
     _delete_instance_record,
@@ -435,6 +436,36 @@ def _access_aws(*, storage_root: str, client: Client) -> dict[str, dict]:
         accessibility["storage_root"] = loaded_accessibility["storageRoot"]
         accessibility["is_managed"] = loaded_accessibility["isManaged"]
     return storage_root_info
+
+
+def access_db(isettings: InstanceSettings, access_token: str | None = None) -> str:
+    if access_token is None:
+        if settings.user.handle == "anonymous":
+            raise RuntimeError(
+                f"Can only get fine-grained access to {isettings.slug} if authenticated."
+            )
+        else:
+            access_token = settings.user.access_token
+            renew_token = True
+    else:
+        renew_token = False
+
+    api_url = isettings._api_url
+    if api_url is None:
+        raise RuntimeError(
+            f"Can only get fine-grained access to {isettings.slug} if api_url is present."
+        )
+
+    url = f"{api_url}/access_v2/instances/{isettings._id}/db_token"
+    response = request_get_auth(url, access_token, renew_token)  # type: ignore
+    response_json = response.json()
+    if response.status_code == 401:
+        raise PermissionError(
+            f"Fine-grained permissions to {isettings.slug} denied: {response_json}"
+        )
+    if "token" not in response_json:
+        raise RuntimeError("The response of access_db does not contain a db token.")
+    return response_json["token"]
 
 
 def get_lamin_site_base_url():

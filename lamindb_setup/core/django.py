@@ -14,7 +14,7 @@ IS_MIGRATING = False
 CONN_MAX_AGE = 299
 
 
-def set_token(token: str | None, connection_name: str = "default"):
+def set_db_token(token: str | None, connection_name: str = "default"):
     # None to reset
     from django.db import connections
     from django.db.backends.base.base import BaseDatabaseWrapper
