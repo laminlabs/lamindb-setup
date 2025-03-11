@@ -182,8 +182,21 @@ def call_with_fallback(
     return result
 
 
-def request_get_auth(url: str, access_token: str, renew_token: bool = True):
+def requests_client():
+    # local is used in tests
+    if os.environ.get("LAMIN_ENV", "prod") == "local":
+        from fastapi.testclient import TestClient
+        from laminhub_rest.main import app
+
+        return TestClient(app)
+
     import requests  # type: ignore
+
+    return requests
+
+
+def request_get_auth(url: str, access_token: str, renew_token: bool = True):
+    requests = requests_client()
 
     response = requests.get(url, headers={"Authorization": f"Bearer {access_token}"})
     # upate access_token and try again if denied

@@ -449,19 +449,21 @@ def access_db(isettings: InstanceSettings, access_token: str | None = None) -> s
             renew_token = True
     else:
         renew_token = False
+    # local is used in tests
+    url = f"/access_v2/instances/{isettings._id}/db_token"
+    if os.environ.get("LAMIN_ENV", "prod") != "local":
+        api_url = isettings._api_url
+        if api_url is None:
+            raise RuntimeError(
+                f"Can only get fine-grained access to {isettings.slug} if api_url is present."
+            )
+        url = api_url + url
 
-    api_url = isettings._api_url
-    if api_url is None:
-        raise RuntimeError(
-            f"Can only get fine-grained access to {isettings.slug} if api_url is present."
-        )
-
-    url = f"{api_url}/access_v2/instances/{isettings._id}/db_token"
     response = request_get_auth(url, access_token, renew_token)  # type: ignore
     response_json = response.json()
     if response.status_code == 401:
         raise PermissionError(
-            f"Fine-grained permissions to {isettings.slug} denied: {response_json}"
+            f"Fine-grained access to {isettings.slug} denied: {response_json}"
         )
     if "token" not in response_json:
         raise RuntimeError("The response of access_db does not contain a db token.")
