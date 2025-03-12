@@ -383,4 +383,6 @@ def test_init_storage_incorrect_protocol():
 
 
 def test_fine_grained_access(create_instance_fine_grained_access):
-    pass
+    instance = create_instance_fine_grained_access
+
+    ln_setup.connect(instance.name)
