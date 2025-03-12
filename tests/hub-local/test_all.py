@@ -387,4 +387,5 @@ def test_fine_grained_access(create_instance_fine_grained_access):
 
     ln_setup.connect(instance.name)
 
+    assert ln_setup.settings.instance.name == instance.name
     assert ln_setup.settings.instance._fine_grained_access
