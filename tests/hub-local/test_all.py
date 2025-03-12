@@ -37,6 +37,7 @@ from lamindb_setup.core._settings_storage import base62
 from lamindb_setup.core._settings_storage import init_storage as init_storage_base
 from lamindb_setup.core._settings_user import UserSettings
 from laminhub_rest.core.instance.collaborator import InstanceCollaboratorHandler
+from laminhub_rest.test.instance.fixtures import instance_for_access_v2
 from postgrest.exceptions import APIError
 from supafunc.errors import FunctionsHttpError
 
@@ -157,6 +158,11 @@ def create_myinstance(create_testadmin1_session):  # -> Dict
         client=admin_client,
     )
     yield instance
+
+
+@pytest.fixture(scope="session")
+def create_instance_fine_grained_access(create_testadmin1_session):
+    yield from instance_for_access_v2("fine_grained_access")
 
 
 def test_connection_string_decomp(create_myinstance, create_testadmin1_session):
@@ -369,3 +375,7 @@ def test_init_storage_incorrect_protocol():
     with pytest.raises(ValueError) as error:
         init_storage_base("incorrect-protocol://some-path/some-path-level")
     assert "Protocol incorrect-protocol is not supported" in error.exconly()
+
+
+def test_fine_grained_access(create_instance_fine_grained_access):
+    pass
