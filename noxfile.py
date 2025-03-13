@@ -85,7 +85,7 @@ def hub_local(session: nox.Session):
     # the -n 1 is to ensure that supabase thread exits properly
     run(
         session,
-        f"pytest -n 1 {COVERAGE_ARGS} ./tests/hub-local",
+        f"pytest -s -n 1 {COVERAGE_ARGS} ./tests/hub-local",
         env=os.environ,
     )
 
