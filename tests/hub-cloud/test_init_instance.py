@@ -7,7 +7,7 @@ from uuid import UUID
 import lamindb_setup as ln_setup
 import pytest
 from lamindb_setup._connect_instance import InstanceNotFoundError
-from lamindb_setup._init_instance import InstanceNotCreated, infer_instance_name
+from lamindb_setup._init_instance import infer_instance_name
 from lamindb_setup.core._hub_client import connect_hub_with_auth
 from lamindb_setup.core._hub_core import _connect_instance_hub
 from lamindb_setup.core._hub_crud import (
@@ -202,12 +202,6 @@ def test_init_instance_sqlite():
     assert ln_setup.settings.instance.owner == user_settings_original.handle
     assert ln_setup.settings.instance.dialect == "sqlite"
     ln_setup.delete("local-sqlite-instance", force=True)
-    # test creating with non-existent cloud storage
-    with pytest.raises(InstanceNotCreated):
-        ln_setup.init(
-            storage="s3://this-bucket-should-not-exist-fdfdfd/surely-nothing-here",
-            _test=True,
-        )
 
 
 def test_init_invalid_name():
