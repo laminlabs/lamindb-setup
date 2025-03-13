@@ -386,6 +386,19 @@ def test_init_storage_incorrect_protocol():
 def test_fine_grained_access(create_instance_fine_grained_access):
     instance = create_instance_fine_grained_access
 
+    isettings_file = instance_settings_file(
+        instance.name, ln_setup.settings.user.handle
+    )
+    # the file is written by create_instance_fine_grained_access
+    # has fine_grained_access=False because create_instance_fine_grained_access
+    # updates the instance after init without updating the settings file
+    assert isettings_file.exists()
+    # need to delete it, because otheriwse
+    # isettings.is_remote evaluates to False
+    # and ln_setup.connect doesn't make a hub request
+    # thus fine_grained_access stays False
+    isettings_file.unlink()
+
     ln_setup.connect(instance.name)
 
     assert ln_setup.settings.instance.name == instance.name
