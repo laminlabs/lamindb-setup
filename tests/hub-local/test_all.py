@@ -35,6 +35,7 @@ from lamindb_setup.core._settings_instance import InstanceSettings
 from lamindb_setup.core._settings_save import save_user_settings
 from lamindb_setup.core._settings_storage import base62
 from lamindb_setup.core._settings_storage import init_storage as init_storage_base
+from lamindb_setup.core._settings_store import instance_settings_file
 from lamindb_setup.core._settings_user import UserSettings
 from laminhub_rest.core.instance.collaborator import InstanceCollaboratorHandler
 from laminhub_rest.test.instance.utils import (
@@ -382,14 +383,13 @@ def test_init_storage_incorrect_protocol():
     assert "Protocol incorrect-protocol is not supported" in error.exconly()
 
 
-def test_fine_grained_access(
-    create_testadmin1_session, create_instance_fine_grained_access
-):
-    client, user = create_testadmin1_session
+def test_fine_grained_access(create_instance_fine_grained_access):
     instance = create_instance_fine_grained_access
 
-    response = connect_instance_hub(owner=user.handle, name=instance.name)
-    raise Exception(response)
+    isettings_file = instance_settings_file(
+        ln_setup.settings.user.handle, instance.name
+    )
+    assert isettings_file.exists()
 
     ln_setup.connect(instance.name)
 
