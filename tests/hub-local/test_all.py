@@ -388,10 +388,7 @@ def test_fine_grained_access(
     client, user = create_testadmin1_session
     instance = create_instance_fine_grained_access
 
-    response = client.functions.invoke(
-        "get-instance-settings-v1",
-        invoke_options={"body": {"owner": user.handle, "name": instance.name}},
-    )
+    response = connect_instance_hub(owner=user.handle, name=instance.name)
     raise Exception(response)
 
     ln_setup.connect(instance.name)
