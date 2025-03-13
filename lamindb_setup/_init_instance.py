@@ -6,6 +6,7 @@ import uuid
 from typing import TYPE_CHECKING, Literal
 from uuid import UUID
 
+import click
 from django.core.exceptions import FieldError
 from django.db.utils import OperationalError, ProgrammingError
 from lamin_utils import logger
@@ -23,6 +24,11 @@ if TYPE_CHECKING:
 
     from .core._settings_user import UserSettings
     from .core.types import UPathStr
+
+
+class InstanceNotCreated(click.ClickException):
+    def show(self, file=None):
+        pass
 
 
 def get_schema_module_name(module_name, raise_import_error: bool = True) -> str | None:
@@ -284,6 +290,13 @@ def init(
             isettings.is_remote and instance_state != "instance-corrupted-or-deleted"
         )
         if register_on_hub:
+            # can't register the instance in the hub
+            # if storage is not in the hub
+            # raise the exception and initiate cleanups
+            if not isettings.storage.is_on_hub:
+                raise InstanceNotCreated(
+                    "Unable to create the instance because failed to register the storage."
+                )
             init_instance_hub(
                 isettings, account_id=user__uuid, access_token=access_token
             )
