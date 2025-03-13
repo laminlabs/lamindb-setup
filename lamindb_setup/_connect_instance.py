@@ -127,9 +127,9 @@ def _connect_instance(
         isettings = load_instance_settings(settings_file)
         # skip hub request for a purely local instance
         make_hub_request = isettings.is_remote
-    print(owner, name)
-    print("make_hub_request")
-    print(make_hub_request)
+    print(owner, name, flush=True)
+    print("make_hub_request", flush=True)
+    print(make_hub_request, flush=True)
     if make_hub_request:
         # the following will return a string if the instance does not exist
         # on the hub
@@ -157,9 +157,9 @@ def _connect_instance(
                 uuid=UUID(storage_result["id"]),
                 instance_id=UUID(instance_result["id"]),
             )
-            print(owner, name)
-            print("instance_result")
-            print(instance_result)
+            print(owner, name, flush=True)
+            print("instance_result", flush=True)
+            print(instance_result, flush=True)
             isettings = InstanceSettings(
                 id=UUID(instance_result["id"]),
                 owner=owner,
@@ -212,7 +212,7 @@ def connect(instance: str | None = None, **kwargs) -> str | tuple | None:
     for kwarg in kwargs:
         if kwarg not in valid_kwargs:
             raise TypeError(f"connect() got unexpected keyword argument '{kwarg}'")
-
+    print("connect", instance, flush=True)
     isettings: InstanceSettings = None  # type: ignore
     # _db is still needed because it is called in init
     _db: str | None = kwargs.get("_db", None)
