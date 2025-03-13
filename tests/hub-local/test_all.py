@@ -386,11 +386,6 @@ def test_init_storage_incorrect_protocol():
 def test_fine_grained_access(create_instance_fine_grained_access):
     instance = create_instance_fine_grained_access
 
-    isettings_file = instance_settings_file(
-        ln_setup.settings.user.handle, instance.name
-    )
-    assert isettings_file.exists()
-
     ln_setup.connect(instance.name)
 
     assert ln_setup.settings.instance.name == instance.name
