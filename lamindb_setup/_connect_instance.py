@@ -122,6 +122,8 @@ def _connect_instance(
     access_token: str | None = None,
 ) -> InstanceSettings:
     settings_file = instance_settings_file(name, owner)
+    print(settings_file, flush=True)
+    print(settings_file.exists(), flush=True)
     make_hub_request = True
     if settings_file.exists():
         isettings = load_instance_settings(settings_file)
