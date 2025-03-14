@@ -461,9 +461,9 @@ def access_db(isettings: InstanceSettings, access_token: str | None = None) -> s
 
     response = request_get_auth(url, access_token, renew_token)  # type: ignore
     response_json = response.json()
-    if response.status_code == 401:
+    if response.status_code != 200:
         raise PermissionError(
-            f"Fine-grained access to {isettings.slug} denied: {response_json}"
+            f"Fine-grained access to {isettings.slug} failed: {response_json}"
         )
     if "token" not in response_json:
         raise RuntimeError("The response of access_db does not contain a db token.")

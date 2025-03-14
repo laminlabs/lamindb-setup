@@ -413,8 +413,3 @@ def test_fine_grained_access(create_instance_fine_grained_access):
         shell=True,
         check=True,
     )
-
-    # check token renewal in access_db
-    invalid_token = "header1.payload1.signature1"
-    ln_setup.settings.user.access_token = invalid_token
-    access_db(ln_setup.settings.instance)

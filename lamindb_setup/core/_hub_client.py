@@ -199,8 +199,8 @@ def request_get_auth(url: str, access_token: str, renew_token: bool = True):
     requests = requests_client()
 
     response = requests.get(url, headers={"Authorization": f"Bearer {access_token}"})
-    # upate access_token and try again if denied
-    if response.status_code == 401 and renew_token:
+    # upate access_token and try again if failed
+    if response.status_code != 200 and renew_token:
         from lamindb_setup import settings
 
         access_token = get_access_token(
