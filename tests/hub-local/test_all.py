@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import os
+import subprocess
 from uuid import UUID, uuid4
 
 import lamindb_setup as ln_setup
@@ -404,8 +405,10 @@ def test_fine_grained_access(create_instance_fine_grained_access):
     # and ln_setup.connect doesn't make a hub request
     # thus fine_grained_access stays False
     isettings_file.unlink()
-
-    ln_setup.connect(instance.name)
-
-    assert ln_setup.settings.instance.name == instance.name
-    assert ln_setup.settings.instance._fine_grained_access
+    # run from a script because test_update_schema_in_hub.py has ln_setup.init
+    # which fails if we connect here
+    subprocess.run(
+        "python ./tests/hub-local/scripts/script-connect-fine-grained-access.py",
+        shell=True,
+        check=True,
+    )
