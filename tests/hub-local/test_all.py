@@ -14,6 +14,7 @@ from lamindb_setup.core._hub_client import (
 )
 from lamindb_setup.core._hub_core import (
     _connect_instance_hub,
+    access_db,
     connect_instance_hub,
     init_instance_hub,
     init_storage_hub,
@@ -412,3 +413,8 @@ def test_fine_grained_access(create_instance_fine_grained_access):
         shell=True,
         check=True,
     )
+
+    # check token renewal in access_db
+    invalid_token = "header1.payload1.signature1"
+    ln_setup.settings.user.access_token = invalid_token
+    access_db(ln_setup.settings.instance)
