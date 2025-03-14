@@ -206,7 +206,6 @@ def connect(instance: str | None = None, **kwargs) -> str | tuple | None:
     for kwarg in kwargs:
         if kwarg not in valid_kwargs:
             raise TypeError(f"connect() got unexpected keyword argument '{kwarg}'")
-
     isettings: InstanceSettings = None  # type: ignore
     # _db is still needed because it is called in init
     _db: str | None = kwargs.get("_db", None)

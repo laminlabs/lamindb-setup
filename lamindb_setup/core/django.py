@@ -14,7 +14,7 @@ IS_MIGRATING = False
 CONN_MAX_AGE = 299
 
 
-def set_token(token: str | None, connection_name: str = "default"):
+def set_db_token(token: str | None, connection_name: str = "default"):
     # None to reset
     from django.db import connections
     from django.db.backends.base.base import BaseDatabaseWrapper
@@ -124,6 +124,11 @@ def setup_django(
         from django.db.backends.base.base import BaseDatabaseWrapper
 
         BaseDatabaseWrapper.close_if_health_check_failed = close_if_health_check_failed
+
+        if isettings._fine_grained_access:
+            from ._hub_core import access_db
+
+            set_db_token(access_db(isettings))
 
     if configure_only:
         return None

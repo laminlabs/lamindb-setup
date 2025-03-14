@@ -180,3 +180,37 @@ def call_with_fallback(
             except NameError:
                 pass
     return result
+
+
+def requests_client():
+    # local is used in tests
+    if os.environ.get("LAMIN_ENV", "prod") == "local":
+        from fastapi.testclient import TestClient
+        from laminhub_rest.main import app
+
+        return TestClient(app)
+
+    import requests  # type: ignore
+
+    return requests
+
+
+def request_get_auth(url: str, access_token: str, renew_token: bool = True):
+    requests = requests_client()
+
+    response = requests.get(url, headers={"Authorization": f"Bearer {access_token}"})
+    # upate access_token and try again if failed
+    if response.status_code != 200 and renew_token:
+        from lamindb_setup import settings
+
+        access_token = get_access_token(
+            settings.user.email, settings.user.password, settings.user.api_key
+        )
+
+        settings.user.access_token = access_token
+        save_user_settings(settings.user)
+
+        response = requests.get(
+            url, headers={"Authorization": f"Bearer {access_token}"}
+        )
+    return response
