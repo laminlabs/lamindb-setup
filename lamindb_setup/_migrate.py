@@ -47,16 +47,20 @@ def check_whether_migrations_in_sync(db_version_str: str):
             f"the database ({db_version_str}) is far behind your installed lamindb package"
             f" ({installed_version_str})"
         )
-        logger.important("migrate your database: lamin migrate deploy")
+        logger.important(
+            "if you are an admin, migrate your database: lamin migrate deploy"
+        )
     elif (
         installed_version.major == db_version.major
         and installed_version.minor > db_version.minor
     ):
-        logger.important(
-            f"the database ({db_version_str}) is behind your installed lamindb package"
-            f" ({installed_version_str})"
-        )
-        logger.important("consider migrating your database: lamin migrate deploy")
+        pass
+        # if the database is behind by a minor version, we don't want to spam the user
+        # logger.important(
+        #     f"the database ({db_version_str}) is behind your installed lamindb package"
+        #     f" ({installed_version_str})"
+        # )
+        # logger.important("consider migrating your database: lamin migrate deploy")
 
 
 # for tests, see lamin-cli
