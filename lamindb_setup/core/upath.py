@@ -907,14 +907,14 @@ def check_storage_is_empty(
     if root_string.startswith(HOSTED_BUCKETS):
         # in hosted buckets, count across entire root
         directory_string = root_string
-        # the SQLite file is not in the ".lamindb" directory
-        if account_for_sqlite_file:
-            n_offset_objects += 1  # because of SQLite file
     else:
         # in any other storage location, only count in .lamindb
         if not root_string.endswith("/"):
             root_string += "/"
         directory_string = root_string + ".lamindb"
+    # the SQLite file is in the ".lamindb" directory
+    if account_for_sqlite_file:
+        n_offset_objects += 1  # because of SQLite file
     objects = root_upath.fs.find(directory_string)
     n_files = len(objects)
     n_diff = n_files - n_offset_objects
