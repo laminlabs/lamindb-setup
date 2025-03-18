@@ -23,7 +23,7 @@ def write_bionty_sources(isettings: InstanceSettings) -> None:
 
     import bionty
     import bionty.base as bionty_base
-    from bionty._bionty import list_biorecord_models
+    from bionty._biorecord import list_biorecord_models
     from bionty.base.dev._handle_sources import parse_sources_yaml
     from bionty.models import Source
 
