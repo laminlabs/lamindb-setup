@@ -295,7 +295,10 @@ class InstanceSettings:
     @property
     def _sqlite_file(self) -> UPath:
         """SQLite file."""
-        return self.storage.key_to_filepath(f"{self._id.hex}.lndb")
+        filepath = self.storage.root / ".lamindb" / "_lamin.db"
+        if not filepath.exists():
+            self.storage.key_to_filepath(f"{self._id.hex}.lndb").rename(filepath)
+        return filepath
 
     @property
     def _sqlite_file_local(self) -> Path:
