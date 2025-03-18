@@ -296,8 +296,6 @@ class InstanceSettings:
     def _sqlite_file(self) -> UPath:
         """SQLite file."""
         filepath = self.storage.root / ".lamindb" / "_lamin.db"
-        if not filepath.exists():
-            self.storage.key_to_filepath(f"{self._id.hex}.lndb").rename(filepath)
         return filepath
 
     @property
@@ -491,12 +489,12 @@ class InstanceSettings:
         # Is the database available and initialized as LaminDB?
         # returns a tuple of status code and message
         if self.dialect == "sqlite" and not self._sqlite_file.exists():
-            legacy_file = self.storage.key_to_filepath(f"{self.name}.lndb")
+            legacy_file = self.storage.key_to_filepath(f"{self._id.hex}.lndb")
             if legacy_file.exists():
-                raise RuntimeError(
-                    "The SQLite file has been renamed!\nPlease rename your SQLite file"
-                    f" {legacy_file} to {self._sqlite_file}"
+                logger.warning(
+                    f"The SQLite file is being renamed from {legacy_file} to {self._sqlite_file}"
                 )
+                legacy_file.rename(self._sqlite_file)
             return False, f"SQLite file {self._sqlite_file} does not exist"
         # we need the local sqlite to setup django
         self._update_local_sqlite_file()
