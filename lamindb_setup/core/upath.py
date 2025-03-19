@@ -899,17 +899,12 @@ def check_storage_is_empty(
 ) -> int:
     root_upath = UPath(root)
     root_string = root_upath.as_posix()  # type: ignore
-    # we currently touch a 0-byte file in the root of a hosted storage location
-    # ({storage_root}/.lamindb/_is_initialized) during storage initialization
-    # since path.fs.find raises a PermissionError on empty hosted
-    # subdirectories (see lamindb_setup/core/_settings_storage/init_storage).
-    n_offset_objects = 1  # because of touched dummy file, see mark_storage_root()
+    n_offset_objects = 1  # because of _is_initialized file, see mark_storage_root()
+    if account_for_sqlite_file:
+        n_offset_objects += 1  # the SQLite file is in the ".lamindb" directory
     if root_string.startswith(HOSTED_BUCKETS):
         # in hosted buckets, count across entire root
         directory_string = root_string
-        # the SQLite file is not in the ".lamindb" directory
-        if account_for_sqlite_file:
-            n_offset_objects += 1  # because of SQLite file
     else:
         # in any other storage location, only count in .lamindb
         if not root_string.endswith("/"):

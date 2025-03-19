@@ -131,7 +131,7 @@ def delete(slug: str, force: bool = False, require_empty: bool = True) -> int | 
         # this will error if the user doesn't have permission
         delete_instance_on_hub(isettings._id, require_empty=False)
     delete_by_isettings(isettings)
-    # if .lndb file was delete, then we might count -1
+    # if _lamin.db file was delete, then we might count -1
     if n_files <= 0 and isettings.storage.type == "local":
         # dir is only empty after sqlite file was delete via delete_by_isettings
         if (isettings.storage.root / ".lamindb").exists():
