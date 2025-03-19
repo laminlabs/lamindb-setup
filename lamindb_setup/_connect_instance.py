@@ -169,6 +169,7 @@ def _connect_instance(
                 if (schema_id := instance_result["schema_id"]) is None
                 else UUID(schema_id),
                 fine_grained_access=instance_result.get("fine_grained_access", False),
+                db_permissions=instance_result.get("db_permissions", None),
             )
         else:
             if hub_result != "anonymous-user":

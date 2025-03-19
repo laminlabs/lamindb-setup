@@ -61,6 +61,7 @@ def save_settings(
                         "api_url",
                         "schema_id",
                         "fine_grained_access",
+                        "db_permissions",
                     }:
                         settings_key = f"_{store_key.rstrip('_')}"
                     else:

@@ -125,7 +125,7 @@ def setup_django(
 
         BaseDatabaseWrapper.close_if_health_check_failed = close_if_health_check_failed
 
-        if isettings._fine_grained_access:
+        if isettings._fine_grained_access and isettings._db_permissions == "jwt":
             from ._hub_core import access_db
 
             set_db_token(access_db(isettings))
