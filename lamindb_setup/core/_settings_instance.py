@@ -154,7 +154,7 @@ class InstanceSettings:
             if root_path.exists():
                 marker_path = root_path / IS_INITIALIZED_KEY
                 if not marker_path.exists():
-                    legacy_filepath = root_path / ".lamindb/_is_initialized"
+                    legacy_filepath = root_path / ".lamindb/storage_uid.txt"
                     legacy_filepath.rename(marker_path)
                 try:
                     uid = marker_path.read_text()

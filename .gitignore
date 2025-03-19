@@ -108,5 +108,5 @@ lamin_sphinx
 docs/conf.py
 _docs_tmp*
 *.db
-_is_initialized
+storage_uid.txt
 test.ipynb

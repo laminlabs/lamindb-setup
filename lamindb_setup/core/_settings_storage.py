@@ -23,7 +23,7 @@ if TYPE_CHECKING:
 
     from .types import UPathStr
 
-IS_INITIALIZED_KEY = ".lamindb/_is_initialized"
+IS_INITIALIZED_KEY = ".lamindb/storage_uid.txt"
 
 # a list of supported fsspec protocols
 # rename file to local before showing to a user
