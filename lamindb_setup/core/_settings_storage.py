@@ -82,9 +82,13 @@ def get_storage_region(path: UPathStr) -> str | None:
 
 
 def mark_storage_root(root: UPathStr, uid: str):
-    # we need to touch a 0-byte object in folder-like storage location on S3 to avoid
+    # we need a file in folder-like storage locations on S3 to avoid
     # permission errors from leveraging s3fs on an empty hosted storage location
-    # for consistency, we write this file everywhere
+    # (path.fs.find raises a PermissionError)
+    # we also need it in case a storage location is ambiguous because a server / local environment
+    # doesn't have a globally unique identifier, then we screen for this file to map the
+    # path on a storage location in the registry
+
     root_upath = UPath(root)
     mark_upath = root_upath / IS_INITIALIZED_KEY
     mark_upath.write_text(uid)
