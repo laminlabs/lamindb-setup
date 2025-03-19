@@ -60,6 +60,7 @@ class InstanceSettings:
         api_url: str | None = None,
         schema_id: UUID | None = None,
         fine_grained_access: bool = False,
+        db_permissions: str | None = None,
         _locker_user: UserSettings | None = None,  # user to lock for if cloud sqlite
     ):
         from ._hub_utils import validate_db_arg
@@ -83,6 +84,8 @@ class InstanceSettings:
         # private, whether fine grained access is used
         # needed to be set to request jwt etc
         self._fine_grained_access = fine_grained_access
+        # permissions for db such as jwt, read, write etc.
+        self._db_permissions = db_permissions
         # if None then settings.user is used
         self._locker_user = _locker_user
 

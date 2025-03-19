@@ -104,6 +104,7 @@ def setup_instance_from_store(store: InstanceSettingsStore) -> InstanceSettings:
         api_url=_null_to_value(store.api_url),
         schema_id=None if store.schema_id == "null" else UUID(store.schema_id),
         fine_grained_access=store.fine_grained_access,
+        db_permissions=_null_to_value(store.db_permissions),
     )
 
 

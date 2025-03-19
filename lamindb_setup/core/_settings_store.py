@@ -58,6 +58,7 @@ class InstanceSettingsStore(BaseSettings):
     schema_str: Optional[str]
     schema_id: Optional[str] = None
     fine_grained_access: bool = False
+    db_permissions: Optional[str] = None
     id: str
     git_repo: Optional[str]
     keep_artifacts_local: Optional[bool]
