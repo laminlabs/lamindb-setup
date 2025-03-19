@@ -481,13 +481,6 @@ class InstanceSettings:
 
         disable_auto_connect(setup_django)(self, init=True)
 
-        from lamindb.models import Space
-
-        Space.objects.get_or_create(
-            name="All",
-            description="Every team & user with access to the instance has access.",
-        )
-
     def _load_db(self) -> tuple[bool, str]:
         # Is the database available and initialized as LaminDB?
         # returns a tuple of status code and message
@@ -498,7 +491,8 @@ class InstanceSettings:
                     f"The SQLite file is being renamed from {legacy_file} to {self._sqlite_file}"
                 )
                 legacy_file.rename(self._sqlite_file)
-            return False, f"SQLite file {self._sqlite_file} does not exist"
+            else:
+                return False, f"SQLite file {self._sqlite_file} does not exist"
         # we need the local sqlite to setup django
         self._update_local_sqlite_file()
         # setting up django also performs a check for migrations & prints them
