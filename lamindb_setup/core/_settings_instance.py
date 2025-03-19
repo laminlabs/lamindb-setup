@@ -17,7 +17,6 @@ from ._settings_storage import (
     IS_INITIALIZED_KEY,
     StorageSettings,
     init_storage,
-    mark_storage_root,
 )
 from ._settings_store import current_instance_settings_file, instance_settings_file
 from .cloud_sqlite_locker import (
@@ -154,8 +153,16 @@ class InstanceSettings:
             if root_path.exists():
                 marker_path = root_path / IS_INITIALIZED_KEY
                 if not marker_path.exists():
-                    legacy_filepath = root_path / ".lamindb/storage_uid.txt"
-                    legacy_filepath.rename(marker_path)
+                    legacy_filepath = root_path / ".lamindb/_is_initialized"
+                    if legacy_filepath.exists():
+                        logger.warning(
+                            f"found legacy marker file, renaming it from {legacy_filepath} to {marker_path}"
+                        )
+                        legacy_filepath.rename(marker_path)
+                    else:
+                        raise ValueError(
+                            f"local storage location '{root_path}' is corrupted, cannot find marker file with storage uid"
+                        )
                 try:
                     uid = marker_path.read_text()
                 except PermissionError:
