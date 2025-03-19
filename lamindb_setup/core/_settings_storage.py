@@ -23,7 +23,7 @@ if TYPE_CHECKING:
 
     from .types import UPathStr
 
-IS_INITIALIZED_KEY = ".lamindb/storage_uid.txt"
+STORAGE_UID_FILE_KEY = ".lamindb/storage_uid.txt"
 
 # a list of supported fsspec protocols
 # rename file to local before showing to a user
@@ -90,7 +90,7 @@ def mark_storage_root(root: UPathStr, uid: str):
     # path on a storage location in the registry
 
     root_upath = UPath(root)
-    mark_upath = root_upath / IS_INITIALIZED_KEY
+    mark_upath = root_upath / STORAGE_UID_FILE_KEY
     mark_upath.write_text(uid)
 
 
@@ -238,7 +238,7 @@ class StorageSettings:
 
     @property
     def _mark_storage_root(self) -> UPath:
-        return self.root / IS_INITIALIZED_KEY
+        return self.root / STORAGE_UID_FILE_KEY
 
     @property
     def record(self) -> Any:

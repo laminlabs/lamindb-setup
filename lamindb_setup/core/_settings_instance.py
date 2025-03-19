@@ -14,7 +14,7 @@ from ._hub_crud import select_account_handle_name_by_lnid
 from ._hub_utils import LaminDsn, LaminDsnModel
 from ._settings_save import save_instance_settings
 from ._settings_storage import (
-    IS_INITIALIZED_KEY,
+    STORAGE_UID_FILE_KEY,
     StorageSettings,
     init_storage,
 )
@@ -151,7 +151,7 @@ class InstanceSettings:
         for record in all_local_records:
             root_path = Path(record.root)
             if root_path.exists():
-                marker_path = root_path / IS_INITIALIZED_KEY
+                marker_path = root_path / STORAGE_UID_FILE_KEY
                 if not marker_path.exists():
                     legacy_filepath = root_path / ".lamindb/_is_initialized"
                     if legacy_filepath.exists():
@@ -173,8 +173,6 @@ class InstanceSettings:
                 if uid == record.uid:
                     found = True
                     break
-                else:
-                    continue
         if found:
             return StorageSettings(record.root)
         elif not mute_warning:
