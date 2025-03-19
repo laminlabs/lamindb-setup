@@ -154,8 +154,8 @@ class InstanceSettings:
             if root_path.exists():
                 marker_path = root_path / IS_INITIALIZED_KEY
                 if not marker_path.exists():
-                    root_path / ".lamindb/_is_initialized"
-                    marker_path.rename(marker_path)
+                    legacy_filepath = root_path / ".lamindb/_is_initialized"
+                    legacy_filepath.rename(marker_path)
                 try:
                     uid = marker_path.read_text()
                 except PermissionError:
