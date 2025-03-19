@@ -298,7 +298,7 @@ class InstanceSettings:
     @property
     def _sqlite_file(self) -> UPath:
         """SQLite file."""
-        filepath = self.storage.root / ".lamindb" / "_lamin.db"
+        filepath = self.storage.root / ".lamindb/lamin.db"
         return filepath
 
     @property
