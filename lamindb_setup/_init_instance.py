@@ -95,11 +95,16 @@ def register_user(usettings):
         pass
 
 
-def register_user_and_storage_in_instance(isettings: InstanceSettings, usettings):
-    """Register user & storage in DB."""
+def register_initial_objects(isettings: InstanceSettings, usettings):
+    """Register space, user & storage in DB."""
     from django.db.utils import OperationalError
+    from lamindb.models import Space
 
     try:
+        Space.objects.get_or_create(
+            name="All",
+            description="Every team & user with access to the instance has access.",
+        )
         register_user(usettings)
         register_storage_in_instance(isettings.storage)
     except OperationalError as error:
@@ -359,8 +364,8 @@ def load_from_isettings(
     user = settings.user if user is None else user
 
     if init:
-        # during init both user and storage need to be registered
-        register_user_and_storage_in_instance(isettings, user)
+        # during init space, user and storage need to be registered
+        register_initial_objects(isettings, user)
         write_bionty_sources(isettings)
         isettings._update_cloud_sqlite_file(unlock_cloud_sqlite=False)
     else:

@@ -481,13 +481,6 @@ class InstanceSettings:
 
         disable_auto_connect(setup_django)(self, init=True)
 
-        from lamindb.models import Space
-
-        Space.objects.get_or_create(
-            name="All",
-            description="Every team & user with access to the instance has access.",
-        )
-
     def _load_db(self) -> tuple[bool, str]:
         # Is the database available and initialized as LaminDB?
         # returns a tuple of status code and message
