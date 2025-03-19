@@ -95,7 +95,7 @@ def register_user(usettings):
         pass
 
 
-def register_initial_objects(isettings: InstanceSettings, usettings):
+def register_initial_records(isettings: InstanceSettings, usettings):
     """Register space, user & storage in DB."""
     from django.db.utils import OperationalError
     from lamindb.models import Space
@@ -365,7 +365,7 @@ def load_from_isettings(
 
     if init:
         # during init space, user and storage need to be registered
-        register_initial_objects(isettings, user)
+        register_initial_records(isettings, user)
         write_bionty_sources(isettings)
         isettings._update_cloud_sqlite_file(unlock_cloud_sqlite=False)
     else:
