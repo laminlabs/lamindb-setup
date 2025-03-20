@@ -121,7 +121,7 @@ def init_storage_hub(
     auto_populate_instance: bool = True,
     created_by: UUID | None = None,
     access_token: str | None = None,
-) -> Literal["hub-record-retireved", "hub-record-created"]:
+) -> Literal["hub-record-retrieved", "hub-record-created"]:
     if settings.user.handle != "anonymous" or access_token is not None:
         return call_with_fallback_auth(
             _init_storage_hub,
@@ -135,7 +135,7 @@ def init_storage_hub(
             _select_storage, ssettings=ssettings, update_uid=True
         )
         if storage_exists:
-            return "hub-record-retireved"
+            return "hub-record-retrieved"
         else:
             raise ValueError("Log in to create a storage location on the hub.")
 
@@ -145,7 +145,7 @@ def _init_storage_hub(
     ssettings: StorageSettings,
     auto_populate_instance: bool,
     created_by: UUID | None = None,
-) -> Literal["hub-record-retireved", "hub-record-created"]:
+) -> Literal["hub-record-retrieved", "hub-record-created"]:
     from lamindb_setup import settings
 
     created_by = settings.user._uuid if created_by is None else created_by
@@ -153,7 +153,7 @@ def _init_storage_hub(
     # database
     root = ssettings.root_as_str
     if _select_storage(ssettings, update_uid=True, client=client):
-        return "hub-record-retireved"
+        return "hub-record-retrieved"
     if ssettings.type_is_cloud:
         id = uuid.uuid5(uuid.NAMESPACE_URL, root)
     else:
