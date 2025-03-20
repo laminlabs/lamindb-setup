@@ -37,9 +37,7 @@ def write_bionty_sources(isettings: InstanceSettings) -> None:
     all_records = []
     for kwargs in all_sources_dict:
         act = currently_used.loc[(kwargs["entity"], kwargs["organism"])].to_dict()
-        if (act["source"] == kwargs["source"]) and (
-            act["version"] == kwargs["version"]
-        ):
+        if (act["name"] == kwargs["name"]) and (act["version"] == kwargs["version"]):
             kwargs["currently_used"] = True
 
         # when the database is not yet migrated but setup is updated
