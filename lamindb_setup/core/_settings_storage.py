@@ -162,6 +162,10 @@ def init_storage(
             access_token=access_token,
         )
     # below comes last only if everything else was successful
+    # we have to check hub_record_status here because
+    # _select_storage inside init_storage_hub also populates ssettings._uuid
+    # and we don't want to delete an existing storage record here
+    # only newly created
     if hub_record_status == "hub-record-created":
         try:
             # (federated) credentials for AWS access are provisioned under-the-hood
@@ -172,10 +176,6 @@ def init_storage(
             logger.important(
                 f"due to lack of write access, LaminDB won't manage storage location: {ssettings.root_as_str}"
             )
-            # we have to check hub_record_status here because
-            # _select_storage inside init_storage_hub also populates ssettings._uuid
-            # and we don't want to delete an existing storage record here
-            # only newly created
             if ssettings._uuid is not None:
                 delete_storage_record(ssettings._uuid, access_token=access_token)  # type: ignore
                 ssettings._uuid_ = None
