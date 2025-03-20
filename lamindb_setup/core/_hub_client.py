@@ -69,7 +69,9 @@ def connect_hub(
         # function_client_timeout=5 by default
         # increase to avoid rare timeouts for edge functions
         client_options = ClientOptions(
-            auto_refresh_token=False, function_client_timeout=10
+            auto_refresh_token=False,
+            function_client_timeout=20,
+            postgrest_client_timeout=20,
         )
     return create_client(env.supabase_api_url, env.supabase_anon_key, client_options)
 

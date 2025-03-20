@@ -4,7 +4,6 @@ from lamin_utils import logger
 
 from .core._settings import settings
 from .core._settings_store import current_instance_settings_file
-from .core._setup_bionty_sources import delete_bionty_sources_yaml
 from .core.cloud_sqlite_locker import clear_locker
 
 
@@ -24,8 +23,6 @@ def close(mute: bool = False) -> None:
                 logger.warning("did not upload cache file - not enough permissions")
             else:
                 raise e
-        if "bionty" in settings.instance.modules:
-            delete_bionty_sources_yaml()
         current_instance_settings_file().unlink()
         clear_locker()
         if not mute:
