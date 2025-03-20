@@ -155,6 +155,8 @@ def init_storage(
     if not prevent_register_hub and (ssettings.type_is_cloud or register_hub):
         from ._hub_core import delete_storage_record, init_storage_hub
 
+        # this retireves the storage record if it exists already in the hub
+        # and updates uid and instance_id in ssettings
         hub_record_status = init_storage_hub(
             ssettings,
             auto_populate_instance=not init_instance,
@@ -162,9 +164,10 @@ def init_storage(
             access_token=access_token,
         )
     # below comes last only if everything else was successful
-    # we have to check hub_record_status here because
+    # we check the write access here only if the storage record has been just created
+    # also we have to check hub_record_status here because
     # _select_storage inside init_storage_hub also populates ssettings._uuid
-    # and we don't want to delete an existing storage record here
+    # and we don't want to delete an existing storage record here if no write access
     # only newly created
     if hub_record_status == "hub-record-created":
         try:
