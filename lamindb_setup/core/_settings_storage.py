@@ -170,7 +170,11 @@ def init_storage(
     # _select_storage inside init_storage_hub also populates ssettings._uuid
     # and we don't want to delete an existing storage record here if no write access
     # only newly created
-    if hub_record_status == "hub-record-created" or not ssettings.type_is_cloud:
+    # local storages not registered in the hub should be also marked
+    is_local_not_retrieved = not (
+        ssettings.type_is_cloud or hub_record_status == "hub-record-retireved"
+    )
+    if hub_record_status == "hub-record-created" or is_local_not_retrieved:
         try:
             # (federated) credentials for AWS access are provisioned under-the-hood
             # discussion: https://laminlabs.slack.com/archives/C04FPE8V01W/p1719260587167489
