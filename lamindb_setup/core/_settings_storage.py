@@ -104,7 +104,7 @@ def init_storage(
     access_token: str | None = None,
 ) -> tuple[
     StorageSettings,
-    Literal["hub-record-not-created", "hub-record-retireved", "hub-record-created"],
+    Literal["hub-record-not-created", "hub-record-retrieved", "hub-record-created"],
 ]:
     assert root is not None, "`root` argument can't be `None`"
 
@@ -149,7 +149,7 @@ def init_storage(
     )
     # this stores the result of init_storage_hub
     hub_record_status: Literal[
-        "hub-record-not-created", "hub-record-retireved", "hub-record-created"
+        "hub-record-not-created", "hub-record-retrieved", "hub-record-created"
     ] = "hub-record-not-created"
     # the below might update the uid with one that's already taken on the hub
     if not prevent_register_hub and (ssettings.type_is_cloud or register_hub):
@@ -172,7 +172,7 @@ def init_storage(
     # only newly created
     # local storages not registered in the hub should be also marked
     is_local_not_retrieved = not (
-        ssettings.type_is_cloud or hub_record_status == "hub-record-retireved"
+        ssettings.type_is_cloud or hub_record_status == "hub-record-retrieved"
     )
     if hub_record_status == "hub-record-created" or is_local_not_retrieved:
         try:
