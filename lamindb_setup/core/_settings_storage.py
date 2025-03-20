@@ -155,7 +155,7 @@ def init_storage(
     if not prevent_register_hub and (ssettings.type_is_cloud or register_hub):
         from ._hub_core import delete_storage_record, init_storage_hub
 
-        # this retireves the storage record if it exists already in the hub
+        # this retrieves the storage record if it exists already in the hub
         # and updates uid and instance_id in ssettings
         hub_record_status = init_storage_hub(
             ssettings,
