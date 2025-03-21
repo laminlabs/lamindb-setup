@@ -14,6 +14,7 @@ from ._hub_crud import select_account_handle_name_by_lnid
 from ._hub_utils import LaminDsn, LaminDsnModel
 from ._settings_save import save_instance_settings
 from ._settings_storage import (
+    LEGACY_STORAGE_UID_FILE_KEY,
     STORAGE_UID_FILE_KEY,
     StorageSettings,
     init_storage,
@@ -153,7 +154,7 @@ class InstanceSettings:
             if root_path.exists():
                 marker_path = root_path / STORAGE_UID_FILE_KEY
                 if not marker_path.exists():
-                    legacy_filepath = root_path / ".lamindb/_is_initialized"
+                    legacy_filepath = root_path / LEGACY_STORAGE_UID_FILE_KEY
                     if legacy_filepath.exists():
                         logger.warning(
                             f"found legacy marker file, renaming it from {legacy_filepath} to {marker_path}"

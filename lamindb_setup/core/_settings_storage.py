@@ -24,6 +24,7 @@ if TYPE_CHECKING:
     from .types import UPathStr
 
 STORAGE_UID_FILE_KEY = ".lamindb/storage_uid.txt"
+LEGACY_STORAGE_UID_FILE_KEY = ".lamindb/_is_initialized"
 
 # a list of supported fsspec protocols
 # rename file to local before showing to a user
@@ -247,7 +248,7 @@ class StorageSettings:
     @property
     def _mark_storage_root(self) -> UPath:
         marker_path = self.root / STORAGE_UID_FILE_KEY
-        legacy_filepath = self.root / ".lamindb/_is_initialized"
+        legacy_filepath = self.root / LEGACY_STORAGE_UID_FILE_KEY
         if legacy_filepath.exists():
             logger.warning(
                 f"found legacy marker file, renaming it from {legacy_filepath} to {marker_path}"
