@@ -899,7 +899,7 @@ def check_storage_is_empty(
 ) -> int:
     root_upath = UPath(root)
     root_string = root_upath.as_posix()  # type: ignore
-    n_offset_objects = 1  # because of _is_initialized file, see mark_storage_root()
+    n_offset_objects = 1  # because of storage_uid.txt file, see mark_storage_root()
     if account_for_sqlite_file:
         n_offset_objects += 1  # the SQLite file is in the ".lamindb" directory
     if root_string.startswith(HOSTED_BUCKETS):

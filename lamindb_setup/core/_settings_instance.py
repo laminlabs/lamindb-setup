@@ -13,7 +13,12 @@ from ._hub_client import call_with_fallback
 from ._hub_crud import select_account_handle_name_by_lnid
 from ._hub_utils import LaminDsn, LaminDsnModel
 from ._settings_save import save_instance_settings
-from ._settings_storage import StorageSettings, init_storage, mark_storage_root
+from ._settings_storage import (
+    LEGACY_STORAGE_UID_FILE_KEY,
+    STORAGE_UID_FILE_KEY,
+    StorageSettings,
+    init_storage,
+)
 from ._settings_store import current_instance_settings_file, instance_settings_file
 from .cloud_sqlite_locker import (
     EXPIRATION_TIME,
@@ -147,32 +152,27 @@ class InstanceSettings:
         for record in all_local_records:
             root_path = Path(record.root)
             if root_path.exists():
-                marker_path = root_path / ".lamindb/_is_initialized"
-                if marker_path.exists():
-                    try:
-                        uid = marker_path.read_text()
-                    except PermissionError:
+                marker_path = root_path / STORAGE_UID_FILE_KEY
+                if not marker_path.exists():
+                    legacy_filepath = root_path / LEGACY_STORAGE_UID_FILE_KEY
+                    if legacy_filepath.exists():
                         logger.warning(
-                            f"ignoring the following location because no permission to read it: {marker_path}"
+                            f"found legacy marker file, renaming it from {legacy_filepath} to {marker_path}"
                         )
-                        continue
-                    if uid == record.uid:
-                        found = True
-                        break
-                    elif uid == "":
-                        try:
-                            # legacy instance that was not yet marked properly
-                            mark_storage_root(record.root, record.uid)
-                        except PermissionError:
-                            logger.warning(
-                                f"ignoring the following location because no permission to write to it: {marker_path}"
-                            )
-                            continue
+                        legacy_filepath.rename(marker_path)
                     else:
-                        continue
-                else:
-                    # legacy instance that was not yet marked at all
-                    mark_storage_root(record.root, record.uid)
+                        raise ValueError(
+                            f"local storage location '{root_path}' is corrupted, cannot find marker file with storage uid"
+                        )
+                try:
+                    uid = marker_path.read_text()
+                except PermissionError:
+                    logger.warning(
+                        f"ignoring the following location because no permission to read it: {marker_path}"
+                    )
+                    continue
+                if uid == record.uid:
+                    found = True
                     break
         if found:
             return StorageSettings(record.root)
