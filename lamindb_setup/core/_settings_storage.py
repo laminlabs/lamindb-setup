@@ -246,7 +246,14 @@ class StorageSettings:
 
     @property
     def _mark_storage_root(self) -> UPath:
-        return self.root / STORAGE_UID_FILE_KEY
+        marker_path = self.root / STORAGE_UID_FILE_KEY
+        legacy_filepath = self.root / ".lamindb/_is_initialized"
+        if legacy_filepath.exists():
+            logger.warning(
+                f"found legacy marker file, renaming it from {legacy_filepath} to {marker_path}"
+            )
+            legacy_filepath.rename(marker_path)
+        return marker_path
 
     @property
     def record(self) -> Any:
