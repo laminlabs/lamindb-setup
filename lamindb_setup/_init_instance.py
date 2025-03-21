@@ -14,6 +14,7 @@ from lamin_utils import logger
 from ._close import close as close_instance
 from ._silence_loggers import silence_loggers
 from .core import InstanceSettings
+from .core._docs import doc_args
 from .core._settings import settings
 from .core._settings_instance import is_local_db_url
 from .core._settings_storage import StorageSettings, init_storage
@@ -213,7 +214,15 @@ ln.Artifact.using("laminlabs/cellxgene").filter()
 Or do you want to switch off auto-connect via `lamin settings set auto-connect false`?
 """
 
+DOC_STORAGE_ARG = "A local or remote folder (`'s3://...'` or `'gs://...'`). Defaults to current working directory."
+DOC_INSTANCE_NAME = (
+    "Instance name. If not passed, it will equal the folder name passed to `storage`."
+)
+DOC_DB = "Database connection URL. Defaults to `None`, which implies an SQLite file in the storage location."
+DOC_MODULES = "Comma-separated string of schema modules."
 
+
+@doc_args(DOC_STORAGE_ARG, DOC_INSTANCE_NAME)
 def init(
     *,
     storage: UPathStr = ".",
@@ -222,13 +231,13 @@ def init(
     modules: str | None = None,
     **kwargs,
 ) -> None:
-    """Create and load a LaminDB instance.
+    """Init a LaminDB instance.
 
     Args:
-        storage: A local or remote folder (`"s3://..."` or `"gs://..."`). Defaults to current working directory.
-        name: Instance name. If not passed, it will equal the folder name passed to `storage`.
-        db: Database connection URL. Defaults to `None`, which implies an SQLite file in the storage location.
-        modules: Comma-separated string of schema modules.
+        storage: {}
+        name: {}
+        db: {}
+        modules: {}
     """
     isettings = None
     ssettings = None
