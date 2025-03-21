@@ -220,9 +220,10 @@ DOC_INSTANCE_NAME = (
 )
 DOC_DB = "Database connection URL. Defaults to `None`, which implies an SQLite file in the storage location."
 DOC_MODULES = "Comma-separated string of schema modules."
+DOC_LOW_LEVEL_KWARGS = "Keyword arguments for low-level control."
 
 
-@doc_args(DOC_STORAGE_ARG, DOC_INSTANCE_NAME)
+@doc_args(DOC_STORAGE_ARG, DOC_INSTANCE_NAME, DOC_DB, DOC_MODULES, DOC_LOW_LEVEL_KWARGS)
 def init(
     *,
     storage: UPathStr = ".",
@@ -238,6 +239,7 @@ def init(
         name: {}
         db: {}
         modules: {}
+        **kwargs: {}
     """
     isettings = None
     ssettings = None
