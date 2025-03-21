@@ -216,7 +216,7 @@ Or do you want to switch off auto-connect via `lamin settings set auto-connect f
 
 def init(
     *,
-    storage: UPathStr,
+    storage: UPathStr = ".",
     name: str | None = None,
     db: PostgresDsn | None = None,
     modules: str | None = None,
@@ -225,10 +225,10 @@ def init(
     """Create and load a LaminDB instance.
 
     Args:
-        storage: Either local or remote folder (`"s3://..."` or `"gs://..."`).
-        name: Instance name.
-        db: Database connection url, do not pass for SQLite.
-        modules: Comma-separated string of modules. None if the lamindb registries are enough.
+        storage: A local or remote folder (`"s3://..."` or `"gs://..."`). Defaults to current working directory.
+        name: Instance name. If not passed, it will equal the folder name passed to `storage`.
+        db: Database connection URL. Defaults to `None`, which implies an SQLite file in the storage location.
+        modules: Comma-separated string of schema modules.
     """
     isettings = None
     ssettings = None
