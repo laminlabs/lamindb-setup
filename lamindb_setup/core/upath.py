@@ -316,16 +316,26 @@ def upload_from(
         callback = ProgressCallback(local_path.name, "uploading")
         kwargs["callback"] = callback
 
-    source: str | list[str]
-    destination: str | list[str]
-    if local_path_is_dir and not create_folder:
-        source = [f.as_posix() for f in local_path.rglob("*") if f.is_file()]
-        destination = fsspec.utils.other_paths(
-            source, self.as_posix(), exists=False, flatten=False
-        )
-    else:
-        source = local_path.as_posix()
-        destination = self.as_posix()
+    source: str | list[str] = local_path.as_posix()
+    destination: str | list[str] = self.as_posix()
+    if local_path_is_dir:
+        size: int = 0
+        files: list[str] = []
+        for file in (path for path in local_path.rglob("*") if path.is_file()):
+            size += file.stat().st_size
+            files.append(file.as_posix())
+        # see https://github.com/fsspec/s3fs/issues/897
+        # here we reduce batch_size for folders bigger than 8 GiB
+        # to avoid the problem in the issue
+        # the default batch size for this case is 128
+        if "batch_size" not in kwargs and size >= 8 * 2**30:
+            kwargs["batch_size"] = 64
+
+        if not create_folder:
+            source = files
+            destination = fsspec.utils.other_paths(
+                files, self.as_posix(), exists=False, flatten=False
+            )
 
     # the below lines are to avoid s3fs triggering create_bucket in upload if
     # dirs are present, it allows to avoid the permission error
