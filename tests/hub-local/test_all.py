@@ -39,8 +39,8 @@ from lamindb_setup.core._settings_storage import base62
 from lamindb_setup.core._settings_storage import init_storage as init_storage_base
 from lamindb_setup.core._settings_store import instance_settings_file
 from lamindb_setup.core._settings_user import UserSettings
-from laminhub_rest.core.access_v2 import OrganizationHandler
-from laminhub_rest.core.instance.collaborator import InstanceCollaboratorHandler
+from laminhub_rest.core.legacy._instance_collaborator import InstanceCollaboratorHandler
+from laminhub_rest.core.organization import OrganizationHandler
 from laminhub_rest.test.instance.utils import (
     create_hosted_test_instance,
     delete_hosted_test_instance,

@@ -7,7 +7,7 @@ import pytest
 from lamindb_setup._connect_instance import InstanceNotFoundError
 from lamindb_setup.core._hub_client import connect_hub_with_auth
 from lamindb_setup.core._hub_crud import update_instance
-from laminhub_rest.core.instance.collaborator import InstanceCollaboratorHandler
+from laminhub_rest.core.legacy._instance_collaborator import InstanceCollaboratorHandler
 from postgrest.exceptions import APIError
 
 
