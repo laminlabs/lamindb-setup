@@ -7,6 +7,7 @@ from importlib import metadata
 from typing import TYPE_CHECKING, Literal
 from uuid import UUID
 
+import jwt
 from lamin_utils import logger
 from postgrest.exceptions import APIError
 
@@ -548,7 +549,7 @@ def _sign_in_hub_api_key(api_key: str, client: Client):
     access_token = json.loads(response)["accessToken"]
     # probably need more info here to avoid additional queries
     # like handle, uid etc
-    account_id = client.auth._decode_jwt(access_token)["sub"]
+    account_id = jwt.decode(access_token, options={"verify_signature": False})["sub"]
     client.postgrest.auth(access_token)
     # normally public.account.id is equal to auth.user.id
     data = client.table("account").select("*").eq("id", account_id).execute().data
