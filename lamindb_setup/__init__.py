@@ -33,7 +33,7 @@ Modules & settings:
 
 """
 
-__version__ = "1.3.2"  # denote a release candidate for 0.1.0 with 0.1rc1
+__version__ = "1.4.0"  # denote a release candidate for 0.1.0 with 0.1rc1
 
 import os
 
