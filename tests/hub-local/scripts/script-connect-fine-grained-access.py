@@ -12,6 +12,8 @@ assert ln_setup.settings.instance._fine_grained_access
 assert ln_setup.settings.instance._db_permissions == "jwt"
 assert ln_setup.settings.instance._api_url is not None
 
+print(ln_setup.settings.instance._api_url)
+
 # check calling access_db with anonymous user
 ln_setup.settings.user.handle = "anonymous"
 with pytest.raises(RuntimeError):
