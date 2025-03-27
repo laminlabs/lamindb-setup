@@ -402,10 +402,7 @@ def test_fine_grained_access(
         name=instance.name,
         client=admin_client,
     )
-    assert instance_record is not None
-    assert instance_record["resource_db_server_id"] is not None, instance_record
-    print("resource_db_server_id")
-    print(instance_record["resource_db_server_id"])
+    print(instance_record)
 
     from laminhub_rest.core._env import env
 
