@@ -315,9 +315,9 @@ def test_connect_instance_hub(create_myinstance, create_testadmin1_session):
     assert instance["name"] == create_myinstance["name"]
     assert instance["db"] == expected_dsn
 
-    # add db_server from seed_local_test
+    # add resource_db_server from seed_local_test
     admin_client.table("instance").update(
-        {"db_server_id": "e36c7069-2129-4c78-b2c6-323e2354b741"}
+        {"resource_db_server_id": "e36c7069-2129-4c78-b2c6-323e2354b741"}
     ).eq("id", instance["id"]).execute()
 
     instance, _ = connect_instance_hub(owner=owner, name=name)
