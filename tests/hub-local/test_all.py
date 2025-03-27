@@ -391,8 +391,27 @@ def test_init_storage_incorrect_protocol():
     assert "Protocol incorrect-protocol is not supported" in error.exconly()
 
 
-def test_fine_grained_access(create_instance_fine_grained_access):
+def test_fine_grained_access(
+    create_testadmin1_session, create_instance_fine_grained_access
+):
+    admin_client, testadmin1 = create_testadmin1_session
     instance = create_instance_fine_grained_access
+
+    instance_record = select_instance_by_name(
+        account_id=testadmin1._uuid,
+        name=instance.name,
+        client=admin_client,
+    )
+    assert instance_record is not None
+    assert instance_record["resource_db_server_id"] is not None, instance_record
+    print("resource_db_server_id")
+    print(instance_record["resource_db_server_id"])
+
+    from laminhub_rest.core._env import env
+
+    print("LAMIN_CLOUD_VERSION")
+    print(env().LAMIN_CLOUD_VERSION)
+    print(bool(env().LAMIN_CLOUD_VERSION))
 
     isettings_file = instance_settings_file(
         instance.name, ln_setup.settings.user.handle
