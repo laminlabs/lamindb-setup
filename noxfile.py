@@ -52,9 +52,7 @@ uv pip install --system git+https://github.com/laminlabs/bionty
 
     # above downgrades django, I don't understand why, try this
     if group == "hub-local":
-        cmds += (
-            "\nuv pip install --system -e ./laminhub/rest-hub line_profiler sentry_sdk"
-        )
+        cmds += "\nuv pip install --system ./laminhub/rest-hub line_profiler sentry_sdk"
 
     run(session, "uv pip install --system pandera")  # needed to import lamindb
     [run(session, line) for line in cmds.splitlines()]
