@@ -175,6 +175,12 @@ def create_instance_fine_grained_access(create_testadmin1_session):
     org_handler.create(testadmin1._uuid)
 
     instance = create_hosted_test_instance("instance_access_v2", access_v2=True)
+    # for now add resource_db_server_id manually
+    # because os.environ["LAMIN_CLOUD_VERSION"] = "0.1" makes laminhu fail to setup the instance
+    # this resource_db_server was created by seed_local_test()
+    client.table("instance").update(
+        {"resource_db_server_id": "e36c7069-2129-4c78-b2c6-323e2354b741"}
+    ).eq("id", instance.id.hex).execute()
     yield instance
     delete_hosted_test_instance(instance)
 
@@ -309,9 +315,9 @@ def test_connect_instance_hub(create_myinstance, create_testadmin1_session):
     assert instance["name"] == create_myinstance["name"]
     assert instance["db"] == expected_dsn
 
-    # add db_server from seed_local_test
+    # add resource_db_server from seed_local_test
     admin_client.table("instance").update(
-        {"db_server_id": "e36c7069-2129-4c78-b2c6-323e2354b741"}
+        {"resource_db_server_id": "e36c7069-2129-4c78-b2c6-323e2354b741"}
     ).eq("id", instance["id"]).execute()
 
     instance, _ = connect_instance_hub(owner=owner, name=name)
@@ -391,8 +397,18 @@ def test_init_storage_incorrect_protocol():
     assert "Protocol incorrect-protocol is not supported" in error.exconly()
 
 
-def test_fine_grained_access(create_instance_fine_grained_access):
+def test_fine_grained_access(
+    create_testadmin1_session, create_instance_fine_grained_access
+):
+    admin_client, testadmin1 = create_testadmin1_session
     instance = create_instance_fine_grained_access
+    # check api_url is set up correctly through the new tables
+    instance_record = select_instance_by_name(
+        account_id=testadmin1._uuid,
+        name=instance.name,
+        client=admin_client,
+    )
+    assert instance_record["resource_db_server_id"] is not None
 
     isettings_file = instance_settings_file(
         instance.name, ln_setup.settings.user.handle
