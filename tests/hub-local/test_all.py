@@ -396,17 +396,13 @@ def test_fine_grained_access(
 ):
     admin_client, testadmin1 = create_testadmin1_session
     instance = create_instance_fine_grained_access
-
-    select_instance_by_name(
+    # check api_url is set up correctly through the new tables
+    instance_record = select_instance_by_name(
         account_id=testadmin1._uuid,
         name=instance.name,
         client=admin_client,
     )
-    response = admin_client.functions.invoke(
-        "get-instance-settings-v1",
-        invoke_options={"body": {"owner": testadmin1.handle, "name": instance.name}},
-    )
-    print(response)
+    assert instance_record["resource_db_server_id"] is not None
 
     isettings_file = instance_settings_file(
         instance.name, ln_setup.settings.user.handle
