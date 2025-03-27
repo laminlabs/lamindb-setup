@@ -176,6 +176,7 @@ def create_instance_fine_grained_access(create_testadmin1_session):
 
     instance = create_hosted_test_instance("instance_access_v2", access_v2=True)
     # for now add resource_db_server_id manually
+    # because os.environ["LAMIN_CLOUD_VERSION"] = "0.1" makes laminhu fail to setup the instance
     # this resource_db_server was created by seed_local_test()
     client.table("instance").update(
         {"resource_db_server_id": "e36c7069-2129-4c78-b2c6-323e2354b741"}
