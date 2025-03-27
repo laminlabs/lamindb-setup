@@ -19,7 +19,6 @@ pytest_plugins = [
 
 def pytest_configure():
     os.environ["LAMIN_ENV"] = "local"
-    #    os.environ["LAMIN_CLOUD_VERSION"] = "0.1"
     remove_lamin_local_settings()
     supabase_resources.start_local()
     supabase_resources.reset_local()
