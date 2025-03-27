@@ -42,10 +42,9 @@ def get_schema_module_name(module_name, raise_import_error: bool = True) -> str 
         module_spec = importlib.util.find_spec(name)
         if module_spec is not None:
             return name
-    message = f"schema module '{module_name}' is not installed → no access to its labels & registries (resolve via `pip install {module_name}`)"
+    message = f"schema module '{module_name}' is not installed → resolve via `pip install {module_name}`"
     if raise_import_error:
         raise ImportError(message)
-    logger.warning(message.lower())
     return None
 
 
