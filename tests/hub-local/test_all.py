@@ -408,12 +408,6 @@ def test_fine_grained_access(
     )
     print(response)
 
-    from laminhub_rest.core._env import env
-
-    print("LAMIN_CLOUD_VERSION")
-    print(env().LAMIN_CLOUD_VERSION)
-    print(bool(env().LAMIN_CLOUD_VERSION))
-
     isettings_file = instance_settings_file(
         instance.name, ln_setup.settings.user.handle
     )
