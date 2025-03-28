@@ -286,7 +286,7 @@ class InstanceSettings:
         The core schema contained in lamindb is not included in this set.
         """
         if self._schema_str is None:
-            return {}  # type: ignore
+            return set()
         else:
             return {module for module in self._schema_str.split(",") if module != ""}
 
