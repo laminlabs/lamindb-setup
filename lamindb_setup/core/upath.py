@@ -177,22 +177,24 @@ def create_mapper(
         )
 
 
-def print_hook(size: int, value: int, objectname: str, action: str):
+def print_hook(
+    size: int, value: int, objectname: str, action: str, interactive_stdout: bool = True
+):
+    if "NBPRJ_TEST_NBPATH" in os.environ:
+        return None
+
     if size == 0:
         progress_in_percent = 100.0
     else:
         progress_in_percent = (value / size) * 100
-    out = f"... {action} {objectname}:" f" {min(progress_in_percent, 100):4.1f}%"
-    if "NBPRJ_TEST_NBPATH" not in os.environ:
-        is_final_update = progress_in_percent >= 100
-        # print progress only if the stdout is 'interactive'
-        # i.e "\r" erases the previous line
-        if IS_RUN_FROM_IPYTHON or sys.stdout.isatty():
-            end = "\n" if is_final_update else "\r"
-            print(out, end=end)
-        # otherwise print just the last message, i.e. 100% completed
-        elif is_final_update:
-            print(out)
+
+    is_final_update = progress_in_percent >= 100
+    # print progress only if the stdout is 'interactive'
+    # i.e "\r" erases the previous line
+    # otherwise print just the last message, i.e. 100% completed
+    if interactive_stdout or is_final_update:
+        out = f"... {action} {objectname}:" f" {min(progress_in_percent, 100):4.1f}%"
+        print(out, end="\n" if is_final_update else "\r")
 
 
 class ProgressCallback(fsspec.callbacks.Callback):
@@ -207,7 +209,13 @@ class ProgressCallback(fsspec.callbacks.Callback):
         super().__init__()
 
         self.action = action
-        print_progress = partial(print_hook, objectname=objectname, action=action)
+        interactive_stdout = IS_RUN_FROM_IPYTHON or sys.stdout.isatty()
+        print_progress = partial(
+            print_hook,
+            objectname=objectname,
+            action=action,
+            interactive_stdout=interactive_stdout,
+        )
         self.hooks = {"print_progress": print_progress}
 
         self.adjust_size = adjust_size
