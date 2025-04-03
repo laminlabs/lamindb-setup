@@ -34,7 +34,7 @@ uv pip install --system git+https://github.com/laminlabs/bionty
     if group == "hub-cloud":
         cmds = (
             modules_deps
-            + "uv pip install --system sentry_sdk line_profiler wheel flit"
+            + "uv pip install --system sentry_sdk line_profiler wheel==0.45.1 flit"
             + "\nuv pip install --system ./laminhub/rest-hub --no-build-isolation"
         )
     elif group == "docs":
