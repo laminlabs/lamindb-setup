@@ -32,6 +32,8 @@ class DBTokenManager:
 
     def set(self, token: str, connection_name: str = "default"):
         from django.db.transaction import Atomic
+
+        # no adapt in psycopg3
         from psycopg2.extensions import adapt
 
         connection = self.get_connection(connection_name)
@@ -41,23 +43,34 @@ class DBTokenManager:
             f"SELECT set_token({adapt(token).getquoted().decode()}, true); "
         )
 
-        # this relies on psycopg2 specific behaviour
-        # this won't work with psycopg3
         def set_token_wrapper(execute, sql, params, many, context):
-            in_atomic_block = (
-                context is not None
-                and "connection" in context
-                and context["connection"].in_atomic_block
+            not_in_atomic_block = (
+                context is None
+                or "connection" not in context
+                or not context["connection"].in_atomic_block
             )
             # ignore atomic blocks
-            if not in_atomic_block:
+            if not_in_atomic_block:
                 sql = set_token_query + sql
             elif self.debug:
                 print("--in atomic block--")
 
             if self.debug:
                 print(sql)
-            return execute(sql, params, many, context)
+            result = execute(sql, params, many, context)
+            # this ensures that psycopg3 in the current env doesn't break this wrapper
+            # psycopg3 returns a cursor
+            # psycopg3 fetching differs from psycopg2, it returns the output of all sql statements
+            # not only the last one as psycopg2 does. So we shift the cursor from set_token
+            if (
+                not_in_atomic_block
+                and result is not None
+                and hasattr(result, "nextset")
+            ):
+                if self.debug:
+                    print("(shift cursor)")
+                result.nextset()
+            return result
 
         connection.execute_wrappers.append(set_token_wrapper)
 
@@ -70,6 +83,8 @@ class DBTokenManager:
             if is_same_connection and len(connection.atomic_blocks) == 1:
                 # use raw psycopg2 connection here
                 # atomic block ensures connection
+                if self.debug:
+                    print("(set transaction token)")
                 connection.connection.cursor().execute(set_token_query)
 
         Atomic.__enter__ = __enter__
