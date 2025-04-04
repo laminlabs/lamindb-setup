@@ -51,6 +51,7 @@ class DBTokenManager:
 
             connection.execute_wrappers.append(set_db_token_wrapper)
 
+            # ensure we set the token only once for an outer atomic block
             def __enter__(atomic):
                 self.original_atomic_enter(atomic)
                 is_same_connection = (
