@@ -18,7 +18,7 @@ assert isettings._api_url is not None
 instance_dict = {
     "owner": isettings.owner,
     "name": isettings.name,
-    "id": isettings._id,
+    "id": isettings._id.hex,
     "api_url": isettings._api_url,
 }
 access_db(instance_dict)
