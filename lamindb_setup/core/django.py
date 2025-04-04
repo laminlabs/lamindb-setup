@@ -33,7 +33,13 @@ def set_db_token(token: str | None, connection_name: str = "default"):
         # this relies on psycopg2 specific behaviour
         # won't work with psycopg3
         def set_db_token_wrapper(execute, sql, params, many, context):
-            sql = set_token_query + sql
+            in_atomic_block = (
+                context is not None
+                and "connection" in context
+                and context["connection"].in_atomic_block
+            )
+            if not in_atomic_block:
+                sql = set_token_query + sql
             return execute(sql, params, many, context)
 
         connection.execute_wrappers.append(set_db_token_wrapper)
