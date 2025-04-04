@@ -34,12 +34,11 @@ from ._hub_utils import (
     LaminDsnModel,
 )
 from ._settings import settings
+from ._settings_instance import InstanceSettings
 from ._settings_storage import StorageSettings, base62
 
 if TYPE_CHECKING:
     from supabase import Client  # type: ignore
-
-    from ._settings_instance import InstanceSettings
 
 
 def delete_storage_record(storage_uuid: UUID, access_token: str | None = None) -> None:
@@ -439,11 +438,25 @@ def _access_aws(*, storage_root: str, client: Client) -> dict[str, dict]:
     return storage_root_info
 
 
-def access_db(isettings: InstanceSettings, access_token: str | None = None) -> str:
+def access_db(
+    instance: InstanceSettings | dict, access_token: str | None = None
+) -> str:
+    instance_id: UUID
+    instance_slug: str
+    instance_api_url: str | None
+    if isinstance(instance, InstanceSettings):
+        instance_id = instance._id
+        instance_slug = instance.slug
+        instance_api_url = instance._api_url
+    else:
+        instance_id = UUID(instance["id"])
+        instance_slug = instance["owner"] + "/" + instance["name"]
+        instance_api_url = instance["api_url"]
+
     if access_token is None:
         if settings.user.handle == "anonymous":
             raise RuntimeError(
-                f"Can only get fine-grained access to {isettings.slug} if authenticated."
+                f"Can only get fine-grained access to {instance_slug} if authenticated."
             )
         else:
             access_token = settings.user.access_token
@@ -451,20 +464,19 @@ def access_db(isettings: InstanceSettings, access_token: str | None = None) -> s
     else:
         renew_token = False
     # local is used in tests
-    url = f"/access_v2/instances/{isettings._id}/db_token"
+    url = f"/access_v2/instances/{instance_id}/db_token"
     if os.environ.get("LAMIN_ENV", "prod") != "local":
-        api_url = isettings._api_url
-        if api_url is None:
+        if instance_api_url is None:
             raise RuntimeError(
-                f"Can only get fine-grained access to {isettings.slug} if api_url is present."
+                f"Can only get fine-grained access to {instance_slug} if api_url is present."
             )
-        url = api_url + url
+        url = instance_api_url + url
 
     response = request_get_auth(url, access_token, renew_token)  # type: ignore
     response_json = response.json()
     if response.status_code != 200:
         raise PermissionError(
-            f"Fine-grained access to {isettings.slug} failed: {response_json}"
+            f"Fine-grained access to {instance_slug} failed: {response_json}"
         )
     if "token" not in response_json:
         raise RuntimeError("The response of access_db does not contain a db token.")

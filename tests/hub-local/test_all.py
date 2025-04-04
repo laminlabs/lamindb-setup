@@ -14,7 +14,6 @@ from lamindb_setup.core._hub_client import (
 )
 from lamindb_setup.core._hub_core import (
     _connect_instance_hub,
-    access_db,
     connect_instance_hub,
     init_instance_hub,
     init_storage_hub,
