@@ -466,12 +466,11 @@ def access_db(
     # local is used in tests
     url = f"/access_v2/instances/{instance_id}/db_token"
     if os.environ.get("LAMIN_ENV", "prod") != "local":
-        api_url = instance_api_url
-        if api_url is None:
+        if instance_api_url is None:
             raise RuntimeError(
                 f"Can only get fine-grained access to {instance_slug} if api_url is present."
             )
-        url = api_url + url
+        url = instance_api_url + url
 
     response = request_get_auth(url, access_token, renew_token)  # type: ignore
     response_json = response.json()
