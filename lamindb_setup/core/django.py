@@ -38,7 +38,7 @@ class DBTokenManager:
 
             # this relies on psycopg2 specific behaviour
             # won't work with psycopg3
-            def set_db_token_wrapper(execute, sql, params, many, context):
+            def set_token_wrapper(execute, sql, params, many, context):
                 in_atomic_block = (
                     context is not None
                     and "connection" in context
@@ -49,7 +49,7 @@ class DBTokenManager:
                     sql = set_token_query + sql
                 return execute(sql, params, many, context)
 
-            connection.execute_wrappers.append(set_db_token_wrapper)
+            connection.execute_wrappers.append(set_token_wrapper)
 
             # ensure we set the token only once for an outer atomic block
             def __enter__(atomic):
@@ -67,7 +67,7 @@ class DBTokenManager:
             connection.execute_wrappers = [
                 w
                 for w in connection.execute_wrappers
-                if getattr(w, "__name__", None) != "set_db_token_wrapper"
+                if getattr(w, "__name__", None) != "set_token_wrapper"
             ]
             Atomic.__enter__ = self.original_atomic_enter
 
