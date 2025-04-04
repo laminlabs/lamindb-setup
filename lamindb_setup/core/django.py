@@ -23,20 +23,26 @@ def set_db_token(token: str | None, connection_name: str = "default"):
     assert connection.vendor == "postgresql"
 
     if token is not None:
+        from psycopg2.extensions import adapt
 
-        def connect(self):
-            BaseDatabaseWrapper.connect(self)
-            # now the connection should be set
-            # Use a psycopg cursor directly, bypassing Django's utilities.
-            with self.connection.cursor() as cursor:
-                cursor.execute("SELECT set_token(%s, false);", (token,))
+        # escape correctly to avoid wrangling with params
+        set_token_query = (
+            f"SELECT set_token({adapt(token).getquoted().decode()}, true); "
+        )
+
+        # this relies on psycopg2 specific behaviour
+        # won't work with psycopg3
+        def set_db_token_wrapper(execute, sql, params, many, context):
+            sql = set_token_query + sql
+            return execute(sql, params, many, context)
+
+        connection.execute_wrappers.append(set_db_token_wrapper)
     else:
-        connect = BaseDatabaseWrapper.connect
-
-    connection.connect = connect.__get__(connection, connection.__class__)
-    # execute this to initially set or reset the token
-    connection.close()
-    connection.connect()
+        connection.execute_wrappers = [
+            w
+            for w in connection.execute_wrappers
+            if getattr(w, "__name__", None) != "set_db_token_wrapper"
+        ]
 
 
 def close_if_health_check_failed(self) -> None:
