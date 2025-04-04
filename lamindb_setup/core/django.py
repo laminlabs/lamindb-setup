@@ -16,9 +16,10 @@ CONN_MAX_AGE = 299
 
 # a class to manage jwt in dbs
 class DBTokenManager:
-    def __init__(self):
+    def __init__(self, debug: bool = False):
         from django.db.transaction import Atomic
 
+        self.debug = debug
         self.original_atomic_enter = Atomic.__enter__
 
     def get_connection(self, connection_name: str):
@@ -51,6 +52,11 @@ class DBTokenManager:
             # ignore atomic blocks
             if not in_atomic_block:
                 sql = set_token_query + sql
+            elif self.debug:
+                print("--in atomic block--")
+
+            if self.debug:
+                print(sql)
             return execute(sql, params, many, context)
 
         connection.execute_wrappers.append(set_token_wrapper)
