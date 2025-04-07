@@ -22,6 +22,8 @@ class DBTokenManager:
         self.debug = debug
         self.original_atomic_enter = Atomic.__enter__
 
+        self.tokens: dict[str, str] = {}
+
     def get_connection(self, connection_name: str):
         from django.db import connections
 
@@ -89,6 +91,8 @@ class DBTokenManager:
 
         Atomic.__enter__ = __enter__
 
+        self.tokens[connection_name] = token
+
     def reset(self, connection_name: str = "default"):
         from django.db.transaction import Atomic
 
@@ -100,6 +104,8 @@ class DBTokenManager:
             if getattr(w, "__name__", None) != "set_token_wrapper"
         ]
         Atomic.__enter__ = self.original_atomic_enter
+
+        self.tokens.pop(connection_name, None)
 
 
 db_token_manager = DBTokenManager()
@@ -194,7 +200,8 @@ def setup_django(
         if isettings._fine_grained_access and isettings._db_permissions == "jwt":
             from ._hub_core import access_db
 
-            db_token_manager.set(access_db(isettings))
+            db_token = access_db(isettings)
+            db_token_manager.set(db_token)  # sets for the default connection
 
     if configure_only:
         return None
