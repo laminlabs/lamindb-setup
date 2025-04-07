@@ -219,12 +219,14 @@ def connect(instance: str | None = None, **kwargs) -> str | tuple | None:
     _user: UserSettings | None = kwargs.get("_user", None)
     if _user is not None:
         access_token = _user.access_token
+    if instance is None:
+        instance = os.environ.get("LAMIN_CURRENT_INSTANCE_SLUG")
 
     try:
         if instance is None:
             isettings_or_none = _get_current_instance_settings()
             if isettings_or_none is None:
-                raise SystemExit(
+                raise ValueError(
                     "No instance was connected through the CLI, pass a value to `instance` or connect via the CLI."
                 )
             isettings = isettings_or_none
