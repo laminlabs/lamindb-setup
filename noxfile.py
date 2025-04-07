@@ -56,6 +56,8 @@ uv pip install --system git+https://github.com/laminlabs/bionty
     if group == "hub-local":
         cmds += "\nuv pip install --system sentry_sdk line_profiler wheel==0.45.1 flit"
         cmds += "\nuv pip install --system -e ./laminhub/rest-hub --no-build-isolation"
+        # check that just installing psycopg (psycopg3) doesn't break fine-grained access
+        cmds += "\nuv pip install --system psycopg[binary]"
 
     run(session, "uv pip install --system pandera")  # needed to import lamindb
     [run(session, line) for line in cmds.splitlines()]
