@@ -14,6 +14,9 @@ assert isettings._fine_grained_access
 assert isettings._db_permissions == "jwt"
 assert isettings._api_url is not None
 
+# test querying
+storage_record = isettings.storage.record
+
 # check calling access_db with a dict
 instance_dict = {
     "owner": isettings.owner,
