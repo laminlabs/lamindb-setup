@@ -193,7 +193,7 @@ def connect(instance: str | None = None, **kwargs) -> str | tuple | None:
 
     Args:
         instance: Pass a slug (`account/name`) or URL (`https://lamin.ai/account/name`).
-            If `None`, looks for an environment variable `LAMIN_CURRENT_INSTANCE_SLUG` to get the instance identifier. If it doesn't find this variable, it connects to the instance that was connected with `lamin connect` through the CLI.
+            If `None`, looks for an environment variable `LAMIN_CURRENT_INSTANCE` to get the instance identifier. If it doesn't find this variable, it connects to the instance that was connected with `lamin connect` through the CLI.
     """
     # validate kwargs
     valid_kwargs = {
@@ -220,7 +220,7 @@ def connect(instance: str | None = None, **kwargs) -> str | tuple | None:
     if _user is not None:
         access_token = _user.access_token
     if instance is None:
-        instance = os.environ.get("LAMIN_CURRENT_INSTANCE_SLUG")
+        instance = os.environ.get("LAMIN_CURRENT_INSTANCE")
 
     try:
         if instance is None:
