@@ -119,8 +119,11 @@ def login(
 def logout():
     if current_user_settings_file().exists():
         current_user_settings_file().unlink()
-        # update user info
         settings._user_settings = None
         logger.success("logged out")
     else:
         logger.important("already logged out")
+    if os.environ.get("LAMIN_API_KEY") is not None:
+        logger.warning(
+            "LAMIN_API_KEY is still set in your environment and will automatically log you in"
+        )
