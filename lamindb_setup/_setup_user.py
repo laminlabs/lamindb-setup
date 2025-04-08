@@ -5,6 +5,8 @@ from typing import TYPE_CHECKING
 
 from lamin_utils import logger
 
+from lamindb_setup.core._settings_save import UserSettings
+
 from ._check_setup import _check_instance_setup
 from ._init_instance import register_user
 from .core._settings import settings
@@ -15,9 +17,6 @@ from .core._settings_store import (
     user_settings_file_email,
     user_settings_file_handle,
 )
-
-if TYPE_CHECKING:
-    from lamindb_setup.core._settings_save import UserSettings
 
 
 def load_user(email: str | None = None, handle: str | None = None) -> UserSettings:
@@ -84,7 +83,7 @@ def login(
         elif user_settings.email is None:
             raise SystemExit(f"✗ No stored user email, please call: lamin login {user}")
     else:
-        user_settings = load_or_create_user_settings()
+        user_settings = UserSettings(handle="temporary", uid="00000000")
 
     from .core._hub_core import sign_in_hub, sign_in_hub_api_key
 
@@ -105,7 +104,7 @@ def login(
     else:
         user_uuid, user_id, user_handle, user_name, access_token = response
 
-    if email is None:
+    if api_key is not None:
         logger.success(f"logged in {user_handle} (uid: {user_id})")
     else:  # legacy flow
         logger.success(f"logged in with email {user_settings.email} (uid: {user_id})")
