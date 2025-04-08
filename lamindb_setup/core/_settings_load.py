@@ -40,7 +40,7 @@ def load_instance_settings(instance_settings_file: Path | None = None):
     if instance_settings_file is None:
         instance_settings_file = current_instance_settings_file()
     if not instance_settings_file.exists():
-        raise SystemExit("No instance is loaded! Call `lamin init` or `lamin connect`")
+        raise SystemExit("No instance connected! Call `lamin connect` or `lamin init`")
     try:
         settings_store = InstanceSettingsStore(_env_file=instance_settings_file)
     except (ValidationError, TypeError) as error:
