@@ -170,6 +170,7 @@ def _check_instance_setup(from_module: str | None = None) -> bool:
                 from ._connect_instance import connect
 
                 connect(_write_settings=False)
+                return django_lamin.IS_SETUP
             else:
                 logger.warning(InstanceNotSetupError.default_message)
         return False

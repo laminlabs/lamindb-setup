@@ -63,6 +63,7 @@ def login(
 
     from .core._hub_core import sign_in_hub, sign_in_hub_api_key
 
+    email = None
     if api_key is not None:
         response = sign_in_hub_api_key(api_key)
         user_settings = UserSettings(handle="temporary", uid="00000000")

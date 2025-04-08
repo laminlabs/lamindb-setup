@@ -301,22 +301,10 @@ def connect(instance: str | None = None, **kwargs) -> str | tuple | None:
         if _TEST_FAILED_LOAD:
             raise RuntimeError("Technical testing error.")
 
-        # below is for backfilling the instance_uid value
-        # we'll enable it once more people migrated to 0.71.0
-        # ssettings_record = isettings.storage.record
-        # if ssettings_record.instance_uid is None:
-        #     ssettings_record.instance_uid = isettings.uid
-        #     # try saving if not read-only access
-        #     try:
-        #         ssettings_record.save()
-        #     # raised by django when the access is denied
-        #     except ProgrammingError:
-        #         pass
         load_from_isettings(isettings, user=_user, write_settings=_write_settings)
         if _reload_lamindb:
             importlib.reload(importlib.import_module("lamindb"))
-        else:
-            logger.important(f"connected lamindb: {isettings.slug}")
+        logger.important(f"connected lamindb: {isettings.slug}")
     except Exception as e:
         if isettings is not None:
             if _write_settings:
