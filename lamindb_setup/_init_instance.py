@@ -11,7 +11,7 @@ from django.core.exceptions import FieldError
 from django.db.utils import OperationalError, ProgrammingError
 from lamin_utils import logger
 
-from ._close import close as close_instance
+from ._disconnect import disconnect
 from ._silence_loggers import silence_loggers
 from .core import InstanceSettings
 from .core._docs import doc_args
@@ -262,7 +262,7 @@ def init(
         if _check_instance_setup() and not _test:
             raise CannotSwitchDefaultInstance(MESSAGE_CANNOT_SWITCH_DEFAULT_INSTANCE)
         elif _write_settings:
-            close_instance(mute=True)
+            disconnect(mute=True)
         from .core._hub_core import init_instance_hub
 
         name_str, instance_id, instance_state, _ = validate_init_args(

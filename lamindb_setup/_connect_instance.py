@@ -8,7 +8,7 @@ from uuid import UUID
 from lamin_utils import logger
 
 from ._check_setup import _check_instance_setup, _get_current_instance_settings
-from ._close import close as close_instance
+from ._disconnect import disconnect
 from ._init_instance import (
     MESSAGE_CANNOT_SWITCH_DEFAULT_INSTANCE,
     CannotSwitchDefaultInstance,
@@ -255,7 +255,7 @@ def connect(instance: str | None = None, **kwargs) -> str | tuple | None:
                 and settings._instance_exists
                 and f"{owner}/{name}" != settings.instance.slug
             ):
-                close_instance(mute=True)
+                disconnect(mute=True)
 
             try:
                 isettings = _connect_instance(
