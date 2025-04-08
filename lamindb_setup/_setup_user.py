@@ -85,7 +85,6 @@ def login(
     from .core._hub_core import sign_in_hub, sign_in_hub_api_key
 
     if api_key is None:
-        user_settings = load_or_create_user_settings()
         response = sign_in_hub(
             user_settings.email,  # type: ignore
             user_settings.password,  # type: ignore
