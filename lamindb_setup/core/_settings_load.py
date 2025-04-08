@@ -56,14 +56,19 @@ def load_instance_settings(instance_settings_file: Path | None = None):
     return isettings
 
 
-def load_or_create_user_settings() -> UserSettings:
-    """Return current user settings."""
+def load_or_create_user_settings(api_key: str | None = None) -> UserSettings:
+    """Return current user settings.
+
+    Args:
+        api_key: if provided and there is no current user,
+            perform login and return the user settings.
+    """
     current_user_settings = current_user_settings_file()
     if not current_user_settings.exists():
-        if os.environ.get("LAMIN_API_KEY"):
+        if api_key is not None:
             from lamindb_setup._setup_user import login
 
-            return login()
+            return login(api_key=api_key)
         else:
             logger.warning("using anonymous user (to identify, call: lamin login)")
         usettings = UserSettings(handle="anonymous", uid="00000000")

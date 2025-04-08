@@ -114,7 +114,10 @@ class SetupSettings:
             and self._user_settings_env != get_env_name()
         )
         if self._user_settings is None or env_changed:
-            self._user_settings = load_or_create_user_settings()
+            # only uses LAMIN_API_KEY if there is no current_user.env
+            self._user_settings = load_or_create_user_settings(
+                api_key=os.environ.get("LAMIN_API_KEY")
+            )
             self._user_settings_env = get_env_name()
             if self._user_settings and self._user_settings.uid is None:
                 raise RuntimeError("Need to login, first: lamin login")

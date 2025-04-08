@@ -15,7 +15,9 @@ from .core._settings_store import (
     user_settings_file_email,
     user_settings_file_handle,
 )
-from .core._settings_user import UserSettings
+
+if TYPE_CHECKING:
+    from lamindb_setup.core._settings_save import UserSettings
 
 
 def load_user(email: str | None = None, handle: str | None = None) -> UserSettings:
@@ -61,22 +63,17 @@ def login(
         else:
             raise ValueError("Both `user` and `api_key` should not be `None`.")
 
-    from .core._hub_core import sign_in_hub, sign_in_hub_api_key
-
-    email = None
-    if api_key is not None:
-        response = sign_in_hub_api_key(api_key)
-        user_settings = UserSettings(handle="temporary", uid="00000000")
-        user_settings.password = None
-    else:  # legacy flow
+    if api_key is None:
         if "@" in user:  # type: ignore
             email, handle = user, None
         else:
             email, handle = None, user
         user_settings = load_user(email, handle)
+
         if key is not None:
-            # within UserSettings, the legacy API key is called "password"
+            # within UserSettings, we still call it "password" for a while
             user_settings.password = key
+
         if user_settings.password is None:
             api_key = user_settings.api_key
             if api_key is None:
@@ -86,11 +83,20 @@ def login(
                 )
         elif user_settings.email is None:
             raise SystemExit(f"✗ No stored user email, please call: lamin login {user}")
+    else:
+        user_settings = load_or_create_user_settings()
+
+    from .core._hub_core import sign_in_hub, sign_in_hub_api_key
+
+    if api_key is None:
         response = sign_in_hub(
             user_settings.email,  # type: ignore
             user_settings.password,  # type: ignore
             user_settings.handle,
         )
+    else:
+        response = sign_in_hub_api_key(api_key)
+        user_settings.password = None
 
     if isinstance(response, Exception):
         raise response
@@ -98,10 +104,12 @@ def login(
         raise SystemExit(f"✗ Unsuccessful login: {response}.")
     else:
         user_uuid, user_id, user_handle, user_name, access_token = response
+
     if email is None:
         logger.success(f"logged in {user_handle} (uid: {user_id})")
     else:  # legacy flow
         logger.success(f"logged in with email {user_settings.email} (uid: {user_id})")
+
     user_settings.uid = user_id
     user_settings.handle = user_handle
     user_settings.name = user_name
