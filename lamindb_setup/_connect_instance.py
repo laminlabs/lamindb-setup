@@ -304,7 +304,8 @@ def connect(instance: str | None = None, **kwargs) -> str | tuple | None:
         load_from_isettings(isettings, user=_user, write_settings=_write_settings)
         if _reload_lamindb:
             importlib.reload(importlib.import_module("lamindb"))
-        logger.important(f"connected lamindb: {isettings.slug}")
+        else:
+            logger.important(f"connected lamindb: {isettings.slug}")
     except Exception as e:
         if isettings is not None:
             if _write_settings:

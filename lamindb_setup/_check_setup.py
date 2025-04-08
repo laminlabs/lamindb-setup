@@ -169,7 +169,7 @@ def _check_instance_setup(from_module: str | None = None) -> bool:
             if os.environ.get("LAMIN_CURRENT_INSTANCE") is not None:
                 from ._connect_instance import connect
 
-                connect(_write_settings=False)
+                connect(_write_settings=False, _reload_lamindb=False)
                 return django_lamin.IS_SETUP
             else:
                 logger.warning(InstanceNotSetupError.default_message)
