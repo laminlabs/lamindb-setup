@@ -14,7 +14,6 @@ from ._init_instance import (
     CannotSwitchDefaultInstance,
     load_from_isettings,
 )
-from ._setup_user import login
 from ._silence_loggers import silence_loggers
 from .core._hub_core import connect_instance_hub
 from .core._hub_utils import (
@@ -220,12 +219,6 @@ def connect(instance: str | None = None, **kwargs) -> str | tuple | None:
     _user: UserSettings | None = kwargs.get("_user", None)
     if _user is not None:
         access_token = _user.access_token
-    if (
-        settings.user.api_key is None
-        and settings.user.password is None
-        and os.environ.get("LAMIN_API_KEY") is not None
-    ):
-        login()
     if instance is None:
         instance = os.environ.get("LAMIN_CURRENT_INSTANCE")
 

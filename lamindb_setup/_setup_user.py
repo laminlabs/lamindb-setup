@@ -15,9 +15,7 @@ from .core._settings_store import (
     user_settings_file_email,
     user_settings_file_handle,
 )
-
-if TYPE_CHECKING:
-    from lamindb_setup.core._settings_save import UserSettings
+from .core._settings_user import UserSettings
 
 
 def load_user(email: str | None = None, handle: str | None = None) -> UserSettings:
@@ -83,12 +81,11 @@ def login(
                 )
         elif user_settings.email is None:
             raise SystemExit(f"✗ No stored user email, please call: lamin login {user}")
-    else:
-        user_settings = load_or_create_user_settings(anonymous_warning=False)
 
     from .core._hub_core import sign_in_hub, sign_in_hub_api_key
 
     if api_key is None:
+        user_settings = load_or_create_user_settings()
         response = sign_in_hub(
             user_settings.email,  # type: ignore
             user_settings.password,  # type: ignore
@@ -96,6 +93,9 @@ def login(
         )
     else:
         response = sign_in_hub_api_key(api_key)
+        user_settings = UserSettings(
+            handle="temporary", uid="00000000"
+        )  # to be populated
         user_settings.password = None
 
     if isinstance(response, Exception):

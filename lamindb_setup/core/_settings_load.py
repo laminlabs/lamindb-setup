@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import os
 from typing import TYPE_CHECKING
 from uuid import UUID, uuid4
 
@@ -55,11 +56,15 @@ def load_instance_settings(instance_settings_file: Path | None = None):
     return isettings
 
 
-def load_or_create_user_settings(anonymous_warning: bool = True) -> UserSettings:
+def load_or_create_user_settings() -> UserSettings:
     """Return current user settings."""
     current_user_settings = current_user_settings_file()
     if not current_user_settings.exists():
-        if anonymous_warning:
+        if os.environ.get("LAMIN_API_KEY"):
+            from lamindb_setup._setup_user import login
+
+            login()
+        else:
             logger.warning("using anonymous user (to identify, call: lamin login)")
         usettings = UserSettings(handle="anonymous", uid="00000000")
         from ._settings_save import save_user_settings
