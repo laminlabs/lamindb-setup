@@ -117,7 +117,7 @@ class SetupSettings:
             self._user_settings = load_or_create_user_settings()
             self._user_settings_env = get_env_name()
             if self._user_settings and self._user_settings.uid is None:
-                raise RuntimeError("Need to login, first: lamin login <email>")
+                raise RuntimeError("Need to login, first: lamin login")
         return self._user_settings  # type: ignore
 
     @property

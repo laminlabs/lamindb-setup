@@ -71,7 +71,7 @@ def login(
         user_settings = load_user(email, handle)
 
         if key is not None:
-            # within UserSettings, we still call it "password" for a while
+            # within UserSettings, the legacy API key is called "password"
             user_settings.password = key
 
         if user_settings.password is None:
@@ -84,7 +84,7 @@ def login(
         elif user_settings.email is None:
             raise SystemExit(f"✗ No stored user email, please call: lamin login {user}")
     else:
-        user_settings = load_or_create_user_settings()
+        user_settings = load_or_create_user_settings(anonymous_warning=False)
 
     from .core._hub_core import sign_in_hub, sign_in_hub_api_key
 

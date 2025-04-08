@@ -55,11 +55,12 @@ def load_instance_settings(instance_settings_file: Path | None = None):
     return isettings
 
 
-def load_or_create_user_settings() -> UserSettings:
+def load_or_create_user_settings(anonymous_warning: bool = True) -> UserSettings:
     """Return current user settings."""
     current_user_settings = current_user_settings_file()
     if not current_user_settings.exists():
-        logger.warning("using anonymous user (to identify, call: lamin login)")
+        if anonymous_warning:
+            logger.warning("using anonymous user (to identify, call: lamin login)")
         usettings = UserSettings(handle="anonymous", uid="00000000")
         from ._settings_save import save_user_settings
 
