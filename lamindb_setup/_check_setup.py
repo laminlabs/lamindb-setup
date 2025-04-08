@@ -163,10 +163,13 @@ def _check_instance_setup(from_module: str | None = None) -> bool:
         return django_lamin.IS_SETUP
     else:
         if from_module is not None and settings.auto_connect:
+            # the below enables users to auto-connect to an instance
+            # simply by setting an environment variable, bypassing the
+            # need of calling connect() manually
             if os.environ.get("LAMIN_CURRENT_INSTANCE") is not None:
                 from ._connect_instance import connect
 
-                connect()
+                connect(_write_settings=False)
             else:
                 logger.warning(InstanceNotSetupError.default_message)
         return False

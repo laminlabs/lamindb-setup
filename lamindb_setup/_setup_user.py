@@ -47,7 +47,7 @@ def load_user(email: str | None = None, handle: str | None = None) -> UserSettin
 
 def login(
     user: str | None = None, *, api_key: str | None = None, key: str | None = None
-) -> None:
+) -> UserSettings:
     """Log in user.
 
     Args:
@@ -61,17 +61,21 @@ def login(
         else:
             raise ValueError("Both `user` and `api_key` should not be `None`.")
 
-    if api_key is None:
+    from .core._hub_core import sign_in_hub, sign_in_hub_api_key
+
+    if api_key is not None:
+        response = sign_in_hub_api_key(api_key)
+        user_settings = UserSettings(handle="temporary", uid="00000000")
+        user_settings.password = None
+    else:  # legacy flow
         if "@" in user:  # type: ignore
             email, handle = user, None
         else:
             email, handle = None, user
         user_settings = load_user(email, handle)
-
         if key is not None:
             # within UserSettings, the legacy API key is called "password"
             user_settings.password = key
-
         if user_settings.password is None:
             api_key = user_settings.api_key
             if api_key is None:
@@ -81,21 +85,11 @@ def login(
                 )
         elif user_settings.email is None:
             raise SystemExit(f"✗ No stored user email, please call: lamin login {user}")
-
-    from .core._hub_core import sign_in_hub, sign_in_hub_api_key
-
-    if api_key is None:
         response = sign_in_hub(
             user_settings.email,  # type: ignore
             user_settings.password,  # type: ignore
             user_settings.handle,
         )
-    else:
-        response = sign_in_hub_api_key(api_key)
-        user_settings = UserSettings(
-            handle="temporary", uid="00000000"
-        )  # to be populated
-        user_settings.password = None
 
     if isinstance(response, Exception):
         raise response
@@ -103,13 +97,9 @@ def login(
         raise SystemExit(f"✗ Unsuccessful login: {response}.")
     else:
         user_uuid, user_id, user_handle, user_name, access_token = response
-    if api_key is not None:
-        logger.success(
-            f"logged in with API key (handle: {user_handle}, uid: {user_id})"
-        )
-    elif handle is None:
-        logger.success(f"logged in with handle {user_handle} (uid: {user_id})")
-    else:
+    if email is None:
+        logger.success(f"logged in {user_handle} (uid: {user_id})")
+    else:  # legacy flow
         logger.success(f"logged in with email {user_settings.email} (uid: {user_id})")
     user_settings.uid = user_id
     user_settings.handle = user_handle
@@ -123,7 +113,7 @@ def login(
         register_user(user_settings)
 
     settings._user_settings = None
-    return None
+    return user_settings
 
 
 def logout():

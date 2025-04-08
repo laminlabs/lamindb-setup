@@ -63,7 +63,7 @@ def load_or_create_user_settings() -> UserSettings:
         if os.environ.get("LAMIN_API_KEY"):
             from lamindb_setup._setup_user import login
 
-            login()
+            return login()
         else:
             logger.warning("using anonymous user (to identify, call: lamin login)")
         usettings = UserSettings(handle="anonymous", uid="00000000")
