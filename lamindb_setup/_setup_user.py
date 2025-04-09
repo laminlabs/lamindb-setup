@@ -8,7 +8,7 @@ from lamin_utils import logger
 from ._check_setup import _check_instance_setup
 from ._init_instance import register_user
 from .core._settings import settings
-from .core._settings_load import load_or_create_user_settings, load_user_settings
+from .core._settings_load import load_user_settings
 from .core._settings_save import save_user_settings
 from .core._settings_store import (
     current_user_settings_file,
@@ -28,15 +28,12 @@ def load_user(email: str | None = None, handle: str | None = None) -> UserSettin
         save_user_settings(user_settings)  # needed to save to current_user.env
         assert user_settings.email is not None or user_settings.api_key is not None
     else:
-        user_settings = load_or_create_user_settings()
         if email is None:
             raise SystemExit(
                 "✗ Use your email for your first login in a compute environment. "
                 "After that, you can use your handle."
             )
-        user_settings.email = email
-        user_settings.handle = handle
-        save_user_settings(user_settings)
+        user_settings = UserSettings(handle=handle, email=email, uid="null")  # type: ignore
 
     from .core._settings import settings
 
@@ -82,7 +79,7 @@ def login(
         elif user_settings.email is None:
             raise SystemExit(f"✗ No stored user email, please call: lamin login {user}")
     else:
-        user_settings = UserSettings(handle="temporary", uid="00000000")
+        user_settings = UserSettings(handle="temporary", uid="null")
 
     from .core._hub_core import sign_in_hub, sign_in_hub_api_key
 
