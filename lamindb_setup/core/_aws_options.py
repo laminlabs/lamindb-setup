@@ -50,9 +50,7 @@ class AWSOptionsManager:
     @staticmethod
     def _suppress_aiobotocore_traceback_logging():
         logger = logging.getLogger("aiobotocore.credentials")
-
-        for handler in logger.handlers:
-            handler.addFilter(NoTracebackFilter())
+        logger.addFilter(NoTracebackFilter())
 
     def __init__(self):
         self._credentials_cache = {}
