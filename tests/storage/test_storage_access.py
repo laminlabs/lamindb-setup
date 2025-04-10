@@ -58,4 +58,4 @@ def test_connect_instance_with_public_storage():
     )
     client.auth.sign_out()
     assert ln_setup.settings.instance._id == UUID(instance["id"])
-    ln_setup.close()
+    ln_setup.disconnect()

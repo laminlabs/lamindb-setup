@@ -8,7 +8,7 @@ from uuid import UUID
 from lamin_utils import logger
 
 from ._check_setup import _check_instance_setup, _get_current_instance_settings
-from ._close import close as close_instance
+from ._disconnect import disconnect
 from ._init_instance import (
     MESSAGE_CANNOT_SWITCH_DEFAULT_INSTANCE,
     CannotSwitchDefaultInstance,
@@ -192,8 +192,8 @@ def connect(instance: str | None = None, **kwargs) -> str | tuple | None:
     """Connect to an instance.
 
     Args:
-        instance: `None` or an instance identifier (URL, slug `account/name`, or `name` if the instance is local or in your account).
-            If `None`, it will connect to the instance that was connected via the CLI.
+        instance: Pass a slug (`account/name`) or URL (`https://lamin.ai/account/name`).
+            If `None`, looks for an environment variable `LAMIN_CURRENT_INSTANCE` to get the instance identifier. If it doesn't find this variable, it connects to the instance that was connected with `lamin connect` through the CLI.
     """
     # validate kwargs
     valid_kwargs = {
@@ -219,12 +219,14 @@ def connect(instance: str | None = None, **kwargs) -> str | tuple | None:
     _user: UserSettings | None = kwargs.get("_user", None)
     if _user is not None:
         access_token = _user.access_token
+    if instance is None:
+        instance = os.environ.get("LAMIN_CURRENT_INSTANCE")
 
     try:
         if instance is None:
             isettings_or_none = _get_current_instance_settings()
             if isettings_or_none is None:
-                raise SystemExit(
+                raise ValueError(
                     "No instance was connected through the CLI, pass a value to `instance` or connect via the CLI."
                 )
             isettings = isettings_or_none
@@ -246,7 +248,7 @@ def connect(instance: str | None = None, **kwargs) -> str | tuple | None:
                 and settings._instance_exists
                 and f"{owner}/{name}" != settings.instance.slug
             ):
-                close_instance(mute=True)
+                disconnect(mute=True)
 
             try:
                 isettings = _connect_instance(
@@ -299,17 +301,6 @@ def connect(instance: str | None = None, **kwargs) -> str | tuple | None:
         if _TEST_FAILED_LOAD:
             raise RuntimeError("Technical testing error.")
 
-        # below is for backfilling the instance_uid value
-        # we'll enable it once more people migrated to 0.71.0
-        # ssettings_record = isettings.storage.record
-        # if ssettings_record.instance_uid is None:
-        #     ssettings_record.instance_uid = isettings.uid
-        #     # try saving if not read-only access
-        #     try:
-        #         ssettings_record.save()
-        #     # raised by django when the access is denied
-        #     except ProgrammingError:
-        #         pass
         load_from_isettings(isettings, user=_user, write_settings=_write_settings)
         if _reload_lamindb:
             importlib.reload(importlib.import_module("lamindb"))

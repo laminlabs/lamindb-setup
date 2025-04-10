@@ -12,7 +12,7 @@ Basic operations:
    login
    logout
    init
-   close
+   disconnect
    delete
 
 Instance operations:
@@ -41,9 +41,9 @@ from packaging import version as packaging_version
 
 from . import core
 from ._check_setup import _check_instance_setup
-from ._close import close
 from ._connect_instance import connect, load
 from ._delete import delete
+from ._disconnect import disconnect
 from ._django import django
 from ._entry_points import call_registered_entry_points as _call_registered_entry_points
 from ._init_instance import init
@@ -100,3 +100,6 @@ _TESTING = _is_CI_environment()
 _call_registered_entry_points("lamindb_setup.on_import")
 
 settings.__doc__ = """Global :class:`~lamindb.setup.core.SetupSettings`."""
+
+
+close = disconnect  # backward compatibility

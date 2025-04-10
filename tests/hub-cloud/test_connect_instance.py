@@ -12,11 +12,11 @@ from postgrest.exceptions import APIError
 
 
 def test_connect_pass_none():
-    with pytest.raises(SystemExit) as err:
+    with pytest.raises(ValueError) as err:
         ln_setup.connect(_test=True)
     assert (
         err.exconly()
-        == "SystemExit: No instance was connected through the CLI, pass a value to `instance` or connect via the CLI."
+        == "ValueError: No instance was connected through the CLI, pass a value to `instance` or connect via the CLI."
     )
 
 

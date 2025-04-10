@@ -8,16 +8,14 @@ from lamin_utils import logger
 from ._check_setup import _check_instance_setup
 from ._init_instance import register_user
 from .core._settings import settings
-from .core._settings_load import load_or_create_user_settings, load_user_settings
+from .core._settings_load import load_user_settings
 from .core._settings_save import save_user_settings
 from .core._settings_store import (
     current_user_settings_file,
     user_settings_file_email,
     user_settings_file_handle,
 )
-
-if TYPE_CHECKING:
-    from lamindb_setup.core._settings_save import UserSettings
+from .core._settings_user import UserSettings
 
 
 def load_user(email: str | None = None, handle: str | None = None) -> UserSettings:
@@ -30,15 +28,12 @@ def load_user(email: str | None = None, handle: str | None = None) -> UserSettin
         save_user_settings(user_settings)  # needed to save to current_user.env
         assert user_settings.email is not None or user_settings.api_key is not None
     else:
-        user_settings = load_or_create_user_settings()
         if email is None:
             raise SystemExit(
                 "✗ Use your email for your first login in a compute environment. "
                 "After that, you can use your handle."
             )
-        user_settings.email = email
-        user_settings.handle = handle
-        save_user_settings(user_settings)
+        user_settings = UserSettings(handle=handle, email=email, uid="null")  # type: ignore
 
     from .core._settings import settings
 
@@ -49,7 +44,7 @@ def load_user(email: str | None = None, handle: str | None = None) -> UserSettin
 
 def login(
     user: str | None = None, *, api_key: str | None = None, key: str | None = None
-) -> None:
+) -> UserSettings:
     """Log in user.
 
     Args:
@@ -84,7 +79,7 @@ def login(
         elif user_settings.email is None:
             raise SystemExit(f"✗ No stored user email, please call: lamin login {user}")
     else:
-        user_settings = load_or_create_user_settings()
+        user_settings = UserSettings(handle="temporary", uid="null")
 
     from .core._hub_core import sign_in_hub, sign_in_hub_api_key
 
@@ -104,14 +99,12 @@ def login(
         raise SystemExit(f"✗ Unsuccessful login: {response}.")
     else:
         user_uuid, user_id, user_handle, user_name, access_token = response
+
     if api_key is not None:
-        logger.success(
-            f"logged in with API key (handle: {user_handle}, uid: {user_id})"
-        )
-    elif handle is None:
-        logger.success(f"logged in with handle {user_handle} (uid: {user_id})")
-    else:
+        logger.success(f"logged in {user_handle} (uid: {user_id})")
+    else:  # legacy flow
         logger.success(f"logged in with email {user_settings.email} (uid: {user_id})")
+
     user_settings.uid = user_id
     user_settings.handle = user_handle
     user_settings.name = user_name
@@ -124,14 +117,17 @@ def login(
         register_user(user_settings)
 
     settings._user_settings = None
-    return None
+    return user_settings
 
 
 def logout():
     if current_user_settings_file().exists():
         current_user_settings_file().unlink()
-        # update user info
         settings._user_settings = None
         logger.success("logged out")
     else:
         logger.important("already logged out")
+    if os.environ.get("LAMIN_API_KEY") is not None:
+        logger.warning(
+            "LAMIN_API_KEY is still set in your environment and will automatically log you in"
+        )
