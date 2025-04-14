@@ -16,6 +16,7 @@ IS_MIGRATING = False
 CONN_MAX_AGE = 299
 
 
+# db token that refreshes on access if needed
 class DBToken:
     def __init__(
         self, intance: InstanceSettings | dict, access_token: str | None = None
