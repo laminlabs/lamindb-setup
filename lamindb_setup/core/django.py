@@ -49,7 +49,7 @@ class DBToken:
             from psycopg2.extensions import adapt
 
             self._token_query = (
-                f"SELECT set_token({adapt(self._token).getquoted().decode()}, true); "
+                f"SELECT set_token({adapt(self._token).getquoted().decode()}, true);"
             )
 
         return self._token_query
