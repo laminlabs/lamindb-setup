@@ -22,6 +22,12 @@ isettings.storage._record = None
 with transaction.atomic():
     assert isettings.storage.record.id == storage_record.id
 
+assert db_token_manager.tokens
+db_token_manager.reset()
+
+isettings.storage._record = None
+storage_record = isettings.storage.record
+
 # check calling access_db with a dict
 instance_dict = {
     "owner": isettings.owner,
