@@ -57,10 +57,9 @@ class DBToken:
 
 # a class to manage jwt in dbs
 class DBTokenManager:
-    def __init__(self, debug: bool = False):
+    def __init__(self):
         from django.db.transaction import Atomic
 
-        self.debug = debug
         self.original_atomic_enter = Atomic.__enter__
 
         self.tokens: dict[str, DBToken] = {}
@@ -90,11 +89,6 @@ class DBTokenManager:
             # ignore atomic blocks
             if not_in_atomic_block:
                 sql = token.token_query + sql
-            elif self.debug:
-                print("--in atomic block--")
-
-            if self.debug:
-                print(sql)
             result = execute(sql, params, many, context)
             # this ensures that psycopg3 in the current env doesn't break this wrapper
             # psycopg3 returns a cursor
@@ -105,8 +99,6 @@ class DBTokenManager:
                 and result is not None
                 and hasattr(result, "nextset")
             ):
-                if self.debug:
-                    print("(shift cursor)")
                 result.nextset()
             return result
 
@@ -121,8 +113,6 @@ class DBTokenManager:
             if is_same_connection and len(connection.atomic_blocks) == 1:
                 # use raw psycopg2 connection here
                 # atomic block ensures connection
-                if self.debug:
-                    print("(set transaction token)")
                 connection.connection.cursor().execute(token.token_query)
 
         Atomic.__enter__ = __enter__
