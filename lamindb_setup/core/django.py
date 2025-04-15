@@ -23,36 +23,30 @@ class DBToken:
     ):
         self.instance = intance
         self.access_token = access_token
-
-        self._token: str
-        self._expiration: float
+        # initialized in token_query
+        self._token: str | None = None
         self._token_query: str | None = None
-        # populate the variables above
-        self._refresh_token()
+        self._expiration: float
 
     def _refresh_token(self):
         from ._hub_core import access_db
+        from psycopg2.extensions import adapt
 
         self._token = access_db(self.instance, self.access_token)
+        self._token_query = (
+            f"SELECT set_token({adapt(self._token).getquoted().decode()}, true);"
+        )
         self._expiration = jwt.decode(self._token, options={"verify_signature": False})[
             "exp"
         ]
-        self._token_query = None
 
     @property
     def token_query(self) -> str:
         # refresh token if needed
-        if time.time() >= self._expiration:
+        if self._token is None or time.time() >= self._expiration:
             self._refresh_token()
 
-        if self._token_query is None:
-            from psycopg2.extensions import adapt
-
-            self._token_query = (
-                f"SELECT set_token({adapt(self._token).getquoted().decode()}, true);"
-            )
-
-        return self._token_query
+        return self._token_query  # type: ignore
 
 
 # a class to manage jwt in dbs
