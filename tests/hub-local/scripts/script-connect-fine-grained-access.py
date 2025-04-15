@@ -2,7 +2,7 @@ import os
 
 import lamindb_setup as ln_setup
 import pytest
-from django.db import transaction
+from django.db import connection, transaction
 from lamindb_setup.core._hub_core import access_db
 from lamindb_setup.core.django import db_token_manager
 
@@ -21,6 +21,13 @@ storage_record = isettings.storage.record
 isettings.storage._record = None
 with transaction.atomic():
     assert isettings.storage.record.id == storage_record.id
+
+# check directly
+with connection.cursor() as cur:
+    cur.execute("SELECT current_setting('app.account_id');")
+    account_id = cur.fetchall()[0][0]
+assert account_id == ln_setup.settings.user._uuid.hex  # type: ignore
+
 # check reset
 assert db_token_manager.tokens
 db_token_manager.reset()
