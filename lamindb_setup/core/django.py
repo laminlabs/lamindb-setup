@@ -69,9 +69,6 @@ class DBTokenManager:
     def set(self, token: DBToken, connection_name: str = "default"):
         from django.db.transaction import Atomic
 
-        # no adapt in psycopg3
-        from psycopg2.extensions import adapt
-
         connection = self.get_connection(connection_name)
 
         def set_token_wrapper(execute, sql, params, many, context):
@@ -98,20 +95,23 @@ class DBTokenManager:
 
         connection.execute_wrappers.append(set_token_wrapper)
 
+        self.tokens[connection_name] = token
+
         # ensure we set the token only once for an outer atomic block
         def __enter__(atomic):
             self.original_atomic_enter(atomic)
-            is_same_connection = (
-                "default" if atomic.using is None else atomic.using
-            ) == connection_name
-            if is_same_connection and len(connection.atomic_blocks) == 1:
-                # use raw psycopg2 connection here
-                # atomic block ensures connection
-                connection.connection.cursor().execute(token.token_query)
+            connection_name = "default" if atomic.using is None else atomic.using
+            if connection_name in self.tokens:
+                # here we don't use the connection from the closure
+                # because Atomic is a single class to manage transactions for all connections
+                connection = self.get_connection(connection_name)
+                if len(connection.atomic_blocks) == 1:
+                    token = self.tokens[connection_name]
+                    # use raw psycopg2 connection here
+                    # atomic block ensures connection
+                    connection.connection.cursor().execute(token.token_query)
 
         Atomic.__enter__ = __enter__
-
-        self.tokens[connection_name] = token
 
     def reset(self, connection_name: str = "default"):
         from django.db.transaction import Atomic
