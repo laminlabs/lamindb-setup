@@ -3,6 +3,8 @@ from __future__ import annotations
 # flake8: noqa
 import builtins
 import os
+import jwt
+import time
 from pathlib import Path
 import time
 from ._settings_instance import InstanceSettings
@@ -14,15 +16,47 @@ IS_MIGRATING = False
 CONN_MAX_AGE = 299
 
 
+# db token that refreshes on access if needed
+class DBToken:
+    def __init__(
+        self, instance: InstanceSettings | dict, access_token: str | None = None
+    ):
+        self.instance = instance
+        self.access_token = access_token
+        # initialized in token_query
+        self._token: str | None = None
+        self._token_query: str | None = None
+        self._expiration: float
+
+    def _refresh_token(self):
+        from ._hub_core import access_db
+        from psycopg2.extensions import adapt
+
+        self._token = access_db(self.instance, self.access_token)
+        self._token_query = (
+            f"SELECT set_token({adapt(self._token).getquoted().decode()}, true);"
+        )
+        self._expiration = jwt.decode(self._token, options={"verify_signature": False})[
+            "exp"
+        ]
+
+    @property
+    def token_query(self) -> str:
+        # refresh token if needed
+        if self._token is None or time.time() >= self._expiration:
+            self._refresh_token()
+
+        return self._token_query  # type: ignore
+
+
 # a class to manage jwt in dbs
 class DBTokenManager:
-    def __init__(self, debug: bool = False):
+    def __init__(self):
         from django.db.transaction import Atomic
 
-        self.debug = debug
         self.original_atomic_enter = Atomic.__enter__
 
-        self.tokens: dict[str, str] = {}
+        self.tokens: dict[str, DBToken] = {}
 
     def get_connection(self, connection_name: str):
         from django.db import connections
@@ -32,18 +66,10 @@ class DBTokenManager:
 
         return connection
 
-    def set(self, token: str, connection_name: str = "default"):
+    def set(self, token: DBToken, connection_name: str = "default"):
         from django.db.transaction import Atomic
 
-        # no adapt in psycopg3
-        from psycopg2.extensions import adapt
-
         connection = self.get_connection(connection_name)
-
-        # escape correctly to avoid wrangling with params
-        set_token_query = (
-            f"SELECT set_token({adapt(token).getquoted().decode()}, true); "
-        )
 
         def set_token_wrapper(execute, sql, params, many, context):
             not_in_atomic_block = (
@@ -53,12 +79,7 @@ class DBTokenManager:
             )
             # ignore atomic blocks
             if not_in_atomic_block:
-                sql = set_token_query + sql
-            elif self.debug:
-                print("--in atomic block--")
-
-            if self.debug:
-                print(sql)
+                sql = token.token_query + sql
             result = execute(sql, params, many, context)
             # this ensures that psycopg3 in the current env doesn't break this wrapper
             # psycopg3 returns a cursor
@@ -69,29 +90,28 @@ class DBTokenManager:
                 and result is not None
                 and hasattr(result, "nextset")
             ):
-                if self.debug:
-                    print("(shift cursor)")
                 result.nextset()
             return result
 
         connection.execute_wrappers.append(set_token_wrapper)
 
+        self.tokens[connection_name] = token
+
         # ensure we set the token only once for an outer atomic block
         def __enter__(atomic):
             self.original_atomic_enter(atomic)
-            is_same_connection = (
-                "default" if atomic.using is None else atomic.using
-            ) == connection_name
-            if is_same_connection and len(connection.atomic_blocks) == 1:
-                # use raw psycopg2 connection here
-                # atomic block ensures connection
-                if self.debug:
-                    print("(set transaction token)")
-                connection.connection.cursor().execute(set_token_query)
+            connection_name = "default" if atomic.using is None else atomic.using
+            if connection_name in self.tokens:
+                # here we don't use the connection from the closure
+                # because Atomic is a single class to manage transactions for all connections
+                connection = self.get_connection(connection_name)
+                if len(connection.atomic_blocks) == 1:
+                    token = self.tokens[connection_name]
+                    # use raw psycopg2 connection here
+                    # atomic block ensures connection
+                    connection.connection.cursor().execute(token.token_query)
 
         Atomic.__enter__ = __enter__
-
-        self.tokens[connection_name] = token
 
     def reset(self, connection_name: str = "default"):
         from django.db.transaction import Atomic
@@ -103,7 +123,6 @@ class DBTokenManager:
             for w in connection.execute_wrappers
             if getattr(w, "__name__", None) != "set_token_wrapper"
         ]
-        Atomic.__enter__ = self.original_atomic_enter
 
         self.tokens.pop(connection_name, None)
 
@@ -198,9 +217,7 @@ def setup_django(
         BaseDatabaseWrapper.close_if_health_check_failed = close_if_health_check_failed
 
         if isettings._fine_grained_access and isettings._db_permissions == "jwt":
-            from ._hub_core import access_db
-
-            db_token = access_db(isettings)
+            db_token = DBToken(isettings)
             db_token_manager.set(db_token)  # sets for the default connection
 
     if configure_only:
