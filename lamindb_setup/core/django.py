@@ -123,7 +123,6 @@ class DBTokenManager:
             for w in connection.execute_wrappers
             if getattr(w, "__name__", None) != "set_token_wrapper"
         ]
-        Atomic.__enter__ = self.original_atomic_enter
 
         self.tokens.pop(connection_name, None)
 
