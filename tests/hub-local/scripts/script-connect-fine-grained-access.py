@@ -23,21 +23,22 @@ with transaction.atomic():
     assert isettings.storage.record.id == storage_record.id
 
 # check directly
+assert db_token_manager.tokens
+
 with connection.cursor() as cur:
-    cur.execute("SELECT current_setting('app.account_id');")
-    account_id = cur.fetchall()[0][0]
-assert account_id == ln_setup.settings.user._uuid.hex  # type: ignore
+    cur.execute("SELECT current_setting('app.token');")
+    current_token = cur.fetchall()[0][0]
+assert current_token == db_token_manager.tokens["default"]._token
 
 # check reset
-assert db_token_manager.tokens
 db_token_manager.reset()
 assert not db_token_manager.tokens
 
 # check after reset
 with connection.cursor() as cur:
-    cur.execute("SELECT current_setting('app.account_id');")
-    account_id = cur.fetchall()[0][0]
-assert account_id == ""
+    cur.execute("SELECT current_setting('app.token');")
+    current_token = cur.fetchall()[0][0]
+assert current_token == ""
 
 # check calling access_db with a dict
 instance_dict = {
