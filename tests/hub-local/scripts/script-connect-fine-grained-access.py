@@ -3,9 +3,9 @@ import os
 import lamindb_setup as ln_setup
 import pytest
 from django.db import connection, transaction
+from django.db.utils import ProgrammingError
 from lamindb_setup.core._hub_core import access_db
 from lamindb_setup.core.django import db_token_manager
-from psycopg2.errors import RaiseException
 
 assert os.environ["LAMIN_ENV"] == "local"
 
@@ -36,7 +36,7 @@ db_token_manager.reset()
 assert not db_token_manager.tokens
 
 # check after reset
-with pytest.raises(RaiseException), connection.cursor() as cur:
+with pytest.raises(ProgrammingError), connection.cursor() as cur:
     cur.execute("SELECT get_account_id();")
 # check calling access_db with a dict
 instance_dict = {
