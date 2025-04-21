@@ -3,6 +3,7 @@ import os
 import lamindb_setup as ln_setup
 import pytest
 from django.db import connection, transaction
+from django.db.utils import ProgrammingError
 from lamindb_setup.core._hub_core import access_db
 from lamindb_setup.core.django import db_token_manager
 
@@ -26,20 +27,17 @@ with transaction.atomic():
 assert db_token_manager.tokens
 
 with connection.cursor() as cur:
-    cur.execute("SELECT current_setting('app.token');")
-    current_token = cur.fetchall()[0][0]
-assert current_token == db_token_manager.tokens["default"]._token
+    cur.execute("SELECT get_account_id();")
+    account_id = cur.fetchall()[0][0]
+assert account_id == ln_setup.settings.user._uuid
 
 # check reset
 db_token_manager.reset()
 assert not db_token_manager.tokens
 
 # check after reset
-with connection.cursor() as cur:
-    cur.execute("SELECT current_setting('app.token');")
-    current_token = cur.fetchall()[0][0]
-assert current_token == ""
-
+with pytest.raises(ProgrammingError), connection.cursor() as cur:
+    cur.execute("SELECT get_account_id();")
 # check calling access_db with a dict
 instance_dict = {
     "owner": isettings.owner,
