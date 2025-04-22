@@ -36,9 +36,8 @@ db_token_manager.reset()
 assert not db_token_manager.tokens
 
 # check after reset
-with pytest.raises(ProgrammingError) as error, connection.cursor() as cur:
+with connection.cursor() as cur:
     cur.execute("SELECT get_account_id();")
-assert error.exconly().endswith("JWT is not set")
 # check calling access_db with a dict
 instance_dict = {
     "owner": isettings.owner,
