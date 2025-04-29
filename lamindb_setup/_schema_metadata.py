@@ -250,12 +250,14 @@ class _ModelHandler:
             related_schema_name = None
             related_field_name = None
             is_editable = field.editable
+            max_length = field.max_length
         else:
             related_model_name = field.related_model._meta.model_name
             related_schema_name = field.related_model.__get_module_name__()
             schema_name = field.model.__get_module_name__()
             related_field_name = field.remote_field.name
             is_editable = False
+            max_length = None
 
         field_name = field.name
         is_primary_key = getattr(field, "primary_key", False)
@@ -290,7 +292,7 @@ class _ModelHandler:
             is_link_table=issubclass(field.model, LinkORM),
             is_primary_key=is_primary_key,
             is_editable=is_editable,
-            max_length=field.max_length,
+            max_length=max_length,
             column_name=column,
             relation_type=relation_type,
             related_schema_name=related_schema_name
