@@ -71,7 +71,7 @@ def test_update_schema_in_hub(setup_instance):
         "is_link_table": False,
         "is_primary_key": False,
         "is_editable": False,
-        "max_length": 8,
+        "max_length": 20,
         "relation_type": None,
         "related_field_name": None,
         "related_model_name": None,
