@@ -150,6 +150,7 @@ class FieldMetadata(BaseModel):
     is_link_table: bool
     is_primary_key: bool
     is_editable: bool
+    max_length: int | None = None
     relation_type: RelationType | None = None
     related_field_name: str | None = None
     related_model_name: str | None = None
@@ -289,6 +290,7 @@ class _ModelHandler:
             is_link_table=issubclass(field.model, LinkORM),
             is_primary_key=is_primary_key,
             is_editable=is_editable,
+            max_length=field.max_length,
             column_name=column,
             relation_type=relation_type,
             related_schema_name=related_schema_name
