@@ -44,11 +44,6 @@ def test_update_schema_in_hub(setup_instance):
     assert not schema["schema_json"]["core"]["artifact"]["is_link_table"]
     assert schema["schema_json"]["core"]["artifactulabel"]["is_link_table"]
 
-    assert schema["schema_json"]["core"]["artifact"]["uid_length"] == 20
-    assert schema["schema_json"]["core"]["transform"]["uid_length"] == 20
-    assert schema["schema_json"]["core"]["bionty"]["gene"] == 20
-    assert schema["schema_json"]["core"]["wetlab"]["well"] == 20
-
     assert schema["schema_json"]["core"]["artifact"]["fields"]["id"] == {
         "type": "AutoField",
         "column_name": "id",
@@ -59,6 +54,7 @@ def test_update_schema_in_hub(setup_instance):
         "is_link_table": False,
         "is_primary_key": True,
         "is_editable": True,  # Primary key are read-only even if is_editable is True
+        "max_length": None,
         "relation_type": None,
         "related_field_name": None,
         "related_model_name": None,
@@ -75,6 +71,7 @@ def test_update_schema_in_hub(setup_instance):
         "is_link_table": False,
         "is_primary_key": False,
         "is_editable": False,
+        "max_length": 20,
         "relation_type": None,
         "related_field_name": None,
         "related_model_name": None,
@@ -91,6 +88,7 @@ def test_update_schema_in_hub(setup_instance):
         "is_link_table": False,
         "is_primary_key": False,
         "is_editable": False,
+        "max_length": 64,
         "relation_type": None,
         "related_field_name": None,
         "related_model_name": None,
@@ -111,6 +109,7 @@ def test_update_schema_in_hub(setup_instance):
         "is_link_table": False,
         "is_primary_key": False,
         "is_editable": False,
+        "max_length": None,
         "relation_type": "many-to-one",
         "related_field_name": "created_artifacts",
         "related_model_name": "user",
@@ -131,6 +130,7 @@ def test_update_schema_in_hub(setup_instance):
         "is_link_table": False,
         "is_primary_key": False,
         "is_editable": False,
+        "max_length": None,
         "relation_type": "many-to-many",
         "related_field_name": "genes",
         "related_model_name": "pathway",
@@ -151,6 +151,7 @@ def test_update_schema_in_hub(setup_instance):
         "is_link_table": False,
         "is_primary_key": False,
         "is_editable": False,
+        "max_length": None,
         "relation_type": "many-to-many",
         "related_field_name": "wells",
         "related_model_name": "artifact",
@@ -171,6 +172,7 @@ def test_update_schema_in_hub(setup_instance):
         "is_link_table": False,
         "is_primary_key": False,
         "is_editable": False,
+        "max_length": None,
         "relation_type": "many-to-many",
         "related_field_name": "successors",
         "related_model_name": "transform",
@@ -191,6 +193,7 @@ def test_update_schema_in_hub(setup_instance):
         "is_link_table": False,
         "is_primary_key": False,
         "is_editable": False,
+        "max_length": None,
         "relation_type": "many-to-many",
         "related_field_name": "predecessors",
         "related_model_name": "transform",
