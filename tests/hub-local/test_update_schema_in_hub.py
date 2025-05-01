@@ -44,6 +44,14 @@ def test_update_schema_in_hub(setup_instance):
     assert not schema["schema_json"]["core"]["artifact"]["is_link_table"]
     assert schema["schema_json"]["core"]["artifactulabel"]["is_link_table"]
 
+    assert schema["schema_json"]["core"]["artifact"]["name_field"] is None
+    assert schema["schema_json"]["core"]["artifact"]["ontology_id_field"] is None
+    assert schema["schema_json"]["bionty"]["gene"]["name_field"] == "symbol"
+    assert (
+        schema["schema_json"]["bionty"]["gene"]["ontology_id_field"]
+        == "ensembl_gene_id"
+    )
+
     assert schema["schema_json"]["core"]["artifact"]["fields"]["id"] == {
         "type": "AutoField",
         "column_name": "id",
