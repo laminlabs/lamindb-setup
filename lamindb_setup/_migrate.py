@@ -5,7 +5,7 @@ from django.db.migrations.loader import MigrationLoader
 from lamin_utils import logger
 from packaging import version
 
-from ._check_setup import _check_instance_setup
+from ._check_setup import _check_instance_setup, disable_auto_connect
 from .core._settings import settings
 from .core.django import setup_django
 
@@ -23,26 +23,44 @@ def check_whether_migrations_in_sync(db_version_str: str):
         return None
     installed_version = version.parse(installed_version_str)
     db_version = version.parse(db_version_str)
-    if (
-        installed_version.major < db_version.major
-        or installed_version.minor < db_version.minor
-    ):
-        db_version_lower = f"{db_version.major}.{db_version.minor}"
-        db_version_upper = f"{db_version.major}.{db_version.minor + 1}"
+    if installed_version.major < db_version.major:
         logger.warning(
-            f"your database ({db_version_str}) is ahead of your installed lamindb"
-            f" package ({installed_version_str}) \n❗ please update lamindb: pip install"
-            f' "lamindb>={db_version_lower},<{db_version_upper}"'
+            f"the database ({db_version_str}) is far ahead of your installed lamindb package ({installed_version_str})"
+        )
+        logger.important(
+            f"please update lamindb: pip install lamindb>={db_version.major}"
         )
     elif (
-        installed_version.major > db_version.major
-        or installed_version.minor > db_version.minor
+        installed_version.major == db_version.major
+        and installed_version.minor < db_version.minor
     ):
-        logger.warning(
-            f"your database ({db_version_str}) is behind your installed lamindb package"
-            f" ({installed_version_str}) \n❗ please migrate your database: lamin"
-            " migrate deploy"
+        db_version_lower = f"{db_version.major}.{db_version.minor}"
+        logger.important(
+            f"the database ({db_version_str}) is ahead of your installed lamindb"
+            f" package ({installed_version_str})"
         )
+        logger.important(
+            f"consider updating lamindb: pip install lamindb>={db_version_lower}"
+        )
+    elif installed_version.major > db_version.major:
+        logger.warning(
+            f"the database ({db_version_str}) is far behind your installed lamindb package"
+            f" ({installed_version_str})"
+        )
+        logger.important(
+            "if you are an admin, migrate your database: lamin migrate deploy"
+        )
+    elif (
+        installed_version.major == db_version.major
+        and installed_version.minor > db_version.minor
+    ):
+        pass
+        # if the database is behind by a minor version, we don't want to spam the user
+        # logger.important(
+        #     f"the database ({db_version_str}) is behind your installed lamindb package"
+        #     f" ({installed_version_str})"
+        # )
+        # logger.important("consider migrating your database: lamin migrate deploy")
 
 
 # for tests, see lamin-cli
@@ -59,6 +77,7 @@ class migrate:
     """
 
     @classmethod
+    @disable_auto_connect
     def create(cls) -> None:
         """Create a migration."""
         if _check_instance_setup():
@@ -66,28 +85,25 @@ class migrate:
         setup_django(settings.instance, create_migrations=True)
 
     @classmethod
+    @disable_auto_connect
     def deploy(cls) -> None:
         """Deploy a migration."""
+        from ._schema_metadata import update_schema_in_hub
+
         if _check_instance_setup():
             raise RuntimeError("Restart Python session to migrate or use CLI!")
         from lamindb_setup.core._hub_client import call_with_fallback_auth
         from lamindb_setup.core._hub_crud import (
             select_collaborator,
-            select_instance_by_id,
             update_instance,
         )
 
-        instance_id_str = settings.instance._id.hex
-        instance = call_with_fallback_auth(
-            select_instance_by_id, instance_id=instance_id_str
-        )
-        instance_is_on_hub = instance is not None
-        if instance_is_on_hub:
+        if settings.instance.is_on_hub:
             # double check that user is an admin, otherwise will fail below
-            # without idempotence
+            # due to insufficient SQL permissions with cryptic error
             collaborator = call_with_fallback_auth(
                 select_collaborator,
-                instance_id=instance_id_str,
+                instance_id=settings.instance._id,
                 account_id=settings.user._uuid,
             )
             if collaborator is None or collaborator["role"] != "admin":
@@ -102,8 +118,11 @@ class migrate:
         # this sets up django and deploys the migrations
         setup_django(settings.instance, deploy_migrations=True)
         # this populates the hub
-        if instance_is_on_hub:
+        if settings.instance.is_on_hub:
             logger.important(f"updating lamindb version in hub: {lamindb.__version__}")
+            # TODO: integrate update of instance table within update_schema_in_hub & below
+            if settings.instance.dialect != "sqlite":
+                update_schema_in_hub()
             call_with_fallback_auth(
                 update_instance,
                 instance_id=settings.instance._id.hex,
@@ -111,6 +130,7 @@ class migrate:
             )
 
     @classmethod
+    @disable_auto_connect
     def check(cls) -> bool:
         """Check whether Registry definitions are in sync with migrations."""
         from django.core.management import call_command
@@ -127,6 +147,7 @@ class migrate:
         return True
 
     @classmethod
+    @disable_auto_connect
     def squash(
         cls, package_name, migration_nr, start_migration_nr: str | None = None
     ) -> None:
@@ -142,6 +163,7 @@ class migrate:
             call_command("squashmigrations", package_name, migration_nr)
 
     @classmethod
+    @disable_auto_connect
     def show(cls) -> None:
         """Show migrations."""
         from django.core.management import call_command

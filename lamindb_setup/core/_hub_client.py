@@ -1,13 +1,16 @@
 from __future__ import annotations
 
+import json
 import os
 from urllib.request import urlretrieve
 
 from gotrue.errors import AuthUnknownError
 from lamin_utils import logger
-from pydantic import BaseSettings
+from pydantic_settings import BaseSettings
 from supabase import Client, create_client  # type: ignore
 from supabase.lib.client_options import ClientOptions
+
+from ._settings_save import save_user_settings
 
 
 class Connector(BaseSettings):
@@ -59,9 +62,17 @@ class Environment:
 
 # runs ~0.5s
 def connect_hub(
-    fallback_env: bool = False, client_options: ClientOptions = ClientOptions()
+    fallback_env: bool = False, client_options: ClientOptions | None = None
 ) -> Client:
     env = Environment(fallback=fallback_env)
+    if client_options is None:
+        # function_client_timeout=5 by default
+        # increase to avoid rare timeouts for edge functions
+        client_options = ClientOptions(
+            auto_refresh_token=False,
+            function_client_timeout=20,
+            postgrest_client_timeout=20,
+        )
     return create_client(env.supabase_api_url, env.supabase_anon_key, client_options)
 
 
@@ -76,7 +87,7 @@ def connect_hub_with_auth(
 
         if renew_token:
             settings.user.access_token = get_access_token(
-                settings.user.email, settings.user.password
+                settings.user.email, settings.user.password, settings.user.api_key
             )
         access_token = settings.user.access_token
     hub.postgrest.auth(access_token)
@@ -85,9 +96,17 @@ def connect_hub_with_auth(
 
 
 # runs ~0.5s
-def get_access_token(email: str | None = None, password: str | None = None):
+def get_access_token(
+    email: str | None = None, password: str | None = None, api_key: str | None = None
+):
     hub = connect_hub()
     try:
+        if api_key is not None:
+            auth_response = hub.functions.invoke(
+                "get-jwt-v1",
+                invoke_options={"body": {"api_key": api_key}},
+            )
+            return json.loads(auth_response)["accessToken"]
         auth_response = hub.auth.sign_in_with_password(
             {
                 "email": email,
@@ -96,7 +115,7 @@ def get_access_token(email: str | None = None, password: str | None = None):
         )
         return auth_response.session.access_token
     finally:
-        hub.auth.sign_out()
+        hub.auth.sign_out(options={"scope": "local"})
 
 
 def call_with_fallback_auth(
@@ -111,21 +130,24 @@ def call_with_fallback_auth(
             result = callable(**kwargs, client=client)
         finally:
             try:
-                client.auth.sign_out()
+                client.auth.sign_out(options={"scope": "local"})
             except NameError:
                 pass
         return result
 
     for renew_token, fallback_env in [(False, False), (True, False), (False, True)]:
         try:
-            if renew_token:
-                logger.important(
-                    "Renewing expired lamin token: call lamin login to avoid this"
-                )
             client = connect_hub_with_auth(
                 renew_token=renew_token, fallback_env=fallback_env
             )
             result = callable(**kwargs, client=client)
+            # we update access_token here
+            # because at this point the call has been successfully resolved
+            if renew_token:
+                from lamindb_setup import settings
+
+                # here settings.user contains an updated access_token
+                save_user_settings(settings.user)
             break
         # we use Exception here as the ways in which the client fails upon 401
         # are not consistent and keep changing
@@ -135,7 +157,7 @@ def call_with_fallback_auth(
                 raise e
         finally:
             try:
-                client.auth.sign_out()
+                client.auth.sign_out(options={"scope": "local"})
             except NameError:
                 pass
     return result
@@ -154,6 +176,43 @@ def call_with_fallback(
             if fallback_env:
                 raise e
         finally:
-            # in case there was sign in
-            client.auth.sign_out()
+            try:
+                # in case there was sign in
+                client.auth.sign_out(options={"scope": "local"})
+            except NameError:
+                pass
     return result
+
+
+def requests_client():
+    # local is used in tests
+    if os.environ.get("LAMIN_ENV", "prod") == "local":
+        from fastapi.testclient import TestClient
+        from laminhub_rest.main import app
+
+        return TestClient(app)
+
+    import requests  # type: ignore
+
+    return requests
+
+
+def request_get_auth(url: str, access_token: str, renew_token: bool = True):
+    requests = requests_client()
+
+    response = requests.get(url, headers={"Authorization": f"Bearer {access_token}"})
+    # upate access_token and try again if failed
+    if response.status_code != 200 and renew_token:
+        from lamindb_setup import settings
+
+        access_token = get_access_token(
+            settings.user.email, settings.user.password, settings.user.api_key
+        )
+
+        settings.user.access_token = access_token
+        save_user_settings(settings.user)
+
+        response = requests.get(
+            url, headers={"Authorization": f"Bearer {access_token}"}
+        )
+    return response

@@ -4,7 +4,7 @@ from importlib import import_module
 from pathlib import Path
 
 MODELS = {
-    "core": {
+    "lamindb": {
         "Collection": False,
         "Artifact": False,
         "Transform": False,
@@ -12,7 +12,7 @@ MODELS = {
         "User": False,
         "Storage": False,
         "Feature": False,
-        "FeatureSet": False,
+        "Schema": False,
         "ULabel": False,
     },
     # "bionty": {
@@ -29,7 +29,7 @@ MODELS = {
     #     "ExperimentalFactor": False,
     #     "DevelopmentalStage": False,
     #     "Ethnicity": False,
-    #     "PublicSource": False,
+    #     "Source": False,
     # },
     # "wetlab": {
     #     "ExperimentType": False,
@@ -57,9 +57,9 @@ def exportdb() -> None:
 
     # export data to parquet files
     print(f"\nexporting data to parquet files in: {directory}\n")
-    for schema_name, models in MODELS.items():
+    for module_name, models in MODELS.items():
         for model_name in models.keys():
-            schema_module = import_module(f"lnschema_{schema_name}")
+            schema_module = import_module(f"lnschema_{module_name}")
             registry = getattr(schema_module, model_name)
             export_registry(registry, directory)
             many_to_many_names = [field.name for field in registry._meta.many_to_many]

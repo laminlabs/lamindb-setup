@@ -2,24 +2,31 @@ from __future__ import annotations
 
 import os
 
-from lamin_utils import logger
-from laminhub_rest.dev._setup_local_hub import setup_local_hub
+from laminhub_rest.dev import (
+    SupabaseResources,
+    remove_lamin_local_settings,
+    seed_local_test,
+)
+
+supabase_resources = SupabaseResources()
+
 
 pytest_plugins = [
-    "laminhub_rest.core.account.user.test.fixtures",
-    "laminhub_rest.test.fixtures.run_id",
+    "laminhub_rest.test.account.fixtures",
+    "laminhub_rest.test.common_fixtures",
 ]
-
-local_setup_state = setup_local_hub()
 
 
 def pytest_configure():
-    if os.environ["LAMIN_ENV"] == "local":
-        local_setup_state.__enter__()
-    else:
-        logger.warning("you're running non-local tests")
+    os.environ["LAMIN_ENV"] = "local"
+    os.environ["LAMIN_CLOUD_VERSION"] = "0.1"
+    remove_lamin_local_settings()
+    supabase_resources.start_local()
+    supabase_resources.reset_local()
+    supabase_resources.migrate()
+    seed_local_test()
 
 
 def pytest_unconfigure():
-    if os.environ["LAMIN_ENV"] == "local":
-        local_setup_state.__exit__(None, None, None)
+    if supabase_resources.edge_function_process:
+        supabase_resources.stop_local_edge_functions()

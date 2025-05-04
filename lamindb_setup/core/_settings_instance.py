@@ -5,27 +5,46 @@ import shutil
 from pathlib import Path
 from typing import TYPE_CHECKING, Literal
 
+from django.db.utils import ProgrammingError
 from lamin_utils import logger
 
+from ._deprecated import deprecated
 from ._hub_client import call_with_fallback
 from ._hub_crud import select_account_handle_name_by_lnid
 from ._hub_utils import LaminDsn, LaminDsnModel
 from ._settings_save import save_instance_settings
-from ._settings_storage import StorageSettings, init_storage, mark_storage_root
+from ._settings_storage import (
+    LEGACY_STORAGE_UID_FILE_KEY,
+    STORAGE_UID_FILE_KEY,
+    StorageSettings,
+    init_storage,
+)
 from ._settings_store import current_instance_settings_file, instance_settings_file
 from .cloud_sqlite_locker import (
     EXPIRATION_TIME,
     InstanceLockedException,
 )
-from .upath import LocalPathClasses, UPath, convert_pathlike
+from .upath import LocalPathClasses, UPath
 
 if TYPE_CHECKING:
     from uuid import UUID
+
+    from ._settings_user import UserSettings
 
 
 def sanitize_git_repo_url(repo_url: str) -> str:
     assert repo_url.startswith("https://")
     return repo_url.replace(".git", "")
+
+
+def is_local_db_url(db_url: str) -> bool:
+    if "@localhost:" in db_url:
+        return True
+    if "@0.0.0.0:" in db_url:
+        return True
+    if "@127.0.0.1" in db_url:
+        return True
+    return False
 
 
 class InstanceSettings:
@@ -40,9 +59,14 @@ class InstanceSettings:
         keep_artifacts_local: bool = False,  # default to local storage
         uid: str | None = None,  # instance uid/lnid
         db: str | None = None,  # DB URI
-        schema: str | None = None,  # comma-separated string of schema names
+        modules: str | None = None,  # comma-separated string of module names
         git_repo: str | None = None,  # a git repo URL
         is_on_hub: bool | None = None,  # initialized from hub
+        api_url: str | None = None,
+        schema_id: UUID | None = None,
+        fine_grained_access: bool = False,
+        db_permissions: str | None = None,
+        _locker_user: UserSettings | None = None,  # user to lock for if cloud sqlite
     ):
         from ._hub_utils import validate_db_arg
 
@@ -53,17 +77,27 @@ class InstanceSettings:
         self._storage: StorageSettings = storage
         validate_db_arg(db)
         self._db: str | None = db
-        self._schema_str: str | None = schema
+        self._schema_str: str | None = modules
         self._git_repo = None if git_repo is None else sanitize_git_repo_url(git_repo)
         # local storage
         self._keep_artifacts_local = keep_artifacts_local
         self._storage_local: StorageSettings | None = None
         self._is_on_hub = is_on_hub
+        # private, needed for api requests
+        self._api_url = api_url
+        self._schema_id = schema_id
+        # private, whether fine grained access is used
+        # needed to be set to request jwt etc
+        self._fine_grained_access = fine_grained_access
+        # permissions for db such as jwt, read, write etc.
+        self._db_permissions = db_permissions
+        # if None then settings.user is used
+        self._locker_user = _locker_user
 
     def __repr__(self):
         """Rich string representation."""
         representation = f"Current instance: {self.slug}"
-        attrs = ["owner", "name", "storage", "db", "schema", "git_repo"]
+        attrs = ["owner", "name", "storage", "db", "modules", "git_repo"]
         for attr in attrs:
             value = getattr(self, attr)
             if attr == "storage":
@@ -100,38 +134,55 @@ class InstanceSettings:
     def _search_local_root(
         self, local_root: str | None = None, mute_warning: bool = False
     ) -> StorageSettings | None:
-        from lnschema_core.models import Storage
+        from lamindb.models import Storage
 
         if local_root is not None:
             local_records = Storage.objects.filter(root=local_root)
         else:
-            local_records = Storage.objects.filter(type="local")
+            # only search local managed storage locations (instance_uid=self.uid)
+            local_records = Storage.objects.filter(type="local", instance_uid=self.uid)
+        all_local_records = local_records.all()
+        try:
+            # trigger an error in case of a migration issue
+            all_local_records.first()
+        except ProgrammingError:
+            logger.error("not able to load Storage registry: please migrate")
+            return None
         found = False
-        for record in local_records.all():
+        for record in all_local_records:
             root_path = Path(record.root)
             if root_path.exists():
-                marker_path = root_path / ".lamindb/_is_initialized"
-                if marker_path.exists():
-                    uid = marker_path.read_text()
-                    if uid == record.uid:
-                        found = True
-                        break
-                    elif uid == "":
-                        # legacy instance that was not yet marked properly
-                        mark_storage_root(record.root, record.uid)
+                marker_path = root_path / STORAGE_UID_FILE_KEY
+                if not marker_path.exists():
+                    legacy_filepath = root_path / LEGACY_STORAGE_UID_FILE_KEY
+                    if legacy_filepath.exists():
+                        logger.warning(
+                            f"found legacy marker file, renaming it from {legacy_filepath} to {marker_path}"
+                        )
+                        legacy_filepath.rename(marker_path)
                     else:
-                        continue
-                else:
-                    # legacy instance that was not yet marked at all
-                    mark_storage_root(record.root, record.uid)
+                        raise ValueError(
+                            f"local storage location '{root_path}' is corrupted, cannot find marker file with storage uid"
+                        )
+                try:
+                    uid = marker_path.read_text()
+                except PermissionError:
+                    logger.warning(
+                        f"ignoring the following location because no permission to read it: {marker_path}"
+                    )
+                    continue
+                if uid == record.uid:
+                    found = True
                     break
         if found:
             return StorageSettings(record.root)
         elif not mute_warning:
             logger.warning(
-                f"none of the registered local storage locations were found in your environment: {local_records}"
-                "\n❗ please register a new local storage location via `ln.settings.storage_local = local_root_path` "
-                "and re-load/connect the instance"
+                "none of the registered local storage locations were found:\n    "
+                + "\n    ".join(r.root for r in all_local_records)
+            )
+            logger.important(
+                "please register a new local storage location via `ln.settings.storage_local = local_root_path` and re-load/connect the instance"
             )
         return None
 
@@ -197,9 +248,9 @@ class InstanceSettings:
                 )
             if response != "y":
                 return None
-        local_root = convert_pathlike(local_root)
+        local_root = UPath(local_root)
         assert isinstance(local_root, LocalPathClasses)
-        self._storage_local = init_storage(local_root, self._id, register_hub=True)  # type: ignore
+        self._storage_local, _ = init_storage(local_root, self._id, register_hub=True)  # type: ignore
         register_storage_in_instance(self._storage_local)  # type: ignore
         logger.important(f"defaulting to local storage: {self._storage_local.root}")
 
@@ -229,17 +280,26 @@ class InstanceSettings:
         return hash_and_encode_as_b62(self._id.hex)[:12]
 
     @property
-    def schema(self) -> set[str]:
-        """Schema modules in addition to core schema."""
+    def modules(self) -> set[str]:
+        """The set of modules that defines the database schema.
+
+        The core schema contained in lamindb is not included in this set.
+        """
         if self._schema_str is None:
-            return {}  # type: ignore
+            return set()
         else:
-            return {schema for schema in self._schema_str.split(",") if schema != ""}
+            return {module for module in self._schema_str.split(",") if module != ""}
+
+    @property
+    @deprecated("modules")
+    def schema(self) -> set[str]:
+        return self.modules
 
     @property
     def _sqlite_file(self) -> UPath:
         """SQLite file."""
-        return self.storage.key_to_filepath(f"{self._id.hex}.lndb")
+        filepath = self.storage.root / ".lamindb/lamin.db"
+        return filepath
 
     @property
     def _sqlite_file_local(self) -> Path:
@@ -251,7 +311,8 @@ class InstanceSettings:
         if self._is_cloud_sqlite:
             sqlite_file = self._sqlite_file
             logger.warning(
-                f"updating & unlocking cloud SQLite '{sqlite_file}' of instance"
+                f"updating{' & unlocking' if unlock_cloud_sqlite else ''} cloud SQLite "
+                f"'{sqlite_file}' of instance"
                 f" '{self.slug}'"
             )
             cache_file = self.storage.cloud_to_local_no_update(sqlite_file)
@@ -268,7 +329,7 @@ class InstanceSettings:
         if self._is_cloud_sqlite:
             logger.warning(
                 "updating local SQLite & locking cloud SQLite (sync back & unlock:"
-                " lamin close)"
+                " lamin disconnect)"
             )
             if lock_cloud_sqlite:
                 self._cloud_sqlite_locker.lock()
@@ -301,6 +362,12 @@ class InstanceSettings:
     @property
     def db(self) -> str:
         """Database connection string (URI)."""
+        if "LAMINDB_DJANGO_DATABASE_URL" in os.environ:
+            logger.warning(
+                "LAMINDB_DJANGO_DATABASE_URL env variable "
+                f"is set to {os.environ['LAMINDB_DJANGO_DATABASE_URL']}. "
+                "It overwrites all db connections and is used instead of `instance.db`."
+            )
         if self._db is None:
             # here, we want the updated sqlite file
             # hence, we don't use self._sqlite_file_local()
@@ -309,7 +376,7 @@ class InstanceSettings:
             sqlite_filepath = self.storage.cloud_to_local(
                 self._sqlite_file, error_no_origin=False
             )
-            return f"sqlite:///{sqlite_filepath}"
+            return f"sqlite:///{sqlite_filepath.as_posix()}"
         else:
             return self._db
 
@@ -336,7 +403,8 @@ class InstanceSettings:
 
         if self._is_cloud_sqlite:
             try:
-                return get_locker(self)
+                # if _locker_user is None then settings.user is used
+                return get_locker(self, self._locker_user)
             except PermissionError:
                 logger.warning("read-only access - did not access locker")
                 return empty_locker
@@ -349,17 +417,8 @@ class InstanceSettings:
         if not self.storage.type_is_cloud:
             return False
 
-        def is_local_uri(uri: str):
-            if "@localhost:" in uri:
-                return True
-            if "@0.0.0.0:" in uri:
-                return True
-            if "@127.0.0.1" in uri:
-                return True
-            return False
-
         if self.dialect == "postgresql":
-            if is_local_uri(self.db):
+            if is_local_db_url(self.db):
                 return False
         # returns True for cloud SQLite
         # and remote postgres
@@ -395,44 +454,54 @@ class InstanceSettings:
     def _get_settings_file(self) -> Path:
         return instance_settings_file(self.name, self.owner)
 
-    def _persist(self) -> None:
-        assert self.name is not None
+    def _persist(self, write_to_disk: bool = True) -> None:
+        """Set these instance settings as the current instance.
 
-        filepath = self._get_settings_file()
-        # persist under filepath for later reference
-        save_instance_settings(self, filepath)
-        # persist under current file for auto load
-        shutil.copy2(filepath, current_instance_settings_file())
-        # persist under settings class for same session reference
-        # need to import here to avoid circular import
+        Args:
+            write_to_disk: Save these instance settings to disk and
+                overwrite the current instance settings file.
+        """
+        if write_to_disk:
+            assert self.name is not None
+            filepath = self._get_settings_file()
+            # persist under filepath for later reference
+            save_instance_settings(self, filepath)
+            # persist under current file for auto load
+            shutil.copy2(filepath, current_instance_settings_file())
+            # persist under settings class for same session reference
+            # need to import here to avoid circular import
         from ._settings import settings
 
         settings._instance_settings = self
 
     def _init_db(self):
+        from lamindb_setup._check_setup import disable_auto_connect
+
         from .django import setup_django
 
-        setup_django(self, init=True)
+        disable_auto_connect(setup_django)(self, init=True)
 
     def _load_db(self) -> tuple[bool, str]:
         # Is the database available and initialized as LaminDB?
         # returns a tuple of status code and message
         if self.dialect == "sqlite" and not self._sqlite_file.exists():
-            legacy_file = self.storage.key_to_filepath(f"{self.name}.lndb")
+            legacy_file = self.storage.key_to_filepath(f"{self._id.hex}.lndb")
             if legacy_file.exists():
-                raise RuntimeError(
-                    "The SQLite file has been renamed!\nPlease rename your SQLite file"
-                    f" {legacy_file} to {self._sqlite_file}"
+                logger.warning(
+                    f"The SQLite file is being renamed from {legacy_file} to {self._sqlite_file}"
                 )
-            return False, f"SQLite file {self._sqlite_file} does not exist"
-        from lamindb_setup import settings  # to check user
-
-        from .django import setup_django
-
+                legacy_file.rename(self._sqlite_file)
+            else:
+                return False, f"SQLite file {self._sqlite_file} does not exist"
         # we need the local sqlite to setup django
-        self._update_local_sqlite_file(lock_cloud_sqlite=self._is_cloud_sqlite)
+        self._update_local_sqlite_file()
         # setting up django also performs a check for migrations & prints them
         # as warnings
         # this should fail, e.g., if the db is not reachable
-        setup_django(self)
+        from lamindb_setup._check_setup import disable_auto_connect
+
+        from .django import setup_django
+
+        disable_auto_connect(setup_django)(self)
+
         return True, ""

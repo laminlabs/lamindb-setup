@@ -30,23 +30,30 @@ from functools import wraps
 def deprecated(new_name: str):
     """Deprecated.
 
-    This is a decorator which can be used to mark functions
+    This is a decorator which can be used to mark functions, methods and properties
     as deprecated. It will result in a warning being emitted
     when the function is used.
+
+    It will also hide the function from the docs.
+
+    Example::
+
+        @property
+        @deprecated("n_files")
+        def n_objects(self) -> int:
+            return self.n_files
+
     """
 
     def decorator(func):
         @wraps(func)
         def new_func(*args, **kwargs):
-            # turn off filter
-            warnings.simplefilter("always", DeprecationWarning)
             warnings.warn(
                 f"Use {new_name} instead of {func.__name__}, "
                 f"{func.__name__} will be removed in the future.",
-                category=DeprecationWarning,
+                category=FutureWarning,
                 stacklevel=2,
             )
-            warnings.simplefilter("default", DeprecationWarning)  # reset filter
             return func(*args, **kwargs)
 
         setattr(new_func, "__deprecated", True)

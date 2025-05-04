@@ -36,10 +36,10 @@ def importdb() -> None:
     with engine.begin() as connection:
         if ln_setup.settings.instance.dialect == "postgresql":
             connection.execute(text("SET CONSTRAINTS ALL DEFERRED;"))
-        for schema_name, models in MODELS.items():
+        for module_name, models in MODELS.items():
             for model_name in models.keys():
                 print(model_name)
-                schema_module = import_module(f"lnschema_{schema_name}")
+                schema_module = import_module(f"lnschema_{module_name}")
                 registry = getattr(schema_module, model_name)
                 import_registry(registry, directory, connection)
                 many_to_many_names = [

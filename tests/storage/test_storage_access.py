@@ -5,6 +5,7 @@ from uuid import UUID
 
 import lamindb_setup as ln_setup
 import pytest
+from lamindb_setup._init_instance import InstanceNotCreated
 from lamindb_setup.core._hub_client import connect_hub_with_auth
 from lamindb_setup.core._hub_crud import (
     select_account_by_handle,
@@ -17,20 +18,30 @@ def test_connect_instance_with_private_storage_and_no_storage_access():
     # this should fail because of insufficient AWS permission for the storage bucket
     # that has the SQLite file on it, but because _test=True, we don't actually try to
     # pull the SQLite file -> see the line below to proxy this
-    ln_setup.connect("laminlabs/static-test-instance-private-sqlite", _test=True)
+    ln_setup.connect("testuser1/static-test-instance-private-sqlite", _test=True)
     with pytest.raises(PermissionError):
         (ln_setup.settings.storage.root / "test_file").exists()
     # connecting to a postgres instance should work because it doesn't touch
     # storage during connection
     ln_setup.connect(
         "laminlabs/test-instance-private-postgres",
-        db=os.environ["TEST_INSTANCE_PRIVATE_POSTGRES"],
+        _db=os.environ["TEST_INSTANCE_PRIVATE_POSTGRES"],
         _test=True,
     )
     # accessing storage in the instance should fail:
     with pytest.raises(PermissionError):
         path = ln_setup.settings.storage.root
-        path.fs.call_s3("head_bucket", Bucket=path._url.netloc)
+        path.fs.call_s3("head_bucket", Bucket=path.drive)
+
+
+def test_init_instance_with_private_storage_and_no_storage_access():
+    ln_setup.login("testuser1@lamin.ai")
+    # test creating with no access to a cloud storage
+    with pytest.raises(InstanceNotCreated):
+        ln_setup.init(
+            storage="s3://lndb-setup-ci-eu-central-1/surely-nothing-here",
+            _test=True,
+        )
 
 
 def test_connect_instance_with_public_storage():
@@ -47,4 +58,4 @@ def test_connect_instance_with_public_storage():
     )
     client.auth.sign_out()
     assert ln_setup.settings.instance._id == UUID(instance["id"])
-    ln_setup.close()
+    ln_setup.disconnect()

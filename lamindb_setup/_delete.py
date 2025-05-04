@@ -7,11 +7,12 @@ from uuid import UUID
 from lamin_utils import logger
 
 from ._connect_instance import _connect_instance, get_owner_name_from_identifier
+from .core._aws_options import HOSTED_BUCKETS
 from .core._hub_core import delete_instance as delete_instance_on_hub
 from .core._hub_core import get_storage_records_for_instance
 from .core._settings import settings
 from .core._settings_storage import StorageSettings
-from .core.upath import HOSTED_BUCKETS, check_storage_is_empty
+from .core.upath import LocalPathClasses, check_storage_is_empty
 
 if TYPE_CHECKING:
     from pathlib import Path
@@ -19,9 +20,13 @@ if TYPE_CHECKING:
     from .core._settings_instance import InstanceSettings
 
 
-def delete_cache(cache_dir: Path):
-    if cache_dir is not None and cache_dir.exists():
-        shutil.rmtree(cache_dir)
+def delete_cache(isettings: InstanceSettings):
+    # avoid init of root
+    root = isettings.storage._root_init
+    if not isinstance(root, LocalPathClasses):
+        cache_dir = settings.cache_dir / root.path
+        if cache_dir.exists():
+            shutil.rmtree(cache_dir)
 
 
 def delete_exclusion_dir(isettings: InstanceSettings) -> None:
@@ -34,7 +39,7 @@ def delete_by_isettings(isettings: InstanceSettings) -> None:
     settings_file = isettings._get_settings_file()
     if settings_file.exists():
         settings_file.unlink()
-    delete_cache(isettings.storage.cache_dir)
+    delete_cache(isettings)
     if isettings.dialect == "sqlite":
         try:
             if isettings._sqlite_file.exists():
@@ -94,7 +99,7 @@ def delete(slug: str, force: bool = False, require_empty: bool = True) -> int | 
             )
         require_empty = True
     # first the default storage
-    n_objects = check_storage_is_empty(
+    n_files = check_storage_is_empty(
         isettings.storage.root,
         raise_error=require_empty,
         account_for_sqlite_file=isettings.dialect == "sqlite",
@@ -109,11 +114,11 @@ def delete(slug: str, force: bool = False, require_empty: bool = True) -> int | 
         for storage_record in storage_records:
             if storage_record["root"] == isettings.storage.root_as_str:
                 continue
+            ssettings = StorageSettings(storage_record["root"])  # type: ignore
             check_storage_is_empty(
-                storage_record["root"],  # type: ignore
+                ssettings.root,  # type: ignore
                 raise_error=require_empty,
             )
-            ssettings = StorageSettings(storage_record["root"])  # type: ignore
             if ssettings._mark_storage_root.exists():
                 ssettings._mark_storage_root.unlink(
                     missing_ok=True  # this is totally weird, but needed on Py3.11
@@ -126,8 +131,8 @@ def delete(slug: str, force: bool = False, require_empty: bool = True) -> int | 
         # this will error if the user doesn't have permission
         delete_instance_on_hub(isettings._id, require_empty=False)
     delete_by_isettings(isettings)
-    # if .lndb file was delete, then we might count -1
-    if n_objects <= 0 and isettings.storage.type == "local":
+    # if lamin.db file was delete, then we might count -1
+    if n_files <= 0 and isettings.storage.type == "local":
         # dir is only empty after sqlite file was delete via delete_by_isettings
         if (isettings.storage.root / ".lamindb").exists():
             (isettings.storage.root / ".lamindb").rmdir()

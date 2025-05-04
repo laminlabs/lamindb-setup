@@ -2,45 +2,55 @@ from __future__ import annotations
 
 import importlib
 import os
-import sys
 import uuid
 from typing import TYPE_CHECKING, Literal
 from uuid import UUID
 
+import click
 from django.core.exceptions import FieldError
 from django.db.utils import OperationalError, ProgrammingError
 from lamin_utils import logger
 
-from ._close import close as close_instance
+from ._disconnect import disconnect
 from ._silence_loggers import silence_loggers
 from .core import InstanceSettings
+from .core._docs import doc_args
 from .core._settings import settings
+from .core._settings_instance import is_local_db_url
 from .core._settings_storage import StorageSettings, init_storage
-from .core.upath import convert_pathlike
+from .core.upath import UPath
 
 if TYPE_CHECKING:
     from pydantic import PostgresDsn
 
+    from .core._settings_user import UserSettings
     from .core.types import UPathStr
 
 
-def get_schema_module_name(schema_name) -> str:
+class InstanceNotCreated(click.ClickException):
+    def show(self, file=None):
+        pass
+
+
+def get_schema_module_name(module_name, raise_import_error: bool = True) -> str | None:
     import importlib.util
 
-    name_attempts = [f"lnschema_{schema_name.replace('-', '_')}", schema_name]
+    if module_name == "core":
+        return "lamindb"
+    name_attempts = [f"lnschema_{module_name.replace('-', '_')}", module_name]
     for name in name_attempts:
         module_spec = importlib.util.find_spec(name)
         if module_spec is not None:
             return name
-    raise ImportError(
-        f"Python package for '{schema_name}' is not installed, tried two package names:"
-        f" {name_attempts}\nHave you installed the schema package using `pip install`?"
-    )
+    message = f"schema module '{module_name}' is not installed → resolve via `pip install {module_name}`"
+    if raise_import_error:
+        raise ImportError(message)
+    return None
 
 
 def register_storage_in_instance(ssettings: StorageSettings):
-    from lnschema_core.models import Storage
-    from lnschema_core.users import current_user_id
+    from lamindb.base.users import current_user_id
+    from lamindb.models import Storage
 
     from .core.hashing import hash_and_encode_as_b62
 
@@ -56,6 +66,7 @@ def register_storage_in_instance(ssettings: StorageSettings):
         "region": ssettings.region,
         "instance_uid": instance_uid,
         "created_by_id": current_user_id(),
+        "run": None,
     }
     if ssettings._uid is not None:
         defaults["uid"] = ssettings._uid
@@ -67,7 +78,7 @@ def register_storage_in_instance(ssettings: StorageSettings):
 
 
 def register_user(usettings):
-    from lnschema_core.models import User
+    from lamindb.models import User
 
     try:
         # need to have try except because of integer primary key migration
@@ -84,49 +95,20 @@ def register_user(usettings):
         pass
 
 
-def register_user_and_storage_in_instance(isettings: InstanceSettings, usettings):
-    """Register user & storage in DB."""
+def register_initial_records(isettings: InstanceSettings, usettings):
+    """Register space, user & storage in DB."""
     from django.db.utils import OperationalError
+    from lamindb.models import Space
 
     try:
+        Space.objects.get_or_create(
+            name="All",
+            description="Every team & user with access to the instance has access.",
+        )
         register_user(usettings)
         register_storage_in_instance(isettings.storage)
     except OperationalError as error:
         logger.warning(f"instance seems not set up ({error})")
-
-
-def reload_schema_modules(isettings: InstanceSettings):
-    schema_names = ["core"] + list(isettings.schema)
-    schema_module_names = [get_schema_module_name(n) for n in schema_names]
-
-    for schema_module_name in schema_module_names:
-        if schema_module_name in sys.modules:
-            schema_module = importlib.import_module(schema_module_name)
-            importlib.reload(schema_module)
-
-
-def reload_lamindb_itself(isettings) -> bool:
-    reloaded = False
-    if "lamindb" in sys.modules:
-        import lamindb
-
-        importlib.reload(lamindb)
-        reloaded = True
-    if "bionty" in isettings.schema and "bionty" in sys.modules:
-        schema_module = importlib.import_module("bionty")
-        importlib.reload(schema_module)
-        reloaded = True
-    return reloaded
-
-
-def reload_lamindb(isettings: InstanceSettings):
-    # only touch lamindb if we're operating from lamindb
-    reload_schema_modules(isettings)
-    log_message = settings.auto_connect
-    if not reload_lamindb_itself(isettings):
-        log_message = True
-    if log_message:
-        logger.important(f"connected lamindb: {isettings.slug}")
 
 
 ERROR_SQLITE_CACHE = """
@@ -158,13 +140,24 @@ def process_connect_response(
     return instance_id, instance_state
 
 
+def process_modules_arg(modules: str | None = None) -> str:
+    if modules is None or modules == "":
+        return ""
+    # currently no actual validation, can add back if we see a need
+    # the following just strips white spaces
+    to_be_validated = [s.strip() for s in modules.split(",")]
+    return ",".join(to_be_validated)
+
+
 def validate_init_args(
     *,
     storage: UPathStr,
     name: str | None = None,
     db: PostgresDsn | None = None,
-    schema: str | None = None,
+    modules: str | None = None,
     _test: bool = False,
+    _write_settings: bool = True,
+    _user: UserSettings | None = None,
 ) -> tuple[
     str,
     UUID | None,
@@ -177,15 +170,22 @@ def validate_init_args(
     str,
 ]:
     from ._connect_instance import connect
-    from .core._hub_utils import (
-        validate_schema_arg,
-    )
 
+    if storage is None:
+        raise SystemExit("✗ `storage` argument can't be `None`")
     # should be called as the first thing
     name_str = infer_instance_name(storage=storage, name=name, db=db)
+    owner_str = settings.user.handle if _user is None else _user.handle
     # test whether instance exists by trying to load it
-    instance_slug = f"{settings.user.handle}/{name_str}"
-    response = connect(instance_slug, db=db, _raise_not_found_error=False, _test=_test)
+    instance_slug = f"{owner_str}/{name_str}"
+    response = connect(
+        instance_slug,
+        _db=db,
+        _raise_not_found_error=False,
+        _test=_test,
+        _write_settings=_write_settings,
+        _user=_user,
+    )
     instance_state: Literal[
         "connected",
         "instance-corrupted-or-deleted",
@@ -195,98 +195,169 @@ def validate_init_args(
     instance_id = None
     if response is not None:
         instance_id, instance_state = process_connect_response(response, instance_slug)
-    schema = validate_schema_arg(schema)
+    modules = process_modules_arg(modules)
     return name_str, instance_id, instance_state, instance_slug
 
 
-MESSAGE_NO_MULTIPLE_INSTANCE = """
-Currently don't support subsequent connection to different databases in the same
-Python session.\n
-Try running on the CLI: lamin set auto-connect false
+class CannotSwitchDefaultInstance(SystemExit):
+    pass
+
+
+MESSAGE_CANNOT_SWITCH_DEFAULT_INSTANCE = """
+You cannot write to different instances in the same Python session.
+
+Do you want to read from another instance via `Record.using()`? For example:
+
+ln.Artifact.using("laminlabs/cellxgene").filter()
+
+Or do you want to switch off auto-connect via `lamin settings set auto-connect false`?
 """
 
+DOC_STORAGE_ARG = "A local or remote folder (`'s3://...'` or `'gs://...'`). Defaults to current working directory."
+DOC_INSTANCE_NAME = (
+    "Instance name. If not passed, it will equal the folder name passed to `storage`."
+)
+DOC_DB = "Database connection URL. Defaults to `None`, which implies an SQLite file in the storage location."
+DOC_MODULES = "Comma-separated string of schema modules."
+DOC_LOW_LEVEL_KWARGS = "Keyword arguments for low-level control."
 
+
+@doc_args(DOC_STORAGE_ARG, DOC_INSTANCE_NAME, DOC_DB, DOC_MODULES, DOC_LOW_LEVEL_KWARGS)
 def init(
     *,
-    storage: UPathStr,
+    storage: UPathStr = ".",
     name: str | None = None,
     db: PostgresDsn | None = None,
-    schema: str | None = None,
-    _test: bool = False,
+    modules: str | None = None,
+    **kwargs,
 ) -> None:
-    """Create and load a LaminDB instance.
+    """Init a LaminDB instance.
 
     Args:
-        storage: Either ``"create-s3"``, local or
-            remote folder (``"s3://..."`` or ``"gs://..."``).
-        name: Instance name.
-        db: Database connection url, do not pass for SQLite.
-        schema: Comma-separated string of schema modules. None if not set.
+        storage: {}
+        name: {}
+        db: {}
+        modules: {}
+        **kwargs: {}
     """
     isettings = None
     ssettings = None
+
+    _write_settings: bool = kwargs.get("_write_settings", True)
+    if modules is None:
+        modules = kwargs.get("schema", None)
+    _test: bool = kwargs.get("_test", False)
+
+    # use this user instead of settings.user
+    # contains access_token
+    _user: UserSettings | None = kwargs.get("_user", None)
+    user_handle: str = settings.user.handle if _user is None else _user.handle
+    user__uuid: UUID = settings.user._uuid if _user is None else _user._uuid  # type: ignore
+    access_token: str | None = None if _user is None else _user.access_token
+
     try:
         silence_loggers()
         from ._check_setup import _check_instance_setup
 
         if _check_instance_setup() and not _test:
-            raise RuntimeError(MESSAGE_NO_MULTIPLE_INSTANCE)
-        else:
-            close_instance(mute=True)
-        from .core._hub_core import init_instance as init_instance_hub
+            raise CannotSwitchDefaultInstance(MESSAGE_CANNOT_SWITCH_DEFAULT_INSTANCE)
+        elif _write_settings:
+            disconnect(mute=True)
+        from .core._hub_core import init_instance_hub
 
         name_str, instance_id, instance_state, _ = validate_init_args(
             storage=storage,
             name=name,
             db=db,
-            schema=schema,
+            modules=modules,
             _test=_test,
+            _write_settings=_write_settings,
+            _user=_user,  # will get from settings.user if _user is None
         )
         if instance_state == "connected":
-            settings.auto_connect = True  # we can also debate this switch here
+            if _write_settings:
+                settings.auto_connect = True  # we can also debate this switch here
             return None
-        ssettings = init_storage(storage, instance_id=instance_id)
+        # the conditions here match `isettings.is_remote`, but I currently don't
+        # see a way of making this more elegant; should become possible if we
+        # remove the instance.storage_id FK on the hub
+        prevent_register_hub = is_local_db_url(db) if db is not None else False
+        ssettings, _ = init_storage(
+            storage,
+            instance_id=instance_id,
+            init_instance=True,
+            prevent_register_hub=prevent_register_hub,
+            created_by=user__uuid,
+            access_token=access_token,
+        )
         isettings = InstanceSettings(
             id=instance_id,  # type: ignore
-            owner=settings.user.handle,
+            owner=user_handle,
             name=name_str,
             storage=ssettings,
             db=db,
-            schema=schema,
+            modules=modules,
             uid=ssettings.uid,
+            # to lock passed user in isettings._cloud_sqlite_locker.lock()
+            _locker_user=_user,  # only has effect if cloud sqlite
         )
-        if isettings.is_remote and instance_state != "instance-corrupted-or-deleted":
-            init_instance_hub(isettings)
+        register_on_hub = (
+            isettings.is_remote and instance_state != "instance-corrupted-or-deleted"
+        )
+        if register_on_hub:
+            # can't register the instance in the hub
+            # if storage is not in the hub
+            # raise the exception and initiate cleanups
+            if not isettings.storage.is_on_hub:
+                raise InstanceNotCreated(
+                    "Unable to create the instance because failed to register the storage."
+                )
+            init_instance_hub(
+                isettings, account_id=user__uuid, access_token=access_token
+            )
         validate_sqlite_state(isettings)
-        isettings._persist()
+        # why call it here if it is also called in load_from_isettings?
+        isettings._persist(write_to_disk=_write_settings)
         if _test:
             return None
         isettings._init_db()
-        load_from_isettings(isettings, init=True)
-        if isettings._is_cloud_sqlite:
+        load_from_isettings(
+            isettings, init=True, user=_user, write_settings=_write_settings
+        )
+        if _write_settings and isettings._is_cloud_sqlite:
             isettings._cloud_sqlite_locker.lock()
             logger.warning(
                 "locked instance (to unlock and push changes to the cloud SQLite file,"
-                " call: lamin close)"
+                " call: lamin disconnect)"
             )
-        # we can debate whether this is the right setting, but this is how
-        # things have been and we'd like to not easily break backward compat
-        settings.auto_connect = True
+        if register_on_hub and isettings.dialect != "sqlite":
+            from ._schema_metadata import update_schema_in_hub
+
+            update_schema_in_hub(access_token=access_token)
+        if _write_settings:
+            settings.auto_connect = True
+        importlib.reload(importlib.import_module("lamindb"))
+        logger.important(f"initialized lamindb: {isettings.slug}")
     except Exception as e:
         from ._delete import delete_by_isettings
         from .core._hub_core import delete_instance_record, delete_storage_record
 
         if isettings is not None:
-            delete_by_isettings(isettings)
-            if settings.user.handle != "anonymous" and isettings.is_on_hub:
-                delete_instance_record(isettings._id)
-            isettings._get_settings_file().unlink(missing_ok=True)  # type: ignore
+            if _write_settings:
+                delete_by_isettings(isettings)
+            else:
+                settings._instance_settings = None
         if (
             ssettings is not None
-            and settings.user.handle != "anonymous"
+            and (user_handle != "anonymous" or access_token is not None)
             and ssettings.is_on_hub
         ):
-            delete_storage_record(ssettings._uuid)  # type: ignore
+            delete_storage_record(ssettings._uuid, access_token=access_token)  # type: ignore
+        if isettings is not None:
+            if (
+                user_handle != "anonymous" or access_token is not None
+            ) and isettings.is_on_hub:
+                delete_instance_record(isettings._id, access_token=access_token)
         raise e
     return None
 
@@ -295,12 +366,16 @@ def load_from_isettings(
     isettings: InstanceSettings,
     *,
     init: bool = False,
+    user: UserSettings | None = None,
+    write_settings: bool = True,
 ) -> None:
-    from .core._setup_bionty_sources import load_bionty_sources, write_bionty_sources
+    from .core._setup_bionty_sources import write_bionty_sources
+
+    user = settings.user if user is None else user
 
     if init:
-        # during init both user and storage need to be registered
-        register_user_and_storage_in_instance(isettings, settings.user)
+        # during init space, user and storage need to be registered
+        register_initial_records(isettings, user)
         write_bionty_sources(isettings)
         isettings._update_cloud_sqlite_file(unlock_cloud_sqlite=False)
     else:
@@ -311,10 +386,8 @@ def load_from_isettings(
         # this is our best proxy for that the user might not
         # yet be registered
         if not isettings._get_settings_file().exists():
-            register_user(settings.user)
-        load_bionty_sources(isettings)
-    isettings._persist()
-    reload_lamindb(isettings)
+            register_user(user)
+    isettings._persist(write_to_disk=write_settings)
 
 
 def validate_sqlite_state(isettings: InstanceSettings) -> None:
@@ -350,10 +423,6 @@ def infer_instance_name(
         return str(db).split("/")[-1]
     if storage == "create-s3":
         raise ValueError("pass name to init if storage = 'create-s3'")
-    storage_path = convert_pathlike(storage)
-    if storage_path.name != "":
-        name = storage_path.name
-    else:
-        # dedicated treatment of bucket names
-        name = storage_path._url.netloc
+    storage_path = UPath(storage).resolve()
+    name = storage_path.path.rstrip("/").split("/")[-1]
     return name.lower()

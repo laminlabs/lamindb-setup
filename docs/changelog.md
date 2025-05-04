@@ -3,6 +3,26 @@
 <!-- prettier-ignore -->
 Name | PR | Developer | Date | Version
 --- | --- | --- | --- | ---
+🐛 Only search local managed storage locations | [788](https://github.com/laminlabs/lamindb-setup/pull/788) | [falexwolf](https://github.com/falexwolf) | 2024-07-03 |
+💚 Fix test | [784](https://github.com/laminlabs/lamindb-setup/pull/784) | [falexwolf](https://github.com/falexwolf) | 2024-06-26 | 0.73.3
+♻️ Save schema to hub upon init | [782](https://github.com/laminlabs/lamindb-setup/pull/782) | [falexwolf](https://github.com/falexwolf) | 2024-06-24 |
+💚 Fix schema serialization test | [781](https://github.com/laminlabs/lamindb-setup/pull/781) | [falexwolf](https://github.com/falexwolf) | 2024-06-24 |
+Better error message | [780](https://github.com/laminlabs/lamindb-setup/pull/780) | [falexwolf](https://github.com/falexwolf) | 2024-06-20 |
+🐛 Fix permission error when screening for local storage root | [778](https://github.com/laminlabs/lamindb-setup/pull/778) | [falexwolf](https://github.com/falexwolf) | 2024-06-19 | 0.73.2
+🐛 Fix same root check in get_locker | [777](https://github.com/laminlabs/lamindb-setup/pull/777) | [Koncopd](https://github.com/Koncopd) | 2024-06-13 |
+✨ Add .ome.zarr as composite suffix | [775](https://github.com/laminlabs/lamindb-setup/pull/775) | [sunnyosun](https://github.com/sunnyosun) | 2024-06-05 |
+🏗️ Update instance schema in the hub | [774](https://github.com/laminlabs/lamindb-setup/pull/774) | [fredericenard](https://github.com/fredericenard) | 2024-06-04 |
+⬆️ Migrate to upath 0.2.2 | [723](https://github.com/laminlabs/lamindb-setup/pull/723) | [Koncopd](https://github.com/Koncopd) | 2024-06-02 |
+🐛 Fix trailing slash in upload_from source | [773](https://github.com/laminlabs/lamindb-setup/pull/773) | [Koncopd](https://github.com/Koncopd) | 2024-05-23 | 0.73.0
+🚸 Make `upload_from()`, `download_to()`, and `view_tree()` more user friendly | [772](https://github.com/laminlabs/lamindb-setup/pull/772) | [falexwolf](https://github.com/falexwolf) | 2024-05-23 |
+✨ Resolve s3 bucket region even without access rights | [771](https://github.com/laminlabs/lamindb-setup/pull/771) | [Koncopd](https://github.com/Koncopd) | 2024-05-22 |
+💚 Coverage fix | [770](https://github.com/laminlabs/lamindb-setup/pull/770) | [falexwolf](https://github.com/falexwolf) | 2024-05-22 |
+👷 Fix coverage compute | [769](https://github.com/laminlabs/lamindb-setup/pull/769) | [falexwolf](https://github.com/falexwolf) | 2024-05-22 |
+🐛 Deal with migration errors when keep-artifacts-local is true | [767](https://github.com/laminlabs/lamindb-setup/pull/767) | [falexwolf](https://github.com/falexwolf) | 2024-05-20 | 0.72.2
+♻️ Do not error if empty dict in `access_aws` | [764](https://github.com/laminlabs/lamindb-setup/pull/764) | [falexwolf](https://github.com/falexwolf) | 2024-05-19 | 0.72.1
+🐛 Keep training slash in aws cache keys | [766](https://github.com/laminlabs/lamindb-setup/pull/766) | [Koncopd](https://github.com/Koncopd) | 2024-05-19 |
+🐛 Check empty after storage record root init in delete | [763](https://github.com/laminlabs/lamindb-setup/pull/763) | [Koncopd](https://github.com/Koncopd) | 2024-05-18 |
+✨ Call `access_aws` for all paths and cache | [762](https://github.com/laminlabs/lamindb-setup/pull/762) | [Koncopd](https://github.com/Koncopd) | 2024-05-18 | 0.72.0
 ⚡️ Speed-up file hash | [761](https://github.com/laminlabs/lamindb-setup/pull/761) | [Koncopd](https://github.com/Koncopd) | 2024-05-11 | 0.71.4
 ♻️ Account for public storage locations | [758](https://github.com/laminlabs/lamindb-setup/pull/758) | [falexwolf](https://github.com/falexwolf) | 2024-05-10 |
 ♻️ Make init_instance_hub idempotent | [757](https://github.com/laminlabs/lamindb-setup/pull/757) | [falexwolf](https://github.com/falexwolf) | 2024-05-09 |

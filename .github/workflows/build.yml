@@ -12,26 +12,26 @@ jobs:
   # tests only on production hub
   hub-prod:
     runs-on: ubuntu-latest
-    timeout-minutes: 10
+    timeout-minutes: 12
     steps:
       - uses: actions/checkout@v3
       - uses: actions/setup-python@v4
         with:
-          python-version: "3.9" # consciously run one job on Python 3.9
+          python-version: "3.10" # run one job on 3.9
           cache: "pip"
-          cache-dependency-path: ".github/workflows/build.yml"
-      - uses: aws-actions/configure-aws-credentials@v2
+      - uses: aws-actions/configure-aws-credentials@v4
         with:
           aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           aws-region: eu-central-1
-      - run: pip install -U laminci
+      - run: pip install "laminci@git+https://x-access-token:${{ secrets.LAMIN_BUILD_DOCS }}@github.com/laminlabs/laminci"
       - run: nox -s "install(group='hub-prod')"
       - run: nox -s "build(lamin_env='prod', group='hub-prod')"
-      - uses: actions/upload-artifact@v2
+      - uses: actions/upload-artifact@v4
         with:
           name: coverage--hub-prod
           path: .coverage
+          include-hidden-files: true
 
   # tests both on production and staging hub
   hub-cloud:
@@ -39,12 +39,14 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        lamin_env:
-          - "staging"
-          - "prod"
-    timeout-minutes: 15
+        include:
+          - lamin_env: "prod"
+            python-version: "3.11"
+          - lamin_env: "staging"
+            python-version: "3.10" # test on 3.9
+    timeout-minutes: 12
     steps:
-      - uses: aws-actions/configure-aws-credentials@v2
+      - uses: aws-actions/configure-aws-credentials@v4
         with:
           aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
@@ -52,22 +54,21 @@ jobs:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v4
         with:
-          python-version: "3.11" # consciously run one job on Python 3.11
+          python-version: ${{ matrix.python-version }}
           cache: "pip"
           cache-dependency-path: ".github/workflows/build.yml"
-      - name: checkout laminhub
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
         with:
-          repository: laminlabs/laminapp-ui
+          repository: laminlabs/laminhub
           token: ${{ secrets.GH_TOKEN_DEPLOY_LAMINAPP }}
           path: laminhub
           ref: main
-      - uses: actions/cache@v3
+      - uses: actions/cache@v4
         with:
           path: ~/.cache/pre-commit
           key: pre-commit-${{ runner.os }}-${{ hashFiles('.pre-commit-config.yaml') }}
       - id: cache-postgres
-        uses: actions/cache@v3
+        uses: actions/cache@v4
         with:
           path: ~/postgres.tar
           key: cache-postgres-0
@@ -75,7 +76,7 @@ jobs:
         run: docker pull postgres:latest && docker image save postgres:latest --output ~/postgres.tar
       - if: steps.cache-postgres.outputs.cache-hit == 'true'
         run: docker image load --input ~/postgres.tar
-      - run: pip install -U laminci
+      - run: pip install "laminci@git+https://x-access-token:${{ secrets.LAMIN_BUILD_DOCS }}@github.com/laminlabs/laminci"
       # account for in a different job
       # - uses: "google-github-actions/auth@v0"
       #   with:
@@ -83,24 +84,25 @@ jobs:
       # - uses: "google-github-actions/setup-gcloud@v0"
       - run: nox -s "install(group='hub-cloud')"
       - run: nox -s "build(lamin_env='${{ matrix.lamin_env }}', group='hub-cloud')"
-      - uses: actions/upload-artifact@v2
+      - uses: actions/upload-artifact@v4
         if: ${{ matrix.lamin_env == 'prod' }}
         with:
           name: coverage--hub-cloud
           path: .coverage
+          include-hidden-files: true
 
   # test user access to storage
   storage:
     runs-on: ubuntu-latest
-    timeout-minutes: 10
+    timeout-minutes: 12
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v4
         with:
-          python-version: "3.10" # consciously run one job on Python 3.10
+          python-version: "3.10"
           cache: "pip"
           cache-dependency-path: ".github/workflows/build.yml"
-      - run: pip install -U laminci
+      - run: pip install "laminci@git+https://x-access-token:${{ secrets.LAMIN_BUILD_DOCS }}@github.com/laminlabs/laminci"
       - run: nox -s "install(group='storage')"
       - run: nox -s lint
       - run: nox -s storage
@@ -108,26 +110,26 @@ jobs:
           TEST_INSTANCE_PRIVATE_POSTGRES: ${{ secrets.TEST_INSTANCE_PRIVATE_POSTGRES }}
           TMP_AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
           TMP_AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-      - uses: actions/upload-artifact@v2
+      - uses: actions/upload-artifact@v4
         with:
           name: coverage--storage
           path: .coverage
+          include-hidden-files: true
 
   # test low-level hub functionality
   hub-local:
     runs-on: ubuntu-latest
-    timeout-minutes: 10
+    timeout-minutes: 12
     steps:
-      - uses: aws-actions/configure-aws-credentials@v2
+      - uses: aws-actions/configure-aws-credentials@v4
         with:
           aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           aws-region: eu-central-1
       - uses: actions/checkout@v4
-      - name: checkout laminhub
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
         with:
-          repository: laminlabs/laminapp-ui
+          repository: laminlabs/laminhub
           token: ${{ secrets.GH_TOKEN_DEPLOY_LAMINAPP }}
           path: laminhub
           ref: main
@@ -139,24 +141,27 @@ jobs:
         working-directory: laminhub/rest-hub/supabase
       - uses: actions/setup-python@v4
         with:
-          python-version: "3.11" # consciously run one job on Python 3.11
+          python-version: "3.11" # we need to run everything for coverage on 3.11
           cache: "pip"
           cache-dependency-path: ".github/workflows/build.yml"
-      - run: pip install -U laminci
+      - run: pip install "laminci@git+https://x-access-token:${{ secrets.LAMIN_BUILD_DOCS }}@github.com/laminlabs/laminci"
       - run: nox -s "install(group='hub-local')"
       - id: cache-supabase
-        uses: actions/cache@v3
+        uses: actions/cache@v4
         with:
           path: /var/lib/docker
           key: cache-supabase
       - uses: supabase/setup-cli@v1
+        with:
+          version: "2.6.8"
       - run: nox -s hub_local
         env:
           LAMIN_ENV: "local"
-      - uses: actions/upload-artifact@v2
+      - uses: actions/upload-artifact@v4
         with:
           name: coverage--hub-local
           path: .coverage
+          include-hidden-files: true
 
   coverage:
     needs: [hub-prod, hub-cloud, storage, hub-local]
@@ -165,13 +170,12 @@ jobs:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v4
         with:
-          python-version: "3.10"
+          python-version: "3.11"
           cache: "pip"
-          cache-dependency-path: ".github/workflows/build.yml"
       - run: |
           pip install coverage[toml]
           pip install --no-deps .
-      - uses: actions/download-artifact@v2
+      - uses: actions/download-artifact@v4
       - name: run coverage
         run: |
           coverage combine coverage--*/.coverage*
@@ -185,7 +189,7 @@ jobs:
     needs: hub-cloud
     runs-on: ubuntu-latest
     steps:
-      - uses: aws-actions/configure-aws-credentials@v2
+      - uses: aws-actions/configure-aws-credentials@v4
         with:
           aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
@@ -206,9 +210,9 @@ jobs:
           python-version: "3.10"
           cache: "pip"
           cache-dependency-path: ".github/workflows/build.yml"
-      - run: pip install -U laminci
+      - run: pip install "laminci@git+https://x-access-token:${{ secrets.LAMIN_BUILD_DOCS }}@github.com/laminlabs/laminci"
       - run: nox -s "install(group='docs')"
-      - uses: actions/download-artifact@v2
+      - uses: actions/download-artifact@v4
       - run: nox -s docs
       - uses: nwtgck/actions-netlify@v1.2
         with:

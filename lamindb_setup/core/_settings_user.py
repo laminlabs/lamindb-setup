@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import TYPE_CHECKING, Optional
+from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
     from uuid import UUID
@@ -21,10 +21,12 @@ class UserSettings:
 
     handle: str = "anonymous"
     """Unique handle."""
-    email: str = None  # type: ignore
+    email: str | None = None
     """User email."""
+    api_key: str | None = None
+    """API key."""
     password: str | None = None
-    """API key or legacy password."""
+    """legacy API key or legacy password."""
     access_token: str | None = None
     """User access token."""
     uid: str = "null"
@@ -45,7 +47,9 @@ class UserSettings:
 
     @property
     def id(self):
-        """Integer id valid in current intance."""
-        from lnschema_core.users import current_user_id
+        """Integer id valid in current instance."""
+        from lamindb.base.users import current_user_id
 
+        # there is no cache needed here because current_user_id()
+        # has its own cache
         return current_user_id()

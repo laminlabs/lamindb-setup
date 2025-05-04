@@ -107,4 +107,6 @@ _build
 lamin_sphinx
 docs/conf.py
 _docs_tmp*
-*.lndb
+*.db
+storage_uid.txt
+test.ipynb

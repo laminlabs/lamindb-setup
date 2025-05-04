@@ -1,6 +1,6 @@
 repos:
-  - repo: https://github.com/pre-commit/mirrors-prettier
-    rev: v4.0.0-alpha.4
+  - repo: https://github.com/rbubley/mirrors-prettier
+    rev: v3.5.1
     hooks:
       - id: prettier
         exclude: |
@@ -17,7 +17,7 @@ repos:
               docs/notes/
           )
   - repo: https://github.com/astral-sh/ruff-pre-commit
-    rev: v0.1.7
+    rev: v0.8.6
     hooks:
       - id: ruff
         args: [--fix, --exit-non-zero-on-fix, --unsafe-fixes]
@@ -44,9 +44,3 @@ repos:
           (?x)(
               tests/hub-local/conftest.py
           )
-  - repo: https://github.com/pycqa/pydocstyle
-    rev: 6.1.1
-    hooks:
-      - id: pydocstyle
-        args: # google style + __init__, see http://www.pydocstyle.org/en/stable/error_codes.html
-          - --ignore=D100,D101,D102,D103,D104,D106,D107,D203,D204,D213,D215,D400,D401,D403,D404,D406,D407,D408,D409,D412,D413

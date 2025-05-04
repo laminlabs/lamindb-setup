@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import os
+import subprocess
 from uuid import UUID, uuid4
 
 import lamindb_setup as ln_setup
@@ -8,12 +9,14 @@ import pytest
 from gotrue.errors import AuthApiError
 from lamindb_setup.core._hub_client import (
     Environment,
+    connect_hub,
     connect_hub_with_auth,
 )
 from lamindb_setup.core._hub_core import (
-    connect_instance,
-    init_instance,
-    init_storage,
+    _connect_instance_hub,
+    connect_instance_hub,
+    init_instance_hub,
+    init_storage_hub,
     sign_in_hub,
     sign_up_local_hub,
 )
@@ -33,9 +36,16 @@ from lamindb_setup.core._settings_instance import InstanceSettings
 from lamindb_setup.core._settings_save import save_user_settings
 from lamindb_setup.core._settings_storage import base62
 from lamindb_setup.core._settings_storage import init_storage as init_storage_base
+from lamindb_setup.core._settings_store import instance_settings_file
 from lamindb_setup.core._settings_user import UserSettings
-from laminhub_rest.core.instance.collaborator import InstanceCollaboratorHandler
+from laminhub_rest.core.legacy._instance_collaborator import InstanceCollaboratorHandler
+from laminhub_rest.core.organization import OrganizationHandler
+from laminhub_rest.test.instance.utils import (
+    create_hosted_test_instance,
+    delete_hosted_test_instance,
+)
 from postgrest.exceptions import APIError
+from supafunc.errors import FunctionsHttpError
 
 
 def sign_up_user(email: str, handle: str, save_as_settings: bool = False):
@@ -118,12 +128,13 @@ def create_myinstance(create_testadmin1_session):  # -> Dict
         id=instance_id,
         owner=usettings.handle,
         name="myinstance",
+        # cannot yet pass instance_id here as it does not yet exist
         storage=init_storage_base(
-            "s3://lamindb-ci/myinstance", instance_id=instance_id
-        ),
+            "s3://lamindb-ci/myinstance",
+        )[0],
         db=db_str,
     )
-    init_instance(isettings)
+    init_instance_hub(isettings)
     # test loading it
     with pytest.raises(PermissionError) as error:
         ln_setup.connect("testadmin1/myinstance", _test=True)
@@ -153,6 +164,18 @@ def create_myinstance(create_testadmin1_session):  # -> Dict
         client=admin_client,
     )
     yield instance
+
+
+@pytest.fixture(scope="session")
+def create_instance_fine_grained_access(create_testadmin1_session):
+    client, testadmin1 = create_testadmin1_session
+
+    org_handler = OrganizationHandler(client)
+    org_handler.create(testadmin1._uuid)
+
+    instance = create_hosted_test_instance("instance_access_v2", access_v2=True)
+    yield instance
+    delete_hosted_test_instance(instance)
 
 
 def test_connection_string_decomp(create_myinstance, create_testadmin1_session):
@@ -200,6 +223,7 @@ def test_db_user(
         account_id=reader_settings._uuid,
         instance_id=instance_id,
         role="read",
+        schema_id=None,
         skip_insert_user_table=True,
     )
     # check that this was successful and can be read by the reader
@@ -253,31 +277,25 @@ def test_db_user(
     assert db_user["name"] == "write"
 
 
-def test_connect_instance(create_myinstance, create_testadmin1_session):
-    # trigger return for inexistent handle
-    assert "account-not-exists" == connect_instance(
-        owner="testusr1",  # testadmin1 with a typo
-        name=create_myinstance["name"],
-    )
-    # trigger misspelled name
-    assert "instance-not-found" == connect_instance(
-        owner="testadmin1",
-        name="inexistent-name",  # inexistent name
-    )
-    # make instance public so that we can also test connection string
-    client, _ = create_testadmin1_session
-    update_instance(
-        instance_id=create_myinstance["id"],
-        instance_fields={"public": True},
-        client=client,
-    )
-    result = connect_instance(
-        owner="testadmin1",
-        name=create_myinstance["name"],
-    )
+# This tests lamindb_setup.core._hub_core.connect_instance_hub
+# This functions makes a request to execute get-instance-settings-v1 edge function
+# see how to make a request without using supabase in hub-cloud tests, in test_edge_request.py
+def test_connect_instance_hub(create_myinstance, create_testadmin1_session):
+    admin_client, _ = create_testadmin1_session
+
+    owner, name = ln_setup.settings.user.handle, create_myinstance["name"]
+    instance, storage = connect_instance_hub(owner=owner, name=name)
+    assert instance["name"] == name
+    assert instance["owner"] == owner
+    assert instance["api_url"] is None
+    assert instance["db_permissions"] == "write"
+    assert storage["root"] == "s3://lamindb-ci/myinstance"
+    assert "schema_id" in instance
+    assert "lnid" in instance
+
     db_user = select_db_user_by_instance(
         instance_id=create_myinstance["id"],
-        client=client,
+        client=admin_client,
     )
     expected_dsn = LaminDsn.build(
         scheme=create_myinstance["db_scheme"],
@@ -287,47 +305,120 @@ def test_connect_instance(create_myinstance, create_testadmin1_session):
         port=str(create_myinstance["db_port"]),
         database=create_myinstance["db_database"],
     )
-    loaded_instance, _ = result
-    assert loaded_instance["name"] == create_myinstance["name"]
-    assert loaded_instance["db"] == expected_dsn
-    # make instance private again
+    assert instance["name"] == create_myinstance["name"]
+    assert instance["db"] == expected_dsn
+
+    # add resource_db_server from seed_local_test
+    admin_client.table("instance").update(
+        {"resource_db_server_id": "e36c7069-2129-4c78-b2c6-323e2354b741"}
+    ).eq("id", instance["id"]).execute()
+
+    instance, _ = connect_instance_hub(owner=owner, name=name)
+    assert instance["api_url"] == "http://localhost:8000"
+
+    # test anon access to public instance
+    update_instance(
+        instance_id=create_myinstance["id"],
+        instance_fields={"public": True},
+        client=admin_client,
+    )
+
+    anon_client = connect_hub()
+    instance, _ = _connect_instance_hub(owner=owner, name=name, client=anon_client)
+    assert instance["name"] == name
+    assert instance["owner"] == owner
+
     update_instance(
         instance_id=create_myinstance["id"],
         instance_fields={"public": False},
-        client=client,
+        client=admin_client,
     )
+    # test non-existent
+    result = connect_instance_hub(owner="user-not-exists", name=name)
+    assert result == "account-not-exists"
+    result = connect_instance_hub(owner=owner, name="instance-not-exists")
+    assert result == "instance-not-found"
 
 
-def test_connect_instance_corrupted_or_expired_credentials(
+def test_connect_instance_hub_corrupted_or_expired_credentials(
     create_myinstance, create_testadmin1_session
 ):
     # assume token & password are corrupted or expired
-    ln_setup.settings.user.access_token = "corrupted_or_expired_token"
+    # make realisticly looking token that passes
+    # supafunc is_valid_jwt but is actually not a real token
+    invalid_token = "header1.payload1.signature1"
+    ln_setup.settings.user.access_token = invalid_token
     correct_password = ln_setup.settings.user.password
     ln_setup.settings.user.password = "corrupted_password"
-    with pytest.raises(APIError):
-        connect_instance(
+    with pytest.raises(FunctionsHttpError):
+        connect_instance_hub(
             owner="testadmin1",
             name=create_myinstance["name"],
         )
     # now, let's assume only the token is expired or corrupted
     # re-creating the auth client triggers a re-generated token because it
     # excepts the error assuming the token is expired
-    ln_setup.settings.user.access_token = "corrupted_or_expired_token"
+    ln_setup.settings.user.access_token = invalid_token
     ln_setup.settings.user.password = correct_password
-    connect_instance(
+    connect_instance_hub(
         owner="testadmin1",
         name=create_myinstance["name"],
     )
+    # check access_token renewal
+    access_token = ln_setup.settings.user.access_token
+    assert access_token != invalid_token
+    # check that the access_token was written to the settings
+    ln_setup.settings._user_settings = None
+    assert ln_setup.settings.user.access_token == access_token
 
 
 def test_init_storage_with_non_existing_bucket(create_testadmin1_session):
     from botocore.exceptions import ClientError
 
     with pytest.raises(ClientError) as error:
-        init_storage(
+        init_storage_hub(
             ssettings=init_storage_base(
                 "s3://non_existing_storage_root", instance_id=uuid4()
-            )
+            )[0]
         )
     assert error.exconly().endswith("Not Found")
+
+
+def test_init_storage_incorrect_protocol():
+    with pytest.raises(ValueError) as error:
+        init_storage_base("incorrect-protocol://some-path/some-path-level")
+    assert "Protocol incorrect-protocol is not supported" in error.exconly()
+
+
+def test_fine_grained_access(
+    create_testadmin1_session, create_instance_fine_grained_access
+):
+    admin_client, testadmin1 = create_testadmin1_session
+    instance = create_instance_fine_grained_access
+    # check api_url is set up correctly through the new tables
+    instance_record = select_instance_by_name(
+        account_id=testadmin1._uuid,
+        name=instance.name,
+        client=admin_client,
+    )
+    assert instance_record["resource_db_server_id"] is not None
+
+    isettings_file = instance_settings_file(
+        instance.name, ln_setup.settings.user.handle
+    )
+    # the file is written by create_instance_fine_grained_access
+    # has fine_grained_access=False because create_instance_fine_grained_access
+    # updates the instance after init without updating the settings file
+    assert isettings_file.exists()
+    # need to delete it, because otheriwse
+    # isettings.is_remote evaluates to False
+    # and ln_setup.connect doesn't make a hub request
+    # thus fine_grained_access stays False
+    isettings_file.unlink()
+    # run from a script because test_update_schema_in_hub.py has ln_setup.init
+    # which fails if we connect here
+    subprocess.run(
+        "python ./tests/hub-local/scripts/script-connect-fine-grained-access.py",
+        shell=True,
+        check=True,
+    )

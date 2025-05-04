@@ -4,12 +4,11 @@ from lamin_utils import logger
 
 from .core._settings import settings
 from .core._settings_store import current_instance_settings_file
-from .core._setup_bionty_sources import delete_bionty_sources_yaml
 from .core.cloud_sqlite_locker import clear_locker
 
 
-def close(mute: bool = False) -> None:
-    """Close existing instance.
+def disconnect(mute: bool = False) -> None:
+    """Disconnect an instance.
 
     Returns `None` if succeeds, otherwise an exception is raised.
     """
@@ -25,10 +24,9 @@ def close(mute: bool = False) -> None:
             else:
                 raise e
         current_instance_settings_file().unlink()
-        delete_bionty_sources_yaml()
         clear_locker()
         if not mute:
-            logger.success(f"closed instance: {instance}")
+            logger.success(f"disconnected instance: {instance}")
     else:
         if not mute:
             logger.info("no instance loaded")

@@ -27,28 +27,39 @@ def lint(session: nox.Session) -> None:
     ["hub-local", "hub-prod", "hub-cloud", "storage", "docs"],
 )
 def install(session: nox.Session, group: str) -> None:
-    no_deps_packages = "git+https://github.com/laminlabs/lnschema-bionty git+https://github.com/laminlabs/lnschema-core lamin-cli"
-    cloud_prod_installs = f"""uv pip install --system bionty git+https://github.com/laminlabs/bionty-base
-uv pip install --system --no-deps {no_deps_packages}
+    no_deps_packages = "git+https://github.com/laminlabs/lamindb git+https://github.com/laminlabs/wetlab git+https://github.com/laminlabs/lamin-cli"
+    modules_deps = f"""uv pip install --system --no-deps {no_deps_packages}
+uv pip install --system git+https://github.com/laminlabs/bionty
 """
     if group == "hub-cloud":
-        cmds = cloud_prod_installs + "uv pip install --system ./laminhub/rest-hub"
+        cmds = (
+            modules_deps
+            + "uv pip install --system sentry_sdk line_profiler wheel==0.45.1 flit"
+            + "\nuv pip install --system ./laminhub/rest-hub --no-build-isolation"
+        )
     elif group == "docs":
-        cmds = (
-            """uv pip install --system git+https://github.com/laminlabs/lnschema-core"""
-        )
+        cmds = """uv pip install --system git+https://github.com/laminlabs/lamindb"""
     elif group == "storage":
-        cmds = """uv pip install --system gcsfs"""
+        cmds = modules_deps + "uv pip install --system gcsfs huggingface_hub"
     elif group == "hub-prod":
-        cmds = (
-            cloud_prod_installs
-            + "uv pip install --system --no-deps git+https://github.com/laminlabs/wetlab"
-        )
+        # cmds = "git clone --depth 1 https://github.com/django/django\n"
+        # cmds += "uv pip install --system -e ./django\n"
+        cmds = ""
+        cmds += modules_deps.strip()
+        cmds += """\nuv pip install --system gcsfs huggingface_hub"""
     elif group == "hub-local":
-        cmds = """uv pip install --system -e ./laminhub/rest-hub"""
+        cmds = modules_deps.strip()
     # current package
-    cmds += """\nuv pip install --system .[aws,dev] lamin-cli"""
+    cmds += """\nuv pip install --system -e '.[aws,dev]'"""
 
+    # above downgrades django, I don't understand why, try this
+    if group == "hub-local":
+        cmds += "\nuv pip install --system sentry_sdk line_profiler wheel==0.45.1 flit"
+        cmds += "\nuv pip install --system -e ./laminhub/rest-hub --no-build-isolation"
+        # check that just installing psycopg (psycopg3) doesn't break fine-grained access
+        cmds += "\nuv pip install --system psycopg[binary]"
+
+    run(session, "uv pip install --system pandera")  # needed to import lamindb
     [run(session, line) for line in cmds.splitlines()]
 
 
@@ -79,7 +90,7 @@ def hub_local(session: nox.Session):
     # the -n 1 is to ensure that supabase thread exits properly
     run(
         session,
-        f"pytest -n 1 {COVERAGE_ARGS} ./tests/hub-local",
+        f"pytest {COVERAGE_ARGS} ./tests/hub-local",
         env=os.environ,
     )
 

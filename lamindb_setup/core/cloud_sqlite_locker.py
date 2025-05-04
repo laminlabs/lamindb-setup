@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from datetime import datetime, timezone
 from functools import wraps
-from typing import TYPE_CHECKING, Optional, Union
+from typing import TYPE_CHECKING
 
 from lamin_utils import logger
 
@@ -11,6 +11,9 @@ from .upath import UPath, create_mapper, infer_filesystem
 if TYPE_CHECKING:
     from pathlib import Path
     from uuid import UUID
+
+    from ._settings_instance import InstanceSettings
+    from ._settings_user import UserSettings
 
 EXPIRATION_TIME = 24 * 60 * 60 * 7  # 7 days
 
@@ -111,6 +114,7 @@ class Locker:
         if self._counter <= MAX_MSG_COUNTER:
             self._counter += 1
 
+    # Lamport's bakery algorithm
     def _lock_unsafe(self):
         if self._has_lock:
             return None
@@ -175,18 +179,20 @@ class Locker:
 _locker: Locker | None = None
 
 
-def get_locker(isettings) -> Locker:
+def get_locker(
+    isettings: InstanceSettings, usettings: UserSettings | None = None
+) -> Locker:
     from ._settings import settings
 
     global _locker
 
-    user_uid = settings.user.uid
+    user_uid = settings.user.uid if usettings is None else usettings.uid
     storage_root = isettings.storage.root
 
     if (
         _locker is None
         or _locker.user != user_uid
-        or _locker.root is not storage_root
+        or _locker.root != storage_root
         or _locker.instance_id != isettings._id
     ):
         _locker = Locker(user_uid, storage_root, isettings._id)
