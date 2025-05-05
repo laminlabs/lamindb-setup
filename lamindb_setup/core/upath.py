@@ -821,7 +821,7 @@ register_implementation("s3", S3QueryPath, clobber=True)
 
 
 def create_path(path: UPathStr, access_token: str | None = None) -> UPath:
-    upath = UPath(path)
+    upath = UPath(path).expanduser()
 
     if upath.protocol == "s3":
         # add managed credentials and other options for AWS s3 paths
