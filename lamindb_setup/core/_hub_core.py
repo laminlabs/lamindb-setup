@@ -36,6 +36,7 @@ from ._hub_utils import (
 from ._settings import settings
 from ._settings_instance import InstanceSettings
 from ._settings_storage import StorageSettings, base62
+from .hashing import hash_and_encode_as_b62
 
 if TYPE_CHECKING:
     from supabase import Client  # type: ignore
@@ -114,6 +115,27 @@ def _select_storage(
         else:
             assert ssettings._uid == existing_storage["lnid"]
         return True
+
+
+def _select_storage_or_parent(path: str, client: Client) -> dict | None:
+    result = client.rpc("existing_root_or_child", {"_path": path}).execute().data
+    if result["root"] is None:
+        return None
+    result["instance_uid"] = hash_and_encode_as_b62(
+        UUID(result.pop("instance_id")).hex
+    )[:12]
+    return result
+
+
+def select_storage_or_parent(path: str, access_token: str | None = None) -> dict | None:
+    if settings.user.handle != "anonymous" or access_token is not None:
+        return call_with_fallback_auth(
+            _select_storage_or_parent,
+            path=path,
+            access_token=access_token,
+        )
+    else:
+        return call_with_fallback(_select_storage_or_parent, path=path)
 
 
 def init_storage_hub(
