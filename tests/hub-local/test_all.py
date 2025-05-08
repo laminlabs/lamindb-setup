@@ -17,6 +17,7 @@ from lamindb_setup.core._hub_core import (
     connect_instance_hub,
     init_instance_hub,
     init_storage_hub,
+    select_storage_or_parent,
     sign_in_hub,
     sign_up_local_hub,
 )
@@ -388,6 +389,13 @@ def test_init_storage_incorrect_protocol():
     with pytest.raises(ValueError) as error:
         init_storage_base("incorrect-protocol://some-path/some-path-level")
     assert "Protocol incorrect-protocol is not supported" in error.exconly()
+
+
+def test_select_storage_or_parent(create_myinstance):
+    root = "s3://lamindb-ci/myinstance"
+
+    result = select_storage_or_parent("s3://lamindb-ci/myinstance")
+    assert result["root"] == root
 
 
 def test_fine_grained_access(
