@@ -393,6 +393,9 @@ def test_init_storage_incorrect_protocol():
 
 
 def test_select_storage_or_parent(create_myinstance):
+    # check not exisitng
+    assert select_storage_or_parent("s3://does-not-exist") is None
+
     root = "s3://lamindb-ci/myinstance"
 
     result = select_storage_or_parent(root)
