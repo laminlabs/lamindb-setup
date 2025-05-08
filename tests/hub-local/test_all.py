@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import os
 import subprocess
+from unittest.mock import patch
 from uuid import UUID, uuid4
 
 import lamindb_setup as ln_setup
@@ -394,7 +395,11 @@ def test_init_storage_incorrect_protocol():
 def test_select_storage_or_parent(create_myinstance):
     root = "s3://lamindb-ci/myinstance"
 
-    result = select_storage_or_parent("s3://lamindb-ci/myinstance")
+    result = select_storage_or_parent(root)
+    assert result["root"] == root
+    # check with a child path and anonymous user
+    with patch.object(ln_setup.settings.user, "handle", new="anonymous"):
+        result = select_storage_or_parent(root + "/subfolder")
     assert result["root"] == root
 
 
