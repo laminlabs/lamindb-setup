@@ -23,7 +23,8 @@ if TYPE_CHECKING:
 
     from .types import UPathStr
 
-IS_INITIALIZED_KEY = ".lamindb/_is_initialized"
+STORAGE_UID_FILE_KEY = ".lamindb/storage_uid.txt"
+LEGACY_STORAGE_UID_FILE_KEY = ".lamindb/_is_initialized"
 
 # a list of supported fsspec protocols
 # rename file to local before showing to a user
@@ -82,11 +83,15 @@ def get_storage_region(path: UPathStr) -> str | None:
 
 
 def mark_storage_root(root: UPathStr, uid: str):
-    # we need to touch a 0-byte object in folder-like storage location on S3 to avoid
+    # we need a file in folder-like storage locations on S3 to avoid
     # permission errors from leveraging s3fs on an empty hosted storage location
-    # for consistency, we write this file everywhere
+    # (path.fs.find raises a PermissionError)
+    # we also need it in case a storage location is ambiguous because a server / local environment
+    # doesn't have a globally unique identifier, then we screen for this file to map the
+    # path on a storage location in the registry
+
     root_upath = UPath(root)
-    mark_upath = root_upath / IS_INITIALIZED_KEY
+    mark_upath = root_upath / STORAGE_UID_FILE_KEY
     mark_upath.write_text(uid)
 
 
@@ -100,7 +105,7 @@ def init_storage(
     access_token: str | None = None,
 ) -> tuple[
     StorageSettings,
-    Literal["hub-record-not-created", "hub-record-retireved", "hub-record-created"],
+    Literal["hub-record-not-created", "hub-record-retrieved", "hub-record-created"],
 ]:
     assert root is not None, "`root` argument can't be `None`"
 
@@ -145,38 +150,46 @@ def init_storage(
     )
     # this stores the result of init_storage_hub
     hub_record_status: Literal[
-        "hub-record-not-created", "hub-record-retireved", "hub-record-created"
+        "hub-record-not-created", "hub-record-retrieved", "hub-record-created"
     ] = "hub-record-not-created"
     # the below might update the uid with one that's already taken on the hub
-    if not prevent_register_hub:
-        if ssettings.type_is_cloud or register_hub:
-            from ._hub_core import delete_storage_record
-            from ._hub_core import init_storage as init_storage_hub
+    if not prevent_register_hub and (ssettings.type_is_cloud or register_hub):
+        from ._hub_core import delete_storage_record, init_storage_hub
 
-            hub_record_status = init_storage_hub(
-                ssettings,
-                auto_populate_instance=not init_instance,
-                created_by=created_by,
-                access_token=access_token,
-            )
-    # below comes last only if everything else was successful
-    try:
-        # (federated) credentials for AWS access are provisioned under-the-hood
-        # discussion: https://laminlabs.slack.com/archives/C04FPE8V01W/p1719260587167489
-        # if access_token was passed in ssettings, it is used here
-        mark_storage_root(ssettings.root, ssettings.uid)  # type: ignore
-    except Exception:
-        logger.important(
-            f"due to lack of write access, LaminDB won't manage storage location: {ssettings.root_as_str}"
+        # this retrieves the storage record if it exists already in the hub
+        # and updates uid and instance_id in ssettings
+        hub_record_status = init_storage_hub(
+            ssettings,
+            auto_populate_instance=not init_instance,
+            created_by=created_by,
+            access_token=access_token,
         )
-        # we have to check hub_record_status here because
-        # _select_storage inside init_storage_hub also populates ssettings._uuid
-        # and we don't want to delete an existing storage record here
-        # only newly created
-        if hub_record_status == "hub-record-created" and ssettings._uuid is not None:
-            delete_storage_record(ssettings._uuid, access_token=access_token)  # type: ignore
-            hub_record_status = "hub-record-not-created"
-        ssettings._instance_id = None
+    # below comes last only if everything else was successful
+    # we check the write access here only if the storage record has been just created
+    # or if the storage is local
+    # also we have to check hub_record_status here because
+    # _select_storage inside init_storage_hub also populates ssettings._uuid
+    # and we don't want to delete an existing storage record here if no write access
+    # only newly created
+    # local storages not registered in the hub should be also marked
+    is_local_not_retrieved = not (
+        ssettings.type_is_cloud or hub_record_status == "hub-record-retrieved"
+    )
+    if hub_record_status == "hub-record-created" or is_local_not_retrieved:
+        try:
+            # (federated) credentials for AWS access are provisioned under-the-hood
+            # discussion: https://laminlabs.slack.com/archives/C04FPE8V01W/p1719260587167489
+            # if access_token was passed in ssettings, it is used here
+            mark_storage_root(ssettings.root, ssettings.uid)  # type: ignore
+        except Exception:
+            logger.important(
+                f"due to lack of write access, LaminDB won't manage storage location: {ssettings.root_as_str}"
+            )
+            if ssettings._uuid is not None:
+                delete_storage_record(ssettings._uuid, access_token=access_token)  # type: ignore
+                ssettings._uuid_ = None
+                hub_record_status = "hub-record-not-created"
+            ssettings._instance_id = None
     return ssettings, hub_record_status
 
 
@@ -234,7 +247,14 @@ class StorageSettings:
 
     @property
     def _mark_storage_root(self) -> UPath:
-        return self.root / IS_INITIALIZED_KEY
+        marker_path = self.root / STORAGE_UID_FILE_KEY
+        legacy_filepath = self.root / LEGACY_STORAGE_UID_FILE_KEY
+        if legacy_filepath.exists():
+            logger.warning(
+                f"found legacy marker file, renaming it from {legacy_filepath} to {marker_path}"
+            )
+            legacy_filepath.rename(marker_path)
+        return marker_path
 
     @property
     def record(self) -> Any:

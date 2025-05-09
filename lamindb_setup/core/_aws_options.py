@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import logging
 import os
 import time
 
@@ -38,7 +39,19 @@ PUBLIC_BUCKETS: tuple[str] = ("cellxgene-data-public",)
 LAMIN_ENDPOINTS: tuple[str | None] = (None,)
 
 
+class NoTracebackFilter(logging.Filter):
+    def filter(self, record):
+        record.exc_info = None  # Remove traceback info from the log record.
+        return True
+
+
 class AWSOptionsManager:
+    # suppress giant traceback logs from aiobotocore when failing to refresh sso etc
+    @staticmethod
+    def _suppress_aiobotocore_traceback_logging():
+        logger = logging.getLogger("aiobotocore.credentials")
+        logger.addFilter(NoTracebackFilter())
+
     def __init__(self):
         self._credentials_cache = {}
 
@@ -48,6 +61,9 @@ class AWSOptionsManager:
         fs = S3FileSystem(
             cache_regions=True, use_listings_cache=True, version_aware=False
         )
+
+        self._suppress_aiobotocore_traceback_logging()
+
         try:
             fs.connect()
             self.anon: bool = fs.session._credentials is None

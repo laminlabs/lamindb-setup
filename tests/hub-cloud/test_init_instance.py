@@ -150,8 +150,7 @@ def test_init_instance_cloud_aws_us():
     assert ln_setup.settings.storage.root_as_str == storage
     assert ln_setup.settings.storage.region == "us-west-1"
     assert (
-        str(ln_setup.settings.instance._sqlite_file)
-        == f"{storage}/{ln_setup.settings.instance._id.hex}.lndb"
+        str(ln_setup.settings.instance._sqlite_file) == f"{storage}/.lamindb/lamin.db"
     )
     ln_setup.delete("init_instance_cloud_aws_us", force=True)
 
@@ -168,8 +167,7 @@ def test_init_instance_cloud_aws_europe():
     assert ln_setup.settings.storage.region == "eu-central-1"
     assert ln_setup.settings.instance.name == "lamindb-ci-europe"
     assert (
-        str(ln_setup.settings.instance._sqlite_file)
-        == f"{storage}/{ln_setup.settings.instance._id.hex}.lndb"
+        str(ln_setup.settings.instance._sqlite_file) == f"{storage}/.lamindb/lamin.db"
     )
     ln_setup.delete("lamindb-ci-europe", force=True)
 

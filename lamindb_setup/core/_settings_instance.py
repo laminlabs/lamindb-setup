@@ -13,7 +13,12 @@ from ._hub_client import call_with_fallback
 from ._hub_crud import select_account_handle_name_by_lnid
 from ._hub_utils import LaminDsn, LaminDsnModel
 from ._settings_save import save_instance_settings
-from ._settings_storage import StorageSettings, init_storage, mark_storage_root
+from ._settings_storage import (
+    LEGACY_STORAGE_UID_FILE_KEY,
+    STORAGE_UID_FILE_KEY,
+    StorageSettings,
+    init_storage,
+)
 from ._settings_store import current_instance_settings_file, instance_settings_file
 from .cloud_sqlite_locker import (
     EXPIRATION_TIME,
@@ -59,6 +64,8 @@ class InstanceSettings:
         is_on_hub: bool | None = None,  # initialized from hub
         api_url: str | None = None,
         schema_id: UUID | None = None,
+        fine_grained_access: bool = False,
+        db_permissions: str | None = None,
         _locker_user: UserSettings | None = None,  # user to lock for if cloud sqlite
     ):
         from ._hub_utils import validate_db_arg
@@ -76,9 +83,14 @@ class InstanceSettings:
         self._keep_artifacts_local = keep_artifacts_local
         self._storage_local: StorageSettings | None = None
         self._is_on_hub = is_on_hub
-        # private, needed for writing instance settings
+        # private, needed for api requests
         self._api_url = api_url
         self._schema_id = schema_id
+        # private, whether fine grained access is used
+        # needed to be set to request jwt etc
+        self._fine_grained_access = fine_grained_access
+        # permissions for db such as jwt, read, write etc.
+        self._db_permissions = db_permissions
         # if None then settings.user is used
         self._locker_user = _locker_user
 
@@ -140,32 +152,27 @@ class InstanceSettings:
         for record in all_local_records:
             root_path = Path(record.root)
             if root_path.exists():
-                marker_path = root_path / ".lamindb/_is_initialized"
-                if marker_path.exists():
-                    try:
-                        uid = marker_path.read_text()
-                    except PermissionError:
+                marker_path = root_path / STORAGE_UID_FILE_KEY
+                if not marker_path.exists():
+                    legacy_filepath = root_path / LEGACY_STORAGE_UID_FILE_KEY
+                    if legacy_filepath.exists():
                         logger.warning(
-                            f"ignoring the following location because no permission to read it: {marker_path}"
+                            f"found legacy marker file, renaming it from {legacy_filepath} to {marker_path}"
                         )
-                        continue
-                    if uid == record.uid:
-                        found = True
-                        break
-                    elif uid == "":
-                        try:
-                            # legacy instance that was not yet marked properly
-                            mark_storage_root(record.root, record.uid)
-                        except PermissionError:
-                            logger.warning(
-                                f"ignoring the following location because no permission to write to it: {marker_path}"
-                            )
-                            continue
+                        legacy_filepath.rename(marker_path)
                     else:
-                        continue
-                else:
-                    # legacy instance that was not yet marked at all
-                    mark_storage_root(record.root, record.uid)
+                        raise ValueError(
+                            f"local storage location '{root_path}' is corrupted, cannot find marker file with storage uid"
+                        )
+                try:
+                    uid = marker_path.read_text()
+                except PermissionError:
+                    logger.warning(
+                        f"ignoring the following location because no permission to read it: {marker_path}"
+                    )
+                    continue
+                if uid == record.uid:
+                    found = True
                     break
         if found:
             return StorageSettings(record.root)
@@ -279,7 +286,7 @@ class InstanceSettings:
         The core schema contained in lamindb is not included in this set.
         """
         if self._schema_str is None:
-            return {}  # type: ignore
+            return set()
         else:
             return {module for module in self._schema_str.split(",") if module != ""}
 
@@ -291,7 +298,8 @@ class InstanceSettings:
     @property
     def _sqlite_file(self) -> UPath:
         """SQLite file."""
-        return self.storage.key_to_filepath(f"{self._id.hex}.lndb")
+        filepath = self.storage.root / ".lamindb/lamin.db"
+        return filepath
 
     @property
     def _sqlite_file_local(self) -> Path:
@@ -473,24 +481,18 @@ class InstanceSettings:
 
         disable_auto_connect(setup_django)(self, init=True)
 
-        from lamindb.models import Space
-
-        Space.objects.get_or_create(
-            name="All",
-            description="Every team & user with access to the instance has access.",
-        )
-
     def _load_db(self) -> tuple[bool, str]:
         # Is the database available and initialized as LaminDB?
         # returns a tuple of status code and message
         if self.dialect == "sqlite" and not self._sqlite_file.exists():
-            legacy_file = self.storage.key_to_filepath(f"{self.name}.lndb")
+            legacy_file = self.storage.key_to_filepath(f"{self._id.hex}.lndb")
             if legacy_file.exists():
-                raise RuntimeError(
-                    "The SQLite file has been renamed!\nPlease rename your SQLite file"
-                    f" {legacy_file} to {self._sqlite_file}"
+                logger.warning(
+                    f"The SQLite file is being renamed from {legacy_file} to {self._sqlite_file}"
                 )
-            return False, f"SQLite file {self._sqlite_file} does not exist"
+                legacy_file.rename(self._sqlite_file)
+            else:
+                return False, f"SQLite file {self._sqlite_file} does not exist"
         # we need the local sqlite to setup django
         self._update_local_sqlite_file()
         # setting up django also performs a check for migrations & prints them

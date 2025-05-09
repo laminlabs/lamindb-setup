@@ -150,6 +150,7 @@ class FieldMetadata(BaseModel):
     is_link_table: bool
     is_primary_key: bool
     is_editable: bool
+    max_length: int | None = None
     relation_type: RelationType | None = None
     related_field_name: str | None = None
     related_model_name: str | None = None
@@ -168,6 +169,10 @@ class _ModelHandler:
         self.included_modules = included_modules
         self.fields = self._get_fields_metadata(self.model)
         self.is_link_table = issubclass(model, LinkORM)
+        self.name_field = model._name_field if hasattr(model, "_name_field") else None
+        self.ontology_id_field = (
+            model._ontology_id_field if hasattr(model, "_ontology_id_field") else None
+        )
 
     def to_dict(self, include_django_objects: bool = True):
         _dict = {
@@ -175,6 +180,8 @@ class _ModelHandler:
             "class_name": self.class_name,
             "table_name": self.table_name,
             "is_link_table": self.is_link_table,
+            "name_field": self.name_field,
+            "ontology_id_field": self.ontology_id_field,
         }
 
         for field_name in self.fields.keys():
@@ -243,18 +250,21 @@ class _ModelHandler:
         internal_type = field.get_internal_type()
         model_name = field.model._meta.model_name
         relation_type = self._get_relation_type(model, field)
+
+        schema_name = field.model.__get_module_name__()
+
         if field.related_model is None:
-            schema_name = field.model.__get_module_name__()
             related_model_name = None
             related_schema_name = None
             related_field_name = None
             is_editable = field.editable
+            max_length = field.max_length
         else:
             related_model_name = field.related_model._meta.model_name
             related_schema_name = field.related_model.__get_module_name__()
-            schema_name = field.model.__get_module_name__()
             related_field_name = field.remote_field.name
             is_editable = False
+            max_length = None
 
         field_name = field.name
         is_primary_key = getattr(field, "primary_key", False)
@@ -289,6 +299,7 @@ class _ModelHandler:
             is_link_table=issubclass(field.model, LinkORM),
             is_primary_key=is_primary_key,
             is_editable=is_editable,
+            max_length=max_length,
             column_name=column,
             relation_type=relation_type,
             related_schema_name=related_schema_name

@@ -23,29 +23,44 @@ def check_whether_migrations_in_sync(db_version_str: str):
         return None
     installed_version = version.parse(installed_version_str)
     db_version = version.parse(db_version_str)
-    if installed_version.major < db_version.major or (
+    if installed_version.major < db_version.major:
+        logger.warning(
+            f"the database ({db_version_str}) is far ahead of your installed lamindb package ({installed_version_str})"
+        )
+        logger.important(
+            f"please update lamindb: pip install lamindb>={db_version.major}"
+        )
+    elif (
         installed_version.major == db_version.major
         and installed_version.minor < db_version.minor
     ):
         db_version_lower = f"{db_version.major}.{db_version.minor}"
-        db_version_upper = f"{db_version.major}.{db_version.minor + 1}"
-        logger.warning(
+        logger.important(
             f"the database ({db_version_str}) is ahead of your installed lamindb"
             f" package ({installed_version_str})"
         )
         logger.important(
-            "please update lamindb: pip install"
-            f' "lamindb>={db_version_lower},<{db_version_upper}"'
+            f"consider updating lamindb: pip install lamindb>={db_version_lower}"
         )
-    elif installed_version.major > db_version.major or (
+    elif installed_version.major > db_version.major:
+        logger.warning(
+            f"the database ({db_version_str}) is far behind your installed lamindb package"
+            f" ({installed_version_str})"
+        )
+        logger.important(
+            "if you are an admin, migrate your database: lamin migrate deploy"
+        )
+    elif (
         installed_version.major == db_version.major
         and installed_version.minor > db_version.minor
     ):
-        logger.warning(
-            f"the database ({db_version_str}) is behind your installed lamindb package"
-            f" ({installed_version_str})"
-        )
-        logger.important("consider migrating your database: lamin migrate deploy")
+        pass
+        # if the database is behind by a minor version, we don't want to spam the user
+        # logger.important(
+        #     f"the database ({db_version_str}) is behind your installed lamindb package"
+        #     f" ({installed_version_str})"
+        # )
+        # logger.important("consider migrating your database: lamin migrate deploy")
 
 
 # for tests, see lamin-cli

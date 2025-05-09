@@ -8,16 +8,16 @@ from .core._settings_save import save_system_storage_settings
 
 
 def clear_cache_dir():
-    from lamindb_setup import close, settings
+    from lamindb_setup import disconnect, settings
 
     try:
         if settings.instance._is_cloud_sqlite:
             logger.warning(
-                "Closing the current instance to update the cloud sqlite database."
+                "Disconnecting the current instance to update the cloud sqlite database."
             )
-            close()
+            disconnect()
     except SystemExit as e:
-        if str(e) != "No instance is loaded! Call `lamin init` or `lamin connect`":
+        if str(e) != "No instance connected! Call `lamin connect` or `lamin init`":
             raise e
 
     cache_dir = settings.cache_dir

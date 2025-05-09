@@ -7,6 +7,7 @@ from importlib import metadata
 from typing import TYPE_CHECKING, Literal
 from uuid import UUID
 
+import jwt
 from lamin_utils import logger
 from postgrest.exceptions import APIError
 
@@ -16,6 +17,7 @@ from ._hub_client import (
     call_with_fallback,
     call_with_fallback_auth,
     connect_hub,
+    request_get_auth,
 )
 from ._hub_crud import (
     _delete_instance_record,
@@ -32,12 +34,12 @@ from ._hub_utils import (
     LaminDsnModel,
 )
 from ._settings import settings
+from ._settings_instance import InstanceSettings
 from ._settings_storage import StorageSettings, base62
+from .hashing import hash_and_encode_as_b62
 
 if TYPE_CHECKING:
     from supabase import Client  # type: ignore
-
-    from ._settings_instance import InstanceSettings
 
 
 def delete_storage_record(storage_uuid: UUID, access_token: str | None = None) -> None:
@@ -115,15 +117,36 @@ def _select_storage(
         return True
 
 
-def init_storage(
+def _select_storage_or_parent(path: str, client: Client) -> dict | None:
+    result = client.rpc("existing_root_or_child", {"_path": path}).execute().data
+    if result["root"] is None:
+        return None
+    result["instance_uid"] = hash_and_encode_as_b62(
+        UUID(result.pop("instance_id")).hex
+    )[:12]
+    return result
+
+
+def select_storage_or_parent(path: str, access_token: str | None = None) -> dict | None:
+    if settings.user.handle != "anonymous" or access_token is not None:
+        return call_with_fallback_auth(
+            _select_storage_or_parent,
+            path=path,
+            access_token=access_token,
+        )
+    else:
+        return call_with_fallback(_select_storage_or_parent, path=path)
+
+
+def init_storage_hub(
     ssettings: StorageSettings,
     auto_populate_instance: bool = True,
     created_by: UUID | None = None,
     access_token: str | None = None,
-) -> Literal["hub-record-retireved", "hub-record-created"]:
+) -> Literal["hub-record-retrieved", "hub-record-created"]:
     if settings.user.handle != "anonymous" or access_token is not None:
         return call_with_fallback_auth(
-            _init_storage,
+            _init_storage_hub,
             ssettings=ssettings,
             auto_populate_instance=auto_populate_instance,
             created_by=created_by,
@@ -134,17 +157,17 @@ def init_storage(
             _select_storage, ssettings=ssettings, update_uid=True
         )
         if storage_exists:
-            return "hub-record-retireved"
+            return "hub-record-retrieved"
         else:
             raise ValueError("Log in to create a storage location on the hub.")
 
 
-def _init_storage(
+def _init_storage_hub(
     client: Client,
     ssettings: StorageSettings,
     auto_populate_instance: bool,
     created_by: UUID | None = None,
-) -> Literal["hub-record-retireved", "hub-record-created"]:
+) -> Literal["hub-record-retrieved", "hub-record-created"]:
     from lamindb_setup import settings
 
     created_by = settings.user._uuid if created_by is None else created_by
@@ -152,7 +175,7 @@ def _init_storage(
     # database
     root = ssettings.root_as_str
     if _select_storage(ssettings, update_uid=True, client=client):
-        return "hub-record-retireved"
+        return "hub-record-retrieved"
     if ssettings.type_is_cloud:
         id = uuid.uuid5(uuid.NAMESPACE_URL, root)
     else:
@@ -269,20 +292,20 @@ def delete_instance_record(instance_id: UUID, access_token: str | None = None) -
     )
 
 
-def init_instance(
+def init_instance_hub(
     isettings: InstanceSettings,
     account_id: UUID | None = None,
     access_token: str | None = None,
 ) -> None:
     return call_with_fallback_auth(
-        _init_instance,
+        _init_instance_hub,
         isettings=isettings,
         account_id=account_id,
         access_token=access_token,
     )
 
 
-def _init_instance(
+def _init_instance_hub(
     client: Client, isettings: InstanceSettings, account_id: UUID | None = None
 ) -> None:
     from ._settings import settings
@@ -437,6 +460,51 @@ def _access_aws(*, storage_root: str, client: Client) -> dict[str, dict]:
     return storage_root_info
 
 
+def access_db(
+    instance: InstanceSettings | dict, access_token: str | None = None
+) -> str:
+    instance_id: UUID
+    instance_slug: str
+    instance_api_url: str | None
+    if isinstance(instance, InstanceSettings):
+        instance_id = instance._id
+        instance_slug = instance.slug
+        instance_api_url = instance._api_url
+    else:
+        instance_id = UUID(instance["id"])
+        instance_slug = instance["owner"] + "/" + instance["name"]
+        instance_api_url = instance["api_url"]
+
+    if access_token is None:
+        if settings.user.handle == "anonymous":
+            raise RuntimeError(
+                f"Can only get fine-grained access to {instance_slug} if authenticated."
+            )
+        else:
+            access_token = settings.user.access_token
+            renew_token = True
+    else:
+        renew_token = False
+    # local is used in tests
+    url = f"/access_v2/instances/{instance_id}/db_token"
+    if os.environ.get("LAMIN_ENV", "prod") != "local":
+        if instance_api_url is None:
+            raise RuntimeError(
+                f"Can only get fine-grained access to {instance_slug} if api_url is present."
+            )
+        url = instance_api_url + url
+
+    response = request_get_auth(url, access_token, renew_token)  # type: ignore
+    response_json = response.json()
+    if response.status_code != 200:
+        raise PermissionError(
+            f"Fine-grained access to {instance_slug} failed: {response_json}"
+        )
+    if "token" not in response_json:
+        raise RuntimeError("The response of access_db does not contain a db token.")
+    return response_json["token"]
+
+
 def get_lamin_site_base_url():
     if "LAMIN_ENV" in os.environ:
         if os.environ["LAMIN_ENV"] == "local":
@@ -515,7 +583,7 @@ def _sign_in_hub_api_key(api_key: str, client: Client):
     access_token = json.loads(response)["accessToken"]
     # probably need more info here to avoid additional queries
     # like handle, uid etc
-    account_id = client.auth._decode_jwt(access_token)["sub"]
+    account_id = jwt.decode(access_token, options={"verify_signature": False})["sub"]
     client.postgrest.auth(access_token)
     # normally public.account.id is equal to auth.user.id
     data = client.table("account").select("*").eq("id", account_id).execute().data

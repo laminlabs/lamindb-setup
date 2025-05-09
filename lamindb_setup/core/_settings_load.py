@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import os
 from typing import TYPE_CHECKING
 from uuid import UUID, uuid4
 
@@ -40,7 +41,7 @@ def load_instance_settings(instance_settings_file: Path | None = None):
     if instance_settings_file is None:
         instance_settings_file = current_instance_settings_file()
     if not instance_settings_file.exists():
-        raise SystemExit("No instance is loaded! Call `lamin init` or `lamin connect`")
+        raise SystemExit("No instance connected! Call `lamin connect` or `lamin init`")
     try:
         settings_store = InstanceSettingsStore(_env_file=instance_settings_file)
     except (ValidationError, TypeError) as error:
@@ -55,11 +56,21 @@ def load_instance_settings(instance_settings_file: Path | None = None):
     return isettings
 
 
-def load_or_create_user_settings() -> UserSettings:
-    """Return current user settings."""
+def load_or_create_user_settings(api_key: str | None = None) -> UserSettings:
+    """Return current user settings.
+
+    Args:
+        api_key: if provided and there is no current user,
+            perform login and return the user settings.
+    """
     current_user_settings = current_user_settings_file()
     if not current_user_settings.exists():
-        logger.warning("using anonymous user (to identify, call: lamin login)")
+        if api_key is not None:
+            from lamindb_setup._setup_user import login
+
+            return login(api_key=api_key)
+        else:
+            logger.warning("using anonymous user (to identify, call: lamin login)")
         usettings = UserSettings(handle="anonymous", uid="00000000")
         from ._settings_save import save_user_settings
 
@@ -101,6 +112,10 @@ def setup_instance_from_store(store: InstanceSettingsStore) -> InstanceSettings:
         modules=_null_to_value(store.schema_str),
         git_repo=_null_to_value(store.git_repo),
         keep_artifacts_local=store.keep_artifacts_local,  # type: ignore
+        api_url=_null_to_value(store.api_url),
+        schema_id=None if store.schema_id == "null" else UUID(store.schema_id),
+        fine_grained_access=store.fine_grained_access,
+        db_permissions=_null_to_value(store.db_permissions),
     )
 
 

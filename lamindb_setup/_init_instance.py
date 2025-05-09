@@ -6,13 +6,15 @@ import uuid
 from typing import TYPE_CHECKING, Literal
 from uuid import UUID
 
+import click
 from django.core.exceptions import FieldError
 from django.db.utils import OperationalError, ProgrammingError
 from lamin_utils import logger
 
-from ._close import close as close_instance
+from ._disconnect import disconnect
 from ._silence_loggers import silence_loggers
 from .core import InstanceSettings
+from .core._docs import doc_args
 from .core._settings import settings
 from .core._settings_instance import is_local_db_url
 from .core._settings_storage import StorageSettings, init_storage
@@ -25,6 +27,11 @@ if TYPE_CHECKING:
     from .core.types import UPathStr
 
 
+class InstanceNotCreated(click.ClickException):
+    def show(self, file=None):
+        pass
+
+
 def get_schema_module_name(module_name, raise_import_error: bool = True) -> str | None:
     import importlib.util
 
@@ -35,10 +42,9 @@ def get_schema_module_name(module_name, raise_import_error: bool = True) -> str 
         module_spec = importlib.util.find_spec(name)
         if module_spec is not None:
             return name
-    message = f"schema module '{module_name}' is not installed → no access to its labels & registries (resolve via `pip install {module_name}`)"
+    message = f"schema module '{module_name}' is not installed → resolve via `pip install {module_name}`"
     if raise_import_error:
         raise ImportError(message)
-    logger.warning(message.lower())
     return None
 
 
@@ -89,11 +95,16 @@ def register_user(usettings):
         pass
 
 
-def register_user_and_storage_in_instance(isettings: InstanceSettings, usettings):
-    """Register user & storage in DB."""
+def register_initial_records(isettings: InstanceSettings, usettings):
+    """Register space, user & storage in DB."""
     from django.db.utils import OperationalError
+    from lamindb.models import Space
 
     try:
+        Space.objects.get_or_create(
+            name="All",
+            description="Every team & user with access to the instance has access.",
+        )
         register_user(usettings)
         register_storage_in_instance(isettings.storage)
     except OperationalError as error:
@@ -202,22 +213,32 @@ ln.Artifact.using("laminlabs/cellxgene").filter()
 Or do you want to switch off auto-connect via `lamin settings set auto-connect false`?
 """
 
+DOC_STORAGE_ARG = "A local or remote folder (`'s3://...'` or `'gs://...'`). Defaults to current working directory."
+DOC_INSTANCE_NAME = (
+    "Instance name. If not passed, it will equal the folder name passed to `storage`."
+)
+DOC_DB = "Database connection URL. Defaults to `None`, which implies an SQLite file in the storage location."
+DOC_MODULES = "Comma-separated string of schema modules."
+DOC_LOW_LEVEL_KWARGS = "Keyword arguments for low-level control."
 
+
+@doc_args(DOC_STORAGE_ARG, DOC_INSTANCE_NAME, DOC_DB, DOC_MODULES, DOC_LOW_LEVEL_KWARGS)
 def init(
     *,
-    storage: UPathStr,
+    storage: UPathStr = ".",
     name: str | None = None,
     db: PostgresDsn | None = None,
     modules: str | None = None,
     **kwargs,
 ) -> None:
-    """Create and load a LaminDB instance.
+    """Init a LaminDB instance.
 
     Args:
-        storage: Either local or remote folder (`"s3://..."` or `"gs://..."`).
-        name: Instance name.
-        db: Database connection url, do not pass for SQLite.
-        modules: Comma-separated string of modules. None if the lamindb registries are enough.
+        storage: {}
+        name: {}
+        db: {}
+        modules: {}
+        **kwargs: {}
     """
     isettings = None
     ssettings = None
@@ -241,8 +262,8 @@ def init(
         if _check_instance_setup() and not _test:
             raise CannotSwitchDefaultInstance(MESSAGE_CANNOT_SWITCH_DEFAULT_INSTANCE)
         elif _write_settings:
-            close_instance(mute=True)
-        from .core._hub_core import init_instance as init_instance_hub
+            disconnect(mute=True)
+        from .core._hub_core import init_instance_hub
 
         name_str, instance_id, instance_state, _ = validate_init_args(
             storage=storage,
@@ -284,6 +305,13 @@ def init(
             isettings.is_remote and instance_state != "instance-corrupted-or-deleted"
         )
         if register_on_hub:
+            # can't register the instance in the hub
+            # if storage is not in the hub
+            # raise the exception and initiate cleanups
+            if not isettings.storage.is_on_hub:
+                raise InstanceNotCreated(
+                    "Unable to create the instance because failed to register the storage."
+                )
             init_instance_hub(
                 isettings, account_id=user__uuid, access_token=access_token
             )
@@ -346,8 +374,8 @@ def load_from_isettings(
     user = settings.user if user is None else user
 
     if init:
-        # during init both user and storage need to be registered
-        register_user_and_storage_in_instance(isettings, user)
+        # during init space, user and storage need to be registered
+        register_initial_records(isettings, user)
         write_bionty_sources(isettings)
         isettings._update_cloud_sqlite_file(unlock_cloud_sqlite=False)
     else:

@@ -5,6 +5,7 @@ from uuid import UUID
 
 import lamindb_setup as ln_setup
 import pytest
+from lamindb_setup._init_instance import InstanceNotCreated
 from lamindb_setup.core._hub_client import connect_hub_with_auth
 from lamindb_setup.core._hub_crud import (
     select_account_by_handle,
@@ -33,6 +34,16 @@ def test_connect_instance_with_private_storage_and_no_storage_access():
         path.fs.call_s3("head_bucket", Bucket=path.drive)
 
 
+def test_init_instance_with_private_storage_and_no_storage_access():
+    ln_setup.login("testuser1@lamin.ai")
+    # test creating with no access to a cloud storage
+    with pytest.raises(InstanceNotCreated):
+        ln_setup.init(
+            storage="s3://lndb-setup-ci-eu-central-1/surely-nothing-here",
+            _test=True,
+        )
+
+
 def test_connect_instance_with_public_storage():
     # this loads a persistent instance created with a public s3 bucket
     # with s3:GetObject and s3:ListBucket policies enabled for all
@@ -47,4 +58,4 @@ def test_connect_instance_with_public_storage():
     )
     client.auth.sign_out()
     assert ln_setup.settings.instance._id == UUID(instance["id"])
-    ln_setup.close()
+    ln_setup.disconnect()

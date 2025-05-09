@@ -51,6 +51,21 @@ VALID_SIMPLE_SUFFIXES = {
     ".xml",
     ".qs",  # https://cran.r-project.org/web/packages/qs/vignettes/vignette.html
     ".rds",
+    ".pt",
+    ".pth",
+    ".ckpt",
+    ".state_dict",
+    ".keras",
+    ".pb",
+    ".pbtxt",
+    ".savedmodel",
+    ".pkl",
+    ".pickle",
+    ".bin",
+    ".safetensors",
+    ".model",
+    ".mlmodel",
+    ".mar",
     #
     # with readers (see below)
     #
@@ -316,16 +331,26 @@ def upload_from(
         callback = ProgressCallback(local_path.name, "uploading")
         kwargs["callback"] = callback
 
-    source: str | list[str]
-    destination: str | list[str]
-    if local_path_is_dir and not create_folder:
-        source = [f.as_posix() for f in local_path.rglob("*") if f.is_file()]
-        destination = fsspec.utils.other_paths(
-            source, self.as_posix(), exists=False, flatten=False
-        )
-    else:
-        source = local_path.as_posix()
-        destination = self.as_posix()
+    source: str | list[str] = local_path.as_posix()
+    destination: str | list[str] = self.as_posix()
+    if local_path_is_dir:
+        size: int = 0
+        files: list[str] = []
+        for file in (path for path in local_path.rglob("*") if path.is_file()):
+            size += file.stat().st_size
+            files.append(file.as_posix())
+        # see https://github.com/fsspec/s3fs/issues/897
+        # here we reduce batch_size for folders bigger than 8 GiB
+        # to avoid the problem in the issue
+        # the default batch size for this case is 128
+        if "batch_size" not in kwargs and size >= 8 * 2**30:
+            kwargs["batch_size"] = 64
+
+        if not create_folder:
+            source = files
+            destination = fsspec.utils.other_paths(
+                files, self.as_posix(), exists=False, flatten=False
+            )
 
     # the below lines are to avoid s3fs triggering create_bucket in upload if
     # dirs are present, it allows to avoid the permission error
@@ -899,17 +924,12 @@ def check_storage_is_empty(
 ) -> int:
     root_upath = UPath(root)
     root_string = root_upath.as_posix()  # type: ignore
-    # we currently touch a 0-byte file in the root of a hosted storage location
-    # ({storage_root}/.lamindb/_is_initialized) during storage initialization
-    # since path.fs.find raises a PermissionError on empty hosted
-    # subdirectories (see lamindb_setup/core/_settings_storage/init_storage).
-    n_offset_objects = 1  # because of touched dummy file, see mark_storage_root()
+    n_offset_objects = 1  # because of storage_uid.txt file, see mark_storage_root()
+    if account_for_sqlite_file:
+        n_offset_objects += 1  # the SQLite file is in the ".lamindb" directory
     if root_string.startswith(HOSTED_BUCKETS):
         # in hosted buckets, count across entire root
         directory_string = root_string
-        # the SQLite file is not in the ".lamindb" directory
-        if account_for_sqlite_file:
-            n_offset_objects += 1  # because of SQLite file
     else:
         # in any other storage location, only count in .lamindb
         if not root_string.endswith("/"):

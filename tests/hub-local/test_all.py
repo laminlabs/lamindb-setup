@@ -1,6 +1,8 @@
 from __future__ import annotations
 
 import os
+import subprocess
+from unittest.mock import patch
 from uuid import UUID, uuid4
 
 import lamindb_setup as ln_setup
@@ -14,8 +16,9 @@ from lamindb_setup.core._hub_client import (
 from lamindb_setup.core._hub_core import (
     _connect_instance_hub,
     connect_instance_hub,
-    init_instance,
-    init_storage,
+    init_instance_hub,
+    init_storage_hub,
+    select_storage_or_parent,
     sign_in_hub,
     sign_up_local_hub,
 )
@@ -35,8 +38,14 @@ from lamindb_setup.core._settings_instance import InstanceSettings
 from lamindb_setup.core._settings_save import save_user_settings
 from lamindb_setup.core._settings_storage import base62
 from lamindb_setup.core._settings_storage import init_storage as init_storage_base
+from lamindb_setup.core._settings_store import instance_settings_file
 from lamindb_setup.core._settings_user import UserSettings
-from laminhub_rest.core.instance.collaborator import InstanceCollaboratorHandler
+from laminhub_rest.core.legacy._instance_collaborator import InstanceCollaboratorHandler
+from laminhub_rest.core.organization import OrganizationHandler
+from laminhub_rest.test.instance.utils import (
+    create_hosted_test_instance,
+    delete_hosted_test_instance,
+)
 from postgrest.exceptions import APIError
 from supafunc.errors import FunctionsHttpError
 
@@ -127,7 +136,7 @@ def create_myinstance(create_testadmin1_session):  # -> Dict
         )[0],
         db=db_str,
     )
-    init_instance(isettings)
+    init_instance_hub(isettings)
     # test loading it
     with pytest.raises(PermissionError) as error:
         ln_setup.connect("testadmin1/myinstance", _test=True)
@@ -157,6 +166,18 @@ def create_myinstance(create_testadmin1_session):  # -> Dict
         client=admin_client,
     )
     yield instance
+
+
+@pytest.fixture(scope="session")
+def create_instance_fine_grained_access(create_testadmin1_session):
+    client, testadmin1 = create_testadmin1_session
+
+    org_handler = OrganizationHandler(client)
+    org_handler.create(testadmin1._uuid)
+
+    instance = create_hosted_test_instance("instance_access_v2", access_v2=True)
+    yield instance
+    delete_hosted_test_instance(instance)
 
 
 def test_connection_string_decomp(create_myinstance, create_testadmin1_session):
@@ -289,9 +310,9 @@ def test_connect_instance_hub(create_myinstance, create_testadmin1_session):
     assert instance["name"] == create_myinstance["name"]
     assert instance["db"] == expected_dsn
 
-    # add db_server from seed_local_test
+    # add resource_db_server from seed_local_test
     admin_client.table("instance").update(
-        {"db_server_id": "e36c7069-2129-4c78-b2c6-323e2354b741"}
+        {"resource_db_server_id": "e36c7069-2129-4c78-b2c6-323e2354b741"}
     ).eq("id", instance["id"]).execute()
 
     instance, _ = connect_instance_hub(owner=owner, name=name)
@@ -357,7 +378,7 @@ def test_init_storage_with_non_existing_bucket(create_testadmin1_session):
     from botocore.exceptions import ClientError
 
     with pytest.raises(ClientError) as error:
-        init_storage(
+        init_storage_hub(
             ssettings=init_storage_base(
                 "s3://non_existing_storage_root", instance_id=uuid4()
             )[0]
@@ -369,3 +390,51 @@ def test_init_storage_incorrect_protocol():
     with pytest.raises(ValueError) as error:
         init_storage_base("incorrect-protocol://some-path/some-path-level")
     assert "Protocol incorrect-protocol is not supported" in error.exconly()
+
+
+def test_select_storage_or_parent(create_myinstance):
+    # check not exisitng
+    assert select_storage_or_parent("s3://does-not-exist") is None
+
+    root = "s3://lamindb-ci/myinstance"
+
+    result = select_storage_or_parent(root)
+    assert result["root"] == root
+    # check with a child path and anonymous user
+    with patch.object(ln_setup.settings.user, "handle", new="anonymous"):
+        result = select_storage_or_parent(root + "/subfolder")
+    assert result["root"] == root
+
+
+def test_fine_grained_access(
+    create_testadmin1_session, create_instance_fine_grained_access
+):
+    admin_client, testadmin1 = create_testadmin1_session
+    instance = create_instance_fine_grained_access
+    # check api_url is set up correctly through the new tables
+    instance_record = select_instance_by_name(
+        account_id=testadmin1._uuid,
+        name=instance.name,
+        client=admin_client,
+    )
+    assert instance_record["resource_db_server_id"] is not None
+
+    isettings_file = instance_settings_file(
+        instance.name, ln_setup.settings.user.handle
+    )
+    # the file is written by create_instance_fine_grained_access
+    # has fine_grained_access=False because create_instance_fine_grained_access
+    # updates the instance after init without updating the settings file
+    assert isettings_file.exists()
+    # need to delete it, because otheriwse
+    # isettings.is_remote evaluates to False
+    # and ln_setup.connect doesn't make a hub request
+    # thus fine_grained_access stays False
+    isettings_file.unlink()
+    # run from a script because test_update_schema_in_hub.py has ln_setup.init
+    # which fails if we connect here
+    subprocess.run(
+        "python ./tests/hub-local/scripts/script-connect-fine-grained-access.py",
+        shell=True,
+        check=True,
+    )
