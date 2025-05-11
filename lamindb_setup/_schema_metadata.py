@@ -400,7 +400,7 @@ class _SchemaHandler:
         return self.to_dict(include_django_objects=False)
 
     def _get_modules_metadata(self):
-        from lamindb.models import Record, Registry
+        from lamindb.models import DBRecord, Registry
 
         all_models = {
             module_name: {
@@ -411,7 +411,7 @@ class _SchemaHandler:
                     module_name
                 ).models.__dict__.values()
                 if model.__class__ is Registry
-                and model is not Record
+                and model is not DBRecord
                 and not model._meta.abstract
                 and model.__get_module_name__() == module_name
             }

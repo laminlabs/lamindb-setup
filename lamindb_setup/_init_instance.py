@@ -206,7 +206,7 @@ class CannotSwitchDefaultInstance(SystemExit):
 MESSAGE_CANNOT_SWITCH_DEFAULT_INSTANCE = """
 You cannot write to different instances in the same Python session.
 
-Do you want to read from another instance via `Record.using()`? For example:
+Do you want to read from another instance via `DBRecord.using()`? For example:
 
 ln.Artifact.using("laminlabs/cellxgene").filter()
 
