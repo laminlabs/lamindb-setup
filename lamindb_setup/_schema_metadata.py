@@ -159,7 +159,7 @@ class FieldMetadata(BaseModel):
 
 class _ModelHandler:
     def __init__(self, model, module_name: str, included_modules: list[str]) -> None:
-        from lamindb.models import LinkORM
+        from lamindb.models import IsLink
 
         self.model = model
         self.class_name = model.__name__
@@ -168,7 +168,7 @@ class _ModelHandler:
         self.table_name = model._meta.db_table
         self.included_modules = included_modules
         self.fields = self._get_fields_metadata(self.model)
-        self.is_link_table = issubclass(model, LinkORM)
+        self.is_link_table = issubclass(model, IsLink)
         self.name_field = model._name_field if hasattr(model, "_name_field") else None
         self.ontology_id_field = (
             model._ontology_id_field if hasattr(model, "_ontology_id_field") else None
@@ -245,7 +245,7 @@ class _ModelHandler:
         return related_fields
 
     def _get_field_metadata(self, model, field: Field):
-        from lamindb.models import LinkORM
+        from lamindb.models import IsLink
 
         internal_type = field.get_internal_type()
         model_name = field.model._meta.model_name
@@ -296,7 +296,7 @@ class _ModelHandler:
             model_name=model_name,
             field_name=field_name,
             type=internal_type,
-            is_link_table=issubclass(field.model, LinkORM),
+            is_link_table=issubclass(field.model, IsLink),
             is_primary_key=is_primary_key,
             is_editable=is_editable,
             max_length=max_length,
