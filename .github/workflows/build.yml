@@ -232,14 +232,6 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: voxmedia/github-action-slack-notify-build@v1
-        if: ${{ needs.hub-local.result == 'success' && needs.hub-cloud.result == 'success' && github.event_name == 'repository_dispatch' }}
-        env:
-          SLACK_BOT_TOKEN: ${{ secrets.SLACK_GITHUB_ACTION }}
-        with:
-          channel_id: C05S2C02JHM
-          status: SUCCESS
-          color: good
-      - uses: voxmedia/github-action-slack-notify-build@v1
         if: ${{ ( needs.hub-local.result == 'failure' || needs.hub-cloud.result == 'failure' ) && github.event_name == 'repository_dispatch' }}
         env:
           SLACK_BOT_TOKEN: ${{ secrets.SLACK_GITHUB_ACTION }}
