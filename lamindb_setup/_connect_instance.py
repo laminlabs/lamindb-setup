@@ -79,7 +79,8 @@ def update_db_using_local(
             # read level or inexistent
             elif settings_file.exists() and (
                 db_dsn_hub.db.user is None
-                or (db_dsn_hub.db.user is not None and "read" in db_dsn_hub.db.user)
+                or db_dsn_hub.db.user == "none"
+                or "read" in db_dsn_hub.db.user
             ):
                 isettings = load_instance_settings(settings_file)
                 db_dsn_local = LaminDsnModel(db=isettings.db)
