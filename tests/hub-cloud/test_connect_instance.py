@@ -117,20 +117,20 @@ def test_connect_with_db_parameter():
         ln_setup.login("testuser1")
         # test load from hub
         ln_setup.connect("laminlabs/lamindata", _test=True)
-        assert "root" in ln_setup.settings.instance.db
+        assert "jwt" in ln_setup.settings.instance.db
         # test load from provided db argument
         db = "postgresql://testdbuser:testpwd@database2.cmyfs24wugc3.us-east-1.rds.amazonaws.com:5432/db1"
         ln_setup.connect("laminlabs/lamindata", _db=db, _test=True)
         assert "testdbuser" in ln_setup.settings.instance.db
-        # test ignore loading from cache because hub result has >read access
+        # test ignore loading from cache because hub result has jwt access
         ln_setup.connect("laminlabs/lamindata", _test=True)
-        assert "root" in ln_setup.settings.instance.db
+        assert "jwt" in ln_setup.settings.instance.db
 
         # now take a user that has no collaborator status
         ln_setup.login("testuser2")
         # the cached high priviledge connection string remains active
         ln_setup.connect("laminlabs/lamindata", _test=True)
-        assert "root" in ln_setup.settings.instance.db
+        assert "jwt" in ln_setup.settings.instance.db
         # now pass the connection string
         ln_setup.connect("laminlabs/lamindata", _db=db, _test=True)
         assert "testdbuser" in ln_setup.settings.instance.db

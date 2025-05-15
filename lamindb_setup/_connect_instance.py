@@ -78,16 +78,15 @@ def update_db_using_local(
             # read from a cached settings file in case the hub result is only
             # read level or inexistent
             elif settings_file.exists() and (
-                db_dsn_hub.db.user is None
-                or (db_dsn_hub.db.user is not None and "read" in db_dsn_hub.db.user)
+                db_dsn_hub.db.user in {None, "none"} or "read" in db_dsn_hub.db.user  # type:ignore
             ):
                 isettings = load_instance_settings(settings_file)
                 db_dsn_local = LaminDsnModel(db=isettings.db)
             else:
                 # just take the default hub result and ensure there is actually a user
                 if (
-                    db_dsn_hub.db.user == "none"
-                    and db_dsn_hub.db.password == "none"
+                    db_dsn_hub.db.user in {None, "none"}
+                    and db_dsn_hub.db.password in {None, "none"}
                     and raise_permission_error
                 ):
                     raise PermissionError(
