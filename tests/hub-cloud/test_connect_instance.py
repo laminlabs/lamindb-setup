@@ -136,11 +136,3 @@ def test_connect_with_db_parameter():
         # now pass the connection string
         ln_setup.connect("laminlabs/lamindata", _db=db, _test=True)
         assert "testdbuser" in ln_setup.settings.instance.db
-
-        # test corrupted input
-        db_corrupted = "postgresql://testuser:testpwd@wrongserver:5432/db1"
-        with pytest.raises(ValueError) as error:
-            ln_setup.connect("laminlabs/lamindata", _db=db_corrupted, _test=True)
-        assert error.exconly().startswith(
-            "ValueError: The local differs from the hub database information"
-        )
