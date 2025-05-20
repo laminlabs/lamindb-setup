@@ -351,7 +351,10 @@ def migrate_lnschema_core(
     elif db_type in ["postgresql", "postgres"]:
         import psycopg2
 
-        conn = psycopg2.connect(isettings.db)
+        # do not ignore LAMINDB_DJANGO_DATABASE_URL if it is set
+        conn = psycopg2.connect(
+            os.environ.get("LAMINDB_DJANGO_DATABASE_URL", isettings.db)
+        )
     else:
         raise ValueError("Unsupported database type. Use 'sqlite' or 'postgresql' URI.")
 
