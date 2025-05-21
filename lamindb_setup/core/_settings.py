@@ -5,6 +5,7 @@ import sys
 from typing import TYPE_CHECKING
 
 from appdirs import AppDirs
+from lamin_utils import logger
 
 from ._settings_load import (
     load_instance_settings,
@@ -162,7 +163,16 @@ class SetupSettings:
             self._cache_dir = cache_dir
         else:
             cache_dir = self._cache_dir
-        cache_dir.mkdir(parents=True, exist_ok=True)
+        try:
+            cache_dir.mkdir(parents=True, exist_ok=True)
+        # we don not want this to error
+        # beause no actual writing happens on just getting the cache dir
+        # in cloud_to_local_no_update for example
+        # so it should not fail on read-only systems
+        except Exception as e:
+            logger.warning(
+                f"Failed to create lamin cache directory at {cache_dir}: {e}"
+            )
         return cache_dir
 
     @property
