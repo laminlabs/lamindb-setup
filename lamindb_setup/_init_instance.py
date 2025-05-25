@@ -98,12 +98,30 @@ def register_user(usettings):
 def register_initial_records(isettings: InstanceSettings, usettings):
     """Register space, user & storage in DB."""
     from django.db.utils import OperationalError
-    from lamindb.models import Space
+    from lamindb.models import Branch, Space
 
     try:
         Space.objects.get_or_create(
+            uid="A",
             name="All",
             description="Every team & user with access to the instance has access.",
+        )
+        Branch.objects.get_or_create(
+            id=-1,
+            uid="T",
+            name="Trash",
+            description="The trash.",
+        )
+        Branch.objects.get_or_create(
+            id=0,
+            uid="A",
+            name="Archive",
+            description="The archive.",
+        )
+        Branch.objects.get_or_create(
+            uid="M",
+            name="Main",
+            description="The main & default branch of the instance.",
         )
         register_user(usettings)
         register_storage_in_instance(isettings.storage)
