@@ -41,7 +41,6 @@ from lamindb_setup.core._settings_storage import init_storage as init_storage_ba
 from lamindb_setup.core._settings_store import instance_settings_file
 from lamindb_setup.core._settings_user import UserSettings
 from laminhub_rest.core.legacy._instance_collaborator import InstanceCollaboratorHandler
-from laminhub_rest.core.organization import OrganizationHandler
 from laminhub_rest.test.instance.utils import (
     create_hosted_test_instance,
     delete_hosted_test_instance,
@@ -170,11 +169,6 @@ def create_myinstance(create_testadmin1_session):  # -> Dict
 
 @pytest.fixture(scope="session")
 def create_instance_fine_grained_access(create_testadmin1_session):
-    client, testadmin1 = create_testadmin1_session
-
-    org_handler = OrganizationHandler(client)
-    org_handler.create(testadmin1._uuid)
-
     instance = create_hosted_test_instance("instance_access_v2", access_v2=True)
     yield instance
     delete_hosted_test_instance(instance)
