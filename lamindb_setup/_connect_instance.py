@@ -67,10 +67,12 @@ def update_db_using_local(
     db_updated = None
     # check if postgres
     if hub_instance_result["db_scheme"] == "postgresql":
-        db_dsn_hub = LaminDsnModel(db=hub_instance_result["db"])
         if db is not None:
-            db_dsn_local = LaminDsnModel(db=db)
+            # use only the provided db if it is set
+            db_dsn_hub = LaminDsnModel(db=db)
+            db_dsn_local = db_dsn_hub
         else:
+            db_dsn_hub = LaminDsnModel(db=hub_instance_result["db"])
             # read directly from the environment
             if os.getenv("LAMINDB_INSTANCE_DB") is not None:
                 logger.important("loading db URL from env variable LAMINDB_INSTANCE_DB")
@@ -94,13 +96,13 @@ def update_db_using_local(
                         " a DB URL and pass it via --db <db_url>"
                     )
                 db_dsn_local = db_dsn_hub
-        if not check_db_dsn_equal_up_to_credentials(db_dsn_hub.db, db_dsn_local.db):
-            raise ValueError(
-                "The local differs from the hub database information:\n 1. did you"
-                " pass a wrong db URL with --db?\n 2. did your database get updated by"
-                " an admin?\nConsider deleting your cached database environment:\nrm"
-                f" {settings_file.as_posix()}"
-            )
+            if not check_db_dsn_equal_up_to_credentials(db_dsn_hub.db, db_dsn_local.db):
+                raise ValueError(
+                    "The local differs from the hub database information:\n"
+                    "did your database get updated by an admin?\n"
+                    "Consider deleting your cached database environment:\nrm"
+                    f" {settings_file.as_posix()}"
+                )
         db_updated = LaminDsn.build(
             scheme=db_dsn_hub.db.scheme,
             user=db_dsn_local.db.user,
@@ -344,11 +346,15 @@ def migrate_lnschema_core(
     if db_type == "sqlite":
         import sqlite3
 
+        # maybe also use LAMINDB_DJANGO_DATABASE_URL here?
         conn = sqlite3.connect(parsed_uri.path)
     elif db_type in ["postgresql", "postgres"]:
         import psycopg2
 
-        conn = psycopg2.connect(isettings.db)
+        # do not ignore LAMINDB_DJANGO_DATABASE_URL if it is set
+        conn = psycopg2.connect(
+            os.environ.get("LAMINDB_DJANGO_DATABASE_URL", isettings.db)
+        )
     else:
         raise ValueError("Unsupported database type. Use 'sqlite' or 'postgresql' URI.")
 

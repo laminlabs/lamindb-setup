@@ -117,6 +117,8 @@ def test_connect_with_db_parameter():
         ln_setup.login("testuser1")
         # test load from hub
         ln_setup.connect("laminlabs/lamindata", _test=True)
+        # this test assumes fine-grained access
+        assert ln_setup.settings.instance._db_permissions == "jwt"
         assert "jwt" in ln_setup.settings.instance.db
         # test load from provided db argument
         db = "postgresql://testdbuser:testpwd@database2.cmyfs24wugc3.us-east-1.rds.amazonaws.com:5432/db1"
@@ -128,20 +130,9 @@ def test_connect_with_db_parameter():
 
         # now take a user that has no collaborator status
         ln_setup.login("testuser2")
-        # the cached high priviledge connection string remains active
+        # receives public connection
         ln_setup.connect("laminlabs/lamindata", _test=True)
-        assert "jwt" in ln_setup.settings.instance.db
+        assert "public" in ln_setup.settings.instance.db
         # now pass the connection string
         ln_setup.connect("laminlabs/lamindata", _db=db, _test=True)
         assert "testdbuser" in ln_setup.settings.instance.db
-        # now the cache is used
-        ln_setup.connect("laminlabs/lamindata", _test=True)
-        assert "testdbuser" in ln_setup.settings.instance.db
-
-        # test corrupted input
-        db_corrupted = "postgresql://testuser:testpwd@wrongserver:5432/db1"
-        with pytest.raises(ValueError) as error:
-            ln_setup.connect("laminlabs/lamindata", _db=db_corrupted, _test=True)
-        assert error.exconly().startswith(
-            "ValueError: The local differs from the hub database information"
-        )
