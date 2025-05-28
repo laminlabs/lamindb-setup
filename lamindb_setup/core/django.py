@@ -265,7 +265,7 @@ def reset_django():
     if getattr(settings, "_wrapped", None) is not None:
         settings._wrapped = None
 
-    app_names = ("django",) + tuple(app.name for app in apps.get_app_configs())
+    app_names = {"django"} | {app.name for app in apps.get_app_configs()}
 
     apps.app_configs.clear()
     apps.apps_ready = apps.models_ready = apps.ready = apps.loading = False
@@ -274,7 +274,7 @@ def reset_django():
     # i suspect it is enough to just drop django and all the apps from sys.modules
     # the code above is just a precaution
     for module_name in list(sys.modules):
-        if module_name.startswith(app_names):
+        if module_name.partition(".")[0] in app_names:
             del sys.modules[module_name]
 
     il.invalidate_caches()
