@@ -245,10 +245,16 @@ def setup_django(
         isettings._search_local_root()
 
 
+# django.setup fails if called for the second time
+# reset_django() allows to call setup again,
+# needed to connect to a different instance in the same process if connected already
 def reset_django():
     from django.conf import settings
     from django.apps import apps
     from django.db import connections
+
+    if not settings.configured:
+        return
 
     connections.close_all()
 
