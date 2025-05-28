@@ -3,6 +3,8 @@ from __future__ import annotations
 # flake8: noqa
 import builtins
 import os
+import sys
+import importlib as il
 import jwt
 import time
 from pathlib import Path
@@ -241,3 +243,44 @@ def setup_django(
 
     if isettings.keep_artifacts_local:
         isettings._search_local_root()
+
+
+# THIS IS NOT SAFE
+# especially if lamindb is imported already
+# django.setup fails if called for the second time
+# reset_django() allows to call setup again,
+# needed to connect to a different instance in the same process if connected already
+# there could be problems if models are already imported from lamindb or other modules
+# these 'old' models can have any number of problems
+def reset_django():
+    from django.conf import settings
+    from django.apps import apps
+    from django.db import connections
+
+    if not settings.configured:
+        return
+
+    connections.close_all()
+
+    if getattr(settings, "_wrapped", None) is not None:
+        settings._wrapped = None
+
+    app_names = {"django"} | {app.name for app in apps.get_app_configs()}
+
+    apps.app_configs.clear()
+    apps.apps_ready = apps.models_ready = apps.ready = apps.loading = False
+    apps.clear_cache()
+
+    # i suspect it is enough to just drop django and all the apps from sys.modules
+    # the code above is just a precaution
+    for module_name in list(sys.modules):
+        if module_name.partition(".")[0] in app_names:
+            del sys.modules[module_name]
+
+    il.invalidate_caches()
+
+    global db_token_manager
+    db_token_manager = DBTokenManager()
+
+    global IS_SETUP
+    IS_SETUP = False
