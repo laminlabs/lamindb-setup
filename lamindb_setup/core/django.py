@@ -3,6 +3,8 @@ from __future__ import annotations
 # flake8: noqa
 import builtins
 import os
+import sys
+import importlib as il
 import jwt
 import time
 from pathlib import Path
@@ -241,3 +243,33 @@ def setup_django(
 
     if isettings.keep_artifacts_local:
         isettings._search_local_root()
+
+
+def reset_django():
+    from django.conf import settings
+    from django.apps import apps
+    from django.db import connections
+
+    connections.close_all()
+
+    db_token_manager.reset()
+
+    if getattr(settings, "_wrapped", None) is not None:
+        settings._wrapped = None
+
+    app_names = ("django",) + tuple(app.name for app in apps.get_app_configs())
+
+    apps.app_configs.clear()
+    apps.apps_ready = apps.models_ready = apps.ready = apps.loading = False
+    apps.clear_cache()
+
+    # i suspect it is enough to just drop django and all the apps from sys.modules
+    # the code above is just a precaution
+    for module_name in list(sys.modules):
+        if module_name.startswith(app_names):
+            del sys.modules[module_name]
+
+    il.invalidate_caches()
+
+    global IS_SETUP
+    IS_SETUP = False
