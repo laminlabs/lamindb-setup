@@ -246,6 +246,7 @@ def setup_django(
 
 
 # THIS IS NOT SAFE
+# especially if lamindb is imported already
 # django.setup fails if called for the second time
 # reset_django() allows to call setup again,
 # needed to connect to a different instance in the same process if connected already
