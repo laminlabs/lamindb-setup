@@ -258,8 +258,6 @@ def reset_django():
 
     connections.close_all()
 
-    db_token_manager.reset()
-
     if getattr(settings, "_wrapped", None) is not None:
         settings._wrapped = None
 
@@ -276,6 +274,9 @@ def reset_django():
             del sys.modules[module_name]
 
     il.invalidate_caches()
+
+    global db_token_manager
+    db_token_manager = DBTokenManager()
 
     global IS_SETUP
     IS_SETUP = False
