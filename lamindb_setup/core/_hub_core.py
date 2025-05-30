@@ -383,18 +383,18 @@ def _connect_instance_hub(
 
     if instance["db_scheme"] is not None:
         db_user_name, db_user_password = None, None
-        if "db_user_name" in instance and "db_user_password" in instance:
+        # if "db_user_name" in instance and "db_user_password" in instance:
+        #     db_user_name, db_user_password = (
+        #         instance["db_user_name"],
+        #         instance["db_user_password"],
+        #     )
+        # else:
+        db_user = select_db_user_by_instance(instance["id"], client)
+        if db_user is not None:
             db_user_name, db_user_password = (
-                instance["db_user_name"],
-                instance["db_user_password"],
+                db_user["db_user_name"],
+                db_user["db_user_password"],
             )
-        else:
-            db_user = select_db_user_by_instance(instance["id"], client)
-            if db_user is not None:
-                db_user_name, db_user_password = (
-                    db_user["db_user_name"],
-                    db_user["db_user_password"],
-                )
         db_dsn = LaminDsn.build(
             scheme=instance["db_scheme"],
             user=db_user_name if db_user_name is not None else "none",
