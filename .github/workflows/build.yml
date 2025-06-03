@@ -14,10 +14,10 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 12
     steps:
-      - uses: actions/checkout@v3
-      - uses: actions/setup-python@v4
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
         with:
-          python-version: "3.10" # run one job on 3.9
+          python-version: "3.10"
           cache: "pip"
       - uses: aws-actions/configure-aws-credentials@v4
         with:
@@ -35,7 +35,7 @@ jobs:
 
   # tests both on production and staging hub
   hub-cloud:
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-latest
     strategy:
       fail-fast: false
       matrix:
@@ -43,7 +43,7 @@ jobs:
           - lamin_env: "prod"
             python-version: "3.11"
           - lamin_env: "staging"
-            python-version: "3.10" # test on 3.9
+            python-version: "3.10"
     timeout-minutes: 12
     steps:
       - uses: aws-actions/configure-aws-credentials@v4
@@ -97,7 +97,7 @@ jobs:
     timeout-minutes: 12
     steps:
       - uses: actions/checkout@v4
-      - uses: actions/setup-python@v4
+      - uses: actions/setup-python@v5
         with:
           python-version: "3.10"
           cache: "pip"
@@ -205,7 +205,7 @@ jobs:
           ssh-key: ${{ secrets.READ_LNDOCS }}
           path: lndocs
           ref: main
-      - uses: actions/setup-python@v4
+      - uses: actions/setup-python@v5
         with:
           python-version: "3.10"
           cache: "pip"

@@ -2,9 +2,7 @@ from __future__ import annotations
 
 import os
 import secrets
-import shutil
 import string
-from pathlib import Path
 from typing import TYPE_CHECKING, Any, Literal
 
 import fsspec
@@ -208,7 +206,7 @@ class StorageSettings:
     ):
         self._uid = uid
         self._uuid_ = uuid
-        self._root_init = UPath(root)
+        self._root_init = UPath(root).expanduser()
         if isinstance(self._root_init, LocalPathClasses):  # local paths
             try:
                 (self._root_init / ".lamindb").mkdir(parents=True, exist_ok=True)
