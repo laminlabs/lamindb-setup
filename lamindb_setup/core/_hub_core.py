@@ -17,7 +17,7 @@ from ._hub_client import (
     call_with_fallback,
     call_with_fallback_auth,
     connect_hub,
-    request_get_auth,
+    request_auth,
 )
 from ._hub_crud import (
     _delete_instance_record,
@@ -495,7 +495,7 @@ def access_db(
             )
         url = instance_api_url + url
 
-    response = request_get_auth(url, access_token, renew_token)  # type: ignore
+    response = request_auth(url, "get", access_token, renew_token)  # type: ignore
     response_json = response.json()
     if response.status_code != 200:
         raise PermissionError(
