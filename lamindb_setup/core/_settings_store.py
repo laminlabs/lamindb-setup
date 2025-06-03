@@ -2,6 +2,7 @@ import os
 from pathlib import Path
 from typing import Optional
 
+from lamin_utils import logger
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 if "LAMIN_SETTINGS_DIR" in os.environ:
@@ -12,7 +13,11 @@ else:
     # hence, let's take home/.lamin
     settings_dir = Path.home() / ".lamin"
 
-settings_dir.mkdir(parents=True, exist_ok=True)
+
+try:
+    settings_dir.mkdir(parents=True, exist_ok=True)
+except Exception as e:
+    logger.warning(f"Failed to create lamin settings directory at {settings_dir}: {e}")
 
 
 def get_settings_file_name_prefix():

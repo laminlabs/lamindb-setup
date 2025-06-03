@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import os
 import subprocess
+from unittest.mock import patch
 from uuid import UUID, uuid4
 
 import lamindb_setup as ln_setup
@@ -17,6 +18,7 @@ from lamindb_setup.core._hub_core import (
     connect_instance_hub,
     init_instance_hub,
     init_storage_hub,
+    select_storage_or_parent,
     sign_in_hub,
     sign_up_local_hub,
 )
@@ -39,7 +41,6 @@ from lamindb_setup.core._settings_storage import init_storage as init_storage_ba
 from lamindb_setup.core._settings_store import instance_settings_file
 from lamindb_setup.core._settings_user import UserSettings
 from laminhub_rest.core.legacy._instance_collaborator import InstanceCollaboratorHandler
-from laminhub_rest.core.organization import OrganizationHandler
 from laminhub_rest.test.instance.utils import (
     create_hosted_test_instance,
     delete_hosted_test_instance,
@@ -168,11 +169,6 @@ def create_myinstance(create_testadmin1_session):  # -> Dict
 
 @pytest.fixture(scope="session")
 def create_instance_fine_grained_access(create_testadmin1_session):
-    client, testadmin1 = create_testadmin1_session
-
-    org_handler = OrganizationHandler(client)
-    org_handler.create(testadmin1._uuid)
-
     instance = create_hosted_test_instance("instance_access_v2", access_v2=True)
     yield instance
     delete_hosted_test_instance(instance)
@@ -388,6 +384,20 @@ def test_init_storage_incorrect_protocol():
     with pytest.raises(ValueError) as error:
         init_storage_base("incorrect-protocol://some-path/some-path-level")
     assert "Protocol incorrect-protocol is not supported" in error.exconly()
+
+
+def test_select_storage_or_parent(create_myinstance):
+    # check not exisitng
+    assert select_storage_or_parent("s3://does-not-exist") is None
+
+    root = "s3://lamindb-ci/myinstance"
+
+    result = select_storage_or_parent(root)
+    assert result["root"] == root
+    # check with a child path and anonymous user
+    with patch.object(ln_setup.settings.user, "handle", new="anonymous"):
+        result = select_storage_or_parent(root + "/subfolder")
+    assert result["root"] == root
 
 
 def test_fine_grained_access(

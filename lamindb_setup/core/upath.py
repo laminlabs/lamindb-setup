@@ -51,6 +51,21 @@ VALID_SIMPLE_SUFFIXES = {
     ".xml",
     ".qs",  # https://cran.r-project.org/web/packages/qs/vignettes/vignette.html
     ".rds",
+    ".pt",
+    ".pth",
+    ".ckpt",
+    ".state_dict",
+    ".keras",
+    ".pb",
+    ".pbtxt",
+    ".savedmodel",
+    ".pkl",
+    ".pickle",
+    ".bin",
+    ".safetensors",
+    ".model",
+    ".mlmodel",
+    ".mar",
     #
     # with readers (see below)
     #
