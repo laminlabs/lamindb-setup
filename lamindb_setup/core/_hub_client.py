@@ -198,7 +198,7 @@ def requests_client():
     return requests
 
 
-def request_auth(
+def request_with_auth(
     url: str,
     method: Literal["get", "post", "put", "delete", "head", "options"],
     access_token: str,
