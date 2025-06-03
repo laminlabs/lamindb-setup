@@ -123,6 +123,13 @@ def test_init_instance_cwd():
     ln_setup.delete("mystorage_cwd", force=True)
 
 
+def test_init_instance_user():
+    ln_setup.init(storage="~/mydata", _test=True)
+    assert not ln_setup.settings.instance.storage.type_is_cloud
+    assert "home" in ln_setup.settings.storage.root.as_posix()
+    ln_setup.delete("mydata", force=True)
+
+
 def test_init_instance_cloud_aws_us():
     storage = (
         f"s3://lamindb-ci/{os.environ['LAMIN_ENV']}_test/init_instance_cloud_aws_us"
