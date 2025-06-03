@@ -11,7 +11,6 @@ from lamindb_setup._init_instance import infer_instance_name
 from lamindb_setup.core._hub_client import connect_hub_with_auth
 from lamindb_setup.core._hub_core import _connect_instance_hub
 from lamindb_setup.core._hub_crud import (
-    Client,
     select_account_by_handle,
     select_default_storage_by_instance_id,
     select_instance_by_name,
@@ -126,7 +125,7 @@ def test_init_instance_cwd():
 def test_init_instance_user():
     ln_setup.init(storage="~/mydata", _test=True)
     assert not ln_setup.settings.instance.storage.type_is_cloud
-    assert "home" in ln_setup.settings.storage.root.as_posix()
+    assert ln_setup.settings.storage.root.is_relative_to(Path.home())
     ln_setup.delete("mydata", force=True)
 
 
