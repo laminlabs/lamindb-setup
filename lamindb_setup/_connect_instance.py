@@ -241,9 +241,9 @@ def connect(instance: str | None = None, **kwargs) -> str | tuple | None:
                     logger.important(f"connected lamindb: {settings.instance.slug}")
                     return None
                 else:
-                    raise CannotSwitchDefaultInstance(
-                        MESSAGE_CANNOT_SWITCH_DEFAULT_INSTANCE
-                    )
+                    from lamindb_setup.core.django import reset_django
+
+                    reset_django()
             elif (
                 _write_settings
                 and settings._instance_exists
