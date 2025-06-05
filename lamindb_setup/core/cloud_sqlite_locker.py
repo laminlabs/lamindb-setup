@@ -9,11 +9,16 @@ from lamin_utils import logger
 from .upath import UPath, create_mapper, infer_filesystem
 
 if TYPE_CHECKING:
+    from collections.abc import Callable
     from pathlib import Path
+    from typing import ParamSpec, TypeVar
     from uuid import UUID
 
     from ._settings_instance import InstanceSettings
     from ._settings_user import UserSettings
+
+    P = ParamSpec("P")
+    R = TypeVar("R")
 
 EXPIRATION_TIME = 24 * 60 * 60 * 7  # 7 days
 
@@ -207,7 +212,9 @@ def clear_locker():
 
 
 # decorator
-def unlock_cloud_sqlite_upon_exception(ignore_prev_locker: bool = False):
+def unlock_cloud_sqlite_upon_exception(
+    ignore_prev_locker: bool = False,
+) -> Callable[[Callable[P, R]], Callable[P, R]]:
     """Decorator to unlock a cloud sqlite instance upon an exception.
 
     Ignores `InstanceLockedException`.
