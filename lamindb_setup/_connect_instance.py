@@ -9,11 +9,7 @@ from lamin_utils import logger
 
 from ._check_setup import _check_instance_setup, _get_current_instance_settings
 from ._disconnect import disconnect
-from ._init_instance import (
-    MESSAGE_CANNOT_SWITCH_DEFAULT_INSTANCE,
-    CannotSwitchDefaultInstance,
-    load_from_isettings,
-)
+from ._init_instance import load_from_isettings
 from ._silence_loggers import silence_loggers
 from .core._hub_core import connect_instance_hub
 from .core._hub_utils import (
