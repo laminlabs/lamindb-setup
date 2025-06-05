@@ -209,7 +209,9 @@ class ProgressCallback(fsspec.callbacks.Callback):
         super().__init__()
 
         self.action = action
-        interactive_stdout = IS_RUN_FROM_IPYTHON or sys.stdout.isatty()
+        interactive_stdout = (
+            IS_RUN_FROM_IPYTHON or getattr(sys.stdout, "isatty", lambda: False)()
+        )
         print_progress = partial(
             print_hook,
             objectname=objectname,
