@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import importlib
 import os
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
 from uuid import UUID
 
 from lamin_utils import logger
@@ -189,7 +189,7 @@ def _connect_instance(
 
 
 @unlock_cloud_sqlite_upon_exception(ignore_prev_locker=True)
-def connect(instance: str | None = None, **kwargs) -> str | tuple | None:
+def connect(instance: str | None = None, **kwargs: Any) -> str | tuple | None:
     """Connect to an instance.
 
     Args:
