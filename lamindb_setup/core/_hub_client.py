@@ -5,7 +5,6 @@ import os
 from typing import Literal
 from urllib.request import urlretrieve
 
-from gotrue.errors import AuthUnknownError
 from lamin_utils import logger
 from pydantic_settings import BaseSettings
 from supabase import Client, create_client  # type: ignore
@@ -173,7 +172,7 @@ def call_with_fallback(
             client = connect_hub(fallback_env=fallback_env)
             result = callable(**kwargs, client=client)
             break
-        except AuthUnknownError as e:
+        except Exception as e:
             if fallback_env:
                 raise e
         finally:
