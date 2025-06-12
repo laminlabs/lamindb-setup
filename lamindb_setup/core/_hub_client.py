@@ -25,7 +25,7 @@ def load_fallback_connector() -> Connector:
     return connector
 
 
-PROD_URL = "https://laesaummdydllppgfchu.supabase.co"
+PROD_URL = "https://hub.lamin.ai"
 PROD_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImxhZXNhdW1tZHlkbGxwcGdmY2h1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE2NTY4NDA1NTEsImV4cCI6MTk3MjQxNjU1MX0.WUeCRiun0ExUxKIv5-CtjF6878H8u26t0JmCWx3_2-c"
 
 
