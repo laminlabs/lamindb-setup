@@ -6,6 +6,8 @@ from typing import TYPE_CHECKING
 
 from lamin_utils import logger
 
+from lamindb_setup.errors import InstanceLockedException
+
 from .upath import UPath, create_mapper, infer_filesystem
 
 if TYPE_CHECKING:
@@ -23,12 +25,6 @@ if TYPE_CHECKING:
 EXPIRATION_TIME = 24 * 60 * 60 * 7  # 7 days
 
 MAX_MSG_COUNTER = 100  # print the msg after this number of iterations
-
-
-# raise if an instance is already locked
-# ignored by unlock_cloud_sqlite_upon_exception
-class InstanceLockedException(Exception):
-    pass
 
 
 class empty_locker:
