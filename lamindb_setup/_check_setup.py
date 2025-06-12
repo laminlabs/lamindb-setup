@@ -81,8 +81,8 @@ def _check_module_in_instance_modules(
     module: str, isettings: InstanceSettings | None = None
 ) -> None:
     not_in_instance_msg = (
-        f"'{module}' is missing from this instance. "
-        "Please go to your instance settings page and add it under 'schema modules'."
+        f"'{module}' wasn't configured for this instance -- "
+        "if you want it, go to your instance settings page and add it under 'schema modules' (or ask an admin to do so)"
     )
 
     if isettings is not None:
