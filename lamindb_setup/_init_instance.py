@@ -19,6 +19,7 @@ from .core._settings import settings
 from .core._settings_instance import is_local_db_url
 from .core._settings_storage import StorageSettings, init_storage
 from .core.upath import UPath
+from .errors import CannotSwitchDefaultInstance
 
 if TYPE_CHECKING:
     from pydantic import PostgresDsn
@@ -215,10 +216,6 @@ def validate_init_args(
         instance_id, instance_state = process_connect_response(response, instance_slug)
     modules = process_modules_arg(modules)
     return name_str, instance_id, instance_state, instance_slug
-
-
-class CannotSwitchDefaultInstance(SystemExit):
-    pass
 
 
 MESSAGE_CANNOT_SWITCH_DEFAULT_INSTANCE = """

@@ -30,6 +30,7 @@ Modules & settings:
    settings
    core
    django
+   errors
 
 """
 
@@ -39,7 +40,7 @@ import os
 
 from packaging import version as packaging_version
 
-from . import core
+from . import core, errors
 from ._check_setup import _check_instance_setup
 from ._connect_instance import connect, load
 from ._delete import delete

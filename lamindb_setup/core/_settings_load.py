@@ -8,6 +8,8 @@ from dotenv import dotenv_values
 from lamin_utils import logger
 from pydantic import ValidationError
 
+from lamindb_setup.errors import SettingsEnvFileOutdated
+
 from ._settings_instance import InstanceSettings
 from ._settings_storage import StorageSettings
 from ._settings_store import (
@@ -21,10 +23,6 @@ from ._settings_user import UserSettings
 
 if TYPE_CHECKING:
     from pathlib import Path
-
-
-class SettingsEnvFileOutdated(Exception):
-    pass
 
 
 def load_system_storage_settings(system_storage_settings: Path | None = None) -> dict:

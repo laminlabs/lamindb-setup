@@ -11,7 +11,6 @@ from ._check_setup import _check_instance_setup, _get_current_instance_settings
 from ._disconnect import disconnect
 from ._init_instance import (
     MESSAGE_CANNOT_SWITCH_DEFAULT_INSTANCE,
-    CannotSwitchDefaultInstance,
     load_from_isettings,
 )
 from ._silence_loggers import silence_loggers
@@ -26,6 +25,7 @@ from .core._settings_load import load_instance_settings
 from .core._settings_storage import StorageSettings
 from .core._settings_store import instance_settings_file, settings_dir
 from .core.cloud_sqlite_locker import unlock_cloud_sqlite_upon_exception
+from .errors import CannotSwitchDefaultInstance
 
 if TYPE_CHECKING:
     from pathlib import Path

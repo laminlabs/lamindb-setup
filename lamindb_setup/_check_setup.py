@@ -12,7 +12,7 @@ from ._silence_loggers import silence_loggers
 from .core import django as django_lamin
 from .core._settings import settings
 from .core._settings_store import current_instance_settings_file
-from .core.exceptions import DefaultMessageException
+from .errors import DefaultMessageException, ModuleWasntConfigured
 
 if TYPE_CHECKING:
     from collections.abc import Callable
@@ -32,10 +32,6 @@ If you used the CLI to set up lamindb in a notebook, restart the Python session.
 
 CURRENT_ISETTINGS: InstanceSettings | None = None
 IS_LOADING: bool = False
-
-
-class ModuleWasntConfigured(SystemExit):
-    pass
 
 
 # decorator to disable auto-connect when importing a module such as lamindb
