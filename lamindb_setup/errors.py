@@ -21,7 +21,7 @@ If you used the CLI to set up lamindb in a notebook, restart the Python session.
 
 
 MODULE_WASNT_CONFIGURED_MESSAGE_TEMPLATE = (
-    "'{module}' wasn't configured for this instance -- "
+    "'{}' wasn't configured for this instance -- "
     "if you want it, go to your instance settings page and add it under 'schema modules' (or ask an admin to do so)"
 )
 
