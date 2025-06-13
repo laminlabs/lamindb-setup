@@ -12,22 +12,16 @@ from ._silence_loggers import silence_loggers
 from .core import django as django_lamin
 from .core._settings import settings
 from .core._settings_store import current_instance_settings_file
-from .errors import DefaultMessageException, ModuleWasntConfigured
+from .errors import (
+    MODULE_WASNT_CONFIGURED_MESSAGE_TEMPLATE,
+    InstanceNotSetupError,
+    ModuleWasntConfigured,
+)
 
 if TYPE_CHECKING:
     from collections.abc import Callable
 
     from .core._settings_instance import InstanceSettings
-
-
-class InstanceNotSetupError(DefaultMessageException):
-    default_message = """\
-To use lamindb, you need to connect to an instance.
-
-Connect to an instance: `ln.connect()`. Init an instance: `ln.setup.init()`.
-
-If you used the CLI to set up lamindb in a notebook, restart the Python session.
-"""
 
 
 CURRENT_ISETTINGS: InstanceSettings | None = None
@@ -80,18 +74,15 @@ def _normalize_module_name(module_name: str) -> str:
 def _check_module_in_instance_modules(
     module: str, isettings: InstanceSettings | None = None
 ) -> None:
-    not_in_instance_msg = (
-        f"'{module}' is missing from this instance. "
-        "Please go to your instance settings page and add it under 'schema modules'."
-    )
-
     if isettings is not None:
         modules_raw = isettings.modules
         modules = set(modules_raw).union(
             _normalize_module_name(module) for module in modules_raw
         )
         if _normalize_module_name(module) not in modules and module not in modules:
-            raise ModuleWasntConfigured(not_in_instance_msg)
+            raise ModuleWasntConfigured(
+                MODULE_WASNT_CONFIGURED_MESSAGE_TEMPLATE.format(module)
+            )
         else:
             return
 
@@ -101,7 +92,7 @@ def _check_module_in_instance_modules(
         # app.name is always unnormalized module (python package) name
         if module == app.name or module == _normalize_module_name(app.name):
             return
-    raise ModuleWasntConfigured(not_in_instance_msg)
+    raise ModuleWasntConfigured(MODULE_WASNT_CONFIGURED_MESSAGE_TEMPLATE.format(module))
 
 
 # infer the name of the module that calls this function
