@@ -211,7 +211,7 @@ def connect(instance: str | None = None, **kwargs: Any) -> str | tuple | None:
     isettings: InstanceSettings = None  # type: ignore
     # _db is still needed because it is called in init
     _db: str | None = kwargs.get("_db", None)
-    _write_settings: bool = kwargs.get("_write_settings", True)
+    _write_settings: bool = kwargs.get("_write_settings", False)
     _raise_not_found_error: bool = kwargs.get("_raise_not_found_error", True)
     _reload_lamindb: bool = kwargs.get("_reload_lamindb", True)
     _test: bool = kwargs.get("_test", False)
