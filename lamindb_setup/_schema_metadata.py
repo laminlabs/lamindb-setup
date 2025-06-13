@@ -16,6 +16,7 @@ from django.db.models import (
     OneToOneField,
     OneToOneRel,
 )
+from lamin_utils import logger
 from pydantic import BaseModel
 
 from lamindb_setup import settings
@@ -25,6 +26,9 @@ from lamindb_setup.core._hub_client import call_with_fallback_auth
 # surpress pydantic warning about `model_` namespace
 try:
     BaseModel.model_config["protected_namespaces"] = ()
+    logger.debug(
+        "pydantic.BaseModel.model_config['protected_namespaces'] has been set to ()"
+    )
 except Exception:
     pass
 

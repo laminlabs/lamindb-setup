@@ -778,6 +778,8 @@ Args:
     pathlike: A string or Path to a local/cloud file/directory/folder.
 """
 
+logger.debug("upath.UPath has been patched")
+
 # suppress the warning from upath about hf (huggingface) filesystem
 # not being explicitly implemented in upath
 warnings.filterwarnings(
