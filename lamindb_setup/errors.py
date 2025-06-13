@@ -10,6 +10,22 @@ class DefaultMessageException(Exception):
         super().__init__(message)
 
 
+class InstanceNotSetupError(DefaultMessageException):
+    default_message = """\
+To use lamindb, you need to connect to an instance.
+
+Connect to an instance: `ln.connect()`. Init an instance: `ln.setup.init()`.
+
+If you used the CLI to set up lamindb in a notebook, restart the Python session.
+"""
+
+
+ModuleWasntConfiguredMessageTemplate = (
+    "'{module}' wasn't configured for this instance -- "
+    "if you want it, go to your instance settings page and add it under 'schema modules' (or ask an admin to do so)"
+)
+
+
 class ModuleWasntConfigured(Exception):
     pass
 
