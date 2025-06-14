@@ -14,6 +14,7 @@ from ._aws_options import (
     get_aws_options_manager,
 )
 from ._aws_storage import find_closest_aws_region
+from .core.hashing import hash_and_encode_as_b62
 from .upath import LocalPathClasses, UPath, _split_path_query, create_path
 
 if TYPE_CHECKING:
@@ -242,6 +243,18 @@ class StorageSettings:
         if self._uid is None:
             self._uid = self.record.uid
         return self._uid
+
+    @property
+    def instance_uid(self) -> str | None:
+        """The `uid` of the managing LaminDB instance.
+
+        If `None`, the storage location is not managed by any LaminDB instance.
+        """
+        if self._instance_id is not None:
+            instance_uid = hash_and_encode_as_b62(self._instance_id.hex)[:12]
+        else:
+            instance_uid = None
+        return instance_uid
 
     @property
     def _mark_storage_root(self) -> UPath:

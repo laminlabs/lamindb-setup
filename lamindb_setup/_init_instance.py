@@ -50,23 +50,15 @@ def get_schema_module_name(module_name, raise_import_error: bool = True) -> str 
 
 
 def register_storage_in_instance(ssettings: StorageSettings):
-    from lamindb.base.users import current_user_id
     from lamindb.models import Storage
 
-    from .core.hashing import hash_and_encode_as_b62
-
-    if ssettings._instance_id is not None:
-        instance_uid = hash_and_encode_as_b62(ssettings._instance_id.hex)[:12]
-    else:
-        instance_uid = None
     # how do we ensure that this function is only called passing
     # the managing instance?
     kwargs = {
         "root": ssettings.root_as_str,
         "type": ssettings.type,
         "region": ssettings.region,
-        "instance_uid": instance_uid,
-        "created_by_id": current_user_id(),
+        "instance_uid": ssettings.instance_uid,
         "run": None,
         "_skip_preparation": True,
     }
