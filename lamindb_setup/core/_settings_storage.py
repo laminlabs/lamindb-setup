@@ -14,6 +14,7 @@ from ._aws_options import (
     get_aws_options_manager,
 )
 from ._aws_storage import find_closest_aws_region
+from .hashing import hash_and_encode_as_b62
 from .upath import LocalPathClasses, UPath, _split_path_query, create_path
 
 if TYPE_CHECKING:
@@ -151,6 +152,7 @@ def init_storage(
         "hub-record-not-created", "hub-record-retrieved", "hub-record-created"
     ] = "hub-record-not-created"
     # the below might update the uid with one that's already taken on the hub
+    # it will also update the instance_id if it's already taken on the hub
     if not prevent_register_hub and (ssettings.type_is_cloud or register_hub):
         from ._hub_core import delete_storage_record, init_storage_hub
 
@@ -187,6 +189,7 @@ def init_storage(
                 delete_storage_record(ssettings, access_token=access_token)  # type: ignore
                 ssettings._uuid_ = None
                 hub_record_status = "hub-record-not-created"
+            # it will set the instance_id to None if the storage is not writable
             ssettings._instance_id = None
     return ssettings, hub_record_status
 
@@ -242,6 +245,18 @@ class StorageSettings:
         if self._uid is None:
             self._uid = self.record.uid
         return self._uid
+
+    @property
+    def instance_uid(self) -> str | None:
+        """The `uid` of the managing LaminDB instance.
+
+        If `None`, the storage location is not managed by any LaminDB instance.
+        """
+        if self._instance_id is not None:
+            instance_uid = hash_and_encode_as_b62(self._instance_id.hex)[:12]
+        else:
+            instance_uid = None
+        return instance_uid
 
     @property
     def _mark_storage_root(self) -> UPath:
