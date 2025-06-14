@@ -152,6 +152,7 @@ def init_storage(
         "hub-record-not-created", "hub-record-retrieved", "hub-record-created"
     ] = "hub-record-not-created"
     # the below might update the uid with one that's already taken on the hub
+    # it will also update the instance_id if it's already taken on the hub
     if not prevent_register_hub and (ssettings.type_is_cloud or register_hub):
         from ._hub_core import delete_storage_record, init_storage_hub
 
@@ -188,6 +189,7 @@ def init_storage(
                 delete_storage_record(ssettings, access_token=access_token)  # type: ignore
                 ssettings._uuid_ = None
                 hub_record_status = "hub-record-not-created"
+            # it will set the instance_id to None if the storage is not writable
             ssettings._instance_id = None
     return ssettings, hub_record_status
 
