@@ -42,21 +42,29 @@ if TYPE_CHECKING:
     from supabase import Client  # type: ignore
 
 
-def delete_storage_record(storage_uuid: UUID, access_token: str | None = None) -> None:
+def delete_storage_record(
+    storage_info: dict[str, str] | StorageSettings,
+    access_token: str | None = None,
+) -> None:
+    if isinstance(storage_info, StorageSettings):
+        storage_info = {"id": storage_info._uuid.hex, "root": storage_info.root_as_str}  # type: ignore
     return call_with_fallback_auth(
-        _delete_storage_record, storage_uuid=storage_uuid, access_token=access_token
+        _delete_storage_record, storage_info=storage_info, access_token=access_token
     )
 
 
-def _delete_storage_record(storage_uuid: UUID, client: Client) -> None:
+def _delete_storage_record(storage_info: dict[str, str], client: Client) -> None:
+    storage_uuid = UUID(storage_info["id"])
     if storage_uuid is None:
         return None
     response = client.table("storage").delete().eq("id", storage_uuid.hex).execute()
     if response.data:
-        logger.important(f"deleted storage record on hub {storage_uuid.hex}")
+        logger.important(
+            f"deleted storage record on hub {storage_uuid.hex} | {storage_info['root']}"
+        )
     else:
         raise PermissionError(
-            f"Deleting of storage with {storage_uuid.hex} was not successful. Probably, you"
+            f"Deleting of storage {storage_uuid.hex} ({storage_info['root']}) was not successful. Probably, you"
             " don't have sufficient permissions."
         )
 
@@ -279,10 +287,8 @@ def _delete_instance(
             check_storage_is_empty(
                 root_path, account_for_sqlite_file=account_for_sqlite_file
             )
-    # first delete the storage records because we will turn instance_id on
-    # storage into a FK soon
     for storage_record in storage_records:
-        _delete_storage_record(UUID(storage_record["id"]), client)  # type: ignore
+        _delete_storage_record(storage_record, client)  # type: ignore
     _delete_instance_record(UUID(instance_with_storage["id"]), client)
     return None
 

@@ -47,7 +47,7 @@ def set_managed_storage(root: UPathStr, **fs_kwargs):
         register_storage_in_instance(ssettings)
     except Exception as e:
         if hub_record_status == "hub-record-created" and ssettings._uuid is not None:
-            delete_storage_record(ssettings._uuid)  # type: ignore
+            delete_storage_record(ssettings)
         raise e
 
     settings.instance._storage = ssettings

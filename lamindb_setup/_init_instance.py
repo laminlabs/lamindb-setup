@@ -367,7 +367,7 @@ def init(
             and (user_handle != "anonymous" or access_token is not None)
             and ssettings.is_on_hub
         ):
-            delete_storage_record(ssettings._uuid, access_token=access_token)  # type: ignore
+            delete_storage_record(ssettings, access_token=access_token)  # type: ignore
         if isettings is not None:
             if (
                 user_handle != "anonymous" or access_token is not None

@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+import click
+
 
 class DefaultMessageException(Exception):
     default_message: str | None = None
@@ -28,6 +30,11 @@ MODULE_WASNT_CONFIGURED_MESSAGE_TEMPLATE = (
 
 class ModuleWasntConfigured(Exception):
     pass
+
+
+class StorageNotEmpty(click.ClickException):
+    def show(self, file=None):
+        pass
 
 
 # raise if a cloud SQLite instance is already locked
