@@ -14,7 +14,7 @@ from ._aws_options import (
     get_aws_options_manager,
 )
 from ._aws_storage import find_closest_aws_region
-from .core.hashing import hash_and_encode_as_b62
+from .hashing import hash_and_encode_as_b62
 from .upath import LocalPathClasses, UPath, _split_path_query, create_path
 
 if TYPE_CHECKING:
