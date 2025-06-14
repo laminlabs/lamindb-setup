@@ -51,5 +51,4 @@ def set_managed_storage(root: UPathStr, **fs_kwargs):
         raise e
 
     settings.instance._storage = ssettings
-    settings.instance._persist()  # this also updates the settings object
     settings.storage._set_fs_kwargs(**fs_kwargs)

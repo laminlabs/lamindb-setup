@@ -61,20 +61,19 @@ def register_storage_in_instance(ssettings: StorageSettings):
         instance_uid = None
     # how do we ensure that this function is only called passing
     # the managing instance?
-    defaults = {
+    kwargs = {
         "root": ssettings.root_as_str,
         "type": ssettings.type,
         "region": ssettings.region,
         "instance_uid": instance_uid,
         "created_by_id": current_user_id(),
         "run": None,
+        "_skip_preparation": True,
     }
     if ssettings._uid is not None:
-        defaults["uid"] = ssettings._uid
-    storage, _ = Storage.objects.update_or_create(
-        root=ssettings.root_as_str,
-        defaults=defaults,
-    )
+        kwargs["uid"] = ssettings._uid
+    # this checks if the storage already exists under the hood
+    storage = Storage(**kwargs).save()
     return storage
 
 
