@@ -13,13 +13,14 @@ from pathlib import Path, PosixPath, PurePosixPath, WindowsPath
 from typing import TYPE_CHECKING, Any, Literal
 from urllib.parse import parse_qs, urlsplit
 
-import click
 import fsspec
 from lamin_utils import logger
 from upath import UPath
 from upath.implementations.cloud import CloudPath, S3Path  # keep CloudPath!
 from upath.implementations.local import LocalPath
 from upath.registry import register_implementation
+
+from lamindb_setup.errors import StorageNotEmpty
 
 from ._aws_options import HOSTED_BUCKETS, get_aws_options_manager
 from .hashing import HASH_LENGTH, b16_to_b64, hash_from_hashes_list, hash_string
@@ -915,11 +916,6 @@ def get_stat_dir_cloud(path: UPath) -> tuple[int, str | None, str | None, int]:
     return size, hash, hash_type, n_files
 
 
-class InstanceNotEmpty(click.ClickException):
-    def show(self, file=None):
-        pass
-
-
 # is as fast as boto3: https://lamin.ai/laminlabs/lamin-site-assets/transform/krGp3hT1f78N5zKv
 def check_storage_is_empty(
     root: UPathStr, *, raise_error: bool = True, account_for_sqlite_file: bool = False
@@ -941,17 +937,17 @@ def check_storage_is_empty(
     n_files = len(objects)
     n_diff = n_files - n_offset_objects
     ask_for_deletion = (
-        "delete them prior to deleting the instance"
+        "delete them prior to deleting the storage location"
         if raise_error
         else "consider deleting them"
     )
     message = (
-        f"Storage '{directory_string}' contains {n_files - n_offset_objects} objects"
+        f"'{directory_string}' contains {n_files - n_offset_objects} objects"
         f" - {ask_for_deletion}"
     )
     if n_diff > 0:
         if raise_error:
-            raise InstanceNotEmpty(message) from None
+            raise StorageNotEmpty(message) from None
         else:
             logger.warning(message)
     return n_diff

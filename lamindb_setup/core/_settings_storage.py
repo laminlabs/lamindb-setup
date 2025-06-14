@@ -184,7 +184,7 @@ def init_storage(
                 f"due to lack of write access, LaminDB won't manage storage location: {ssettings.root_as_str}"
             )
             if ssettings._uuid is not None:
-                delete_storage_record(ssettings._uuid, access_token=access_token)  # type: ignore
+                delete_storage_record(ssettings, access_token=access_token)  # type: ignore
                 ssettings._uuid_ = None
                 hub_record_status = "hub-record-not-created"
             ssettings._instance_id = None
