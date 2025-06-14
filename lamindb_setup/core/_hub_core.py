@@ -102,21 +102,12 @@ def _select_storage(
         return False
     else:
         existing_storage = response.data[0]
-        if existing_storage["instance_id"] is not None:
-            if ssettings._instance_id is not None:
-                # consider storage settings that are meant to be managed by an instance
-                if UUID(existing_storage["instance_id"]) != ssettings._instance_id:
-                    # everything is alright if the instance_id matches
-                    # we're probably just switching storage locations
-                    # below can be turned into a warning and then delegate the error
-                    # to a unique constraint violation below
-                    raise ValueError(
-                        f"Storage root {root} is already managed by instance {existing_storage['instance_id']}."
-                    )
-            else:
-                # if the request is agnostic of the instance, that's alright,
-                # we'll update the instance_id with what's stored in the hub
-                ssettings._instance_id = UUID(existing_storage["instance_id"])
+        if ssettings._instance_id is not None:
+            if UUID(existing_storage["instance_id"]) != ssettings._instance_id:
+                logger.important(
+                    f"referencing storage location {root}, which is managed by instance {existing_storage['instance_id']}"
+                )
+        ssettings._instance_id = UUID(existing_storage["instance_id"])
         ssettings._uuid_ = UUID(existing_storage["id"])
         if update_uid:
             ssettings._uid = existing_storage["lnid"]
