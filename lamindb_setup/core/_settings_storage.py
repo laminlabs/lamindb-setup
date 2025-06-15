@@ -4,6 +4,7 @@ import os
 import secrets
 import string
 from typing import TYPE_CHECKING, Any, Literal
+from uuid import UUID
 
 import fsspec
 from lamin_utils import logger
@@ -14,12 +15,11 @@ from ._aws_options import (
     get_aws_options_manager,
 )
 from ._aws_storage import find_closest_aws_region
+from ._deprecated import deprecated
 from .hashing import hash_and_encode_as_b62
 from .upath import LocalPathClasses, UPath, _split_path_query, create_path
 
 if TYPE_CHECKING:
-    from uuid import UUID
-
     from .types import UPathStr
 
 STORAGE_UID_FILE_KEY = ".lamindb/storage_uid.txt"
@@ -81,7 +81,7 @@ def get_storage_region(path: UPathStr) -> str | None:
     return region
 
 
-def mark_storage_root(root: UPathStr, uid: str):
+def mark_storage_root(root: UPathStr, uid: str) -> Literal["__marked__"] | str:
     # we need a file in folder-like storage locations on S3 to avoid
     # permission errors from leveraging s3fs on an empty hosted storage location
     # (path.fs.find raises a PermissionError)
@@ -90,8 +90,18 @@ def mark_storage_root(root: UPathStr, uid: str):
     # path on a storage location in the registry
 
     root_upath = UPath(root)
+    existing_uid = ""
+    legacy_mark_upath = root_upath / LEGACY_STORAGE_UID_FILE_KEY
     mark_upath = root_upath / STORAGE_UID_FILE_KEY
-    mark_upath.write_text(uid)
+    if legacy_mark_upath.exists():
+        legacy_mark_upath.rename(mark_upath)
+    if mark_upath.exists():
+        existing_uid = mark_upath.read_text()
+    if existing_uid != uid:
+        return uid
+    if existing_uid == "":
+        mark_upath.write_text(uid)
+    return "__is_marked__"
 
 
 def init_storage(
@@ -170,22 +180,33 @@ def init_storage(
             # (federated) credentials for AWS access are provisioned under-the-hood
             # discussion: https://laminlabs.slack.com/archives/C04FPE8V01W/p1719260587167489
             # if access_token was passed in ssettings, it is used here
-            mark_storage_root(ssettings.root, ssettings.uid)  # type: ignore
+            marking_result = mark_storage_root(ssettings.root, ssettings.uid)  # type: ignore
         except Exception:
-            logger.important(
-                f"due to lack of write access, LaminDB won't manage storage location: {ssettings.root_as_str}"
-            )
+            marking_result = "no-write-access"
+        if marking_result != "__is_marked__":
+            if marking_result == "no-write-access":
+                logger.important(
+                    f"due to lack of write access, LaminDB won't manage this storage location: {ssettings.root_as_str}"
+                )
+                ssettings._instance_id = None  # indicate that this storage location is not managed by the instance
+            else:
+                logger.important(
+                    f"storage location {ssettings.root_as_str} is already marked with uid {marking_result}, meaning that it is managed by another LaminDB instance"
+                    "\nmanage your instance with LaminHub to avoid such conflicts"
+                )
+                ssettings._instance_id = UUID(
+                    "00000000000000000000000000000000"
+                )  # indicate not known
+                ssettings._uid = marking_result
             if ssettings._uuid is not None:
                 delete_storage_record(ssettings, access_token=access_token)  # type: ignore
                 ssettings._uuid_ = None
                 hub_record_status = "hub-record-not-created"
-            # it will set the instance_id to None if the storage is not writable
-            ssettings._instance_id = None
     return ssettings, hub_record_status
 
 
 class StorageSettings:
-    """Settings for a given storage location (local or cloud)."""
+    """Settings for a storage location (local or cloud)."""
 
     def __init__(
         self,
@@ -205,7 +226,9 @@ class StorageSettings:
                 (self._root_init / ".lamindb").mkdir(parents=True, exist_ok=True)
                 self._root_init = self._root_init.resolve()
             except Exception:
-                logger.warning(f"unable to create .lamindb folder in {self._root_init}")
+                logger.warning(
+                    f"unable to create .lamindb/ folder in {self._root_init}"
+                )
         self._root = None
         self._instance_id = instance_id
         # we don't yet infer region here to make init fast
@@ -220,8 +243,16 @@ class StorageSettings:
         self._local = None
 
     @property
+    @deprecated("_id")
     def id(self) -> int:
-        """Storage id in current instance."""
+        return self._id
+
+    @property
+    def _id(self) -> int:
+        """Storage id.
+
+        This id is only valid in the current instance and not globally unique. Only for internal use.
+        """
         return self.record.id
 
     @property
@@ -231,7 +262,7 @@ class StorageSettings:
 
     @property
     def uid(self) -> str | None:
-        """Storage id."""
+        """Storage uid."""
         if self._uid is None:
             self._uid = self.record.uid
         return self._uid
@@ -243,7 +274,10 @@ class StorageSettings:
         If `None`, the storage location is not managed by any LaminDB instance.
         """
         if self._instance_id is not None:
-            instance_uid = hash_and_encode_as_b62(self._instance_id.hex)[:12]
+            if self._instance_id.hex == "00000000000000000000000000000000":
+                instance_uid = "__unkown__"
+            else:
+                instance_uid = hash_and_encode_as_b62(self._instance_id.hex)[:12]
         else:
             instance_uid = None
         return instance_uid
