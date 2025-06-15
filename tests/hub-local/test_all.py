@@ -371,26 +371,28 @@ def test_connect_instance_hub_corrupted_or_expired_credentials(
     assert ln_setup.settings.user.access_token == access_token
 
 
-def test_init_storage_with_non_existing_bucket(create_testadmin1_session):
+def test_init_storage_with_non_existing_bucket(
+    create_myinstance, create_testadmin1_session
+):
     from botocore.exceptions import ClientError
 
     with pytest.raises(ClientError) as error:
         init_storage_hub(
             ssettings=init_storage_base(
                 root="s3://non_existing_storage_root",
-                instance_id=uuid4(),  # dummy uuid
-                instance_slug="testadmin1/dummy-instance",  # dummy slug
+                instance_id=create_myinstance["id"],
+                instance_slug=f"testadmin1/{create_myinstance['id']}",
             )[0]
         )
     assert error.exconly().endswith("Not Found")
 
 
-def test_init_storage_incorrect_protocol():
+def test_init_storage_incorrect_protocol(create_myinstance):
     with pytest.raises(ValueError) as error:
         init_storage_base(
             root="incorrect-protocol://some-path/some-path-level",
-            instance_id=uuid4(),  # dummy uuid
-            instance_slug="testadmin1/dummy-instance",  # dummy slug
+            instance_id=create_myinstance["id"],
+            instance_slug=f"testadmin1/{create_myinstance['id']}",
         )
     assert "Protocol incorrect-protocol is not supported" in error.exconly()
 
