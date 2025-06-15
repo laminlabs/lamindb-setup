@@ -22,7 +22,7 @@ from .hashing import hash_and_encode_as_b62
 from .upath import LocalPathClasses, UPath, _split_path_query, create_path
 
 if TYPE_CHECKING:
-    from .types import UPathStr
+    from .types import StorageType, UPathStr
 
 STORAGE_UID_FILE_KEY = ".lamindb/storage_uid.txt"
 LEGACY_STORAGE_UID_FILE_KEY = ".lamindb/_is_initialized"
@@ -381,10 +381,10 @@ class StorageSettings:
         return self._region
 
     @property
-    def type(self) -> Literal["local", "s3", "gs", "hf", "http", "https"]:
+    def type(self) -> StorageType:
         """AWS S3 vs. Google Cloud vs. local.
 
-        Returns the protocol as a string: "local", "s3", "gs", "http", "https".
+        Returns the protocol as a stringe, e.g., "local", "s3", "gs", "http", "https".
         """
         import fsspec
 
