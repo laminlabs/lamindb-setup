@@ -171,7 +171,7 @@ def create_myinstance(create_testadmin1_session):  # -> Dict
         client=admin_client,
     )
     yield instance
-    delete(instance_slug)
+    delete(instance_slug, force=True)
 
 
 @pytest.fixture(scope="session")
