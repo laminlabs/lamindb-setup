@@ -271,10 +271,6 @@ def _delete_instance(
             else:
                 access_token = None
             root_path = create_path(root_string, access_token)
-            mark_storage_root(
-                root_path,
-                storage_record["lnid"],  # type: ignore
-            )  # address permission error
             check_storage_is_empty(
                 root_path, account_for_sqlite_file=account_for_sqlite_file
             )
