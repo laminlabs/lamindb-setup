@@ -99,10 +99,12 @@ def mark_storage_root(root: UPathStr, uid: str) -> Literal["__marked__"] | str:
         legacy_mark_upath.rename(mark_upath)
     if mark_upath.exists():
         existing_uid = mark_upath.read_text()
-    if existing_uid != uid:
-        return uid
     if existing_uid == "":
         mark_upath.write_text(uid)
+    elif existing_uid != uid:
+        return uid
+    # covers the case in which existing uid is the same as uid
+    # and the case in which there was no existing uid
     return "__is_marked__"
 
 
