@@ -109,7 +109,7 @@ def _select_storage(
             existing_storage["instance_id"] = ssettings._instance_id
         if ssettings._instance_id is not None:
             if UUID(existing_storage["instance_id"]) != ssettings._instance_id:
-                logger.important(
+                logger.debug(
                     f"referencing storage location {root}, which is managed by instance {existing_storage['instance_id']}"
                 )
         ssettings._instance_id = UUID(existing_storage["instance_id"])
@@ -148,7 +148,9 @@ def init_storage_hub(
     auto_populate_instance: bool = True,
     created_by: UUID | None = None,
     access_token: str | None = None,
-) -> Literal["hub-record-retrieved", "hub-record-created"]:
+    prevent_creation: bool = False,
+) -> Literal["hub-record-retrieved", "hub-record-created", "hub-record-not-created"]:
+    """Creates or retrieves an existing storage record from the hub."""
     if settings.user.handle != "anonymous" or access_token is not None:
         return call_with_fallback_auth(
             _init_storage_hub,
@@ -156,6 +158,7 @@ def init_storage_hub(
             auto_populate_instance=auto_populate_instance,
             created_by=created_by,
             access_token=access_token,
+            prevent_creation=prevent_creation,
         )
     else:
         storage_exists = call_with_fallback(
@@ -164,7 +167,7 @@ def init_storage_hub(
         if storage_exists:
             return "hub-record-retrieved"
         else:
-            raise ValueError("Log in to create a storage location on the hub.")
+            return "hub-record-not-created"
 
 
 def _init_storage_hub(
@@ -172,7 +175,8 @@ def _init_storage_hub(
     ssettings: StorageSettings,
     auto_populate_instance: bool,
     created_by: UUID | None = None,
-) -> Literal["hub-record-retrieved", "hub-record-created"]:
+    prevent_creation: bool = False,
+) -> Literal["hub-record-retrieved", "hub-record-created", "hub-record-not-created"]:
     from lamindb_setup import settings
 
     created_by = settings.user._uuid if created_by is None else created_by
@@ -181,6 +185,8 @@ def _init_storage_hub(
     root = ssettings.root_as_str
     if _select_storage(ssettings, update_uid=True, client=client):
         return "hub-record-retrieved"
+    if prevent_creation:
+        return "hub-record-not-created"
     if ssettings.type_is_cloud:
         id = uuid.uuid5(uuid.NAMESPACE_URL, root)
     else:

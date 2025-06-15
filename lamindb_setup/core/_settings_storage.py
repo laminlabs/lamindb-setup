@@ -129,6 +129,8 @@ def init_storage(
     StorageSettings,
     Literal["hub-record-not-created", "hub-record-retrieved", "hub-record-created"],
 ]:
+    from ._hub_core import delete_storage_record, init_storage_hub
+
     assert root is not None, "`root` argument can't be `None`"
 
     root_str = str(root)  # ensure we have a string
@@ -170,23 +172,15 @@ def init_storage(
         instance_id=instance_id,
         access_token=access_token,
     )
-    # this stores the result of init_storage_hub
-    hub_record_status: Literal[
-        "hub-record-not-created", "hub-record-retrieved", "hub-record-created"
-    ] = "hub-record-not-created"
-    # the below might update the uid with one that's already taken on the hub
-    # it will also update the instance_id if it's already taken on the hub
-    if not prevent_register_hub and (ssettings.type_is_cloud or register_hub):
-        from ._hub_core import delete_storage_record, init_storage_hub
-
-        # this retrieves the storage record if it exists already in the hub
-        # and updates uid and instance_id in ssettings
-        hub_record_status = init_storage_hub(
-            ssettings,
-            auto_populate_instance=not init_instance,
-            created_by=created_by,
-            access_token=access_token,
-        )
+    # this retrieves the storage record if it exists already in the hub
+    # and updates uid and instance_id in ssettings
+    hub_record_status = init_storage_hub(
+        ssettings,
+        auto_populate_instance=not init_instance,
+        created_by=created_by,
+        access_token=access_token,
+        prevent_creation=prevent_register_hub,
+    )
     # we check the write access here if the storage record has not been retrieved from the hub
     if hub_record_status != "hub-record-retrieved":
         try:
