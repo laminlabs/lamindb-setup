@@ -32,6 +32,10 @@ class ModuleWasntConfigured(Exception):
     pass
 
 
+class StorageAlreadyManaged(Exception):
+    pass
+
+
 class StorageNotEmpty(click.ClickException):
     def show(self, file=None):
         pass

@@ -9,6 +9,8 @@ from uuid import UUID
 import fsspec
 from lamin_utils import logger
 
+from lamindb_setup.errors import StorageAlreadyManaged
+
 from ._aws_options import (
     HOSTED_REGIONS,
     LAMIN_ENDPOINTS,
@@ -190,10 +192,14 @@ def init_storage(
                 )
                 ssettings._instance_id = None  # indicate that this storage location is not managed by the instance
             else:
-                logger.important(
-                    f"storage location {ssettings.root_as_str} is already marked with uid {marking_result}, meaning that it is managed by another LaminDB instance"
-                    "\nmanage your instance with LaminHub to avoid such conflicts"
+                s = "S" if init_instance else "s"  # upper case for error message
+                message = (
+                    f"{s}torage location {ssettings.root_as_str} is already marked with uid {marking_result}, meaning that it is managed by another LaminDB instance -- "
+                    "if you manage your instance with LaminHub you get an overview of all your storage locations"
                 )
+                if init_instance:
+                    raise StorageAlreadyManaged(message)
+                logger.warning(message)
                 ssettings._instance_id = UUID(
                     "00000000000000000000000000000000"
                 )  # indicate not known
