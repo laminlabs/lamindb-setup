@@ -26,7 +26,7 @@ from ._aws_options import HOSTED_BUCKETS, get_aws_options_manager
 from .hashing import HASH_LENGTH, b16_to_b64, hash_from_hashes_list, hash_string
 
 if TYPE_CHECKING:
-    from .types import UPathStr
+    from lamindb_setup.types import UPathStr
 
 LocalPathClasses = (PosixPath, WindowsPath, LocalPath)
 

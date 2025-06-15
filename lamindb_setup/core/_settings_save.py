@@ -14,8 +14,9 @@ from ._settings_store import (
 )
 
 if TYPE_CHECKING:
+    from lamindb_setup.types import UPathStr
+
     from ._settings_user import UserSettings
-    from .types import UPathStr
 
 
 def save_user_settings(settings: UserSettings):

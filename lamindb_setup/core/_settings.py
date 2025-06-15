@@ -19,8 +19,7 @@ if TYPE_CHECKING:
     from pathlib import Path
 
     from lamindb_setup.core import InstanceSettings, StorageSettings, UserSettings
-
-    from .types import UPathStr
+    from lamindb_setup.types import UPathStr
 
 
 DEFAULT_CACHE_DIR = UPath(AppDirs("lamindb", "laminlabs").user_cache_dir)

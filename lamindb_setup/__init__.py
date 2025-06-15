@@ -31,6 +31,7 @@ Modules & settings:
    core
    django
    errors
+   types
 
 """
 
@@ -40,7 +41,7 @@ import os
 
 from packaging import version as packaging_version
 
-from . import core, errors
+from . import core, errors, types
 from ._check_setup import _check_instance_setup
 from ._connect_instance import connect
 from ._delete import delete

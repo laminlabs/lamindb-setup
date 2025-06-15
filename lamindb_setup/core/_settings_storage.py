@@ -22,7 +22,7 @@ from .hashing import hash_and_encode_as_b62
 from .upath import LocalPathClasses, UPath, _split_path_query, create_path
 
 if TYPE_CHECKING:
-    from .types import StorageType, UPathStr
+    from lamindb_setup.types import StorageType, UPathStr
 
 STORAGE_UID_FILE_KEY = ".lamindb/storage_uid.txt"
 LEGACY_STORAGE_UID_FILE_KEY = ".lamindb/_is_initialized"

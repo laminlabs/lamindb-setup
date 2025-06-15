@@ -10,7 +10,7 @@ from .core._settings import settings
 from .core._settings_storage import init_storage
 
 if TYPE_CHECKING:
-    from lamindb_setup.core.types import UPathStr
+    from lamindb_setup.types import UPathStr
 
 
 def set_managed_storage(root: UPathStr, **fs_kwargs):

@@ -25,7 +25,7 @@ if TYPE_CHECKING:
     from pydantic import PostgresDsn
 
     from .core._settings_user import UserSettings
-    from .core.types import UPathStr
+    from .types import UPathStr
 
 
 class InstanceNotCreated(click.ClickException):
