@@ -251,7 +251,9 @@ class InstanceSettings:
                 return None
         local_root = UPath(local_root)
         assert isinstance(local_root, LocalPathClasses)
-        self._storage_local, _ = init_storage(local_root, self._id, register_hub=True)  # type: ignore
+        self._storage_local, _ = init_storage(
+            local_root, instance_id=self._id, instance_slug=self.slug, register_hub=True
+        )  # type: ignore
         register_storage_in_instance(self._storage_local)  # type: ignore
         logger.important(f"defaulting to local storage: {self._storage_local.root}")
 

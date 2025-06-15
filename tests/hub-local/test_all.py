@@ -8,6 +8,7 @@ from uuid import UUID, uuid4
 import lamindb_setup as ln_setup
 import pytest
 from gotrue.errors import AuthApiError
+from lamindb_setup import delete
 from lamindb_setup.core._hub_client import (
     Environment,
     connect_hub,
@@ -126,6 +127,7 @@ def create_myinstance(create_testadmin1_session):  # -> Dict
     instance_id = uuid4()
     db_str = "postgresql://postgres:pwd@fakeserver.xyz:5432/mydb"
     instance_name = "myinstance"
+    instance_slug = f"{usettings.handle}/{instance_name}"
     isettings = InstanceSettings(
         id=instance_id,
         owner=usettings.handle,
@@ -134,7 +136,7 @@ def create_myinstance(create_testadmin1_session):  # -> Dict
         storage=init_storage_base(
             "s3://lamindb-ci/myinstance",
             instance_id=instance_id,
-            instance_slug=f"{usettings.handle}/{instance_name}",
+            instance_slug=instance_slug,
             init_instance=True,
         )[0],
         db=db_str,
@@ -169,6 +171,7 @@ def create_myinstance(create_testadmin1_session):  # -> Dict
         client=admin_client,
     )
     yield instance
+    delete(instance_slug)
 
 
 @pytest.fixture(scope="session")
