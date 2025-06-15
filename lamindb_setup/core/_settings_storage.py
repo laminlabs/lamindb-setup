@@ -294,7 +294,7 @@ class StorageSettings:
         """
         if self._instance_id is not None:
             if self._instance_id.hex == "00000000000000000000000000000000":
-                instance_uid = "__unkown__"
+                instance_uid = "__unknown__"
             else:
                 instance_uid = instance_uid_from_uuid(self._instance_id)
         else:
