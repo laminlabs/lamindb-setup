@@ -39,6 +39,10 @@ def base62(n_char: int) -> str:
     return id
 
 
+def instance_uid_from_uuid(instance_id: UUID) -> str:
+    return hash_and_encode_as_b62(instance_id.hex)[:12]
+
+
 def get_storage_region(path: UPathStr) -> str | None:
     path_str = str(path)
     if path_str.startswith("s3://"):
@@ -83,7 +87,9 @@ def get_storage_region(path: UPathStr) -> str | None:
     return region
 
 
-def mark_storage_root(root: UPathStr, uid: str) -> Literal["__marked__"] | str:
+def mark_storage_root(
+    root: UPathStr, uid: str, instance_id: UUID, instance_slug: str
+) -> Literal["__marked__"] | str:
     # we need a file in folder-like storage locations on S3 to avoid
     # permission errors from leveraging s3fs on an empty hosted storage location
     # (path.fs.find raises a PermissionError)
@@ -98,9 +104,11 @@ def mark_storage_root(root: UPathStr, uid: str) -> Literal["__marked__"] | str:
     if legacy_mark_upath.exists():
         legacy_mark_upath.rename(mark_upath)
     if mark_upath.exists():
-        existing_uid = mark_upath.read_text()
+        existing_uid = mark_upath.read_text().splitlines()[0]
     if existing_uid == "":
-        mark_upath.write_text(uid)
+        instance_uid = instance_uid_from_uuid(instance_id)
+        text = f"{uid}\ncreation info:\ninstance_slug={instance_slug}\ninstance_id={instance_id.hex}\ninstance_uid={instance_uid}"
+        mark_upath.write_text(text)
     elif existing_uid != uid:
         return uid
     # covers the case in which existing uid is the same as uid
@@ -110,7 +118,8 @@ def mark_storage_root(root: UPathStr, uid: str) -> Literal["__marked__"] | str:
 
 def init_storage(
     root: UPathStr,
-    instance_id: UUID | None = None,
+    instance_id: UUID,
+    instance_slug: str,
     register_hub: bool | None = None,
     prevent_register_hub: bool = False,
     init_instance: bool = False,
@@ -184,7 +193,12 @@ def init_storage(
             # (federated) credentials for AWS access are provisioned under-the-hood
             # discussion: https://laminlabs.slack.com/archives/C04FPE8V01W/p1719260587167489
             # if access_token was passed in ssettings, it is used here
-            marking_result = mark_storage_root(ssettings.root, ssettings.uid)  # type: ignore
+            marking_result = mark_storage_root(
+                root=ssettings.root,
+                uid=ssettings.uid,
+                instance_id=instance_id,
+                instance_slug=instance_slug,
+            )
         except Exception:
             marking_result = "no-write-access"
         if marking_result != "__is_marked__":
@@ -269,7 +283,7 @@ class StorageSettings:
         return self._uuid_
 
     @property
-    def uid(self) -> str | None:
+    def uid(self) -> str:
         """Storage uid."""
         if self._uid is None:
             self._uid = self.record.uid
@@ -285,7 +299,7 @@ class StorageSettings:
             if self._instance_id.hex == "00000000000000000000000000000000":
                 instance_uid = "__unkown__"
             else:
-                instance_uid = hash_and_encode_as_b62(self._instance_id.hex)[:12]
+                instance_uid = instance_uid_from_uuid(self._instance_id)
         else:
             instance_uid = None
         return instance_uid

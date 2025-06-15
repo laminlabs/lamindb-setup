@@ -215,29 +215,3 @@ def test_init_invalid_name():
         error.exconly()
         == "ValueError: Invalid instance name: '/' delimiter not allowed."
     )
-
-
-# def test_db_unique_error():
-#     ln_setup.login("testuser2")
-
-#     # postgres
-
-
-# #     with pytest.raises(RuntimeError):
-# #         ln_setup.init(
-# #             storage="s3://lamindb-ci",
-# #             modules="retro, bionty",
-# #             db="postgresql://batman:robin@35.222.187.204:5432/retro",
-# #         )
-
-# # sqlite
-# # this fails because there is already an sqlite with the same name in that bucket
-# # hence, the sqlite file would clash
-
-# # with pytest.raises(RuntimeError):
-# #     ln_setup.init(storage="s3://lamindb-ci")
-
-
-# def test_value_error_modules():
-#     with pytest.raises(ModuleNotFoundError):
-#         ln_setup.init(storage="tmpstorage1", modules="bionty, xyz1")
