@@ -31,7 +31,7 @@ if TYPE_CHECKING:
     from pathlib import Path
 
     from .core._settings_user import UserSettings
-    from .core.types import UPathStr
+    from .types import UPathStr
 
 # this is for testing purposes only
 # set to True only to test failed load

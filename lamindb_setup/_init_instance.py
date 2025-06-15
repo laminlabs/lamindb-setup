@@ -25,7 +25,7 @@ if TYPE_CHECKING:
     from pydantic import PostgresDsn
 
     from .core._settings_user import UserSettings
-    from .core.types import UPathStr
+    from .types import UPathStr
 
 
 class InstanceNotCreated(click.ClickException):
@@ -170,7 +170,7 @@ def validate_init_args(
     _user: UserSettings | None = None,
 ) -> tuple[
     str,
-    UUID | None,
+    UUID,
     Literal[
         "connected",
         "instance-corrupted-or-deleted",
@@ -196,14 +196,16 @@ def validate_init_args(
         _write_settings=_write_settings,
         _user=_user,
     )
+    instance_id: UUID
     instance_state: Literal[
         "connected",
         "instance-corrupted-or-deleted",
         "account-not-exists",
         "instance-not-found",
-    ] = "connected"
-    instance_id = None
-    if response is not None:
+    ]
+    if response is None:
+        instance_state, instance_id = "connected", settings.instance._id
+    else:
         instance_id, instance_state = process_connect_response(response, instance_slug)
     modules = process_modules_arg(modules)
     return name_str, instance_id, instance_state, instance_slug
@@ -284,13 +286,11 @@ def init(
             if _write_settings:
                 settings.auto_connect = True  # we can also debate this switch here
             return None
-        # the conditions here match `isettings.is_remote`, but I currently don't
-        # see a way of making this more elegant; should become possible if we
-        # remove the instance.storage_id FK on the hub
         prevent_register_hub = is_local_db_url(db) if db is not None else False
         ssettings, _ = init_storage(
             storage,
             instance_id=instance_id,
+            instance_slug=f"{user_handle}/{name_str}",
             init_instance=True,
             prevent_register_hub=prevent_register_hub,
             created_by=user__uuid,

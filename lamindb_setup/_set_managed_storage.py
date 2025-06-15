@@ -10,7 +10,7 @@ from .core._settings import settings
 from .core._settings_storage import init_storage
 
 if TYPE_CHECKING:
-    from lamindb_setup.core.types import UPathStr
+    from lamindb_setup.types import UPathStr
 
 
 def set_managed_storage(root: UPathStr, **fs_kwargs):
@@ -33,7 +33,10 @@ def set_managed_storage(root: UPathStr, **fs_kwargs):
     # hub_record_status="hub-record-created" if a new record is created
     # "hub-record-retrieved" if the storage is in the hub already
     ssettings, hub_record_status = init_storage(
-        root=root, instance_id=settings.instance._id, register_hub=True
+        root=root,
+        instance_id=settings.instance._id,
+        instance_slug=settings.instance.slug,
+        register_hub=True,
     )
     if ssettings._instance_id is None:
         raise ValueError(

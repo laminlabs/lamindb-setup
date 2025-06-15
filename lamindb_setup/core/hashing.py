@@ -23,7 +23,7 @@ HASH_LENGTH = 22
 if TYPE_CHECKING:
     from collections.abc import Iterable
 
-    from .types import Path, UPathStr
+    from lamindb_setup.types import Path, UPathStr
 
 
 def hash_and_encode_as_b62(s: str) -> str:

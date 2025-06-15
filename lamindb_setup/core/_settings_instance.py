@@ -18,6 +18,7 @@ from ._settings_storage import (
     STORAGE_UID_FILE_KEY,
     StorageSettings,
     init_storage,
+    instance_uid_from_uuid,
 )
 from ._settings_store import current_instance_settings_file, instance_settings_file
 from .cloud_sqlite_locker import (
@@ -165,7 +166,7 @@ class InstanceSettings:
                             f"local storage location '{root_path}' is corrupted, cannot find marker file with storage uid"
                         )
                 try:
-                    uid = marker_path.read_text()
+                    uid = marker_path.read_text().splitlines()[0]
                 except PermissionError:
                     logger.warning(
                         f"ignoring the following location because no permission to read it: {marker_path}"
@@ -250,7 +251,9 @@ class InstanceSettings:
                 return None
         local_root = UPath(local_root)
         assert isinstance(local_root, LocalPathClasses)
-        self._storage_local, _ = init_storage(local_root, self._id, register_hub=True)  # type: ignore
+        self._storage_local, _ = init_storage(
+            local_root, instance_id=self._id, instance_slug=self.slug, register_hub=True
+        )  # type: ignore
         register_storage_in_instance(self._storage_local)  # type: ignore
         logger.important(f"defaulting to local storage: {self._storage_local.root}")
 
@@ -275,9 +278,7 @@ class InstanceSettings:
     @property
     def uid(self) -> str:
         """The user-facing instance id."""
-        from .hashing import hash_and_encode_as_b62
-
-        return hash_and_encode_as_b62(self._id.hex)[:12]
+        return instance_uid_from_uuid(self._id)
 
     @property
     def modules(self) -> set[str]:

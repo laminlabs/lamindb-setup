@@ -102,9 +102,18 @@ def _select_storage(
         return False
     else:
         existing_storage = response.data[0]
+        if existing_storage["instance_id"] is None:
+            # if there is no instance_id, the storage location should not be on the hub
+            # this can only occur if instance init fails halfway through and is not cleaned up
+            # we're patching the situation here
+            existing_storage["instance_id"] = (
+                ssettings._instance_id.hex
+                if ssettings._instance_id is not None
+                else None
+            )
         if ssettings._instance_id is not None:
             if UUID(existing_storage["instance_id"]) != ssettings._instance_id:
-                logger.important(
+                logger.debug(
                     f"referencing storage location {root}, which is managed by instance {existing_storage['instance_id']}"
                 )
         ssettings._instance_id = UUID(existing_storage["instance_id"])
@@ -143,7 +152,9 @@ def init_storage_hub(
     auto_populate_instance: bool = True,
     created_by: UUID | None = None,
     access_token: str | None = None,
-) -> Literal["hub-record-retrieved", "hub-record-created"]:
+    prevent_creation: bool = False,
+) -> Literal["hub-record-retrieved", "hub-record-created", "hub-record-not-created"]:
+    """Creates or retrieves an existing storage record from the hub."""
     if settings.user.handle != "anonymous" or access_token is not None:
         return call_with_fallback_auth(
             _init_storage_hub,
@@ -151,6 +162,7 @@ def init_storage_hub(
             auto_populate_instance=auto_populate_instance,
             created_by=created_by,
             access_token=access_token,
+            prevent_creation=prevent_creation,
         )
     else:
         storage_exists = call_with_fallback(
@@ -159,7 +171,7 @@ def init_storage_hub(
         if storage_exists:
             return "hub-record-retrieved"
         else:
-            raise ValueError("Log in to create a storage location on the hub.")
+            return "hub-record-not-created"
 
 
 def _init_storage_hub(
@@ -167,7 +179,8 @@ def _init_storage_hub(
     ssettings: StorageSettings,
     auto_populate_instance: bool,
     created_by: UUID | None = None,
-) -> Literal["hub-record-retrieved", "hub-record-created"]:
+    prevent_creation: bool = False,
+) -> Literal["hub-record-retrieved", "hub-record-created", "hub-record-not-created"]:
     from lamindb_setup import settings
 
     created_by = settings.user._uuid if created_by is None else created_by
@@ -176,6 +189,8 @@ def _init_storage_hub(
     root = ssettings.root_as_str
     if _select_storage(ssettings, update_uid=True, client=client):
         return "hub-record-retrieved"
+    if prevent_creation:
+        return "hub-record-not-created"
     if ssettings.type_is_cloud:
         id = uuid.uuid5(uuid.NAMESPACE_URL, root)
     else:
@@ -271,10 +286,6 @@ def _delete_instance(
             else:
                 access_token = None
             root_path = create_path(root_string, access_token)
-            mark_storage_root(
-                root_path,
-                storage_record["lnid"],  # type: ignore
-            )  # address permission error
             check_storage_is_empty(
                 root_path, account_for_sqlite_file=account_for_sqlite_file
             )

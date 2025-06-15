@@ -1,3 +1,18 @@
+"""Errors.
+
+.. autosummary::
+   :toctree: .
+
+   InstanceNotSetupError
+   ModuleWasntConfigured
+   StorageAlreadyManaged
+   StorageNotEmpty
+   InstanceLockedException
+   SettingsEnvFileOutdated
+   CannotSwitchDefaultInstance
+
+"""
+
 from __future__ import annotations
 
 import click
@@ -29,6 +44,10 @@ MODULE_WASNT_CONFIGURED_MESSAGE_TEMPLATE = (
 
 
 class ModuleWasntConfigured(Exception):
+    pass
+
+
+class StorageAlreadyManaged(Exception):
     pass
 
 
