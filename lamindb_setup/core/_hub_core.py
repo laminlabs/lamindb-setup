@@ -106,7 +106,11 @@ def _select_storage(
             # if there is no instance_id, the storage location should not be on the hub
             # this can only occur if instance init fails halfway through and is not cleaned up
             # we're patching the situation here
-            existing_storage["instance_id"] = ssettings._instance_id
+            existing_storage["instance_id"] = (
+                ssettings._instance_id.hex
+                if ssettings._instance_id is not None
+                else None
+            )
         if ssettings._instance_id is not None:
             if UUID(existing_storage["instance_id"]) != ssettings._instance_id:
                 logger.debug(
