@@ -11,6 +11,8 @@ def test_init_no_writes():
     if result.returncode != 0:
         raise Exception("stderr: " + result.stderr.decode())
 
+    assert settings.user.handle == "testuser1"
+
     # cleanup from failed runs
     subprocess.run("lamin delete testuser1/test-init-no-writes --force", shell=True)
 
@@ -21,7 +23,7 @@ def test_init_no_writes():
         "created_by", settings.user._uuid.hex
     ).execute()
     client.table("instance").delete().eq("name", "test-init-no-writes").eq(
-        "created_by", settings.user._uuid.hex
+        "account_id", settings.user._uuid.hex
     ).execute()
     client.auth.sign_out(options={"scope": "local"})
 
