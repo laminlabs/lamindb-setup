@@ -1,17 +1,14 @@
 import os
 import subprocess
 
-from lamindb_setup import settings
+import lamindb_setup as ln_setup
 from lamindb_setup.core._hub_client import connect_hub_with_auth
 from upath import UPath
 
 
 def test_init_no_writes():
-    result = subprocess.run("lamin login testuser1", shell=True, capture_output=True)
-    if result.returncode != 0:
-        raise Exception("stderr: " + result.stderr.decode())
-
-    assert settings.user.handle == "testuser1"
+    ln_setup.login("testuser1")
+    assert ln_setup.settings.user.handle == "testuser1"
 
     # cleanup from failed runs
     subprocess.run("lamin delete testuser1/test-init-no-writes --force", shell=True)
@@ -20,10 +17,10 @@ def test_init_no_writes():
     (root / ".lamindb/storage_uid.txt").unlink(missing_ok=True)
     client = connect_hub_with_auth()
     client.table("storage").delete().eq("root", root.as_posix()).eq(
-        "created_by", settings.user._uuid.hex
+        "created_by", ln_setup.settings.user._uuid.hex
     ).execute()
     client.table("instance").delete().eq("name", "test-init-no-writes").eq(
-        "account_id", settings.user._uuid.hex
+        "account_id", ln_setup.settings.user._uuid.hex
     ).execute()
     client.auth.sign_out(options={"scope": "local"})
 
