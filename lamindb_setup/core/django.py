@@ -11,6 +11,8 @@ from pathlib import Path
 import time
 from ._settings_instance import InstanceSettings
 
+from lamin_utils import logger
+
 
 IS_RUN_FROM_IPYTHON = getattr(builtins, "__IPYTHON__", False)
 IS_SETUP = False
@@ -114,10 +116,9 @@ class DBTokenManager:
                     connection.connection.cursor().execute(token.token_query)
 
         Atomic.__enter__ = __enter__
+        logger.debug("django.db.transaction.Atomic.__enter__ has been patched")
 
     def reset(self, connection_name: str = "default"):
-        from django.db.transaction import Atomic
-
         connection = self.get_connection(connection_name)
 
         connection.execute_wrappers = [
@@ -150,6 +151,7 @@ def setup_django(
 ):
     if IS_RUN_FROM_IPYTHON:
         os.environ["DJANGO_ALLOW_ASYNC_UNSAFE"] = "true"
+        logger.debug("DJANGO_ALLOW_ASYNC_UNSAFE env variable has been set to 'true'")
 
     import dj_database_url
     import django
@@ -216,6 +218,9 @@ def setup_django(
         from django.db.backends.base.base import BaseDatabaseWrapper
 
         BaseDatabaseWrapper.close_if_health_check_failed = close_if_health_check_failed
+        logger.debug(
+            "django.db.backends.base.base.BaseDatabaseWrapper.close_if_health_check_failed has been patched"
+        )
 
         if isettings._fine_grained_access and isettings._db_permissions == "jwt":
             db_token = DBToken(isettings)

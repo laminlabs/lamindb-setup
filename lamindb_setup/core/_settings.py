@@ -19,8 +19,7 @@ if TYPE_CHECKING:
     from pathlib import Path
 
     from lamindb_setup.core import InstanceSettings, StorageSettings, UserSettings
-
-    from .types import UPathStr
+    from lamindb_setup.types import UPathStr
 
 
 DEFAULT_CACHE_DIR = UPath(AppDirs("lamindb", "laminlabs").user_cache_dir)
@@ -85,6 +84,17 @@ class SetupSettings:
             self._auto_connect_path.touch()
         else:
             self._auto_connect_path.unlink(missing_ok=True)
+
+    @property
+    def is_connected(self) -> bool:
+        """Determine whether the current instance is fully connected and ready to use.
+
+        If `True`, the current instance is connected, meaning that the db and other settings
+        are properly configured for use.
+        """
+        from .django import IS_SETUP  # always import to protect from assignment
+
+        return IS_SETUP
 
     @property
     def private_django_api(self) -> bool:

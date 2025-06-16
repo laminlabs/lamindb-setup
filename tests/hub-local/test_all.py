@@ -8,6 +8,7 @@ from uuid import UUID, uuid4
 import lamindb_setup as ln_setup
 import pytest
 from gotrue.errors import AuthApiError
+from lamindb_setup import delete
 from lamindb_setup.core._hub_client import (
     Environment,
     connect_hub,
@@ -125,13 +126,18 @@ def create_myinstance(create_testadmin1_session):  # -> Dict
     admin_client, usettings = create_testadmin1_session
     instance_id = uuid4()
     db_str = "postgresql://postgres:pwd@fakeserver.xyz:5432/mydb"
+    instance_name = "myinstance"
+    instance_slug = f"{usettings.handle}/{instance_name}"
     isettings = InstanceSettings(
         id=instance_id,
         owner=usettings.handle,
-        name="myinstance",
+        name=instance_name,
         # cannot yet pass instance_id here as it does not yet exist
         storage=init_storage_base(
             "s3://lamindb-ci/myinstance",
+            instance_id=instance_id,
+            instance_slug=instance_slug,
+            init_instance=True,
         )[0],
         db=db_str,
     )
@@ -165,6 +171,7 @@ def create_myinstance(create_testadmin1_session):  # -> Dict
         client=admin_client,
     )
     yield instance
+    delete(instance_slug, force=True)
 
 
 @pytest.fixture(scope="session")
@@ -368,21 +375,31 @@ def test_connect_instance_hub_corrupted_or_expired_credentials(
     assert ln_setup.settings.user.access_token == access_token
 
 
-def test_init_storage_with_non_existing_bucket(create_testadmin1_session):
+def test_init_storage_with_non_existing_bucket(
+    create_myinstance, create_testadmin1_session
+):
     from botocore.exceptions import ClientError
 
     with pytest.raises(ClientError) as error:
         init_storage_hub(
             ssettings=init_storage_base(
-                "s3://non_existing_storage_root", instance_id=uuid4()
+                root="s3://non_existing_storage_root",
+                instance_id=create_myinstance["id"],
+                instance_slug=f"testadmin1/{create_myinstance['id']}",
+                init_instance=True,
             )[0]
         )
     assert error.exconly().endswith("Not Found")
 
 
-def test_init_storage_incorrect_protocol():
+def test_init_storage_incorrect_protocol(create_myinstance):
     with pytest.raises(ValueError) as error:
-        init_storage_base("incorrect-protocol://some-path/some-path-level")
+        init_storage_base(
+            root="incorrect-protocol://some-path/some-path-level",
+            instance_id=create_myinstance["id"],
+            instance_slug=f"testadmin1/{create_myinstance['id']}",
+            init_instance=True,
+        )
     assert "Protocol incorrect-protocol is not supported" in error.exconly()
 
 
