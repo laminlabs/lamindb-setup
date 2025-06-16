@@ -225,12 +225,7 @@ def connect(instance: str | None = None, **kwargs: Any) -> str | tuple | None:
 
     try:
         if instance is None:
-            isettings_or_none = _get_current_instance_settings()
-            if isettings_or_none is None:
-                raise ValueError(
-                    "No instance was connected through the CLI, pass a value to `instance` or connect via the CLI."
-                )
-            isettings = isettings_or_none
+            isettings = _get_current_instance_settings()
         else:
             owner, name = get_owner_name_from_identifier(instance)
             if _check_instance_setup() and not _test:

@@ -43,7 +43,7 @@ def disable_auto_connect(func: Callable):
     return wrapper
 
 
-def _get_current_instance_settings() -> InstanceSettings | None:
+def _get_current_instance_settings() -> InstanceSettings:
     from .core._settings_instance import InstanceSettings
 
     global CURRENT_ISETTINGS
@@ -71,7 +71,7 @@ def _get_current_instance_settings() -> InstanceSettings | None:
             name="none",
             storage=None,
         )
-        logger.warning("not connected to a database instance")
+        logger.warning("not connected, call: ln.connect('account/name')")
         return isettings
 
 

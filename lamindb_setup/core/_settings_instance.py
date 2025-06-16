@@ -464,7 +464,7 @@ class InstanceSettings:
             write_to_disk: Save these instance settings to disk and
                 overwrite the current instance settings file.
         """
-        if write_to_disk:
+        if write_to_disk and self.slug != "none/none":
             assert self.name is not None
             filepath = self._get_settings_file()
             # persist under filepath for later reference
