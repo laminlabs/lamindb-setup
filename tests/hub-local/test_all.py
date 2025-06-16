@@ -6,7 +6,6 @@ from unittest.mock import patch
 from uuid import UUID, uuid4
 
 import lamindb_setup as ln_setup
-import psycopg2
 import pytest
 from gotrue.errors import AuthApiError
 from lamindb_setup import delete
@@ -451,11 +450,6 @@ def test_fine_grained_access(
     # and ln_setup.connect doesn't make a hub request
     # thus fine_grained_access stays False
     isettings_file.unlink()
-
-    print("user in instance")
-    with psycopg2.connect(instance.db) as conn, conn.cursor() as cur:
-        cur.execute("SELECT * FROM lamindb_user")
-        print(cur.fetchall())
     # run from a script because test_update_schema_in_hub.py has ln_setup.init
     # which fails if we connect here
     subprocess.run(

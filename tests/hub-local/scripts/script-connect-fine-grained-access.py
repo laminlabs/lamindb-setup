@@ -9,10 +9,6 @@ from lamindb_setup.core.django import db_token_manager
 
 assert os.environ["LAMIN_ENV"] == "local"
 
-print("connect user in script")
-print(ln_setup.settings.user.handle)
-print(ln_setup.settings.user.uid)
-
 ln_setup.connect("instance_access_v2")
 
 isettings = ln_setup.settings.instance
