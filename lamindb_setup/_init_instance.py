@@ -74,10 +74,6 @@ def register_user(usettings):
 
     try:
         # need to have try except because of integer primary key migration
-        print("register user")
-        print(usettings.uid)
-        print(usettings.handle)
-        print(usettings.name)
         user, created = User.objects.update_or_create(
             uid=usettings.uid,
             defaults={

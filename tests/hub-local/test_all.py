@@ -446,10 +446,6 @@ def test_fine_grained_access(
     isettings_file.unlink()
     # run from a script because test_update_schema_in_hub.py has ln_setup.init
     # which fails if we connect here
-    with psycopg2.connect(instance.db) as conn, conn.cursor() as cur:
-        cur.execute("SELECT * FROM lamindb_user")
-        print(cur.fetchall())
-
     subprocess.run(
         "python ./tests/hub-local/scripts/script-connect-fine-grained-access.py",
         shell=True,
