@@ -7,6 +7,10 @@ import sys
 import importlib as il
 import jwt
 import time
+import dj_database_url
+import django
+from django.conf import settings as django_settings
+from django.core.management import call_command
 from pathlib import Path
 import time
 from ._settings_instance import InstanceSettings
@@ -140,26 +144,10 @@ def close_if_health_check_failed(self) -> None:
         self.close_at = time.monotonic() + CONN_MAX_AGE
 
 
-# this bundles set up and migration management
-def setup_django(
-    isettings: InstanceSettings,
-    deploy_migrations: bool = False,
-    create_migrations: bool = False,
-    configure_only: bool = False,
-    init: bool = False,
-    view_schema: bool = False,
+def configure_django(
+    isettings: InstanceSettings, init: bool = False, view_schema: bool = False
 ):
-    if IS_RUN_FROM_IPYTHON:
-        os.environ["DJANGO_ALLOW_ASYNC_UNSAFE"] = "true"
-        logger.debug("DJANGO_ALLOW_ASYNC_UNSAFE env variable has been set to 'true'")
-
-    import dj_database_url
-    import django
-    from django.conf import settings
-    from django.core.management import call_command
-
-    # configuration
-    if not settings.configured:
+    if not django_settings.configured:
         default_db = dj_database_url.config(
             env="LAMINDB_DJANGO_DATABASE_URL",
             default=isettings.db,
@@ -212,19 +200,35 @@ def setup_django(
                 ],
                 STATIC_URL="static/",
             )
-        settings.configure(**kwargs)
-        django.setup(set_prefix=False)
-        # https://laminlabs.slack.com/archives/C04FPE8V01W/p1698239551460289
-        from django.db.backends.base.base import BaseDatabaseWrapper
+        django_settings.configure(**kwargs)
 
-        BaseDatabaseWrapper.close_if_health_check_failed = close_if_health_check_failed
-        logger.debug(
-            "django.db.backends.base.base.BaseDatabaseWrapper.close_if_health_check_failed has been patched"
-        )
 
-        if isettings._fine_grained_access and isettings._db_permissions == "jwt":
-            db_token = DBToken(isettings)
-            db_token_manager.set(db_token)  # sets for the default connection
+# this bundles set up and migration management
+def setup_django(
+    isettings: InstanceSettings,
+    deploy_migrations: bool = False,
+    create_migrations: bool = False,
+    configure_only: bool = False,
+    init: bool = False,
+    view_schema: bool = False,
+):
+    if IS_RUN_FROM_IPYTHON:
+        os.environ["DJANGO_ALLOW_ASYNC_UNSAFE"] = "true"
+        logger.debug("DJANGO_ALLOW_ASYNC_UNSAFE env variable has been set to 'true'")
+
+    configure_django(isettings, init=init, view_schema=view_schema)
+    django.setup(set_prefix=False)
+    # https://laminlabs.slack.com/archives/C04FPE8V01W/p1698239551460289
+    from django.db.backends.base.base import BaseDatabaseWrapper
+
+    BaseDatabaseWrapper.close_if_health_check_failed = close_if_health_check_failed
+    logger.debug(
+        "django.db.backends.base.base.BaseDatabaseWrapper.close_if_health_check_failed has been patched"
+    )
+
+    if isettings._fine_grained_access and isettings._db_permissions == "jwt":
+        db_token = DBToken(isettings)
+        db_token_manager.set(db_token)  # sets for the default connection
 
     if configure_only:
         return None
