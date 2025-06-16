@@ -8,7 +8,7 @@ from uuid import UUID
 
 import click
 from django.core.exceptions import FieldError
-from django.db.utils import OperationalError, ProgrammingError
+from django.db.utils import IntegrityError, OperationalError, ProgrammingError
 from lamin_utils import logger
 
 from ._disconnect import disconnect
@@ -82,8 +82,9 @@ def register_user(usettings):
             },
         )
     # for users with only read access, except via ProgrammingError
-    # ProgrammingError: permission denied for table lnschema_core_user
-    except (OperationalError, FieldError, ProgrammingError):
+    # ProgrammingError: permission denied for table lamindb_user
+    # IntegrityError: when trying to update a user on a fine-grained access instance
+    except (OperationalError, FieldError, ProgrammingError, IntegrityError):
         pass
 
 
@@ -211,16 +212,6 @@ def validate_init_args(
     return name_str, instance_id, instance_state, instance_slug
 
 
-MESSAGE_CANNOT_SWITCH_DEFAULT_INSTANCE = """
-You cannot write to different instances in the same Python session.
-
-Do you want to read from another instance via `SQLRecord.using()`? For example:
-
-ln.Artifact.using("laminlabs/cellxgene").filter()
-
-Or do you want to switch off auto-connect via `lamin settings set auto-connect false`?
-"""
-
 DOC_STORAGE_ARG = "A local or remote folder (`'s3://...'` or `'gs://...'`). Defaults to current working directory."
 DOC_INSTANCE_NAME = (
     "Instance name. If not passed, it will equal the folder name passed to `storage`."
@@ -268,7 +259,9 @@ def init(
         from ._check_setup import _check_instance_setup
 
         if _check_instance_setup() and not _test:
-            raise CannotSwitchDefaultInstance(MESSAGE_CANNOT_SWITCH_DEFAULT_INSTANCE)
+            from lamindb_setup.core.django import reset_django
+
+            reset_django()
         elif _write_settings:
             disconnect(mute=True)
         from .core._hub_core import init_instance_hub

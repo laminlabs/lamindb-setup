@@ -60,6 +60,7 @@ def sign_up_user(email: str, handle: str, save_as_settings: bool = False):
     account_id = UUID(result_or_error[1])
     access_token = result_or_error[2]
     user_settings = UserSettings(
+        uid=base62(8),
         handle=handle,
         email=email,
         password=result_or_error[0],
@@ -91,12 +92,16 @@ def create_testadmin1_session():  # -> Tuple[Client, UserSettings]
     with pytest.raises(AuthApiError):
         # test error with "User already registered"
         sign_up_user(email, "testadmin1")
-    account_id = ln_setup.settings.user._uuid
+
+    handle = ln_setup.settings.user.handle
+    assert handle == "testadmin1"
+
+    account_id = ln_setup.settings.user._uuid.hex
     account = {
-        "id": account_id.hex,
-        "user_id": account_id.hex,
-        "lnid": base62(8),
-        "handle": "testadmin1",
+        "id": account_id,
+        "user_id": account_id,
+        "lnid": ln_setup.settings.user.uid,
+        "handle": handle,
     }
     # uses ln_setup.settings.user.access_token
     client = connect_hub_with_auth()
@@ -109,11 +114,13 @@ def create_testadmin1_session():  # -> Tuple[Client, UserSettings]
 def create_testreader1_session():  # -> Tuple[Client, UserSettings]
     email = "testreader1@gmail.com"
     user_settings = sign_up_user(email, "testreader1")
+    assert user_settings.handle == "testreader1"
+
     account = {
         "id": user_settings._uuid.hex,
         "user_id": user_settings._uuid.hex,
-        "lnid": base62(8),
-        "handle": "testreader1",
+        "lnid": user_settings.uid,
+        "handle": user_settings.handle,
     }
     client = connect_hub_with_auth(access_token=user_settings.access_token)
     client.table("account").insert(account).execute()
@@ -177,6 +184,7 @@ def create_myinstance(create_testadmin1_session):  # -> Dict
 @pytest.fixture(scope="session")
 def create_instance_fine_grained_access(create_testadmin1_session):
     instance = create_hosted_test_instance("instance_access_v2", access_v2=True)
+
     yield instance
     delete_hosted_test_instance(instance)
 
