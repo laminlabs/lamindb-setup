@@ -448,7 +448,7 @@ def test_fine_grained_access(
     # which fails if we connect here
     with psycopg2.connect(instance.db) as conn, conn.cursor() as cur:
         cur.execute("SELECT * FROM lamindb_user")
-        raise Exception(str(cur.fetchall()))
+        print(cur.fetchall())
 
     subprocess.run(
         "python ./tests/hub-local/scripts/script-connect-fine-grained-access.py",
