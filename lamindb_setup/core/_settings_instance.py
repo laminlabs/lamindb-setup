@@ -56,7 +56,7 @@ class InstanceSettings:
         id: UUID,  # instance id/uuid
         owner: str,  # owner handle
         name: str,  # instance name
-        storage: StorageSettings,  # storage location
+        storage: StorageSettings | None,  # storage location
         keep_artifacts_local: bool = False,  # default to local storage
         uid: str | None = None,  # instance uid/lnid
         db: str | None = None,  # DB URI
@@ -75,7 +75,7 @@ class InstanceSettings:
         self._owner: str = owner
         self._name: str = name
         self._uid: str | None = uid
-        self._storage: StorageSettings = storage
+        self._storage: StorageSettings | None = storage
         validate_db_arg(db)
         self._db: str | None = db
         self._schema_str: str | None = modules
@@ -204,7 +204,7 @@ class InstanceSettings:
         For a cloud instance, this is cloud storage. For a local instance, this
         is a local directory.
         """
-        return self._storage
+        return self._storage  # type: ignore
 
     @property
     def storage_local(self) -> StorageSettings:
@@ -370,6 +370,8 @@ class InstanceSettings:
                 "It overwrites all db connections and is used instead of `instance.db`."
             )
         if self._db is None:
+            if self._storage is None:
+                return "sqlite:///:memory:"
             # here, we want the updated sqlite file
             # hence, we don't use self._sqlite_file_local()
             # error_no_origin=False because on instance init
