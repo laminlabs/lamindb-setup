@@ -161,3 +161,6 @@ def _check_instance_setup(from_module: str | None = None) -> bool:
             else:
                 logger.warning(InstanceNotSetupError.default_message)
         return False
+
+
+django_lamin.configure_django()

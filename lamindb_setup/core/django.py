@@ -145,34 +145,52 @@ def close_if_health_check_failed(self) -> None:
 
 
 def configure_django(
-    isettings: InstanceSettings, init: bool = False, view_schema: bool = False
+    isettings: InstanceSettings | None = None,
+    init: bool = False,
+    view_schema: bool = False,
 ):
-    if not django_settings.configured:
-        default_db = dj_database_url.config(
-            env="LAMINDB_DJANGO_DATABASE_URL",
-            default=isettings.db,
-            # see comment next to patching BaseDatabaseWrapper below
-            conn_max_age=CONN_MAX_AGE,
-            conn_health_checks=True,
-        )
-        DATABASES = {
-            "default": default_db,
-        }
-        from .._init_instance import get_schema_module_name
+    if isettings is None:
+        from .._check_setup import _get_current_instance_settings
 
-        module_names = ["core"] + list(isettings.modules)
-        raise_import_error = True if init else False
-        installed_apps = [
-            package_name
-            for name in module_names
-            if (
-                package_name := get_schema_module_name(
-                    name, raise_import_error=raise_import_error
-                )
+        isettings = _get_current_instance_settings()
+
+    if not django_settings.configured:
+        # Use dummy in-memory SQLite if no instance settings
+        if isettings is None:
+            DATABASES = {
+                "default": {
+                    "ENGINE": "django.db.backends.sqlite3",
+                    "NAME": ":memory:",
+                }
+            }
+            installed_apps = []  # No additional apps
+        else:
+            default_db = dj_database_url.config(
+                env="LAMINDB_DJANGO_DATABASE_URL",
+                default=isettings.db,
+                # see comment next to patching BaseDatabaseWrapper below
+                conn_max_age=CONN_MAX_AGE,
+                conn_health_checks=True,
             )
-            is not None
-        ]
-        if view_schema:
+            DATABASES = {
+                "default": default_db,
+            }
+            from .._init_instance import get_schema_module_name
+
+            module_names = ["core"] + list(isettings.modules)
+            raise_import_error = True if init else False
+            installed_apps = [
+                package_name
+                for name in module_names
+                if (
+                    package_name := get_schema_module_name(
+                        name, raise_import_error=raise_import_error
+                    )
+                )
+                is not None
+            ]
+
+        if view_schema and isettings is not None:
             installed_apps = installed_apps[::-1]  # to fix how apps appear
             installed_apps += ["schema_graph", "django.contrib.staticfiles"]
 
@@ -183,7 +201,8 @@ def configure_django(
             TIME_ZONE="UTC",
             USE_TZ=True,
         )
-        if view_schema:
+
+        if view_schema and isettings is not None:
             kwargs.update(
                 DEBUG=True,
                 ROOT_URLCONF="lamindb_setup._schema",
