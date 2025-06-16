@@ -154,9 +154,10 @@ def _check_instance_setup(from_module: str | None = None) -> bool:
                 import lamindb
 
                 il.reload(il.import_module(from_module))
-            elif isettings.slug != "none/none":
+            else:
                 django_lamin.setup_django(isettings)
-                logger.important(f"connected lamindb: {isettings.slug}")
+                if isettings.slug != "none/none":
+                    logger.important(f"connected lamindb: {isettings.slug}")
         return django_lamin.IS_SETUP
     else:
         if from_module is not None and settings.auto_connect:
