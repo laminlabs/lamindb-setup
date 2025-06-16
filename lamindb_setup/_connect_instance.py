@@ -288,7 +288,7 @@ def connect(instance: str | None = None, **kwargs: Any) -> str | tuple | None:
         load_from_isettings(isettings, user=_user, write_settings=_write_settings)
         if _reload_lamindb:
             importlib.reload(importlib.import_module("lamindb"))
-        elif isettings.slug != "none/none":
+        if isettings.slug != "none/none":
             logger.important(f"connected lamindb: {isettings.slug}")
     except Exception as e:
         if isettings is not None:
