@@ -73,6 +73,8 @@ def register_user(usettings):
     from lamindb.models import User
 
     try:
+        print("curr users")
+        print(User.filter().list())
         # need to have try except because of integer primary key migration
         user, created = User.objects.update_or_create(
             uid=usettings.uid,
