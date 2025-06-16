@@ -6,6 +6,7 @@ from unittest.mock import patch
 from uuid import UUID, uuid4
 
 import lamindb_setup as ln_setup
+import psycopg2
 import pytest
 from gotrue.errors import AuthApiError
 from lamindb_setup import delete
@@ -177,6 +178,19 @@ def create_myinstance(create_testadmin1_session):  # -> Dict
 @pytest.fixture(scope="session")
 def create_instance_fine_grained_access(create_testadmin1_session):
     instance = create_hosted_test_instance("instance_access_v2", access_v2=True)
+
+    with psycopg2.connect(instance.db) as conn, conn.cursor() as cur:
+        # for some reason the user sequence is incorrect after create_hosted_test_instance
+        cur.execute(
+            """
+            SELECT setval(
+                pg_get_serial_sequence('lamindb_user', 'id'),
+                COALESCE(MAX(id), 1),
+                MAX(id) IS NOT NULL
+            )
+            FROM lamindb_user
+            """
+        )
     yield instance
     delete_hosted_test_instance(instance)
 
