@@ -392,6 +392,7 @@ def load_from_isettings(
         # this is our best proxy for that the user might not
         # yet be registered
         if not isettings._get_settings_file().exists():
+            print("register user on connect")
             register_user(user)
     isettings._persist(write_to_disk=write_settings)
 
