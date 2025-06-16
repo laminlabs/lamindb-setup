@@ -8,7 +8,7 @@ from uuid import UUID
 
 import click
 from django.core.exceptions import FieldError
-from django.db.utils import OperationalError, ProgrammingError
+from django.db.utils import IntegrityError, OperationalError, ProgrammingError
 from lamin_utils import logger
 
 from ._disconnect import disconnect
@@ -82,8 +82,9 @@ def register_user(usettings):
             },
         )
     # for users with only read access, except via ProgrammingError
-    # ProgrammingError: permission denied for table lnschema_core_user
-    except (OperationalError, FieldError, ProgrammingError):
+    # ProgrammingError: permission denied for table lamindb_user
+    # IntegrityError: when trying to update a user on a fine-grained access instance
+    except (OperationalError, FieldError, ProgrammingError, IntegrityError):
         pass
 
 
