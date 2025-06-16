@@ -179,20 +179,6 @@ def create_myinstance(create_testadmin1_session):  # -> Dict
 def create_instance_fine_grained_access(create_testadmin1_session):
     instance = create_hosted_test_instance("instance_access_v2", access_v2=True)
 
-    # for some reason the user sequence is incorrect after create_hosted_test_instance
-    # this fixes the problem
-    with psycopg2.connect(instance.db) as conn, conn.cursor() as cur:
-        cur.execute(
-            """
-            SELECT setval(
-                pg_get_serial_sequence('lamindb_user', 'id'),
-                COALESCE(MAX(id), 1),
-                MAX(id) IS NOT NULL
-            )
-            FROM lamindb_user
-            """
-        )
-
     yield instance
     delete_hosted_test_instance(instance)
 
@@ -460,6 +446,10 @@ def test_fine_grained_access(
     isettings_file.unlink()
     # run from a script because test_update_schema_in_hub.py has ln_setup.init
     # which fails if we connect here
+    with psycopg2.connect(instance.db) as conn, conn.cursor() as cur:
+        cur.execute("SELECT * FROM lamindb_user")
+        raise Exception(str(cur.fetchall()))
+
     subprocess.run(
         "python ./tests/hub-local/scripts/script-connect-fine-grained-access.py",
         shell=True,
