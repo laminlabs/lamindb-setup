@@ -179,8 +179,9 @@ def create_myinstance(create_testadmin1_session):  # -> Dict
 def create_instance_fine_grained_access(create_testadmin1_session):
     instance = create_hosted_test_instance("instance_access_v2", access_v2=True)
 
+    # for some reason the user sequence is incorrect after create_hosted_test_instance
+    # this fixes the problem
     with psycopg2.connect(instance.db) as conn, conn.cursor() as cur:
-        # for some reason the user sequence is incorrect after create_hosted_test_instance
         cur.execute(
             """
             SELECT setval(
@@ -191,6 +192,7 @@ def create_instance_fine_grained_access(create_testadmin1_session):
             FROM lamindb_user
             """
         )
+
     yield instance
     delete_hosted_test_instance(instance)
 
