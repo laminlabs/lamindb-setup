@@ -217,6 +217,7 @@ def init_storage(
                     "00000000000000000000000000000000"
                 )  # indicate not known
                 ssettings._uid = marking_result
+            # this condition means that the hub record was created
             if ssettings._uuid is not None:
                 delete_storage_record(ssettings, access_token=access_token)  # type: ignore
                 ssettings._uuid_ = None
