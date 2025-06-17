@@ -278,9 +278,9 @@ def reset_django():
 
     # i suspect it is enough to just drop django and all the apps from sys.modules
     # the code above is just a precaution
-    # for module_name in list(sys.modules):
-    #     if module_name.partition(".")[0] in app_names:
-    #         del sys.modules[module_name]
+    for module_name in list(sys.modules):
+        if module_name.partition(".")[0] in app_names:
+            del sys.modules[module_name]
 
     il.invalidate_caches()
 

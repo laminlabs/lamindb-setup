@@ -71,7 +71,8 @@ def _get_current_instance_settings() -> InstanceSettings:
             name="none",
             storage=None,
         )
-        logger.warning("not connected, call: ln.connect('account/name')")
+        if not IS_LOADING:
+            logger.warning("not connected, call: ln.connect('account/name')")
         return isettings
 
 
