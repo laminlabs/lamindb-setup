@@ -23,7 +23,13 @@ from upath.registry import register_implementation
 from lamindb_setup.errors import StorageNotEmpty
 
 from ._aws_options import HOSTED_BUCKETS, get_aws_options_manager
-from .hashing import HASH_LENGTH, b16_to_b64, hash_from_hashes_list, hash_string
+from .hashing import (
+    HASH_LENGTH,
+    b16_to_b64,
+    hash_file_s3,
+    hash_from_hashes_list,
+    hash_string,
+)
 
 if TYPE_CHECKING:
     from lamindb_setup.types import UPathStr
@@ -379,6 +385,43 @@ def upload_from(
         return self / local_path.name
     else:
         return self
+
+
+def synchronize_from(
+    source: UPath, destination: UPath, print_progress: bool = False, **kwargs
+):
+    if source.is_dir():
+        files = [path for path in source.rglob("*") if path.is_file()]
+    else:
+        files = [source]
+
+    fs = destination.fs
+    protocol = destination.protocol
+    source_paths = []
+    destination_stats = fs.find(destination.as_posix(), detail=True)
+    destination_paths = []
+
+    for file in files:
+        file_str = file.as_posix()
+        file_key = (destination / file.relative_to(source).as_posix()).path
+        if file_key in destination_stats:
+            etag = destination_stats.pop(file_key)["ETag"].strip('"')
+            None if "-" in etag else 50 * 1024 * 1024
+            if hash_file_s3(file) == etag:
+                continue
+        source_paths.append(file_str)
+        destination_paths.append(f"{protocol}://{file_key}")
+
+    fs.rm(destination_stats.keys(), recursive=False)
+
+    if len(source_paths) == 0:
+        return
+
+    if print_progress and "callback" not in kwargs:
+        callback = ProgressCallback(source.name, "uploading")
+        kwargs["callback"] = callback
+
+    fs.upload(source_paths, destination_paths, recursive=False, **kwargs)
 
 
 def synchronize(
