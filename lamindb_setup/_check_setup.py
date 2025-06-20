@@ -5,6 +5,7 @@ import importlib as il
 import inspect
 import os
 from typing import TYPE_CHECKING
+from uuid import UUID
 
 from lamin_utils import logger
 
@@ -42,7 +43,9 @@ def disable_auto_connect(func: Callable):
     return wrapper
 
 
-def _get_current_instance_settings() -> InstanceSettings | None:
+def _get_current_instance_settings() -> InstanceSettings:
+    from .core._settings_instance import InstanceSettings
+
     global CURRENT_ISETTINGS
 
     if CURRENT_ISETTINGS is not None:
@@ -62,7 +65,15 @@ def _get_current_instance_settings() -> InstanceSettings | None:
             raise e
         return isettings
     else:
-        return None
+        isettings = InstanceSettings(
+            id=UUID("00000000-0000-0000-0000-000000000000"),
+            owner="none",
+            name="none",
+            storage=None,
+        )
+        if not IS_LOADING:
+            logger.warning("not connected, call: ln.connect('account/name')")
+        return isettings
 
 
 def _normalize_module_name(module_name: str) -> str:
@@ -146,7 +157,8 @@ def _check_instance_setup(from_module: str | None = None) -> bool:
                 il.reload(il.import_module(from_module))
             else:
                 django_lamin.setup_django(isettings)
-                logger.important(f"connected lamindb: {isettings.slug}")
+                if isettings.slug != "none/none":
+                    logger.important(f"connected lamindb: {isettings.slug}")
         return django_lamin.IS_SETUP
     else:
         if from_module is not None and settings.auto_connect:

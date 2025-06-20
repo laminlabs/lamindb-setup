@@ -76,7 +76,8 @@ class SetupSettings:
         - in Python: `ln.setup.settings.auto_connect = True/False`
         - via the CLI: `lamin settings set auto-connect true/false`
         """
-        return self._auto_connect_path.exists()
+        # always true now because we can switch instances
+        return True
 
     @auto_connect.setter
     def auto_connect(self, value: bool) -> None:

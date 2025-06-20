@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import importlib
 import os
+import sys
 from typing import TYPE_CHECKING, Any
 from uuid import UUID
 
@@ -185,6 +186,24 @@ def _connect_instance(
     return isettings
 
 
+def reset_django_module_variables():
+    # after deleting references of main variables in django.reset_django(), need to reset them
+    main_variables = sys.modules["__main__"]
+    # doing this manually for now, because the logic below seems flawed
+    main_variables.ln = sys.modules["lamindb"]
+    # from django.apps import apps
+
+    # app_names = {"django"} | {app.name for app in apps.get_app_configs()}
+    # main_variables = sys.modules["__main__"]
+
+    # for module_name in sys.modules:
+    #     if module_name.partition(".")[0] in app_names:
+    #         module_obj = sys.modules[module_name]
+    #         for var_name, var_value in vars(main_variables).items():
+    #             if var_value is module_obj:
+    #                 setattr(main_variables, var_name, module_obj)
+
+
 @unlock_cloud_sqlite_upon_exception(ignore_prev_locker=True)
 def connect(instance: str | None = None, **kwargs: Any) -> str | tuple | None:
     """Connect to an instance.
@@ -222,12 +241,7 @@ def connect(instance: str | None = None, **kwargs: Any) -> str | tuple | None:
 
     try:
         if instance is None:
-            isettings_or_none = _get_current_instance_settings()
-            if isettings_or_none is None:
-                raise ValueError(
-                    "No instance was connected through the CLI, pass a value to `instance` or connect via the CLI."
-                )
-            isettings = isettings_or_none
+            isettings = _get_current_instance_settings()
         else:
             owner, name = get_owner_name_from_identifier(instance)
             if _check_instance_setup() and not _test:
@@ -293,7 +307,8 @@ def connect(instance: str | None = None, **kwargs: Any) -> str | tuple | None:
         load_from_isettings(isettings, user=_user, write_settings=_write_settings)
         if _reload_lamindb:
             importlib.reload(importlib.import_module("lamindb"))
-        else:
+            reset_django_module_variables()
+        if isettings.slug != "none/none":
             logger.important(f"connected lamindb: {isettings.slug}")
     except Exception as e:
         if isettings is not None:
