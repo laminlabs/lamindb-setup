@@ -3,11 +3,15 @@ from __future__ import annotations
 # flake8: noqa
 import builtins
 import os
+import sys
+import importlib as il
 import jwt
 import time
 from pathlib import Path
 import time
 from ._settings_instance import InstanceSettings
+
+from lamin_utils import logger
 
 
 IS_RUN_FROM_IPYTHON = getattr(builtins, "__IPYTHON__", False)
@@ -112,10 +116,9 @@ class DBTokenManager:
                     connection.connection.cursor().execute(token.token_query)
 
         Atomic.__enter__ = __enter__
+        logger.debug("django.db.transaction.Atomic.__enter__ has been patched")
 
     def reset(self, connection_name: str = "default"):
-        from django.db.transaction import Atomic
-
         connection = self.get_connection(connection_name)
 
         connection.execute_wrappers = [
@@ -148,6 +151,7 @@ def setup_django(
 ):
     if IS_RUN_FROM_IPYTHON:
         os.environ["DJANGO_ALLOW_ASYNC_UNSAFE"] = "true"
+        logger.debug("DJANGO_ALLOW_ASYNC_UNSAFE env variable has been set to 'true'")
 
     import dj_database_url
     import django
@@ -170,8 +174,7 @@ def setup_django(
 
         module_names = ["core"] + list(isettings.modules)
         raise_import_error = True if init else False
-        installed_apps = ["django.contrib.contenttypes"]
-        installed_apps += [
+        installed_apps = [
             package_name
             for name in module_names
             if (
@@ -215,6 +218,9 @@ def setup_django(
         from django.db.backends.base.base import BaseDatabaseWrapper
 
         BaseDatabaseWrapper.close_if_health_check_failed = close_if_health_check_failed
+        logger.debug(
+            "django.db.backends.base.base.BaseDatabaseWrapper.close_if_health_check_failed has been patched"
+        )
 
         if isettings._fine_grained_access and isettings._db_permissions == "jwt":
             db_token = DBToken(isettings)
@@ -242,3 +248,44 @@ def setup_django(
 
     if isettings.keep_artifacts_local:
         isettings._search_local_root()
+
+
+# THIS IS NOT SAFE
+# especially if lamindb is imported already
+# django.setup fails if called for the second time
+# reset_django() allows to call setup again,
+# needed to connect to a different instance in the same process if connected already
+# there could be problems if models are already imported from lamindb or other modules
+# these 'old' models can have any number of problems
+def reset_django():
+    from django.conf import settings
+    from django.apps import apps
+    from django.db import connections
+
+    if not settings.configured:
+        return
+
+    connections.close_all()
+
+    if getattr(settings, "_wrapped", None) is not None:
+        settings._wrapped = None
+
+    app_names = {"django"} | {app.name for app in apps.get_app_configs()}
+
+    apps.app_configs.clear()
+    apps.apps_ready = apps.models_ready = apps.ready = apps.loading = False
+    apps.clear_cache()
+
+    # i suspect it is enough to just drop django and all the apps from sys.modules
+    # the code above is just a precaution
+    for module_name in list(sys.modules):
+        if module_name.partition(".")[0] in app_names:
+            del sys.modules[module_name]
+
+    il.invalidate_caches()
+
+    global db_token_manager
+    db_token_manager = DBTokenManager()
+
+    global IS_SETUP
+    IS_SETUP = False

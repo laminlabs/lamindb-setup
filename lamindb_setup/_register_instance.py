@@ -12,7 +12,7 @@ def register(_test: bool = False):
     from ._check_setup import _check_instance_setup
     from .core._hub_core import init_instance_hub, init_storage_hub
 
-    logger.warning("""lamin register will be removed soon""")
+    logger.warning("note that register() is only for testing purposes")
 
     isettings = settings.instance
     if not _check_instance_setup() and not _test:

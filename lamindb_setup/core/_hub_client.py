@@ -2,9 +2,9 @@ from __future__ import annotations
 
 import json
 import os
+from typing import Literal
 from urllib.request import urlretrieve
 
-from gotrue.errors import AuthUnknownError
 from lamin_utils import logger
 from pydantic_settings import BaseSettings
 from supabase import Client, create_client  # type: ignore
@@ -172,7 +172,7 @@ def call_with_fallback(
             client = connect_hub(fallback_env=fallback_env)
             result = callable(**kwargs, client=client)
             break
-        except AuthUnknownError as e:
+        except Exception as e:
             if fallback_env:
                 raise e
         finally:
@@ -197,10 +197,20 @@ def requests_client():
     return requests
 
 
-def request_get_auth(url: str, access_token: str, renew_token: bool = True):
+def request_with_auth(
+    url: str,
+    method: Literal["get", "post", "put", "delete", "head", "options"],
+    access_token: str,
+    renew_token: bool = True,
+    **kwargs,
+):
     requests = requests_client()
 
-    response = requests.get(url, headers={"Authorization": f"Bearer {access_token}"})
+    headers = kwargs.pop("headers", {})
+    headers["Authorization"] = f"Bearer {access_token}"
+
+    make_request = getattr(requests, method)
+    response = make_request(url, headers=headers, **kwargs)
     # upate access_token and try again if failed
     if response.status_code != 200 and renew_token:
         from lamindb_setup import settings
@@ -212,7 +222,7 @@ def request_get_auth(url: str, access_token: str, renew_token: bool = True):
         settings.user.access_token = access_token
         save_user_settings(settings.user)
 
-        response = requests.get(
-            url, headers={"Authorization": f"Bearer {access_token}"}
-        )
+        headers["Authorization"] = f"Bearer {access_token}"
+
+        response = make_request(url, headers=headers, **kwargs)
     return response

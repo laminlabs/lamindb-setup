@@ -30,18 +30,20 @@ Modules & settings:
    settings
    core
    django
+   errors
+   types
 
 """
 
-__version__ = "1.5.2"  # denote a release candidate for 0.1.0 with 0.1rc1
+__version__ = "1.6.1"  # denote a release candidate for 0.1.0 with 0.1rc1
 
 import os
 
 from packaging import version as packaging_version
 
-from . import core
+from . import core, errors, types
 from ._check_setup import _check_instance_setup
-from ._connect_instance import connect, load
+from ._connect_instance import connect
 from ._delete import delete
 from ._disconnect import disconnect
 from ._django import django

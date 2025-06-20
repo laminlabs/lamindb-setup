@@ -8,7 +8,7 @@ from uuid import UUID
 
 import click
 from django.core.exceptions import FieldError
-from django.db.utils import OperationalError, ProgrammingError
+from django.db.utils import IntegrityError, OperationalError, ProgrammingError
 from lamin_utils import logger
 
 from ._disconnect import disconnect
@@ -19,12 +19,13 @@ from .core._settings import settings
 from .core._settings_instance import is_local_db_url
 from .core._settings_storage import StorageSettings, init_storage
 from .core.upath import UPath
+from .errors import CannotSwitchDefaultInstance
 
 if TYPE_CHECKING:
     from pydantic import PostgresDsn
 
     from .core._settings_user import UserSettings
-    from .core.types import UPathStr
+    from .types import UPathStr
 
 
 class InstanceNotCreated(click.ClickException):
@@ -49,31 +50,22 @@ def get_schema_module_name(module_name, raise_import_error: bool = True) -> str 
 
 
 def register_storage_in_instance(ssettings: StorageSettings):
-    from lamindb.base.users import current_user_id
     from lamindb.models import Storage
 
-    from .core.hashing import hash_and_encode_as_b62
-
-    if ssettings._instance_id is not None:
-        instance_uid = hash_and_encode_as_b62(ssettings._instance_id.hex)[:12]
-    else:
-        instance_uid = None
     # how do we ensure that this function is only called passing
     # the managing instance?
-    defaults = {
+    kwargs = {
         "root": ssettings.root_as_str,
         "type": ssettings.type,
         "region": ssettings.region,
-        "instance_uid": instance_uid,
-        "created_by_id": current_user_id(),
+        "instance_uid": ssettings.instance_uid,
         "run": None,
+        "_skip_preparation": True,
     }
     if ssettings._uid is not None:
-        defaults["uid"] = ssettings._uid
-    storage, _ = Storage.objects.update_or_create(
-        root=ssettings.root_as_str,
-        defaults=defaults,
-    )
+        kwargs["uid"] = ssettings._uid
+    # this checks if the storage already exists under the hood
+    storage = Storage(**kwargs).save()
     return storage
 
 
@@ -90,8 +82,9 @@ def register_user(usettings):
             },
         )
     # for users with only read access, except via ProgrammingError
-    # ProgrammingError: permission denied for table lnschema_core_user
-    except (OperationalError, FieldError, ProgrammingError):
+    # ProgrammingError: permission denied for table lamindb_user
+    # IntegrityError: when trying to update a user on a fine-grained access instance
+    except (OperationalError, FieldError, ProgrammingError, IntegrityError):
         pass
 
 
@@ -178,7 +171,7 @@ def validate_init_args(
     _user: UserSettings | None = None,
 ) -> tuple[
     str,
-    UUID | None,
+    UUID,
     Literal[
         "connected",
         "instance-corrupted-or-deleted",
@@ -204,32 +197,20 @@ def validate_init_args(
         _write_settings=_write_settings,
         _user=_user,
     )
+    instance_id: UUID
     instance_state: Literal[
         "connected",
         "instance-corrupted-or-deleted",
         "account-not-exists",
         "instance-not-found",
-    ] = "connected"
-    instance_id = None
-    if response is not None:
+    ]
+    if response is None:
+        instance_state, instance_id = "connected", settings.instance._id
+    else:
         instance_id, instance_state = process_connect_response(response, instance_slug)
     modules = process_modules_arg(modules)
     return name_str, instance_id, instance_state, instance_slug
 
-
-class CannotSwitchDefaultInstance(SystemExit):
-    pass
-
-
-MESSAGE_CANNOT_SWITCH_DEFAULT_INSTANCE = """
-You cannot write to different instances in the same Python session.
-
-Do you want to read from another instance via `SQLRecord.using()`? For example:
-
-ln.Artifact.using("laminlabs/cellxgene").filter()
-
-Or do you want to switch off auto-connect via `lamin settings set auto-connect false`?
-"""
 
 DOC_STORAGE_ARG = "A local or remote folder (`'s3://...'` or `'gs://...'`). Defaults to current working directory."
 DOC_INSTANCE_NAME = (
@@ -278,7 +259,9 @@ def init(
         from ._check_setup import _check_instance_setup
 
         if _check_instance_setup() and not _test:
-            raise CannotSwitchDefaultInstance(MESSAGE_CANNOT_SWITCH_DEFAULT_INSTANCE)
+            from lamindb_setup.core.django import reset_django
+
+            reset_django()
         elif _write_settings:
             disconnect(mute=True)
         from .core._hub_core import init_instance_hub
@@ -296,13 +279,11 @@ def init(
             if _write_settings:
                 settings.auto_connect = True  # we can also debate this switch here
             return None
-        # the conditions here match `isettings.is_remote`, but I currently don't
-        # see a way of making this more elegant; should become possible if we
-        # remove the instance.storage_id FK on the hub
         prevent_register_hub = is_local_db_url(db) if db is not None else False
         ssettings, _ = init_storage(
             storage,
             instance_id=instance_id,
+            instance_slug=f"{user_handle}/{name_str}",
             init_instance=True,
             prevent_register_hub=prevent_register_hub,
             created_by=user__uuid,
@@ -370,7 +351,7 @@ def init(
             and (user_handle != "anonymous" or access_token is not None)
             and ssettings.is_on_hub
         ):
-            delete_storage_record(ssettings._uuid, access_token=access_token)  # type: ignore
+            delete_storage_record(ssettings, access_token=access_token)  # type: ignore
         if isettings is not None:
             if (
                 user_handle != "anonymous" or access_token is not None

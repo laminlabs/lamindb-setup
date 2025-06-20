@@ -11,7 +11,7 @@ def pytest_sessionstart(session: pytest.Session):
     os.environ["LAMINDB_INSTANCE_ID_INIT"] = lamindb_instance_id.hex
     assert lamindb_setup.settings.user.handle == "testuser2"
     lamindb_setup.init(
-        storage="./default_storage",
+        storage="./default_storage_hub_prod_tests",
         modules="bionty",
         name="lamindb-setup-unit-tests",
     )
