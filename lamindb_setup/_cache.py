@@ -4,7 +4,7 @@ import shutil
 
 from lamin_utils import logger
 
-from .core._settings_save import save_user_storage_settings
+from .core._settings_save import save_platform_user_storage_settings
 
 
 def clear_cache_dir():
@@ -48,5 +48,5 @@ def set_cache_dir(cache_dir: str):
         shutil.rmtree(old_cache_dir)
         logger.info("The current cache directory was moved to the specified location")
     new_cache_dir = new_cache_dir.resolve()
-    save_user_storage_settings(new_cache_dir)
+    save_platform_user_storage_settings(new_cache_dir)
     settings._cache_dir = new_cache_dir
