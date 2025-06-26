@@ -37,6 +37,8 @@ def _process_cache_path(cache_path: UPathStr | None):
         raise ValueError("cache dir should be a local path.")
     if cache_dir.exists() and not cache_dir.is_dir():
         raise ValueError("cache dir should be a directory.")
+    if not cache_dir.is_absolute():
+        raise ValueError("A path to the cache dir should be absolute.")
     return cache_dir
 
 
