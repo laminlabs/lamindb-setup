@@ -17,7 +17,7 @@ from ._settings_store import (
     UserSettingsStore,
     current_instance_settings_file,
     current_user_settings_file,
-    system_storage_settings_file,
+    user_storage_settings_file,
 )
 from ._settings_user import UserSettings
 
@@ -25,12 +25,12 @@ if TYPE_CHECKING:
     from pathlib import Path
 
 
-def load_system_storage_settings(system_storage_settings: Path | None = None) -> dict:
-    if system_storage_settings is None:
-        system_storage_settings = system_storage_settings_file()
+def load_user_storage_settings(user_storage_settings: Path | None = None) -> dict:
+    if user_storage_settings is None:
+        user_storage_settings = user_storage_settings_file()
 
-    if system_storage_settings.exists():
-        return dotenv_values(system_storage_settings)
+    if user_storage_settings.exists():
+        return dotenv_values(user_storage_settings)
     else:
         return {}
 
