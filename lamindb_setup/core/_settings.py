@@ -8,11 +8,15 @@ from lamin_utils import logger
 from platformdirs import user_cache_dir
 
 from ._settings_load import (
+    load_cache_path_from_settings,
     load_instance_settings,
     load_or_create_user_settings,
-    load_storage_settings,
 )
-from ._settings_store import current_instance_settings_file, settings_dir
+from ._settings_store import (
+    current_instance_settings_file,
+    settings_dir,
+    system_settings_dir,
+)
 from .upath import LocalPathClasses, UPath
 
 if TYPE_CHECKING:
@@ -166,7 +170,7 @@ class SetupSettings:
         if "LAMIN_CACHE_DIR" in os.environ:
             cache_dir = UPath(os.environ["LAMIN_CACHE_DIR"])
         elif self._cache_dir is None:
-            cache_path = load_storage_settings().get("lamindb_cache_path", None)
+            cache_path = load_cache_path_from_settings()
             cache_dir = _process_cache_path(cache_path)
             if cache_dir is None:
                 cache_dir = DEFAULT_CACHE_DIR
@@ -199,10 +203,12 @@ class SetupSettings:
         # do not show current setting representation when building docs
         if "sphinx" in sys.modules:
             return object.__repr__(self)
-        repr = self.user.__repr__()
-        repr += f"\nAuto-connect in Python: {self.auto_connect}\n"
+        repr = f"Auto-connect in Python: {self.auto_connect}\n"
         repr += f"Private Django API: {self.private_django_api}\n"
         repr += f"Cache directory: {self.cache_dir.as_posix()}\n"
+        repr += f"User settings directory: {settings_dir.as_posix()}\n"
+        repr += f"System settings directory: {system_settings_dir.as_posix()}\n"
+        repr += self.user.__repr__() + "\n"
         if self._instance_exists:
             repr += self.instance.__repr__()
         else:

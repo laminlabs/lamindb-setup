@@ -8,9 +8,9 @@ from ._settings_store import (
     InstanceSettingsStore,
     UserSettingsStore,
     current_user_settings_file,
+    platform_user_storage_settings_file,
     user_settings_file_email,
     user_settings_file_handle,
-    user_storage_settings_file,
 )
 
 if TYPE_CHECKING:
@@ -90,6 +90,6 @@ def save_user_storage_settings(
     if isinstance(cache_path, Path):  # also True for UPath
         cache_path = cache_path.as_posix()
     if settings_file is None:
-        settings_file = user_storage_settings_file()
+        settings_file = platform_user_storage_settings_file()
     with open(settings_file, "w") as f:
         f.write(f"lamindb_cache_path={cache_path}")

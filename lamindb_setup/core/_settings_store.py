@@ -3,6 +3,7 @@ from pathlib import Path
 from typing import Optional
 
 from lamin_utils import logger
+from platformdirs import site_config_dir
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 if "LAMIN_SETTINGS_DIR" in os.environ:
@@ -18,6 +19,9 @@ try:
     settings_dir.mkdir(parents=True, exist_ok=True)
 except Exception as e:
     logger.warning(f"Failed to create lamin settings directory at {settings_dir}: {e}")
+
+
+system_settings_dir = Path(site_config_dir(appname="lamindb", appauthor="laminlabs"))
 
 
 def get_settings_file_name_prefix():
@@ -49,8 +53,13 @@ def user_settings_file_handle(handle: str):
     return settings_dir / f"{get_settings_file_name_prefix()}user--{handle}.env"
 
 
-def user_storage_settings_file():
+# here user means the user directory on os, not a lamindb user
+def platform_user_storage_settings_file():
     return settings_dir / "storage.env"
+
+
+def system_settings_file():
+    return system_settings_dir / "system.env"
 
 
 class InstanceSettingsStore(BaseSettings):
