@@ -4,8 +4,8 @@ import os
 import sys
 from typing import TYPE_CHECKING
 
-from appdirs import AppDirs
 from lamin_utils import logger
+from platformdirs import user_cache_dir
 
 from ._settings_load import (
     load_instance_settings,
@@ -22,7 +22,7 @@ if TYPE_CHECKING:
     from lamindb_setup.types import UPathStr
 
 
-DEFAULT_CACHE_DIR = UPath(AppDirs("lamindb", "laminlabs").user_cache_dir)
+DEFAULT_CACHE_DIR = UPath(user_cache_dir(appname="lamindb", appauthor="laminlabs"))
 
 
 def _process_cache_path(cache_path: UPathStr | None):
