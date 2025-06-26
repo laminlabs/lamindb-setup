@@ -10,7 +10,7 @@ from platformdirs import user_cache_dir
 from ._settings_load import (
     load_instance_settings,
     load_or_create_user_settings,
-    load_user_storage_settings,
+    load_storage_settings,
 )
 from ._settings_store import current_instance_settings_file, settings_dir
 from .upath import LocalPathClasses, UPath
@@ -166,7 +166,7 @@ class SetupSettings:
         if "LAMIN_CACHE_DIR" in os.environ:
             cache_dir = UPath(os.environ["LAMIN_CACHE_DIR"])
         elif self._cache_dir is None:
-            cache_path = load_user_storage_settings().get("lamindb_cache_path", None)
+            cache_path = load_storage_settings().get("lamindb_cache_path", None)
             cache_dir = _process_cache_path(cache_path)
             if cache_dir is None:
                 cache_dir = DEFAULT_CACHE_DIR
