@@ -25,12 +25,12 @@ if TYPE_CHECKING:
     from pathlib import Path
 
 
-def load_user_storage_settings(user_storage_settings: Path | None = None) -> dict:
-    if user_storage_settings is None:
-        user_storage_settings = user_storage_settings_file()
+def load_storage_settings(storage_settings: Path | None = None) -> dict:
+    if storage_settings is None:
+        storage_settings = user_storage_settings_file()
 
-    if user_storage_settings.exists():
-        return dotenv_values(user_storage_settings)
+    if storage_settings.exists():
+        return dotenv_values(storage_settings)
     else:
         return {}
 
