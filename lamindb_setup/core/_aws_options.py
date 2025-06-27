@@ -79,8 +79,8 @@ class AWSOptionsManager:
                 # use lamindata public bucket for this test
                 fs.call_s3("head_bucket", Bucket="lamindata")
                 self.anon_public = False
-            except Exception as e:
-                self.anon_public = isinstance(e, PermissionError)
+            except Exception:
+                self.anon_public = True
 
     def _find_root(self, path_str: str) -> str | None:
         roots = self._credentials_cache.keys()
