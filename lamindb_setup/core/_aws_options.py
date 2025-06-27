@@ -31,7 +31,7 @@ AWS_CREDENTIALS_EXPIRATION: int = 11 * 60 * 60  # refresh credentials after 11 h
 
 # set anon=True for these buckets if credentials fail for a public bucket
 # to be expanded
-PUBLIC_BUCKETS: tuple[str] = ("cellxgene-data-public",)
+PUBLIC_BUCKETS: tuple[str, ...] = ("cellxgene-data-public", "bionty-assets")
 
 
 # s3-comaptible endpoints managed by lamin
