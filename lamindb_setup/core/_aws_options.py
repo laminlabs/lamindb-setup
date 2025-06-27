@@ -31,7 +31,7 @@ AWS_CREDENTIALS_EXPIRATION: int = 11 * 60 * 60  # refresh credentials after 11 h
 
 # set anon=True for these buckets if credentials fail for a public bucket
 # to be expanded
-PUBLIC_BUCKETS: tuple[str] = ("cellxgene-data-public",)
+PUBLIC_BUCKETS: tuple[str, ...] = ("cellxgene-data-public", "bionty-assets")
 
 
 # s3-comaptible endpoints managed by lamin
@@ -79,8 +79,8 @@ class AWSOptionsManager:
                 # use lamindata public bucket for this test
                 fs.call_s3("head_bucket", Bucket="lamindata")
                 self.anon_public = False
-            except Exception as e:
-                self.anon_public = isinstance(e, PermissionError)
+            except Exception:
+                self.anon_public = True
 
     def _find_root(self, path_str: str) -> str | None:
         roots = self._credentials_cache.keys()
