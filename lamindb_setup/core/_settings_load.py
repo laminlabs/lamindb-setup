@@ -111,7 +111,7 @@ def setup_instance_from_store(store: InstanceSettingsStore) -> InstanceSettings:
         git_repo=_null_to_value(store.git_repo),
         keep_artifacts_local=store.keep_artifacts_local,  # type: ignore
         api_url=_null_to_value(store.api_url),
-        schema_id=None if store.schema_id == "null" else UUID(store.schema_id),
+        schema_id=None if store.schema_id in {None, "null"} else UUID(store.schema_id),
         fine_grained_access=store.fine_grained_access,
         db_permissions=_null_to_value(store.db_permissions),
     )
