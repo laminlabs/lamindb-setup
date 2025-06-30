@@ -35,7 +35,7 @@ from ._hub_utils import (
 )
 from ._settings import settings
 from ._settings_instance import InstanceSettings
-from ._settings_storage import StorageSettings, base62
+from ._settings_storage import StorageSettings, base62, instance_uid_from_uuid
 from .hashing import hash_and_encode_as_b62
 
 if TYPE_CHECKING:
@@ -130,9 +130,7 @@ def _select_storage_or_parent(path: str, client: Client) -> dict | None:
     if result["root"] is None:
         return None
     result["uid"] = result.pop("lnid")
-    result["instance_uid"] = hash_and_encode_as_b62(
-        UUID(result.pop("instance_id")).hex
-    )[:12]
+    result["instance_uid"] = instance_uid_from_uuid(UUID(result.pop("instance_id")))
     return result
 
 
