@@ -69,8 +69,11 @@ def register_storage_in_instance(ssettings: StorageSettings):
     return storage
 
 
-def register_user(usettings):
+def register_user(usettings: UserSettings, update_user: bool = True):
     from lamindb.models import User
+
+    if not update_user and User.objects.filter(uid=usettings.uid).exists():
+        return
 
     try:
         # need to have try except because of integer primary key migration
@@ -88,7 +91,7 @@ def register_user(usettings):
         pass
 
 
-def register_initial_records(isettings: InstanceSettings, usettings):
+def register_initial_records(isettings: InstanceSettings, usettings: UserSettings):
     """Register space, user & storage in DB."""
     from django.db.utils import OperationalError
     from lamindb.models import Branch, Space
@@ -385,7 +388,9 @@ def load_from_isettings(
         # this is our best proxy for that the user might not
         # yet be registered
         if not isettings._get_settings_file().exists():
-            register_user(user)
+            # do not try to update the user on fine grained access instances
+            # this is blocked anyways, only select and insert are allowed
+            register_user(user, update_user=not isettings._fine_grained_access)
     isettings._persist(write_to_disk=write_settings)
 
 
