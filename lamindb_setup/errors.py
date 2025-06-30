@@ -1,4 +1,21 @@
+"""Errors.
+
+.. autosummary::
+   :toctree: .
+
+   InstanceNotSetupError
+   ModuleWasntConfigured
+   StorageAlreadyManaged
+   StorageNotEmpty
+   InstanceLockedException
+   SettingsEnvFileOutdated
+   CannotSwitchDefaultInstance
+
+"""
+
 from __future__ import annotations
+
+import click
 
 
 class DefaultMessageException(Exception):
@@ -28,6 +45,15 @@ MODULE_WASNT_CONFIGURED_MESSAGE_TEMPLATE = (
 
 class ModuleWasntConfigured(Exception):
     pass
+
+
+class StorageAlreadyManaged(Exception):
+    pass
+
+
+class StorageNotEmpty(click.ClickException):
+    def show(self, file=None):
+        pass
 
 
 # raise if a cloud SQLite instance is already locked

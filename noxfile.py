@@ -38,7 +38,7 @@ uv pip install --system git+https://github.com/laminlabs/bionty
             + "\nuv pip install --system ./laminhub/rest-hub --no-build-isolation"
         )
     elif group == "docs":
-        cmds = """uv pip install --system git+https://github.com/laminlabs/lamindb"""
+        cmds = modules_deps.strip()
     elif group == "storage":
         cmds = modules_deps + "uv pip install --system gcsfs huggingface_hub"
     elif group == "hub-prod":

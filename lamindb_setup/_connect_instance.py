@@ -10,10 +10,7 @@ from lamin_utils import logger
 
 from ._check_setup import _check_instance_setup, _get_current_instance_settings
 from ._disconnect import disconnect
-from ._init_instance import (
-    MESSAGE_CANNOT_SWITCH_DEFAULT_INSTANCE,
-    load_from_isettings,
-)
+from ._init_instance import load_from_isettings
 from ._silence_loggers import silence_loggers
 from .core._hub_core import connect_instance_hub
 from .core._hub_utils import (
@@ -33,7 +30,7 @@ if TYPE_CHECKING:
     from pathlib import Path
 
     from .core._settings_user import UserSettings
-    from .core.types import UPathStr
+    from .types import UPathStr
 
 # this is for testing purposes only
 # set to True only to test failed load
@@ -223,7 +220,7 @@ def connect(instance: str | None = None, **kwargs: Any) -> str | tuple | None:
     isettings: InstanceSettings = None  # type: ignore
     # _db is still needed because it is called in init
     _db: str | None = kwargs.get("_db", None)
-    _write_settings: bool = kwargs.get("_write_settings", True)
+    _write_settings: bool = kwargs.get("_write_settings", False)
     _raise_not_found_error: bool = kwargs.get("_raise_not_found_error", True)
     _reload_lamindb: bool = kwargs.get("_reload_lamindb", True)
     _test: bool = kwargs.get("_test", False)
@@ -253,9 +250,9 @@ def connect(instance: str | None = None, **kwargs: Any) -> str | tuple | None:
                     logger.important(f"connected lamindb: {settings.instance.slug}")
                     return None
                 else:
-                    raise CannotSwitchDefaultInstance(
-                        MESSAGE_CANNOT_SWITCH_DEFAULT_INSTANCE
-                    )
+                    from lamindb_setup.core.django import reset_django
+
+                    reset_django()
             elif (
                 _write_settings
                 and settings._instance_exists
@@ -282,15 +279,6 @@ def connect(instance: str | None = None, **kwargs: Any) -> str | tuple | None:
         if _test:
             return None
         silence_loggers()
-        # migrate away from lnschema-core
-        no_lnschema_core_file = (
-            settings_dir / f"no_lnschema_core-{isettings.slug.replace('/', '--')}"
-        )
-        if not no_lnschema_core_file.exists():
-            # sqlite file for cloud sqlite instances is already updated here
-            migrate_lnschema_core(
-                isettings, no_lnschema_core_file, write_file=_write_settings
-            )
         check, msg = isettings._load_db()
         if not check:
             local_db = (
@@ -317,8 +305,7 @@ def connect(instance: str | None = None, **kwargs: Any) -> str | tuple | None:
         load_from_isettings(isettings, user=_user, write_settings=_write_settings)
         if _reload_lamindb:
             importlib.reload(importlib.import_module("lamindb"))
-        else:
-            logger.important(f"connected lamindb: {isettings.slug}")
+        logger.important(f"connected lamindb: {isettings.slug}")
     except Exception as e:
         if isettings is not None:
             if _write_settings:
@@ -326,141 +313,6 @@ def connect(instance: str | None = None, **kwargs: Any) -> str | tuple | None:
             settings._instance_settings = None
         raise e
     return None
-
-
-def load(slug: str) -> str | tuple | None:
-    """Connect to instance and set ``auto-connect`` to true.
-
-    This is exactly the same as ``ln.connect()`` except for that
-    ``ln.connect()`` doesn't change the state of ``auto-connect``.
-    """
-    print("Warning: This is deprecated and will be removed.")
-    result = connect(slug)
-    settings.auto_connect = True
-    return result
-
-
-def migrate_lnschema_core(
-    isettings: InstanceSettings, no_lnschema_core_file: Path, write_file: bool = True
-):
-    """Migrate lnschema_core tables to lamindb tables."""
-    from urllib.parse import urlparse
-
-    # we need to do this because the sqlite file should be already synced
-    # has no effect if not cloud sqlite
-    # errors if the sqlite file is not in the cloud and doesn't exist locally
-    # isettings.db syncs but doesn't error in this case due to error_no_origin=False
-    isettings._update_local_sqlite_file()
-
-    parsed_uri = urlparse(isettings.db)
-    db_type = parsed_uri.scheme
-
-    if db_type == "sqlite":
-        import sqlite3
-
-        # maybe also use LAMINDB_DJANGO_DATABASE_URL here?
-        conn = sqlite3.connect(parsed_uri.path)
-    elif db_type in ["postgresql", "postgres"]:
-        import psycopg2
-
-        # do not ignore LAMINDB_DJANGO_DATABASE_URL if it is set
-        conn = psycopg2.connect(
-            os.environ.get("LAMINDB_DJANGO_DATABASE_URL", isettings.db)
-        )
-    else:
-        raise ValueError("Unsupported database type. Use 'sqlite' or 'postgresql' URI.")
-
-    cur = conn.cursor()
-
-    try:
-        if db_type == "sqlite":
-            cur.execute(
-                "SELECT name FROM sqlite_master WHERE type='table' AND name='lamindb_user'"
-            )
-            migrated = cur.fetchone() is not None
-
-            # tables that need to be renamed
-            cur.execute(
-                "SELECT name FROM sqlite_master WHERE type='table' AND name LIKE 'lnschema_core_%'"
-            )
-            tables_to_rename = [
-                row[0][len("lnschema_core_") :] for row in cur.fetchall()
-            ]
-        else:  # postgres
-            cur.execute(
-                "SELECT EXISTS (SELECT FROM information_schema.tables WHERE table_name = 'lamindb_user')"
-            )
-            migrated = cur.fetchone()[0]
-
-            # tables that need to be renamed
-            cur.execute(
-                "SELECT table_name FROM information_schema.tables WHERE table_name LIKE 'lnschema_core_%'"
-            )
-            tables_to_rename = [
-                row[0][len("lnschema_core_") :] for row in cur.fetchall()
-            ]
-
-        if migrated:
-            if write_file:
-                no_lnschema_core_file.touch(exist_ok=True)
-        else:
-            try:
-                response = input(
-                    f"Do you want to migrate to lamindb 1.0 (integrate lnschema_core into lamindb)? (y/n) -- Will rename {tables_to_rename}"
-                )
-                if response != "y":
-                    print("Aborted.")
-                    quit()
-                if isettings.is_on_hub:
-                    from lamindb_setup.core._hub_client import call_with_fallback_auth
-                    from lamindb_setup.core._hub_crud import (
-                        select_collaborator,
-                    )
-
-                    # double check that user is an admin, otherwise will fail below
-                    # due to insufficient SQL permissions with cryptic error
-                    collaborator = call_with_fallback_auth(
-                        select_collaborator,
-                        instance_id=settings.instance._id,
-                        account_id=settings.user._uuid,
-                    )
-                    if collaborator is None or collaborator["role"] != "admin":
-                        raise SystemExit(
-                            "❌ Only admins can deploy migrations, please ensure that you're an"
-                            f" admin: https://lamin.ai/{settings.instance.slug}/settings"
-                        )
-                for table in tables_to_rename:
-                    if db_type == "sqlite":
-                        cur.execute(
-                            f"ALTER TABLE lnschema_core_{table} RENAME TO lamindb_{table}"
-                        )
-                    else:  # postgres
-                        cur.execute(
-                            f"ALTER TABLE lnschema_core_{table} RENAME TO lamindb_{table};"
-                        )
-
-                cur.execute(
-                    "UPDATE django_migrations SET app = 'lamindb' WHERE app = 'lnschema_core'"
-                )
-                print(
-                    "Renaming tables finished.\nNow, *please* call: lamin migrate deploy"
-                )
-                if write_file:
-                    no_lnschema_core_file.touch(exist_ok=True)
-            except Exception:
-                # read-only users can't rename tables
-                pass
-
-        conn.commit()
-
-    except Exception as e:
-        print(f"An error occurred: {e}")
-        conn.rollback()
-
-    finally:
-        # close the cursor and connection
-        cur.close()
-        conn.close()
 
 
 def get_owner_name_from_identifier(identifier: str):

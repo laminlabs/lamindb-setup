@@ -12,7 +12,7 @@ Settings:
 
 """
 
-from . import django, types, upath
+from . import django, upath
 from ._deprecated import deprecated
 from ._docs import doc_args
 from ._settings import SetupSettings
