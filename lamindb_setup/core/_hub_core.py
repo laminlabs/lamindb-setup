@@ -10,6 +10,7 @@ from uuid import UUID
 import jwt
 from lamin_utils import logger
 from postgrest.exceptions import APIError
+
 from lamindb_setup._migrate import check_whether_migrations_in_sync
 
 from ._hub_client import (
