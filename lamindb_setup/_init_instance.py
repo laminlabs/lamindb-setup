@@ -267,6 +267,7 @@ def init(
             reset_django()
         elif _write_settings:
             disconnect(mute=True)
+        from ._connect_instance import reset_django_module_variables
         from .core._hub_core import init_instance_hub
 
         name_str, instance_id, instance_state, _ = validate_init_args(
@@ -339,6 +340,7 @@ def init(
         if _write_settings:
             settings.auto_connect = True
         importlib.reload(importlib.import_module("lamindb"))
+        reset_django_module_variables()
         logger.important(f"initialized lamindb: {isettings.slug}")
     except Exception as e:
         from ._delete import delete_by_isettings
