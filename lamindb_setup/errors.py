@@ -37,6 +37,12 @@ If you used the CLI to set up lamindb in a notebook, restart the Python session.
 """
 
 
+class CurrentInstanceNotConfigured(DefaultMessageException):
+    default_message = (
+        """Current instance is not configured! Call `lamin connect` or `lamin init`"""
+    )
+
+
 MODULE_WASNT_CONFIGURED_MESSAGE_TEMPLATE = (
     "'{}' wasn't configured for this instance -- "
     "if you want it, go to your instance settings page and add it under 'schema modules' (or ask an admin to do so)"
