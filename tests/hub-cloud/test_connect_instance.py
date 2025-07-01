@@ -145,6 +145,8 @@ def test_connect_with_db_parameter():
 
 def test_connect_renamed_instance():
     if os.getenv("LAMIN_ENV") == "prod":
+        ln_setup.login("testuser1")
+
         ln_setup.connect("laminlabs/lamin-dev1072025", _test=True)
 
         client = connect_hub_with_auth()
