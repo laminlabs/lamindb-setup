@@ -3,6 +3,7 @@
 .. autosummary::
    :toctree: .
 
+   CurrentInstanceNotConfigured
    InstanceNotSetupError
    ModuleWasntConfigured
    StorageAlreadyManaged
