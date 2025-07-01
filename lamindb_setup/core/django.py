@@ -155,6 +155,7 @@ def setup_django(
 
     import dj_database_url
     import django
+    from django.apps import apps
     from django.conf import settings
     from django.core.management import call_command
 
@@ -213,6 +214,9 @@ def setup_django(
                 STATIC_URL="static/",
             )
         settings.configure(**kwargs)
+        # this isn't needed the first time django.setup() is called, but for unknown reason it's needed the second time
+        # the first time, it already defaults to true
+        apps.apps_ready = True
         django.setup(set_prefix=False)
         # https://laminlabs.slack.com/archives/C04FPE8V01W/p1698239551460289
         from django.db.backends.base.base import BaseDatabaseWrapper
@@ -273,6 +277,7 @@ def reset_django():
     app_names = {"django"} | {app.name for app in apps.get_app_configs()}
 
     apps.app_configs.clear()
+    apps.all_models.clear()
     apps.apps_ready = apps.models_ready = apps.ready = apps.loading = False
     apps.clear_cache()
 
