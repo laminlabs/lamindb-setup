@@ -381,6 +381,9 @@ def _connect_instance_hub(
         )
         if len(data) != 0 and (instance_data := data[0]["instance"]) is not None:
             new_name = instance_data["name"]  # the instance was renamed
+            logger.warning(
+                f"'{owner}/{name}' was renamed, please use '{owner}/{new_name}'"
+            )
             response = client.functions.invoke(
                 "get-instance-settings-v1",
                 invoke_options={"body": {"owner": owner, "name": new_name}},
@@ -399,7 +402,7 @@ def _connect_instance_hub(
         if storage is None:
             return "default-storage-does-not-exist-on-hub"
         logger.warning(
-            "Could not find instance via API, but found directly querying hub."
+            "could not find instance via API, but found directly querying hub"
         )
     else:
         instance = json.loads(response)
