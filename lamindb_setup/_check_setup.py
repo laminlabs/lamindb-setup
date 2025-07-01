@@ -27,6 +27,7 @@ if TYPE_CHECKING:
 
 
 CURRENT_ISETTINGS: InstanceSettings | None = None
+MODULE_CANDIDATES: set[str] | None = None
 IS_LOADING: bool = False
 
 
@@ -44,7 +45,11 @@ def disable_auto_connect(func: Callable):
     return wrapper
 
 
-def find_dual_dependencies():
+def find_module_candidates():
+    """Find all local packages that depend on lamindb."""
+    global MODULE_CANDIDATES
+    if MODULE_CANDIDATES is not None:
+        return MODULE_CANDIDATES
     all_dists = list(distributions())
     lamindb_deps = {
         dist.metadata["Name"].lower()
@@ -52,6 +57,7 @@ def find_dual_dependencies():
         if dist.requires and any("lamindb" in req.lower() for req in dist.requires)
     }
     lamindb_deps.remove("lamindb")
+    MODULE_CANDIDATES = lamindb_deps
     return lamindb_deps
 
 
@@ -76,13 +82,13 @@ def _get_current_instance_settings(from_module: str | None = None) -> InstanceSe
             )
             raise e
     else:
-        matching_packages = find_dual_dependencies()
+        module_candidates = find_module_candidates()
         isettings = InstanceSettings(
             id=UUID("00000000-0000-0000-0000-000000000000"),
             owner="none",
             name="none",
             storage=None,
-            modules=",".join(matching_packages),
+            modules=",".join(module_candidates),
         )
         if not IS_LOADING:
             logger.warning("not connected, call: ln.connect('account/name')")

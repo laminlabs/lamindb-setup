@@ -8,7 +8,11 @@ from uuid import UUID
 
 from lamin_utils import logger
 
-from ._check_setup import _check_instance_setup, _get_current_instance_settings
+from ._check_setup import (
+    _check_instance_setup,
+    _get_current_instance_settings,
+    find_module_candidates,
+)
 from ._disconnect import disconnect
 from ._init_instance import load_from_isettings
 from ._silence_loggers import silence_loggers
@@ -187,21 +191,23 @@ def _connect_instance(
 
 
 def reset_django_module_variables():
-    # after deleting references of main variables in django.reset_django(), need to reset them
-    main_variables = sys.modules["__main__"]
-    # doing this manually for now, because the logic below seems flawed
-    main_variables.ln = sys.modules["lamindb"]
-    # from django.apps import apps
+    import types
 
-    # app_names = {"django"} | {app.name for app in apps.get_app_configs()}
-    # main_variables = sys.modules["__main__"]
+    from django.apps import apps
 
-    # for module_name in sys.modules:
-    #     if module_name.partition(".")[0] in app_names:
-    #         module_obj = sys.modules[module_name]
-    #         for var_name, var_value in vars(main_variables).items():
-    #             if var_value is module_obj:
-    #                 setattr(main_variables, var_name, module_obj)
+    app_names = {app.name for app in apps.get_app_configs()}
+    main_modules = {
+        k: v
+        for k, v in vars(sys.modules["__main__"]).items()
+        if isinstance(v, types.ModuleType)
+        and not k.startswith("_")
+        and v.__name__ in app_names
+    }
+
+    for var_name, old_module in main_modules.items():
+        module_name = old_module.__name__
+        if module_name in sys.modules:
+            vars(sys.modules["__main__"])[var_name] = sys.modules[module_name]
 
 
 @unlock_cloud_sqlite_upon_exception(ignore_prev_locker=True)
