@@ -27,6 +27,7 @@ class DefaultMessageException(Exception):
         super().__init__(message)
 
 
+# TODO: remove this exception sooner or later because we don't have a need for it anymore
 class InstanceNotSetupError(DefaultMessageException):
     default_message = """\
 To use lamindb, you need to connect to an instance.
