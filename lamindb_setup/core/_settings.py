@@ -207,7 +207,7 @@ class SetupSettings:
         if self._instance_exists:
             repr += self.instance.__repr__()
         else:
-            repr += "\nNo instance connected"
+            repr += "\nCurrent instance not configured"
         return repr
 
 
