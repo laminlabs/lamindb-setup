@@ -145,19 +145,17 @@ def test_connect_with_db_parameter():
 
 def test_connect_renamed_instance():
     if os.getenv("LAMIN_ENV") == "prod":
-        ln_setup.connect("laminlabs/arrayloader-benchmarks2", _test=True)
+        ln_setup.connect("laminlabs/lamin-dev1072025", _test=True)
 
         client = connect_hub_with_auth()
         instance = select_instance_by_name(
             account_id="672869b4-6743-4fd3-acc0-c20aff27439e",
-            name="arrayloader-benchmarks2",
+            name="lamin-dev1072025",
             client=client,
         )
-        assert instance["name"] == "arrayloader-benchmarks"
+        assert instance["name"] == "lamin-dev"
         client.auth.sign_out(options={"scope": "local"})
 
-        instance, _ = connect_instance_hub(
-            owner="laminlabs", name="arrayloader-benchmarks2"
-        )
-        assert instance["name"] == "arrayloader-benchmarks"
+        instance, _ = connect_instance_hub(owner="laminlabs", name="lamin-dev1072025")
+        assert instance["name"] == "lamin-dev"
         assert "db_permissions" in instance
