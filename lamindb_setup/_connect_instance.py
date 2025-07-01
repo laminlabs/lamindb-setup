@@ -160,7 +160,7 @@ def _connect_instance(
             isettings = InstanceSettings(
                 id=UUID(instance_result["id"]),
                 owner=owner,
-                name=name,
+                name=instance_result["name"],
                 storage=ssettings,
                 db=db_updated,
                 modules=instance_result["schema_str"],

@@ -35,7 +35,7 @@ from ._hub_utils import (
 )
 from ._settings import settings
 from ._settings_instance import InstanceSettings
-from ._settings_storage import StorageSettings, base62
+from ._settings_storage import StorageSettings, base62, instance_uid_from_uuid
 from .hashing import hash_and_encode_as_b62
 
 if TYPE_CHECKING:
@@ -130,9 +130,7 @@ def _select_storage_or_parent(path: str, client: Client) -> dict | None:
     if result["root"] is None:
         return None
     result["uid"] = result.pop("lnid")
-    result["instance_uid"] = hash_and_encode_as_b62(
-        UUID(result.pop("instance_id")).hex
-    )[:12]
+    result["instance_uid"] = instance_uid_from_uuid(UUID(result.pop("instance_id")))
     return result
 
 
@@ -369,6 +367,27 @@ def _connect_instance_hub(
         "get-instance-settings-v1",
         invoke_options={"body": {"owner": owner, "name": name}},
     )
+    # check instance renames
+    if response == b"{}":
+        data = (
+            client.table("instance_previous_name")
+            .select(
+                "instance!instance_previous_name_instance_id_17ac5d61_fk_instance_id(name, account!instance_account_id_28936e8f_fk_account_id(handle))"
+            )
+            .eq("instance.account.handle", owner)
+            .eq("previous_name", name)
+            .execute()
+            .data
+        )
+        if len(data) != 0 and (instance_data := data[0]["instance"]) is not None:
+            new_name = instance_data["name"]  # the instance was renamed
+            logger.warning(
+                f"'{owner}/{name}' was renamed, please use '{owner}/{new_name}'"
+            )
+            response = client.functions.invoke(
+                "get-instance-settings-v1",
+                invoke_options={"body": {"owner": owner, "name": new_name}},
+            )
     # no instance found, check why is that
     if response == b"{}":
         # try the via single requests, will take more time
@@ -383,7 +402,7 @@ def _connect_instance_hub(
         if storage is None:
             return "default-storage-does-not-exist-on-hub"
         logger.warning(
-            "Could not find instance via API, but found directly querying hub."
+            "could not find instance via API, but found directly querying hub"
         )
     else:
         instance = json.loads(response)
@@ -475,6 +494,12 @@ def access_db(
     instance_id: UUID
     instance_slug: str
     instance_api_url: str | None
+    if (
+        "LAMIN_TEST_DB_TOKEN" in os.environ
+        and (env_db_token := os.environ["LAMIN_TEST_DB_TOKEN"]) != ""
+    ):
+        return env_db_token
+
     if isinstance(instance, InstanceSettings):
         instance_id = instance._id
         instance_slug = instance.slug
