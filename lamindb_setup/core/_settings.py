@@ -7,6 +7,8 @@ from typing import TYPE_CHECKING
 from appdirs import AppDirs
 from lamin_utils import logger
 
+from lamindb_setup.errors import CurrentInstanceNotConfigured
+
 from ._settings_load import (
     load_instance_settings,
     load_or_create_user_settings,
@@ -158,7 +160,7 @@ class SetupSettings:
             self.instance  # noqa
             return True
         # this is implicit logic that catches if no instance is loaded
-        except SystemExit:
+        except CurrentInstanceNotConfigured:
             return False
 
     @property
@@ -207,7 +209,7 @@ class SetupSettings:
         if self._instance_exists:
             repr += self.instance.__repr__()
         else:
-            repr += "\nCurrent instance not configured"
+            repr += f"\n{CurrentInstanceNotConfigured.default_message}"
         return repr
 
 
