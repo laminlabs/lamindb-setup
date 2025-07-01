@@ -163,12 +163,7 @@ def _check_instance_setup(from_module: str | None = None) -> bool:
         return True
     isettings = _get_current_instance_settings()
     if isettings is not None:
-        if (
-            from_module is not None
-            and settings.auto_connect
-            and not django_lamin.IS_SETUP
-            and not IS_LOADING
-        ):
+        if from_module is not None and not django_lamin.IS_SETUP and not IS_LOADING:
             if from_module != "lamindb":
                 _check_module_in_instance_modules(from_module, isettings)
 
@@ -181,7 +176,7 @@ def _check_instance_setup(from_module: str | None = None) -> bool:
                     logger.important(f"connected lamindb: {isettings.slug}")
         return django_lamin.IS_SETUP
     else:
-        if from_module is not None and settings.auto_connect:
+        if from_module is not None:
             # the below enables users to auto-connect to an instance
             # simply by setting an environment variable, bypassing the
             # need of calling connect() manually
