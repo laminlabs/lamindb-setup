@@ -140,16 +140,6 @@ def close_if_health_check_failed(self) -> None:
         self.close_at = time.monotonic() + CONN_MAX_AGE
 
 
-def clear_django_apps_cache():
-    """Clear Django apps cache."""
-    from django.apps import apps
-
-    apps.app_configs.clear()
-    apps.apps_ready = apps.models_ready = apps.ready = apps.loading = False
-    apps.clear_cache()
-    logger.debug("django apps cache has been cleared.")
-
-
 # this bundles set up and migration management
 def setup_django(
     isettings: InstanceSettings,
@@ -165,7 +155,6 @@ def setup_django(
 
     import dj_database_url
     import django
-    from django.apps import apps
     from django.conf import settings
     from django.core.management import call_command
 
@@ -200,7 +189,7 @@ def setup_django(
             installed_apps += ["schema_graph", "django.contrib.staticfiles"]
 
         kwargs = dict(
-            INSTALLED_APPS=[],
+            INSTALLED_APPS=installed_apps,
             DATABASES=DATABASES,
             DEFAULT_AUTO_FIELD="django.db.models.BigAutoField",
             TIME_ZONE="UTC",
@@ -225,9 +214,6 @@ def setup_django(
             )
         settings.configure(**kwargs)
         django.setup(set_prefix=False)
-        from django.apps import apps
-
-        apps.populate(settings.INSTALLED_APPS)
         # https://laminlabs.slack.com/archives/C04FPE8V01W/p1698239551460289
         from django.db.backends.base.base import BaseDatabaseWrapper
 
@@ -286,7 +272,9 @@ def reset_django():
 
     app_names = {"django"} | {app.name for app in apps.get_app_configs()}
 
-    clear_django_apps_cache()
+    apps.app_configs.clear()
+    apps.apps_ready = apps.models_ready = apps.ready = apps.loading = False
+    apps.clear_cache()
 
     # i suspect it is enough to just drop django and all the apps from sys.modules
     # the code above is just a precaution

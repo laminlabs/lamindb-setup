@@ -93,28 +93,28 @@ def register_user(usettings: UserSettings, update_user: bool = True):
 
 def register_initial_records(isettings: InstanceSettings, usettings: UserSettings):
     """Register space, user & storage in DB."""
-    import lamindb as ln
     from django.db.utils import OperationalError
+    from lamindb.models import Branch, Space
 
     try:
-        ln.Space.objects.get_or_create(
+        Space.objects.get_or_create(
             uid="A",
             name="All",
             description="Every team & user with access to the instance has access.",
         )
-        ln.Branch.objects.get_or_create(
+        Branch.objects.get_or_create(
             id=-1,
             uid="T",
             name="Trash",
             description="The trash.",
         )
-        ln.Branch.objects.get_or_create(
+        Branch.objects.get_or_create(
             id=0,
             uid="A",
             name="Archive",
             description="The archive.",
         )
-        ln.Branch.objects.get_or_create(
+        Branch.objects.get_or_create(
             uid="M",
             name="Main",
             description="The main & default branch of the instance.",
@@ -324,7 +324,6 @@ def init(
         if _test:
             return None
         isettings._init_db()
-        reset_django_module_variables()
         load_from_isettings(
             isettings, init=True, user=_user, write_settings=_write_settings
         )
@@ -341,6 +340,7 @@ def init(
         if _write_settings:
             settings.auto_connect = True
         importlib.reload(importlib.import_module("lamindb"))
+        reset_django_module_variables()
         logger.important(f"initialized lamindb: {isettings.slug}")
     except Exception as e:
         from ._delete import delete_by_isettings
