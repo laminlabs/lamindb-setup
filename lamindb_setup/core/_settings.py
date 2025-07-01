@@ -98,9 +98,10 @@ class SetupSettings:
         If `True`, the current instance is connected, meaning that the db and other settings
         are properly configured for use.
         """
-        from .django import IS_SETUP  # always import to protect from assignment
-
-        return IS_SETUP
+        if self._instance_exists:
+            return self.instance.slug != "none/none"
+        else:
+            return False
 
     @property
     def private_django_api(self) -> bool:
