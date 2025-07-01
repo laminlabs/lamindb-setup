@@ -51,3 +51,6 @@ with pytest.raises(RuntimeError):
     access_db(isettings)
 # check with providing access_token explicitly
 access_db(isettings, ln_setup.settings.user.access_token)
+# check specifying an env token via an env variable
+os.environ["LAMIN_TEST_DB_TOKEN"] = "test_db_token"
+assert access_db(isettings) == os.environ["LAMIN_TEST_DB_TOKEN"]
