@@ -193,9 +193,9 @@ def _connect_instance(
 def reset_django_module_variables():
     import types
 
-    from django.apps import apps
-
-    app_names = {app.name for app in apps.get_app_configs()}
+    app_names = find_module_candidates()
+    app_names.add("lamindb")
+    print(app_names)
     main_modules = {
         k: v
         for k, v in vars(sys.modules["__main__"]).items()
