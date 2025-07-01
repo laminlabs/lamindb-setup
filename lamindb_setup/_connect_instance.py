@@ -196,18 +196,22 @@ def reset_django_module_variables():
     from django.apps import apps
 
     app_names = {app.name for app in apps.get_app_configs()}
-    main_modules = {
-        k: v
-        for k, v in vars(sys.modules["__main__"]).items()
-        if isinstance(v, types.ModuleType)
-        and not k.startswith("_")
-        and v.__name__ in app_names
-    }
 
-    for var_name, old_module in main_modules.items():
-        module_name = old_module.__name__
-        if module_name in sys.modules:
-            vars(sys.modules["__main__"])[var_name] = sys.modules[module_name]
+    # Check both __main__ and conftest
+    for module_name in ["__main__", "conftest"]:
+        if module_name not in sys.modules:
+            continue
+
+        module = sys.modules[module_name]
+        for k, v in vars(module).items():
+            if (
+                isinstance(v, types.ModuleType)
+                and not k.startswith("_")
+                and getattr(v, "__name__", None) in app_names
+            ):
+                # Update the module where we found the variable
+                if v.__name__ in sys.modules:
+                    vars(module)[k] = sys.modules[v.__name__]
 
 
 @unlock_cloud_sqlite_upon_exception(ignore_prev_locker=True)
