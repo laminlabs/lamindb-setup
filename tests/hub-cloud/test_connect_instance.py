@@ -156,7 +156,7 @@ def test_connect_renamed_instance():
         assert instance["name"] == "arrayloader-benchmarks"
         client.auth.sign_out(options={"scope": "local"})
 
-        instance = connect_instance_hub(
+        instance, _ = connect_instance_hub(
             owner="laminlabs", name="arrayloader-benchmarks2"
         )
         assert instance["name"] == "arrayloader-benchmarks"
