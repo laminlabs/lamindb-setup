@@ -4,6 +4,7 @@ import functools
 import importlib as il
 import inspect
 import os
+from importlib.metadata import distributions
 from typing import TYPE_CHECKING
 from uuid import UUID
 
@@ -43,7 +44,18 @@ def disable_auto_connect(func: Callable):
     return wrapper
 
 
-def _get_current_instance_settings() -> InstanceSettings:
+def find_dual_dependencies():
+    all_dists = list(distributions())
+    lamindb_deps = {
+        dist.metadata["Name"].lower()
+        for dist in all_dists
+        if dist.requires and any("lamindb" in req.lower() for req in dist.requires)
+    }
+    lamindb_deps.remove("lamindb")
+    return lamindb_deps
+
+
+def _get_current_instance_settings(from_module: str | None = None) -> InstanceSettings:
     from .core._settings_instance import InstanceSettings
 
     global CURRENT_ISETTINGS
@@ -63,17 +75,19 @@ def _get_current_instance_settings() -> InstanceSettings:
                 " command line: `lamin connect <instance>` or `lamin init <...>`"
             )
             raise e
-        return isettings
     else:
+        matching_packages = find_dual_dependencies()
         isettings = InstanceSettings(
             id=UUID("00000000-0000-0000-0000-000000000000"),
             owner="none",
             name="none",
             storage=None,
+            modules=",".join(matching_packages),
         )
         if not IS_LOADING:
             logger.warning("not connected, call: ln.connect('account/name')")
-        return isettings
+    CURRENT_ISETTINGS = isettings
+    return isettings
 
 
 def _normalize_module_name(module_name: str) -> str:
