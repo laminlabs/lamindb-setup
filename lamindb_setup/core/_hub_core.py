@@ -367,6 +367,24 @@ def _connect_instance_hub(
         "get-instance-settings-v1",
         invoke_options={"body": {"owner": owner, "name": name}},
     )
+    # check instance renames
+    if response == b"{}":
+        data = (
+            client.table("instance_previous_name")
+            .select(
+                "instance!instance_previous_name_instance_id_17ac5d61_fk_instance_id(name, account!instance_account_id_28936e8f_fk_account_id(handle))"
+            )
+            .eq("instance.account.handle", owner)
+            .eq("previous_name", name)
+            .execute()
+            .data
+        )
+        if len(data) != 0:
+            new_name = data[0]["instance"]["name"]  # the instance was renamed
+            response = client.functions.invoke(
+                "get-instance-settings-v1",
+                invoke_options={"body": {"owner": owner, "name": new_name}},
+            )
     # no instance found, check why is that
     if response == b"{}":
         # try the via single requests, will take more time
