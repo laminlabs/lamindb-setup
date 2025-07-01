@@ -370,7 +370,9 @@ class InstanceSettings:
                 "It overwrites all db connections and is used instead of `instance.db`."
             )
         if self._db is None:
-            if self._storage is None:
+            from .django import IS_SETUP
+
+            if self._storage is None and self.slug == "none/none":
                 return "sqlite:///:memory:"
             # here, we want the updated sqlite file
             # hence, we don't use self._sqlite_file_local()
