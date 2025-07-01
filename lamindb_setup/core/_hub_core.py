@@ -473,6 +473,12 @@ def access_db(
     instance_id: UUID
     instance_slug: str
     instance_api_url: str | None
+    if (
+        "LAMIN_TEST_DB_TOKEN" in os.environ
+        and (env_db_token := os.environ["LAMIN_TEST_DB_TOKEN"]) != ""
+    ):
+        return env_db_token
+
     if isinstance(instance, InstanceSettings):
         instance_id = instance._id
         instance_slug = instance.slug
