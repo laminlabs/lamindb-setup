@@ -379,8 +379,8 @@ def _connect_instance_hub(
             .execute()
             .data
         )
-        if len(data) != 0:
-            new_name = data[0]["instance"]["name"]  # the instance was renamed
+        if len(data) != 0 and (instance_data := data[0]["instance"]) is not None:
+            new_name = instance_data["name"]  # the instance was renamed
             response = client.functions.invoke(
                 "get-instance-settings-v1",
                 invoke_options={"body": {"owner": owner, "name": new_name}},
