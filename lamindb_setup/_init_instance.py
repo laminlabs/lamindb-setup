@@ -267,6 +267,7 @@ def init(
             reset_django()
         elif _write_settings:
             disconnect(mute=True)
+        from ._connect_instance import reset_django_module_variables
         from .core._hub_core import init_instance_hub
 
         name_str, instance_id, instance_state, _ = validate_init_args(
@@ -279,8 +280,6 @@ def init(
             _user=_user,  # will get from settings.user if _user is None
         )
         if instance_state == "connected":
-            if _write_settings:
-                settings.auto_connect = True  # we can also debate this switch here
             return None
         prevent_register_hub = is_local_db_url(db) if db is not None else False
         ssettings, _ = init_storage(
@@ -336,9 +335,8 @@ def init(
             from ._schema_metadata import update_schema_in_hub
 
             update_schema_in_hub(access_token=access_token)
-        if _write_settings:
-            settings.auto_connect = True
         importlib.reload(importlib.import_module("lamindb"))
+        reset_django_module_variables()
         logger.important(f"initialized lamindb: {isettings.slug}")
     except Exception as e:
         from ._delete import delete_by_isettings

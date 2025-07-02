@@ -8,7 +8,7 @@ from dotenv import dotenv_values
 from lamin_utils import logger
 from pydantic import ValidationError
 
-from lamindb_setup.errors import SettingsEnvFileOutdated
+from lamindb_setup.errors import CurrentInstanceNotConfigured, SettingsEnvFileOutdated
 
 from ._settings_instance import InstanceSettings
 from ._settings_storage import StorageSettings
@@ -39,7 +39,7 @@ def load_instance_settings(instance_settings_file: Path | None = None):
     if instance_settings_file is None:
         instance_settings_file = current_instance_settings_file()
     if not instance_settings_file.exists():
-        raise SystemExit("No instance connected! Call `lamin connect` or `lamin init`")
+        raise CurrentInstanceNotConfigured
     try:
         settings_store = InstanceSettingsStore(_env_file=instance_settings_file)
     except (ValidationError, TypeError) as error:

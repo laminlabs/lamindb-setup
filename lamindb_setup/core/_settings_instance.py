@@ -56,7 +56,7 @@ class InstanceSettings:
         id: UUID,  # instance id/uuid
         owner: str,  # owner handle
         name: str,  # instance name
-        storage: StorageSettings,  # storage location
+        storage: StorageSettings | None,  # storage location
         keep_artifacts_local: bool = False,  # default to local storage
         uid: str | None = None,  # instance uid/lnid
         db: str | None = None,  # DB URI
@@ -75,7 +75,7 @@ class InstanceSettings:
         self._owner: str = owner
         self._name: str = name
         self._uid: str | None = uid
-        self._storage: StorageSettings = storage
+        self._storage: StorageSettings | None = storage
         validate_db_arg(db)
         self._db: str | None = db
         self._schema_str: str | None = modules
@@ -204,7 +204,7 @@ class InstanceSettings:
         For a cloud instance, this is cloud storage. For a local instance, this
         is a local directory.
         """
-        return self._storage
+        return self._storage  # type: ignore
 
     @property
     def storage_local(self) -> StorageSettings:
@@ -370,6 +370,10 @@ class InstanceSettings:
                 "It overwrites all db connections and is used instead of `instance.db`."
             )
         if self._db is None:
+            from .django import IS_SETUP
+
+            if self._storage is None and self.slug == "none/none":
+                return "sqlite:///:memory:"
             # here, we want the updated sqlite file
             # hence, we don't use self._sqlite_file_local()
             # error_no_origin=False because on instance init
@@ -462,7 +466,7 @@ class InstanceSettings:
             write_to_disk: Save these instance settings to disk and
                 overwrite the current instance settings file.
         """
-        if write_to_disk:
+        if write_to_disk and self.slug != "none/none":
             assert self.name is not None
             filepath = self._get_settings_file()
             # persist under filepath for later reference

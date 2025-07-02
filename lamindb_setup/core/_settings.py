@@ -2,10 +2,13 @@ from __future__ import annotations
 
 import os
 import sys
+import warnings
 from typing import TYPE_CHECKING
 
 from appdirs import AppDirs
 from lamin_utils import logger
+
+from lamindb_setup.errors import CurrentInstanceNotConfigured
 
 from ._settings_load import (
     load_instance_settings,
@@ -76,10 +79,13 @@ class SetupSettings:
         - in Python: `ln.setup.settings.auto_connect = True/False`
         - via the CLI: `lamin settings set auto-connect true/false`
         """
-        return self._auto_connect_path.exists()
+        return True
 
     @auto_connect.setter
     def auto_connect(self, value: bool) -> None:
+        logger.warning(
+            "setting auto_connect to `False` no longer has an effect and the setting will likely be removed in the future; since lamindb 1.7, auto_connect `True` no longer clashes with connecting in a Python session",
+        )
         if value:
             self._auto_connect_path.touch()
         else:
@@ -92,9 +98,10 @@ class SetupSettings:
         If `True`, the current instance is connected, meaning that the db and other settings
         are properly configured for use.
         """
-        from .django import IS_SETUP  # always import to protect from assignment
-
-        return IS_SETUP
+        if self._instance_exists:
+            return self.instance.slug != "none/none"
+        else:
+            return False
 
     @property
     def private_django_api(self) -> bool:
@@ -157,7 +164,7 @@ class SetupSettings:
             self.instance  # noqa
             return True
         # this is implicit logic that catches if no instance is loaded
-        except SystemExit:
+        except CurrentInstanceNotConfigured:
             return False
 
     @property
@@ -206,7 +213,7 @@ class SetupSettings:
         if self._instance_exists:
             repr += self.instance.__repr__()
         else:
-            repr += "\nNo instance connected"
+            repr += f"\n{CurrentInstanceNotConfigured.default_message}"
         return repr
 
 
