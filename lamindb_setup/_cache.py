@@ -21,9 +21,10 @@ def clear_cache_dir():
             raise e
 
     cache_dir = settings.cache_dir
-    shutil.rmtree(cache_dir)
-    cache_dir.mkdir()
-    logger.success("The cache directory was cleared.")
+    if cache_dir.exists():
+        shutil.rmtree(cache_dir)
+        cache_dir.mkdir()
+        logger.success("The cache directory was cleared.")
 
 
 def get_cache_dir():
