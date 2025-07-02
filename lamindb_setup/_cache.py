@@ -68,7 +68,7 @@ def set_cache_dir(cache_dir: str):
         if old_cache_dir.exists():
             shutil.copytree(old_cache_dir, new_cache_dir, dirs_exist_ok=True)
             logger.info(
-                f"the current cache directory was moved to {new_cache_dir.as_posix()} "
+                f"the current cache directory was copied to {new_cache_dir.as_posix()} "
             )
             if old_cache_dir != system_cache_dir:
                 shutil.rmtree(old_cache_dir)
