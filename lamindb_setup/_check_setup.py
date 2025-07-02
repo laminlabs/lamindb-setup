@@ -90,8 +90,6 @@ def _get_current_instance_settings(from_module: str | None = None) -> InstanceSe
             storage=None,
             modules=",".join(module_candidates),
         )
-        if not IS_LOADING:
-            logger.warning("not connected, call: ln.connect('account/name')")
     CURRENT_ISETTINGS = isettings
     return isettings
 
@@ -174,6 +172,8 @@ def _check_instance_setup(from_module: str | None = None) -> bool:
                 django_lamin.setup_django(isettings)
                 if isettings.slug != "none/none":
                     logger.important(f"connected lamindb: {isettings.slug}")
+                else:
+                    logger.warning("not connected, call: ln.connect('account/name')")
         return django_lamin.IS_SETUP
     else:
         if from_module is not None:
