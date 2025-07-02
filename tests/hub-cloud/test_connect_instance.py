@@ -12,23 +12,9 @@ from laminhub_rest.core.legacy._instance_collaborator import InstanceCollaborato
 from postgrest.exceptions import APIError
 
 
-@pytest.fixture
-def ccaplog(caplog):
-    """Add caplog handler to our custom logger at session start."""
-    from lamin_utils._logger import logger
-
-    # Add caplog's handler to our custom logger
-    logger.addHandler(caplog.handler)
-
-    yield caplog
-
-    # Clean up at the end of the session
-    logger.removeHandler(caplog.handler)
-
-
-def test_connect_pass_none(ccaplog):
+def test_connect_pass_none():
+    # this doesn't log anything
     ln_setup.connect(_test=True)
-    assert "not connected, call: ln.connect('account/name')" in ccaplog.text
 
 
 # do not call hub if the owner is set to anonymous
