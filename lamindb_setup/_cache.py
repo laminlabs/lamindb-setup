@@ -16,7 +16,7 @@ def clear_cache_dir():
     try:
         if settings.instance._is_cloud_sqlite:
             logger.warning(
-                "Disconnecting the current instance to update the cloud sqlite database."
+                "disconnecting the current instance to update the cloud sqlite database."
             )
             disconnect()
     except SystemExit as e:
