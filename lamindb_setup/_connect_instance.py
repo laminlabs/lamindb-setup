@@ -202,8 +202,6 @@ def reset_django_module_variables():
             module is not None
             and (not name.startswith("__") or name == "__main__")
             and name not in sys.builtin_module_names
-            # skip standard library modules because the isinstance() check
-            # below might also be applied to deprecated modules etc.
             and not (
                 hasattr(module, "__file__")
                 and module.__file__
@@ -218,9 +216,21 @@ def reset_django_module_variables():
                         isinstance(v, types.ModuleType)
                         and not k.startswith("_")
                         and getattr(v, "__name__", None) in app_names
-                        and v.__name__ in sys.modules
                     ):
-                        vars(module)[k] = sys.modules[v.__name__]
+                        if v.__name__ in sys.modules:
+                            vars(module)[k] = sys.modules[v.__name__]
+                    # Also reset classes from Django apps - but check if the class module starts with any app name
+                    elif hasattr(v, "__module__") and getattr(v, "__module__", None):
+                        class_module = v.__module__
+                        # Check if the class module starts with any of our app names
+                        if any(
+                            class_module.startswith(app_name) for app_name in app_names
+                        ):
+                            if class_module in sys.modules:
+                                fresh_module = sys.modules[class_module]
+                                attr_name = getattr(v, "__name__", k)
+                                if hasattr(fresh_module, attr_name):
+                                    vars(module)[k] = getattr(fresh_module, attr_name)
             except (AttributeError, TypeError):
                 continue
 
