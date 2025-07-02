@@ -197,49 +197,32 @@ def reset_django_module_variables():
 
     app_names = {app.name for app in apps.get_app_configs()}
 
-    def module_has_django_imports(module, app_names):
-        try:
-            return any(
-                isinstance(v, types.ModuleType)
-                and not k.startswith("_")
-                and getattr(v, "__name__", None) in app_names
-                for k, v in vars(module).items()
+    for name, module in sys.modules.items():
+        if (
+            module is not None
+            and (not name.startswith("__") or name == "__main__")
+            and name not in sys.builtin_module_names
+            # skip standard library modules because the isinstance() check
+            # below might also be applied to deprecated modules etc.
+            and not (
+                hasattr(module, "__file__")
+                and module.__file__
+                and any(
+                    path in module.__file__ for path in ["/lib/python", "\\lib\\python"]
+                )
             )
-        except (AttributeError, TypeError):
-            return False
-
-    # Find all modules that might have imported Django apps
-    candidate_modules = [
-        name
-        for name, module in sys.modules.items()
-        if module is not None
-        and not name.startswith("_")
-        and name not in sys.builtin_module_names
-        and not (
-            hasattr(module, "__file__")
-            and module.__file__
-            and any(
-                path in module.__file__ for path in ["/lib/python", "\\lib\\python"]
-            )
-        )
-        and module_has_django_imports(module, app_names)
-    ]
-
-    # Check both __main__ and conftest
-    for module_name in candidate_modules:
-        if module_name not in sys.modules:
-            continue
-
-        module = sys.modules[module_name]
-        for k, v in vars(module).items():
-            if (
-                isinstance(v, types.ModuleType)
-                and not k.startswith("_")
-                and getattr(v, "__name__", None) in app_names
-            ):
-                # Update the module where we found the variable
-                if v.__name__ in sys.modules:
-                    vars(module)[k] = sys.modules[v.__name__]
+        ):
+            try:
+                for k, v in vars(module).items():
+                    if (
+                        isinstance(v, types.ModuleType)
+                        and not k.startswith("_")
+                        and getattr(v, "__name__", None) in app_names
+                        and v.__name__ in sys.modules
+                    ):
+                        vars(module)[k] = sys.modules[v.__name__]
+            except (AttributeError, TypeError):
+                continue
 
 
 @unlock_cloud_sqlite_upon_exception(ignore_prev_locker=True)
