@@ -44,9 +44,14 @@ def set_cache_dir(cache_dir: str):
     if new_cache_dir is None:
         new_cache_dir = DEFAULT_CACHE_DIR
     if new_cache_dir != old_cache_dir:
-        shutil.copytree(old_cache_dir, new_cache_dir, dirs_exist_ok=True)
-        shutil.rmtree(old_cache_dir)
-        logger.info("The current cache directory was moved to the specified location")
+        if old_cache_dir.exists():
+            shutil.copytree(old_cache_dir, new_cache_dir, dirs_exist_ok=True)
+            shutil.rmtree(old_cache_dir)
+            logger.info(
+                "The current cache directory was moved to the specified location"
+            )
+        else:
+            new_cache_dir.mkdir(parents=True, exist_ok=True)
     new_cache_dir = new_cache_dir.resolve()
     save_platform_user_storage_settings(new_cache_dir)
     settings._cache_dir = new_cache_dir
