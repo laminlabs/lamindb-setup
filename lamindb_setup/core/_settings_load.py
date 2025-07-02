@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import os
+from pathlib import Path
 from typing import TYPE_CHECKING
 from uuid import UUID, uuid4
 
@@ -17,22 +18,32 @@ from ._settings_store import (
     UserSettingsStore,
     current_instance_settings_file,
     current_user_settings_file,
-    system_storage_settings_file,
+    platform_user_storage_settings_file,
+    system_settings_file,
 )
 from ._settings_user import UserSettings
 
-if TYPE_CHECKING:
-    from pathlib import Path
 
+def load_cache_path_from_settings(storage_settings: Path | None = None) -> Path | None:
+    if storage_settings is None:
+        paltform_user_storage_settings = platform_user_storage_settings_file()
+        if paltform_user_storage_settings.exists():
+            cache_path = dotenv_values(paltform_user_storage_settings).get(
+                "lamindb_cache_path", None
+            )
+        else:
+            cache_path = None
 
-def load_system_storage_settings(system_storage_settings: Path | None = None) -> dict:
-    if system_storage_settings is None:
-        system_storage_settings = system_storage_settings_file()
+        if cache_path in {None, "null", ""}:
+            storage_settings = system_settings_file()
+        else:
+            return Path(cache_path)
 
-    if system_storage_settings.exists():
-        return dotenv_values(system_storage_settings)
+    if storage_settings.exists():
+        cache_path = dotenv_values(storage_settings).get("lamindb_cache_path", None)
+        return Path(cache_path) if cache_path not in {None, "null", ""} else None
     else:
-        return {}
+        return None
 
 
 def load_instance_settings(instance_settings_file: Path | None = None):
