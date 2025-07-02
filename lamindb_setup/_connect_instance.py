@@ -197,8 +197,36 @@ def reset_django_module_variables():
 
     app_names = {app.name for app in apps.get_app_configs()}
 
+    def module_has_django_imports(module, app_names):
+        try:
+            return any(
+                isinstance(v, types.ModuleType)
+                and not k.startswith("_")
+                and getattr(v, "__name__", None) in app_names
+                for k, v in vars(module).items()
+            )
+        except (AttributeError, TypeError):
+            return False
+
+    # Find all modules that might have imported Django apps
+    candidate_modules = [
+        name
+        for name, module in sys.modules.items()
+        if module is not None
+        and not name.startswith("_")
+        and name not in sys.builtin_module_names
+        and not (
+            hasattr(module, "__file__")
+            and module.__file__
+            and any(
+                path in module.__file__ for path in ["/lib/python", "\\lib\\python"]
+            )
+        )
+        and module_has_django_imports(module, app_names)
+    ]
+
     # Check both __main__ and conftest
-    for module_name in ["__main__", "conftest"]:
+    for module_name in candidate_modules:
         if module_name not in sys.modules:
             continue
 
