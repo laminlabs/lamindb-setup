@@ -29,7 +29,7 @@ if TYPE_CHECKING:
 DEFAULT_CACHE_DIR = UPath(user_cache_dir(appname="lamindb", appauthor="laminlabs"))
 
 
-def _process_cache_path(cache_path: UPathStr | None):
+def _process_cache_path(cache_path: UPathStr | None) -> UPath | None:
     if cache_path is None or cache_path == "null":
         return None
     cache_dir = UPath(cache_path)

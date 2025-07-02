@@ -28,7 +28,9 @@ def load_cache_path_from_settings(storage_settings: Path | None = None) -> Path 
     if storage_settings is None:
         paltform_user_storage_settings = platform_user_storage_settings_file()
         if paltform_user_storage_settings.exists():
-            cache_path = dotenv_values(storage_settings).get("lamindb_cache_path", None)
+            cache_path = dotenv_values(paltform_user_storage_settings).get(
+                "lamindb_cache_path", None
+            )
         else:
             cache_path = None
 
