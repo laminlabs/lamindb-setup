@@ -118,6 +118,8 @@ class InstanceSettings:
                 else:
                     db_print = value
                 representation += f"\n- {attr}: {db_print}"
+            elif attr == "modules":
+                representation += f"\n- {attr}: {value if value else '{}'}"
             else:
                 representation += f"\n- {attr}: {value}"
         return representation

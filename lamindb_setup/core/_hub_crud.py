@@ -68,9 +68,23 @@ def select_instance_by_name(
         .execute()
         .data
     )
-    if len(data) == 0:
-        return None
-    return data[0]
+    if len(data) != 0:
+        return data[0]
+
+    data = (
+        client.table("instance_previous_name")
+        .select(
+            "instance!instance_previous_name_instance_id_17ac5d61_fk_instance_id(*)"
+        )
+        .eq("instance.account_id", account_id)
+        .eq("previous_name", name)
+        .execute()
+        .data
+    )
+    if len(data) != 0:
+        return data[0]["instance"]
+
+    return None
 
 
 def select_instance_by_id(

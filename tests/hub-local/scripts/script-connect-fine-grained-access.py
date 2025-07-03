@@ -27,9 +27,7 @@ with transaction.atomic():
 assert db_token_manager.tokens
 
 with connection.cursor() as cur:
-    cur.execute("SELECT get_account_id();")
-    account_id = cur.fetchall()[0][0]
-assert account_id == ln_setup.settings.user._uuid
+    cur.execute("SELECT * FROM check_access();")
 
 # check reset
 db_token_manager.reset()
@@ -37,7 +35,7 @@ assert not db_token_manager.tokens
 
 # check after reset
 with pytest.raises(ProgrammingError) as error, connection.cursor() as cur:
-    cur.execute("SELECT get_account_id();")
+    cur.execute("SELECT * FROM check_access();")
 assert "JWT is not set" in error.exconly()
 # check calling access_db with a dict
 instance_dict = {
@@ -53,3 +51,6 @@ with pytest.raises(RuntimeError):
     access_db(isettings)
 # check with providing access_token explicitly
 access_db(isettings, ln_setup.settings.user.access_token)
+# check specifying an env token via an env variable
+os.environ["LAMIN_TEST_DB_TOKEN"] = "test_db_token"
+assert access_db(isettings) == os.environ["LAMIN_TEST_DB_TOKEN"]
