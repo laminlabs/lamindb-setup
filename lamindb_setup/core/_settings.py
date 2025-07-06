@@ -98,12 +98,18 @@ class SetupSettings:
     @property
     def branch(self) -> Branch:
         """Default branch."""
-        return self._branch_path.exists()
+        from lamindb import Branch
+
+        if self._branch_path.exists():
+            uid = self._branch_path.read_text()
+        else:
+            uid = "m"
+        return Branch.get(uid)
 
     @branch.setter
     def branch(self, value: str | Branch) -> None:
         from lamindb import Branch, Q
-        from lamindb.errors import InvalidArgument
+        from lamindb.errors import DoesNotExist
 
         if isinstance(value, Branch):
             assert (
@@ -113,7 +119,7 @@ class SetupSettings:
         else:
             branch_record = Branch.filter(Q(name=value) | Q(uid=value)).one_or_none()
             if branch_record is None:
-                raise InvalidArgument(
+                raise DoesNotExist(
                     f"Branch '{value}', please check on the hub UI whether you have the correct `uid` or `name`."
                 )
         self._branch_path.write_text(branch_record.uid)
@@ -121,12 +127,18 @@ class SetupSettings:
     @property
     def space(self) -> Space:
         """Default space."""
-        return self._space_path.exists()
+        from lamindb import Space
+
+        if self._space_path.exists():
+            uid = self._space_path.read_text()
+        else:
+            uid = "a"
+        return Space.get(uid)
 
     @space.setter
     def space(self, value: str | Space) -> None:
         from lamindb import Q, Space
-        from lamindb.errors import InvalidArgument
+        from lamindb.errors import DoesNotExist
 
         if isinstance(value, Space):
             assert (
@@ -136,7 +148,7 @@ class SetupSettings:
         else:
             space_record = Space.filter(Q(name=value) | Q(uid=value)).one_or_none()
             if space_record is None:
-                raise InvalidArgument(
+                raise DoesNotExist(
                     f"Space '{value}', please check on the hub UI whether you have the correct `uid` or `name`."
                 )
         self._space_path.write_text(space_record.uid)
