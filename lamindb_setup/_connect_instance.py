@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import functools
 import importlib
 import os
 from typing import TYPE_CHECKING, Any
@@ -26,6 +27,7 @@ from .core._settings_storage import StorageSettings
 from .core._settings_store import instance_settings_file, settings_dir
 from .core.cloud_sqlite_locker import unlock_cloud_sqlite_upon_exception
 from .errors import CannotSwitchDefaultInstance
+from .lazy_import import disable_lazy_imports as _disable_lazy_imports
 
 if TYPE_CHECKING:
     from pathlib import Path
@@ -188,6 +190,16 @@ def _connect_instance(
     return isettings
 
 
+def _with_disable_lazy_imports(func):
+    @functools.wraps(func)
+    def wrapper(*args, **kwargs):
+        with _disable_lazy_imports():
+            return func(*args, **kwargs)
+
+    return wrapper
+
+
+@_with_disable_lazy_imports
 @unlock_cloud_sqlite_upon_exception(ignore_prev_locker=True)
 def connect(instance: str | None = None, **kwargs: Any) -> str | tuple | None:
     """Connect to an instance.
