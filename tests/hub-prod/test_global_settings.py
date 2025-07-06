@@ -4,6 +4,7 @@ import subprocess
 from pathlib import Path
 
 import lamindb_setup as ln_setup
+import pytest
 from lamindb_setup.core.hashing import hash_dir
 
 
@@ -14,6 +15,30 @@ def test_auto_connect():
     ln_setup.settings.auto_connect = False
     assert not ln_setup.settings._auto_connect_path.exists()
     ln_setup.settings.auto_connect = current_state
+
+
+def test_branch():
+    import lamindb as ln
+
+    ln_setup.settings._branch_path.unlink(missing_ok=True)
+    assert ln_setup.settings.branch.uid == "m"
+    ln_setup.settings.branch = "archive"
+    assert ln_setup.settings._branch_path.read_text() == "a"
+    ln_setup.settings.branch = "main"
+    assert ln_setup.settings._branch_path.read_text() == "m"
+    with pytest.raises(ln.errors.DoesNotExist):
+        ln_setup.settings.branch = "not_exists"
+
+
+def test_space():
+    import lamindb as ln
+
+    ln_setup.settings._space_path.unlink(missing_ok=True)
+    assert ln_setup.settings.space.uid == "a"
+    ln_setup.settings.space = "all"
+    assert ln_setup.settings._space_path.read_text() == "a"
+    with pytest.raises(ln.errors.DoesNotExist):
+        ln_setup.settings.space = "not_exists"
 
 
 def test_private_django_api():
