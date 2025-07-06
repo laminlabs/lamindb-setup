@@ -263,16 +263,22 @@ class SetupSettings:
         # do not show current setting representation when building docs
         if "sphinx" in sys.modules:
             return object.__repr__(self)
-        repr = f"Auto-connect in Python: {self.auto_connect}\n"
-        repr += f"Private Django API: {self.private_django_api}\n"
-        repr += f"Cache directory: {self.cache_dir.as_posix()}\n"
-        repr += f"User settings directory: {settings_dir.as_posix()}\n"
-        repr += f"System settings directory: {system_settings_dir.as_posix()}\n"
-        repr += self.user.__repr__() + "\n"
+        repr = ""
         if self._instance_exists:
+            repr += "Current branch & space:\n"
+            repr += f" - branch: {self.branch.name}\n"
+            repr += f" - space: {self.space.name}\n"
             repr += self.instance.__repr__()
         else:
-            repr += "\nNo instance connected"
+            repr += "Current instance: None"
+        repr += "\nConfig:\n"
+        repr += f" - auto-connect in Python: {self.auto_connect}\n"
+        repr += f" - private Django API: {self.private_django_api}\n"
+        repr += "Local directories:\n"
+        repr += f" - cache: {self.cache_dir.as_posix()}\n"
+        repr += f" - user settings: {settings_dir.as_posix()}\n"
+        repr += f" - system settings: {system_settings_dir.as_posix()}\n"
+        repr += self.user.__repr__()
         return repr
 
 

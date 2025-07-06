@@ -97,13 +97,13 @@ class InstanceSettings:
 
     def __repr__(self):
         """Rich string representation."""
-        representation = f"Current instance: {self.slug}"
-        attrs = ["owner", "name", "storage", "db", "modules", "git_repo"]
+        representation = "Current instance:"
+        attrs = ["slug", "storage", "db", "modules", "git_repo"]
         for attr in attrs:
             value = getattr(self, attr)
             if attr == "storage":
-                representation += f"\n- storage root: {value.root_as_str}"
-                representation += f"\n- storage region: {value.region}"
+                representation += f"\n - storage root: {value.root_as_str}"
+                representation += f"\n - storage region: {value.region}"
             elif attr == "db":
                 if self.dialect != "sqlite":
                     model = LaminDsnModel(db=value)
@@ -117,11 +117,11 @@ class InstanceSettings:
                     )
                 else:
                     db_print = value
-                representation += f"\n- {attr}: {db_print}"
+                representation += f"\n - {attr}: {db_print}"
             elif attr == "modules":
-                representation += f"\n- {attr}: {value if value else '{}'}"
+                representation += f"\n - {attr}: {value if value else '{}'}"
             else:
-                representation += f"\n- {attr}: {value}"
+                representation += f"\n - {attr}: {value}"
         return representation
 
     @property
