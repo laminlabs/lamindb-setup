@@ -9,7 +9,10 @@ from lamin_utils import logger
 
 from ._check_setup import _check_instance_setup, _get_current_instance_settings
 from ._disconnect import disconnect
-from ._init_instance import load_from_isettings
+from ._init_instance import (
+    MESSAGE_CANNOT_SWITCH_DEFAULT_INSTANCE,
+    load_from_isettings,
+)
 from ._silence_loggers import silence_loggers
 from .core._hub_core import connect_instance_hub
 from .core._hub_utils import (
@@ -238,9 +241,9 @@ def connect(instance: str | None = None, **kwargs: Any) -> str | tuple | None:
                     logger.important(f"connected lamindb: {settings.instance.slug}")
                     return None
                 else:
-                    from lamindb_setup.core.django import reset_django
-
-                    reset_django()
+                    raise CannotSwitchDefaultInstance(
+                        MESSAGE_CANNOT_SWITCH_DEFAULT_INSTANCE
+                    )
             elif (
                 _write_settings
                 and settings._instance_exists
