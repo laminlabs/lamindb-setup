@@ -112,9 +112,7 @@ class SetupSettings:
         from lamindb.errors import DoesNotExist
 
         if isinstance(value, Branch):
-            assert (
-                value._state.adding is False
-            ), "Branch must be saved before passing it to track()"
+            assert value._state.adding is False, "Branch must be saved"
             branch_record = value
         else:
             branch_record = Branch.filter(Q(name=value) | Q(uid=value)).one_or_none()
@@ -141,9 +139,7 @@ class SetupSettings:
         from lamindb.errors import DoesNotExist
 
         if isinstance(value, Space):
-            assert (
-                value._state.adding is False
-            ), "Space must be saved before passing it to track()"
+            assert value._state.adding is False, "Space must be saved"
             space_record = value
         else:
             space_record = Space.filter(Q(name=value) | Q(uid=value)).one_or_none()
