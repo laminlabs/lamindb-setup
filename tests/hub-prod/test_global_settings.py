@@ -21,11 +21,11 @@ def test_branch():
     import lamindb as ln
 
     ln_setup.settings._branch_path.unlink(missing_ok=True)
-    assert ln_setup.settings.branch.uid == "m"
+    assert ln_setup.settings.branch.uid == 12 * "m"
     ln_setup.settings.branch = "archive"
-    assert ln_setup.settings._branch_path.read_text() == "a"
+    assert ln_setup.settings._branch_path.read_text() == 12 * "a"
     ln_setup.settings.branch = "main"
-    assert ln_setup.settings._branch_path.read_text() == "m"
+    assert ln_setup.settings._branch_path.read_text() == 12 * "m"
     with pytest.raises(ln.errors.DoesNotExist):
         ln_setup.settings.branch = "not_exists"
 
