@@ -98,24 +98,24 @@ def register_initial_records(isettings: InstanceSettings, usettings: UserSetting
 
     try:
         Space.objects.get_or_create(
-            uid="a",
+            uid="aaaaaaaaaaaa",
             name="all",
             description="Every team & user with access to the instance has access.",
         )
         Branch.objects.get_or_create(
             id=-1,
-            uid="t",
+            uid="tttttttttttt",
             name="trash",
             description="The trash.",
         )
         Branch.objects.get_or_create(
             id=0,
-            uid="a",
+            uid="aaaaaaaaaaaa",
             name="archive",
             description="The archive.",
         )
         Branch.objects.get_or_create(
-            uid="m",
+            uid="mmmmmmmmmmmm",
             name="main",
             description="The main & default branch of the instance.",
         )
