@@ -34,9 +34,9 @@ def test_space():
     import lamindb as ln
 
     ln_setup.settings._space_path.unlink(missing_ok=True)
-    assert ln_setup.settings.space.uid == "a"
+    assert ln_setup.settings.space.uid == 12 * "a"
     ln_setup.settings.space = "all"
-    assert ln_setup.settings._space_path.read_text() == "a"
+    assert ln_setup.settings._space_path.read_text() == 12 * "a"
     with pytest.raises(ln.errors.DoesNotExist):
         ln_setup.settings.space = "not_exists"
 
