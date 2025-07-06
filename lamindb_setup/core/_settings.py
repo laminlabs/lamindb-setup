@@ -22,6 +22,8 @@ from .upath import LocalPathClasses, UPath
 if TYPE_CHECKING:
     from pathlib import Path
 
+    from lamindb.models import Branch, Space
+
     from lamindb_setup.core import InstanceSettings, StorageSettings, UserSettings
     from lamindb_setup.types import UPathStr
 
@@ -54,6 +56,8 @@ class SetupSettings:
     _instance_settings_env: str | None = None
 
     _auto_connect_path: Path = settings_dir / "auto_connect"
+    _branch_path: Path = settings_dir / "branch_uid.txt"
+    _space_path: Path = settings_dir / "space_uid.txt"
     _private_django_api_path: Path = settings_dir / "private_django_api"
 
     _cache_dir: Path | None = None
@@ -90,6 +94,52 @@ class SetupSettings:
             self._auto_connect_path.touch()
         else:
             self._auto_connect_path.unlink(missing_ok=True)
+
+    @property
+    def branch(self) -> Branch:
+        """Default branch."""
+        return self._branch_path.exists()
+
+    @branch.setter
+    def branch(self, value: str | Branch) -> None:
+        from lamindb import Branch, Q
+        from lamindb.errors import InvalidArgument
+
+        if isinstance(value, Branch):
+            assert (
+                value._state.adding is False
+            ), "Branch must be saved before passing it to track()"
+            branch_record = value
+        else:
+            branch_record = Branch.filter(Q(name=value) | Q(uid=value)).one_or_none()
+            if branch_record is None:
+                raise InvalidArgument(
+                    f"Branch '{value}', please check on the hub UI whether you have the correct `uid` or `name`."
+                )
+        self._branch_path.write_text(branch_record.uid)
+
+    @property
+    def space(self) -> Space:
+        """Default space."""
+        return self._space_path.exists()
+
+    @space.setter
+    def space(self, value: str | Space) -> None:
+        from lamindb import Q, Space
+        from lamindb.errors import InvalidArgument
+
+        if isinstance(value, Space):
+            assert (
+                value._state.adding is False
+            ), "Space must be saved before passing it to track()"
+            space_record = value
+        else:
+            space_record = Space.filter(Q(name=value) | Q(uid=value)).one_or_none()
+            if space_record is None:
+                raise InvalidArgument(
+                    f"Space '{value}', please check on the hub UI whether you have the correct `uid` or `name`."
+                )
+        self._space_path.write_text(space_record.uid)
 
     @property
     def is_connected(self) -> bool:
