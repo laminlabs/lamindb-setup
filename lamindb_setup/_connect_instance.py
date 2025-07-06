@@ -14,10 +14,7 @@ from ._check_setup import (
     find_module_candidates,
 )
 from ._disconnect import disconnect
-from ._init_instance import (
-    MESSAGE_CANNOT_SWITCH_DEFAULT_INSTANCE,
-    load_from_isettings,
-)
+from ._init_instance import load_from_isettings
 from ._silence_loggers import silence_loggers
 from .core._hub_core import connect_instance_hub
 from .core._hub_utils import (
@@ -286,9 +283,9 @@ def connect(instance: str | None = None, **kwargs: Any) -> str | tuple | None:
                     logger.important(f"connected lamindb: {settings.instance.slug}")
                     return None
                 else:
-                    raise CannotSwitchDefaultInstance(
-                        MESSAGE_CANNOT_SWITCH_DEFAULT_INSTANCE
-                    )
+                    from lamindb_setup.core.django import reset_django
+
+                    reset_django()
             elif (
                 _write_settings
                 and settings._instance_exists
