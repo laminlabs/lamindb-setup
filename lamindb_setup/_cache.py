@@ -6,8 +6,11 @@ from pathlib import Path
 from dotenv import dotenv_values
 from lamin_utils import logger
 
+from .core._settings_save import save_system_storage_settings
+from .errors import CurrentInstanceNotConfigured
 from .core._settings_save import save_platform_user_storage_settings
 from .core._settings_store import system_settings_file
+
 
 
 def clear_cache_dir():
@@ -19,9 +22,8 @@ def clear_cache_dir():
                 "disconnecting the current instance to update the cloud sqlite database."
             )
             disconnect()
-    except SystemExit as e:
-        if str(e) != "No instance connected! Call `lamin connect` or `lamin init`":
-            raise e
+    except CurrentInstanceNotConfigured:
+        pass
 
     cache_dir = settings.cache_dir
     if cache_dir.exists():
