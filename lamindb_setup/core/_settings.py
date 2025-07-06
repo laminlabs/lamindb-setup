@@ -100,11 +100,10 @@ class SetupSettings:
         """Default branch."""
         from lamindb import Branch
 
+        idlike: str | int = 1
         if self._branch_path.exists():
-            uid = self._branch_path.read_text()
-        else:
-            uid = "m"
-        return Branch.get(uid)
+            idlike = self._branch_path.read_text()
+        return Branch.get(idlike)
 
     @branch.setter
     def branch(self, value: str | Branch) -> None:
@@ -127,11 +126,10 @@ class SetupSettings:
         """Default space."""
         from lamindb import Space
 
+        idlike: str | int = 1
         if self._space_path.exists():
-            uid = self._space_path.read_text()
-        else:
-            uid = "a"
-        return Space.get(uid)
+            idlike = self._space_path.read_text()
+        return Space.get(idlike)
 
     @space.setter
     def space(self, value: str | Space) -> None:
