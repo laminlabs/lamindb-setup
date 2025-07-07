@@ -95,7 +95,10 @@ class SetupSettings:
 
     @property
     def _branch_path(self) -> Path:
-        return settings_dir / f"{self.instance.owner}--{self.instance.name}--branch.txt"
+        return (
+            settings_dir
+            / f"current-branch--{self.instance.owner}--{self.instance.name}.txt"
+        )
 
     def _read_branch_idlike_name(self) -> tuple[int | str, str]:
         idlike: str | int = 1
@@ -136,7 +139,10 @@ class SetupSettings:
 
     @property
     def _space_path(self) -> Path:
-        return settings_dir / f"{self.instance.owner}--{self.instance.name}--space.txt"
+        return (
+            settings_dir
+            / f"current-space--{self.instance.owner}--{self.instance.name}.txt"
+        )
 
     def _read_space_idlike_name(self) -> tuple[int | str, str]:
         idlike: str | int = 1
