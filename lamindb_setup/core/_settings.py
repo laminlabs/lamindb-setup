@@ -95,15 +95,33 @@ class SetupSettings:
         else:
             self._auto_connect_path.unlink(missing_ok=True)
 
+    def _read_branch_idlike(self) -> int | str:
+        idlike: str | int = 1
+        if self._branch_path.exists():
+            idlike = self._branch_path.read_text()
+
+        return idlike
+
+    def _read_branch_name(self) -> str:
+        idlike = self._read_branch_idlike()
+
+        if idlike in {1, "m", "mmmmmmmmmmmm"}:
+            return "main"
+        elif idlike in {"t", "tttttttttttt"}:
+            return "trash"
+        elif idlike in {"a", "aaaaaaaaaaaa"}:
+            return "archive"
+        else:
+            from lamindb import Branch
+
+            return Branch.get(idlike).name
+
     @property
     def branch(self) -> Branch:
         """Default branch."""
         from lamindb import Branch
 
-        idlike: str | int = 1
-        if self._branch_path.exists():
-            idlike = self._branch_path.read_text()
-        return Branch.get(idlike)
+        return Branch.get(self._read_branch_idlike())
 
     @branch.setter
     def branch(self, value: str | Branch) -> None:
@@ -121,15 +139,29 @@ class SetupSettings:
                 )
         self._branch_path.write_text(branch_record.uid)
 
+    def _read_space_idlike(self) -> int | str:
+        idlike: str | int = 1
+        if self._space_path.exists():
+            idlike = self._space_path.read_text()
+
+        return idlike
+
+    def _read_space_name(self) -> str:
+        idlike = self._read_space_idlike()
+
+        if idlike in {1, "a", "aaaaaaaaaaaa"}:
+            return "all"
+        else:
+            from lamindb import Space
+
+            return Space.get(idlike).name
+
     @property
     def space(self) -> Space:
         """Default space."""
         from lamindb import Space
 
-        idlike: str | int = 1
-        if self._space_path.exists():
-            idlike = self._space_path.read_text()
-        return Space.get(idlike)
+        return Space.get(self._read_space_idlike())
 
     @space.setter
     def space(self, value: str | Space) -> None:
@@ -264,8 +296,8 @@ class SetupSettings:
         repr = ""
         if self._instance_exists:
             repr += "Current branch & space:\n"
-            repr += f" - branch: {self.branch.name}\n"
-            repr += f" - space: {self.space.name}\n"
+            repr += f" - branch: {self._read_branch_name()}\n"
+            repr += f" - space: {self._read_space_name()}\n"
             repr += self.instance.__repr__()
         else:
             repr += "Current instance: None"
