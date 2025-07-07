@@ -380,14 +380,16 @@ def _connect_instance_hub(
             .data
         )
         if len(data) != 0 and (instance_data := data[0]["instance"]) is not None:
-            new_name = instance_data["name"]  # the instance was renamed
-            logger.warning(
-                f"'{owner}/{name}' was renamed, please use '{owner}/{new_name}'"
-            )
-            response = client.functions.invoke(
-                "get-instance-settings-v1",
-                invoke_options={"body": {"owner": owner, "name": new_name}},
-            )
+            new_name = instance_data["name"]
+            # the instance was renamed
+            if new_name != name:
+                logger.warning(
+                    f"'{owner}/{name}' was renamed, please use '{owner}/{new_name}'"
+                )
+                response = client.functions.invoke(
+                    "get-instance-settings-v1",
+                    invoke_options={"body": {"owner": owner, "name": new_name}},
+                )
     # no instance found, check why is that
     if response == b"{}":
         # try the via single requests, will take more time

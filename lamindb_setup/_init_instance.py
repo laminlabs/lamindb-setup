@@ -98,24 +98,24 @@ def register_initial_records(isettings: InstanceSettings, usettings: UserSetting
 
     try:
         Space.objects.get_or_create(
-            uid="a",
+            uid=12 * "a",
             name="all",
             description="Every team & user with access to the instance has access.",
         )
         Branch.objects.get_or_create(
             id=-1,
-            uid="t",
+            uid=12 * "t",
             name="trash",
             description="The trash.",
         )
         Branch.objects.get_or_create(
             id=0,
-            uid="a",
+            uid=12 * "a",
             name="archive",
             description="The archive.",
         )
         Branch.objects.get_or_create(
-            uid="m",
+            uid=12 * "m",
             name="main",
             description="The main & default branch of the instance.",
         )
@@ -215,6 +215,16 @@ def validate_init_args(
     return name_str, instance_id, instance_state, instance_slug
 
 
+MESSAGE_CANNOT_SWITCH_DEFAULT_INSTANCE = """
+You cannot write to different instances in the same Python session.
+
+Do you want to read from another instance via `SQLRecord.using()`? For example:
+
+ln.Artifact.using("laminlabs/cellxgene").filter()
+
+Or do you want to switch off auto-connect via `lamin settings set auto-connect false`?
+"""
+
 DOC_STORAGE_ARG = "A local or remote folder (`'s3://...'` or `'gs://...'`). Defaults to current working directory."
 DOC_INSTANCE_NAME = (
     "Instance name. If not passed, it will equal the folder name passed to `storage`."
@@ -262,9 +272,7 @@ def init(
         from ._check_setup import _check_instance_setup
 
         if _check_instance_setup() and not _test:
-            from lamindb_setup.core.django import reset_django
-
-            reset_django()
+            raise CannotSwitchDefaultInstance(MESSAGE_CANNOT_SWITCH_DEFAULT_INSTANCE)
         elif _write_settings:
             disconnect(mute=True)
         from .core._hub_core import init_instance_hub
