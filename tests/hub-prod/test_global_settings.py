@@ -23,9 +23,9 @@ def test_branch():
     ln_setup.settings._branch_path.unlink(missing_ok=True)
     assert ln_setup.settings.branch.uid == 12 * "m"
     ln_setup.settings.branch = "archive"
-    assert ln_setup.settings._branch_path.read_text() == 12 * "a"
+    assert ln_setup.settings._branch_path.read_text() == f"{12 * 'a'}\narchive"
     ln_setup.settings.branch = "main"
-    assert ln_setup.settings._branch_path.read_text() == 12 * "m"
+    assert ln_setup.settings._branch_path.read_text() == f"{12 * 'm'}\nmain"
     with pytest.raises(ln.errors.DoesNotExist):
         ln_setup.settings.branch = "not_exists"
 
@@ -36,7 +36,7 @@ def test_space():
     ln_setup.settings._space_path.unlink(missing_ok=True)
     assert ln_setup.settings.space.uid == 12 * "a"
     ln_setup.settings.space = "all"
-    assert ln_setup.settings._space_path.read_text() == 12 * "a"
+    assert ln_setup.settings._space_path.read_text() == f"{12 * 'a'}\nall"
     with pytest.raises(ln.errors.DoesNotExist):
         ln_setup.settings.space = "not_exists"
 
