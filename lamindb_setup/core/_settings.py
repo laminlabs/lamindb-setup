@@ -56,8 +56,6 @@ class SetupSettings:
     _instance_settings_env: str | None = None
 
     _auto_connect_path: Path = settings_dir / "auto_connect"
-    _branch_path: Path = settings_dir / "branch_uid.txt"
-    _space_path: Path = settings_dir / "space_uid.txt"
     _private_django_api_path: Path = settings_dir / "private_django_api"
 
     _cache_dir: Path | None = None
@@ -95,33 +93,27 @@ class SetupSettings:
         else:
             self._auto_connect_path.unlink(missing_ok=True)
 
-    def _read_branch_idlike(self) -> int | str:
+    def _read_branch_idlike_name(self) -> tuple[int | str, str]:
         idlike: str | int = 1
-        if self._branch_path.exists():
-            idlike = self._branch_path.read_text()
-
-        return idlike
-
-    def _read_branch_name(self) -> str:
-        idlike = self._read_branch_idlike()
-
-        if idlike in {1, "m", "mmmmmmmmmmmm"}:
-            return "main"
-        elif idlike in {"t", "tttttttttttt"}:
-            return "trash"
-        elif idlike in {"a", "aaaaaaaaaaaa"}:
-            return "archive"
-        else:
-            from lamindb import Branch
-
-            return Branch.get(idlike).name
+        name: str = "main"
+        try:
+            branch_path = (
+                settings_dir
+                / f"{self.instance.owner}--{self.instance.name}--branch.txt"
+            )
+        except SystemExit:
+            return idlike, name
+        if branch_path.exists():
+            idlike, name = branch_path.read_text().split("\n")
+        return idlike, name
 
     @property
     def branch(self) -> Branch:
         """Default branch."""
         from lamindb import Branch
 
-        return Branch.get(self._read_branch_idlike())
+        idlike, _ = self._read_branch_idlike_name()
+        return Branch.get(idlike)
 
     @branch.setter
     def branch(self, value: str | Branch) -> None:
@@ -137,31 +129,33 @@ class SetupSettings:
                 raise DoesNotExist(
                     f"Branch '{value}', please check on the hub UI whether you have the correct `uid` or `name`."
                 )
-        self._branch_path.write_text(branch_record.uid)
+        # we are sure that the current instance is setup because
+        # it will error on lamindb import otherwise
+        branch_path = (
+            settings_dir / f"{self.instance.owner}--{self.instance.name}--branch.txt"
+        )
+        branch_path.write_text(f"{branch_record.uid}\n{branch_record.name}")
 
-    def _read_space_idlike(self) -> int | str:
+    def _read_space_idlike_name(self) -> tuple[int | str, str]:
         idlike: str | int = 1
-        if self._space_path.exists():
-            idlike = self._space_path.read_text()
-
-        return idlike
-
-    def _read_space_name(self) -> str:
-        idlike = self._read_space_idlike()
-
-        if idlike in {1, "a", "aaaaaaaaaaaa"}:
-            return "all"
-        else:
-            from lamindb import Space
-
-            return Space.get(idlike).name
+        name: str = "all"
+        try:
+            space_path = (
+                settings_dir / f"{self.instance.owner}--{self.instance.name}--space.txt"
+            )
+        except SystemExit:
+            return idlike, name
+        if space_path.exists():
+            idlike, name = space_path.read_text().split("\n")
+        return idlike, name
 
     @property
     def space(self) -> Space:
         """Default space."""
         from lamindb import Space
 
-        return Space.get(self._read_space_idlike())
+        idlike, _ = self._read_space_idlike_name()
+        return Space.get(idlike)
 
     @space.setter
     def space(self, value: str | Space) -> None:
@@ -177,7 +171,12 @@ class SetupSettings:
                 raise DoesNotExist(
                     f"Space '{value}', please check on the hub UI whether you have the correct `uid` or `name`."
                 )
-        self._space_path.write_text(space_record.uid)
+        # we are sure that the current instance is setup because
+        # it will error on lamindb import otherwise
+        space_path = (
+            settings_dir / f"{self.instance.owner}--{self.instance.name}--space.txt"
+        )
+        space_path.write_text(f"{space_record.uid}\n{space_record.name}")
 
     @property
     def is_connected(self) -> bool:
@@ -296,8 +295,8 @@ class SetupSettings:
         repr = ""
         if self._instance_exists:
             repr += "Current branch & space:\n"
-            repr += f" - branch: {self._read_branch_name()}\n"
-            repr += f" - space: {self._read_space_name()}\n"
+            repr += f" - branch: {self._read_branch_idlike_name()[1]}\n"
+            repr += f" - space: {self._read_space_idlike_name()[1]}\n"
             repr += self.instance.__repr__()
         else:
             repr += "Current instance: None"
