@@ -75,7 +75,8 @@ def connect_hub(
     client = create_client(env.supabase_api_url, env.supabase_anon_key, client_options)
     # needed to enable retries for http requests in supabase
     # these are separate clients and need separate transports
-    transport_kwargs = {"verify": True, "http2": True, "retries": 2}
+    # retries are done only in case an httpx.ConnectError or an httpx.ConnectTimeout occurs
+    transport_kwargs = {"verify": True, "http2": True, "retries": 3}
     client.auth._http_client._transport = HTTPTransport(**transport_kwargs)
     client.functions._client._transport = HTTPTransport(**transport_kwargs)
     client.postgrest.session._transport = HTTPTransport(**transport_kwargs)
