@@ -13,11 +13,13 @@ if TYPE_CHECKING:
     from lamindb_setup.types import UPathStr
 
 
-def set_managed_storage(root: UPathStr, **fs_kwargs):
+def set_managed_storage(root: UPathStr, host: str | None = None, **fs_kwargs):
     """Add or switch to another managed storage location.
 
     Args:
         root: `UPathStr` - The new storage root, e.g., an S3 bucket.
+        host: `str | None = None` For a shared local storage location, pass a globally unique host identifier, e.g. `"my-institute-cluster-1"`, `"my-server-abcd"`, ...
+            Discuss the naming convention with an admin.
         **fs_kwargs: Additional fsspec arguments for cloud root, e.g., profile.
 
     """
@@ -37,6 +39,7 @@ def set_managed_storage(root: UPathStr, **fs_kwargs):
         instance_id=settings.instance._id,
         instance_slug=settings.instance.slug,
         register_hub=True,
+        host=host,
     )
     if ssettings._instance_id is None:
         raise ValueError(

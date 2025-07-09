@@ -134,6 +134,7 @@ def init_storage(
     init_instance: bool = False,
     created_by: UUID | None = None,
     access_token: str | None = None,
+    host: str | None = None,
 ) -> tuple[
     StorageSettings,
     Literal["hub-record-not-created", "hub-record-retrieved", "hub-record-created"],
@@ -239,7 +240,10 @@ def init_storage(
 
 
 class StorageSettings:
-    """Settings for a storage location (local or cloud)."""
+    """Settings for a storage location (local or cloud).
+
+    Do not instantiate this class yourself, use `ln.Storage` instead.
+    """
 
     def __init__(
         self,
