@@ -186,6 +186,10 @@ def init_storage(
     register_hub = (
         register_hub or ssettings.type_is_cloud
     )  # default to registering cloud storage
+    if register_hub and not ssettings.type_is_cloud and ssettings.host is None:
+        raise ValueError(
+            "`host` must be set for local storage locations that are registered on the hub"
+        )
     hub_record_status = init_storage_hub(
         ssettings,
         auto_populate_instance=not init_instance,
@@ -393,6 +397,18 @@ class StorageSettings:
     def type_is_cloud(self) -> bool:
         """`True` if `storage_root` is in cloud, `False` otherwise."""
         return self.type != "local"
+
+    @property
+    def host(self) -> str | None:
+        """Host identifier for local storage locations.
+
+        Is `None` for locations with `type != "local"`.
+
+        A globally unique user-defined host identifier (cluster, server, laptop, etc.).
+        """
+        if self.type != "local":
+            return None
+        return self.region
 
     @property
     def region(self) -> str | None:
