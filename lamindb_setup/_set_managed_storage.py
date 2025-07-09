@@ -39,7 +39,7 @@ def set_managed_storage(root: UPathStr, host: str | None = None, **fs_kwargs):
         instance_id=settings.instance._id,
         instance_slug=settings.instance.slug,
         register_hub=True,
-        host=host,
+        region=host,
     )
     if ssettings._instance_id is None:
         raise ValueError(

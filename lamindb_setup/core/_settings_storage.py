@@ -134,7 +134,7 @@ def init_storage(
     init_instance: bool = False,
     created_by: UUID | None = None,
     access_token: str | None = None,
-    host: str | None = None,
+    region: str | None = None,
 ) -> tuple[
     StorageSettings,
     Literal["hub-record-not-created", "hub-record-retrieved", "hub-record-created"],
@@ -155,7 +155,6 @@ def init_storage(
         # this means we constructed a hosted location of shape s3://bucket-name/uid
         # within LaminHub
         assert root_str.endswith(uid)
-    region = None
     lamin_env = os.getenv("LAMIN_ENV")
     if root_str.startswith("create-s3"):
         if root_str != "create-s3":
