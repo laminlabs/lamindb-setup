@@ -87,6 +87,15 @@ def get_storage_region(path: UPathStr) -> str | None:
     return region
 
 
+def get_storage_type(root_as_str: str) -> StorageType:
+    import fsspec
+
+    convert = {"file": "local"}
+    # init_storage checks that the root protocol belongs to VALID_PROTOCOLS
+    protocol = fsspec.utils.get_protocol(root_as_str)
+    return convert.get(protocol, protocol)  # type: ignore
+
+
 def mark_storage_root(
     root: UPathStr, uid: str, instance_id: UUID, instance_slug: str
 ) -> Literal["__marked__"] | str:
@@ -398,12 +407,7 @@ class StorageSettings:
 
         Returns the protocol as a stringe, e.g., "local", "s3", "gs", "http", "https".
         """
-        import fsspec
-
-        convert = {"file": "local"}
-        # init_storage checks that the root protocol belongs to VALID_PROTOCOLS
-        protocol = fsspec.utils.get_protocol(self.root_as_str)
-        return convert.get(protocol, protocol)  # type: ignore
+        return get_storage_type(self.root_as_str)
 
     @property
     def is_on_hub(self) -> bool:
