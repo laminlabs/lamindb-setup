@@ -49,6 +49,7 @@ def set_managed_storage(root: UPathStr, host: str | None = None, **fs_kwargs):
         instance_id=settings.instance._id,
         instance_slug=settings.instance.slug,
         register_hub=settings.instance.is_on_hub,
+        prevent_register_hub=not settings.instance.is_on_hub,
         region=host,
     )
     if ssettings._instance_id is None:
