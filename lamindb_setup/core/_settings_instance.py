@@ -226,8 +226,18 @@ class InstanceSettings:
         return self._storage_local
 
     @storage_local.setter
-    def storage_local(self, local_root: Path | str):
+    def storage_local(self, local_root_host: tuple[Path | str, str]):
         from lamindb_setup._init_instance import register_storage_in_instance
+
+        if not isinstance(local_root_host, tuple):
+            logger.warning(
+                "setting storage_local with a single path is deprecated, "
+                "use a tuple of (local_root, host) instead"
+            )
+            local_root = local_root_host
+            host = "non-specified-host"
+        else:
+            local_root, host = local_root_host
 
         local_root = Path(local_root)
         if not self._keep_artifacts_local:
@@ -254,10 +264,16 @@ class InstanceSettings:
         local_root = UPath(local_root)
         assert isinstance(local_root, LocalPathClasses)
         self._storage_local, _ = init_storage(
-            local_root, instance_id=self._id, instance_slug=self.slug, register_hub=True
+            local_root,
+            instance_id=self._id,
+            instance_slug=self.slug,
+            register_hub=True,
+            region=host,
         )  # type: ignore
         register_storage_in_instance(self._storage_local)  # type: ignore
-        logger.important(f"defaulting to local storage: {self._storage_local.root}")
+        logger.important(
+            f"defaulting to local storage: {self._storage_local.root} on host {host}"
+        )
 
     @property
     def slug(self) -> str:
