@@ -34,6 +34,12 @@ def set_managed_storage(root: UPathStr, host: str | None = None, **fs_kwargs):
 
     # we do not just query the instance storage table because
     # we might need some information from the hub
+    if not StorageSettings(root).type_is_cloud and host is None:
+        host = "unspecified-host"
+        logger.warning(
+            "setting local storage locations with a single path is deprecated, "
+            "use a tuple of (local_root, host) instead"
+        )
 
     # here the storage is registered in the hub
     # hub_record_status="hub-record-created" if a new record is created

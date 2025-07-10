@@ -235,7 +235,7 @@ class InstanceSettings:
                 "use a tuple of (local_root, host) instead"
             )
             local_root = local_root_host
-            host = "non-specified-host"
+            host = "unspecified-host"
         else:
             local_root, host = local_root_host
 
