@@ -276,6 +276,16 @@ class InstanceSettings:
         )
 
     @property
+    @deprecated("local_storage")
+    def storage_local(self) -> StorageSettings:
+        return self.local_storage
+
+    @storage_local.setter
+    @deprecated("local_storage")
+    def storage_local(self, local_root_host: tuple[Path | str, str]):
+        self.local_storage = local_root_host  # type: ignore
+
+    @property
     def slug(self) -> str:
         """Unique semantic identifier of form `"{account_handle}/{instance_name}"`."""
         return f"{self.owner}/{self.name}"
