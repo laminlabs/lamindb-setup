@@ -82,7 +82,7 @@ class InstanceSettings:
         self._git_repo = None if git_repo is None else sanitize_git_repo_url(git_repo)
         # local storage
         self._keep_artifacts_local = keep_artifacts_local
-        self._storage_local: StorageSettings | None = None
+        self._local_storage: StorageSettings | None = None
         self._is_on_hub = is_on_hub
         # private, needed for api requests
         self._api_url = api_url
@@ -185,7 +185,7 @@ class InstanceSettings:
                 + "\n    ".join(r.root for r in all_local_records)
             )
             logger.important(
-                "please register a new local storage location via `ln.settings.storage_local = local_root_path` and re-load/connect the instance"
+                "please register a new local storage location via `ln.settings.local_storage = local_root_path` and re-load/connect the instance"
             )
         return None
 
@@ -209,7 +209,7 @@ class InstanceSettings:
         return self._storage
 
     @property
-    def storage_local(self) -> StorageSettings:
+    def local_storage(self) -> StorageSettings:
         """An additional local default storage.
 
         Is only available if :attr:`keep_artifacts_local` is enabled.
@@ -218,20 +218,20 @@ class InstanceSettings:
         """
         if not self._keep_artifacts_local:
             raise ValueError("`keep_artifacts_local` is not enabled for this instance.")
-        if self._storage_local is None:
-            self._storage_local = self._search_local_root()
-        if self._storage_local is None:
+        if self._local_storage is None:
+            self._local_storage = self._search_local_root()
+        if self._local_storage is None:
             # raise an error, there was a warning just before in search_local_root
             raise ValueError()
-        return self._storage_local
+        return self._local_storage
 
-    @storage_local.setter
-    def storage_local(self, local_root_host: tuple[Path | str, str]):
+    @local_storage.setter
+    def local_storage(self, local_root_host: tuple[Path | str, str]):
         from lamindb_setup._init_instance import register_storage_in_instance
 
         if not isinstance(local_root_host, tuple):
             logger.warning(
-                "setting storage_local with a single path is deprecated, "
+                "setting local_storage with a single path is deprecated, "
                 "use a tuple of (local_root, host) instead"
             )
             local_root = local_root_host
@@ -242,37 +242,37 @@ class InstanceSettings:
         local_root = Path(local_root)
         if not self._keep_artifacts_local:
             raise ValueError("`keep_artifacts_local` is not enabled for this instance.")
-        storage_local = self._search_local_root(
+        local_storage = self._search_local_root(
             local_root=StorageSettings(local_root).root_as_str, mute_warning=True
         )
-        if storage_local is not None:
+        if local_storage is not None:
             # great, we're merely switching storage location
-            self._storage_local = storage_local
-            logger.important(f"defaulting to local storage: {storage_local.root}")
+            self._local_storage = local_storage
+            logger.important(f"defaulting to local storage: {local_storage.root}")
             return None
-        storage_local = self._search_local_root(mute_warning=True)
-        if storage_local is not None:
+        local_storage = self._search_local_root(mute_warning=True)
+        if local_storage is not None:
             if os.getenv("LAMIN_TESTING") == "true":
                 response = "y"
             else:
                 response = input(
                     "You already configured a local storage root for this instance in this"
-                    f" environment: {self.storage_local.root}\nDo you want to register another one? (y/n)"
+                    f" environment: {self.local_storage.root}\nDo you want to register another one? (y/n)"
                 )
             if response != "y":
                 return None
         local_root = UPath(local_root)
         assert isinstance(local_root, LocalPathClasses)
-        self._storage_local, _ = init_storage(
+        self._local_storage, _ = init_storage(
             local_root,
             instance_id=self._id,
             instance_slug=self.slug,
             register_hub=True,
             region=host,
         )  # type: ignore
-        register_storage_in_instance(self._storage_local)  # type: ignore
+        register_storage_in_instance(self._local_storage)  # type: ignore
         logger.important(
-            f"defaulting to local storage: {self._storage_local.root} on host {host}"
+            f"defaulting to local storage: {self._local_storage.root} on host {host}"
         )
 
     @property
