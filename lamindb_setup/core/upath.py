@@ -421,26 +421,27 @@ def synchronize(
         get_modified = lambda file_stat: file_stat["last_commit"].date.timestamp()
     else:  #  http etc
         use_size = True
+        get_modified = lambda file_stat: file_stat["size"]
 
     if use_size:
-        is_sync_needed = (
-            lambda cloud_stat, local_stat: cloud_stat["size"] != local_stat.st_size
-        )
+        is_sync_needed = lambda cloud_size, local_stat: cloud_size != local_stat.st_size
     else:
         is_sync_needed = (
-            lambda cloud_stat, local_stat: get_modified(cloud_stat)
-            > local_stat.st_mtime
+            lambda cloud_mtime, local_stat: cloud_mtime > local_stat.st_mtime
         )
 
     local_paths: list[Path] = []
     cloud_stats: dict
     if is_dir:
-        cloud_stats = origin.fs.find(origin.as_posix(), detail=True)
+        cloud_stats = {
+            file: get_modified(stat)
+            for file, stat in origin.fs.find(origin.as_posix(), detail=True).items()
+        }
         for cloud_path in cloud_stats:
             file_key = PurePosixPath(cloud_path).relative_to(origin.path).as_posix()
             local_paths.append(destination / file_key)
     else:
-        cloud_stats = {origin.path: cloud_info}
+        cloud_stats = {origin.path: get_modified(cloud_info)}
         local_paths.append(destination)
 
     local_paths_all: list[Path] | None = None
@@ -450,9 +451,7 @@ def synchronize(
                 path for path in destination.rglob("*") if path.is_file()
             ]
             if not use_size:
-                cloud_mts_max = max(
-                    get_modified(cloud_stat) for cloud_stat in cloud_stats.values()
-                )
+                cloud_mts_max = max(cloud_stats.values())
                 local_mts_max = max(path.stat().st_mtime for path in local_paths_all)
                 if local_mts_max > cloud_mts_max:
                     return False
@@ -493,7 +492,7 @@ def synchronize(
         )
         if not use_size:
             for i, cloud_file in enumerate(cloud_files_sync):
-                cloud_mtime = get_modified(cloud_stats[cloud_file])
+                cloud_mtime = cloud_stats[cloud_file]
                 os.utime(local_files_sync[i], times=(cloud_mtime, cloud_mtime))
     else:
         return False
