@@ -453,11 +453,7 @@ def synchronize(
                 cloud_mts_max = max(
                     get_modified(cloud_stat) for cloud_stat in cloud_stats.values()
                 )
-                local_mts_max = max(
-                    file.stat().st_mtime
-                    for file in destination.rglob("*")
-                    if file.is_file()
-                )
+                local_mts_max = max(path.stat().st_mtime for path in local_paths_all)
                 if local_mts_max > cloud_mts_max:
                     return False
                 elif local_mts_max == cloud_mts_max:
@@ -502,9 +498,8 @@ def synchronize(
     else:
         return False
 
-    if local_paths_all is not None and len(local_paths_all) > len(local_paths):
-        redundant_paths = (path for path in local_paths_all if path not in local_paths)
-        for path in redundant_paths:
+    if local_paths_all is not None:
+        for path in (path for path in local_paths_all if path not in local_paths):
             path.unlink()
             parent = path.parent
             if next(parent.iterdir(), None) is None:
