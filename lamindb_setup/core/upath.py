@@ -431,7 +431,7 @@ def synchronize(
         )
 
     local_paths: list[Path] = []
-    cloud_stats: dict
+    cloud_stats: dict[str, float | int]
     if is_dir:
         cloud_stats = {
             file: get_modified(stat)
@@ -444,15 +444,15 @@ def synchronize(
         cloud_stats = {origin.path: get_modified(cloud_info)}
         local_paths.append(destination)
 
-    local_paths_all: list[Path] | None = None
+    local_paths_all: dict[Path, os.stat_result] = {}
     if destination.exists():
         if is_dir:
-            local_paths_all = [
-                path for path in destination.rglob("*") if path.is_file()
-            ]
+            local_paths_all = {
+                path: path.stat() for path in destination.rglob("*") if path.is_file()
+            }
             if not use_size:
                 cloud_mts_max = max(cloud_stats.values())
-                local_mts_max = max(path.stat().st_mtime for path in local_paths_all)
+                local_mts_max = max(stat.st_mtime for stat in local_paths_all.values())
                 if local_mts_max > cloud_mts_max:
                     return False
                 elif local_mts_max == cloud_mts_max:
@@ -460,12 +460,16 @@ def synchronize(
                         return False
                     elif just_check:
                         return True
+        else:
+            local_paths_all = {destination: destination.stat()}
 
         cloud_files_sync = []
         local_files_sync = []
         for i, (cloud_file, cloud_stat) in enumerate(cloud_stats.items()):
             local_path = local_paths[i]
-            if not local_path.exists() or is_sync_needed(cloud_stat, local_path.stat()):
+            if local_path not in local_paths_all or is_sync_needed(
+                cloud_stat, local_paths_all[local_path]
+            ):
                 cloud_files_sync.append(cloud_file)
                 local_files_sync.append(local_path.as_posix())
     else:
@@ -497,7 +501,7 @@ def synchronize(
     else:
         return False
 
-    if local_paths_all is not None:
+    if is_dir and local_paths_all:
         for path in (path for path in local_paths_all if path not in local_paths):
             path.unlink()
             parent = path.parent
