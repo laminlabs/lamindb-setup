@@ -387,8 +387,10 @@ def synchronize(
     error_no_origin: bool = True,
     print_progress: bool = False,
     just_check: bool = False,
+    **kwargs,
 ) -> bool:
     """Sync to a local destination path."""
+    destination = destination.resolve()
     protocol = origin.protocol
     try:
         cloud_info = origin.stat().as_info()
@@ -478,14 +480,20 @@ def synchronize(
     if len(cloud_files_sync) > 0:
         if just_check:
             return True
-        if print_progress:
-            callback = ProgressCallback(
-                destination.name, "synchronizing", adjust_size=False
-            )
-        else:
-            callback = fsspec.callbacks.NoOpCallback()
+
+        callback = ProgressCallback.requires_progress(
+            maybe_callback=kwargs.pop("callback", None),
+            print_progress=print_progress,
+            objectname=destination.name,
+            action="synchronizing",
+            adjust_size=False,
+        )
         origin.fs.download(
-            cloud_files_sync, local_files_sync, recursive=False, callback=callback
+            cloud_files_sync,
+            local_files_sync,
+            recursive=False,
+            callback=callback,
+            **kwargs,
         )
         if not use_size:
             for i, cloud_file in enumerate(cloud_files_sync):
