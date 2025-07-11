@@ -153,7 +153,7 @@ class InstanceSettings:
         except ProgrammingError:
             logger.error("not able to load Storage registry: please migrate")
             return None
-        found = False
+        found = []
         for record in all_local_records:
             root_path = Path(record.root)
             if root_path.exists():
@@ -177,9 +177,11 @@ class InstanceSettings:
                     )
                     continue
                 if uid == record.uid:
-                    found = True
-                    break
+                    found.append(record)
         if found:
+            if len(found) > 1:
+                found_display = "\n - ".join([f"{record.root}" for record in found])
+                logger.important(f"found locations:\n - {found_display}")
             logger.important(f"defaulting to local storage: {record.root}")
             return StorageSettings(record.root)
         elif not mute_warning:
