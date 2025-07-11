@@ -476,7 +476,7 @@ def synchronize(
         cloud_files_sync = list(cloud_stats.keys())
         local_files_sync = [local_path.as_posix() for local_path in local_paths]
 
-    if len(cloud_files_sync) > 0:
+    if cloud_files_sync:
         if just_check:
             return True
 
