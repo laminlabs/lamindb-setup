@@ -181,11 +181,7 @@ class InstanceSettings:
             return StorageSettings(record.root)
         elif not mute_warning:
             logger.warning(
-                "none of the registered local storage locations were found:\n    "
-                + "\n    ".join(r.root for r in all_local_records)
-            )
-            logger.important(
-                "please register a new local storage location via `ln.settings.local_storage = local_root_path` and re-load/connect the instance"
+                "no local storage locations was found in the current environment"
             )
         return None
 
@@ -210,7 +206,7 @@ class InstanceSettings:
 
     @property
     def local_storage(self) -> StorageSettings:
-        """An additional local default storage.
+        """An additional local storage location.
 
         Is only available if :attr:`keep_artifacts_local` is enabled.
 
@@ -221,8 +217,9 @@ class InstanceSettings:
         if self._local_storage is None:
             self._local_storage = self._search_local_root()
         if self._local_storage is None:
-            # raise an error, there was a warning just before in search_local_root
-            raise ValueError()
+            raise ValueError(
+                "Please register a new local storage location using a unique host identifier: ln.Storage(root='/dir/our_shared_dir', host='our-server-123).save()"
+            )
         return self._local_storage
 
     @local_storage.setter
