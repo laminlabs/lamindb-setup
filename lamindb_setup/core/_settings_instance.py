@@ -241,7 +241,6 @@ class InstanceSettings:
         if local_storage is not None:
             # great, we're merely switching storage location
             self._local_storage = local_storage
-            logger.important(f"defaulting to local storage: {local_storage.root}")
             return None
         local_storage = self._search_local_root(mute_warning=True)
         if local_storage is not None:
