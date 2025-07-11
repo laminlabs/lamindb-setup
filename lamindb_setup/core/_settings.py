@@ -350,7 +350,7 @@ class SetupPaths:
         local_filepath = SetupPaths.cloud_to_local_no_update(filepath, cache_key)
         if not isinstance(filepath, LocalPathClasses):
             local_filepath.parent.mkdir(parents=True, exist_ok=True)
-            filepath.synchronize(local_filepath, **kwargs)  # type: ignore
+            filepath.synchronize_to(local_filepath, **kwargs)  # type: ignore
         return local_filepath
 
 
