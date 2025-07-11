@@ -32,7 +32,7 @@ if TYPE_CHECKING:
 
     from ._settings_user import UserSettings
 
-LOCAL_STORAGE_MESSAGE = "Please register a new local storage location using a unique host identifier: ln.Storage(root='/dir/our_shared_dir', host='our-server-123).save()"
+LOCAL_STORAGE_MESSAGE = "No storage location found in current environment: create one via, e.g., ln.Storage(root='/dir/our_shared_dir', host='our-server-123).save()"
 
 
 def sanitize_git_repo_url(repo_url: str) -> str:
@@ -180,11 +180,11 @@ class InstanceSettings:
                     found = True
                     break
         if found:
+            logger.important(f"defaulting to local storage: {record.root}")
             return StorageSettings(record.root)
         elif not mute_warning:
-            logger.warning(
-                f"no local storage location was found in the current environment: {LOCAL_STORAGE_MESSAGE}"
-            )
+            start = LOCAL_STORAGE_MESSAGE[0].lower()
+            logger.warning(f"{start}{LOCAL_STORAGE_MESSAGE[1:]}")
         return None
 
     @property
