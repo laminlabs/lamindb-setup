@@ -494,11 +494,7 @@ def synchronize(
     else:
         return False
 
-    if (
-        is_dir
-        and local_paths_all is not None
-        and len(local_paths_all) > len(local_paths)
-    ):
+    if local_paths_all is not None and len(local_paths_all) > len(local_paths):
         redundant_paths = (path for path in local_paths_all if path not in local_paths)
         for path in redundant_paths:
             path.unlink()
