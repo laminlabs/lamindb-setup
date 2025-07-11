@@ -381,7 +381,7 @@ def upload_from(
         return self
 
 
-def synchronize(
+def synchronize_to(
     origin: UPath,
     destination: Path,
     error_no_origin: bool = True,
@@ -717,7 +717,7 @@ def to_url(upath):
 
 # add custom functions
 UPath.modified = property(modified)
-UPath.synchronize = synchronize
+UPath.synchronize_to = synchronize_to
 UPath.upload_from = upload_from
 UPath.to_url = to_url
 UPath.download_to = download_to
