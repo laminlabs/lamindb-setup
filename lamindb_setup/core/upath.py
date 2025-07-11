@@ -928,9 +928,13 @@ def check_storage_is_empty(
     # if the storage_uid.txt was somehow deleted, we restore a dummy version of it
     # because we need it to count files in an empty directory on S3 (otherwise permission error)
     if not (root_upath / STORAGE_UID_FILE_KEY).exists():
-        (root_upath / STORAGE_UID_FILE_KEY).write_text(
-            "was deleted, restored during delete"
-        )
+        try:
+            (root_upath / STORAGE_UID_FILE_KEY).write_text(
+                "was deleted, restored during delete"
+            )
+        except FileNotFoundError:
+            # this can happen if the root is a local non-existing path
+            pass
     if account_for_sqlite_file:
         n_offset_objects += 1  # the SQLite file is in the ".lamindb" directory
     if root_string.startswith(HOSTED_BUCKETS):

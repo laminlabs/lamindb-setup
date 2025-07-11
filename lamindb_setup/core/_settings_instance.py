@@ -32,6 +32,8 @@ if TYPE_CHECKING:
 
     from ._settings_user import UserSettings
 
+LOCAL_STORAGE_MESSAGE = "Please register a new local storage location using a unique host identifier: ln.Storage(root='/dir/our_shared_dir', host='our-server-123).save()"
+
 
 def sanitize_git_repo_url(repo_url: str) -> str:
     assert repo_url.startswith("https://")
@@ -181,7 +183,7 @@ class InstanceSettings:
             return StorageSettings(record.root)
         elif not mute_warning:
             logger.warning(
-                "no local storage locations was found in the current environment"
+                f"no local storage location was found in the current environment: {LOCAL_STORAGE_MESSAGE}"
             )
         return None
 
@@ -217,9 +219,7 @@ class InstanceSettings:
         if self._local_storage is None:
             self._local_storage = self._search_local_root()
         if self._local_storage is None:
-            raise ValueError(
-                "Please register a new local storage location using a unique host identifier: ln.Storage(root='/dir/our_shared_dir', host='our-server-123).save()"
-            )
+            raise ValueError(LOCAL_STORAGE_MESSAGE)
         return self._local_storage
 
     @local_storage.setter
