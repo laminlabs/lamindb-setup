@@ -227,10 +227,6 @@ class InstanceSettings:
         from lamindb_setup._init_instance import register_storage_in_instance
 
         if not isinstance(local_root_host, tuple):
-            logger.warning(
-                "setting local_storage with a single path is deprecated, "
-                "use a tuple of (local_root, host) instead"
-            )
             local_root = local_root_host
             host = "unspecified-host"
         else:
@@ -258,6 +254,13 @@ class InstanceSettings:
                 )
             if response != "y":
                 return None
+        if host == "unspecified-host":
+            logger.warning(
+                "setting local_storage with a single path is deprecated for creating storage locations"
+            )
+            logger.warning(
+                "use this instead: ln.Storage(root='/dir/our_shared_dir', host='our-server-123').save()"
+            )
         local_root = UPath(local_root)
         assert isinstance(local_root, LocalPathClasses)
         self._local_storage, _ = init_storage(
