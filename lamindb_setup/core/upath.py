@@ -382,41 +382,26 @@ def upload_from(
 
 
 def synchronize(
-    self,
-    objectpath: Path,
+    origin: UPath,
+    destination: Path,
     error_no_origin: bool = True,
     print_progress: bool = False,
-    callback: fsspec.callbacks.Callback | None = None,
-    timestamp: float | None = None,
     just_check: bool = False,
 ) -> bool:
     """Sync to a local destination path."""
-    protocol = self.protocol
-    # optimize the number of network requests
-    if timestamp is not None:
-        is_dir = False
+    protocol = origin.protocol
+    try:
+        cloud_info = origin.stat().as_info()
         exists = True
-        cloud_mts = timestamp
-    else:
-        try:
-            cloud_stat = self.stat()
-            cloud_info = cloud_stat.as_info()
-            exists = True
-            is_dir = cloud_info["type"] == "directory"
-            if not is_dir:
-                # hf requires special treatment
-                if protocol == "hf":
-                    cloud_mts = cloud_info["last_commit"].date.timestamp()
-                else:
-                    cloud_mts = cloud_stat.st_mtime
-        except FileNotFoundError:
-            exists = False
+        is_dir = cloud_info["type"] == "directory"
+    except FileNotFoundError:
+        exists = False
 
     if not exists:
-        warn_or_error = f"The original path {self} does not exist anymore."
-        if objectpath.exists():
+        warn_or_error = f"The original path {origin} does not exist anymore."
+        if destination.exists():
             warn_or_error += (
-                f"\nHowever, the local path {objectpath} still exists, you might want"
+                f"\nHowever, the local path {destination} still exists, you might want"
                 " to reupload the object back."
             )
             logger.warning(warn_or_error)
@@ -425,113 +410,103 @@ def synchronize(
             raise FileNotFoundError(warn_or_error)
         return False
 
-    # synchronization logic for directories
-    # to synchronize directories, it should be possible to get modification times
-    if is_dir:
-        files = self.fs.find(str(self), detail=True)
-        if protocol == "s3":
-            get_modified = lambda file_stat: file_stat["LastModified"]
-        elif protocol == "gs":
-            get_modified = lambda file_stat: file_stat["mtime"]
-        elif protocol == "hf":
-            get_modified = lambda file_stat: file_stat["last_commit"].date
-        else:
-            raise ValueError(f"Can't synchronize a directory for {protocol}.")
-        if objectpath.exists():
-            destination_exists = True
-            cloud_mts_max = max(
-                get_modified(file) for file in files.values()
-            ).timestamp()
-            local_mts = [
-                file.stat().st_mtime for file in objectpath.rglob("*") if file.is_file()
-            ]
-            n_local_files = len(local_mts)
-            local_mts_max = max(local_mts)
-            if local_mts_max == cloud_mts_max:
-                need_synchronize = n_local_files != len(files)
-            elif local_mts_max > cloud_mts_max:
-                need_synchronize = False
-            else:
-                need_synchronize = True
-        else:
-            destination_exists = False
-            need_synchronize = True
-        # just check if synchronization is needed
-        if just_check:
-            return need_synchronize
-        if need_synchronize:
-            callback = ProgressCallback.requires_progress(
-                callback, print_progress, objectpath.name, "synchronizing"
-            )
-            callback.set_size(len(files))
-            origin_file_keys = []
-            for file, stat in callback.wrap(files.items()):
-                file_key = PurePosixPath(file).relative_to(self.path).as_posix()
-                origin_file_keys.append(file_key)
-                timestamp = get_modified(stat).timestamp()
-                origin = f"{protocol}://{file}"
-                destination = objectpath / file_key
-                child = callback.branched(origin, destination.as_posix())
-                UPath(origin, **self.storage_options).synchronize(
-                    destination, callback=child, timestamp=timestamp
-                )
-                child.close()
-            if destination_exists:
-                local_files = [file for file in objectpath.rglob("*") if file.is_file()]
-                if len(local_files) > len(files):
-                    for file in local_files:
-                        if (
-                            file.relative_to(objectpath).as_posix()
-                            not in origin_file_keys
-                        ):
-                            file.unlink()
-                            parent = file.parent
-                            if next(parent.iterdir(), None) is None:
-                                parent.rmdir()
-        return need_synchronize
+    use_size: bool = False
+    if protocol == "s3":
+        get_modified = lambda file_stat: file_stat["LastModified"].timestamp()
+    elif protocol == "gs":
+        get_modified = lambda file_stat: file_stat["mtime"].timestamp()
+    elif protocol == "hf":
+        get_modified = lambda file_stat: file_stat["last_commit"].date.timestamp()
+    else:  #  http etc
+        use_size = True
 
-    # synchronization logic for files
-    callback = ProgressCallback.requires_progress(
-        callback, print_progress, objectpath.name, "synchronizing"
-    )
-    objectpath_exists = objectpath.exists()
-    if objectpath_exists:
-        if cloud_mts != 0:
-            local_mts_obj = objectpath.stat().st_mtime
-            need_synchronize = cloud_mts > local_mts_obj
-        else:
-            # this is true for http for example
-            # where size is present but st_mtime is not
-            # we assume that any change without the change in size is unlikely
-            cloud_size = cloud_stat.st_size
-            local_size_obj = objectpath.stat().st_size
-            need_synchronize = cloud_size != local_size_obj
-    else:
-        if not just_check:
-            objectpath.parent.mkdir(parents=True, exist_ok=True)
-        need_synchronize = True
-    # just check if synchronization is needed
-    if just_check:
-        return need_synchronize
-    if need_synchronize:
-        # just to be sure that overwriting an existing file doesn't corrupt it
-        # we saw some frequent corruption on some systems for unclear reasons
-        if objectpath_exists:
-            objectpath.unlink()
-        # hf has sync filesystem
-        # on sync filesystems ChildProgressCallback.branched()
-        # returns the default callback
-        # this is why a difference between s3 and hf in progress bars
-        self.download_to(
-            objectpath, recursive=False, print_progress=False, callback=callback
+    if use_size:
+        is_sync_needed = (
+            lambda cloud_stat, local_stat: cloud_stat["size"] != local_stat.st_size
         )
-        if cloud_mts != 0:
-            os.utime(objectpath, times=(cloud_mts, cloud_mts))
     else:
-        # nothing happens if parent_update is not defined
-        # because of Callback.no_op
-        callback.parent_update()
-    return need_synchronize
+        is_sync_needed = (
+            lambda cloud_stat, local_stat: get_modified(cloud_stat)
+            > local_stat.st_mtime
+        )
+
+    local_paths: list[Path] = []
+    cloud_stats: dict
+    if is_dir:
+        cloud_stats = origin.fs.find(origin.as_posix(), detail=True)
+        for cloud_path in cloud_stats:
+            file_key = PurePosixPath(cloud_path).relative_to(origin.path).as_posix()
+            local_paths.append(destination / file_key)
+    else:
+        cloud_stats = {origin.path: cloud_info}
+        local_paths.append(destination)
+
+    local_paths_all: list[Path] | None = None
+    if destination.exists():
+        if is_dir:
+            local_paths_all = [
+                path for path in destination.rglob("*") if path.is_file()
+            ]
+            if not use_size:
+                cloud_mts_max = max(
+                    get_modified(cloud_stat) for cloud_stat in cloud_stats.values()
+                )
+                local_mts_max = max(
+                    file.stat().st_mtime
+                    for file in destination.rglob("*")
+                    if file.is_file()
+                )
+                if local_mts_max > cloud_mts_max:
+                    return False
+                elif local_mts_max == cloud_mts_max:
+                    if len(local_paths_all) == len(cloud_stats):
+                        return False
+                    elif just_check:
+                        return True
+
+        cloud_files_sync = []
+        local_files_sync = []
+        for i, (cloud_file, cloud_stat) in enumerate(cloud_stats.items()):
+            local_path = local_paths[i]
+            if not local_path.exists() or is_sync_needed(cloud_stat, local_path.stat()):
+                cloud_files_sync.append(cloud_file)
+                local_files_sync.append(local_path.as_posix())
+    else:
+        cloud_files_sync = list(cloud_stats.keys())
+        local_files_sync = [local_path.as_posix() for local_path in local_paths]
+
+    if len(cloud_files_sync) > 0:
+        if just_check:
+            return True
+        if print_progress:
+            callback = ProgressCallback(
+                destination.name, "synchronizing", adjust_size=False
+            )
+        else:
+            callback = fsspec.callbacks.NoOpCallback()
+        origin.fs.download(
+            cloud_files_sync, local_files_sync, recursive=False, callback=callback
+        )
+        if not use_size:
+            for i, cloud_file in enumerate(cloud_files_sync):
+                cloud_mtime = get_modified(cloud_stats[cloud_file])
+                os.utime(local_files_sync[i], times=(cloud_mtime, cloud_mtime))
+    else:
+        return False
+
+    if (
+        is_dir
+        and local_paths_all is not None
+        and len(local_paths_all) > len(local_paths)
+    ):
+        redundant_paths = (path for path in local_paths_all if path not in local_paths)
+        for path in redundant_paths:
+            path.unlink()
+            parent = path.parent
+            if next(parent.iterdir(), None) is None:
+                parent.rmdir()
+
+    return True
 
 
 def modified(self) -> datetime | None:
