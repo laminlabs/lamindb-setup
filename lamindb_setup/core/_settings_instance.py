@@ -264,17 +264,21 @@ class InstanceSettings:
             )
         local_root = UPath(local_root)
         assert isinstance(local_root, LocalPathClasses)
-        self._local_storage, _ = init_storage(
+        tentative_storage, hub_status = init_storage(
             local_root,
             instance_id=self._id,
             instance_slug=self.slug,
             register_hub=True,
             region=host,
         )  # type: ignore
-        register_storage_in_instance(self._local_storage)  # type: ignore
-        logger.important(
-            f"defaulting to local storage: {self._local_storage.root} on host {host}"
-        )
+        if hub_status in ["hub-record-created", "hub-record-retrieved"]:
+            register_storage_in_instance(tentative_storage)  # type: ignore
+            self._local_storage = tentative_storage
+            logger.important(
+                f"defaulting to local storage: {self._local_storage.root} on host {host}"
+            )
+        else:
+            logger.warning(f"could not set this local storage location: {local_root}")
 
     @property
     @deprecated("local_storage")
