@@ -32,7 +32,7 @@ if TYPE_CHECKING:
 
     from ._settings_user import UserSettings
 
-LOCAL_STORAGE_MESSAGE = "No storage location found in current environment: create one via, e.g., ln.Storage(root='/dir/our_shared_dir', host='our-server-123).save()"
+LOCAL_STORAGE_MESSAGE = "No storage location found in current environment: create one via, e.g., ln.Storage(root='/dir/our_shared_dir', host='our-server-123').save()"
 
 
 def sanitize_git_repo_url(repo_url: str) -> str:
