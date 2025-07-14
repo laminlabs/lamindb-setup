@@ -370,7 +370,7 @@ class InstanceSettings:
                 self._check_sqlite_lock()
             sqlite_file = self._sqlite_file
             cache_file = self.storage.cloud_to_local_no_update(sqlite_file)
-            sqlite_file.synchronize(cache_file, print_progress=True)  # type: ignore
+            sqlite_file.synchronize_to(cache_file, print_progress=True)  # type: ignore
 
     def _check_sqlite_lock(self):
         if not self._cloud_sqlite_locker.has_lock:
