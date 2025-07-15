@@ -690,9 +690,7 @@ def to_url(upath):
     if bucket == "scverse-spatial-eu-central-1":
         region = "eu-central-1"
     elif f"s3://{bucket}" not in HOSTED_BUCKETS:
-        response = upath.fs.call_s3("head_bucket", Bucket=bucket)
-        headers = response["ResponseMetadata"]["HTTPHeaders"]
-        region = headers.get("x-amz-bucket-region")
+        region = get_storage_region(upath)
     else:
         region = bucket.replace("lamin_", "")
     if region == "us-east-1":
@@ -798,6 +796,66 @@ class S3QueryPath(S3Path):
 
 
 register_implementation("s3", S3QueryPath, clobber=True)
+
+
+def get_storage_region(path: UPathStr) -> str | None:
+    upath = UPath(path)
+
+    if upath.protocol != "s3":
+        return None
+
+    bucket = upath.drive
+
+    if bucket == "scverse-spatial-eu-central-1":
+        return "eu-central-1"
+    elif f"s3://{bucket}" in HOSTED_BUCKETS:
+        return bucket.replace("lamin-", "")
+
+    from botocore.exceptions import ClientError
+
+    if isinstance(path, str):
+        import botocore.session
+        from botocore.config import Config
+
+        path_part = path.replace("s3://", "")
+        # check for endpoint_url in the path string
+        if "?" in path_part:
+            path_part, query = _split_path_query(path_part)
+            endpoint_url = query.get("endpoint_url", [None])[0]
+        else:
+            endpoint_url = None
+        session = botocore.session.get_session()
+        credentials = session.get_credentials()
+        if credentials is None or credentials.access_key is None:
+            config = Config(signature_version=botocore.session.UNSIGNED)
+        else:
+            config = None
+        s3_client = session.create_client(
+            "s3", endpoint_url=endpoint_url, config=config
+        )
+        try:
+            response = s3_client.head_bucket(Bucket=bucket)
+        except ClientError as exc:
+            response = getattr(exc, "response", {})
+            if response.get("Error", {}).get("Code") == "404":
+                raise exc
+    else:
+        try:
+            response = upath.fs.call_s3("head_bucket", Bucket=bucket)
+        except Exception as exc:
+            cause = getattr(exc, "__cause__", None)
+            if not isinstance(cause, ClientError):
+                raise exc
+            response = getattr(cause, "response", {})
+            if response.get("Error", {}).get("Code") == "404":
+                raise exc
+
+    region = (
+        response.get("ResponseMetadata", {})
+        .get("HTTPHeaders", {})
+        .get("x-amz-bucket-region", None)
+    )
+    return region
 
 
 def create_path(path: UPathStr, access_token: str | None = None) -> UPath:
