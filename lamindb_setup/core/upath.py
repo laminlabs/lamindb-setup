@@ -687,12 +687,7 @@ def to_url(upath):
         raise ValueError("The provided UPath must be an S3 path.")
     key = "/".join(upath.parts[1:])
     bucket = upath.drive
-    if bucket == "scverse-spatial-eu-central-1":
-        region = "eu-central-1"
-    elif f"s3://{bucket}" not in HOSTED_BUCKETS:
-        region = get_storage_region(upath)
-    else:
-        region = bucket.replace("lamin_", "")
+    region = get_storage_region(upath)
     if region == "us-east-1":
         return f"https://{bucket}.s3.amazonaws.com/{key}"
     else:
