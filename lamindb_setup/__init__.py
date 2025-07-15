@@ -37,9 +37,38 @@ Modules & settings:
 
 __version__ = "1.8.1"  # denote a release candidate for 0.1.0 with 0.1rc1
 
+import importlib
+import importlib.metadata
 import os
 
 from packaging import version as packaging_version
+
+from lamindb_setup.errors import ModuleWasntConfigured
+
+
+def _check_plugin_version(package_name: str, min_version: str) -> None:
+    try:
+        current_version = importlib.metadata.version(package_name)
+
+        if packaging_version.parse(current_version) < packaging_version.parse(
+            min_version
+        ):
+            raise RuntimeError(
+                f"The version of {package_name} you have ({current_version}) is incompatible "
+                f"with lamindb, please upgrade it: pip install {package_name}>{min_version}"
+            )
+    except (
+        importlib.metadata.PackageNotFoundError,
+        ModuleWasntConfigured,
+        ImportError,
+    ):
+        pass
+
+
+_check_plugin_version("bionty", "1.6.0")
+_check_plugin_version("wetlab", "1.3.1")
+_check_plugin_version("clinicore", "1.2.1")
+
 
 from . import core, errors, types
 from ._check_setup import _check_instance_setup
