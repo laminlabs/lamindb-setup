@@ -12,7 +12,9 @@ def test_to_url():
     )
     # private bucket
     assert (
-        ln_setup.core.upath.create_path("s3://lamindb-setup-private-bucket/test-folder")
+        ln_setup.core.upath.create_path(
+            "s3://lamindb-setup-private-bucket/test-folder"
+        ).to_url()
         == "https://lamindb-setup-private-bucket.s3.amazonaws.com/test-folder"
     )
     # eu-central-1 / AWS Dev
