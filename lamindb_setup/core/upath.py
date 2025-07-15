@@ -23,6 +23,7 @@ from upath.registry import register_implementation
 from lamindb_setup.errors import StorageNotEmpty
 
 from ._aws_options import HOSTED_BUCKETS, get_aws_options_manager
+from ._deprecated import deprecated
 from .hashing import HASH_LENGTH, b16_to_b64, hash_from_hashes_list, hash_string
 
 if TYPE_CHECKING:
@@ -710,6 +711,7 @@ def to_url(upath):
 
 # add custom functions
 UPath.modified = property(modified)
+UPath.synchronize = deprecated("synchronize_to")(synchronize_to)
 UPath.synchronize_to = synchronize_to
 UPath.upload_from = upload_from
 UPath.to_url = to_url
