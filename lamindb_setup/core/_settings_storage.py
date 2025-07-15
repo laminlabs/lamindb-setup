@@ -19,7 +19,13 @@ from ._aws_options import (
 from ._aws_storage import find_closest_aws_region
 from ._deprecated import deprecated
 from .hashing import hash_and_encode_as_b62
-from .upath import LocalPathClasses, UPath, _split_path_query, create_path
+from .upath import (
+    LocalPathClasses,
+    UPath,
+    _split_path_query,
+    create_path,
+    get_storage_region,
+)
 
 if TYPE_CHECKING:
     from lamindb_setup.types import StorageType, UPathStr
@@ -41,50 +47,6 @@ def base62(n_char: int) -> str:
 
 def instance_uid_from_uuid(instance_id: UUID) -> str:
     return hash_and_encode_as_b62(instance_id.hex)[:12]
-
-
-def get_storage_region(path: UPathStr) -> str | None:
-    path_str = str(path)
-    if path_str.startswith("s3://"):
-        import botocore.session
-        from botocore.config import Config
-        from botocore.exceptions import ClientError
-
-        # check for endpoint_url in storage options if upath
-        if isinstance(path, UPath):
-            endpoint_url = path.storage_options.get("endpoint_url", None)
-        else:
-            endpoint_url = None
-        path_part = path_str.replace("s3://", "")
-        # check for endpoint_url in the path string
-        if "?" in path_part:
-            assert endpoint_url is None
-            path_part, query = _split_path_query(path_part)
-            endpoint_url = query.get("endpoint_url", [None])[0]
-        bucket = path_part.split("/")[0]
-        session = botocore.session.get_session()
-        credentials = session.get_credentials()
-        if credentials is None or credentials.access_key is None:
-            config = Config(signature_version=botocore.session.UNSIGNED)
-        else:
-            config = None
-        s3_client = session.create_client(
-            "s3", endpoint_url=endpoint_url, config=config
-        )
-        try:
-            response = s3_client.head_bucket(Bucket=bucket)
-        except ClientError as exc:
-            response = getattr(exc, "response", {})
-            if response.get("Error", {}).get("Code") == "404":
-                raise exc
-        region = (
-            response.get("ResponseMetadata", {})
-            .get("HTTPHeaders", {})
-            .get("x-amz-bucket-region", None)
-        )
-    else:
-        region = None
-    return region
 
 
 def get_storage_type(root_as_str: str) -> StorageType:
