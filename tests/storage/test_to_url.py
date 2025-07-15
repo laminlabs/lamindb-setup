@@ -27,5 +27,5 @@ def test_to_url():
         ln_setup.core.upath.create_path(
             "s3://lamin-eu-central-1/9fm7UN13/test-folder"
         ).to_url()
-        == "https://lamin-eu-central-1.s3-lamin-eu-central-1.amazonaws.com/9fm7UN13/test-folder"
+        == "https://lamin-eu-central-1.s3-eu-central-1.amazonaws.com/9fm7UN13/test-folder"
     )
