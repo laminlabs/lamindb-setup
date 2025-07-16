@@ -200,7 +200,7 @@ def _connect_cli(instance: str) -> None:
         # (1) if the instance is not on the hub, we need to register
         # potential users through register_user()
         # (2) if the instance is cloud sqlite, we need to lock it
-        connect(_write_settings=False)
+        connect(_write_settings=False, _reload_lamindb=False)
     else:
         logger.important(f"connected lamindb: {isettings.slug}")
     return None
