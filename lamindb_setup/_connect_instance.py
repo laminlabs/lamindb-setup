@@ -188,6 +188,24 @@ def _connect_instance(
     return isettings
 
 
+def _connect_cli(instance: str) -> None:
+    from lamindb_setup import settings as settings_
+
+    settings_.auto_connect = True
+    owner, name = get_owner_name_from_identifier(instance)
+    isettings = _connect_instance(owner, name)
+    isettings._persist(write_to_disk=True)
+    if not isettings.is_on_hub or isettings._is_cloud_sqlite:
+        # there are two reasons to call the full-blown connect
+        # (1) if the instance is not on the hub, we need to register
+        # potential users through register_user()
+        # (2) if the instance is cloud sqlite, we need to lock it
+        connect(_write_settings=False)
+    else:
+        logger.important(f"connected lamindb: {isettings.slug}")
+    return None
+
+
 @unlock_cloud_sqlite_upon_exception(ignore_prev_locker=True)
 def connect(instance: str | None = None, **kwargs: Any) -> str | tuple | None:
     """Connect to an instance.
