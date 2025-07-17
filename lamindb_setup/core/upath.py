@@ -414,12 +414,14 @@ def synchronize_to(
         return False
 
     use_size: bool = False
+    # use casting to int to avoid problems when the local filesystem
+    # discards fractional parts of timestamps
     if protocol == "s3":
-        get_modified = lambda file_stat: file_stat["LastModified"].timestamp()
+        get_modified = lambda file_stat: int(file_stat["LastModified"].timestamp())
     elif protocol == "gs":
-        get_modified = lambda file_stat: file_stat["mtime"].timestamp()
+        get_modified = lambda file_stat: int(file_stat["mtime"].timestamp())
     elif protocol == "hf":
-        get_modified = lambda file_stat: file_stat["last_commit"].date.timestamp()
+        get_modified = lambda file_stat: int(file_stat["last_commit"].date.timestamp())
     else:  #  http etc
         use_size = True
         get_modified = lambda file_stat: file_stat["size"]
@@ -427,14 +429,15 @@ def synchronize_to(
     if use_size:
         is_sync_needed = lambda cloud_size, local_stat: cloud_size != local_stat.st_size
     else:
-        # local filesystems may not store the fractional part of the timestamp,
-        # so use some tolerance in the comparison
+        # no need to cast local_stat.st_mtime to int
+        # because if it has the fractional part and cloud_mtime doesn't
+        # and they have the same integer part then cloud_mtime can't be bigger
         is_sync_needed = (
-            lambda cloud_mtime, local_stat: cloud_mtime - local_stat.st_mtime >= 1
+            lambda cloud_mtime, local_stat: cloud_mtime > local_stat.st_mtime
         )
 
     local_paths: list[Path] = []
-    cloud_stats: dict[str, float | int]
+    cloud_stats: dict[str, int]
     if is_dir:
         cloud_stats = {
             file: get_modified(stat)
@@ -454,8 +457,14 @@ def synchronize_to(
                 path: path.stat() for path in destination.rglob("*") if path.is_file()
             }
             if not use_size:
-                cloud_mts_max = max(cloud_stats.values())
-                local_mts_max = max(stat.st_mtime for stat in local_paths_all.values())
+                # cast to int to remove the fractional parts
+                # there is a problem when a fractional part is allowed on one filesystem
+                # but not on the other
+                # so just normalize both to int
+                cloud_mts_max: int = max(cloud_stats.values())
+                local_mts_max: int = int(
+                    max(stat.st_mtime for stat in local_paths_all.values())
+                )
                 if local_mts_max > cloud_mts_max:
                     return False
                 elif local_mts_max == cloud_mts_max:
