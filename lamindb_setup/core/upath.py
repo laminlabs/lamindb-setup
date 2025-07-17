@@ -427,8 +427,10 @@ def synchronize_to(
     if use_size:
         is_sync_needed = lambda cloud_size, local_stat: cloud_size != local_stat.st_size
     else:
+        # local filesystems may not store the fractional part of the timestamp,
+        # so use some tolerance in the comparison
         is_sync_needed = (
-            lambda cloud_mtime, local_stat: cloud_mtime > local_stat.st_mtime
+            lambda cloud_mtime, local_stat: cloud_mtime - local_stat.st_mtime >= 1
         )
 
     local_paths: list[Path] = []
