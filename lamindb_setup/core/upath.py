@@ -458,6 +458,9 @@ def synchronize_to(
             }
             if not use_size:
                 # cast to int to remove the fractional parts
+                # there is a problem when a fractional part is allowed on one filesystem
+                # but not on the other
+                # so just normalize both to int
                 cloud_mts_max: int = max(cloud_stats.values())
                 local_mts_max: int = int(
                     max(stat.st_mtime for stat in local_paths_all.values())
