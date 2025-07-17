@@ -61,6 +61,9 @@ class Environment:
         self.supabase_anon_key: str = key
 
 
+DEFAULT_TIMEOUT = 20
+
+
 # runs ~0.5s
 def connect_hub(
     fallback_env: bool = False, client_options: ClientOptions | None = None
@@ -69,8 +72,8 @@ def connect_hub(
     if client_options is None:
         client_options = ClientOptions(
             auto_refresh_token=False,
-            function_client_timeout=20,
-            postgrest_client_timeout=20,
+            function_client_timeout=DEFAULT_TIMEOUT,
+            postgrest_client_timeout=DEFAULT_TIMEOUT,
         )
     client = create_client(env.supabase_api_url, env.supabase_anon_key, client_options)
     # needed to enable retries for http requests in supabase
@@ -217,7 +220,9 @@ def request_with_auth(
     headers["Authorization"] = f"Bearer {access_token}"
 
     make_request = getattr(requests, method)
-    response = make_request(url, headers=headers, **kwargs)
+    timeout = kwargs.pop("timeout", DEFAULT_TIMEOUT)
+
+    response = make_request(url, headers=headers, timeout=timeout, **kwargs)
     # upate access_token and try again if failed
     if response.status_code != 200 and renew_token:
         from lamindb_setup import settings
@@ -231,5 +236,5 @@ def request_with_auth(
 
         headers["Authorization"] = f"Bearer {access_token}"
 
-        response = make_request(url, headers=headers, **kwargs)
+        response = make_request(url, headers=headers, timeout=timeout, **kwargs)
     return response
