@@ -429,8 +429,11 @@ def synchronize_to(
     if use_size:
         is_sync_needed = lambda cloud_size, local_stat: cloud_size != local_stat.st_size
     else:
-        is_sync_needed = lambda cloud_mtime, local_stat: cloud_mtime > int(
-            local_stat.st_mtime
+        # no need to cast local_stat.st_mtime to int
+        # because if it has the fractional part and cloud_mtime doesn't
+        # and they have the same integer part then cloud_mtime can't be bigger
+        is_sync_needed = (
+            lambda cloud_mtime, local_stat: cloud_mtime > local_stat.st_mtime
         )
 
     local_paths: list[Path] = []
