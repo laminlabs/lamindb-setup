@@ -156,7 +156,11 @@ class InstanceSettings:
         found = []
         for record in all_local_records:
             root_path = Path(record.root)
-            if root_path.exists():
+            try:
+                root_path_exists = root_path.exists()
+            except Exception:  # no access etc
+                root_path_exists = False
+            if root_path_exists:
                 marker_path = root_path / STORAGE_UID_FILE_KEY
                 if not marker_path.exists():
                     legacy_filepath = root_path / LEGACY_STORAGE_UID_FILE_KEY
