@@ -531,11 +531,13 @@ def access_db(
         url = instance_api_url + url
 
     response = request_with_auth(url, "get", access_token, renew_token)  # type: ignore
-    response_json = response.json()
-    if response.status_code != 200:
+    status_code = response.status_code
+    if not (200 <= status_code < 300):
         raise PermissionError(
-            f"Fine-grained access to {instance_slug} failed: {response_json}"
+            f"Fine-grained access to {instance_slug} failed: {status_code} {response.text}"
         )
+
+    response_json = response.json()
     if "token" not in response_json:
         raise RuntimeError("The response of access_db does not contain a db token.")
     return response_json["token"]

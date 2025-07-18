@@ -223,8 +223,9 @@ def request_with_auth(
     timeout = kwargs.pop("timeout", DEFAULT_TIMEOUT)
 
     response = make_request(url, headers=headers, timeout=timeout, **kwargs)
+    status_code = response.status_code
     # update access_token and try again if failed
-    if (status_code := response.status_code) != 200 and renew_token:
+    if not (200 <= status_code < 300) and renew_token:
         from lamindb_setup import settings
 
         logger.debug(f"{method} {url} failed: {status_code} {response.text}")
