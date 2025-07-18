@@ -159,10 +159,14 @@ class InstanceSettings:
             try:
                 root_path_exists = root_path.exists()
             except Exception:  # no access etc
-                root_path_exists = False
+                break
             if root_path_exists:
                 marker_path = root_path / STORAGE_UID_FILE_KEY
-                if not marker_path.exists():
+                try:
+                    marker_path_exists = marker_path.exists()
+                except Exception:  # no access etc
+                    break
+                if not marker_path_exists:
                     legacy_filepath = root_path / LEGACY_STORAGE_UID_FILE_KEY
                     if legacy_filepath.exists():
                         logger.warning(
