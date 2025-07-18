@@ -159,13 +159,13 @@ class InstanceSettings:
             try:
                 root_path_exists = root_path.exists()
             except PermissionError:
-                break
+                continue
             if root_path_exists:
                 marker_path = root_path / STORAGE_UID_FILE_KEY
                 try:
                     marker_path_exists = marker_path.exists()
                 except PermissionError:
-                    break
+                    continue
                 if not marker_path_exists:
                     legacy_filepath = root_path / LEGACY_STORAGE_UID_FILE_KEY
                     if legacy_filepath.exists():
