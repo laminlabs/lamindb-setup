@@ -380,14 +380,16 @@ def _connect_instance_hub(
             .data
         )
         if len(data) != 0 and (instance_data := data[0]["instance"]) is not None:
-            new_name = instance_data["name"]  # the instance was renamed
-            logger.warning(
-                f"'{owner}/{name}' was renamed, please use '{owner}/{new_name}'"
-            )
-            response = client.functions.invoke(
-                "get-instance-settings-v1",
-                invoke_options={"body": {"owner": owner, "name": new_name}},
-            )
+            new_name = instance_data["name"]
+            # the instance was renamed
+            if new_name != name:
+                logger.warning(
+                    f"'{owner}/{name}' was renamed, please use '{owner}/{new_name}'"
+                )
+                response = client.functions.invoke(
+                    "get-instance-settings-v1",
+                    invoke_options={"body": {"owner": owner, "name": new_name}},
+                )
     # no instance found, check why is that
     if response == b"{}":
         # try the via single requests, will take more time
@@ -529,11 +531,13 @@ def access_db(
         url = instance_api_url + url
 
     response = request_with_auth(url, "get", access_token, renew_token)  # type: ignore
-    response_json = response.json()
-    if response.status_code != 200:
+    status_code = response.status_code
+    if not (200 <= status_code < 300):
         raise PermissionError(
-            f"Fine-grained access to {instance_slug} failed: {response_json}"
+            f"Fine-grained access to {instance_slug} failed: {status_code} {response.text}"
         )
+
+    response_json = response.json()
     if "token" not in response_json:
         raise RuntimeError("The response of access_db does not contain a db token.")
     return response_json["token"]

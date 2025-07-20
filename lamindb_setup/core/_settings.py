@@ -25,6 +25,8 @@ from .upath import LocalPathClasses, UPath
 if TYPE_CHECKING:
     from pathlib import Path
 
+    from lamindb.models import Branch, Space
+
     from lamindb_setup.core import InstanceSettings, StorageSettings, UserSettings
     from lamindb_setup.types import UPathStr
 
@@ -96,6 +98,94 @@ class SetupSettings:
             self._auto_connect_path.touch()
         else:
             self._auto_connect_path.unlink(missing_ok=True)
+
+    @property
+    def _branch_path(self) -> Path:
+        return (
+            settings_dir
+            / f"current-branch--{self.instance.owner}--{self.instance.name}.txt"
+        )
+
+    def _read_branch_idlike_name(self) -> tuple[int | str, str]:
+        idlike: str | int = 1
+        name: str = "main"
+        try:
+            branch_path = self._branch_path
+        except SystemExit:  # in case no instance setup
+            return idlike, name
+        if branch_path.exists():
+            idlike, name = branch_path.read_text().split("\n")
+        return idlike, name
+
+    @property
+    def branch(self) -> Branch:
+        """Default branch."""
+        from lamindb import Branch
+
+        idlike, _ = self._read_branch_idlike_name()
+        return Branch.get(idlike)
+
+    @branch.setter
+    def branch(self, value: str | Branch) -> None:
+        from lamindb import Branch, Q
+        from lamindb.errors import DoesNotExist
+
+        if isinstance(value, Branch):
+            assert value._state.adding is False, "Branch must be saved"
+            branch_record = value
+        else:
+            branch_record = Branch.filter(Q(name=value) | Q(uid=value)).one_or_none()
+            if branch_record is None:
+                raise DoesNotExist(
+                    f"Branch '{value}', please check on the hub UI whether you have the correct `uid` or `name`."
+                )
+        # we are sure that the current instance is setup because
+        # it will error on lamindb import otherwise
+        self._branch_path.write_text(f"{branch_record.uid}\n{branch_record.name}")
+
+    @property
+    def _space_path(self) -> Path:
+        return (
+            settings_dir
+            / f"current-space--{self.instance.owner}--{self.instance.name}.txt"
+        )
+
+    def _read_space_idlike_name(self) -> tuple[int | str, str]:
+        idlike: str | int = 1
+        name: str = "all"
+        try:
+            space_path = self._space_path
+        except SystemExit:  # in case no instance setup
+            return idlike, name
+        if space_path.exists():
+            idlike, name = space_path.read_text().split("\n")
+        return idlike, name
+
+    @property
+    def space(self) -> Space:
+        """Default space."""
+        from lamindb import Space
+
+        idlike, _ = self._read_space_idlike_name()
+        return Space.get(idlike)
+
+    @space.setter
+    def space(self, value: str | Space) -> None:
+        from lamindb import Q, Space
+        from lamindb.errors import DoesNotExist
+
+        if isinstance(value, Space):
+            assert value._state.adding is False, "Space must be saved"
+            space_record = value
+        else:
+            space_record = Space.filter(Q(name=value) | Q(uid=value)).one_or_none()
+            if space_record is None:
+                raise DoesNotExist(
+                    f"Space '{value}', please check on the hub UI whether you have the correct `uid` or `name`."
+                )
+        # we are sure that the current instance is setup because
+        # it will error on lamindb import otherwise
+        self._space_path.write_text(f"{space_record.uid}\n{space_record.name}")
 
     @property
     def is_connected(self) -> bool:
@@ -212,16 +302,22 @@ class SetupSettings:
         # do not show current setting representation when building docs
         if "sphinx" in sys.modules:
             return object.__repr__(self)
-        repr = f"Auto-connect in Python: {self.auto_connect}\n"
-        repr += f"Private Django API: {self.private_django_api}\n"
-        repr += f"Cache directory: {self.cache_dir.as_posix()}\n"
-        repr += f"User settings directory: {settings_dir.as_posix()}\n"
-        repr += f"System settings directory: {system_settings_dir.as_posix()}\n"
-        repr += self.user.__repr__() + "\n"
+        repr = ""
         if self._instance_exists:
+            repr += "Current branch & space:\n"
+            repr += f" - branch: {self._read_branch_idlike_name()[1]}\n"
+            repr += f" - space: {self._read_space_idlike_name()[1]}\n"
             repr += self.instance.__repr__()
         else:
-            repr += f"\n{CurrentInstanceNotConfigured.default_message}"
+            repr += "Current instance: None"
+        repr += "\nConfig:\n"
+        repr += f" - auto-connect in Python: {self.auto_connect}\n"
+        repr += f" - private Django API: {self.private_django_api}\n"
+        repr += "Local directories:\n"
+        repr += f" - cache: {self.cache_dir.as_posix()}\n"
+        repr += f" - user settings: {settings_dir.as_posix()}\n"
+        repr += f" - system settings: {system_settings_dir.as_posix()}\n"
+        repr += self.user.__repr__()
         return repr
 
 
@@ -261,7 +357,7 @@ class SetupPaths:
         local_filepath = SetupPaths.cloud_to_local_no_update(filepath, cache_key)
         if not isinstance(filepath, LocalPathClasses):
             local_filepath.parent.mkdir(parents=True, exist_ok=True)
-            filepath.synchronize(local_filepath, **kwargs)  # type: ignore
+            filepath.synchronize_to(local_filepath, **kwargs)  # type: ignore
         return local_filepath
 
 

@@ -32,6 +32,8 @@ if TYPE_CHECKING:
 
     from ._settings_user import UserSettings
 
+LOCAL_STORAGE_MESSAGE = "No local storage location found in current environment: defaulting to cloud storage"
+
 
 def sanitize_git_repo_url(repo_url: str) -> str:
     assert repo_url.startswith("https://")
@@ -82,7 +84,7 @@ class InstanceSettings:
         self._git_repo = None if git_repo is None else sanitize_git_repo_url(git_repo)
         # local storage
         self._keep_artifacts_local = keep_artifacts_local
-        self._storage_local: StorageSettings | None = None
+        self._local_storage: StorageSettings | None = None
         self._is_on_hub = is_on_hub
         # private, needed for api requests
         self._api_url = api_url
@@ -97,13 +99,13 @@ class InstanceSettings:
 
     def __repr__(self):
         """Rich string representation."""
-        representation = f"Current instance: {self.slug}"
-        attrs = ["owner", "name", "storage", "db", "modules", "git_repo"]
+        representation = "Current instance:"
+        attrs = ["slug", "storage", "db", "modules", "git_repo"]
         for attr in attrs:
             value = getattr(self, attr)
             if attr == "storage":
-                representation += f"\n- storage root: {value.root_as_str}"
-                representation += f"\n- storage region: {value.region}"
+                representation += f"\n - storage root: {value.root_as_str}"
+                representation += f"\n - storage region: {value.region}"
             elif attr == "db":
                 if self.dialect != "sqlite":
                     model = LaminDsnModel(db=value)
@@ -117,11 +119,11 @@ class InstanceSettings:
                     )
                 else:
                     db_print = value
-                representation += f"\n- {attr}: {db_print}"
+                representation += f"\n - {attr}: {db_print}"
             elif attr == "modules":
-                representation += f"\n- {attr}: {value if value else '{}'}"
+                representation += f"\n - {attr}: {value if value else '{}'}"
             else:
-                representation += f"\n- {attr}: {value}"
+                representation += f"\n - {attr}: {value}"
         return representation
 
     @property
@@ -151,12 +153,20 @@ class InstanceSettings:
         except ProgrammingError:
             logger.error("not able to load Storage registry: please migrate")
             return None
-        found = False
+        found = []
         for record in all_local_records:
             root_path = Path(record.root)
-            if root_path.exists():
+            try:
+                root_path_exists = root_path.exists()
+            except PermissionError:
+                continue
+            if root_path_exists:
                 marker_path = root_path / STORAGE_UID_FILE_KEY
-                if not marker_path.exists():
+                try:
+                    marker_path_exists = marker_path.exists()
+                except PermissionError:
+                    continue
+                if not marker_path_exists:
                     legacy_filepath = root_path / LEGACY_STORAGE_UID_FILE_KEY
                     if legacy_filepath.exists():
                         logger.warning(
@@ -175,33 +185,35 @@ class InstanceSettings:
                     )
                     continue
                 if uid == record.uid:
-                    found = True
-                    break
+                    found.append(record)
         if found:
+            if len(found) > 1:
+                found_display = "\n - ".join([f"{record.root}" for record in found])
+                logger.important(f"found locations:\n - {found_display}")
+            logger.important(f"defaulting to local storage: {record.root}")
             return StorageSettings(record.root)
         elif not mute_warning:
-            logger.warning(
-                "none of the registered local storage locations were found:\n    "
-                + "\n    ".join(r.root for r in all_local_records)
-            )
-            logger.important(
-                "please register a new local storage location via `ln.settings.storage_local = local_root_path` and re-load/connect the instance"
-            )
+            start = LOCAL_STORAGE_MESSAGE[0].lower()
+            logger.warning(f"{start}{LOCAL_STORAGE_MESSAGE[1:]}")
         return None
 
     @property
     def keep_artifacts_local(self) -> bool:
         """Default to keeping artifacts local.
 
-        Enable this optional setting for cloud instances on lamin.ai.
-
         Guide: :doc:`faq/keep-artifacts-local`
         """
         return self._keep_artifacts_local
 
+    @keep_artifacts_local.setter
+    def keep_artifacts_local(self, value: bool):
+        if not isinstance(value, bool):
+            raise ValueError("keep_artifacts_local must be a boolean value.")
+        self._keep_artifacts_local = value
+
     @property
     def storage(self) -> StorageSettings:
-        """Default storage.
+        """Default storage of instance.
 
         For a cloud instance, this is cloud storage. For a local instance, this
         is a local directory.
@@ -209,55 +221,86 @@ class InstanceSettings:
         return self._storage  # type: ignore
 
     @property
-    def storage_local(self) -> StorageSettings:
-        """An additional local default storage.
+    def local_storage(self) -> StorageSettings:
+        """An alternative default local storage location in the current environment.
 
-        Is only available if :attr:`keep_artifacts_local` is enabled.
+        Serves as the default storage location if :attr:`keep_artifacts_local` is enabled.
 
         Guide: :doc:`faq/keep-artifacts-local`
         """
-        if not self._keep_artifacts_local:
+        if not self.keep_artifacts_local:
             raise ValueError("`keep_artifacts_local` is not enabled for this instance.")
-        if self._storage_local is None:
-            self._storage_local = self._search_local_root()
-        if self._storage_local is None:
-            # raise an error, there was a warning just before in search_local_root
-            raise ValueError()
-        return self._storage_local
+        if self._local_storage is None:
+            self._local_storage = self._search_local_root()
+        if self._local_storage is None:
+            raise ValueError(LOCAL_STORAGE_MESSAGE)
+        return self._local_storage
 
-    @storage_local.setter
-    def storage_local(self, local_root: Path | str):
+    @local_storage.setter
+    def local_storage(self, local_root_host: tuple[Path | str, str]):
         from lamindb_setup._init_instance import register_storage_in_instance
 
+        if not isinstance(local_root_host, tuple):
+            local_root = local_root_host
+            host = "unspecified-host"
+        else:
+            local_root, host = local_root_host
+
         local_root = Path(local_root)
-        if not self._keep_artifacts_local:
+        if not self.keep_artifacts_local:
             raise ValueError("`keep_artifacts_local` is not enabled for this instance.")
-        storage_local = self._search_local_root(
+        local_storage = self._search_local_root(
             local_root=StorageSettings(local_root).root_as_str, mute_warning=True
         )
-        if storage_local is not None:
+        if local_storage is not None:
             # great, we're merely switching storage location
-            self._storage_local = storage_local
-            logger.important(f"defaulting to local storage: {storage_local.root}")
+            self._local_storage = local_storage
             return None
-        storage_local = self._search_local_root(mute_warning=True)
-        if storage_local is not None:
+        local_storage = self._search_local_root(mute_warning=True)
+        if local_storage is not None:
             if os.getenv("LAMIN_TESTING") == "true":
                 response = "y"
             else:
                 response = input(
                     "You already configured a local storage root for this instance in this"
-                    f" environment: {self.storage_local.root}\nDo you want to register another one? (y/n)"
+                    f" environment: {self.local_storage.root}\nDo you want to register another one? (y/n)"
                 )
             if response != "y":
                 return None
+        if host == "unspecified-host":
+            logger.warning(
+                "setting local_storage with a single path is deprecated for creating storage locations"
+            )
+            logger.warning(
+                "use this instead: ln.Storage(root='/dir/our_shared_dir', host='our-server-123').save()"
+            )
         local_root = UPath(local_root)
         assert isinstance(local_root, LocalPathClasses)
-        self._storage_local, _ = init_storage(
-            local_root, instance_id=self._id, instance_slug=self.slug, register_hub=True
+        tentative_storage, hub_status = init_storage(
+            local_root,
+            instance_id=self._id,
+            instance_slug=self.slug,
+            register_hub=True,
+            region=host,
         )  # type: ignore
-        register_storage_in_instance(self._storage_local)  # type: ignore
-        logger.important(f"defaulting to local storage: {self._storage_local.root}")
+        if hub_status in ["hub-record-created", "hub-record-retrieved"]:
+            register_storage_in_instance(tentative_storage)  # type: ignore
+            self._local_storage = tentative_storage
+            logger.important(
+                f"defaulting to local storage: {self._local_storage.root} on host {host}"
+            )
+        else:
+            logger.warning(f"could not set this local storage location: {local_root}")
+
+    @property
+    @deprecated("local_storage")
+    def storage_local(self) -> StorageSettings:
+        return self.local_storage
+
+    @storage_local.setter
+    @deprecated("local_storage")
+    def storage_local(self, local_root_host: tuple[Path | str, str]):
+        self.local_storage = local_root_host  # type: ignore
 
     @property
     def slug(self) -> str:
@@ -339,7 +382,7 @@ class InstanceSettings:
                 self._check_sqlite_lock()
             sqlite_file = self._sqlite_file
             cache_file = self.storage.cloud_to_local_no_update(sqlite_file)
-            sqlite_file.synchronize(cache_file, print_progress=True)  # type: ignore
+            sqlite_file.synchronize_to(cache_file, print_progress=True)  # type: ignore
 
     def _check_sqlite_lock(self):
         if not self._cloud_sqlite_locker.has_lock:

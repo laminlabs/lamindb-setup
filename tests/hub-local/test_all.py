@@ -42,10 +42,7 @@ from lamindb_setup.core._settings_storage import init_storage as init_storage_ba
 from lamindb_setup.core._settings_store import instance_settings_file
 from lamindb_setup.core._settings_user import UserSettings
 from laminhub_rest.core.legacy._instance_collaborator import InstanceCollaboratorHandler
-from laminhub_rest.test.instance.utils import (
-    create_hosted_test_instance,
-    delete_hosted_test_instance,
-)
+from laminhub_rest.test.instance import create_instance
 from postgrest.exceptions import APIError
 from supafunc.errors import FunctionsHttpError
 
@@ -183,10 +180,13 @@ def create_myinstance(create_testadmin1_session):  # -> Dict
 
 @pytest.fixture(scope="session")
 def create_instance_fine_grained_access(create_testadmin1_session):
-    instance = create_hosted_test_instance("instance_access_v2", access_v2=True)
+    client, _ = create_testadmin1_session
+
+    instance = create_instance("instance_test", client=client)
 
     yield instance
-    delete_hosted_test_instance(instance)
+
+    delete(instance.name, force=True)
 
 
 def test_connection_string_decomp(create_myinstance, create_testadmin1_session):

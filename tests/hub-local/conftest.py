@@ -11,15 +11,12 @@ from laminhub_rest.dev import (
 supabase_resources = SupabaseResources()
 
 
-pytest_plugins = [
-    "laminhub_rest.test.account.fixtures",
-    "laminhub_rest.test.common_fixtures",
-]
-
-
 def pytest_configure():
     os.environ["LAMIN_ENV"] = "local"
     os.environ["LAMIN_CLOUD_VERSION"] = "0.1"
+    os.environ["LAMIN_TEST_INSTANCE_ACCESS_V2"] = "true"
+    os.environ["LAMIN_TEST_INSTANCE_SCHEMA_STR"] = ""
+    os.environ["LAMIN_TEST_INSTANCE_PUBLIC"] = "false"
     remove_lamin_local_settings()
     supabase_resources.start_local()
     supabase_resources.reset_local()
