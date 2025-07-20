@@ -6,11 +6,9 @@ from pathlib import Path
 from dotenv import dotenv_values
 from lamin_utils import logger
 
-from .core._settings_save import save_system_storage_settings
-from .errors import CurrentInstanceNotConfigured
 from .core._settings_save import save_platform_user_storage_settings
 from .core._settings_store import system_settings_file
-
+from .errors import CurrentInstanceNotConfigured
 
 
 def clear_cache_dir():
