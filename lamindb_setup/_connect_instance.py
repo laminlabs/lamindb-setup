@@ -234,7 +234,7 @@ def reset_django_module_variables():
             except (AttributeError, TypeError):
                 continue
 
-                
+
 def _connect_cli(instance: str) -> None:
     from lamindb_setup import settings as settings_
 
