@@ -497,8 +497,8 @@ def access_db(
     instance_slug: str
     instance_api_url: str | None
     if (
-        "LAMIN_TEST_DB_TOKEN" in os.environ
-        and (env_db_token := os.environ["LAMIN_TEST_DB_TOKEN"]) != ""
+        "LAMIN_DB_TOKEN" in os.environ
+        and (env_db_token := os.environ["LAMIN_DB_TOKEN"]) != ""
     ):
         return env_db_token
 
