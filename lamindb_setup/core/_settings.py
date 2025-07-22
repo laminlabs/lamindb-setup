@@ -91,9 +91,9 @@ class SetupSettings:
 
     @auto_connect.setter
     def auto_connect(self, value: bool) -> None:
-        logger.warning(
-            "setting auto_connect to `False` no longer has an effect and the setting will likely be removed in the future; since lamindb 1.7, auto_connect `True` no longer clashes with connecting in a Python session",
-        )
+        # logger.warning(
+        #     "setting auto_connect to `False` no longer has an effect and the setting will likely be removed in the future; since lamindb 1.7, auto_connect `True` no longer clashes with connecting in a Python session",
+        # )
         if value:
             self._auto_connect_path.touch()
         else:
