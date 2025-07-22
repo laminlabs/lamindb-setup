@@ -32,7 +32,7 @@ if TYPE_CHECKING:
 
     from ._settings_user import UserSettings
 
-LOCAL_STORAGE_MESSAGE = "No storage location found in current environment: create one via, e.g., ln.Storage(root='/dir/our_shared_dir', host='our-server-123').save()"
+LOCAL_STORAGE_MESSAGE = "No local storage location found in current environment: defaulting to cloud storage"
 
 
 def sanitize_git_repo_url(repo_url: str) -> str:
@@ -156,9 +156,17 @@ class InstanceSettings:
         found = []
         for record in all_local_records:
             root_path = Path(record.root)
-            if root_path.exists():
+            try:
+                root_path_exists = root_path.exists()
+            except PermissionError:
+                continue
+            if root_path_exists:
                 marker_path = root_path / STORAGE_UID_FILE_KEY
-                if not marker_path.exists():
+                try:
+                    marker_path_exists = marker_path.exists()
+                except PermissionError:
+                    continue
+                if not marker_path_exists:
                     legacy_filepath = root_path / LEGACY_STORAGE_UID_FILE_KEY
                     if legacy_filepath.exists():
                         logger.warning(
@@ -193,15 +201,19 @@ class InstanceSettings:
     def keep_artifacts_local(self) -> bool:
         """Default to keeping artifacts local.
 
-        Enable this optional setting for cloud instances on lamin.ai.
-
         Guide: :doc:`faq/keep-artifacts-local`
         """
         return self._keep_artifacts_local
 
+    @keep_artifacts_local.setter
+    def keep_artifacts_local(self, value: bool):
+        if not isinstance(value, bool):
+            raise ValueError("keep_artifacts_local must be a boolean value.")
+        self._keep_artifacts_local = value
+
     @property
     def storage(self) -> StorageSettings:
-        """Default storage.
+        """Default storage of instance.
 
         For a cloud instance, this is cloud storage. For a local instance, this
         is a local directory.
@@ -210,13 +222,13 @@ class InstanceSettings:
 
     @property
     def local_storage(self) -> StorageSettings:
-        """An additional local storage location.
+        """An alternative default local storage location in the current environment.
 
-        Is only available if :attr:`keep_artifacts_local` is enabled.
+        Serves as the default storage location if :attr:`keep_artifacts_local` is enabled.
 
         Guide: :doc:`faq/keep-artifacts-local`
         """
-        if not self._keep_artifacts_local:
+        if not self.keep_artifacts_local:
             raise ValueError("`keep_artifacts_local` is not enabled for this instance.")
         if self._local_storage is None:
             self._local_storage = self._search_local_root()
@@ -235,7 +247,7 @@ class InstanceSettings:
             local_root, host = local_root_host
 
         local_root = Path(local_root)
-        if not self._keep_artifacts_local:
+        if not self.keep_artifacts_local:
             raise ValueError("`keep_artifacts_local` is not enabled for this instance.")
         local_storage = self._search_local_root(
             local_root=StorageSettings(local_root).root_as_str, mute_warning=True

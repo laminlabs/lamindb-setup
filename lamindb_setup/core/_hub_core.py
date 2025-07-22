@@ -460,9 +460,9 @@ def access_aws(storage_root: str, access_token: str | None = None) -> dict[str, 
         storage_root_info = call_with_fallback_auth(
             _access_aws, storage_root=storage_root, access_token=access_token
         )
-        return storage_root_info
     else:
-        raise RuntimeError("Can only get access to AWS if authenticated.")
+        storage_root_info = call_with_fallback(_access_aws, storage_root=storage_root)
+    return storage_root_info
 
 
 def _access_aws(*, storage_root: str, client: Client) -> dict[str, dict]:
@@ -497,8 +497,8 @@ def access_db(
     instance_slug: str
     instance_api_url: str | None
     if (
-        "LAMIN_TEST_DB_TOKEN" in os.environ
-        and (env_db_token := os.environ["LAMIN_TEST_DB_TOKEN"]) != ""
+        "LAMIN_DB_TOKEN" in os.environ
+        and (env_db_token := os.environ["LAMIN_DB_TOKEN"]) != ""
     ):
         return env_db_token
 
@@ -531,11 +531,13 @@ def access_db(
         url = instance_api_url + url
 
     response = request_with_auth(url, "get", access_token, renew_token)  # type: ignore
-    response_json = response.json()
-    if response.status_code != 200:
+    status_code = response.status_code
+    if not (200 <= status_code < 300):
         raise PermissionError(
-            f"Fine-grained access to {instance_slug} failed: {response_json}"
+            f"Fine-grained access to {instance_slug} failed: {status_code} {response.text}"
         )
+
+    response_json = response.json()
     if "token" not in response_json:
         raise RuntimeError("The response of access_db does not contain a db token.")
     return response_json["token"]

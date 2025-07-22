@@ -23,6 +23,7 @@ from upath.registry import register_implementation
 from lamindb_setup.errors import StorageNotEmpty
 
 from ._aws_options import HOSTED_BUCKETS, get_aws_options_manager
+from ._deprecated import deprecated
 from .hashing import HASH_LENGTH, b16_to_b64, hash_from_hashes_list, hash_string
 
 if TYPE_CHECKING:
@@ -413,12 +414,14 @@ def synchronize_to(
         return False
 
     use_size: bool = False
+    # use casting to int to avoid problems when the local filesystem
+    # discards fractional parts of timestamps
     if protocol == "s3":
-        get_modified = lambda file_stat: file_stat["LastModified"].timestamp()
+        get_modified = lambda file_stat: int(file_stat["LastModified"].timestamp())
     elif protocol == "gs":
-        get_modified = lambda file_stat: file_stat["mtime"].timestamp()
+        get_modified = lambda file_stat: int(file_stat["mtime"].timestamp())
     elif protocol == "hf":
-        get_modified = lambda file_stat: file_stat["last_commit"].date.timestamp()
+        get_modified = lambda file_stat: int(file_stat["last_commit"].date.timestamp())
     else:  #  http etc
         use_size = True
         get_modified = lambda file_stat: file_stat["size"]
@@ -426,12 +429,15 @@ def synchronize_to(
     if use_size:
         is_sync_needed = lambda cloud_size, local_stat: cloud_size != local_stat.st_size
     else:
+        # no need to cast local_stat.st_mtime to int
+        # because if it has the fractional part and cloud_mtime doesn't
+        # and they have the same integer part then cloud_mtime can't be bigger
         is_sync_needed = (
             lambda cloud_mtime, local_stat: cloud_mtime > local_stat.st_mtime
         )
 
     local_paths: list[Path] = []
-    cloud_stats: dict[str, float | int]
+    cloud_stats: dict[str, int]
     if is_dir:
         cloud_stats = {
             file: get_modified(stat)
@@ -451,8 +457,14 @@ def synchronize_to(
                 path: path.stat() for path in destination.rglob("*") if path.is_file()
             }
             if not use_size:
-                cloud_mts_max = max(cloud_stats.values())
-                local_mts_max = max(stat.st_mtime for stat in local_paths_all.values())
+                # cast to int to remove the fractional parts
+                # there is a problem when a fractional part is allowed on one filesystem
+                # but not on the other
+                # so just normalize both to int
+                cloud_mts_max: int = max(cloud_stats.values())
+                local_mts_max: int = int(
+                    max(stat.st_mtime for stat in local_paths_all.values())
+                )
                 if local_mts_max > cloud_mts_max:
                     return False
                 elif local_mts_max == cloud_mts_max:
@@ -687,14 +699,7 @@ def to_url(upath):
         raise ValueError("The provided UPath must be an S3 path.")
     key = "/".join(upath.parts[1:])
     bucket = upath.drive
-    if bucket == "scverse-spatial-eu-central-1":
-        region = "eu-central-1"
-    elif f"s3://{bucket}" not in HOSTED_BUCKETS:
-        response = upath.fs.call_s3("head_bucket", Bucket=bucket)
-        headers = response["ResponseMetadata"]["HTTPHeaders"]
-        region = headers.get("x-amz-bucket-region")
-    else:
-        region = bucket.replace("lamin_", "")
+    region = get_storage_region(upath)
     if region == "us-east-1":
         return f"https://{bucket}.s3.amazonaws.com/{key}"
     else:
@@ -717,6 +722,7 @@ def to_url(upath):
 
 # add custom functions
 UPath.modified = property(modified)
+UPath.synchronize = deprecated("synchronize_to")(synchronize_to)
 UPath.synchronize_to = synchronize_to
 UPath.upload_from = upload_from
 UPath.to_url = to_url
@@ -798,6 +804,67 @@ class S3QueryPath(S3Path):
 
 
 register_implementation("s3", S3QueryPath, clobber=True)
+
+
+def get_storage_region(path: UPathStr) -> str | None:
+    upath = UPath(path)
+
+    if upath.protocol != "s3":
+        return None
+
+    bucket = upath.drive
+
+    if bucket == "scverse-spatial-eu-central-1":
+        return "eu-central-1"
+    elif f"s3://{bucket}" in HOSTED_BUCKETS:
+        return bucket.replace("lamin-", "")
+
+    from botocore.exceptions import ClientError
+
+    if isinstance(path, str):
+        import botocore.session
+        from botocore.config import Config
+
+        path_part = path.replace("s3://", "")
+        # check for endpoint_url in the path string
+        if "?" in path_part:
+            path_part, query = _split_path_query(path_part)
+            endpoint_url = query.get("endpoint_url", [None])[0]
+        else:
+            endpoint_url = None
+        session = botocore.session.get_session()
+        credentials = session.get_credentials()
+        if credentials is None or credentials.access_key is None:
+            config = Config(signature_version=botocore.session.UNSIGNED)
+        else:
+            config = None
+        s3_client = session.create_client(
+            "s3", endpoint_url=endpoint_url, config=config
+        )
+        try:
+            response = s3_client.head_bucket(Bucket=bucket)
+        except ClientError as exc:
+            response = getattr(exc, "response", {})
+            if response.get("Error", {}).get("Code") == "404":
+                raise exc
+    else:
+        upath = get_aws_options_manager()._path_inject_options(upath, {})
+        try:
+            response = upath.fs.call_s3("head_bucket", Bucket=bucket)
+        except Exception as exc:
+            cause = getattr(exc, "__cause__", None)
+            if not isinstance(cause, ClientError):
+                raise exc
+            response = getattr(cause, "response", {})
+            if response.get("Error", {}).get("Code") == "404":
+                raise exc
+
+    region = (
+        response.get("ResponseMetadata", {})
+        .get("HTTPHeaders", {})
+        .get("x-amz-bucket-region", None)
+    )
+    return region
 
 
 def create_path(path: UPathStr, access_token: str | None = None) -> UPath:
