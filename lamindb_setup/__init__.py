@@ -42,32 +42,35 @@ import importlib.metadata
 import os
 
 from packaging import version as packaging_version
+from packaging.requirements import Requirement
 
-from lamindb_setup.errors import ModuleWasntConfigured
 
-
-def _check_plugin_version(package_name: str, min_version: str) -> None:
+def _check_plugin_compatibility(package_name: str) -> None:
     try:
-        current_version = importlib.metadata.version(package_name)
+        dist = importlib.metadata.distribution(package_name)
+        lamindb_requirement = None
 
-        if packaging_version.parse(current_version) < packaging_version.parse(
-            min_version
-        ):
+        for req_str in dist.requires or []:
+            req = Requirement(req_str)
+            if req.name == "lamindb":
+                lamindb_requirement = req
+                break
+
+        if not lamindb_requirement:
+            return
+
+        if not lamindb_requirement.specifier.contains(__version__):
             raise RuntimeError(
-                f"The version of {package_name} you have ({current_version}) is incompatible "
-                f"with lamindb, please upgrade it: pip install {package_name}>{min_version}"
+                f"Your lamindb version ({__version__}) is higher than what {package_name} supports. "
+                f"Please upgrade them together: pip install -U 'lamindb[{package_name}]'."
             )
-    except (
-        importlib.metadata.PackageNotFoundError,
-        ModuleWasntConfigured,
-        ImportError,
-    ):
+
+    except (importlib.metadata.PackageNotFoundError, ModuleNotFoundError):
         pass
 
 
-_check_plugin_version("bionty", "1.6.0")
-_check_plugin_version("wetlab", "1.3.1")
-_check_plugin_version("clinicore", "1.2.1")
+for plugin in ["bionty", "wetlab", "clinicore"]:
+    _check_plugin_compatibility(plugin)
 
 
 from . import core, errors, types
