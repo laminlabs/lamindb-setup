@@ -301,7 +301,6 @@ class InstanceSettings:
         if hub_status in ["hub-record-created", "hub-record-retrieved"]:
             register_storage_in_instance(tentative_storage)  # type: ignore
             self._local_storage = tentative_storage
-            self.keep_artifacts_local = True  # was switched off in _search_local_root()
             logger.important(
                 f"defaulting to local storage: {self._local_storage.root} on host {host}"
             )
