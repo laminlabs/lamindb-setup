@@ -186,9 +186,10 @@ class InstanceSettings:
                         )
                         legacy_filepath.rename(marker_path)
                     else:
-                        raise ValueError(
+                        logger.warning(
                             f"local storage location '{root_path}' is corrupted, cannot find marker file with storage uid"
                         )
+                        continue
                 try:
                     uid = marker_path.read_text().splitlines()[0]
                 except PermissionError:
