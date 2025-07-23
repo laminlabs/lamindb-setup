@@ -105,9 +105,10 @@ class InstanceSettings:
             value = getattr(self, attr)
             if attr == "storage":
                 if self.keep_artifacts_local:
-                    import lamindb as ln
-
-                    self._local_storage = ln.setup.settings.instance._local_storage
+                    try:
+                        self.local_storage  # noqa B018 trigger local storage search
+                    except ValueError:
+                        pass
                 if self._local_storage is not None:
                     value_local = self.local_storage
                     representation += f"\n - local storage: {value_local.root_as_str} ({value_local.region})"
@@ -203,13 +204,11 @@ class InstanceSettings:
                 found_display = "\n - ".join([f"{record.root}" for record in found])
                 logger.important(f"found locations:\n - {found_display}")
             record = found[0]
-            self.keep_artifacts_local = True  # might have changed
             logger.important(f"defaulting to local storage: {record.root}")
             return StorageSettings(record.root, region=record.region)
         elif not mute_warning:
             start = LOCAL_STORAGE_MESSAGE[0].lower()
             logger.warning(f"{start}{LOCAL_STORAGE_MESSAGE[1:]}")
-        self.keep_artifacts_local = False
         return None
 
     @property
