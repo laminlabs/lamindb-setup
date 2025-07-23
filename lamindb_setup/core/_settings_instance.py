@@ -203,12 +203,13 @@ class InstanceSettings:
                 found_display = "\n - ".join([f"{record.root}" for record in found])
                 logger.important(f"found locations:\n - {found_display}")
             record = found[0]
+            self.keep_artifacts_local = True  # might have changed
             logger.important(f"defaulting to local storage: {record.root}")
             return StorageSettings(record.root, region=record.region)
         elif not mute_warning:
             start = LOCAL_STORAGE_MESSAGE[0].lower()
             logger.warning(f"{start}{LOCAL_STORAGE_MESSAGE[1:]}")
-        self._keep_artifacts_local = False
+        self.keep_artifacts_local = False
         return None
 
     @property
