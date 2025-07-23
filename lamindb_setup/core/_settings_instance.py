@@ -105,10 +105,9 @@ class InstanceSettings:
             value = getattr(self, attr)
             if attr == "storage":
                 if self.keep_artifacts_local:
-                    try:
-                        self.local_storage  # noqa B018 trigger local storage search
-                    except ValueError:
-                        pass
+                    import lamindb as ln
+
+                    self._local_storage = ln.setup.settings.instance._local_storage
                 if self._local_storage is not None:
                     value_local = self.local_storage
                     representation += f"\n - local storage: {value_local.root_as_str} ({value_local.region})"
