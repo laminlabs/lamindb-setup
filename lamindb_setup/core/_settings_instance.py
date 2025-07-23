@@ -104,8 +104,20 @@ class InstanceSettings:
         for attr in attrs:
             value = getattr(self, attr)
             if attr == "storage":
-                representation += f"\n - storage root: {value.root_as_str}"
-                representation += f"\n - storage region: {value.region}"
+                if self.keep_artifacts_local:
+                    import lamindb as ln
+
+                    self._local_storage = ln.setup.settings.instance._local_storage
+                if self._local_storage is not None:
+                    value_local = self.local_storage
+                    representation += f"\n - local storage: {value_local.root_as_str} ({value_local.region})"
+                    representation += (
+                        f"\n - cloud storage: {value.root_as_str} ({value.region})"
+                    )
+                else:
+                    representation += (
+                        f"\n - storage: {value.root_as_str} ({value.region})"
+                    )
             elif attr == "db":
                 if self.dialect != "sqlite":
                     model = LaminDsnModel(db=value)
@@ -190,8 +202,9 @@ class InstanceSettings:
             if len(found) > 1:
                 found_display = "\n - ".join([f"{record.root}" for record in found])
                 logger.important(f"found locations:\n - {found_display}")
+            record = found[0]
             logger.important(f"defaulting to local storage: {record.root}")
-            return StorageSettings(record.root)
+            return StorageSettings(record.root, region=record.region)
         elif not mute_warning:
             start = LOCAL_STORAGE_MESSAGE[0].lower()
             logger.warning(f"{start}{LOCAL_STORAGE_MESSAGE[1:]}")
@@ -229,7 +242,9 @@ class InstanceSettings:
         Guide: :doc:`faq/keep-artifacts-local`
         """
         if not self.keep_artifacts_local:
-            raise ValueError("`keep_artifacts_local` is not enabled for this instance.")
+            raise ValueError(
+                "`keep_artifacts_local` is False, switch via: ln.setup.settings.instance.keep_artifacts_local = True"
+            )
         if self._local_storage is None:
             self._local_storage = self._search_local_root()
         if self._local_storage is None:
