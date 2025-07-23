@@ -124,6 +124,11 @@ def get_access_token(
             }
         )
         return auth_response.session.access_token
+    except Exception as e:
+        # we need to log the problem here because the exception is usually caught outside
+        # in call_with_fallback_auth
+        logger.warning(f"failed to update your lamindb access token: {e}")
+        raise e
     finally:
         hub.auth.sign_out(options={"scope": "local"})
 
