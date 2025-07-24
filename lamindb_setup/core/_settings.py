@@ -115,6 +115,8 @@ class SetupSettings:
         return idlike, name
 
     @property
+    # TODO: refactor so that it returns a BranchMock object
+    # and we never need a DB request
     def branch(self) -> Branch:
         """Default branch."""
         if self._branch is None:
@@ -162,6 +164,8 @@ class SetupSettings:
         return idlike, name
 
     @property
+    # TODO: refactor so that it returns a BranchMock object
+    # and we never need a DB request
     def space(self) -> Space:
         """Default space."""
         if self._space is None:
