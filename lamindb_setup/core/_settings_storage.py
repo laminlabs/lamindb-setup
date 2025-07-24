@@ -19,7 +19,13 @@ from ._aws_options import (
 from ._aws_storage import find_closest_aws_region
 from ._deprecated import deprecated
 from .hashing import hash_and_encode_as_b62
-from .upath import LocalPathClasses, UPath, _split_path_query, create_path
+from .upath import (
+    LocalPathClasses,
+    UPath,
+    _split_path_query,
+    create_path,
+    get_storage_region,
+)
 
 if TYPE_CHECKING:
     from lamindb_setup.types import StorageType, UPathStr
@@ -43,48 +49,13 @@ def instance_uid_from_uuid(instance_id: UUID) -> str:
     return hash_and_encode_as_b62(instance_id.hex)[:12]
 
 
-def get_storage_region(path: UPathStr) -> str | None:
-    path_str = str(path)
-    if path_str.startswith("s3://"):
-        import botocore.session
-        from botocore.config import Config
-        from botocore.exceptions import ClientError
+def get_storage_type(root_as_str: str) -> StorageType:
+    import fsspec
 
-        # check for endpoint_url in storage options if upath
-        if isinstance(path, UPath):
-            endpoint_url = path.storage_options.get("endpoint_url", None)
-        else:
-            endpoint_url = None
-        path_part = path_str.replace("s3://", "")
-        # check for endpoint_url in the path string
-        if "?" in path_part:
-            assert endpoint_url is None
-            path_part, query = _split_path_query(path_part)
-            endpoint_url = query.get("endpoint_url", [None])[0]
-        bucket = path_part.split("/")[0]
-        session = botocore.session.get_session()
-        credentials = session.get_credentials()
-        if credentials is None or credentials.access_key is None:
-            config = Config(signature_version=botocore.session.UNSIGNED)
-        else:
-            config = None
-        s3_client = session.create_client(
-            "s3", endpoint_url=endpoint_url, config=config
-        )
-        try:
-            response = s3_client.head_bucket(Bucket=bucket)
-        except ClientError as exc:
-            response = getattr(exc, "response", {})
-            if response.get("Error", {}).get("Code") == "404":
-                raise exc
-        region = (
-            response.get("ResponseMetadata", {})
-            .get("HTTPHeaders", {})
-            .get("x-amz-bucket-region", None)
-        )
-    else:
-        region = None
-    return region
+    convert = {"file": "local"}
+    # init_storage checks that the root protocol belongs to VALID_PROTOCOLS
+    protocol = fsspec.utils.get_protocol(root_as_str)
+    return convert.get(protocol, protocol)  # type: ignore
 
 
 def mark_storage_root(
@@ -125,6 +96,7 @@ def init_storage(
     init_instance: bool = False,
     created_by: UUID | None = None,
     access_token: str | None = None,
+    region: str | None = None,
 ) -> tuple[
     StorageSettings,
     Literal["hub-record-not-created", "hub-record-retrieved", "hub-record-created"],
@@ -145,7 +117,6 @@ def init_storage(
         # this means we constructed a hosted location of shape s3://bucket-name/uid
         # within LaminHub
         assert root_str.endswith(uid)
-    region = None
     lamin_env = os.getenv("LAMIN_ENV")
     if root_str.startswith("create-s3"):
         if root_str != "create-s3":
@@ -177,6 +148,10 @@ def init_storage(
     register_hub = (
         register_hub or ssettings.type_is_cloud
     )  # default to registering cloud storage
+    if register_hub and not ssettings.type_is_cloud and ssettings.host is None:
+        raise ValueError(
+            "`host` must be set for local storage locations that are registered on the hub"
+        )
     hub_record_status = init_storage_hub(
         ssettings,
         auto_populate_instance=not init_instance,
@@ -226,7 +201,10 @@ def init_storage(
 
 
 class StorageSettings:
-    """Settings for a storage location (local or cloud)."""
+    """Settings for a storage location (local or cloud).
+
+    Do not instantiate this class yourself, use `ln.Storage` instead.
+    """
 
     def __init__(
         self,
@@ -386,6 +364,18 @@ class StorageSettings:
         return self.type != "local"
 
     @property
+    def host(self) -> str | None:
+        """Host identifier for local storage locations.
+
+        Is `None` for locations with `type != "local"`.
+
+        A globally unique user-defined host identifier (cluster, server, laptop, etc.).
+        """
+        if self.type != "local":
+            return None
+        return self.region
+
+    @property
     def region(self) -> str | None:
         """Storage region."""
         if self._region is None:
@@ -398,12 +388,7 @@ class StorageSettings:
 
         Returns the protocol as a stringe, e.g., "local", "s3", "gs", "http", "https".
         """
-        import fsspec
-
-        convert = {"file": "local"}
-        # init_storage checks that the root protocol belongs to VALID_PROTOCOLS
-        protocol = fsspec.utils.get_protocol(self.root_as_str)
-        return convert.get(protocol, protocol)  # type: ignore
+        return get_storage_type(self.root_as_str)
 
     @property
     def is_on_hub(self) -> bool:

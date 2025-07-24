@@ -247,7 +247,7 @@ def setup_django(
     IS_SETUP = True
 
     if isettings.keep_artifacts_local:
-        isettings._search_local_root()
+        isettings._local_storage = isettings._search_local_root()
 
 
 # THIS IS NOT SAFE

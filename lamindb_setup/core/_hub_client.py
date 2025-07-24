@@ -5,6 +5,7 @@ import os
 from typing import Literal
 from urllib.request import urlretrieve
 
+from httpx import HTTPTransport
 from lamin_utils import logger
 from pydantic_settings import BaseSettings
 from supabase import Client, create_client  # type: ignore
@@ -60,20 +61,29 @@ class Environment:
         self.supabase_anon_key: str = key
 
 
+DEFAULT_TIMEOUT = 20
+
+
 # runs ~0.5s
 def connect_hub(
     fallback_env: bool = False, client_options: ClientOptions | None = None
 ) -> Client:
     env = Environment(fallback=fallback_env)
     if client_options is None:
-        # function_client_timeout=5 by default
-        # increase to avoid rare timeouts for edge functions
         client_options = ClientOptions(
             auto_refresh_token=False,
-            function_client_timeout=30,
-            postgrest_client_timeout=20,
+            function_client_timeout=DEFAULT_TIMEOUT,
+            postgrest_client_timeout=DEFAULT_TIMEOUT,
         )
-    return create_client(env.supabase_api_url, env.supabase_anon_key, client_options)
+    client = create_client(env.supabase_api_url, env.supabase_anon_key, client_options)
+    # needed to enable retries for http requests in supabase
+    # these are separate clients and need separate transports
+    # retries are done only in case an httpx.ConnectError or an httpx.ConnectTimeout occurs
+    transport_kwargs = {"verify": True, "http2": True, "retries": 2}
+    client.auth._http_client._transport = HTTPTransport(**transport_kwargs)
+    client.functions._client._transport = HTTPTransport(**transport_kwargs)
+    client.postgrest.session._transport = HTTPTransport(**transport_kwargs)
+    return client
 
 
 def connect_hub_with_auth(
@@ -114,6 +124,11 @@ def get_access_token(
             }
         )
         return auth_response.session.access_token
+    except Exception as e:
+        # we need to log the problem here because the exception is usually caught outside
+        # in call_with_fallback_auth
+        logger.warning(f"failed to update your lamindb access token: {e}")
+        raise e
     finally:
         hub.auth.sign_out(options={"scope": "local"})
 
@@ -210,10 +225,15 @@ def request_with_auth(
     headers["Authorization"] = f"Bearer {access_token}"
 
     make_request = getattr(requests, method)
-    response = make_request(url, headers=headers, **kwargs)
-    # upate access_token and try again if failed
-    if response.status_code != 200 and renew_token:
+    timeout = kwargs.pop("timeout", DEFAULT_TIMEOUT)
+
+    response = make_request(url, headers=headers, timeout=timeout, **kwargs)
+    status_code = response.status_code
+    # update access_token and try again if failed
+    if not (200 <= status_code < 300) and renew_token:
         from lamindb_setup import settings
+
+        logger.debug(f"{method} {url} failed: {status_code} {response.text}")
 
         access_token = get_access_token(
             settings.user.email, settings.user.password, settings.user.api_key
@@ -224,5 +244,5 @@ def request_with_auth(
 
         headers["Authorization"] = f"Bearer {access_token}"
 
-        response = make_request(url, headers=headers, **kwargs)
+        response = make_request(url, headers=headers, timeout=timeout, **kwargs)
     return response

@@ -147,6 +147,9 @@ def _check_instance_setup(from_module: str | None = None) -> bool:
             else:
                 django_lamin.setup_django(isettings)
                 logger.important(f"connected lamindb: {isettings.slug}")
+                settings._instance_settings = (
+                    isettings  # update of local storage location
+                )
         return django_lamin.IS_SETUP
     else:
         if from_module is not None and settings.auto_connect:
