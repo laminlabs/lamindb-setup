@@ -106,7 +106,9 @@ class AWSOptionsManager:
     def _get_cached_credentials(self, root: str) -> dict:
         return self._credentials_cache[root]["credentials"]
 
-    def _path_inject_options(self, path: UPath, credentials: dict) -> UPath:
+    def _path_inject_options(
+        self, path: UPath, credentials: dict, extra_parameters: dict | None = None
+    ) -> UPath:
         if credentials == {}:
             # credentials were specified manually for the path
             if "anon" in path.storage_options:
@@ -136,6 +138,9 @@ class AWSOptionsManager:
         connection_options["version_aware"] = path.storage_options.get(
             "version_aware", False
         )
+
+        if extra_parameters is not None:
+            connection_options.update(extra_parameters)
 
         return UPath(path, **connection_options)
 
@@ -177,8 +182,12 @@ class AWSOptionsManager:
             is_managed = accessibility.get("is_managed", False)
             if is_managed:
                 credentials = storage_root_info["credentials"]
+                extra_parameters = storage_root_info["accessibility"][
+                    "extra_parameters"
+                ]
             else:
                 credentials = {}
+                extra_parameters = None
 
             if access_token is None:
                 if "storage_root" in accessibility:
@@ -196,7 +205,7 @@ class AWSOptionsManager:
                     root = "s3://" + root
                 self._set_cached_credentials(_keep_trailing_slash(root), credentials)
 
-        return self._path_inject_options(path, credentials)
+        return self._path_inject_options(path, credentials, extra_parameters)
 
 
 _aws_options_manager: AWSOptionsManager | None = None
