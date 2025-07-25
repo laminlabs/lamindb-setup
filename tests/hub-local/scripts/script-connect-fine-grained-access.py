@@ -13,6 +13,15 @@ ln_setup.connect("instance_test__access_v2")
 
 isettings = ln_setup.settings.instance
 
+# check extra parameters for s3 managed buckets
+# this is populated by create_instance imported from laminhub
+assert (
+    isettings.storage.root.storage_options["s3_additional_kwargs"][
+        "ServerSideEncryption"
+    ]
+    == "AES256"
+)
+
 assert isettings._fine_grained_access
 assert isettings._db_permissions == "jwt"
 assert isettings._api_url is not None
