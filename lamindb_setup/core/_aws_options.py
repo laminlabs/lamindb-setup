@@ -203,9 +203,10 @@ class AWSOptionsManager:
                         root = path.drive
                     root = "s3://" + root
 
-                root_slash = _keep_trailing_slash(root)
-                self._set_cached_credentials(root_slash, credentials)
-                self._parameters_cache[root_slash] = extra_parameters
+                root = _keep_trailing_slash(root)
+                assert isinstance(root, str)
+                self._set_cached_credentials(root, credentials)
+                self._parameters_cache[root] = extra_parameters
 
         return self._path_inject_options(path, credentials, extra_parameters)
 
