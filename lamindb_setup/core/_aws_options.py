@@ -22,7 +22,7 @@ else:
     HOSTED_BUCKETS = ("s3://lamin-hosted-test",)  # type: ignore
 
 
-def _keep_trailing_slash(path_str: str):
+def _keep_trailing_slash(path_str: str) -> str:
     return path_str if path_str[-1] == "/" else path_str + "/"
 
 
@@ -54,6 +54,7 @@ class AWSOptionsManager:
 
     def __init__(self):
         self._credentials_cache = {}
+        self._parameters_cache = {}  # this is not refreshed
 
         from s3fs import S3FileSystem
 
@@ -139,7 +140,7 @@ class AWSOptionsManager:
             "version_aware", False
         )
 
-        if extra_parameters is not None:
+        if extra_parameters:
             connection_options.update(extra_parameters)
 
         return UPath(path, **connection_options)
@@ -163,7 +164,7 @@ class AWSOptionsManager:
         if root is not None:
             set_cache = False
             credentials = self._get_cached_credentials(root)
-
+            extra_parameters = self._parameters_cache.get(root)
             if access_token is not None:
                 set_cache = True
             elif credentials != {}:
@@ -182,9 +183,7 @@ class AWSOptionsManager:
             is_managed = accessibility.get("is_managed", False)
             if is_managed:
                 credentials = storage_root_info["credentials"]
-                extra_parameters = storage_root_info["accessibility"][
-                    "extra_parameters"
-                ]
+                extra_parameters = accessibility["extra_parameters"]
             else:
                 credentials = {}
                 extra_parameters = None
@@ -203,7 +202,10 @@ class AWSOptionsManager:
                         # write the bucket for everything else
                         root = path.drive
                     root = "s3://" + root
-                self._set_cached_credentials(_keep_trailing_slash(root), credentials)
+
+                root_slash = _keep_trailing_slash(root)
+                self._set_cached_credentials(root_slash, credentials)
+                self._parameters_cache[root_slash] = extra_parameters
 
         return self._path_inject_options(path, credentials, extra_parameters)
 
