@@ -40,7 +40,7 @@ uv pip install --system git+https://github.com/laminlabs/bionty
     elif group == "docs":
         cmds = modules_deps.strip()
     elif group == "storage":
-        cmds = modules_deps + "uv pip install --system gcsfs huggingface_hub"
+        cmds = modules_deps + "uv pip install --system gcsfs huggingface_hub<0.34.0"
     elif group == "hub-prod":
         # cmds = "git clone --depth 1 https://github.com/django/django\n"
         # cmds += "uv pip install --system -e ./django\n"
