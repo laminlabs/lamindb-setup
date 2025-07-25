@@ -393,8 +393,10 @@ def synchronize_to(
     """Sync to a local destination path."""
     destination = destination.resolve()
     protocol = origin.protocol
+    stat_kwargs = {"expand_info": True} if protocol == "hf" else {}
+    origin_str = str(origin)
     try:
-        cloud_info = origin.stat().as_info()
+        cloud_info = origin.fs.stat(origin_str, **stat_kwargs)
         exists = True
         is_dir = cloud_info["type"] == "directory"
     except FileNotFoundError:
@@ -441,7 +443,9 @@ def synchronize_to(
     if is_dir:
         cloud_stats = {
             file: get_modified(stat)
-            for file, stat in origin.fs.find(origin.as_posix(), detail=True).items()
+            for file, stat in origin.fs.find(
+                origin_str, detail=True, **stat_kwargs
+            ).items()
         }
         for cloud_path in cloud_stats:
             file_key = PurePosixPath(cloud_path).relative_to(origin.path).as_posix()
