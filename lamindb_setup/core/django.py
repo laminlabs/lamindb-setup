@@ -184,6 +184,9 @@ def setup_django(
             )
             is not None
         ]
+        if isettings.dialect == "postgresql":
+            # for trigram indexes
+            installed_apps += ["django.contrib.postgres"]
         if view_schema:
             installed_apps = installed_apps[::-1]  # to fix how apps appear
             installed_apps += ["schema_graph", "django.contrib.staticfiles"]
