@@ -155,6 +155,7 @@ def setup_django(
 
     import dj_database_url
     import django
+    from django.db import connection
     from django.conf import settings
     from django.core.management import call_command
 
@@ -184,6 +185,9 @@ def setup_django(
             )
             is not None
         ]
+        if isettings.dialect == "postgresql":
+            # for trigram indexes
+            installed_apps += ["django.contrib.postgres"]
         if view_schema:
             installed_apps = installed_apps[::-1]  # to fix how apps appear
             installed_apps += ["schema_graph", "django.contrib.staticfiles"]
@@ -229,6 +233,10 @@ def setup_django(
     if configure_only:
         return None
 
+    def install_trigram_extension():
+        with connection.cursor() as cursor:
+            cursor.execute("CREATE EXTENSION IF NOT EXISTS pg_trgm;")
+
     # migrations management
     if create_migrations:
         call_command("makemigrations")
@@ -238,6 +246,9 @@ def setup_django(
         call_command("migrate", verbosity=2)
         isettings._update_cloud_sqlite_file(unlock_cloud_sqlite=False)
     elif init:
+        if isettings.dialect == "postgresql":
+            install_trigram_extension()
+
         global IS_MIGRATING
         IS_MIGRATING = True
         call_command("migrate", verbosity=0)
