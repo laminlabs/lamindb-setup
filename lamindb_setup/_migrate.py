@@ -86,7 +86,7 @@ class migrate:
 
     @classmethod
     @disable_auto_connect
-    def deploy(cls) -> None:
+    def deploy(cls, package_name: str | None = None, number: int | None = None) -> None:
         """Deploy a migration."""
         from ._schema_metadata import update_schema_in_hub
 
@@ -116,7 +116,14 @@ class migrate:
             import lamindb
 
         # this sets up django and deploys the migrations
-        setup_django(settings.instance, deploy_migrations=True)
+        if package_name is not None and number is not None:
+            setup_django(
+                settings.instance,
+                deploy_migrations=True,
+                appname_number=(package_name, number),
+            )
+        else:
+            setup_django(settings.instance, deploy_migrations=True)
         # this populates the hub
         if settings.instance.is_on_hub:
             logger.important(f"updating lamindb version in hub: {lamindb.__version__}")

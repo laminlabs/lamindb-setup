@@ -148,6 +148,7 @@ def setup_django(
     configure_only: bool = False,
     init: bool = False,
     view_schema: bool = False,
+    appname_number: tuple[str, int] | None = None,
 ):
     if IS_RUN_FROM_IPYTHON:
         os.environ["DJANGO_ALLOW_ASYNC_UNSAFE"] = "true"
@@ -243,7 +244,11 @@ def setup_django(
         return None
 
     if deploy_migrations:
-        call_command("migrate", verbosity=2)
+        if appname_number is None:
+            call_command("migrate", verbosity=2)
+        else:
+            app_name, app_number = appname_number
+            call_command("migrate", app_name, app_number, verbosity=2)
         isettings._update_cloud_sqlite_file(unlock_cloud_sqlite=False)
     elif init:
         if isettings.dialect == "postgresql":
