@@ -167,6 +167,7 @@ def setup_django(
             # see comment next to patching BaseDatabaseWrapper below
             conn_max_age=CONN_MAX_AGE,
             conn_health_checks=True,
+            ssl_require=isettings.dialect == "postgresql",
         )
         DATABASES = {
             "default": default_db,
