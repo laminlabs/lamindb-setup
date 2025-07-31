@@ -127,7 +127,12 @@ def _connect_instance(
     if settings_file.exists():
         isettings = load_instance_settings(settings_file)
         # skip hub request for a purely local instance
-        make_hub_request = isettings.is_remote
+        if isettings.is_remote:
+            make_hub_request = True
+        else:
+            make_hub_request = False
+            if db is not None and isettings.dialect == "postgresql":
+                isettings._db = db
     if make_hub_request:
         # the following will return a string if the instance does not exist
         # on the hub
@@ -250,6 +255,8 @@ def connect(instance: str | None = None, **kwargs: Any) -> str | tuple | None:
                     "No instance was connected through the CLI, pass a value to `instance` or connect via the CLI."
                 )
             isettings = isettings_or_none
+            if _db is not None and isettings.dialect == "postgresql":
+                isettings._db = _db
         else:
             owner, name = get_owner_name_from_identifier(instance)
             if _check_instance_setup() and not _test:
