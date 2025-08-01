@@ -78,8 +78,7 @@ def update_db_using_local(
             if db_env is not None:
                 logger.important("loading db URL from env variable LAMINDB_INSTANCE_DB")
                 db_updated = db_env
-            # read from a cached settings file in case the hub result is only
-            # read level or inexistent
+            # read from a cached settings file in case the hub result is inexistent
             elif db_dsn_hub.db.user in {None, "none"} and settings_file.exists():
                 isettings = load_instance_settings(settings_file)
                 db_updated = isettings.db
