@@ -15,10 +15,7 @@ from ._init_instance import (
 )
 from ._silence_loggers import silence_loggers
 from .core._hub_core import connect_instance_hub
-from .core._hub_utils import (
-    LaminDsn,
-    LaminDsnModel,
-)
+from .core._hub_utils import LaminDsnModel
 from .core._settings import settings
 from .core._settings_instance import InstanceSettings
 from .core._settings_load import load_instance_settings
