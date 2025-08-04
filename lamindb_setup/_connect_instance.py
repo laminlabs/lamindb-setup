@@ -15,10 +15,7 @@ from ._init_instance import (
 )
 from ._silence_loggers import silence_loggers
 from .core._hub_core import connect_instance_hub
-from .core._hub_utils import (
-    LaminDsn,
-    LaminDsnModel,
-)
+from .core._hub_utils import LaminDsnModel
 from .core._settings import settings
 from .core._settings_instance import InstanceSettings
 from .core._settings_load import load_instance_settings
@@ -69,21 +66,18 @@ def update_db_using_local(
     if hub_instance_result["db_scheme"] == "postgresql":
         if db is not None:
             # use only the provided db if it is set
-            db_dsn_hub = LaminDsnModel(db=db)
-            db_dsn_local = db_dsn_hub
-        else:
-            db_dsn_hub = LaminDsnModel(db=hub_instance_result["db"])
+            db_updated = db
+        elif (db_env := os.getenv("LAMINDB_INSTANCE_DB")) is not None:
+            logger.important("loading db URL from env variable LAMINDB_INSTANCE_DB")
             # read directly from the environment
-            if os.getenv("LAMINDB_INSTANCE_DB") is not None:
-                logger.important("loading db URL from env variable LAMINDB_INSTANCE_DB")
-                db_dsn_local = LaminDsnModel(db=os.getenv("LAMINDB_INSTANCE_DB"))
-            # read from a cached settings file in case the hub result is only
-            # read level or inexistent
-            elif settings_file.exists() and (
-                db_dsn_hub.db.user in {None, "none"} or "read" in db_dsn_hub.db.user  # type:ignore
-            ):
+            db_updated = db_env
+        else:
+            db_hub = hub_instance_result["db"]
+            db_dsn_hub = LaminDsnModel(db=db_hub)
+            # read from a cached settings file in case the hub result is inexistent
+            if db_dsn_hub.db.user in {None, "none"} and settings_file.exists():
                 isettings = load_instance_settings(settings_file)
-                db_dsn_local = LaminDsnModel(db=isettings.db)
+                db_updated = isettings.db
             else:
                 # just take the default hub result and ensure there is actually a user
                 if (
@@ -95,22 +89,7 @@ def update_db_using_local(
                         "No database access, please ask your admin to provide you with"
                         " a DB URL and pass it via --db <db_url>"
                     )
-                db_dsn_local = db_dsn_hub
-            if not check_db_dsn_equal_up_to_credentials(db_dsn_hub.db, db_dsn_local.db):
-                raise ValueError(
-                    "The local differs from the hub database information:\n"
-                    "did your database get updated by an admin?\n"
-                    "Consider deleting your cached database environment:\nrm"
-                    f" {settings_file.as_posix()}"
-                )
-        db_updated = LaminDsn.build(
-            scheme=db_dsn_hub.db.scheme,
-            user=db_dsn_local.db.user,
-            password=db_dsn_local.db.password,
-            host=db_dsn_hub.db.host,  # type: ignore
-            port=db_dsn_hub.db.port,
-            database=db_dsn_hub.db.database,
-        )
+                db_updated = db_hub
     return db_updated
 
 
