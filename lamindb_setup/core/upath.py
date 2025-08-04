@@ -994,6 +994,9 @@ def check_storage_is_empty(
             root_string += "/"
         directory_string = root_string + ".lamindb"
     objects = root_upath.fs.find(directory_string)
+    if account_for_sqlite_file:
+        # ignore exclusion dir for cloud sqlite
+        objects = [o for o in objects if "/.lamindb/_exclusion/" not in o]
     n_files = len(objects)
     n_diff = n_files - n_offset_objects
     ask_for_deletion = (
@@ -1001,10 +1004,7 @@ def check_storage_is_empty(
         if raise_error
         else "consider deleting them"
     )
-    message = (
-        f"'{directory_string}' contains {n_files - n_offset_objects} objects"
-        f" - {ask_for_deletion}"
-    )
+    message = f"'{directory_string}' contains {n_diff} objects" f" - {ask_for_deletion}"
     if n_diff > 0:
         if raise_error:
             raise StorageNotEmpty(message) from None
