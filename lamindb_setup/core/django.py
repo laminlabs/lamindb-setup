@@ -162,10 +162,13 @@ def setup_django(
     # configuration
     if not settings.configured:
         instance_db = isettings.db
-        ssl_require = isettings.dialect == "postgresql" and not is_local_db_url(
-            instance_db
-        )
-
+        if isettings.dialect == "postgresql":
+            if os.getenv("LAMIN_DB_SSL_REQUIRE") == "false":
+                ssl_require = False
+            else:
+                ssl_require = not is_local_db_url(instance_db)
+        else:
+            ssl_require = False
         default_db = dj_database_url.config(
             env="LAMINDB_DJANGO_DATABASE_URL",
             default=instance_db,
