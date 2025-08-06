@@ -9,7 +9,7 @@ import jwt
 import time
 from pathlib import Path
 import time
-from ._settings_instance import InstanceSettings
+from ._settings_instance import InstanceSettings, is_local_db_url
 
 from lamin_utils import logger
 
@@ -161,12 +161,21 @@ def setup_django(
 
     # configuration
     if not settings.configured:
+        instance_db = isettings.db
+        if isettings.dialect == "postgresql":
+            if os.getenv("LAMIN_DB_SSL_REQUIRE") == "false":
+                ssl_require = False
+            else:
+                ssl_require = not is_local_db_url(instance_db)
+        else:
+            ssl_require = False
         default_db = dj_database_url.config(
             env="LAMINDB_DJANGO_DATABASE_URL",
-            default=isettings.db,
+            default=instance_db,
             # see comment next to patching BaseDatabaseWrapper below
             conn_max_age=CONN_MAX_AGE,
             conn_health_checks=True,
+            ssl_require=ssl_require,
         )
         DATABASES = {
             "default": default_db,
