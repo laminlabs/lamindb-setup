@@ -9,7 +9,7 @@ import jwt
 import time
 from pathlib import Path
 import time
-from ._settings_instance import InstanceSettings
+from ._settings_instance import InstanceSettings, is_local_db_url
 
 from lamin_utils import logger
 
@@ -148,6 +148,7 @@ def setup_django(
     configure_only: bool = False,
     init: bool = False,
     view_schema: bool = False,
+    appname_number: tuple[str, int] | None = None,
 ):
     if IS_RUN_FROM_IPYTHON:
         os.environ["DJANGO_ALLOW_ASYNC_UNSAFE"] = "true"
@@ -161,12 +162,21 @@ def setup_django(
 
     # configuration
     if not settings.configured:
+        instance_db = isettings.db
+        if isettings.dialect == "postgresql":
+            if os.getenv("LAMIN_DB_SSL_REQUIRE") == "false":
+                ssl_require = False
+            else:
+                ssl_require = not is_local_db_url(instance_db)
+        else:
+            ssl_require = False
         default_db = dj_database_url.config(
             env="LAMINDB_DJANGO_DATABASE_URL",
-            default=isettings.db,
+            default=instance_db,
             # see comment next to patching BaseDatabaseWrapper below
             conn_max_age=CONN_MAX_AGE,
             conn_health_checks=True,
+            ssl_require=ssl_require,
         )
         DATABASES = {
             "default": default_db,
@@ -239,7 +249,11 @@ def setup_django(
         return None
 
     if deploy_migrations:
-        call_command("migrate", verbosity=2)
+        if appname_number is None:
+            call_command("migrate", verbosity=2)
+        else:
+            app_name, app_number = appname_number
+            call_command("migrate", app_name, app_number, verbosity=2)
         isettings._update_cloud_sqlite_file(unlock_cloud_sqlite=False)
     elif init:
         global IS_MIGRATING
@@ -251,7 +265,7 @@ def setup_django(
     IS_SETUP = True
 
     if isettings.keep_artifacts_local:
-        isettings._search_local_root()
+        isettings._local_storage = isettings._search_local_root()
 
 
 # THIS IS NOT SAFE

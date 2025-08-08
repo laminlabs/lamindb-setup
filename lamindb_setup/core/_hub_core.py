@@ -460,9 +460,9 @@ def access_aws(storage_root: str, access_token: str | None = None) -> dict[str, 
         storage_root_info = call_with_fallback_auth(
             _access_aws, storage_root=storage_root, access_token=access_token
         )
-        return storage_root_info
     else:
-        raise RuntimeError("Can only get access to AWS if authenticated.")
+        storage_root_info = call_with_fallback(_access_aws, storage_root=storage_root)
+    return storage_root_info
 
 
 def _access_aws(*, storage_root: str, client: Client) -> dict[str, dict]:
@@ -487,6 +487,8 @@ def _access_aws(*, storage_root: str, client: Client) -> dict[str, dict]:
         accessibility = storage_root_info["accessibility"]
         accessibility["storage_root"] = loaded_accessibility["storageRoot"]
         accessibility["is_managed"] = loaded_accessibility["isManaged"]
+        accessibility["extra_parameters"] = loaded_accessibility.get("extraParameters")
+
     return storage_root_info
 
 

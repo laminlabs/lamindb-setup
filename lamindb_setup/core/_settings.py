@@ -63,6 +63,9 @@ class SetupSettings:
 
     _cache_dir: Path | None = None
 
+    _branch = None  # do not have types here
+    _space = None  # do not have types here
+
     @property
     def _instance_settings_path(self) -> Path:
         return current_instance_settings_file()
@@ -118,12 +121,16 @@ class SetupSettings:
         return idlike, name
 
     @property
+    # TODO: refactor so that it returns a BranchMock object
+    # and we never need a DB request
     def branch(self) -> Branch:
         """Default branch."""
-        from lamindb import Branch
+        if self._branch is None:
+            from lamindb import Branch
 
-        idlike, _ = self._read_branch_idlike_name()
-        return Branch.get(idlike)
+            idlike, _ = self._read_branch_idlike_name()
+            self._branch = Branch.get(idlike)
+        return self._branch
 
     @branch.setter
     def branch(self, value: str | Branch) -> None:
@@ -142,6 +149,7 @@ class SetupSettings:
         # we are sure that the current instance is setup because
         # it will error on lamindb import otherwise
         self._branch_path.write_text(f"{branch_record.uid}\n{branch_record.name}")
+        self._branch = branch_record
 
     @property
     def _space_path(self) -> Path:
@@ -162,12 +170,16 @@ class SetupSettings:
         return idlike, name
 
     @property
+    # TODO: refactor so that it returns a BranchMock object
+    # and we never need a DB request
     def space(self) -> Space:
         """Default space."""
-        from lamindb import Space
+        if self._space is None:
+            from lamindb import Space
 
-        idlike, _ = self._read_space_idlike_name()
-        return Space.get(idlike)
+            idlike, _ = self._read_space_idlike_name()
+            self._space = Space.get(idlike)
+        return self._space
 
     @space.setter
     def space(self, value: str | Space) -> None:
@@ -186,6 +198,7 @@ class SetupSettings:
         # we are sure that the current instance is setup because
         # it will error on lamindb import otherwise
         self._space_path.write_text(f"{space_record.uid}\n{space_record.name}")
+        self._space = space_record
 
     @property
     def is_connected(self) -> bool:

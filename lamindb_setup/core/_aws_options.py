@@ -22,7 +22,7 @@ else:
     HOSTED_BUCKETS = ("s3://lamin-hosted-test",)  # type: ignore
 
 
-def _keep_trailing_slash(path_str: str):
+def _keep_trailing_slash(path_str: str) -> str:
     return path_str if path_str[-1] == "/" else path_str + "/"
 
 
@@ -54,6 +54,7 @@ class AWSOptionsManager:
 
     def __init__(self):
         self._credentials_cache = {}
+        self._parameters_cache = {}  # this is not refreshed
 
         from s3fs import S3FileSystem
 
@@ -106,7 +107,9 @@ class AWSOptionsManager:
     def _get_cached_credentials(self, root: str) -> dict:
         return self._credentials_cache[root]["credentials"]
 
-    def _path_inject_options(self, path: UPath, credentials: dict) -> UPath:
+    def _path_inject_options(
+        self, path: UPath, credentials: dict, extra_parameters: dict | None = None
+    ) -> UPath:
         if credentials == {}:
             # credentials were specified manually for the path
             if "anon" in path.storage_options:
@@ -137,6 +140,9 @@ class AWSOptionsManager:
             "version_aware", False
         )
 
+        if extra_parameters:
+            connection_options.update(extra_parameters)
+
         return UPath(path, **connection_options)
 
     def enrich_path(self, path: UPath, access_token: str | None = None) -> UPath:
@@ -158,7 +164,7 @@ class AWSOptionsManager:
         if root is not None:
             set_cache = False
             credentials = self._get_cached_credentials(root)
-
+            extra_parameters = self._parameters_cache.get(root)
             if access_token is not None:
                 set_cache = True
             elif credentials != {}:
@@ -172,17 +178,15 @@ class AWSOptionsManager:
             from ._hub_core import access_aws
             from ._settings import settings
 
-            if settings.user.handle != "anonymous" or access_token is not None:
-                storage_root_info = access_aws(path_str, access_token=access_token)
-            else:
-                storage_root_info = {"credentials": {}, "accessibility": {}}
-
+            storage_root_info = access_aws(path_str, access_token=access_token)
             accessibility = storage_root_info["accessibility"]
             is_managed = accessibility.get("is_managed", False)
             if is_managed:
                 credentials = storage_root_info["credentials"]
+                extra_parameters = accessibility["extra_parameters"]
             else:
                 credentials = {}
+                extra_parameters = None
 
             if access_token is None:
                 if "storage_root" in accessibility:
@@ -198,9 +202,13 @@ class AWSOptionsManager:
                         # write the bucket for everything else
                         root = path.drive
                     root = "s3://" + root
-                self._set_cached_credentials(_keep_trailing_slash(root), credentials)
 
-        return self._path_inject_options(path, credentials)
+                root = _keep_trailing_slash(root)
+                assert isinstance(root, str)
+                self._set_cached_credentials(root, credentials)
+                self._parameters_cache[root] = extra_parameters
+
+        return self._path_inject_options(path, credentials, extra_parameters)
 
 
 _aws_options_manager: AWSOptionsManager | None = None

@@ -393,8 +393,10 @@ def synchronize_to(
     """Sync to a local destination path."""
     destination = destination.resolve()
     protocol = origin.protocol
+    stat_kwargs = {"expand_info": True} if protocol == "hf" else {}
+    origin_str = str(origin)
     try:
-        cloud_info = origin.stat().as_info()
+        cloud_info = origin.fs.stat(origin_str, **stat_kwargs)
         exists = True
         is_dir = cloud_info["type"] == "directory"
     except FileNotFoundError:
@@ -441,7 +443,9 @@ def synchronize_to(
     if is_dir:
         cloud_stats = {
             file: get_modified(stat)
-            for file, stat in origin.fs.find(origin.as_posix(), detail=True).items()
+            for file, stat in origin.fs.find(
+                origin_str, detail=True, **stat_kwargs
+            ).items()
         }
         for cloud_path in cloud_stats:
             file_key = PurePosixPath(cloud_path).relative_to(origin.path).as_posix()
@@ -990,6 +994,9 @@ def check_storage_is_empty(
             root_string += "/"
         directory_string = root_string + ".lamindb"
     objects = root_upath.fs.find(directory_string)
+    if account_for_sqlite_file:
+        # ignore exclusion dir for cloud sqlite
+        objects = [o for o in objects if "/.lamindb/_exclusion/" not in o]
     n_files = len(objects)
     n_diff = n_files - n_offset_objects
     ask_for_deletion = (
@@ -997,10 +1004,7 @@ def check_storage_is_empty(
         if raise_error
         else "consider deleting them"
     )
-    message = (
-        f"'{directory_string}' contains {n_files - n_offset_objects} objects"
-        f" - {ask_for_deletion}"
-    )
+    message = f"'{directory_string}' contains {n_diff} objects" f" - {ask_for_deletion}"
     if n_diff > 0:
         if raise_error:
             raise StorageNotEmpty(message) from None

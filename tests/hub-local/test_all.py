@@ -182,7 +182,7 @@ def create_myinstance(create_testadmin1_session):  # -> Dict
 def create_instance_fine_grained_access(create_testadmin1_session):
     client, _ = create_testadmin1_session
 
-    instance = create_instance("instance_test", client=client)
+    instance = create_instance("instance_test", client=client, connect=False)
 
     yield instance
 
