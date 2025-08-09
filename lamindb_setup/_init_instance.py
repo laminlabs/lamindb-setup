@@ -390,6 +390,9 @@ def load_from_isettings(
             # this is blocked anyways, only select and insert are allowed
             register_user(user, update_user=not isettings._fine_grained_access)
     isettings._persist(write_to_disk=write_settings)
+    # clear branch & space cache after reconnecting
+    settings._branch = None
+    settings._space = None
 
 
 def validate_sqlite_state(isettings: InstanceSettings) -> None:
