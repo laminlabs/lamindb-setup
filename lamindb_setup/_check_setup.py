@@ -4,7 +4,9 @@ import functools
 import importlib as il
 import inspect
 import os
+from importlib.metadata import distributions
 from typing import TYPE_CHECKING
+from uuid import UUID
 
 from lamin_utils import logger
 
@@ -25,6 +27,7 @@ if TYPE_CHECKING:
 
 
 CURRENT_ISETTINGS: InstanceSettings | None = None
+MODULE_CANDIDATES: set[str] | None = None
 IS_LOADING: bool = False
 
 
@@ -42,7 +45,25 @@ def disable_auto_connect(func: Callable):
     return wrapper
 
 
-def _get_current_instance_settings() -> InstanceSettings | None:
+def find_module_candidates():
+    """Find all local packages that depend on lamindb."""
+    global MODULE_CANDIDATES
+    if MODULE_CANDIDATES is not None:
+        return MODULE_CANDIDATES
+    all_dists = list(distributions())
+    lamindb_deps = {
+        dist.metadata["Name"].lower()
+        for dist in all_dists
+        if dist.requires and any("lamindb" in req.lower() for req in dist.requires)
+    }
+    lamindb_deps.remove("lamindb")
+    MODULE_CANDIDATES = lamindb_deps
+    return lamindb_deps
+
+
+def _get_current_instance_settings(from_module: str | None = None) -> InstanceSettings:
+    from .core._settings_instance import InstanceSettings
+
     global CURRENT_ISETTINGS
 
     if CURRENT_ISETTINGS is not None:
@@ -60,9 +81,17 @@ def _get_current_instance_settings() -> InstanceSettings | None:
                 " command line: `lamin connect <instance>` or `lamin init <...>`"
             )
             raise e
-        return isettings
     else:
-        return None
+        module_candidates = find_module_candidates()
+        isettings = InstanceSettings(
+            id=UUID("00000000-0000-0000-0000-000000000000"),
+            owner="none",
+            name="none",
+            storage=None,
+            modules=",".join(module_candidates),
+        )
+    CURRENT_ISETTINGS = isettings
+    return isettings
 
 
 def _normalize_module_name(module_name: str) -> str:
@@ -132,12 +161,7 @@ def _check_instance_setup(from_module: str | None = None) -> bool:
         return True
     isettings = _get_current_instance_settings()
     if isettings is not None:
-        if (
-            from_module is not None
-            and settings.auto_connect
-            and not django_lamin.IS_SETUP
-            and not IS_LOADING
-        ):
+        if from_module is not None and not django_lamin.IS_SETUP and not IS_LOADING:
             if from_module != "lamindb":
                 _check_module_in_instance_modules(from_module, isettings)
 
@@ -146,13 +170,15 @@ def _check_instance_setup(from_module: str | None = None) -> bool:
                 il.reload(il.import_module(from_module))
             else:
                 django_lamin.setup_django(isettings)
-                logger.important(f"connected lamindb: {isettings.slug}")
-                settings._instance_settings = (
-                    isettings  # update of local storage location
-                )
+                if isettings.slug != "none/none":
+                    logger.important(f"connected lamindb: {isettings.slug}")
+                    # update of local storage location through search_local_root()
+                    settings._instance_settings = isettings
+                else:
+                    logger.warning("not connected, call: ln.connect('account/name')")
         return django_lamin.IS_SETUP
     else:
-        if from_module is not None and settings.auto_connect:
+        if from_module is not None:
             # the below enables users to auto-connect to an instance
             # simply by setting an environment variable, bypassing the
             # need of calling connect() manually
