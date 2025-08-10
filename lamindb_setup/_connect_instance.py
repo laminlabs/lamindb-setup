@@ -284,13 +284,22 @@ def connect(instance: str | None = None, **kwargs: Any) -> str | tuple | None:
             if _db is not None and isettings.dialect == "postgresql":
                 isettings._db = _db
         else:
+            from django.db import connection
+
             owner, name = get_owner_name_from_identifier(instance)
             if _check_instance_setup() and not _test:
                 if (
                     settings._instance_exists
                     and f"{owner}/{name}" == settings.instance.slug
+                    # below is to ensure that if another process interferes
+                    # we don't use the in-memory mock database
+                    # could be made more specific by checking whether the django
+                    # configured database is the same as the one in settings
+                    and connection.settings_dict["NAME"] != ":memory:"
                 ):
-                    logger.important(f"connected lamindb: {settings.instance.slug}")
+                    logger.important(
+                        f"doing nothing, already connected lamindb: {settings.instance.slug}"
+                    )
                     return None
                 else:
                     from lamindb_setup.core.django import reset_django
