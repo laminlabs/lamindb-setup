@@ -215,16 +215,6 @@ def validate_init_args(
     return name_str, instance_id, instance_state, instance_slug
 
 
-MESSAGE_CANNOT_SWITCH_DEFAULT_INSTANCE = """
-You cannot write to different instances in the same Python session.
-
-Do you want to read from another instance via `SQLRecord.using()`? For example:
-
-ln.Artifact.using("laminlabs/cellxgene").filter()
-
-Or do you want to switch off auto-connect via `lamin settings set auto-connect false`?
-"""
-
 DOC_STORAGE_ARG = "A local or remote folder (`'s3://...'` or `'gs://...'`). Defaults to current working directory."
 DOC_INSTANCE_NAME = (
     "Instance name. If not passed, it will equal the folder name passed to `storage`."
@@ -272,9 +262,16 @@ def init(
         from ._check_setup import _check_instance_setup
 
         if _check_instance_setup() and not _test:
-            raise CannotSwitchDefaultInstance(MESSAGE_CANNOT_SWITCH_DEFAULT_INSTANCE)
+            from lamindb_setup.core.django import reset_django
+
+            if settings._instance_exists:
+                raise CannotSwitchDefaultInstance(
+                    "Cannot init new instance after connecting to an existing instance."
+                )
+            reset_django()
         elif _write_settings:
             disconnect(mute=True)
+        from ._connect_instance import reset_django_module_variables
         from .core._hub_core import init_instance_hub
 
         name_str, instance_id, instance_state, _ = validate_init_args(
@@ -287,8 +284,6 @@ def init(
             _user=_user,  # will get from settings.user if _user is None
         )
         if instance_state == "connected":
-            if _write_settings:
-                settings.auto_connect = True  # we can also debate this switch here
             return None
         prevent_register_hub = is_local_db_url(db) if db is not None else False
         ssettings, _ = init_storage(
@@ -344,9 +339,8 @@ def init(
             from ._schema_metadata import update_schema_in_hub
 
             update_schema_in_hub(access_token=access_token)
-        if _write_settings:
-            settings.auto_connect = True
         importlib.reload(importlib.import_module("lamindb"))
+        reset_django_module_variables()
         logger.important(f"initialized lamindb: {isettings.slug}")
     except Exception as e:
         from ._delete import delete_by_isettings
