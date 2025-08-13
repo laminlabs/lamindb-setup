@@ -304,6 +304,17 @@ def connect(instance: str | None = None, **kwargs: Any) -> str | tuple | None:
                 else:
                     from lamindb_setup.core.django import reset_django
 
+                    if settings.instance.slug != "none/none":
+                        import lamindb as ln
+
+                        if ln.context.transform is not None:
+                            raise CannotSwitchDefaultInstance(
+                                "Cannot switch default instance while `ln.track()` is live: call `ln.finish()`"
+                            )
+                        else:
+                            logger.warning(
+                                "switching the current lamindb instance is experimental and might produce unexpected side effects"
+                            )
                     reset_django()
             elif (
                 _write_settings
