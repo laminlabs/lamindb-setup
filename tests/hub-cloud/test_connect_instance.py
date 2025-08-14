@@ -13,12 +13,8 @@ from postgrest.exceptions import APIError
 
 
 def test_connect_pass_none():
-    with pytest.raises(ValueError) as err:
-        ln_setup.connect(_test=True)
-    assert (
-        err.exconly()
-        == "ValueError: No instance was connected through the CLI, pass a value to `instance` or connect via the CLI."
-    )
+    # this doesn't log anything and connects to the mock instance
+    ln_setup.connect(_test=True)
 
 
 # do not call hub if the owner is set to anonymous

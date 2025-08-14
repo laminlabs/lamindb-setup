@@ -2,17 +2,19 @@ from __future__ import annotations
 
 import importlib
 import os
+import sys
 from typing import TYPE_CHECKING, Any
 from uuid import UUID
 
 from lamin_utils import logger
 
-from ._check_setup import _check_instance_setup, _get_current_instance_settings
-from ._disconnect import disconnect
-from ._init_instance import (
-    MESSAGE_CANNOT_SWITCH_DEFAULT_INSTANCE,
-    load_from_isettings,
+from ._check_setup import (
+    _check_instance_setup,
+    _get_current_instance_settings,
+    find_module_candidates,
 )
+from ._disconnect import disconnect
+from ._init_instance import load_from_isettings
 from ._silence_loggers import silence_loggers
 from .core._hub_core import connect_instance_hub
 from .core._hub_utils import LaminDsnModel
@@ -172,6 +174,51 @@ def _connect_instance(
     return isettings
 
 
+def reset_django_module_variables():
+    import types
+
+    from django.apps import apps
+
+    app_names = {app.name for app in apps.get_app_configs()}
+
+    for name, module in sys.modules.items():
+        if (
+            module is not None
+            and (not name.startswith("__") or name == "__main__")
+            and name not in sys.builtin_module_names
+            and not (
+                hasattr(module, "__file__")
+                and module.__file__
+                and any(
+                    path in module.__file__ for path in ["/lib/python", "\\lib\\python"]
+                )
+            )
+        ):
+            try:
+                for k, v in vars(module).items():
+                    if (
+                        isinstance(v, types.ModuleType)
+                        and not k.startswith("_")
+                        and getattr(v, "__name__", None) in app_names
+                    ):
+                        if v.__name__ in sys.modules:
+                            vars(module)[k] = sys.modules[v.__name__]
+                    # Also reset classes from Django apps - but check if the class module starts with any app name
+                    elif hasattr(v, "__module__") and getattr(v, "__module__", None):
+                        class_module = v.__module__
+                        # Check if the class module starts with any of our app names
+                        if any(
+                            class_module.startswith(app_name) for app_name in app_names
+                        ):
+                            if class_module in sys.modules:
+                                fresh_module = sys.modules[class_module]
+                                attr_name = getattr(v, "__name__", k)
+                                if hasattr(fresh_module, attr_name):
+                                    vars(module)[k] = getattr(fresh_module, attr_name)
+            except (AttributeError, TypeError):
+                continue
+
+
 def _connect_cli(instance: str) -> None:
     from lamindb_setup import settings as settings_
 
@@ -237,18 +284,41 @@ def connect(instance: str | None = None, **kwargs: Any) -> str | tuple | None:
             if _db is not None and isettings.dialect == "postgresql":
                 isettings._db = _db
         else:
+            from django.db import connection
+
             owner, name = get_owner_name_from_identifier(instance)
             if _check_instance_setup() and not _test:
                 if (
                     settings._instance_exists
                     and f"{owner}/{name}" == settings.instance.slug
+                    # below is to ensure that if another process interferes
+                    # we don't use the in-memory mock database
+                    # could be made more specific by checking whether the django
+                    # configured database is the same as the one in settings
+                    and connection.settings_dict["NAME"] != ":memory:"
                 ):
-                    logger.important(f"connected lamindb: {settings.instance.slug}")
+                    logger.important(
+                        f"doing nothing, already connected lamindb: {settings.instance.slug}"
+                    )
                     return None
                 else:
-                    raise CannotSwitchDefaultInstance(
-                        MESSAGE_CANNOT_SWITCH_DEFAULT_INSTANCE
-                    )
+                    from lamindb_setup.core.django import reset_django
+
+                    if (
+                        settings._instance_exists
+                        and settings.instance.slug != "none/none"
+                    ):
+                        import lamindb as ln
+
+                        if ln.context.transform is not None:
+                            raise CannotSwitchDefaultInstance(
+                                "Cannot switch default instance while `ln.track()` is live: call `ln.finish()`"
+                            )
+                        else:
+                            logger.warning(
+                                "switching the current lamindb instance is experimental and might produce unexpected side effects"
+                            )
+                    reset_django()
             elif (
                 _write_settings
                 and settings._instance_exists
@@ -301,7 +371,9 @@ def connect(instance: str | None = None, **kwargs: Any) -> str | tuple | None:
         load_from_isettings(isettings, user=_user, write_settings=_write_settings)
         if _reload_lamindb:
             importlib.reload(importlib.import_module("lamindb"))
-        logger.important(f"connected lamindb: {isettings.slug}")
+            reset_django_module_variables()
+        if isettings.slug != "none/none":
+            logger.important(f"connected lamindb: {isettings.slug}")
     except Exception as e:
         if isettings is not None:
             if _write_settings:
