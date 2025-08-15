@@ -304,7 +304,10 @@ def connect(instance: str | None = None, **kwargs: Any) -> str | tuple | None:
                 else:
                     from lamindb_setup.core.django import reset_django
 
-                    if settings.instance.slug != "none/none":
+                    if (
+                        settings._instance_exists
+                        and settings.instance.slug != "none/none"
+                    ):
                         import lamindb as ln
 
                         if ln.context.transform is not None:

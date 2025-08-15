@@ -85,7 +85,6 @@ class migrate:
         setup_django(settings.instance, create_migrations=True)
 
     @classmethod
-    @disable_auto_connect
     def deploy(cls, package_name: str | None = None, number: int | None = None) -> None:
         """Deploy a migration."""
         from ._schema_metadata import update_schema_in_hub
