@@ -452,8 +452,11 @@ def test_fine_grained_access(
     isettings_file.unlink()
     # run from a script because test_update_schema_in_hub.py has ln_setup.init
     # which fails if we connect here
-    subprocess.run(
+    result = subprocess.run(
         "python ./tests/hub-local/scripts/script-connect-fine-grained-access.py",
         shell=True,
-        check=True,
+        capture_output=True,
     )
+    print(result.stdout.decode())
+    print(result.stderr.decode())
+    assert result.returncode == 0
