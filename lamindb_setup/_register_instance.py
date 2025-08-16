@@ -23,7 +23,7 @@ def register(_test: bool = False):
         # because django isn't up, we can't get it from the database
         ssettings._uid = base62(12)
     init_instance_hub(isettings)
-    init_storage_hub(ssettings)
+    init_storage_hub(ssettings, is_default=True)
     isettings._is_on_hub = True
     isettings._persist()
     if isettings.dialect != "sqlite" and not _test:

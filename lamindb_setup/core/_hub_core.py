@@ -150,6 +150,7 @@ def init_storage_hub(
     created_by: UUID | None = None,
     access_token: str | None = None,
     prevent_creation: bool = False,
+    is_default: bool = False,
 ) -> Literal["hub-record-retrieved", "hub-record-created", "hub-record-not-created"]:
     """Creates or retrieves an existing storage record from the hub."""
     if settings.user.handle != "anonymous" or access_token is not None:
@@ -159,6 +160,7 @@ def init_storage_hub(
             created_by=created_by,
             access_token=access_token,
             prevent_creation=prevent_creation,
+            is_default=is_default,
         )
     else:
         storage_exists = call_with_fallback(
@@ -175,6 +177,7 @@ def _init_storage_hub(
     ssettings: StorageSettings,
     created_by: UUID | None = None,
     prevent_creation: bool = False,
+    is_default: bool = False,
 ) -> Literal["hub-record-retrieved", "hub-record-created", "hub-record-not-created"]:
     from lamindb_setup import settings
 
@@ -210,6 +213,7 @@ def _init_storage_hub(
         # if this errors with unique constraint error, the user has to update
         # the description in LaminHub
         "description": "",
+        "is_default": is_default,
     }
     # TODO: add error message for violated unique constraint
     # on root & description

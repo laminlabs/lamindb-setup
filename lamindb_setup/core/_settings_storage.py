@@ -156,6 +156,7 @@ def init_storage(
         created_by=created_by,
         access_token=access_token,
         prevent_creation=not register_hub,
+        is_default=init_instance,
     )
     # we check the write access here if the storage record has not been retrieved from the hub
     if hub_record_status != "hub-record-retrieved":
