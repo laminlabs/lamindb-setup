@@ -60,7 +60,6 @@ class InstanceSettings:
         name: str,  # instance name
         storage: StorageSettings | None,  # storage location
         keep_artifacts_local: bool = False,  # default to local storage
-        uid: str | None = None,  # instance uid/lnid
         db: str | None = None,  # DB URI
         modules: str | None = None,  # comma-separated string of module names
         git_repo: str | None = None,  # a git repo URL
@@ -76,7 +75,6 @@ class InstanceSettings:
         self._id_: UUID = id
         self._owner: str = owner
         self._name: str = name
-        self._uid: str | None = uid
         self._storage: StorageSettings | None = storage
         validate_db_arg(db)
         self._db: str | None = db

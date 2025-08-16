@@ -285,24 +285,12 @@ def init(
         )
         if instance_state == "connected":
             return None
-        prevent_register_hub = is_local_db_url(db) if db is not None else False
-        ssettings, _ = init_storage(
-            storage,
-            instance_id=instance_id,
-            instance_slug=f"{user_handle}/{name_str}",
-            init_instance=True,
-            prevent_register_hub=prevent_register_hub,
-            created_by=user__uuid,
-            access_token=access_token,
-        )
         isettings = InstanceSettings(
             id=instance_id,  # type: ignore
             owner=user_handle,
             name=name_str,
-            storage=ssettings,
             db=db,
             modules=modules,
-            uid=ssettings.uid,
             # to lock passed user in isettings._cloud_sqlite_locker.lock()
             _locker_user=_user,  # only has effect if cloud sqlite
         )
@@ -320,6 +308,17 @@ def init(
             init_instance_hub(
                 isettings, account_id=user__uuid, access_token=access_token
             )
+        prevent_register_hub = is_local_db_url(db) if db is not None else False
+        ssettings, _ = init_storage(
+            storage,
+            instance_id=instance_id,
+            instance_slug=f"{user_handle}/{name_str}",
+            init_instance=True,
+            prevent_register_hub=prevent_register_hub,
+            created_by=user__uuid,
+            access_token=access_token,
+        )
+        isettings._storage = ssettings
         validate_sqlite_state(isettings)
         # why call it here if it is also called in load_from_isettings?
         isettings._persist(write_to_disk=_write_settings)
