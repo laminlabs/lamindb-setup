@@ -153,7 +153,6 @@ def init_storage(
         )
     hub_record_status = init_storage_hub(
         ssettings,
-        auto_populate_instance=not init_instance,
         created_by=created_by,
         access_token=access_token,
         prevent_creation=not register_hub,

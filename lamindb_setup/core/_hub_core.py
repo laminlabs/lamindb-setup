@@ -147,7 +147,6 @@ def select_storage_or_parent(path: str, access_token: str | None = None) -> dict
 
 def init_storage_hub(
     ssettings: StorageSettings,
-    auto_populate_instance: bool = True,
     created_by: UUID | None = None,
     access_token: str | None = None,
     prevent_creation: bool = False,
@@ -157,7 +156,6 @@ def init_storage_hub(
         return call_with_fallback_auth(
             _init_storage_hub,
             ssettings=ssettings,
-            auto_populate_instance=auto_populate_instance,
             created_by=created_by,
             access_token=access_token,
             prevent_creation=prevent_creation,
@@ -175,7 +173,6 @@ def init_storage_hub(
 def _init_storage_hub(
     client: Client,
     ssettings: StorageSettings,
-    auto_populate_instance: bool,
     created_by: UUID | None = None,
     prevent_creation: bool = False,
 ) -> Literal["hub-record-retrieved", "hub-record-created", "hub-record-not-created"]:
@@ -193,19 +190,13 @@ def _init_storage_hub(
         id = uuid.uuid5(uuid.NAMESPACE_URL, root)
     else:
         id = uuid.uuid4()
-    if (
-        ssettings._instance_id is None
-        and settings._instance_exists
-        and auto_populate_instance
-    ):
+    if ssettings._instance_id is None and settings._instance_exists:
         logger.warning(
             f"will manage storage location {ssettings.root_as_str} with instance {settings.instance.slug}"
         )
         ssettings._instance_id = settings.instance._id
     instance_id_hex = (
-        ssettings._instance_id.hex
-        if (ssettings._instance_id is not None and auto_populate_instance)
-        else None
+        ssettings._instance_id.hex if ssettings._instance_id is not None else None
     )
     fields = {
         "id": id.hex,
