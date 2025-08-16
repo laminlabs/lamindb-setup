@@ -144,9 +144,6 @@ def init_storage(
     )
     # this retrieves the storage record if it exists already in the hub
     # and updates uid and instance_id in ssettings
-    register_hub = (
-        register_hub or ssettings.type_is_cloud
-    )  # default to registering cloud storage
     if register_hub and not ssettings.type_is_cloud and ssettings.host is None:
         raise ValueError(
             "`host` must be set for local storage locations that are registered on the hub"
