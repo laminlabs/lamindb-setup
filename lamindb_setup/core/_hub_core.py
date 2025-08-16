@@ -351,9 +351,6 @@ def _init_instance_hub(
     except APIError:
         logger.warning(f"instance already existed at: https://lamin.ai/{slug}")
         return None
-    client.table("storage").update(
-        {"instance_id": isettings._id.hex, "is_default": True}
-    ).eq("id", isettings.storage._uuid.hex).execute()  # type: ignore
     if isettings.dialect != "sqlite" and isettings.is_remote:
         logger.important(f"go to: https://lamin.ai/{slug}")
 

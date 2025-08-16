@@ -17,6 +17,7 @@ from ._settings_storage import (
     LEGACY_STORAGE_UID_FILE_KEY,
     STORAGE_UID_FILE_KEY,
     StorageSettings,
+    get_storage_type,
     init_storage,
     instance_uid_from_uuid,
 )
@@ -31,6 +32,7 @@ if TYPE_CHECKING:
     from uuid import UUID
 
     from ._settings_user import UserSettings
+    from .types import UPathStr
 
 LOCAL_STORAGE_MESSAGE = "No local storage location found in current environment: defaulting to cloud storage"
 
@@ -48,6 +50,17 @@ def is_local_db_url(db_url: str) -> bool:
     if "@127.0.0.1" in db_url:
         return True
     return False
+
+
+def check_is_instance_remote(root: UPathStr, db: str | None) -> bool:
+    # returns True for cloud SQLite
+    # and remote postgres
+    if get_storage_type(str(root)) == "local":
+        return False
+
+    if db is not None and is_local_db_url(db):
+        return False
+    return True
 
 
 class InstanceSettings:
@@ -478,15 +491,7 @@ class InstanceSettings:
     @property
     def is_remote(self) -> bool:
         """Boolean indicating if an instance has no local component."""
-        if not self.storage.type_is_cloud:
-            return False
-
-        if self.dialect == "postgresql":
-            if is_local_db_url(self.db):
-                return False
-        # returns True for cloud SQLite
-        # and remote postgres
-        return True
+        return check_is_instance_remote(self.storage.root_as_str, self.db)
 
     @property
     def is_on_hub(self) -> bool:
