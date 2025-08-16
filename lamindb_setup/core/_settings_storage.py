@@ -92,7 +92,6 @@ def init_storage(
     instance_id: UUID,
     instance_slug: str,
     register_hub: bool | None = None,
-    prevent_register_hub: bool = False,
     init_instance: bool = False,
     created_by: UUID | None = None,
     access_token: str | None = None,
@@ -145,19 +144,16 @@ def init_storage(
     )
     # this retrieves the storage record if it exists already in the hub
     # and updates uid and instance_id in ssettings
-    register_hub = (
-        register_hub or ssettings.type_is_cloud
-    )  # default to registering cloud storage
     if register_hub and not ssettings.type_is_cloud and ssettings.host is None:
         raise ValueError(
             "`host` must be set for local storage locations that are registered on the hub"
         )
     hub_record_status = init_storage_hub(
         ssettings,
-        auto_populate_instance=not init_instance,
         created_by=created_by,
         access_token=access_token,
-        prevent_creation=prevent_register_hub or not register_hub,
+        prevent_creation=not register_hub,
+        is_default=init_instance,
     )
     # we check the write access here if the storage record has not been retrieved from the hub
     if hub_record_status != "hub-record-retrieved":

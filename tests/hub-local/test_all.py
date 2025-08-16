@@ -136,16 +136,17 @@ def create_myinstance(create_testadmin1_session):  # -> Dict
         id=instance_id,
         owner=usettings.handle,
         name=instance_name,
-        # cannot yet pass instance_id here as it does not yet exist
-        storage=init_storage_base(
-            "s3://lamindb-ci/myinstance",
-            instance_id=instance_id,
-            instance_slug=instance_slug,
-            init_instance=True,
-        )[0],
         db=db_str,
     )
     init_instance_hub(isettings)
+    storage = init_storage_base(
+        "s3://lamindb-ci/myinstance",
+        instance_id=instance_id,
+        instance_slug=instance_slug,
+        init_instance=True,
+        register_hub=True,
+    )[0]
+    isettings._storage = storage
     # test loading it
     with pytest.raises(PermissionError) as error:
         ln_setup.connect("testadmin1/myinstance", _test=True)
@@ -392,9 +393,10 @@ def test_init_storage_with_non_existing_bucket(
         init_storage_hub(
             ssettings=init_storage_base(
                 root="s3://non_existing_storage_root",
-                instance_id=create_myinstance["id"],
+                instance_id=UUID(create_myinstance["id"]),
                 instance_slug=f"testadmin1/{create_myinstance['id']}",
                 init_instance=True,
+                register_hub=True,
             )[0]
         )
     assert error.exconly().endswith("Not Found")
@@ -407,6 +409,7 @@ def test_init_storage_incorrect_protocol(create_myinstance):
             instance_id=create_myinstance["id"],
             instance_slug=f"testadmin1/{create_myinstance['id']}",
             init_instance=True,
+            register_hub=True,
         )
     assert "Protocol incorrect-protocol is not supported" in error.exconly()
 
