@@ -198,9 +198,7 @@ def _init_storage_hub(
             f"will manage storage location {ssettings.root_as_str} with instance {settings.instance.slug}"
         )
         ssettings._instance_id = settings.instance._id
-    instance_id_hex = (
-        ssettings._instance_id.hex if ssettings._instance_id is not None else None
-    )
+    assert ssettings._instance_id is not None, "connect to an instance"
     fields = {
         "id": id.hex,
         "lnid": ssettings.uid,
@@ -208,7 +206,7 @@ def _init_storage_hub(
         "root": root,
         "region": ssettings.region,
         "type": ssettings.type,
-        "instance_id": instance_id_hex,
+        "instance_id": ssettings._instance_id.hex,
         # the empty string is important as we want the user flow to be through LaminHub
         # if this errors with unique constraint error, the user has to update
         # the description in LaminHub
