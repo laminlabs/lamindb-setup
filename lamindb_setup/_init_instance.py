@@ -311,11 +311,11 @@ def init(
             created_by=user__uuid,
             access_token=access_token,
         )
+        isettings._storage = ssettings
         if register_on_hub and not ssettings.is_on_hub:
             raise InstanceNotCreated(
                 "Unable to create the instance because failed to register the storage."
             )
-        isettings._storage = ssettings
         validate_sqlite_state(isettings)
         # why call it here if it is also called in load_from_isettings?
         isettings._persist(write_to_disk=_write_settings)
