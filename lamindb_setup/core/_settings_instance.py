@@ -55,7 +55,8 @@ def is_local_db_url(db_url: str) -> bool:
 def check_is_instance_remote(root: UPathStr, db: str | None) -> bool:
     # returns True for cloud SQLite
     # and remote postgres
-    if get_storage_type(str(root)) == "local":
+    root_str = str(root)
+    if not root_str.startswith("create-s3") and get_storage_type(root_str) == "local":
         return False
 
     if db is not None and is_local_db_url(db):
