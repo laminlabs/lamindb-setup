@@ -144,6 +144,7 @@ def create_myinstance(create_testadmin1_session):  # -> Dict
         instance_id=instance_id,
         instance_slug=instance_slug,
         init_instance=True,
+        register_hub=True,
     )[0]
     isettings._storage = storage
     # test loading it
@@ -395,6 +396,7 @@ def test_init_storage_with_non_existing_bucket(
                 instance_id=UUID(create_myinstance["id"]),
                 instance_slug=f"testadmin1/{create_myinstance['id']}",
                 init_instance=True,
+                register_hub=True,
             )[0]
         )
     assert error.exconly().endswith("Not Found")
@@ -407,6 +409,7 @@ def test_init_storage_incorrect_protocol(create_myinstance):
             instance_id=create_myinstance["id"],
             instance_slug=f"testadmin1/{create_myinstance['id']}",
             init_instance=True,
+            register_hub=True,
         )
     assert "Protocol incorrect-protocol is not supported" in error.exconly()
 
