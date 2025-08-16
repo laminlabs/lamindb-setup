@@ -9,7 +9,7 @@ from lamindb_setup.core.django import db_token_manager
 
 assert os.environ["LAMIN_ENV"] == "local"
 
-ln_setup.connect("instance_test__access_v2")
+ln_setup.connect("instance_test")
 
 isettings = ln_setup.settings.instance
 
