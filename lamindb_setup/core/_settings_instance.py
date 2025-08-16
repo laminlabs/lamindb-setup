@@ -58,7 +58,7 @@ class InstanceSettings:
         id: UUID,  # instance id/uuid
         owner: str,  # owner handle
         name: str,  # instance name
-        storage: StorageSettings | None,  # storage location
+        storage: StorageSettings | None = None,  # storage location
         keep_artifacts_local: bool = False,  # default to local storage
         db: str | None = None,  # DB URI
         modules: str | None = None,  # comma-separated string of module names
