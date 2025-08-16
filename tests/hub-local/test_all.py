@@ -392,7 +392,7 @@ def test_init_storage_with_non_existing_bucket(
         init_storage_hub(
             ssettings=init_storage_base(
                 root="s3://non_existing_storage_root",
-                instance_id=create_myinstance["id"],
+                instance_id=UUID(create_myinstance["id"]),
                 instance_slug=f"testadmin1/{create_myinstance['id']}",
                 init_instance=True,
             )[0]
