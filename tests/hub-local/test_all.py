@@ -136,16 +136,16 @@ def create_myinstance(create_testadmin1_session):  # -> Dict
         id=instance_id,
         owner=usettings.handle,
         name=instance_name,
-        # cannot yet pass instance_id here as it does not yet exist
-        storage=init_storage_base(
-            "s3://lamindb-ci/myinstance",
-            instance_id=instance_id,
-            instance_slug=instance_slug,
-            init_instance=True,
-        )[0],
         db=db_str,
     )
     init_instance_hub(isettings)
+    storage = init_storage_base(
+        "s3://lamindb-ci/myinstance",
+        instance_id=instance_id,
+        instance_slug=instance_slug,
+        init_instance=True,
+    )[0]
+    isettings._storage = storage
     # test loading it
     with pytest.raises(PermissionError) as error:
         ln_setup.connect("testadmin1/myinstance", _test=True)
