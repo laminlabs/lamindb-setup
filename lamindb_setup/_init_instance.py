@@ -347,16 +347,10 @@ def init(
                 delete_by_isettings(isettings)
             else:
                 settings._instance_settings = None
-        if (
-            ssettings is not None
-            and (user_handle != "anonymous" or access_token is not None)
-            and ssettings.is_on_hub
-        ):
-            delete_storage_record(ssettings, access_token=access_token)  # type: ignore
-        if isettings is not None:
-            if (
-                user_handle != "anonymous" or access_token is not None
-            ) and isettings.is_on_hub:
+        if user_handle != "anonymous" or access_token is not None:
+            if ssettings is not None and ssettings.is_on_hub:
+                delete_storage_record(ssettings, access_token=access_token)
+            if isettings is not None and isettings.is_on_hub:
                 delete_instance_record(isettings._id, access_token=access_token)
         raise e
     return None
