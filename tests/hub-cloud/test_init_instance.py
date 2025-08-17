@@ -68,9 +68,10 @@ def test_init_instance_postgres_default_name(get_hub_client):
     ln_setup.register(_test=True)
     assert ln_setup.settings.instance.slug == "testuser2/pgtest"
     # and check
-    instance, storage = _connect_instance_hub(
-        owner="testuser2", name=instance_name, client=hub
-    )
+    result = _connect_instance_hub(owner="testuser2", name=instance_name, client=hub)
+    if not isinstance(result, tuple):
+        raise TypeError(f"Expected tuple, got: {result}")
+    instance, _ = result  # no checks on storage
     # hub checks
     assert instance["db"].startswith("postgresql://none:none")
     assert instance["name"] == instance_name

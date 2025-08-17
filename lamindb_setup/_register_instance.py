@@ -21,12 +21,9 @@ def register(_test: bool = False):
     ssettings = settings.instance.storage
     if ssettings._uid is None and _test:
         # because django isn't up, we can't get it from the database
-        ssettings._uid = base62(8)
-    # cannot yet populate the instance id here
-    ssettings._instance_id = None
-    # flag auto_populate_instance can be removed once FK migration is over
-    init_storage_hub(ssettings, auto_populate_instance=False)
+        ssettings._uid = base62(12)
     init_instance_hub(isettings)
+    init_storage_hub(ssettings, is_default=True)
     isettings._is_on_hub = True
     isettings._persist()
     if isettings.dialect != "sqlite" and not _test:

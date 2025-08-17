@@ -147,20 +147,20 @@ def select_storage_or_parent(path: str, access_token: str | None = None) -> dict
 
 def init_storage_hub(
     ssettings: StorageSettings,
-    auto_populate_instance: bool = True,
     created_by: UUID | None = None,
     access_token: str | None = None,
     prevent_creation: bool = False,
+    is_default: bool = False,
 ) -> Literal["hub-record-retrieved", "hub-record-created", "hub-record-not-created"]:
     """Creates or retrieves an existing storage record from the hub."""
     if settings.user.handle != "anonymous" or access_token is not None:
         return call_with_fallback_auth(
             _init_storage_hub,
             ssettings=ssettings,
-            auto_populate_instance=auto_populate_instance,
             created_by=created_by,
             access_token=access_token,
             prevent_creation=prevent_creation,
+            is_default=is_default,
         )
     else:
         storage_exists = call_with_fallback(
@@ -175,9 +175,9 @@ def init_storage_hub(
 def _init_storage_hub(
     client: Client,
     ssettings: StorageSettings,
-    auto_populate_instance: bool,
     created_by: UUID | None = None,
     prevent_creation: bool = False,
+    is_default: bool = False,
 ) -> Literal["hub-record-retrieved", "hub-record-created", "hub-record-not-created"]:
     from lamindb_setup import settings
 
@@ -193,20 +193,12 @@ def _init_storage_hub(
         id = uuid.uuid5(uuid.NAMESPACE_URL, root)
     else:
         id = uuid.uuid4()
-    if (
-        ssettings._instance_id is None
-        and settings._instance_exists
-        and auto_populate_instance
-    ):
+    if ssettings._instance_id is None and settings._instance_exists:
         logger.warning(
             f"will manage storage location {ssettings.root_as_str} with instance {settings.instance.slug}"
         )
         ssettings._instance_id = settings.instance._id
-    instance_id_hex = (
-        ssettings._instance_id.hex
-        if (ssettings._instance_id is not None and auto_populate_instance)
-        else None
-    )
+    assert ssettings._instance_id is not None, "connect to an instance"
     fields = {
         "id": id.hex,
         "lnid": ssettings.uid,
@@ -214,11 +206,12 @@ def _init_storage_hub(
         "root": root,
         "region": ssettings.region,
         "type": ssettings.type,
-        "instance_id": instance_id_hex,
+        "instance_id": ssettings._instance_id.hex,
         # the empty string is important as we want the user flow to be through LaminHub
         # if this errors with unique constraint error, the user has to update
         # the description in LaminHub
         "description": "",
+        "is_default": is_default,
     }
     # TODO: add error message for violated unique constraint
     # on root & description
@@ -351,9 +344,6 @@ def _init_instance_hub(
     except APIError:
         logger.warning(f"instance already existed at: https://lamin.ai/{slug}")
         return None
-    client.table("storage").update(
-        {"instance_id": isettings._id.hex, "is_default": True}
-    ).eq("id", isettings.storage._uuid.hex).execute()  # type: ignore
     if isettings.dialect != "sqlite" and isettings.is_remote:
         logger.important(f"go to: https://lamin.ai/{slug}")
 

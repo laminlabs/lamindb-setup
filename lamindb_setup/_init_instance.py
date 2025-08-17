@@ -16,7 +16,7 @@ from ._silence_loggers import silence_loggers
 from .core import InstanceSettings
 from .core._docs import doc_args
 from .core._settings import settings
-from .core._settings_instance import is_local_db_url
+from .core._settings_instance import check_is_instance_remote, is_local_db_url
 from .core._settings_storage import StorageSettings, init_storage
 from .core.upath import UPath
 from .errors import CannotSwitchDefaultInstance
@@ -285,40 +285,36 @@ def init(
         )
         if instance_state == "connected":
             return None
-        prevent_register_hub = is_local_db_url(db) if db is not None else False
+        isettings = InstanceSettings(
+            id=instance_id,  # type: ignore
+            owner=user_handle,
+            name=name_str,
+            db=db,
+            modules=modules,
+            # to lock passed user in isettings._cloud_sqlite_locker.lock()
+            _locker_user=_user,  # only has effect if cloud sqlite
+        )
+        register_on_hub = (
+            check_is_instance_remote(root=storage, db=db)
+            and instance_state != "instance-corrupted-or-deleted"
+        )
+        if register_on_hub:
+            init_instance_hub(
+                isettings, account_id=user__uuid, access_token=access_token
+            )
         ssettings, _ = init_storage(
             storage,
             instance_id=instance_id,
             instance_slug=f"{user_handle}/{name_str}",
             init_instance=True,
-            prevent_register_hub=prevent_register_hub,
+            register_hub=register_on_hub,
             created_by=user__uuid,
             access_token=access_token,
         )
-        isettings = InstanceSettings(
-            id=instance_id,  # type: ignore
-            owner=user_handle,
-            name=name_str,
-            storage=ssettings,
-            db=db,
-            modules=modules,
-            uid=ssettings.uid,
-            # to lock passed user in isettings._cloud_sqlite_locker.lock()
-            _locker_user=_user,  # only has effect if cloud sqlite
-        )
-        register_on_hub = (
-            isettings.is_remote and instance_state != "instance-corrupted-or-deleted"
-        )
-        if register_on_hub:
-            # can't register the instance in the hub
-            # if storage is not in the hub
-            # raise the exception and initiate cleanups
-            if not isettings.storage.is_on_hub:
-                raise InstanceNotCreated(
-                    "Unable to create the instance because failed to register the storage."
-                )
-            init_instance_hub(
-                isettings, account_id=user__uuid, access_token=access_token
+        isettings._storage = ssettings
+        if register_on_hub and not ssettings.is_on_hub:
+            raise InstanceNotCreated(
+                "Unable to create the instance because failed to register the storage."
             )
         validate_sqlite_state(isettings)
         # why call it here if it is also called in load_from_isettings?
@@ -351,16 +347,10 @@ def init(
                 delete_by_isettings(isettings)
             else:
                 settings._instance_settings = None
-        if (
-            ssettings is not None
-            and (user_handle != "anonymous" or access_token is not None)
-            and ssettings.is_on_hub
-        ):
-            delete_storage_record(ssettings, access_token=access_token)  # type: ignore
-        if isettings is not None:
-            if (
-                user_handle != "anonymous" or access_token is not None
-            ) and isettings.is_on_hub:
+        if user_handle != "anonymous" or access_token is not None:
+            if ssettings is not None and ssettings.is_on_hub:
+                delete_storage_record(ssettings, access_token=access_token)
+            if isettings is not None and isettings.is_on_hub:
                 delete_instance_record(isettings._id, access_token=access_token)
         raise e
     return None

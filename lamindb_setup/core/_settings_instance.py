@@ -17,6 +17,7 @@ from ._settings_storage import (
     LEGACY_STORAGE_UID_FILE_KEY,
     STORAGE_UID_FILE_KEY,
     StorageSettings,
+    get_storage_type,
     init_storage,
     instance_uid_from_uuid,
 )
@@ -31,6 +32,7 @@ if TYPE_CHECKING:
     from uuid import UUID
 
     from ._settings_user import UserSettings
+    from .types import UPathStr
 
 LOCAL_STORAGE_MESSAGE = "No local storage location found in current environment: defaulting to cloud storage"
 
@@ -50,6 +52,18 @@ def is_local_db_url(db_url: str) -> bool:
     return False
 
 
+def check_is_instance_remote(root: UPathStr, db: str | None) -> bool:
+    # returns True for cloud SQLite
+    # and remote postgres
+    root_str = str(root)
+    if not root_str.startswith("create-s3") and get_storage_type(root_str) == "local":
+        return False
+
+    if db is not None and is_local_db_url(db):
+        return False
+    return True
+
+
 class InstanceSettings:
     """Instance settings."""
 
@@ -58,9 +72,8 @@ class InstanceSettings:
         id: UUID,  # instance id/uuid
         owner: str,  # owner handle
         name: str,  # instance name
-        storage: StorageSettings | None,  # storage location
+        storage: StorageSettings | None = None,  # storage location
         keep_artifacts_local: bool = False,  # default to local storage
-        uid: str | None = None,  # instance uid/lnid
         db: str | None = None,  # DB URI
         modules: str | None = None,  # comma-separated string of module names
         git_repo: str | None = None,  # a git repo URL
@@ -76,7 +89,6 @@ class InstanceSettings:
         self._id_: UUID = id
         self._owner: str = owner
         self._name: str = name
-        self._uid: str | None = uid
         self._storage: StorageSettings | None = storage
         validate_db_arg(db)
         self._db: str | None = db
@@ -480,15 +492,7 @@ class InstanceSettings:
     @property
     def is_remote(self) -> bool:
         """Boolean indicating if an instance has no local component."""
-        if not self.storage.type_is_cloud:
-            return False
-
-        if self.dialect == "postgresql":
-            if is_local_db_url(self.db):
-                return False
-        # returns True for cloud SQLite
-        # and remote postgres
-        return True
+        return check_is_instance_remote(self.storage.root_as_str, self.db)
 
     @property
     def is_on_hub(self) -> bool:
