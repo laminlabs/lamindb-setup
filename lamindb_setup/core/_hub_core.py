@@ -93,6 +93,18 @@ def _get_storage_records_for_instance(
     return response.data
 
 
+def select_space(space_lnid: str) -> dict | None:
+    return call_with_fallback_auth(
+        _select_space,
+        space_lnid=space_lnid,
+    )
+
+
+def _select_space(space_lnid: str, client: Client) -> dict | None:
+    response = client.table("space").select("*").eq("lnid", space_lnid).execute()
+    return response.data[0] if response.data else None
+
+
 def _select_storage(
     ssettings: StorageSettings, update_uid: bool, client: Client
 ) -> bool:

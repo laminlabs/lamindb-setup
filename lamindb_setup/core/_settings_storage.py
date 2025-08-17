@@ -96,7 +96,7 @@ def init_storage(
     created_by: UUID | None = None,
     access_token: str | None = None,
     region: str | None = None,
-    space_id: UUID | None = None,
+    space_uuid: UUID | None = None,
 ) -> tuple[
     StorageSettings,
     Literal["hub-record-not-created", "hub-record-retrieved", "hub-record-created"],
@@ -155,7 +155,7 @@ def init_storage(
         access_token=access_token,
         prevent_creation=not register_hub,
         is_default=init_instance,
-        space_id=space_id,
+        space_id=space_uuid,
     )
     # we check the write access here if the storage record has not been retrieved from the hub
     if hub_record_status != "hub-record-retrieved":
