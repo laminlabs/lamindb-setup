@@ -93,7 +93,75 @@ def _get_storage_records_for_instance(
     return response.data
 
 
-def _select_storage(
+def select_space(lnid: str) -> dict | None:
+    return call_with_fallback_auth(
+        _select_space,
+        lnid=lnid,
+    )
+
+
+def _select_space(lnid: str, client: Client) -> dict | None:
+    response = client.table("space").select("*").eq("lnid", lnid).execute()
+    return response.data[0] if response.data else None
+
+
+def update_storage_with_space(storage_lnid: str, space_lnid: str) -> dict | None:
+    return call_with_fallback_auth(
+        _update_storage_with_space,
+        storage_lnid=storage_lnid,
+        space_lnid=space_lnid,
+    )
+
+
+def _update_storage_with_space(
+    storage_lnid: str, space_lnid: str, client: Client
+) -> dict | None:
+    # unfortunately these are two network requests
+    # but postgrest doesn't allow doing it in one
+    try:
+        space_response = (
+            client.table("space").select("id").eq("lnid", space_lnid).execute()
+        )
+
+        if not space_response.data:
+            raise ValueError(
+                f"Try again! Space with lnid '{space_lnid}' not found on hub"
+            )
+
+        space_id = space_response.data[0]["id"]
+
+        update_response = (
+            client.table("storage")
+            .update({"space_id": space_id})
+            .eq("lnid", storage_lnid)
+            .execute()
+        )
+
+        if not update_response.data:
+            raise ValueError(
+                f"Try again! Storage with lnid '{storage_lnid}' not found or update failed on hub"
+            )
+
+        return update_response.data[0]
+
+    except Exception as e:
+        print(f"Try again! Error updating storage in hub: {e}")
+        return None
+
+
+def select_storage(lnid: str) -> dict | None:
+    return call_with_fallback_auth(
+        _select_storage,
+        lnid=lnid,
+    )
+
+
+def _select_storage(lnid: str, client: Client) -> dict | None:
+    response = client.table("storage").select("*").eq("lnid", lnid).execute()
+    return response.data[0] if response.data else None
+
+
+def _select_storage_by_settings(
     ssettings: StorageSettings, update_uid: bool, client: Client
 ) -> bool:
     root = ssettings.root_as_str
@@ -151,6 +219,7 @@ def init_storage_hub(
     access_token: str | None = None,
     prevent_creation: bool = False,
     is_default: bool = False,
+    space_id: UUID | None = None,
 ) -> Literal["hub-record-retrieved", "hub-record-created", "hub-record-not-created"]:
     """Creates or retrieves an existing storage record from the hub."""
     if settings.user.handle != "anonymous" or access_token is not None:
@@ -161,10 +230,11 @@ def init_storage_hub(
             access_token=access_token,
             prevent_creation=prevent_creation,
             is_default=is_default,
+            space_id=space_id,
         )
     else:
         storage_exists = call_with_fallback(
-            _select_storage, ssettings=ssettings, update_uid=True
+            _select_storage_by_settings, ssettings=ssettings, update_uid=True
         )
         if storage_exists:
             return "hub-record-retrieved"
@@ -178,6 +248,7 @@ def _init_storage_hub(
     created_by: UUID | None = None,
     prevent_creation: bool = False,
     is_default: bool = False,
+    space_id: UUID | None = None,
 ) -> Literal["hub-record-retrieved", "hub-record-created", "hub-record-not-created"]:
     from lamindb_setup import settings
 
@@ -185,12 +256,15 @@ def _init_storage_hub(
     # storage roots are always stored without the trailing slash in the SQL
     # database
     root = ssettings.root_as_str
-    if _select_storage(ssettings, update_uid=True, client=client):
+    if _select_storage_by_settings(ssettings, update_uid=True, client=client):
         return "hub-record-retrieved"
     if prevent_creation:
         return "hub-record-not-created"
     if ssettings.type_is_cloud:
-        id = uuid.uuid5(uuid.NAMESPACE_URL, root)
+        hash_string = (
+            root if ssettings.type_is_cloud else f"{ssettings.region}://{root}"
+        )
+        id = uuid.uuid5(uuid.NAMESPACE_URL, hash_string)
     else:
         id = uuid.uuid4()
     if ssettings._instance_id is None and settings._instance_exists:
@@ -207,11 +281,9 @@ def _init_storage_hub(
         "region": ssettings.region,
         "type": ssettings.type,
         "instance_id": ssettings._instance_id.hex,
-        # the empty string is important as we want the user flow to be through LaminHub
-        # if this errors with unique constraint error, the user has to update
-        # the description in LaminHub
         "description": "",
         "is_default": is_default,
+        "space_id": space_id.hex if space_id is not None else None,
     }
     # TODO: add error message for violated unique constraint
     # on root & description
