@@ -93,6 +93,18 @@ def _get_storage_records_for_instance(
     return response.data
 
 
+def select_space(space_lnid: str) -> dict | None:
+    return call_with_fallback_auth(
+        _select_space,
+        space_lnid=space_lnid,
+    )
+
+
+def _select_space(space_lnid: str, client: Client) -> dict | None:
+    response = client.table("space").select("*").eq("lnid", space_lnid).execute()
+    return response.data[0] if response.data else None
+
+
 def _select_storage(
     ssettings: StorageSettings, update_uid: bool, client: Client
 ) -> bool:
@@ -151,6 +163,7 @@ def init_storage_hub(
     access_token: str | None = None,
     prevent_creation: bool = False,
     is_default: bool = False,
+    space_id: UUID | None = None,
 ) -> Literal["hub-record-retrieved", "hub-record-created", "hub-record-not-created"]:
     """Creates or retrieves an existing storage record from the hub."""
     if settings.user.handle != "anonymous" or access_token is not None:
@@ -161,6 +174,7 @@ def init_storage_hub(
             access_token=access_token,
             prevent_creation=prevent_creation,
             is_default=is_default,
+            space_id=space_id,
         )
     else:
         storage_exists = call_with_fallback(
@@ -178,6 +192,7 @@ def _init_storage_hub(
     created_by: UUID | None = None,
     prevent_creation: bool = False,
     is_default: bool = False,
+    space_id: UUID | None = None,
 ) -> Literal["hub-record-retrieved", "hub-record-created", "hub-record-not-created"]:
     from lamindb_setup import settings
 
@@ -190,7 +205,10 @@ def _init_storage_hub(
     if prevent_creation:
         return "hub-record-not-created"
     if ssettings.type_is_cloud:
-        id = uuid.uuid5(uuid.NAMESPACE_URL, root)
+        hash_string = (
+            root if ssettings.type_is_cloud else f"{ssettings.region}://{root}"
+        )
+        id = uuid.uuid5(uuid.NAMESPACE_URL, hash_string)
     else:
         id = uuid.uuid4()
     if ssettings._instance_id is None and settings._instance_exists:
@@ -207,11 +225,9 @@ def _init_storage_hub(
         "region": ssettings.region,
         "type": ssettings.type,
         "instance_id": ssettings._instance_id.hex,
-        # the empty string is important as we want the user flow to be through LaminHub
-        # if this errors with unique constraint error, the user has to update
-        # the description in LaminHub
         "description": "",
         "is_default": is_default,
+        "space_id": space_id.hex if space_id is not None else None,
     }
     # TODO: add error message for violated unique constraint
     # on root & description
