@@ -140,7 +140,7 @@ def select_collaborator(
     client: Client,
 ):
     data = (
-        client.table("account_instance")
+        client.table("access_instance")
         .select("*")
         .eq("instance_id", instance_id)
         .eq("account_id", account_id)
