@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+from lamin_utils import logger
+
 
 def get_location(ip="ipinfo.io"):
     import requests  # type: ignore
@@ -32,7 +34,13 @@ def find_closest_aws_region() -> str:
         "eu-central-1": {"latitude": 50.11, "longitude": 8.68},  # Frankfurt
         "eu-west-2": {"latitude": 51.51, "longitude": -0.13},  # London, UK
     }
-    your_location = get_location()
+    # sometimes get_location fails to obtain coordinates
+    try:
+        your_location = get_location()
+    except Exception as e:
+        logger.warning(f"failed to infer location, using us-east-1: {e}")
+        return "us-east-1"
+
     closest_region = ""
     min_distance = float("inf")
     for region in aws_region_locations:
