@@ -168,8 +168,10 @@ def setup_django(
                 ssl_require = False
             else:
                 ssl_require = not is_local_db_url(instance_db)
+            options = {"connect_timeout": os.getenv("PGCONNECT_TIMEOUT", 15)}
         else:
             ssl_require = False
+            options = {}
         default_db = dj_database_url.config(
             env="LAMINDB_DJANGO_DATABASE_URL",
             default=instance_db,
@@ -178,6 +180,9 @@ def setup_django(
             conn_health_checks=True,
             ssl_require=ssl_require,
         )
+        if options:
+            # do not overwrite keys in options if set
+            default_db["OPTIONS"] = {**options, **default_db.get("OPTIONS", {})}
         DATABASES = {
             "default": default_db,
         }
