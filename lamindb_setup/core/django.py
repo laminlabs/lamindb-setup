@@ -168,7 +168,7 @@ def setup_django(
                 ssl_require = False
             else:
                 ssl_require = not is_local_db_url(instance_db)
-            options = {"connect_timeout": os.getenv("PGCONNECT_TIMEOUT", 15)}
+            options = {"connect_timeout": os.getenv("PGCONNECT_TIMEOUT", 20)}
         else:
             ssl_require = False
             options = {}
