@@ -41,6 +41,7 @@ from lamindb_setup.core._settings_storage import base62
 from lamindb_setup.core._settings_storage import init_storage as init_storage_base
 from lamindb_setup.core._settings_store import instance_settings_file
 from lamindb_setup.core._settings_user import UserSettings
+from laminhub_rest.core._central_client import SupabaseClientWrapper
 from laminhub_rest.core.legacy._instance_collaborator import InstanceCollaboratorHandler
 from laminhub_rest.test.instance import create_instance
 from postgrest.exceptions import APIError
@@ -103,7 +104,7 @@ def create_testadmin1_session():  # -> Tuple[Client, UserSettings]
     # uses ln_setup.settings.user.access_token
     client = connect_hub_with_auth()
     client.table("account").insert(account).execute()
-    yield client, ln_setup.settings.user
+    yield SupabaseClientWrapper(client), ln_setup.settings.user
     client.auth.sign_out()
 
 
@@ -121,7 +122,7 @@ def create_testreader1_session():  # -> Tuple[Client, UserSettings]
     }
     client = connect_hub_with_auth(access_token=user_settings.access_token)
     client.table("account").insert(account).execute()
-    yield client, user_settings
+    yield SupabaseClientWrapper(client), user_settings
     client.auth.sign_out()
 
 
