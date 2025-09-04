@@ -101,6 +101,7 @@ def _connect_instance(
     *,
     db: str | None = None,
     raise_permission_error: bool = True,
+    use_root_db_user: bool = False,
     access_token: str | None = None,
 ) -> InstanceSettings:
     settings_file = instance_settings_file(name, owner)
@@ -120,7 +121,10 @@ def _connect_instance(
         # do not call hub if the user is anonymous
         if owner != "anonymous":
             hub_result = connect_instance_hub(
-                owner=owner, name=name, access_token=access_token
+                owner=owner,
+                name=name,
+                access_token=access_token,
+                use_root_db_user=use_root_db_user,
             )
         else:
             hub_result = "anonymous-user"
@@ -219,12 +223,12 @@ def reset_django_module_variables():
                 continue
 
 
-def _connect_cli(instance: str) -> None:
+def _connect_cli(instance: str, use_root_db_user: bool = True) -> None:
     from lamindb_setup import settings as settings_
 
     settings_.auto_connect = True
     owner, name = get_owner_name_from_identifier(instance)
-    isettings = _connect_instance(owner, name)
+    isettings = _connect_instance(owner, name, use_root_db_user=use_root_db_user)
     isettings._persist(write_to_disk=True)
     if not isettings.is_on_hub or isettings._is_cloud_sqlite:
         # there are two reasons to call the full-blown connect
@@ -248,6 +252,7 @@ def connect(instance: str | None = None, **kwargs: Any) -> str | tuple | None:
     """
     # validate kwargs
     valid_kwargs = {
+        "use_root_db_user",
         "_db",
         "_write_settings",
         "_raise_not_found_error",
@@ -260,6 +265,7 @@ def connect(instance: str | None = None, **kwargs: Any) -> str | tuple | None:
             raise TypeError(f"connect() got unexpected keyword argument '{kwarg}'")
     isettings: InstanceSettings = None  # type: ignore
     # _db is still needed because it is called in init
+    use_root_db_user: bool = kwargs.get("use_root_db_user", False)
     _db: str | None = kwargs.get("_db", None)
     _write_settings: bool = kwargs.get("_write_settings", False)
     _raise_not_found_error: bool = kwargs.get("_raise_not_found_error", True)
@@ -328,7 +334,11 @@ def connect(instance: str | None = None, **kwargs: Any) -> str | tuple | None:
 
             try:
                 isettings = _connect_instance(
-                    owner, name, db=_db, access_token=access_token
+                    owner,
+                    name,
+                    db=_db,
+                    access_token=access_token,
+                    use_root_db_user=use_root_db_user,
                 )
             except InstanceNotFoundError as e:
                 if _raise_not_found_error:
