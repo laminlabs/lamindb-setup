@@ -80,17 +80,12 @@ class migrate:
     @disable_auto_connect
     def create(cls) -> None:
         """Create a migration."""
-        if _check_instance_setup():
-            raise RuntimeError("Restart Python session to create migration or use CLI!")
         setup_django(settings.instance, create_migrations=True)
 
     @classmethod
     def deploy(cls, package_name: str | None = None, number: int | None = None) -> None:
         """Deploy a migration."""
-        from ._schema_metadata import update_schema_in_hub
-
-        if _check_instance_setup():
-            raise RuntimeError("Restart Python session to migrate or use CLI!")
+        from lamindb_setup._schema_metadata import update_schema_in_hub
         from lamindb_setup.core._hub_client import call_with_fallback_auth
         from lamindb_setup.core._hub_crud import (
             select_collaborator,
