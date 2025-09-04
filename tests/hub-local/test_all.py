@@ -337,7 +337,9 @@ def test_connect_instance_hub(create_myinstance, create_testadmin1_session):
     )
 
     anon_client = connect_hub()
-    instance, _ = _connect_instance_hub(owner=owner, name=name, client=anon_client)
+    instance, _ = _connect_instance_hub(
+        owner=owner, name=name, use_root_db_user=False, client=anon_client
+    )
     assert instance["name"] == name
     assert instance["owner"] == owner
 
