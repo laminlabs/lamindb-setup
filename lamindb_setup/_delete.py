@@ -65,6 +65,9 @@ def delete(slug: str, force: bool = False, require_empty: bool = True) -> int | 
             If the instance is owned by you, it suffices to pass the instance name.
         force: Whether to skip the confirmation prompt.
         require_empty: Whether to check if the instance is empty before deleting.
+
+    See Also:
+        Delete an instance via the CLI, see `here <https://docs.lamin.ai/cli#delete>`__.
     """
     owner, name = get_owner_name_from_identifier(slug)
     isettings = _connect_instance(owner, name, raise_permission_error=False)
