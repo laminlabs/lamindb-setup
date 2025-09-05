@@ -66,26 +66,17 @@ def login(
                 api_key = os.environ["LAMIN_API_KEY"]
             else:
                 api_key = input("Your API key: ")
-    else:
-        api_key = None
+    elif api_key is not None:
+        raise ValueError("Please provide either 'user' or 'api_key', not both.")
 
-    valid_kwargs = {
-        "key",
-    }
     for kwarg in kwargs:
-        if kwarg not in valid_kwargs:
+        if kwarg != "key":
             raise TypeError(f"login() got unexpected keyword argument '{kwarg}'")
     key: str | None = kwargs.get("key", None)  # legacy API key aka password
     if key is not None:
         logger.warning(
             "the legacy API key is deprecated and will likely be removed in a future version"
         )
-
-    if user is None and api_key is None:
-        if "LAMIN_API_KEY" in os.environ:
-            api_key = os.environ["LAMIN_API_KEY"]
-        else:
-            raise ValueError("Both `user` and `api_key` should not be `None`.")
 
     if api_key is None:
         if "@" in user:  # type: ignore
