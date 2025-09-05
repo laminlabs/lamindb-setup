@@ -24,6 +24,7 @@ from .core._settings_load import load_instance_settings
 from .core._settings_storage import StorageSettings
 from .core._settings_store import instance_settings_file, settings_dir
 from .core.cloud_sqlite_locker import unlock_cloud_sqlite_upon_exception
+from .core.django import reset_django
 from .errors import CannotSwitchDefaultInstance
 
 if TYPE_CHECKING:
@@ -281,12 +282,18 @@ def connect(instance: str | None = None, **kwargs: Any) -> str | tuple | None:
 
     try:
         if instance is None:
-            isettings_or_none = _get_current_instance_settings()
-            if isettings_or_none is None:
-                raise ValueError(
-                    "No instance was connected through the CLI, pass a value to `instance` or connect via the CLI."
-                )
-            isettings = isettings_or_none
+            if settings._instance_exists:
+                isettings = settings.instance
+            else:
+                isettings_or_none = _get_current_instance_settings()
+                if isettings_or_none is None:
+                    raise ValueError(
+                        "No instance was connected through the CLI, pass a value to `instance` or connect via the CLI."
+                    )
+                isettings = isettings_or_none
+            if use_root_db_user:
+                reset_django()
+                owner, name = isettings.owner, isettings.name
             if _db is not None and isettings.dialect == "postgresql":
                 isettings._db = _db
         else:
@@ -302,14 +309,13 @@ def connect(instance: str | None = None, **kwargs: Any) -> str | tuple | None:
                     # could be made more specific by checking whether the django
                     # configured database is the same as the one in settings
                     and connection.settings_dict["NAME"] != ":memory:"
+                    and not use_root_db_user  # always re-connect for root db user
                 ):
                     logger.important(
                         f"doing nothing, already connected lamindb: {settings.instance.slug}"
                     )
                     return None
                 else:
-                    from lamindb_setup.core.django import reset_django
-
                     if (
                         settings._instance_exists
                         and settings.instance.slug != "none/none"
@@ -332,6 +338,7 @@ def connect(instance: str | None = None, **kwargs: Any) -> str | tuple | None:
             ):
                 disconnect(mute=True)
 
+        if instance is not None or use_root_db_user:
             try:
                 isettings = _connect_instance(
                     owner,

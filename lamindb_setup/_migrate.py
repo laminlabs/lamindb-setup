@@ -85,6 +85,7 @@ class migrate:
     @classmethod
     def deploy(cls, package_name: str | None = None, number: int | None = None) -> None:
         """Deploy a migration."""
+        from lamindb_setup._connect_instance import connect
         from lamindb_setup._schema_metadata import update_schema_in_hub
         from lamindb_setup.core._hub_client import call_with_fallback_auth
         from lamindb_setup.core._hub_crud import (
@@ -105,6 +106,10 @@ class migrate:
                     "❌ Only admins can deploy migrations, please ensure that you're an"
                     f" admin: https://lamin.ai/{settings.instance.slug}/settings"
                 )
+            # ensure we connect with the root user
+            if "root:" not in settings.instance.db:
+                connect(use_root_db_user=True)
+                assert "root:" in settings.instance.db
             # we need lamindb to be installed, otherwise we can't populate the version
             # information in the hub
             import lamindb
@@ -121,7 +126,6 @@ class migrate:
         # this populates the hub
         if settings.instance.is_on_hub:
             logger.important(f"updating lamindb version in hub: {lamindb.__version__}")
-            # TODO: integrate update of instance table within update_schema_in_hub & below
             if settings.instance.dialect != "sqlite":
                 update_schema_in_hub()
             call_with_fallback_auth(
