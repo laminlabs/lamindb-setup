@@ -45,11 +45,20 @@ def load_user(email: str | None = None, handle: str | None = None) -> UserSettin
 def login(
     user: str | None = None, *, api_key: str | None = None, **kwargs
 ) -> UserSettings:
-    """Log in user.
+    # note that the docstring needs to be synced with lamin login
+    """Log into LaminHub.
+
+    `login()` prompts for your API key unless you set it via environment variable `LAMIN_API_KEY` or pass it ass an argument.
+
+    You can create your API key in your account settings on LaminHub (top right corner).
+
+    After authenticating once, you can re-authenticate and switch between accounts via `lamin login myhandle`.
+
+    See also: login via the CLI command `lamin login`, see `here <https://docs.lamin.ai/cli#login>`__.
 
     Args:
         user: User handle.
-        api_key: User API key. The CLI `lamin login` command prompts if `api_key` is `None`.
+        api_key: API key. If `None`, will prompt for it unless `LAMIN_API_KEY` is set.
     """
     if user is None:
         if api_key is None:
