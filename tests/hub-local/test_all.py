@@ -234,8 +234,6 @@ def test_db_user(
         account_id=reader_settings._uuid,
         instance_id=instance_id,
         role="read",
-        schema_id=None,
-        skip_insert_user_table=True,
     )
     # check that this was successful and can be read by the reader
     db_collaborator = select_collaborator(
