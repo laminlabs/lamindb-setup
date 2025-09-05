@@ -63,16 +63,29 @@ def check_whether_migrations_in_sync(db_version_str: str):
         # logger.important("consider migrating your database: lamin migrate deploy")
 
 
-# for tests, see lamin-cli
 class migrate:
-    """Manage migrations.
+    """Manage database migrations.
+
+    Unless you maintain your own schema modules with your own Django models, you won't need this.
 
     Examples:
 
-    >>> import lamindb as ln
-    >>> ln.setup.migrate.create()
-    >>> ln.setup.migrate.deploy()
-    >>> ln.setup.migrate.check()
+        Create a migration::
+
+            import lamindb as ln
+
+            ln.setup.migrate.create()
+
+        Deploy a migration::
+
+            ln.setup.migrate.deploy()
+
+        Check migration consistency::
+
+            ln.setup.migrate.check()
+
+    See Also:
+        Migrate an instance via the CLI, see `here <https://docs.lamin.ai/cli#migrate>`__.
 
     """
 

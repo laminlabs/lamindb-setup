@@ -8,9 +8,12 @@ from .core.cloud_sqlite_locker import clear_locker
 
 
 def disconnect(mute: bool = False) -> None:
-    """Disconnect an instance.
+    """Clear default instance configuration.
 
     Returns `None` if succeeds, otherwise an exception is raised.
+
+    See Also:
+        Clear default instance configuration via the CLI, see `here <https://docs.lamin.ai/cli#disconnect>`__.
     """
     if current_instance_settings_file().exists():
         instance = settings.instance.slug

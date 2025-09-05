@@ -43,20 +43,51 @@ def load_user(email: str | None = None, handle: str | None = None) -> UserSettin
 
 
 def login(
-    user: str | None = None, *, api_key: str | None = None, key: str | None = None
+    user: str | None = None, *, api_key: str | None = None, **kwargs
 ) -> UserSettings:
-    """Log in user.
+    # note that the docstring needs to be synced with lamin login
+    """Log into LaminHub.
+
+    `login()` prompts for your API key unless you set it via the `LAMIN_API_KEY` environment variable or pass it as an argument.
+
+    You can create your API key in your account settings on LaminHub (top right corner).
 
     Args:
-        user: handle or email
-        api_key: API key
-        key: legacy API key
+        user: User handle.
+        api_key: API key.
+
+    See Also:
+        Login via the CLI command `lamin login`, see `here <https://docs.lamin.ai/cli#login>`__.
+
+    Examples:
+
+        Logging in the first time::
+
+            import lamindb as ln
+
+            ln.setup.login()  # prompts for API key
+
+        After authenticating multiple users, you can switch between user profiles::
+
+            ln.setup.login("myhandle")  # pass your user handle
     """
-    if user is None and api_key is None:
-        if "LAMIN_API_KEY" in os.environ:
-            api_key = os.environ["LAMIN_API_KEY"]
-        else:
-            raise ValueError("Both `user` and `api_key` should not be `None`.")
+    if user is None:
+        if api_key is None:
+            if "LAMIN_API_KEY" in os.environ:
+                api_key = os.environ["LAMIN_API_KEY"]
+            else:
+                api_key = input("Your API key: ")
+    elif api_key is not None:
+        raise ValueError("Please provide either 'user' or 'api_key', not both.")
+
+    for kwarg in kwargs:
+        if kwarg != "key":
+            raise TypeError(f"login() got unexpected keyword argument '{kwarg}'")
+    key: str | None = kwargs.get("key", None)  # legacy API key aka password
+    if key is not None:
+        logger.warning(
+            "the legacy API key is deprecated and will likely be removed in a future version"
+        )
 
     if api_key is None:
         if "@" in user:  # type: ignore
@@ -66,7 +97,6 @@ def login(
         user_settings = load_user(email, handle)
 
         if key is not None:
-            # within UserSettings, we still call it "password" for a while
             user_settings.password = key
 
         if user_settings.password is None:
@@ -101,9 +131,9 @@ def login(
         user_uuid, user_id, user_handle, user_name, access_token = response
 
     if api_key is not None:
-        logger.success(f"logged in {user_handle} (uid: {user_id})")
+        logger.success(f"logged in {user_handle}")
     else:  # legacy flow
-        logger.success(f"logged in with email {user_settings.email} (uid: {user_id})")
+        logger.success(f"logged in with email {user_settings.email}")
 
     user_settings.uid = user_id
     user_settings.handle = user_handle
@@ -121,6 +151,15 @@ def login(
 
 
 def logout():
+    """Log out the current user.
+
+    This deletes the `~/.lamin/current_user.env` so that you'll no longer be automatically authenticated in the environment.
+
+    It keeps a copy as `~/.lamin/user--<user_handle>.env` so you can easily switch between user profiles.
+
+    See Also:
+        Logout via the CLI command `lamin logout`, see `here <https://docs.lamin.ai/cli#logout>`__.
+    """
     if current_user_settings_file().exists():
         current_user_settings_file().unlink()
         settings._user_settings = None
