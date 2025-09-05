@@ -48,7 +48,7 @@ def login(
     # note that the docstring needs to be synced with lamin login
     """Log into LaminHub.
 
-    `login()` prompts for your API key unless you set it via environment variable `LAMIN_API_KEY` or pass it ass an argument.
+    `login()` prompts for your API key unless you set it via the `LAMIN_API_KEY` environment variable or pass it as an argument.
 
     You can create your API key in your account settings on LaminHub (top right corner).
 
