@@ -52,13 +52,25 @@ def login(
 
     You can create your API key in your account settings on LaminHub (top right corner).
 
-    After authenticating once, you can re-authenticate and switch between accounts via `lamin login myhandle`.
+    After authenticating once, you can re-authenticate and switch between accounts via `login(myhandle)`.
 
     See also: login via the CLI command `lamin login`, see `here <https://docs.lamin.ai/cli#login>`__.
 
     Args:
         user: User handle.
         api_key: API key. If `None`, will prompt for it unless `LAMIN_API_KEY` is set.
+
+    Examples:
+
+        Logging in the first time::
+
+            import lamindb as ln
+
+            ln.setup.login()  # prompts for entering API key
+
+        Switching between user profiles::
+
+            ln.setup.login("myhandle")  # pass your user handle
     """
     if user is None:
         if api_key is None:
