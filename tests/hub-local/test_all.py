@@ -42,7 +42,7 @@ from lamindb_setup.core._settings_storage import init_storage as init_storage_ba
 from lamindb_setup.core._settings_store import instance_settings_file
 from lamindb_setup.core._settings_user import UserSettings
 from laminhub_rest.core._central_client import SupabaseClientWrapper
-from laminhub_rest.core.legacy._instance_collaborator import InstanceCollaboratorHandler
+from laminhub_rest.core.instance_collaborator import InstanceCollaboratorHandler
 from laminhub_rest.test.instance import create_instance
 from postgrest.exceptions import APIError
 from supafunc.errors import FunctionsHttpError
