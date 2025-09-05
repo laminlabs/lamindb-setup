@@ -43,15 +43,35 @@ def load_user(email: str | None = None, handle: str | None = None) -> UserSettin
 
 
 def login(
-    user: str | None = None, *, api_key: str | None = None, key: str | None = None
+    user: str | None = None, *, api_key: str | None = None, **kwargs
 ) -> UserSettings:
     """Log in user.
 
     Args:
-        user: handle or email
-        api_key: API key
-        key: legacy API key
+        user: User handle.
+        api_key: User API key. The CLI `lamin login` command prompts if `api_key` is `None`.
     """
+    if user is None:
+        if api_key is None:
+            if "LAMIN_API_KEY" in os.environ:
+                api_key = os.environ["LAMIN_API_KEY"]
+            else:
+                api_key = input("Your API key: ")
+    else:
+        api_key = None
+
+    valid_kwargs = {
+        "key",
+    }
+    for kwarg in kwargs:
+        if kwarg not in valid_kwargs:
+            raise TypeError(f"login() got unexpected keyword argument '{kwarg}'")
+    key: str | None = kwargs.get("key", None)  # legacy API key aka password
+    if key is not None:
+        logger.warning(
+            "the legacy API key is deprecated and will likely be removed in a future version"
+        )
+
     if user is None and api_key is None:
         if "LAMIN_API_KEY" in os.environ:
             api_key = os.environ["LAMIN_API_KEY"]
@@ -66,7 +86,6 @@ def login(
         user_settings = load_user(email, handle)
 
         if key is not None:
-            # within UserSettings, we still call it "password" for a while
             user_settings.password = key
 
         if user_settings.password is None:
@@ -101,9 +120,9 @@ def login(
         user_uuid, user_id, user_handle, user_name, access_token = response
 
     if api_key is not None:
-        logger.success(f"logged in {user_handle} (uid: {user_id})")
+        logger.success(f"logged in {user_handle}")
     else:  # legacy flow
-        logger.success(f"logged in with email {user_settings.email} (uid: {user_id})")
+        logger.success(f"logged in with email {user_settings.email}")
 
     user_settings.uid = user_id
     user_settings.handle = user_handle
