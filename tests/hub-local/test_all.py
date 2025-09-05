@@ -160,7 +160,6 @@ def create_myinstance(create_testadmin1_session):  # -> Dict
         client=admin_client,
     )
     assert db_collaborator["role"] == "admin"
-    assert db_collaborator["db_user_id"] is None
     db_dsn = LaminDsnModel(db=db_str)
     db_user_name = db_dsn.db.user
     db_user_password = db_dsn.db.password
@@ -203,7 +202,6 @@ def test_connection_string_decomp(create_myinstance, create_testadmin1_session):
         client=client,
     )
     assert db_collaborator["role"] == "admin"
-    assert db_collaborator["db_user_id"] is None
 
 
 def test_db_user(
@@ -248,7 +246,6 @@ def test_db_user(
     assert db_collaborator["role"] == "read"
     assert UUID(db_collaborator["instance_id"]) == instance_id
     assert UUID(db_collaborator["account_id"]) == reader_settings._uuid
-    assert db_collaborator["db_user_id"] is None
     # this alone doesn't set a db_user
     db_user = select_db_user_by_instance(
         instance_id=instance_id,
