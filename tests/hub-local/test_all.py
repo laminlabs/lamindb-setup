@@ -42,7 +42,8 @@ from lamindb_setup.core._settings_storage import init_storage as init_storage_ba
 from lamindb_setup.core._settings_store import instance_settings_file
 from lamindb_setup.core._settings_user import UserSettings
 from laminhub_rest.core._central_client import SupabaseClientWrapper
-from laminhub_rest.core.legacy._instance_collaborator import InstanceCollaboratorHandler
+from laminhub_rest.core.instance_collaborator import InstanceCollaboratorHandler
+from laminhub_rest.core.organization import OrganizationMemberHandler
 from laminhub_rest.test.instance import create_instance
 from postgrest.exceptions import APIError
 from supafunc.errors import FunctionsHttpError
@@ -160,7 +161,6 @@ def create_myinstance(create_testadmin1_session):  # -> Dict
         client=admin_client,
     )
     assert db_collaborator["role"] == "admin"
-    assert db_collaborator["db_user_id"] is None
     db_dsn = LaminDsnModel(db=db_str)
     db_user_name = db_dsn.db.user
     db_user_password = db_dsn.db.password
@@ -203,7 +203,6 @@ def test_connection_string_decomp(create_myinstance, create_testadmin1_session):
         client=client,
     )
     assert db_collaborator["role"] == "admin"
-    assert db_collaborator["db_user_id"] is None
 
 
 def test_db_user(
@@ -232,12 +231,15 @@ def test_db_user(
     )
     assert db_collaborator is None
     # now add testreader1 as a collaborator
+    OrganizationMemberHandler(admin_client).add(
+        organization_id=UUID(create_myinstance["account_id"]),
+        account_id=reader_settings._uuid,
+        role="member",
+    )
     InstanceCollaboratorHandler(admin_client).add(
         account_id=reader_settings._uuid,
         instance_id=instance_id,
         role="read",
-        schema_id=None,
-        skip_insert_user_table=True,
     )
     # check that this was successful and can be read by the reader
     db_collaborator = select_collaborator(
@@ -248,7 +250,6 @@ def test_db_user(
     assert db_collaborator["role"] == "read"
     assert UUID(db_collaborator["instance_id"]) == instance_id
     assert UUID(db_collaborator["account_id"]) == reader_settings._uuid
-    assert db_collaborator["db_user_id"] is None
     # this alone doesn't set a db_user
     db_user = select_db_user_by_instance(
         instance_id=instance_id,
@@ -337,7 +338,9 @@ def test_connect_instance_hub(create_myinstance, create_testadmin1_session):
     )
 
     anon_client = connect_hub()
-    instance, _ = _connect_instance_hub(owner=owner, name=name, client=anon_client)
+    instance, _ = _connect_instance_hub(
+        owner=owner, name=name, use_root_db_user=False, client=anon_client
+    )
     assert instance["name"] == name
     assert instance["owner"] == owner
 
