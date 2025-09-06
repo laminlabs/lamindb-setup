@@ -43,6 +43,7 @@ from lamindb_setup.core._settings_store import instance_settings_file
 from lamindb_setup.core._settings_user import UserSettings
 from laminhub_rest.core._central_client import SupabaseClientWrapper
 from laminhub_rest.core.instance_collaborator import InstanceCollaboratorHandler
+from laminhub_rest.core.organization import OrganizationMemberHandler
 from laminhub_rest.test.instance import create_instance
 from postgrest.exceptions import APIError
 from supafunc.errors import FunctionsHttpError
@@ -230,6 +231,11 @@ def test_db_user(
     )
     assert db_collaborator is None
     # now add testreader1 as a collaborator
+    OrganizationMemberHandler(admin_client).add(
+        organization_id=UUID(create_myinstance["account_id"]),
+        account_id=reader_settings._uuid,
+        role="member",
+    )
     InstanceCollaboratorHandler(admin_client).add(
         account_id=reader_settings._uuid,
         instance_id=instance_id,
