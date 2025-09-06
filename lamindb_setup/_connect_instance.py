@@ -250,6 +250,9 @@ def connect(instance: str | None = None, **kwargs: Any) -> str | tuple | None:
         instance: Pass a slug (`account/name`) or URL (`https://lamin.ai/account/name`).
             If `None`, looks for an environment variable `LAMIN_CURRENT_INSTANCE` to get the instance identifier.
             If it doesn't find this variable, it connects to the instance that was connected with `lamin connect` through the CLI.
+
+    See Also:
+        Configure an instance for auto-connect via the CLI, see `here <https://docs.lamin.ai/cli#connect>`__.
     """
     # validate kwargs
     valid_kwargs = {

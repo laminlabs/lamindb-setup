@@ -241,6 +241,9 @@ def init(
         db: {}
         modules: {}
         **kwargs: {}
+
+    See Also:
+        Init an instance for via the CLI, see `here <https://docs.lamin.ai/cli#init>`__.
     """
     isettings = None
     ssettings = None
