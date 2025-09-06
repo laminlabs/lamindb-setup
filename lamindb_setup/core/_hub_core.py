@@ -396,6 +396,7 @@ def _init_instance_hub(
         "schema_str": isettings._schema_str,
         "lamindb_version": lamindb_version,
         "public": False,
+        "created_by_id": account_id.hex,  # type: ignore
     }
     if isettings.dialect != "sqlite":
         db_dsn = LaminDsnModel(db=isettings.db)
