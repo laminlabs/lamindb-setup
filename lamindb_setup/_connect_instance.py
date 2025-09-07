@@ -330,7 +330,8 @@ def connect(instance: str | None = None, **kwargs: Any) -> str | tuple | None:
                             )
                         else:
                             logger.important_hint(
-                                "switching the default lamindb instance might produce unexpected side effects if locally-scoped imports of registries are used"
+                                "switching the default lamindb instance might produce unexpected side effects with function-scoped imports: "
+                                "please import lamindb at the module level instead of inside functions"
                             )
                     reset_django()
             elif (
