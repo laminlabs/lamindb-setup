@@ -178,12 +178,13 @@ def reset_django_module_variables():
     # This function updates all module-level references to Django classes
     # But it will fail to update function level references
     # So, if a user has
-    # def main():
+    # def my_function():
     #     import lamindb as ln
     #     ...
     #
-    # Then it will not work and the `ln` variable will become stale and hold references
-    # to old classes
+    # Then it will **not** work and the `ln` variable will become stale and hold a reference
+    # to the old classes
+    # There doesn't seem to be an easy way to fix this problem
 
     import types
 
