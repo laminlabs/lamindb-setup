@@ -175,6 +175,16 @@ def _connect_instance(
 
 
 def reset_django_module_variables():
+    # This function updates all module-level references to Django classes
+    # But it will fail to update function level references
+    # So, if a user has
+    # def main():
+    #     import lamindb as ln
+    #     ...
+    #
+    # Then it will not work and the `ln` variable will become stale and hold references
+    # to old classes
+
     import types
 
     from django.apps import apps
@@ -319,7 +329,7 @@ def connect(instance: str | None = None, **kwargs: Any) -> str | tuple | None:
                             )
                         else:
                             logger.warning(
-                                "switching the current lamindb instance is experimental and might produce unexpected side effects"
+                                "switching the current lamindb instance might produce unexpected side effects if function-scoped imports are used"
                             )
                     reset_django()
             elif (
