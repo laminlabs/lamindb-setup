@@ -328,8 +328,8 @@ def connect(instance: str | None = None, **kwargs: Any) -> str | tuple | None:
                                 "Cannot switch default instance while `ln.track()` is live: call `ln.finish()`"
                             )
                         else:
-                            logger.warning(
-                                "switching the current lamindb instance might produce unexpected side effects if function-scoped imports are used"
+                            logger.important_hint(
+                                "switching the default lamindb instance might produce unexpected side effects if locally-scoped imports of registries are used"
                             )
                     reset_django()
             elif (
