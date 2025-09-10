@@ -46,6 +46,7 @@ from laminhub_rest.core.instance_collaborator import InstanceCollaboratorHandler
 from laminhub_rest.core.organization import OrganizationMemberHandler
 from laminhub_rest.test.instance import create_instance
 from postgrest.exceptions import APIError
+from sqlalchemy.exc import OperationalError as SQLAlchemy_OperationalError
 from supafunc.errors import FunctionsHttpError
 
 
@@ -240,11 +241,17 @@ def test_db_user(
         account_id=reader_settings._uuid,
         role="member",
     )
-    InstanceCollaboratorHandler(admin_client).add(
-        account_id=reader_settings._uuid,
-        instance_id=instance_id,
-        role="read",
-    )
+    try:
+        InstanceCollaboratorHandler(admin_client).add(
+            account_id=reader_settings._uuid,
+            instance_id=instance_id,
+            role="read",
+        )
+    except SQLAlchemy_OperationalError:
+        # the function above tries to write to the db
+        # but the db for this instance is dummy
+        # the insertion in the supabase table succeeds anyways
+        pass
     # check that this was successful and can be read by the reader
     db_collaborator = select_collaborator(
         instance_id=instance_id.hex,
@@ -305,7 +312,7 @@ def test_connect_instance_hub(create_myinstance, create_testadmin1_session):
     instance, storage = connect_instance_hub(owner=owner, name=name)
     assert instance["name"] == name
     assert instance["owner"] == owner
-    assert instance["api_url"] is None
+    assert instance["api_url"] == "http://localhost:8000"
     assert instance["db_permissions"] == "write"
     assert storage["root"] == "s3://lamindb-ci/myinstance"
     assert "schema_id" in instance
@@ -325,9 +332,6 @@ def test_connect_instance_hub(create_myinstance, create_testadmin1_session):
     )
     assert instance["name"] == create_myinstance["name"]
     assert instance["db"] == expected_dsn
-
-    instance, _ = connect_instance_hub(owner=owner, name=name)
-    assert instance["api_url"] == "http://localhost:8000"
 
     # test anon access to public instance
     update_instance(
