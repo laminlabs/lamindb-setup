@@ -149,6 +149,10 @@ def create_myinstance(create_testadmin1_session):  # -> Dict
         register_hub=True,
     )[0]
     isettings._storage = storage
+    # add resource_db_server from seed_local_test
+    admin_client.table("instance").update(
+        {"resource_db_server_id": "e36c7069-2129-4c78-b2c6-323e2354b741"}
+    ).eq("id", instance_id.hex).execute()
     # test loading it
     with pytest.raises(PermissionError) as error:
         ln_setup.connect("testadmin1/myinstance", _test=True)
@@ -321,11 +325,6 @@ def test_connect_instance_hub(create_myinstance, create_testadmin1_session):
     )
     assert instance["name"] == create_myinstance["name"]
     assert instance["db"] == expected_dsn
-
-    # add resource_db_server from seed_local_test
-    admin_client.table("instance").update(
-        {"resource_db_server_id": "e36c7069-2129-4c78-b2c6-323e2354b741"}
-    ).eq("id", instance["id"]).execute()
 
     instance, _ = connect_instance_hub(owner=owner, name=name)
     assert instance["api_url"] == "http://localhost:8000"
