@@ -160,7 +160,9 @@ def _connect_instance(
                 schema_id=None
                 if (schema_id := instance_result["schema_id"]) is None
                 else UUID(schema_id),
-                fine_grained_access=instance_result.get("fine_grained_access", False),
+                fine_grained_access=bool(
+                    instance_result["fine_grained_access"]
+                ),  # can be None
                 db_permissions=instance_result.get("db_permissions", None),
             )
         else:

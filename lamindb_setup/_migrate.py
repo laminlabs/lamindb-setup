@@ -113,6 +113,7 @@ class migrate:
                 select_collaborator,
                 instance_id=settings.instance._id,
                 account_id=settings.user._uuid,
+                fine_grained_access=settings.instance._fine_grained_access,
             )
             if collaborator is None or collaborator["role"] != "admin":
                 raise SystemExit(

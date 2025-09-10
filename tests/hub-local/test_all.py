@@ -163,6 +163,7 @@ def create_myinstance(create_testadmin1_session):  # -> Dict
     db_collaborator = select_collaborator(
         instance_id=instance_id.hex,
         account_id=ln_setup.settings.user._uuid.hex,
+        fine_grained_access=True,
         client=admin_client,
     )
     assert db_collaborator["role"] == "admin"
@@ -170,10 +171,11 @@ def create_myinstance(create_testadmin1_session):  # -> Dict
     db_user_name = db_dsn.db.user
     db_user_password = db_dsn.db.password
     insert_db_user(
-        name="write",
+        name="jwt",
         db_user_name=db_user_name,
         db_user_password=db_user_password,
         instance_id=instance_id,
+        fine_grained_access=True,
         client=admin_client,
     )
     instance = select_instance_by_name(
@@ -216,8 +218,7 @@ def test_db_user(
     admin_client, admin_settings = create_testadmin1_session
     instance_id = UUID(create_myinstance["id"])
     db_user = select_db_user_by_instance(
-        instance_id=instance_id,
-        client=admin_client,
+        instance_id=instance_id, client=admin_client, fine_grained_access=True
     )
     assert db_user["db_user_name"] == "postgres"
     assert db_user["db_user_password"] == "pwd"
@@ -225,6 +226,7 @@ def test_db_user(
     reader_client, reader_settings = create_testreader1_session
     db_user = select_db_user_by_instance(
         instance_id=instance_id,
+        fine_grained_access=True,
         client=reader_client,
     )
     assert db_user is None
@@ -232,6 +234,7 @@ def test_db_user(
     db_collaborator = select_collaborator(
         instance_id=instance_id.hex,
         account_id=reader_settings._uuid.hex,
+        fine_grained_access=True,
         client=admin_client,
     )
     assert db_collaborator is None
@@ -256,6 +259,7 @@ def test_db_user(
     db_collaborator = select_collaborator(
         instance_id=instance_id.hex,
         account_id=reader_settings._uuid.hex,
+        fine_grained_access=True,
         client=reader_client,
     )
     assert db_collaborator["role"] == "read"
@@ -264,15 +268,17 @@ def test_db_user(
     # this alone doesn't set a db_user
     db_user = select_db_user_by_instance(
         instance_id=instance_id,
+        fine_grained_access=True,
         client=reader_client,
     )
     assert db_user is None
     # now set the db_user
     insert_db_user(
-        name="read",
+        name="public",
         db_user_name="dbreader",
         db_user_password="1234",
         instance_id=instance_id,
+        fine_grained_access=True,
         client=admin_client,
     )
     # admin can access all db users
@@ -287,19 +293,21 @@ def test_db_user(
     # reader can only access the read-level db user
     db_user = select_db_user_by_instance(
         instance_id=instance_id,
+        fine_grained_access=True,
         client=reader_client,
     )
-    assert db_user["db_user_name"] == "dbreader"
-    assert db_user["db_user_password"] == "1234"
-    assert db_user["name"] == "read"
+    assert db_user["name"] == "dbreader"
+    assert db_user["password"] == "1234"
+    assert db_user["type"] == "public"
     # admin still gets the write-level connection string
     db_user = select_db_user_by_instance(
         instance_id=instance_id,
+        fine_grained_access=True,
         client=admin_client,
     )
-    assert db_user["db_user_name"] == "postgres"
-    assert db_user["db_user_password"] == "pwd"
-    assert db_user["name"] == "write"
+    assert db_user["name"] == "postgres"
+    assert db_user["password"] == "pwd"
+    assert db_user["type"] == "jwt"
 
 
 # This tests lamindb_setup.core._hub_core.connect_instance_hub

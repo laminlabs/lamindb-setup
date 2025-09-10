@@ -137,10 +137,12 @@ def update_instance(instance_id: str, instance_fields: dict, client: Client):
 def select_collaborator(
     instance_id: str,
     account_id: str,
+    fine_grained_access: bool,
     client: Client,
 ):
+    table = "access_instance" if fine_grained_access else "account_instance"
     data = (
-        client.table("access_instance")
+        client.table(table)
         .select("*")
         .eq("instance_id", instance_id)
         .eq("account_id", account_id)
@@ -180,35 +182,53 @@ def insert_db_user(
     db_user_name: str,
     db_user_password: str,
     instance_id: UUID,
+    fine_grained_access: bool,
     client: Client,
 ) -> None:
-    fields = (
-        {
-            "id": uuid4().hex,
-            "instance_id": instance_id.hex,
-            "name": name,
-            "db_user_name": db_user_name,
-            "db_user_password": db_user_password,
-        },
-    )
-    data = client.table("db_user").insert(fields).execute().data
+    fields = {"instance_id": instance_id.hex}
+    if fine_grained_access:
+        table = "access_db_user"
+        fields.update(
+            {
+                "name": db_user_name,
+                "password": db_user_password,
+                "type": name,
+            }
+        )
+    else:
+        table = "db_user"
+        fields.update(
+            {
+                "id": uuid4().hex,
+                "name": name,
+                "db_user_name": db_user_name,
+                "db_user_password": db_user_password,
+            }
+        )
+
+    data = client.table(table).insert(fields).execute().data
     return data[0]
 
 
-def select_db_user_by_instance(instance_id: str, client: Client):
+def select_db_user_by_instance(
+    instance_id: str, fine_grained_access: bool, client: Client
+):
     """Get db_user for which client has permission."""
-    data = (
-        client.table("db_user")
-        .select("*")
-        .eq("instance_id", instance_id)
-        .execute()
-        .data
-    )
+    if fine_grained_access:
+        table = "access_db_user"
+        type_name = "type"
+        type_priority = "jwt"
+    else:
+        table = "db_user"
+        type_name = "name"
+        type_priority = "write"
+
+    data = client.table(table).select("*").eq("instance_id", instance_id).execute().data
     if len(data) == 0:
         return None
     elif len(data) > 1:
         for item in data:
-            if item["name"] == "write":
+            if item[type_name] == type_priority:
                 return item
         logger.warning("found multiple db credentials, using the first one")
     return data[0]
