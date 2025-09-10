@@ -207,6 +207,7 @@ def test_connection_string_decomp(create_myinstance, create_testadmin1_session):
     db_collaborator = select_collaborator(
         instance_id=create_myinstance["id"],
         account_id=ln_setup.settings.user._uuid.hex,
+        fine_grained_access=True,
         client=client,
     )
     assert db_collaborator["role"] == "admin"
@@ -220,9 +221,9 @@ def test_db_user(
     db_user = select_db_user_by_instance(
         instance_id=instance_id, client=admin_client, fine_grained_access=True
     )
-    assert db_user["db_user_name"] == "postgres"
-    assert db_user["db_user_password"] == "pwd"
-    assert db_user["name"] == "write"
+    assert db_user["name"] == "postgres"
+    assert db_user["password"] == "pwd"
+    assert db_user["type"] == "jwt"
     reader_client, reader_settings = create_testreader1_session
     db_user = select_db_user_by_instance(
         instance_id=instance_id,
@@ -283,7 +284,7 @@ def test_db_user(
     )
     # admin can access all db users
     data = (
-        admin_client.table("db_user")
+        admin_client.table("access_db_user")
         .select("*")
         .eq("instance_id", instance_id)
         .execute()
