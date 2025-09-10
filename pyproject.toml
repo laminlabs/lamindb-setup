@@ -48,7 +48,7 @@ dev = [
     "python-dotenv",
     "nox",
     "pytest>=6.0",
-    "pytest-cov",
+    "pytest-cov<7.0.0",
     "pytest-xdist",
     "nbproject-test>=0.4.3",
     "pandas",
