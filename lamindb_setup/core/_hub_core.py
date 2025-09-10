@@ -570,7 +570,7 @@ def access_db(
     if isinstance(instance, InstanceSettings):
         instance_id = instance._id
         instance_slug = instance.slug
-        instance_api_url = instance._api_url
+        instance_api_url = instance.api_url
     else:
         instance_id = UUID(instance["id"])
         instance_slug = instance["owner"] + "/" + instance["name"]

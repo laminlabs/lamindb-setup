@@ -344,6 +344,14 @@ class InstanceSettings:
         return self._git_repo
 
     @property
+    def api_url(self) -> str | None:
+        """URL for REST API.
+
+        Use this URL for API calls related to this instance.
+        """
+        return self._api_url
+
+    @property
     def _id(self) -> UUID:
         """The internal instance id."""
         return self._id_
