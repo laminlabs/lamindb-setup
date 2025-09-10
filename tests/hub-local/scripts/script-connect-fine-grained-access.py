@@ -51,7 +51,7 @@ instance_dict = {
     "owner": isettings.owner,
     "name": isettings.name,
     "id": isettings._id.hex,
-    "api_url": isettings._api_url,
+    "api_url": isettings.api_url,
 }
 access_db(instance_dict)
 # check calling access_db with anonymous user
