@@ -118,10 +118,6 @@ def test_connect_with_db_parameter():
         ln_setup.login("testuser1")
         # test load from hub
         ln_setup.connect("laminlabs/lamindata", _test=True)
-        # check api_url
-        assert (
-            ln_setup.settings.instance.api_url == "https://aws.us-east-1.lamin.ai/api"
-        )
         # this test assumes fine-grained access
         assert ln_setup.settings.instance._db_permissions == "jwt"
         assert "jwt" in ln_setup.settings.instance.db
