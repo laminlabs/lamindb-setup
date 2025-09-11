@@ -396,6 +396,7 @@ def _init_instance_hub(
         "schema_str": isettings._schema_str,
         "lamindb_version": lamindb_version,
         "public": False,
+        "created_by_id": account_id.hex,  # type: ignore
     }
     if isettings.dialect != "sqlite":
         db_dsn = LaminDsnModel(db=isettings.db)
@@ -592,7 +593,7 @@ def access_db(
     if isinstance(instance, InstanceSettings):
         instance_id = instance._id
         instance_slug = instance.slug
-        instance_api_url = instance._api_url
+        instance_api_url = instance.api_url
     else:
         instance_id = UUID(instance["id"])
         instance_slug = instance["owner"] + "/" + instance["name"]
