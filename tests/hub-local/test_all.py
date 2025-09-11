@@ -228,31 +228,34 @@ def test_db_user(
     create_myinstance, create_testadmin1_session, create_testreader1_session
 ):
     admin_client, admin_settings = create_testadmin1_session
-    instance_id = UUID(create_myinstance["id"])
+
+    instance_id_hex = create_myinstance["id"]
+    instance_id = UUID(instance_id_hex)
+
     # check non-fine-grained access db user
     db_user = select_db_user_by_instance(
-        instance_id=instance_id, client=admin_client, fine_grained_access=False
+        instance_id=instance_id_hex, client=admin_client, fine_grained_access=False
     )
     assert db_user["db_user_name"] == "postgres"
     assert db_user["db_user_password"] == "pwd"
     assert db_user["name"] == "write"
     # check fine-grained access db user
     db_user = select_db_user_by_instance(
-        instance_id=instance_id, client=admin_client, fine_grained_access=True
+        instance_id=instance_id_hex, client=admin_client, fine_grained_access=True
     )
     assert db_user["name"] == "postgres"
     assert db_user["password"] == "pwd"
     assert db_user["type"] == "jwt"
     reader_client, reader_settings = create_testreader1_session
     db_user = select_db_user_by_instance(
-        instance_id=instance_id,
+        instance_id=instance_id_hex,
         fine_grained_access=True,
         client=reader_client,
     )
     assert db_user is None
     # check that testreader1 is not yet a collaborator
     db_collaborator = select_collaborator(
-        instance_id=instance_id.hex,
+        instance_id=instance_id_hex,
         account_id=reader_settings._uuid.hex,
         fine_grained_access=True,
         client=admin_client,
@@ -277,17 +280,17 @@ def test_db_user(
         pass
     # check that this was successful and can be read by the reader
     db_collaborator = select_collaborator(
-        instance_id=instance_id.hex,
+        instance_id=instance_id_hex,
         account_id=reader_settings._uuid.hex,
         fine_grained_access=True,
         client=reader_client,
     )
     assert db_collaborator["role"] == "read"
-    assert UUID(db_collaborator["instance_id"]) == instance_id
+    assert db_collaborator["instance_id"] == instance_id_hex
     assert UUID(db_collaborator["account_id"]) == reader_settings._uuid
     # reader is a collaborator now, can see the jwt db user
     db_user = select_db_user_by_instance(
-        instance_id=instance_id,
+        instance_id=instance_id_hex,
         fine_grained_access=True,
         client=reader_client,
     )
@@ -305,7 +308,7 @@ def test_db_user(
     )
     # admon and reader both still get the jwt db user
     db_user = select_db_user_by_instance(
-        instance_id=instance_id,
+        instance_id=instance_id_hex,
         fine_grained_access=True,
         client=reader_client,
     )
@@ -313,7 +316,7 @@ def test_db_user(
     assert db_user["password"] == "pwd"
     assert db_user["type"] == "jwt"
     db_user = select_db_user_by_instance(
-        instance_id=instance_id,
+        instance_id=instance_id_hex,
         fine_grained_access=True,
         client=admin_client,
     )
