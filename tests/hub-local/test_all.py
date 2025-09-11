@@ -170,6 +170,7 @@ def create_myinstance(create_testadmin1_session):  # -> Dict
     db_dsn = LaminDsnModel(db=db_str)
     db_user_name = db_dsn.db.user
     db_user_password = db_dsn.db.password
+    # fine-grained access db user
     insert_db_user(
         name="jwt",
         db_user_name=db_user_name,
@@ -178,6 +179,16 @@ def create_myinstance(create_testadmin1_session):  # -> Dict
         fine_grained_access=True,
         client=admin_client,
     )
+    # non-fine-grained access db user
+    insert_db_user(
+        name="write",
+        db_user_name=db_user_name,
+        db_user_password=db_user_password,
+        instance_id=instance_id,
+        fine_grained_access=False,
+        client=admin_client,
+    )
+    # the instance doesn't have fine_grained_access set to True yet
     instance = select_instance_by_name(
         account_id=ln_setup.settings.user._uuid,
         name="myinstance",
@@ -218,6 +229,14 @@ def test_db_user(
 ):
     admin_client, admin_settings = create_testadmin1_session
     instance_id = UUID(create_myinstance["id"])
+    # check non-fine-grained access db user
+    db_user = select_db_user_by_instance(
+        instance_id=instance_id, client=admin_client, fine_grained_access=False
+    )
+    assert db_user["db_user_name"] == "postgres"
+    assert db_user["db_user_password"] == "pwd"
+    assert db_user["name"] == "write"
+    # check fine-grained access db user
     db_user = select_db_user_by_instance(
         instance_id=instance_id, client=admin_client, fine_grained_access=True
     )
@@ -273,7 +292,7 @@ def test_db_user(
         client=reader_client,
     )
     assert db_user is None
-    # now set the db_user
+    # now set the public db_user
     insert_db_user(
         name="public",
         db_user_name="dbreader",
@@ -291,7 +310,7 @@ def test_db_user(
         .data
     )
     assert len(data) == 2
-    # reader can only access the read-level db user
+    # reader can only access the public db user
     db_user = select_db_user_by_instance(
         instance_id=instance_id,
         fine_grained_access=True,
@@ -300,7 +319,7 @@ def test_db_user(
     assert db_user["name"] == "dbreader"
     assert db_user["password"] == "1234"
     assert db_user["type"] == "public"
-    # admin still gets the write-level connection string
+    # admin still gets the jwt connection string
     db_user = select_db_user_by_instance(
         instance_id=instance_id,
         fine_grained_access=True,
@@ -326,6 +345,14 @@ def test_connect_instance_hub(create_myinstance, create_testadmin1_session):
     assert storage["root"] == "s3://lamindb-ci/myinstance"
     assert "schema_id" in instance
     assert "lnid" in instance
+    # switch the instance to fine-grained access
+    update_instance(
+        instance_id=create_myinstance["id"],
+        instance_fields={"fine_grained_access": True},
+        client=admin_client,
+    )
+    instance, _ = connect_instance_hub(owner=owner, name=name)
+    assert instance["db_permissions"] == "jwt"
 
     db_user = select_db_user_by_instance(
         instance_id=create_myinstance["id"],
