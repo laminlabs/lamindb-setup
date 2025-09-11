@@ -355,8 +355,8 @@ def test_connect_instance_hub(create_myinstance, create_testadmin1_session):
     )
     expected_dsn = LaminDsn.build(
         scheme=create_myinstance["db_scheme"],
-        user=db_user["db_user_name"],
-        password=db_user["db_user_password"],
+        user=db_user["name"],
+        password=db_user["password"],
         host=create_myinstance["db_host"],
         port=str(create_myinstance["db_port"]),
         database=create_myinstance["db_database"],
