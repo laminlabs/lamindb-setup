@@ -5,6 +5,7 @@ import shutil
 from pathlib import Path
 from typing import TYPE_CHECKING, Literal
 
+from django.db import connection
 from django.db.utils import ProgrammingError
 from lamin_utils import logger
 
@@ -350,6 +351,29 @@ class InstanceSettings:
         Use this URL for API calls related to this instance.
         """
         return self._api_url
+
+    @property
+    def available_spaces(self) -> dict | None:
+        """Available spaces with roles for instances fine-grained permissions.
+
+        Returns a dictionary with roles as keys and lists of available spaces
+        as values if this instance has fine-grained permisisons and the current user
+        is a collaborator.
+        If the instance doesn't have fine-grained permissions or the user is not a collaborator,
+        returns `None`.
+        """
+        if self._db_permissions != "jwt":
+            return None
+
+        from lamindb.models import Space
+
+        spaces: dict = {"admin": [], "write": [], "read": []}
+        with connection.cursor() as cur:
+            cur.execute("SELECT * FROM check_access() WHERE type = 'space'")
+            rows = cur.fetchall()
+        for row in rows:
+            spaces[row[1]].append(Space.get(row[0]))
+        return spaces
 
     @property
     def _id(self) -> UUID:
