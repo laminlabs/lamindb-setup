@@ -357,10 +357,8 @@ class InstanceSettings:
         """Available spaces with roles for instances fine-grained permissions.
 
         Returns a dictionary with roles as keys and lists of available spaces
-        as values if this instance has fine-grained permisisons and the current user
-        is a collaborator.
-        If the instance doesn't have fine-grained permissions or the user is not a collaborator,
-        returns `None`.
+        as values if this instance has fine-grained permissions and the current user
+        is a collaborator, `None` otherwise.
         """
         if self._db_permissions != "jwt":
             return None
