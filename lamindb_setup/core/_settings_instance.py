@@ -370,8 +370,10 @@ class InstanceSettings:
             cur.execute("SELECT * FROM check_access() WHERE type = 'space'")
             rows = cur.fetchall()
         for row in rows:
-            spaces[row[1]].append(Space.get(row[0]))
-        return spaces
+            spaces[row[1]].append(row[0])
+        return {
+            k: Space.filter(id__in=v).to_list() if v else [] for k, v in spaces.items()
+        }
 
     @property
     def _id(self) -> UUID:
