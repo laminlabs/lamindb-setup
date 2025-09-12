@@ -6,16 +6,6 @@ import json
 from typing import TYPE_CHECKING, Literal
 from uuid import UUID
 
-from django.db.models import (
-    Field,
-    ForeignKey,
-    ForeignObjectRel,
-    ManyToManyField,
-    ManyToManyRel,
-    ManyToOneRel,
-    OneToOneField,
-    OneToOneRel,
-)
 from lamin_utils import logger
 from pydantic import BaseModel
 
@@ -34,6 +24,16 @@ except Exception:
 
 
 if TYPE_CHECKING:
+    from django.db.models import (
+        Field,
+        ForeignKey,
+        ForeignObjectRel,
+        ManyToManyField,
+        ManyToManyRel,
+        ManyToOneRel,
+        OneToOneField,
+        OneToOneRel,
+    )
     from supabase import Client
 
 
@@ -285,6 +285,9 @@ class _ModelHandler:
 
         column = None
         if relation_type not in ["many-to-many", "one-to-many"]:
+            # have to reload it here in case reset happened
+            from django.db.models import ForeignObjectRel
+
             if not isinstance(field, ForeignObjectRel):
                 column = field.column
 
@@ -316,6 +319,8 @@ class _ModelHandler:
 
     @staticmethod
     def _get_through_many_to_many(field_or_rel: ManyToManyField | ManyToManyRel):
+        # have to reload it here in case reset happened
+        from django.db.models import ManyToManyField, ManyToManyRel
         from lamindb.models import Registry
 
         if isinstance(field_or_rel, ManyToManyField):
@@ -349,6 +354,9 @@ class _ModelHandler:
     def _get_through(
         self, field_or_rel: ForeignKey | OneToOneField | ManyToOneRel | OneToOneRel
     ):
+        # have to reload it here in case reset happened
+        from django.db.models import ForeignObjectRel
+
         if isinstance(field_or_rel, ForeignObjectRel):
             rel_1 = field_or_rel.field.related_fields[0][0]
             rel_2 = field_or_rel.field.related_fields[0][1]
