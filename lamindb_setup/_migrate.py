@@ -121,7 +121,7 @@ class migrate:
                     f" admin: https://lamin.ai/{settings.instance.slug}/settings"
                 )
             # ensure we connect with the root user
-            if "root:" not in settings.instance.db:
+            if "root" not in settings.instance.db:
                 connect(use_root_db_user=True)
                 assert "root" in settings.instance.db, settings.instance.db
             # we need lamindb to be installed, otherwise we can't populate the version
