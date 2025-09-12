@@ -38,6 +38,9 @@ assert db_token_manager.tokens
 with connection.cursor() as cur:
     cur.execute("SELECT * FROM check_access();")
 
+# check available spaces call
+assert ln_setup.settings.instance.available_spaces
+
 # check reset
 db_token_manager.reset()
 assert not db_token_manager.tokens
