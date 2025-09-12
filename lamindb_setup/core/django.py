@@ -273,13 +273,9 @@ def setup_django(
         isettings._local_storage = isettings._search_local_root()
 
 
-# THIS IS NOT SAFE
-# especially if lamindb is imported already
-# django.setup fails if called for the second time
-# reset_django() allows to call setup again,
-# needed to connect to a different instance in the same process if connected already
-# there could be problems if models are already imported from lamindb or other modules
-# these 'old' models can have any number of problems
+# these needs to be followed by
+# setup_django()
+# reset_django_module_variables()
 def reset_django():
     from django.conf import settings
     from django.apps import apps

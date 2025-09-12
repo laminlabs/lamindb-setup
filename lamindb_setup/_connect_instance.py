@@ -193,6 +193,8 @@ def reset_django_module_variables():
     # to the old classes
     # There doesn't seem to be an easy way to fix this problem
 
+    logger.important_hint("resetting django module variables")
+
     import types
 
     from django.apps import apps
@@ -341,11 +343,6 @@ def connect(instance: str | None = None, **kwargs: Any) -> str | tuple | None:
                         if ln.context.transform is not None:
                             raise CannotSwitchDefaultInstance(
                                 "Cannot switch default instance while `ln.track()` is live: call `ln.finish()`"
-                            )
-                        else:
-                            logger.important_hint(
-                                "switching the default lamindb instance might produce unexpected side effects with function-scoped imports: "
-                                "please import lamindb at the module level instead of inside functions"
                             )
                     reset_django()
             elif (
