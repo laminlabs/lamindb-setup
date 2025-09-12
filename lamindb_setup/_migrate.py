@@ -123,7 +123,7 @@ class migrate:
             # ensure we connect with the root user
             if "root" not in settings.instance.db:
                 connect(use_root_db_user=True)
-                assert "root" in settings.instance.db, settings.instance.db
+                assert "root" in (instance_db := settings.instance.db), instance_db
             # we need lamindb to be installed, otherwise we can't populate the version
             # information in the hub
             import lamindb
