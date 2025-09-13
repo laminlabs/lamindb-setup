@@ -424,6 +424,7 @@ def _init_instance_hub(
 def _connect_instance_hub(
     owner: str,  # account_handle
     name: str,  # instance_name
+    use_root_db_user: bool,
     client: Client,
 ) -> tuple[dict, dict] | str:
     response = client.functions.invoke(
@@ -475,17 +476,29 @@ def _connect_instance_hub(
 
     if instance["db_scheme"] is not None:
         db_user_name, db_user_password = None, None
-        if "db_user_name" in instance and "db_user_password" in instance:
+        if (
+            "db_user_name" in instance
+            and "db_user_password" in instance
+            and not use_root_db_user
+        ):
             db_user_name, db_user_password = (
                 instance["db_user_name"],
                 instance["db_user_password"],
             )
         else:
-            db_user = select_db_user_by_instance(instance["id"], client)
+            if use_root_db_user:
+                fine_grained_access = False
+            else:
+                fine_grained_access = bool(
+                    instance["fine_grained_access"]
+                )  # can be None
+            db_user = select_db_user_by_instance(
+                instance["id"], fine_grained_access, client
+            )
             if db_user is not None:
                 db_user_name, db_user_password = (
-                    db_user["db_user_name"],
-                    db_user["db_user_password"],
+                    db_user["name" if fine_grained_access else "db_user_name"],
+                    db_user["password" if fine_grained_access else "db_user_password"],
                 )
         db_dsn = LaminDsn.build(
             scheme=instance["db_scheme"],
@@ -505,15 +518,25 @@ def connect_instance_hub(
     owner: str,  # account_handle
     name: str,  # instance_name
     access_token: str | None = None,
+    use_root_db_user: bool = False,
 ) -> tuple[dict, dict] | str:
     from ._settings import settings
 
     if settings.user.handle != "anonymous" or access_token is not None:
         return call_with_fallback_auth(
-            _connect_instance_hub, owner=owner, name=name, access_token=access_token
+            _connect_instance_hub,
+            owner=owner,
+            name=name,
+            use_root_db_user=use_root_db_user,
+            access_token=access_token,
         )
     else:
-        return call_with_fallback(_connect_instance_hub, owner=owner, name=name)
+        return call_with_fallback(
+            _connect_instance_hub,
+            owner=owner,
+            name=name,
+            use_root_db_user=use_root_db_user,
+        )
 
 
 def access_aws(storage_root: str, access_token: str | None = None) -> dict[str, dict]:

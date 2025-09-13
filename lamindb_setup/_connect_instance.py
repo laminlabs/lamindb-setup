@@ -24,6 +24,7 @@ from .core._settings_load import load_instance_settings
 from .core._settings_storage import StorageSettings
 from .core._settings_store import instance_settings_file, settings_dir
 from .core.cloud_sqlite_locker import unlock_cloud_sqlite_upon_exception
+from .core.django import reset_django
 from .errors import CannotSwitchDefaultInstance
 
 if TYPE_CHECKING:
@@ -101,6 +102,7 @@ def _connect_instance(
     *,
     db: str | None = None,
     raise_permission_error: bool = True,
+    use_root_db_user: bool = False,
     access_token: str | None = None,
 ) -> InstanceSettings:
     settings_file = instance_settings_file(name, owner)
@@ -120,7 +122,10 @@ def _connect_instance(
         # do not call hub if the user is anonymous
         if owner != "anonymous":
             hub_result = connect_instance_hub(
-                owner=owner, name=name, access_token=access_token
+                owner=owner,
+                name=name,
+                access_token=access_token,
+                use_root_db_user=use_root_db_user,
             )
         else:
             hub_result = "anonymous-user"
@@ -155,7 +160,9 @@ def _connect_instance(
                 schema_id=None
                 if (schema_id := instance_result["schema_id"]) is None
                 else UUID(schema_id),
-                fine_grained_access=instance_result.get("fine_grained_access", False),
+                fine_grained_access=bool(
+                    instance_result["fine_grained_access"]
+                ),  # can be None
                 db_permissions=instance_result.get("db_permissions", None),
             )
         else:
@@ -185,6 +192,8 @@ def reset_django_module_variables():
     # Then it will **not** work and the `ln` variable will become stale and hold a reference
     # to the old classes
     # There doesn't seem to be an easy way to fix this problem
+
+    logger.important_hint("resetting django module variables")
 
     import types
 
@@ -230,12 +239,12 @@ def reset_django_module_variables():
                 continue
 
 
-def _connect_cli(instance: str) -> None:
+def _connect_cli(instance: str, use_root_db_user: bool = False) -> None:
     from lamindb_setup import settings as settings_
 
     settings_.auto_connect = True
     owner, name = get_owner_name_from_identifier(instance)
-    isettings = _connect_instance(owner, name)
+    isettings = _connect_instance(owner, name, use_root_db_user=use_root_db_user)
     isettings._persist(write_to_disk=True)
     if not isettings.is_on_hub or isettings._is_cloud_sqlite:
         # there are two reasons to call the full-blown connect
@@ -262,6 +271,7 @@ def connect(instance: str | None = None, **kwargs: Any) -> str | tuple | None:
     """
     # validate kwargs
     valid_kwargs = {
+        "use_root_db_user",
         "_db",
         "_write_settings",
         "_raise_not_found_error",
@@ -274,6 +284,7 @@ def connect(instance: str | None = None, **kwargs: Any) -> str | tuple | None:
             raise TypeError(f"connect() got unexpected keyword argument '{kwarg}'")
     isettings: InstanceSettings = None  # type: ignore
     # _db is still needed because it is called in init
+    use_root_db_user: bool = kwargs.get("use_root_db_user", False)
     _db: str | None = kwargs.get("_db", None)
     _write_settings: bool = kwargs.get("_write_settings", False)
     _raise_not_found_error: bool = kwargs.get("_raise_not_found_error", True)
@@ -289,12 +300,18 @@ def connect(instance: str | None = None, **kwargs: Any) -> str | tuple | None:
 
     try:
         if instance is None:
-            isettings_or_none = _get_current_instance_settings()
-            if isettings_or_none is None:
-                raise ValueError(
-                    "No instance was connected through the CLI, pass a value to `instance` or connect via the CLI."
-                )
-            isettings = isettings_or_none
+            if settings._instance_exists:
+                isettings = settings.instance
+            else:
+                isettings_or_none = _get_current_instance_settings()
+                if isettings_or_none is None:
+                    raise ValueError(
+                        "No instance was connected through the CLI, pass a value to `instance` or connect via the CLI."
+                    )
+                isettings = isettings_or_none
+            if use_root_db_user:
+                reset_django()
+                owner, name = isettings.owner, isettings.name
             if _db is not None and isettings.dialect == "postgresql":
                 isettings._db = _db
         else:
@@ -310,14 +327,13 @@ def connect(instance: str | None = None, **kwargs: Any) -> str | tuple | None:
                     # could be made more specific by checking whether the django
                     # configured database is the same as the one in settings
                     and connection.settings_dict["NAME"] != ":memory:"
+                    and not use_root_db_user  # always re-connect for root db user
                 ):
                     logger.important(
                         f"doing nothing, already connected lamindb: {settings.instance.slug}"
                     )
                     return None
                 else:
-                    from lamindb_setup.core.django import reset_django
-
                     if (
                         settings._instance_exists
                         and settings.instance.slug != "none/none"
@@ -328,11 +344,6 @@ def connect(instance: str | None = None, **kwargs: Any) -> str | tuple | None:
                             raise CannotSwitchDefaultInstance(
                                 "Cannot switch default instance while `ln.track()` is live: call `ln.finish()`"
                             )
-                        else:
-                            logger.important_hint(
-                                "switching the default lamindb instance might produce unexpected side effects with function-scoped imports: "
-                                "please import lamindb at the module level instead of inside functions"
-                            )
                     reset_django()
             elif (
                 _write_settings
@@ -341,9 +352,14 @@ def connect(instance: str | None = None, **kwargs: Any) -> str | tuple | None:
             ):
                 disconnect(mute=True)
 
+        if instance is not None or use_root_db_user:
             try:
                 isettings = _connect_instance(
-                    owner, name, db=_db, access_token=access_token
+                    owner,
+                    name,
+                    db=_db,
+                    access_token=access_token,
+                    use_root_db_user=use_root_db_user,
                 )
             except InstanceNotFoundError as e:
                 if _raise_not_found_error:

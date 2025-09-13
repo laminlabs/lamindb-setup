@@ -42,9 +42,11 @@ from lamindb_setup.core._settings_storage import init_storage as init_storage_ba
 from lamindb_setup.core._settings_store import instance_settings_file
 from lamindb_setup.core._settings_user import UserSettings
 from laminhub_rest.core._central_client import SupabaseClientWrapper
-from laminhub_rest.core.legacy._instance_collaborator import InstanceCollaboratorHandler
+from laminhub_rest.core.instance_collaborator import InstanceCollaboratorHandler
+from laminhub_rest.core.organization import OrganizationMemberHandler
 from laminhub_rest.test.instance import create_instance
 from postgrest.exceptions import APIError
+from sqlalchemy.exc import OperationalError as SQLAlchemy_OperationalError
 from supafunc.errors import FunctionsHttpError
 
 
@@ -148,6 +150,10 @@ def create_myinstance(create_testadmin1_session):  # -> Dict
         register_hub=True,
     )[0]
     isettings._storage = storage
+    # add resource_db_server from seed_local_test
+    admin_client.table("instance").update(
+        {"resource_db_server_id": "e36c7069-2129-4c78-b2c6-323e2354b741"}
+    ).eq("id", instance_id.hex).execute()
     # test loading it
     with pytest.raises(PermissionError) as error:
         ln_setup.connect("testadmin1/myinstance", _test=True)
@@ -157,20 +163,32 @@ def create_myinstance(create_testadmin1_session):  # -> Dict
     db_collaborator = select_collaborator(
         instance_id=instance_id.hex,
         account_id=ln_setup.settings.user._uuid.hex,
+        fine_grained_access=True,
         client=admin_client,
     )
     assert db_collaborator["role"] == "admin"
-    assert db_collaborator["db_user_id"] is None
     db_dsn = LaminDsnModel(db=db_str)
     db_user_name = db_dsn.db.user
     db_user_password = db_dsn.db.password
+    # fine-grained access db user
+    insert_db_user(
+        name="jwt",
+        db_user_name=db_user_name,
+        db_user_password=db_user_password,
+        instance_id=instance_id,
+        fine_grained_access=True,
+        client=admin_client,
+    )
+    # non-fine-grained access db user
     insert_db_user(
         name="write",
         db_user_name=db_user_name,
         db_user_password=db_user_password,
         instance_id=instance_id,
+        fine_grained_access=False,
         client=admin_client,
     )
+    # the instance doesn't have fine_grained_access set to True yet
     instance = select_instance_by_name(
         account_id=ln_setup.settings.user._uuid,
         name="myinstance",
@@ -200,94 +218,111 @@ def test_connection_string_decomp(create_myinstance, create_testadmin1_session):
     db_collaborator = select_collaborator(
         instance_id=create_myinstance["id"],
         account_id=ln_setup.settings.user._uuid.hex,
+        fine_grained_access=True,
         client=client,
     )
     assert db_collaborator["role"] == "admin"
-    assert db_collaborator["db_user_id"] is None
 
 
 def test_db_user(
     create_myinstance, create_testadmin1_session, create_testreader1_session
 ):
     admin_client, admin_settings = create_testadmin1_session
-    instance_id = UUID(create_myinstance["id"])
+
+    instance_id_hex = create_myinstance["id"]
+    instance_id = UUID(instance_id_hex)
+
+    # check non-fine-grained access db user
     db_user = select_db_user_by_instance(
-        instance_id=instance_id,
-        client=admin_client,
+        instance_id=instance_id_hex, client=admin_client, fine_grained_access=False
     )
     assert db_user["db_user_name"] == "postgres"
     assert db_user["db_user_password"] == "pwd"
     assert db_user["name"] == "write"
+    # check fine-grained access db user
+    db_user = select_db_user_by_instance(
+        instance_id=instance_id_hex, client=admin_client, fine_grained_access=True
+    )
+    assert db_user["name"] == "postgres"
+    assert db_user["password"] == "pwd"
+    assert db_user["type"] == "jwt"
     reader_client, reader_settings = create_testreader1_session
     db_user = select_db_user_by_instance(
-        instance_id=instance_id,
+        instance_id=instance_id_hex,
+        fine_grained_access=True,
         client=reader_client,
     )
     assert db_user is None
     # check that testreader1 is not yet a collaborator
     db_collaborator = select_collaborator(
-        instance_id=instance_id.hex,
+        instance_id=instance_id_hex,
         account_id=reader_settings._uuid.hex,
+        fine_grained_access=True,
         client=admin_client,
     )
     assert db_collaborator is None
     # now add testreader1 as a collaborator
-    InstanceCollaboratorHandler(admin_client).add(
+    OrganizationMemberHandler(admin_client).add(
+        organization_id=UUID(create_myinstance["account_id"]),
         account_id=reader_settings._uuid,
-        instance_id=instance_id,
-        role="read",
-        schema_id=None,
-        skip_insert_user_table=True,
+        role="member",
     )
+    try:
+        InstanceCollaboratorHandler(admin_client).add(
+            account_id=reader_settings._uuid,
+            instance_id=instance_id,
+            role="read",
+        )
+    except SQLAlchemy_OperationalError:
+        # the function above tries to write to the db
+        # but the db for this instance is dummy
+        # the insertion in the supabase table succeeds anyways
+        pass
     # check that this was successful and can be read by the reader
     db_collaborator = select_collaborator(
-        instance_id=instance_id.hex,
+        instance_id=instance_id_hex,
         account_id=reader_settings._uuid.hex,
+        fine_grained_access=True,
         client=reader_client,
     )
     assert db_collaborator["role"] == "read"
-    assert UUID(db_collaborator["instance_id"]) == instance_id
+    assert db_collaborator["instance_id"] == instance_id_hex
     assert UUID(db_collaborator["account_id"]) == reader_settings._uuid
-    assert db_collaborator["db_user_id"] is None
-    # this alone doesn't set a db_user
+    # reader is a collaborator now, can see the jwt db user
     db_user = select_db_user_by_instance(
-        instance_id=instance_id,
+        instance_id=instance_id_hex,
+        fine_grained_access=True,
         client=reader_client,
     )
-    assert db_user is None
-    # now set the db_user
+    assert db_user["name"] == "postgres"
+    assert db_user["password"] == "pwd"
+    assert db_user["type"] == "jwt"
+    # now set the public db_user
     insert_db_user(
-        name="read",
+        name="public",
         db_user_name="dbreader",
         db_user_password="1234",
         instance_id=instance_id,
+        fine_grained_access=True,
         client=admin_client,
     )
-    # admin can access all db users
-    data = (
-        admin_client.table("db_user")
-        .select("*")
-        .eq("instance_id", instance_id)
-        .execute()
-        .data
-    )
-    assert len(data) == 2
-    # reader can only access the read-level db user
+    # admon and reader both still get the jwt db user
     db_user = select_db_user_by_instance(
-        instance_id=instance_id,
+        instance_id=instance_id_hex,
+        fine_grained_access=True,
         client=reader_client,
     )
-    assert db_user["db_user_name"] == "dbreader"
-    assert db_user["db_user_password"] == "1234"
-    assert db_user["name"] == "read"
-    # admin still gets the write-level connection string
+    assert db_user["name"] == "postgres"
+    assert db_user["password"] == "pwd"
+    assert db_user["type"] == "jwt"
     db_user = select_db_user_by_instance(
-        instance_id=instance_id,
+        instance_id=instance_id_hex,
+        fine_grained_access=True,
         client=admin_client,
     )
-    assert db_user["db_user_name"] == "postgres"
-    assert db_user["db_user_password"] == "pwd"
-    assert db_user["name"] == "write"
+    assert db_user["name"] == "postgres"
+    assert db_user["password"] == "pwd"
+    assert db_user["type"] == "jwt"
 
 
 # This tests lamindb_setup.core._hub_core.connect_instance_hub
@@ -300,34 +335,37 @@ def test_connect_instance_hub(create_myinstance, create_testadmin1_session):
     instance, storage = connect_instance_hub(owner=owner, name=name)
     assert instance["name"] == name
     assert instance["owner"] == owner
-    assert instance["api_url"] is None
-    assert instance["db_permissions"] == "write"
+    assert instance["api_url"] == "http://localhost:8000"
+    assert (
+        instance["db_permissions"] == "write"
+    )  # the instance has fine_grained_access=False
     assert storage["root"] == "s3://lamindb-ci/myinstance"
     assert "schema_id" in instance
     assert "lnid" in instance
+    # switch the instance to fine-grained access
+    update_instance(
+        instance_id=create_myinstance["id"],
+        instance_fields={"fine_grained_access": True},
+        client=admin_client,
+    )
+    instance, _ = connect_instance_hub(owner=owner, name=name)
+    assert instance["db_permissions"] == "jwt"
 
     db_user = select_db_user_by_instance(
         instance_id=create_myinstance["id"],
+        fine_grained_access=True,
         client=admin_client,
     )
     expected_dsn = LaminDsn.build(
         scheme=create_myinstance["db_scheme"],
-        user=db_user["db_user_name"],
-        password=db_user["db_user_password"],
+        user=db_user["name"],
+        password=db_user["password"],
         host=create_myinstance["db_host"],
         port=str(create_myinstance["db_port"]),
         database=create_myinstance["db_database"],
     )
     assert instance["name"] == create_myinstance["name"]
     assert instance["db"] == expected_dsn
-
-    # add resource_db_server from seed_local_test
-    admin_client.table("instance").update(
-        {"resource_db_server_id": "e36c7069-2129-4c78-b2c6-323e2354b741"}
-    ).eq("id", instance["id"]).execute()
-
-    instance, _ = connect_instance_hub(owner=owner, name=name)
-    assert instance["api_url"] == "http://localhost:8000"
 
     # test anon access to public instance
     update_instance(
@@ -337,7 +375,9 @@ def test_connect_instance_hub(create_myinstance, create_testadmin1_session):
     )
 
     anon_client = connect_hub()
-    instance, _ = _connect_instance_hub(owner=owner, name=name, client=anon_client)
+    instance, _ = _connect_instance_hub(
+        owner=owner, name=name, use_root_db_user=False, client=anon_client
+    )
     assert instance["name"] == name
     assert instance["owner"] == owner
 
