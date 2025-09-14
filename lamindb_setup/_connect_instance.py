@@ -242,7 +242,6 @@ def reset_django_module_variables():
 def _connect_cli(instance: str, use_root_db_user: bool = False) -> None:
     from lamindb_setup import settings as settings_
 
-    settings_.auto_connect = True
     owner, name = get_owner_name_from_identifier(instance)
     isettings = _connect_instance(owner, name, use_root_db_user=use_root_db_user)
     isettings._persist(write_to_disk=True)
