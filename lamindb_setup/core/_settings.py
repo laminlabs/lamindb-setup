@@ -315,7 +315,6 @@ class SetupSettings:
         else:
             repr += "Current instance: None"
         repr += "\nConfig:\n"
-        repr += f" - auto-connect in Python: {self.auto_connect}\n"
         repr += f" - private Django API: {self.private_django_api}\n"
         repr += "Local directories:\n"
         repr += f" - cache: {self.cache_dir.as_posix()}\n"
