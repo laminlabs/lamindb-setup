@@ -79,16 +79,7 @@ class SetupSettings:
     def auto_connect(self) -> bool:
         """Auto-connect to current instance upon `import lamindb`.
 
-        Upon installing `lamindb`, this setting is `False`.
-
-        Upon calling `lamin init` or `lamin connect` on the CLI, this setting is switched to `True`.
-
-        `ln.connect()` doesn't change the value of this setting.
-
-        You can manually change this setting
-
-        - in Python: `ln.setup.settings.auto_connect = True/False`
-        - via the CLI: `lamin settings set auto-connect true/false`
+        This setting is always `True` and will be removed in a future version.
         """
         return True
 
