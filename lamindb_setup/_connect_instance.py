@@ -7,7 +7,6 @@ import types
 from typing import TYPE_CHECKING, Any
 from uuid import UUID
 
-from django.apps import apps
 from lamin_utils import logger
 
 from ._check_setup import (
@@ -198,6 +197,8 @@ def reset_django_module_variables():
     # Other functions that dynamically import are no problem because the variables
     # are automatically refreshed when the function runs the next time after ln.connect() was called
     logger.important_hint("resetting django module variables")
+
+    from django.apps import apps
 
     app_names = {app.name for app in apps.get_app_configs()}
     # always copy before iterations over sys.modules
