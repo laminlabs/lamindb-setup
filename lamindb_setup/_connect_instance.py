@@ -198,6 +198,7 @@ def reset_django_module_variables():
     # are automatically refreshed when the function runs the next time after ln.connect() was called
     logger.important_hint("resetting django module variables")
 
+    # django.apps needs to be a local import to refresh variables
     from django.apps import apps
 
     app_names = {app.name for app in apps.get_app_configs()}
