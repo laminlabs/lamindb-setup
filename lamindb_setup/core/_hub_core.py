@@ -610,7 +610,7 @@ def access_db(
     else:
         renew_token = False
     # local is used in tests
-    url = f"/access_v2/instances/{instance_id}/db_token"
+    url = f"/instances/{instance_id}/db_token"
     if os.environ.get("LAMIN_ENV", "prod") != "local":
         if instance_api_url is None:
             raise RuntimeError(
