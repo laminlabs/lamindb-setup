@@ -3,6 +3,7 @@ from __future__ import annotations
 import importlib
 import os
 import sys
+import types
 from typing import TYPE_CHECKING, Any
 from uuid import UUID
 
@@ -196,8 +197,6 @@ def reset_django_module_variables():
     # Other functions that dynamically import are no problem because the variables
     # are automatically refreshed when the function runs the next time after ln.connect() was called
     logger.important_hint("resetting django module variables")
-
-    import types
 
     from django.apps import apps
 
