@@ -3,6 +3,7 @@ from __future__ import annotations
 import importlib
 import os
 import sys
+import types
 from typing import TYPE_CHECKING, Any
 from uuid import UUID
 
@@ -184,24 +185,26 @@ def _connect_instance(
 def reset_django_module_variables():
     # This function updates all module-level references to Django classes
     # But it will fail to update function level references
+    # This is not a problem unless for the function that calls ln.connect() itself
     # So, if a user has
+    #
     # def my_function():
     #     import lamindb as ln
-    #     ...
+    #     ln.connect(...)
     #
-    # Then it will **not** work and the `ln` variable will become stale and hold a reference
+    # Then it will **not** work and the `ln` variable becomes stale and hold a reference
     # to the old classes
-    # There doesn't seem to be an easy way to fix this problem
-
+    # Other functions that dynamically import are no problem because the variables
+    # are automatically refreshed when the function runs the next time after ln.connect() was called
     logger.important_hint("resetting django module variables")
 
-    import types
-
+    # django.apps needs to be a local import to refresh variables
     from django.apps import apps
 
     app_names = {app.name for app in apps.get_app_configs()}
-
-    for name, module in sys.modules.items():
+    # always copy before iterations over sys.modules
+    # see https://docs.python.org/3/library/sys.html#sys.modules
+    for name, module in sys.modules.copy().items():
         if (
             module is not None
             and (not name.startswith("__") or name == "__main__")
