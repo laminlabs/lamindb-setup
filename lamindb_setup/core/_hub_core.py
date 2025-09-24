@@ -714,20 +714,12 @@ def _sign_in_hub_api_key(api_key: str, client: Client):
     access_token = json.loads(response)["accessToken"]
     # probably need more info here to avoid additional queries
     # like handle, uid etc
-    account_user_id = jwt.decode(access_token, options={"verify_signature": False})[
-        "sub"
-    ]
+    account_id = jwt.decode(access_token, options={"verify_signature": False})["sub"]
     client.postgrest.auth(access_token)
     # normally public.account.id is equal to auth.user.id
     # but it might be not the case in the future
     # this is why we check public.account.user_id that references auth.user.id
-    data = (
-        client.table("account")
-        .select("*")
-        .eq("user_id", account_user_id)
-        .execute()
-        .data
-    )
+    data = client.table("account").select("*").eq("id", account_id).execute().data
     if data:
         user = data[0]
         user_uuid = UUID(user["id"])
