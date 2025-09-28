@@ -72,15 +72,22 @@ class SetupSettings:
 
     @property
     def work_dir(self) -> Path | None:
-        """Get the current working directory."""
+        """Get or set the current working directory.
+
+        If setting it to `None`, the working directory is unset
+        """
         if not self._work_dir.exists():
             return None
         return Path(self._work_dir.read_text())
 
     @work_dir.setter
-    def work_dir(self, value: str | Path) -> None:
-        value_str = Path(value).expanduser().resolve().as_posix()
-        self._work_dir.write_text(value_str)
+    def work_dir(self, value: str | Path | None) -> None:
+        if value is None:
+            if self._work_dir.exists():
+                self._work_dir.unlink()
+        else:
+            value_str = Path(value).expanduser().resolve().as_posix()
+            self._work_dir.write_text(value_str)
 
     @property
     def settings_dir(self) -> Path:
