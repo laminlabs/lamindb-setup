@@ -196,7 +196,7 @@ def reset_django_module_variables():
     # to the old classes
     # Other functions that dynamically import are no problem because the variables
     # are automatically refreshed when the function runs the next time after ln.connect() was called
-    logger.important_hint("resetting django module variables")
+    logger.debug("resetting django module variables")
 
     # django.apps needs to be a local import to refresh variables
     from django.apps import apps
