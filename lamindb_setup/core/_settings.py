@@ -59,7 +59,7 @@ class SetupSettings:
 
     _auto_connect_path: Path = settings_dir / "auto_connect"
     _private_django_api_path: Path = settings_dir / "private_django_api"
-    _work_dir: Path = settings_dir / "work_dir"
+    _work_dir: Path = settings_dir / "work_dir.txt"
 
     _cache_dir: Path | None = None
 
