@@ -341,10 +341,7 @@ def init(
             update_schema_in_hub(access_token=access_token)
         importlib.reload(importlib.import_module("lamindb"))
         reset_django_module_variables()
-        settings.work_dir = Path.cwd()
-        logger.important(
-            f"initialized lamindb: {isettings.slug} + working directory: {settings.work_dir}"
-        )
+        logger.important(f"initialized lamindb: {isettings.slug}")
     except Exception as e:
         from ._delete import delete_by_isettings
         from .core._hub_core import delete_instance_record, delete_storage_record
