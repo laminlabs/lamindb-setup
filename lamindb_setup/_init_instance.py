@@ -3,6 +3,7 @@ from __future__ import annotations
 import importlib
 import os
 import uuid
+from pathlib import Path
 from typing import TYPE_CHECKING, Literal
 from uuid import UUID
 
@@ -340,7 +341,10 @@ def init(
             update_schema_in_hub(access_token=access_token)
         importlib.reload(importlib.import_module("lamindb"))
         reset_django_module_variables()
-        logger.important(f"initialized lamindb: {isettings.slug}")
+        settings.work_dir = Path.cwd()
+        logger.important(
+            f"initialized lamindb: {isettings.slug} + working directory: {settings.work_dir}"
+        )
     except Exception as e:
         from ._delete import delete_by_isettings
         from .core._hub_core import delete_instance_record, delete_storage_record

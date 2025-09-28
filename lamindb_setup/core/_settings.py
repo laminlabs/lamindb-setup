@@ -3,6 +3,7 @@ from __future__ import annotations
 import os
 import sys
 import warnings
+from pathlib import Path
 from typing import TYPE_CHECKING
 
 from lamin_utils import logger
@@ -23,8 +24,6 @@ from ._settings_store import (
 from .upath import LocalPathClasses, UPath
 
 if TYPE_CHECKING:
-    from pathlib import Path
-
     from lamindb.models import Branch, Space
 
     from lamindb_setup.core import InstanceSettings, StorageSettings, UserSettings
@@ -60,6 +59,7 @@ class SetupSettings:
 
     _auto_connect_path: Path = settings_dir / "auto_connect"
     _private_django_api_path: Path = settings_dir / "private_django_api"
+    _work_dir: Path = settings_dir / "work_dir"
 
     _cache_dir: Path | None = None
 
@@ -69,6 +69,18 @@ class SetupSettings:
     @property
     def _instance_settings_path(self) -> Path:
         return current_instance_settings_file()
+
+    @property
+    def work_dir(self) -> Path | None:
+        """Get the current working directory."""
+        if not self._work_dir.exists():
+            return None
+        return Path(self._work_dir.read_text())
+
+    @work_dir.setter
+    def work_dir(self, value: str | Path) -> None:
+        value_str = Path(value).expanduser().resolve().as_posix()
+        self._work_dir.write_text(value_str)
 
     @property
     def settings_dir(self) -> Path:
@@ -317,6 +329,7 @@ class SetupSettings:
         repr += "\nConfig:\n"
         repr += f" - private Django API: {self.private_django_api}\n"
         repr += "Local directories:\n"
+        repr += f" - working directory: {self.work_dir}\n"
         repr += f" - cache: {self.cache_dir.as_posix()}\n"
         repr += f" - user settings: {settings_dir.as_posix()}\n"
         repr += f" - system settings: {system_settings_dir.as_posix()}\n"
