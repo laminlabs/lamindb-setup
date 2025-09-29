@@ -23,7 +23,7 @@ from .core._settings import settings
 from .core._settings_instance import InstanceSettings
 from .core._settings_load import load_instance_settings
 from .core._settings_storage import StorageSettings
-from .core._settings_store import instance_settings_file, settings_dir
+from .core._settings_store import instance_settings_file
 from .core.cloud_sqlite_locker import unlock_cloud_sqlite_upon_exception
 from .core.django import reset_django
 from .errors import CannotSwitchDefaultInstance
@@ -118,8 +118,7 @@ def _connect_instance(
             if db is not None and isettings.dialect == "postgresql":
                 isettings._db = db
     if make_hub_request:
-        # the following will return a string if the instance does not exist
-        # on the hub
+        # the following will return a string if the instance does not exist on the hub
         # do not call hub if the user is anonymous
         if owner != "anonymous":
             hub_result = connect_instance_hub(
@@ -192,8 +191,7 @@ def reset_django_module_variables():
     #     import lamindb as ln
     #     ln.connect(...)
     #
-    # Then it will **not** work and the `ln` variable becomes stale and hold a reference
-    # to the old classes
+    # Then it will **not** work and the `ln` variable becomes stale and hold a reference to the old classes
     # Other functions that dynamically import are no problem because the variables
     # are automatically refreshed when the function runs the next time after ln.connect() was called
     logger.debug("resetting django module variables")
@@ -416,7 +414,7 @@ def connect(instance: str | None = None, **kwargs: Any) -> str | tuple | None:
     return None
 
 
-def get_owner_name_from_identifier(identifier: str):
+def get_owner_name_from_identifier(identifier: str) -> tuple[str, str]:
     if "/" in identifier:
         if identifier.startswith("https://lamin.ai/"):
             identifier = identifier.replace("https://lamin.ai/", "")

@@ -713,15 +713,12 @@ def to_url(upath):
 # Why aren't we subclassing?
 #
 # The problem is that UPath defines a type system of paths
-# Its __new__ method returns instances of different subclasses rather than a
-# UPath object
+# Its __new__ method returns instances of different subclasses rather than a UPath object
 # If we create a custom subclass naively, subclasses of the parent UPath won't
 # be subclasses of our custom subclass
-# This makes life really hard in type checks involving local to cloud
-# comparisons, etc.
+# This makes life really hard in type checks involving local to cloud comparisons, etc.
 # Hence, we extend the existing UPath and amend the docs
-# Some of this might end up in the original UPath implementation over time,
-# we'll see.
+# Some of this might end up in the original UPath implementation over time, we'll see.
 
 
 # add custom functions
