@@ -1,4 +1,5 @@
 import sqlite3
+from urllib.parse import urlparse
 
 import lamindb_setup as setup
 import pandas as pd
@@ -6,48 +7,56 @@ from django.db import connection
 
 
 def test_init_clone_successful():
-    setup.connect("laminlabs/lamin-dev")
+    setup.connect("laminlabs/lamindata")
 
     original_tables = pd.read_sql(
         "SELECT tablename as name FROM pg_tables WHERE schemaname='public'", connection
     )
 
-    setup.core.init_clone("laminlabs/lamin-dev")
+    setup.core.init_clone("laminlabs/lamindata")
 
-    clone_conn = sqlite3.connect(setup.settings.instance.db.replace("sqlite:///", ""))
+    db_uri = setup.settings.instance.db
+    db_path = (
+        urlparse(db_uri).path
+        if db_uri.startswith("sqlite:///")
+        else db_uri.replace("sqlite:///", "")
+    )
+
+    clone_conn = sqlite3.connect(db_path)
     clone_tables = pd.read_sql(
         "SELECT name FROM sqlite_master WHERE type='table'", clone_conn
     )
     clone_conn.close()
 
-    # Filter out tables that are expected to be missing in clone
-    excluded_prefixes = ["clinicore_", "ourprojects_", "hubmodule_"]
+    excluded_prefixes = ("clinicore_", "ourprojects_", "hubmodule_")
     excluded_tables = {
         "django_content_type",
-        "lamindb_page",
-        "lamindb_referencerecord",
         "lamindb_writelogmigrationstate",
         "lamindb_writelogtablestate",
     }
 
-    original_filtered = original_tables[
-        ~original_tables["name"].str.startswith(tuple(excluded_prefixes))
-    ]
-    original_filtered = original_filtered[
-        ~original_filtered["name"].isin(excluded_tables)
-    ]
-
-    # Add sqlite_sequence and person tables that appear in clone but not original
-    # TODO the lamindb ones should not be necessary here
-    clone_only_tables = {
-        "sqlite_sequence",
+    clone_missing_tables = {
         "lamindb_person",
         "lamindb_personproject",
         "lamindb_recordperson",
         "lamindb_reference_authors",
     }
-    expected_tables = set(original_filtered["name"]) | clone_only_tables
 
-    assert set(clone_tables["name"]) == expected_tables
+    clone_only_tables = {
+        "sqlite_sequence",
+        "lamindb_page",
+        "lamindb_referencerecord",
+    }
 
+    original_filtered = original_tables[
+        ~original_tables["name"].str.startswith(excluded_prefixes)
+        & ~original_tables["name"].isin(excluded_tables)
+    ]
+
+    expected_tables = (
+        set(original_filtered["name"]) - clone_missing_tables
+    ) | clone_only_tables
+    actual_tables = set(clone_tables["name"])
+
+    assert actual_tables == expected_tables
     setup.disconnect()
