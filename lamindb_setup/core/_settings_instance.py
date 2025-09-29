@@ -242,8 +242,8 @@ class InstanceSettings:
     def storage(self) -> StorageSettings:
         """Default storage of instance.
 
-        For a cloud instance, this is cloud storage. For a local instance, this
-        is a local directory.
+        For a cloud instance, this is cloud storage.
+        For a local instance, this is a local directory.
         """
         return self._storage  # type: ignore
 
@@ -530,8 +530,8 @@ class InstanceSettings:
     def is_on_hub(self) -> bool:
         """Is this instance on the hub?
 
-        Can only reliably establish if user has access to the instance. Will
-        return `False` in case the instance isn't found.
+        Can only reliably establish if user has access to the instance.
+        Will return `False` in case the instance isn't found.
         """
         if self._is_on_hub is None:
             from ._hub_client import call_with_fallback_auth

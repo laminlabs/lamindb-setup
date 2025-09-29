@@ -110,7 +110,7 @@ def test_init_instance_postgres_custom_name():
 
 
 def test_init_instance_cwd():
-    # can't make it via fixture because need to chnage dir back before ln_setup.delete
+    # can't make it via fixture because need to change dir back before ln_setup.delete
     prev_wd = Path.cwd()
     storage = Path("./mystorage_cwd")
     storage.mkdir()

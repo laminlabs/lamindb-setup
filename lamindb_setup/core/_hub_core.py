@@ -253,8 +253,7 @@ def _init_storage_hub(
     from lamindb_setup import settings
 
     created_by = settings.user._uuid if created_by is None else created_by
-    # storage roots are always stored without the trailing slash in the SQL
-    # database
+    # storage roots are always stored without the trailing slash in the SQL database
     root = ssettings.root_as_str
     if _select_storage_by_settings(ssettings, update_uid=True, client=client):
         return "hub-record-retrieved"
@@ -285,8 +284,7 @@ def _init_storage_hub(
         "is_default": is_default,
         "space_id": space_id.hex if space_id is not None else None,
     }
-    # TODO: add error message for violated unique constraint
-    # on root & description
+    # TODO: add error message for violated unique constraint on root & description
     client.table("storage").upsert(fields).execute()
     ssettings._uuid_ = id
     return "hub-record-created"
