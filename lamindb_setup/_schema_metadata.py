@@ -404,23 +404,27 @@ class _SchemaHandler:
         return self.to_dict(include_django_objects=False)
 
     def _get_modules_metadata(self):
+        from django.apps import apps
         from lamindb.models import Registry, SQLRecord
 
-        all_models = {
-            module_name: {
-                model._meta.model_name: _ModelHandler(
-                    model, module_name, self.included_modules
-                )
-                for model in self._get_schema_module(
-                    module_name
-                ).models.__dict__.values()
-                if model.__class__ is Registry
+        all_models = {module_name: {} for module_name in self.included_modules}
+
+        # Iterate through all registered Django models
+        for model in apps.get_models():
+            # Check if model meets the criteria
+            if (
+                model.__class__ is Registry
                 and model is not SQLRecord
                 and not model._meta.abstract
-                and model.__get_module_name__() == module_name
-            }
-            for module_name in self.included_modules
-        }
+            ):
+                module_name = model.__get_module_name__()
+                # Only include if module is in our included list
+                if module_name in self.included_modules:
+                    model_name = model._meta.model_name
+                    all_models[module_name][model_name] = _ModelHandler(
+                        model, module_name, self.included_modules
+                    )
+
         assert all_models
         return all_models
 
