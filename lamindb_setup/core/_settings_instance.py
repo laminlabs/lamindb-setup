@@ -501,8 +501,6 @@ class InstanceSettings:
 
     @property
     def _is_cloud_sqlite(self) -> bool:
-        # can we make this a private property, Sergei?
-        # as it's not relevant to the user
         """Is this a cloud instance with sqlite db."""
         return self.dialect == "sqlite" and self.storage.type_is_cloud
 

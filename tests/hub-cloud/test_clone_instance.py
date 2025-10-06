@@ -3,6 +3,7 @@ from urllib.parse import urlparse
 
 import lamindb_setup as setup
 import pandas as pd
+import pytest
 from django.db import connection
 
 
@@ -33,6 +34,7 @@ def test_init_clone_successful():
         "django_content_type",
         "lamindb_writelogmigrationstate",
         "lamindb_writelogtablestate",
+        "awsdms_ddl_audit",
     }
 
     clone_missing_tables = {
@@ -60,3 +62,24 @@ def test_init_clone_successful():
 
     assert actual_tables == expected_tables
     setup.disconnect()
+
+
+def test_init_clone_account_does_not_exist():
+    with pytest.raises(ValueError) as e:
+        setup.core.init_clone("thisuserreallydoesntexist/lamindata")
+    assert (
+        "Cloning failed because the account thisuserreallydoesntexist does not exist."
+        == str(e.value)
+    )
+
+
+def test_init_clone_instance_not_found():
+    with pytest.raises(ValueError) as e:
+        setup.core.init_clone("laminlabs/thisinstancereallydoesntexist")
+    assert (
+        "Cloning failed because the instance thisinstancereallydoesntexist was not found."
+        == str(e.value)
+    )
+
+
+# not yet covering the case default-storage-does-not-exist-on-hub

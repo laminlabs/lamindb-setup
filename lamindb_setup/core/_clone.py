@@ -22,7 +22,6 @@ def init_clone(instance: str | None = None) -> None:
             If it doesn't find this variable, it connects to the instance that was connected with `lamin connect` through the CLI.
     """
     from lamindb_setup._connect_instance import get_owner_name_from_identifier
-    from lamindb_setup.core._settings_instance import current_instance_settings_file
 
     from ._hub_core import connect_instance_hub
     from ._settings import settings
@@ -38,8 +37,22 @@ def init_clone(instance: str | None = None) -> None:
 
     owner, name = get_owner_name_from_identifier(instance)
     hub_result = connect_instance_hub(owner=owner, name=name)
-    # TODO add better error handling because this can also be a string which acts as an error type
-    instance_result, storage_result = hub_result  # type: ignore
+    # `connect_instance_hub` returns error names as string if not successful
+    if isinstance(hub_result, str):
+        match hub_result:
+            case "account-not-exist":
+                raise ValueError(
+                    f"Cloning failed because the account {owner} does not exist."
+                )
+            case "instance-not-found":
+                raise ValueError(
+                    f"Cloning failed because the instance {name} was not found."
+                )
+            case "default-storage-does-not-exist-on-hub":
+                raise ValueError(
+                    "Unable to clone instance. The default storage does not exist on the hub."
+                )
+    instance_result, storage_result = hub_result  # type: ignore  # is a tuple now
     modules = instance_result.get("schema_str", None)
 
     # determine instance id
@@ -95,8 +108,11 @@ def init_clone(instance: str | None = None) -> None:
     if hasattr(isettings, "_sqlite_file_local"):
         print(f"Local SQLite file: {isettings._sqlite_file_local}")
 
+    # TODO is this really what we want to do? Write new settings?
     isettings._persist(write_to_disk=True)
     # TODO this also connects - we need to discuss whether we want to keep the connection or connect back
+    # We probably do NOT want to connect to the clone because it should be empty.
+    # Only after the lambda got triggered at least once, it gets populated.
     isettings._init_db()
 
 
@@ -108,4 +124,5 @@ def load_clone(instance: str | None = None) -> str | tuple | None:
             If `None`, looks for an environment variable `LAMIN_CURRENT_INSTANCE` to get the instance identifier.
             If it doesn't find this variable, it connects to the instance that was connected with `lamin connect` through the CLI.
     """
+    # use instance slug to find SQLite file and connect to it
     pass
