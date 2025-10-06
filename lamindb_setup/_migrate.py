@@ -143,11 +143,13 @@ class migrate:
             logger.important(f"updating lamindb version in hub: {lamindb.__version__}")
             if settings.instance.dialect != "sqlite":
                 update_schema_in_hub()
+                logger.warning(
+                    "clearing instance cache in hub; if this fails, re-run with latest lamindb version"
+                )
                 requests.delete(
-                    f"{settings.instance._api_url}/cache/instances/{settings.instance._id.hex}",
+                    f"{settings.instance.api_url}/cache/instances/{settings.instance._id.hex}",
                     headers={"Authorization": f"Bearer {settings.user.access_token}"},
                 )
-
             call_with_fallback_auth(
                 update_instance,
                 instance_id=settings.instance._id.hex,
