@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import requests  # type: ignore
 from django.db import connection
 from django.db.migrations.loader import MigrationLoader
 from lamin_utils import logger
@@ -142,6 +143,11 @@ class migrate:
             logger.important(f"updating lamindb version in hub: {lamindb.__version__}")
             if settings.instance.dialect != "sqlite":
                 update_schema_in_hub()
+                requests.delete(
+                    f"{settings.instance._api_url}/cache/instances/{settings.instance._id.hex}",
+                    headers={"Authorization": f"Bearer {settings.user.access_token}"},
+                )
+
             call_with_fallback_auth(
                 update_instance,
                 instance_id=settings.instance._id.hex,
