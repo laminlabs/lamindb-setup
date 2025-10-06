@@ -3,6 +3,7 @@
 
 from __future__ import annotations
 
+import math
 import os
 import warnings
 from collections import defaultdict
@@ -353,6 +354,15 @@ def upload_from(
             destination = fsspec.utils.other_paths(
                 files, self.as_posix(), exists=False, flatten=False
             )
+    elif self.protocol == "s3" and "chunksize" not in kwargs:
+        size = local_path.stat().st_size
+        MiB = 1024**2
+        DEFAULT_CHUNKSIZE = 50 * MiB  # so in s3fs
+        if size / DEFAULT_CHUNKSIZE > 10000:  # should be no more than 10k parts for s3
+            raw = math.ceil(size / 10000)
+            step = 5 * MiB
+            rounded = math.ceil(raw / step) * step
+            kwargs["chunksize"] = rounded
 
     # the below lines are to avoid s3fs triggering create_bucket in upload if
     # dirs are present, it allows to avoid the permission error
