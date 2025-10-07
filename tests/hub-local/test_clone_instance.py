@@ -22,7 +22,7 @@ def test_init_clone_successful(create_instance_fine_grained_access):
     )
     print(original_tables)
 
-    setup.disconnect()
+    setup.close()
 
     """
     setup.core.init_clone("laminlabs/lamindata")
