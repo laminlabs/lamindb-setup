@@ -148,17 +148,18 @@ def call_with_fallback_auth(
     access_token = kwargs.pop("access_token", None)
 
     if access_token is not None:
+        client = None
         try:
             client = connect_hub_with_auth(access_token=access_token)
             result = callable(**kwargs, client=client)
         finally:
-            try:
+            if client is not None:
                 client.auth.sign_out(options={"scope": "local"})
-            except NameError:
-                pass
+
         return result
 
     for renew_token, fallback_env in [(False, False), (True, False), (False, True)]:
+        client = None
         try:
             client = connect_hub_with_auth(
                 renew_token=renew_token, fallback_env=fallback_env
@@ -179,10 +180,9 @@ def call_with_fallback_auth(
             if fallback_env:
                 raise e
         finally:
-            try:
+            if client is not None:
                 client.auth.sign_out(options={"scope": "local"})
-            except NameError:
-                pass
+
     return result
 
 
@@ -191,6 +191,7 @@ def call_with_fallback(
     **kwargs,
 ):
     for fallback_env in [False, True]:
+        client = None
         try:
             client = connect_hub(fallback_env=fallback_env)
             result = callable(**kwargs, client=client)
@@ -199,11 +200,9 @@ def call_with_fallback(
             if fallback_env:
                 raise e
         finally:
-            try:
+            if client is not None:
                 # in case there was sign in
                 client.auth.sign_out(options={"scope": "local"})
-            except NameError:
-                pass
     return result
 
 
