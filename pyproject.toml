@@ -15,7 +15,7 @@ dependencies = [
     "dj_database_url>=1.3.0,<3.0.0",
     "pydantic-settings",
     "platformdirs<5.0.0",
-    "requests",
+    "httpx_retries",
     "universal_pathlib==0.2.6",  # is still experimental, need pinning
     "botocore<2.0.0",
     "supabase>=2.8.1,<=2.15.0", # from 2.8.1 has correct lower bounds on gotrue
