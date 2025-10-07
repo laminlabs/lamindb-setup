@@ -3,6 +3,7 @@ from __future__ import annotations
 import json
 import os
 from contextlib import contextmanager
+from datetime import datetime
 from typing import Literal
 from urllib.request import urlretrieve
 
@@ -66,6 +67,16 @@ class Environment:
 DEFAULT_TIMEOUT = 12
 
 
+# needed to log retries
+class LogRetry(Retry):
+    def increment(self):
+        new = super().increment()
+        now = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        # new.attempts_made is the 1-based retry count
+        logger.warning(f"{now} HTTP retry attempt {new.attempts_made}/{new.total}")
+        return new
+
+
 # runs ~0.5s
 def connect_hub(
     fallback_env: bool = False, client_options: ClientOptions | None = None
@@ -84,7 +95,7 @@ def connect_hub(
     for _ in range(3):
         transports.append(
             RetryTransport(
-                retry=Retry(total=2, backoff_factor=0.2),
+                retry=LogRetry(total=2, backoff_factor=0.2),
                 transport=httpx.HTTPTransport(verify=True, http2=True),
             )
         )
@@ -218,7 +229,7 @@ def httpx_client():
             client = TestClient(app)
         else:
             transport = RetryTransport(
-                retry=Retry(total=2, backoff_factor=0.2),
+                retry=LogRetry(total=2, backoff_factor=0.2),
                 transport=httpx.HTTPTransport(verify=True, http2=True),
             )
             client = httpx.Client(transport=transport)
