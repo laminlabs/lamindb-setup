@@ -63,7 +63,7 @@ class Environment:
         self.supabase_anon_key: str = key
 
 
-DEFAULT_TIMEOUT = 10
+DEFAULT_TIMEOUT = 12
 
 
 # runs ~0.5s
