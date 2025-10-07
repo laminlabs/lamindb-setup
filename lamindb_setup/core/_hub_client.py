@@ -240,28 +240,22 @@ def request_with_auth(
     timeout = kwargs.pop("timeout", DEFAULT_TIMEOUT)
 
     with httpx_client() as client:
-        response = getattr(client, method)(
-            url, headers=headers, timeout=timeout, **kwargs
-        )
+        make_request = getattr(client, method)
+        response = make_request(url, headers=headers, timeout=timeout, **kwargs)
+        status_code = response.status_code
+        # update access_token and try again if failed
+        if not (200 <= status_code < 300) and renew_token:
+            from lamindb_setup import settings
 
-    status_code = response.status_code
-    # update access_token and try again if failed
-    if not (200 <= status_code < 300) and renew_token:
-        from lamindb_setup import settings
+            logger.debug(f"{method} {url} failed: {status_code} {response.text}")
 
-        logger.debug(f"{method} {url} failed: {status_code} {response.text}")
-
-        access_token = get_access_token(
-            settings.user.email, settings.user.password, settings.user.api_key
-        )
-
-        settings.user.access_token = access_token
-        save_user_settings(settings.user)
-
-        headers["Authorization"] = f"Bearer {access_token}"
-
-        with httpx_client() as client:
-            response = getattr(client, method)(
-                url, headers=headers, timeout=timeout, **kwargs
+            access_token = get_access_token(
+                settings.user.email, settings.user.password, settings.user.api_key
             )
+
+            settings.user.access_token = access_token
+            save_user_settings(settings.user)
+
+            headers["Authorization"] = f"Bearer {access_token}"
+            response = make_request(url, headers=headers, timeout=timeout, **kwargs)
     return response
