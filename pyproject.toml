@@ -18,7 +18,7 @@ dependencies = [
     "httpx_retries<5.0.0",
     "universal_pathlib==0.2.6",  # is still experimental, need pinning
     "botocore<2.0.0",
-    "supabase>=2.8.1,<=2.15.0", # from 2.8.1 has correct lower bounds on gotrue
+    "supabase>=2.8.1,<=2.16.0", # from 2.8.1 has correct lower bounds on gotrue
     "gotrue<=2.12.0", # supabase doesn't have this upper bound
     "storage3!=0.11.2; python_version < '3.11'", # 0.11.2 breaks python 3.10 through usage of new types
     "pyjwt<3.0.0", # needed to decode jwt for sign in with the new api key
