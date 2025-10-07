@@ -5,6 +5,8 @@ from lamindb_setup._schema_metadata import _dict_to_uuid, update_schema_in_hub
 
 @pytest.fixture
 def setup_instance():
+    ln_setup.close()
+
     ln_setup.init(
         storage="./test_storage",
         modules="bionty,wetlab",
