@@ -900,7 +900,7 @@ def create_path(path: UPathStr, access_token: str | None = None) -> UPath:
             storage_options["client_kwargs"] = client_kwargs
         # see download_to for the reason
         if "use_listings_cache" not in upath.storage_options:
-            storage_options["use_listings_cache"] = True
+            storage_options["use_listings_cache"] = True  # type: ignore
         if len(storage_options) > 0:
             return UPath(upath, **storage_options)
     return upath

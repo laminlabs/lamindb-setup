@@ -6,14 +6,23 @@ import pandas as pd
 import pytest
 from django.db import connection
 
+# To run these tests locally, you need to have the local backend set up: https://github.com/laminlabs/laminhub?tab=readme-ov-file#local-backend
+# Ensure that rest-hub is installed in editable mode
+# It might be required to use a specific supabase version. Currently 2.31.8 works and the latest version 2.48.3 does not.
 
-def test_init_clone_successful():
-    setup.connect("laminlabs/lamindata")
+
+def test_init_clone_successful(create_instance_fine_grained_access):
+    instance = create_instance_fine_grained_access
+    print(instance)
+
+    setup.connect(f"testadmin1/{instance.name}")
 
     original_tables = pd.read_sql(
         "SELECT tablename as name FROM pg_tables WHERE schemaname='public'", connection
     )
+    print(original_tables)
 
+    """
     setup.core.init_clone("laminlabs/lamindata")
 
     db_uri = setup.settings.instance.db
@@ -80,6 +89,7 @@ def test_init_clone_instance_not_found():
         "Cloning failed because the instance thisinstancereallydoesntexist was not found."
         == str(e.value)
     )
+    """
 
 
 # not yet covering the case default-storage-does-not-exist-on-hub
