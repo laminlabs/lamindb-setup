@@ -193,7 +193,7 @@ def create_myinstance(create_testadmin1_session):  # -> Dict
     ln_setup.delete(instance_slug, force=True)
 
 
-@pytest.fixture(scope="session")
+@pytest.fixture(scope="function")
 def create_instance_fine_grained_access(create_testadmin1_session):
     client, _ = create_testadmin1_session
 
