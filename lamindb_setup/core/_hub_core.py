@@ -456,7 +456,7 @@ def _connect_instance_hub(
                 )
     # no instance found, check why is that
     if response == b"{}":
-        # try the via single requests, will take more time
+        # try via separate requests, will take more time
         account = select_account_by_handle(owner, client)
         if account is None:
             return "account-not-exists"

@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-import requests  # type: ignore
+import httpx
 from django.db import connection
 from django.db.migrations.loader import MigrationLoader
 from lamin_utils import logger
@@ -146,7 +146,7 @@ class migrate:
                 logger.warning(
                     "clearing instance cache in hub; if this fails, re-run with latest lamindb version"
                 )
-                requests.delete(
+                httpx.delete(
                     f"{settings.instance.api_url}/cache/instances/{settings.instance._id.hex}",
                     headers={"Authorization": f"Bearer {settings.user.access_token}"},
                 )
