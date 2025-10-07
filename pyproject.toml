@@ -16,6 +16,7 @@ dependencies = [
     "pydantic-settings",
     "platformdirs<5.0.0",
     "httpx_retries<5.0.0",
+    "requests", # keep for now for other packages (bionty etc)
     "universal_pathlib==0.2.6",  # is still experimental, need pinning
     "botocore<2.0.0",
     "supabase>=2.8.1,<=2.16.0", # from 2.8.1 has correct lower bounds on gotrue
