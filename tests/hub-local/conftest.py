@@ -202,3 +202,21 @@ def create_instance_fine_grained_access(create_testadmin1_session):
     yield instance
 
     ln_setup.delete(instance.name, force=True)
+    from django.conf import settings
+    from lamindb_setup.core.django import reset_django
+
+    print(f"Before reset - Django configured: {settings.configured}")
+    reset_django()
+    print(f"After reset - Django configured: {settings.configured}")
+
+    # Check if Django models are still in memory
+    import gc
+    import sys
+
+    gc.collect()
+    django_modules = [
+        m
+        for m in sys.modules
+        if "django" in m or "lamindb" in m or "bionty" in m or "wetlab" in m
+    ]
+    print(f"Django-related modules still loaded: {len(django_modules)}")

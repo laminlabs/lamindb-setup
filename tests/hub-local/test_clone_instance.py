@@ -22,11 +22,6 @@ def test_init_clone_successful(create_instance_fine_grained_access):
     )
     print(original_tables)
 
-    from lamindb_setup.core.django import reset_django
-
-    setup.close()
-    reset_django()
-
     """
     setup.core.init_clone("laminlabs/lamindata")
 

@@ -349,7 +349,7 @@ class _ModelHandler:
     def _get_through(
         self, field_or_rel: ForeignKey | OneToOneField | ManyToOneRel | OneToOneRel
     ):
-        if hasattr(field_or_rel, "field"):
+        if isinstance(field_or_rel, ForeignObjectRel):
             rel_1 = field_or_rel.field.related_fields[0][0]
             rel_2 = field_or_rel.field.related_fields[0][1]
         else:
