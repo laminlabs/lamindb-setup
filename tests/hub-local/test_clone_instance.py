@@ -14,7 +14,6 @@ from django.db import connection
 def test_init_clone_successful(create_instance_fine_grained_access):
     instance = create_instance_fine_grained_access
     print("CLONE TESTING")
-    print(instance)
 
     setup.connect(f"testadmin1/{instance.name}")
 
@@ -23,9 +22,9 @@ def test_init_clone_successful(create_instance_fine_grained_access):
     )
     print(original_tables)
 
-    """
-    setup.core.init_clone("laminlabs/lamindata")
+    setup.core.init_clone(f"testadmin1/{instance.name}")
 
+    # needs to be adapted when we don't connect anymore
     db_uri = setup.settings.instance.db
     db_path = (
         urlparse(db_uri).path
@@ -71,6 +70,7 @@ def test_init_clone_successful(create_instance_fine_grained_access):
     actual_tables = set(clone_tables["name"])
 
     assert actual_tables == expected_tables
+
     setup.disconnect()
 
 
@@ -90,7 +90,6 @@ def test_init_clone_instance_not_found():
         "Cloning failed because the instance thisinstancereallydoesntexist was not found."
         == str(e.value)
     )
-    """
 
 
 # not yet covering the case default-storage-does-not-exist-on-hub
