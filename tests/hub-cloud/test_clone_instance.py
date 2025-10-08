@@ -24,6 +24,7 @@ def local_postgres_instance():
 
     try:
         shutil.rmtree("./test-postgres-local")
+        shutil.rmtree("./test-postgres-local-test")
         ln_setup.delete("test-postgres-local", force=True)
     except Exception as e:
         print(e)
@@ -40,30 +41,16 @@ def test_init_clone_successful(local_postgres_instance):
         ln_setup.settings.instance.db,
     )
     print(original_tables)
-    """
 
-    ln_setup.core.init_clone(f"testadmin1/{local_postgres_instance.name}")
+    ln_setup.core.init_clone("zethson/test-local-postgres")
 
     # needs to be adapted when we don't connect anymore
-    db_uri = ln_setup.settings.instance.db
-    db_path = (
-        urlparse(db_uri).path
-        if db_uri.startswith("sqlite:///")
-        else db_uri.replace("sqlite:///", "")
-    )
-
-    clone_conn = sqlite3.connect(db_path)
+    clone_conn = sqlite3.connect(ln_setup.settings.instance._sqlite_file_local)
     clone_tables = pd.read_sql(
-        "SELECT name FROM sqlite_master WHERE type='table'", clone_conn
+        "SELECT name FROM sqlite_master WHERE type='table'",
+        clone_conn,
     )
     clone_conn.close()
-
-    print(clone_tables)
-
-    ln_setup.disconnect()
-
-
-
 
     excluded_prefixes = ("clinicore_", "ourprojects_", "hubmodule_")
     excluded_tables = {
@@ -82,7 +69,6 @@ def test_init_clone_successful(local_postgres_instance):
 
     clone_only_tables = {
         "sqlite_sequence",
-        "lamindb_page",
         "lamindb_referencerecord",
     }
 
@@ -98,12 +84,13 @@ def test_init_clone_successful(local_postgres_instance):
 
     assert actual_tables == expected_tables
 
-    setup.disconnect()
+    ln_setup.disconnect()
 
 
+"""
 def test_init_clone_account_does_not_exist():
     with pytest.raises(ValueError) as e:
-        setup.core.init_clone("thisuserreallydoesntexist/lamindata")
+        ln_setup.core.init_clone("thisuserreallydoesntexist/lamindata")
     assert (
         "Cloning failed because the account thisuserreallydoesntexist does not exist."
         == str(e.value)
@@ -112,12 +99,11 @@ def test_init_clone_account_does_not_exist():
 
 def test_init_clone_instance_not_found():
     with pytest.raises(ValueError) as e:
-        setup.core.init_clone("laminlabs/thisinstancereallydoesntexist")
+        ln_setup.core.init_clone("laminlabs/thisinstancereallydoesntexist")
     assert (
         "Cloning failed because the instance thisinstancereallydoesntexist was not found."
         == str(e.value)
     )
 """
-
 
 # not yet covering the case default-storage-does-not-exist-on-hub

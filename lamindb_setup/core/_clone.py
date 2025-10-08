@@ -35,62 +35,23 @@ def init_clone(instance: str | None = None) -> None:
             "No instance identifier provided and LAMIN_CURRENT_INSTANCE is not set"
         )
 
-    owner, name = get_owner_name_from_identifier(instance)
-    hub_result = connect_instance_hub(owner=owner, name=name)
-    # `connect_instance_hub` returns error names as string if not successful
-    if isinstance(hub_result, str):
-        match hub_result:
-            case "account-not-exist":
-                raise ValueError(
-                    f"Cloning failed because the account {owner} does not exist."
-                )
-            case "instance-not-found":
-                raise ValueError(
-                    f"Cloning failed because the instance {name} was not found."
-                )
-            case "default-storage-does-not-exist-on-hub":
-                raise ValueError(
-                    "Unable to clone instance. The default storage does not exist on the hub."
-                )
-    instance_result, storage_result = hub_result  # type: ignore  # is a tuple now
-    modules = instance_result.get("schema_str", None)
+    import lamindb as ln
 
-    # determine instance id
-    # prefer the hub-provided id; if missing, allow an env override (used in tests/CI)
-    # otherwise derive a deterministic id from the instance slug (same approach as init)
-    instance_id_env = os.getenv("LAMINDB_INSTANCE_ID_INIT")
-    if "id" in instance_result and instance_result.get("id"):
-        instance_id = UUID(instance_result["id"])
-    elif instance_id_env is not None:
-        instance_id = UUID(instance_id_env)
-    else:
-        instance_id = uuid5(NAMESPACE_URL, f"{owner}/{name}")
+    owner = ln.setup.settings.user
+    name = ln.setup.settings.instance.name
+    instance_id = ln.setup.settings.instance._id
+    modules = ln.setup.settings.instance.modules
+    storage_root = (
+        str(ln.setup.settings.storage.root) + "-test"
+    )  # cannot use the same storage location for local tests
 
-    # prefer reusing the remote storage metadata (so blobs remain on the same storage)
-    ssettings = None
-    if isinstance(storage_result, dict) and storage_result.get("root"):
-        ssettings = StorageSettings(
-            root=storage_result["root"],
-            region=storage_result.get("region"),
-            uid=storage_result.get("lnid") or storage_result.get("uid"),
-            uuid=UUID(storage_result["id"]) if storage_result.get("id") else None,
-            instance_id=instance_id,
-        )
-    else:
-        # fallback to creating or initializing a local storage
-        # choose local storage root: env -> settings -> cwd
-        storage_root = (
-            os.environ.get("LAMIN_CLONE_DIR")
-            or getattr(settings, "clone_dir", None)
-            or Path.cwd()
-        )
-        ssettings, _ = init_storage(
-            storage_root,
-            instance_id=instance_id,
-            instance_slug=f"{owner}/{name}",
-            register_hub=False,
-            init_instance=True,
-        )
+    ssettings, _ = init_storage(
+        storage_root,
+        instance_id=instance_id,
+        instance_slug=f"{owner}/{name}",
+        register_hub=False,
+        init_instance=True,
+    )
 
     # construct InstanceSettings that points to local sqlite (db=None)
     isettings = InstanceSettings(
@@ -99,21 +60,29 @@ def init_clone(instance: str | None = None) -> None:
         name=name,
         storage=ssettings,
         db=None,
-        modules=modules,
+        modules=",".join(modules),
         is_on_hub=False,
-        api_url=instance_result.get("api_url"),
     )
 
     # persist settings and initialize sqlite DB with same schema
-    if hasattr(isettings, "_sqlite_file_local"):
-        print(f"Local SQLite file: {isettings._sqlite_file_local}")
+    # if hasattr(isettings, "_sqlite_file_local"):
+    #    print(f"Local SQLite file: {isettings._sqlite_file_local}")
 
     # TODO is this really what we want to do? Write new settings?
     isettings._persist(write_to_disk=True)
+
+    from lamindb_setup.core.django import reset_django
+
+    reset_django()
+
     # TODO this also connects - we need to discuss whether we want to keep the connection or connect back
     # We probably do NOT want to connect to the clone because it should be empty.
     # Only after the lambda got triggered at least once, it gets populated.
     isettings._init_db()
+
+    from lamindb_setup._init_instance import load_from_isettings
+
+    load_from_isettings(isettings, init=True, write_settings=True)
 
 
 def load_clone(instance: str | None = None) -> str | tuple | None:
