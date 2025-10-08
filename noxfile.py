@@ -88,24 +88,19 @@ def build(session: nox.Session, group: str, lamin_env: str):
 def hub_local(session: nox.Session):
     os.environ["AWS_SECRET_ACCESS_KEY_DEV_S3"] = os.environ["AWS_ACCESS_KEY_ID"]
 
+    # TODO: there is a test dependency here that should be resolved -> test_clone requires test_all to be run
     run(
         session,
-        f"pytest {COVERAGE_ARGS} ./tests/hub-local/test_clone_instance.py -s",
+        f"pytest {COVERAGE_ARGS} ./tests/hub-local --ignore=./tests/hub-local/test_update_schema_in_hub.py -s",
         env=os.environ,
     )
 
-    # run(
-    #    session,
-    #    f"pytest {COVERAGE_ARGS} ./tests/hub-local --ignore=./tests/hub-local/test_update_schema_in_hub.py",
-    #    env=os.environ,
-    # )
-
     # Run test_update_schema_in_hub isolated because otherwise django modules are loaded for not yet known reasons
-    # run(
-    #    session,
-    #    f"pytest {COVERAGE_ARGS} ./tests/hub-local/test_update_schema_in_hub.py",
-    #    env=os.environ,
-    # )
+    run(
+        session,
+        f"pytest {COVERAGE_ARGS} ./tests/hub-local/test_update_schema_in_hub.py",
+        env=os.environ,
+    )
 
 
 @nox.session
