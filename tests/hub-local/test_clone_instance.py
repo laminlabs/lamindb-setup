@@ -24,9 +24,6 @@ def test_init_clone_successful(create_instance_fine_grained_access):
 
     setup.core.init_clone(f"testadmin1/{instance.name}")
 
-    setup.disconnect()
-    """
-
     # needs to be adapted when we don't connect anymore
     db_uri = setup.settings.instance.db
     db_path = (
@@ -40,6 +37,13 @@ def test_init_clone_successful(create_instance_fine_grained_access):
         "SELECT name FROM sqlite_master WHERE type='table'", clone_conn
     )
     clone_conn.close()
+
+    print(clone_tables)
+
+    setup.disconnect()
+    """
+
+
 
     excluded_prefixes = ("clinicore_", "ourprojects_", "hubmodule_")
     excluded_tables = {
