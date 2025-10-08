@@ -14,9 +14,10 @@ test_root = Path("./test_script_ci_storage").resolve().as_posix()
 
 with pytest.raises(ProgrammingError) as error:
     set_managed_storage(test_root, host="test-host-1234")
-assert error.exconly().endswith(
+error_str = error.exconly()
+assert error_str.endswith(
     "ProgrammingError: permission denied for table lamindb_storage"
-)
+), error_str
 
 hub_client = connect_hub_with_auth()
 
