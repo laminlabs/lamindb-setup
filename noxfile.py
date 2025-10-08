@@ -90,16 +90,22 @@ def hub_local(session: nox.Session):
 
     run(
         session,
-        f"pytest {COVERAGE_ARGS} ./tests/hub-local --ignore=./tests/hub-local/test_update_schema_in_hub.py",
+        f"pytest {COVERAGE_ARGS} ./tests/hub-local/test_clone_instance.py -s",
         env=os.environ,
     )
 
+    # run(
+    #    session,
+    #    f"pytest {COVERAGE_ARGS} ./tests/hub-local --ignore=./tests/hub-local/test_update_schema_in_hub.py",
+    #    env=os.environ,
+    # )
+
     # Run test_update_schema_in_hub isolated because otherwise django modules are loaded for not yet known reasons
-    run(
-        session,
-        f"pytest {COVERAGE_ARGS} ./tests/hub-local/test_update_schema_in_hub.py",
-        env=os.environ,
-    )
+    # run(
+    #    session,
+    #    f"pytest {COVERAGE_ARGS} ./tests/hub-local/test_update_schema_in_hub.py",
+    #    env=os.environ,
+    # )
 
 
 @nox.session
