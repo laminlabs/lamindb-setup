@@ -13,6 +13,7 @@ from django.db import connection
 
 def test_init_clone_successful(create_instance_fine_grained_access):
     instance = create_instance_fine_grained_access
+    print("CLONE TESTING")
     print(instance)
 
     setup.connect(f"testadmin1/{instance.name}")
