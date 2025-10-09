@@ -92,7 +92,7 @@ def connect_hub(
     # needed to enable retries for http requests in supabase
     # these are separate clients and need separate transports
     transports = []
-    for _ in range(3):
+    for _ in range(2):
         transports.append(
             RetryTransport(
                 retry=LogRetry(total=2, backoff_factor=0.2),
@@ -100,8 +100,24 @@ def connect_hub(
             )
         )
     client.auth._http_client._transport = transports[0]
-    client.functions._client._transport = transports[1]
-    client.postgrest.session._transport = transports[2]
+    client.postgrest.session._transport = transports[1]
+    # POST is not retryable by default, but for our functions it should be safe to retry
+    client.functions._client._transport = RetryTransport(
+        retry=LogRetry(
+            total=2,
+            backoff_factor=0.2,
+            allowed_methods=[
+                "HEAD",
+                "GET",
+                "PUT",
+                "DELETE",
+                "OPTIONS",
+                "TRACE",
+                "POST",
+            ],
+        ),
+        transport=httpx.HTTPTransport(verify=True, http2=True),
+    )
     return client
 
 

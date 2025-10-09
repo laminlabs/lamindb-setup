@@ -194,6 +194,8 @@ def _select_storage_by_settings(
 
 
 def _select_storage_or_parent(path: str, client: Client) -> dict | None:
+    # add get=True when we upgrade supabase
+    # because otherwise it uses POST which is not retryable
     result = client.rpc("existing_root_or_child", {"_path": path}).execute().data
     if result["root"] is None:
         return None
