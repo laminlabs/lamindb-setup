@@ -1,11 +1,10 @@
-"""Clone Postgres instance into SQLite instance.
+"""Utilities to clone and load Postgres instances as local SQLite databases.
 
 .. autosummary::
    :toctree:
 
    init_clone
    load_clone
-
 """
 
 import os
@@ -48,7 +47,6 @@ def init_clone(instance: str | None = None, *, storage: str | None = None) -> No
         register_hub=False,
     )
 
-    # construct InstanceSettings that points to local sqlite (db=None)
     isettings = InstanceSettings(
         id=instance_id,
         owner=owner,  # type: ignore
@@ -63,11 +61,15 @@ def init_clone(instance: str | None = None, *, storage: str | None = None) -> No
     # TODO is this really what we want to do? Write new settings?
     isettings._persist(write_to_disk=True)
 
+    # Reset Django configuration before _init_db() because Django was already configured for the original Postgres instance.
+    # Without this reset, the if not settings.configured check in setup_django() would skip reconfiguration,
+    # causing migrations to run against the old Postgres database instead of the new SQLite clone database.
     reset_django()
 
     # TODO this also connects - we need to discuss whether we want to keep the connection or connect back
     # We probably do NOT want to connect to the clone because it should be empty.
     # Only after the lambda got triggered at least once, it gets populated.
+    # At the same time, this is called by the lambda and not user facing
     isettings._init_db()
 
 
