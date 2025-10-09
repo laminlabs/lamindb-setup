@@ -22,6 +22,7 @@ from .core.upath import UPath
 from .errors import CannotSwitchDefaultInstance
 
 if TYPE_CHECKING:
+    from lamindb.models import Storage
     from pydantic import PostgresDsn
 
     from .core._settings_user import UserSettings
@@ -49,7 +50,7 @@ def get_schema_module_name(module_name, raise_import_error: bool = True) -> str 
     return None
 
 
-def register_storage_in_instance(ssettings: StorageSettings):
+def register_storage_in_instance(ssettings: StorageSettings) -> Storage:
     from lamindb.models import Storage
 
     # how do we ensure that this function is only called passing

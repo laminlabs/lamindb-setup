@@ -63,19 +63,19 @@ def system_settings_file():
 
 
 class InstanceSettingsStore(BaseSettings):
-    api_url: Optional[str] = None
+    api_url: str | None = None
     owner: str
     name: str
     storage_root: str
-    storage_region: Optional[str]  # take old type annotations here because pydantic
-    db: Optional[str]  # doesn't like new types on 3.9 even with future annotations
-    schema_str: Optional[str]
-    schema_id: Optional[str] = None
+    storage_region: str | None  # take old type annotations here because pydantic
+    db: str | None  # doesn't like new types on 3.9 even with future annotations
+    schema_str: str | None
+    schema_id: str | None = None
     fine_grained_access: bool = False
-    db_permissions: Optional[str] = None
+    db_permissions: str | None = None
     id: str
-    git_repo: Optional[str]
-    keep_artifacts_local: Optional[bool]
+    git_repo: str | None
+    keep_artifacts_local: bool | None
     model_config = SettingsConfigDict(env_prefix="lamindb_instance_", env_file=".env")
 
 
@@ -83,7 +83,7 @@ class UserSettingsStore(BaseSettings):
     email: str
     password: str
     access_token: str
-    api_key: Optional[str] = None
+    api_key: str | None = None
     uid: str
     uuid: str
     handle: str

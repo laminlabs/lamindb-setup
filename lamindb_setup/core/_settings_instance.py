@@ -350,6 +350,8 @@ class InstanceSettings:
 
         Use this URL for API calls related to this instance.
         """
+        if "LAMIN_API_URL" in os.environ:
+            return os.environ["LAMIN_API_URL"]
         return self._api_url
 
     @property
@@ -461,7 +463,7 @@ class InstanceSettings:
                 )
             lock_msg += (
                 " The instance will be automatically unlocked after"
-                f" {int(EXPIRATION_TIME/3600/24)}d of no activity."
+                f" {int(EXPIRATION_TIME / 3600 / 24)}d of no activity."
             )
             raise InstanceLockedException(lock_msg)
 

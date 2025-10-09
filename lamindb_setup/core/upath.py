@@ -181,7 +181,7 @@ def print_hook(size: int, value: int, objectname: str, action: str):
         progress_in_percent = 100.0
     else:
         progress_in_percent = (value / size) * 100
-    out = f"... {action} {objectname}:" f" {min(progress_in_percent, 100):4.1f}%"
+    out = f"... {action} {objectname}: {min(progress_in_percent, 100):4.1f}%"
     if "NBPRJ_TEST_NBPATH" not in os.environ:
         end = "\n" if progress_in_percent >= 100 else "\r"
         print(out, end=end)
@@ -1011,7 +1011,7 @@ def check_storage_is_empty(
         if raise_error
         else "consider deleting them"
     )
-    message = f"'{directory_string}' contains {n_diff} objects" f" - {ask_for_deletion}"
+    message = f"'{directory_string}' contains {n_diff} objects - {ask_for_deletion}"
     if n_diff > 0:
         if raise_error:
             raise StorageNotEmpty(message) from None

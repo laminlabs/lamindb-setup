@@ -36,7 +36,6 @@ from ._hub_utils import (
 from ._settings import settings
 from ._settings_instance import InstanceSettings
 from ._settings_storage import StorageSettings, base62, instance_uid_from_uuid
-from .hashing import hash_and_encode_as_b62
 
 if TYPE_CHECKING:
     from supabase import Client  # type: ignore
@@ -194,6 +193,8 @@ def _select_storage_by_settings(
 
 
 def _select_storage_or_parent(path: str, client: Client) -> dict | None:
+    # add get=True when we upgrade supabase
+    # because otherwise it uses POST which is not retryable
     result = client.rpc("existing_root_or_child", {"_path": path}).execute().data
     if result["root"] is None:
         return None
@@ -339,7 +340,7 @@ def _delete_instance(
             )
             # gate storage and instance deletion on empty storage location for
             # normally auth.get_session() doesn't have access_token
-            # so this block is useless i think (Sergei)
+            # so this block is useless I think (Sergei)
             # the token is received from user settings inside create_path
             # might be needed in the hub though
             if client.auth.get_session() is not None:
