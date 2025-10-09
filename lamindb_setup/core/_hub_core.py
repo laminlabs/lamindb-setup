@@ -194,7 +194,9 @@ def _select_storage_by_settings(
 
 
 def _select_storage_or_parent(path: str, client: Client) -> dict | None:
-    result = client.rpc("existing_root_or_child", {"_path": path}).execute().data
+    result = (
+        client.rpc("existing_root_or_child", {"_path": path}, get=True).execute().data
+    )
     if result["root"] is None:
         return None
     result["uid"] = result.pop("lnid")
