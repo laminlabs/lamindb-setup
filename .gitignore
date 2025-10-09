@@ -58,9 +58,6 @@ coverage.xml
 *.mo
 *.pot
 
-# Ruff
-.ruff_cache
-
 # Django stuff:
 *.log
 local_settings.py
