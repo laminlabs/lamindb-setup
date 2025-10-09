@@ -32,7 +32,7 @@ def local_postgres_instance():
 
 
 def test_init_clone_successful(local_postgres_instance):
-    ln_setup.connect("test-local-postgres")
+    ln_setup.connect("test-postgres-local")
 
     postgres_tables = pd.read_sql(
         "SELECT tablename as name FROM pg_tables WHERE schemaname='public'",

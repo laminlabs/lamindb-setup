@@ -34,7 +34,7 @@ def init_clone(instance: str | None = None) -> None:
         )
 
     if instance is not None:
-        if ln_setup.settings.instance.name is not None:
+        if ln_setup.settings.instance is None:
             ln_setup.connect(instance)
 
     owner = ln_setup.settings.user.name
@@ -73,10 +73,6 @@ def init_clone(instance: str | None = None) -> None:
     # We probably do NOT want to connect to the clone because it should be empty.
     # Only after the lambda got triggered at least once, it gets populated.
     isettings._init_db()
-
-    ln_setup._init_instance.load_from_isettings(
-        isettings, init=True, write_settings=True
-    )
 
 
 def load_clone(instance: str | None = None) -> str | tuple | None:
