@@ -350,6 +350,8 @@ class InstanceSettings:
 
         Use this URL for API calls related to this instance.
         """
+        if "LAMIN_API_URL" in os.environ:
+            return os.environ["LAMIN_API_URL"]
         return self._api_url
 
     @property
