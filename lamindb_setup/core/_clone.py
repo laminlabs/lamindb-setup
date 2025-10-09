@@ -8,11 +8,11 @@
 """
 
 import os
+from pathlib import Path
 
 from lamindb_setup.core.django import reset_django
 
 from ._settings_instance import InstanceSettings
-from ._settings_storage import init_storage
 
 
 def init_clone(instance: str | None = None) -> None:
@@ -46,18 +46,11 @@ def init_clone(instance: str | None = None) -> None:
     name = ln_setup.settings.instance.name
     instance_id = ln_setup.settings.instance._id
 
-    ssettings, _ = init_storage(
-        ln_setup.settings.storage.root,
-        instance_id=instance_id,
-        instance_slug=f"{owner}/{name}",
-        register_hub=False,
-    )
-
     isettings = InstanceSettings(
         id=instance_id,
         owner=owner,  # type: ignore
         name=name,
-        storage=ssettings,
+        storage=ln_setup.settings.storage,
         db=None,
         modules=",".join(ln_setup.settings.instance.modules),
         is_on_hub=False,
@@ -68,13 +61,9 @@ def init_clone(instance: str | None = None) -> None:
     # Reset Django configuration before _init_db() because Django was already configured for the original Postgres instance.
     # Without this reset, the if not settings.configured check in setup_django() would skip reconfiguration,
     # causing migrations to run against the old Postgres database instead of the new SQLite clone database.
-    reset_django()
-
-    # TODO this also connects - we need to discuss whether we want to keep the connection or connect back
-    # We probably do NOT want to connect to the clone because it should be empty.
-    # Only after the lambda got triggered at least once, it gets populated.
-    # At the same time, this is called by the lambda and not user facing
-    isettings._init_db()
+    if not Path(isettings._sqlite_file_local).exists():
+        reset_django()
+        isettings._init_db()
 
 
 def load_clone(instance: str | None = None) -> str | tuple | None:
