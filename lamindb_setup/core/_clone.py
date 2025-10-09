@@ -16,40 +16,36 @@ from ._settings_instance import InstanceSettings
 from ._settings_storage import init_storage
 
 
-def init_clone(instance: str | None = None) -> None:
+def init_clone(instance: str | None = None, *, storage: str | None = None) -> None:
     """Initialize a clone SQLite instance.
 
     Args:
         instance: Pass a slug (`account/name`) or URL (`https://lamin.ai/account/name`).
             If `None`, looks for an environment variable `LAMIN_CURRENT_INSTANCE` to get the instance identifier.
             If it doesn't find this variable, it connects to the instance that was connected with `lamin connect` through the CLI.
+        storage: Optional storage root override. If `None`, uses the same storage as the original instance.
     """
     import lamindb_setup as ln_setup
 
     if instance is None:
-        instance = os.environ.get("LAMIN_CURRENT_INSTANCE")
-    if instance is None:
-        raise ValueError(
-            "No instance identifier provided and LAMIN_CURRENT_INSTANCE is not set"
-        )
+        current_instance = os.environ.get("LAMIN_CURRENT_INSTANCE", None)
+        if current_instance is None:
+            raise ValueError(
+                "No instance identifier provided and LAMIN_CURRENT_INSTANCE is not set"
+            )
 
-    if instance is not None:
-        if ln_setup.settings.instance is None:
-            ln_setup.connect(instance)
+    if instance is not None and ln_setup.settings.instance is None:
+        ln_setup.connect(instance)
 
-    owner = ln_setup.settings.user.name
+    owner = ln_setup.settings.instance.owner
     name = ln_setup.settings.instance.name
     instance_id = ln_setup.settings.instance._id
-    storage_root = (
-        str(ln_setup.settings.storage.root) + "-test"
-    )  # cannot use the same storage location for local tests
 
     ssettings, _ = init_storage(
-        storage_root,
+        ln_setup.settings.storage.root,
         instance_id=instance_id,
         instance_slug=f"{owner}/{name}",
         register_hub=False,
-        init_instance=True,
     )
 
     # construct InstanceSettings that points to local sqlite (db=None)
