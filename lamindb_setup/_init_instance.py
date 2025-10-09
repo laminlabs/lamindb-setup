@@ -3,7 +3,6 @@ from __future__ import annotations
 import importlib
 import os
 import uuid
-from pathlib import Path
 from typing import TYPE_CHECKING, Literal
 from uuid import UUID
 
@@ -17,12 +16,13 @@ from ._silence_loggers import silence_loggers
 from .core import InstanceSettings
 from .core._docs import doc_args
 from .core._settings import settings
-from .core._settings_instance import check_is_instance_remote, is_local_db_url
+from .core._settings_instance import check_is_instance_remote
 from .core._settings_storage import StorageSettings, init_storage
 from .core.upath import UPath
 from .errors import CannotSwitchDefaultInstance
 
 if TYPE_CHECKING:
+    from lamindb.models import Storage
     from pydantic import PostgresDsn
 
     from .core._settings_user import UserSettings
@@ -50,7 +50,7 @@ def get_schema_module_name(module_name, raise_import_error: bool = True) -> str 
     return None
 
 
-def register_storage_in_instance(ssettings: StorageSettings):
+def register_storage_in_instance(ssettings: StorageSettings) -> Storage:
     from lamindb.models import Storage
 
     # how do we ensure that this function is only called passing
@@ -70,7 +70,7 @@ def register_storage_in_instance(ssettings: StorageSettings):
     return storage
 
 
-def register_user(usettings: UserSettings, update_user: bool = True):
+def register_user(usettings: UserSettings, update_user: bool = True) -> None:
     from lamindb.models import User
 
     if not update_user and User.objects.filter(uid=usettings.uid).exists():
@@ -92,7 +92,9 @@ def register_user(usettings: UserSettings, update_user: bool = True):
         pass
 
 
-def register_initial_records(isettings: InstanceSettings, usettings: UserSettings):
+def register_initial_records(
+    isettings: InstanceSettings, usettings: UserSettings
+) -> None:
     """Register space, user & storage in DB."""
     from django.db.utils import OperationalError
     from lamindb.models import Branch, Space
@@ -379,10 +381,8 @@ def load_from_isettings(
     else:
         # when loading, django is already set up
         #
-        # only register user if the instance is connected
-        # for the first time in an environment
-        # this is our best proxy for that the user might not
-        # yet be registered
+        # only register user if the instance is connected for the first time in an environment
+        # this is our best proxy for that the user might not yet be registered
         if not isettings._get_settings_file().exists():
             # do not try to update the user on fine grained access instances
             # this is blocked anyways, only select and insert are allowed

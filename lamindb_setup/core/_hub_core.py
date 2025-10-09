@@ -36,7 +36,6 @@ from ._hub_utils import (
 from ._settings import settings
 from ._settings_instance import InstanceSettings
 from ._settings_storage import StorageSettings, base62, instance_uid_from_uuid
-from .hashing import hash_and_encode_as_b62
 
 if TYPE_CHECKING:
     from supabase import Client  # type: ignore
@@ -255,8 +254,7 @@ def _init_storage_hub(
     from lamindb_setup import settings
 
     created_by = settings.user._uuid if created_by is None else created_by
-    # storage roots are always stored without the trailing slash in the SQL
-    # database
+    # storage roots are always stored without the trailing slash in the SQL database
     root = ssettings.root_as_str
     if _select_storage_by_settings(ssettings, update_uid=True, client=client):
         return "hub-record-retrieved"
@@ -287,8 +285,7 @@ def _init_storage_hub(
         "is_default": is_default,
         "space_id": space_id.hex if space_id is not None else None,
     }
-    # TODO: add error message for violated unique constraint
-    # on root & description
+    # TODO: add error message for violated unique constraint on root & description
     client.table("storage").upsert(fields).execute()
     ssettings._uuid_ = id
     return "hub-record-created"
@@ -343,7 +340,7 @@ def _delete_instance(
             )
             # gate storage and instance deletion on empty storage location for
             # normally auth.get_session() doesn't have access_token
-            # so this block is useless i think (Sergei)
+            # so this block is useless I think (Sergei)
             # the token is received from user settings inside create_path
             # might be needed in the hub though
             if client.auth.get_session() is not None:
