@@ -153,3 +153,10 @@ convention = "google"
 "docs/*" = ["I", "B018", "B017"]
 "tests/*" = ["D"]
 "*/__init__.py" = ["F401"]
+
+[tool.pytest.ini_options]
+filterwarnings = [
+    "ignore:Jupyter is migrating its paths to use standard platformdirs:DeprecationWarning",
+    "ignore:The 'timeout' parameter is deprecated. Please configure it in the http client instead.:DeprecationWarning",
+    "ignore:The 'verify' parameter is deprecated. Please configure it in the http client instead.:DeprecationWarning",
+]
