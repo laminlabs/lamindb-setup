@@ -2,7 +2,6 @@ from __future__ import annotations
 
 import os
 import sys
-import warnings
 from pathlib import Path
 from typing import TYPE_CHECKING
 
@@ -226,8 +225,8 @@ class SetupSettings:
     def private_django_api(self) -> bool:
         """Turn internal Django API private to clean up the API (default `False`).
 
-        This patches your local pip-installed django installation. You can undo
-        the patch by setting this back to `False`.
+        This patches your local pip-installed django installation.
+        You can undo the patch by setting this back to `False`.
         """
         return self._private_django_api_path.exists()
 

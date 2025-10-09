@@ -242,8 +242,8 @@ class InstanceSettings:
     def storage(self) -> StorageSettings:
         """Default storage of instance.
 
-        For a cloud instance, this is cloud storage. For a local instance, this
-        is a local directory.
+        For a cloud instance, this is cloud storage.
+        For a local instance, this is a local directory.
         """
         return self._storage  # type: ignore
 
@@ -463,7 +463,7 @@ class InstanceSettings:
                 )
             lock_msg += (
                 " The instance will be automatically unlocked after"
-                f" {int(EXPIRATION_TIME/3600/24)}d of no activity."
+                f" {int(EXPIRATION_TIME / 3600 / 24)}d of no activity."
             )
             raise InstanceLockedException(lock_msg)
 
@@ -503,8 +503,6 @@ class InstanceSettings:
 
     @property
     def _is_cloud_sqlite(self) -> bool:
-        # can we make this a private property, Sergei?
-        # as it's not relevant to the user
         """Is this a cloud instance with sqlite db."""
         return self.dialect == "sqlite" and self.storage.type_is_cloud
 
@@ -532,8 +530,8 @@ class InstanceSettings:
     def is_on_hub(self) -> bool:
         """Is this instance on the hub?
 
-        Can only reliably establish if user has access to the instance. Will
-        return `False` in case the instance isn't found.
+        Can only reliably establish if user has access to the instance.
+        Will return `False` in case the instance isn't found.
         """
         if self._is_on_hub is None:
             from ._hub_client import call_with_fallback_auth

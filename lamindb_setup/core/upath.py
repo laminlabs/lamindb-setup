@@ -181,7 +181,7 @@ def print_hook(size: int, value: int, objectname: str, action: str):
         progress_in_percent = 100.0
     else:
         progress_in_percent = (value / size) * 100
-    out = f"... {action} {objectname}:" f" {min(progress_in_percent, 100):4.1f}%"
+    out = f"... {action} {objectname}: {min(progress_in_percent, 100):4.1f}%"
     if "NBPRJ_TEST_NBPATH" not in os.environ:
         end = "\n" if progress_in_percent >= 100 else "\r"
         print(out, end=end)
@@ -723,15 +723,12 @@ def to_url(upath):
 # Why aren't we subclassing?
 #
 # The problem is that UPath defines a type system of paths
-# Its __new__ method returns instances of different subclasses rather than a
-# UPath object
+# Its __new__ method returns instances of different subclasses rather than a UPath object
 # If we create a custom subclass naively, subclasses of the parent UPath won't
 # be subclasses of our custom subclass
-# This makes life really hard in type checks involving local to cloud
-# comparisons, etc.
+# This makes life really hard in type checks involving local to cloud comparisons, etc.
 # Hence, we extend the existing UPath and amend the docs
-# Some of this might end up in the original UPath implementation over time,
-# we'll see.
+# Some of this might end up in the original UPath implementation over time, we'll see.
 
 
 # add custom functions
@@ -903,7 +900,7 @@ def create_path(path: UPathStr, access_token: str | None = None) -> UPath:
             storage_options["client_kwargs"] = client_kwargs
         # see download_to for the reason
         if "use_listings_cache" not in upath.storage_options:
-            storage_options["use_listings_cache"] = True
+            storage_options["use_listings_cache"] = True  # type: ignore
         if len(storage_options) > 0:
             return UPath(upath, **storage_options)
     return upath
@@ -1014,7 +1011,7 @@ def check_storage_is_empty(
         if raise_error
         else "consider deleting them"
     )
-    message = f"'{directory_string}' contains {n_diff} objects" f" - {ask_for_deletion}"
+    message = f"'{directory_string}' contains {n_diff} objects - {ask_for_deletion}"
     if n_diff > 0:
         if raise_error:
             raise StorageNotEmpty(message) from None

@@ -29,8 +29,7 @@ def _keep_trailing_slash(path_str: str) -> str:
 AWS_CREDENTIALS_EXPIRATION: int = 11 * 60 * 60  # refresh credentials after 11 hours
 
 
-# set anon=True for these buckets if credentials fail for a public bucket
-# to be expanded
+# set anon=True for these buckets if credentials fail for a public bucket to be expanded
 PUBLIC_BUCKETS: tuple[str, ...] = ("cellxgene-data-public", "bionty-assets")
 
 
@@ -155,8 +154,7 @@ class AWSOptionsManager:
                 # this option is needed for correct uploads to R2
                 path = UPath(path, fixed_upload_size=True)
             return path
-        # trailing slash is needed to avoid returning incorrect results
-        # with .startswith
+        # trailing slash is needed to avoid returning incorrect results with .startswith
         # for example s3://lamindata-eu should not receive cache for s3://lamindata
         path_str = _keep_trailing_slash(path.as_posix())
         root = self._find_root(path_str)
