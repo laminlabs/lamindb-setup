@@ -15,8 +15,14 @@ from ._settings_instance import InstanceSettings
 from ._settings_storage import init_storage
 
 
-def init_clone(instance: str | None = None, *, storage: str | None = None) -> None:
+def init_clone(instance: str | None = None) -> None:
     """Initialize a clone SQLite instance.
+
+    Creates a SQLite database with the same schema as the source Postgres instance.
+    The clone shares the same storage location as the original instance.
+
+    The clone is intended for read-only access to instance data without requiring a Postgres connection.
+    Data synchronization happens via a separate Lambda function.
 
     Args:
         instance: Pass a slug (`account/name`) or URL (`https://lamin.ai/account/name`).
@@ -57,8 +63,6 @@ def init_clone(instance: str | None = None, *, storage: str | None = None) -> No
         is_on_hub=False,
     )
 
-    # persist settings and initialize sqlite DB with same schema
-    # TODO is this really what we want to do? Write new settings?
     isettings._persist(write_to_disk=True)
 
     # Reset Django configuration before _init_db() because Django was already configured for the original Postgres instance.
