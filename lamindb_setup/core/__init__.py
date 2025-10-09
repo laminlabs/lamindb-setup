@@ -13,7 +13,7 @@ Settings:
 """
 
 from . import django, upath
-from ._clone import init_clone, load_clone
+from ._clone import init_local_sqlite
 from ._deprecated import deprecated
 from ._docs import doc_args
 from ._settings import SetupSettings

@@ -27,7 +27,7 @@ def local_postgres_instance():
     run("docker stop pgtest && docker rm pgtest", shell=True, stdout=DEVNULL)
 
 
-def test_init_clone_successful(local_postgres_instance):
+def test_init_copy_successful(local_postgres_instance):
     original_owner = ln_setup.settings.instance.owner
     original_name = ln_setup.settings.instance.name
     original_storage = str(ln_setup.settings.storage.root)
@@ -36,7 +36,7 @@ def test_init_clone_successful(local_postgres_instance):
         ln_setup.settings.instance.db,
     )
 
-    ln_setup.core.init_clone("test-postgres-local")
+    ln_setup.core.init_local_sqlite("test-postgres-local")
 
     clone_tables = pd.read_sql(
         "SELECT name FROM sqlite_master WHERE type='table'",
