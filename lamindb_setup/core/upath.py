@@ -660,7 +660,7 @@ def view_tree(
         skip_suffixes: Skip directories with these suffixes.
 
     Examples:
-        >>> dir_path = ln.core.datasets.generate_cell_ranger_files(
+        >>> dir_path = ln.examples.datasets.generate_cell_ranger_files(
         >>>     "sample_001", ln.settings.storage
         >>> )
         >>> ln.UPath(dir_path).view_tree()
