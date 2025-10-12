@@ -291,7 +291,7 @@ def connect(instance: str | None = None, **kwargs: Any) -> str | tuple | None:
             raise TypeError(f"connect() got unexpected keyword argument '{kwarg}'")
 
     use_root_db_user: bool = kwargs.get("use_root_db_user", False)
-    kwargs.get("use_proxy_db", False)
+    use_proxy_db = kwargs.get("use_proxy_db", False)
     # _db is still needed because it is called in init
     _db: str | None = kwargs.get("_db", None)
     _write_settings: bool = kwargs.get("_write_settings", False)
@@ -370,6 +370,7 @@ def connect(instance: str | None = None, **kwargs: Any) -> str | tuple | None:
                     db=_db,
                     access_token=access_token,
                     use_root_db_user=use_root_db_user,
+                    use_proxy_db=use_proxy_db,
                 )
             except InstanceNotFoundError as e:
                 if _raise_not_found_error:
