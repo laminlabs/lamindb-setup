@@ -160,3 +160,9 @@ def test_connect_renamed_instance():
         instance, _ = connect_instance_hub(owner="laminlabs", name="lamin-dev1072025")
         assert instance["name"] == "lamin-dev"
         assert "db_permissions" in instance
+
+
+def test_use_proxy_db():
+    if os.getenv("LAMIN_ENV") == "staging":
+        ln_setup.connect("laminlabs/lamindata", _test=True, use_proxy_db=True)
+        assert "staging-nlb" in ln_setup.settings.instance.db
