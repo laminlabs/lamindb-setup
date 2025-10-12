@@ -242,11 +242,15 @@ def reset_django_module_variables():
                 continue
 
 
-def _connect_cli(instance: str, use_root_db_user: bool = False) -> None:
+def _connect_cli(
+    instance: str, use_root_db_user: bool = False, use_proxy_db: bool = False
+) -> None:
     from lamindb_setup import settings as settings_
 
     owner, name = get_owner_name_from_identifier(instance)
-    isettings = _connect_instance(owner, name, use_root_db_user=use_root_db_user)
+    isettings = _connect_instance(
+        owner, name, use_root_db_user=use_root_db_user, use_proxy_db=use_proxy_db
+    )
     isettings._persist(write_to_disk=True)
     if not isettings.is_on_hub or isettings._is_cloud_sqlite:
         # there are two reasons to call the full-blown connect
