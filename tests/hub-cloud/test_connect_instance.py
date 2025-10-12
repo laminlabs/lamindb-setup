@@ -166,3 +166,4 @@ def test_use_proxy_db():
     if os.getenv("LAMIN_ENV") == "staging":
         ln_setup.connect("laminlabs/lamindata", _test=True, use_proxy_db=True)
         assert "staging-nlb" in ln_setup.settings.instance.db
+    raise Exception(os.getenv("LAMIN_ENV"))
