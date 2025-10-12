@@ -504,11 +504,11 @@ def _connect_instance_hub(
         if use_proxy_db:
             host = instance.get("proxy_host", None)
             assert host is not None, (
-                "Database proxy host is not available, please pass 'use_proxy_db=False'."
+                "Database proxy host is not available, please do not pass 'use_proxy_db'."
             )
             port = instance.get("proxy_port", None)
             assert port is not None, (
-                "Database proxy port is not available, please pass 'use_proxy_db=False'."
+                "Database proxy port is not available, please do not pass 'use_proxy_db'."
             )
         else:
             host = instance["db_host"]
