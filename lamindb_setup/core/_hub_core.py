@@ -424,6 +424,7 @@ def _connect_instance_hub(
     owner: str,  # account_handle
     name: str,  # instance_name
     use_root_db_user: bool,
+    use_proxy_db: bool,
     client: Client,
 ) -> tuple[dict, dict] | str:
     response = client.functions.invoke(
@@ -499,12 +500,26 @@ def _connect_instance_hub(
                     db_user["name" if fine_grained_access else "db_user_name"],
                     db_user["password" if fine_grained_access else "db_user_password"],
                 )
+
+        if use_proxy_db:
+            host = instance.get("proxy_host", None)
+            assert host is not None, (
+                "Database proxy host is not available, please pass 'use_proxy_db=False'."
+            )
+            port = instance.get("proxy_port", None)
+            assert port is not None, (
+                "Database proxy port is not available, please pass 'use_proxy_db=False'."
+            )
+        else:
+            host = instance["db_host"]
+            port = instance["db_port"]
+
         db_dsn = LaminDsn.build(
             scheme=instance["db_scheme"],
             user=db_user_name if db_user_name is not None else "none",
             password=db_user_password if db_user_password is not None else "none",
-            host=instance["db_host"],
-            port=instance["db_port"],
+            host=host,
+            port=port,
             database=instance["db_database"],
         )
         instance["db"] = db_dsn
@@ -518,6 +533,7 @@ def connect_instance_hub(
     name: str,  # instance_name
     access_token: str | None = None,
     use_root_db_user: bool = False,
+    use_proxy_db: bool = False,
 ) -> tuple[dict, dict] | str:
     from ._settings import settings
 
@@ -527,6 +543,7 @@ def connect_instance_hub(
             owner=owner,
             name=name,
             use_root_db_user=use_root_db_user,
+            use_proxy_db=use_proxy_db,
             access_token=access_token,
         )
     else:
@@ -535,6 +552,7 @@ def connect_instance_hub(
             owner=owner,
             name=name,
             use_root_db_user=use_root_db_user,
+            use_proxy_db=use_proxy_db,
         )
 
 
