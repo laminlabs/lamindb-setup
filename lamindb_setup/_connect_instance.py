@@ -104,6 +104,7 @@ def _connect_instance(
     db: str | None = None,
     raise_permission_error: bool = True,
     use_root_db_user: bool = False,
+    use_proxy_db: bool = False,
     access_token: str | None = None,
 ) -> InstanceSettings:
     settings_file = instance_settings_file(name, owner)
@@ -126,6 +127,7 @@ def _connect_instance(
                 name=name,
                 access_token=access_token,
                 use_root_db_user=use_root_db_user,
+                use_proxy_db=use_proxy_db,
             )
         else:
             hub_result = "anonymous-user"
@@ -240,11 +242,15 @@ def reset_django_module_variables():
                 continue
 
 
-def _connect_cli(instance: str, use_root_db_user: bool = False) -> None:
+def _connect_cli(
+    instance: str, use_root_db_user: bool = False, use_proxy_db: bool = False
+) -> None:
     from lamindb_setup import settings as settings_
 
     owner, name = get_owner_name_from_identifier(instance)
-    isettings = _connect_instance(owner, name, use_root_db_user=use_root_db_user)
+    isettings = _connect_instance(
+        owner, name, use_root_db_user=use_root_db_user, use_proxy_db=use_proxy_db
+    )
     isettings._persist(write_to_disk=True)
     if not isettings.is_on_hub or isettings._is_cloud_sqlite:
         # there are two reasons to call the full-blown connect
@@ -272,6 +278,7 @@ def connect(instance: str | None = None, **kwargs: Any) -> str | tuple | None:
     # validate kwargs
     valid_kwargs = {
         "use_root_db_user",
+        "use_proxy_db",
         "_db",
         "_write_settings",
         "_raise_not_found_error",
@@ -282,14 +289,17 @@ def connect(instance: str | None = None, **kwargs: Any) -> str | tuple | None:
     for kwarg in kwargs:
         if kwarg not in valid_kwargs:
             raise TypeError(f"connect() got unexpected keyword argument '{kwarg}'")
-    isettings: InstanceSettings = None  # type: ignore
-    # _db is still needed because it is called in init
+
     use_root_db_user: bool = kwargs.get("use_root_db_user", False)
+    use_proxy_db = kwargs.get("use_proxy_db", False)
+    # _db is still needed because it is called in init
     _db: str | None = kwargs.get("_db", None)
     _write_settings: bool = kwargs.get("_write_settings", False)
     _raise_not_found_error: bool = kwargs.get("_raise_not_found_error", True)
     _reload_lamindb: bool = kwargs.get("_reload_lamindb", True)
     _test: bool = kwargs.get("_test", False)
+
+    isettings: InstanceSettings = None  # type: ignore
 
     access_token: str | None = None
     _user: UserSettings | None = kwargs.get("_user", None)
@@ -360,6 +370,7 @@ def connect(instance: str | None = None, **kwargs: Any) -> str | tuple | None:
                     db=_db,
                     access_token=access_token,
                     use_root_db_user=use_root_db_user,
+                    use_proxy_db=use_proxy_db,
                 )
             except InstanceNotFoundError as e:
                 if _raise_not_found_error:

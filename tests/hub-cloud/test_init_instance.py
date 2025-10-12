@@ -69,7 +69,11 @@ def test_init_instance_postgres_default_name(get_hub_client):
     assert ln_setup.settings.instance.slug == "testuser2/pgtest"
     # and check
     result = _connect_instance_hub(
-        owner="testuser2", name=instance_name, use_root_db_user=False, client=hub
+        owner="testuser2",
+        name=instance_name,
+        use_root_db_user=False,
+        use_proxy_db=False,
+        client=hub,
     )
     if not isinstance(result, tuple):
         raise TypeError(f"Expected tuple, got: {result}")
