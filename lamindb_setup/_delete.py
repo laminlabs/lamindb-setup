@@ -21,6 +21,8 @@ if TYPE_CHECKING:
 
 
 def delete_cache(isettings: InstanceSettings):
+    if isettings.storage is None:
+        return
     # avoid init of root
     root = isettings.storage._root_init
     if not isinstance(root, LocalPathClasses):
@@ -40,7 +42,7 @@ def delete_by_isettings(isettings: InstanceSettings) -> None:
     if settings_file.exists():
         settings_file.unlink()
     delete_cache(isettings)
-    if isettings.dialect == "sqlite":
+    if isettings.dialect == "sqlite" and isettings.storage is not None:
         try:
             if isettings._sqlite_file.exists():
                 isettings._sqlite_file.unlink()
