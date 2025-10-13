@@ -45,10 +45,15 @@ def init_local_sqlite(
     if instance is not None and ln_setup.settings.instance is None:  # pragma: no cover
         ln_setup.connect(instance)
 
+    name = (
+        f"{ln_setup.settings.instance.name}{copy_suffix}"
+        if copy_suffix is not None
+        else ln_setup.settings.instance.name
+    )
     isettings = InstanceSettings(
         id=ln_setup.settings.instance._id,
         owner=ln_setup.settings.instance.owner,  # type: ignore
-        name=f"{ln_setup.settings.instance.name}{copy_suffix}",
+        name=name,
         storage=ln_setup.settings.storage,
         db=None,
         modules=",".join(ln_setup.settings.instance.modules),
