@@ -131,12 +131,14 @@ def test_connect_with_db_parameter():
         # test ignore loading from cache because hub result has jwt access
         ln_setup.connect("laminlabs/lamindata", _test=True)
         assert "jwt" in ln_setup.settings.instance.db
-
-        # now take a user that has no collaborator status
-        ln_setup.login("testuser2")
-        # receives public connection
+        # anon should get public
+        ln_setup.logout()
         ln_setup.connect("laminlabs/lamindata", _test=True)
         assert "public" in ln_setup.settings.instance.db
+        # it is an org member, receives jwt connection
+        ln_setup.login("testuser2")
+        ln_setup.connect("laminlabs/lamindata", _test=True)
+        assert "jwt" in ln_setup.settings.instance.db
         # now pass the connection string
         ln_setup.connect("laminlabs/lamindata", _db=db, _test=True)
         assert "testdbuser" in ln_setup.settings.instance.db
