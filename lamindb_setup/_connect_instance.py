@@ -166,7 +166,7 @@ def _connect_instance(
                 if not use_root_db_user
                 else False,
                 db_permissions=instance_result.get("db_permissions", None)
-                if not not use_root_db_user
+                if not use_root_db_user
                 else "write",
             )
         else:
