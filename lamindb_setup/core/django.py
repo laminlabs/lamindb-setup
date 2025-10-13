@@ -250,6 +250,7 @@ def setup_django(
 
             if version.parse(ipykernel_version) >= version.parse("7.0.0"):
                 django.db.connections._connections = threading.local()
+                logger.debug("django.db.connections._connections has been patched")
 
         if isettings._fine_grained_access and isettings._db_permissions == "jwt":
             db_token = DBToken(isettings)
