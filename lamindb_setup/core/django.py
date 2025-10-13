@@ -7,8 +7,9 @@ import sys
 import importlib as il
 import jwt
 import time
+import threading
 from pathlib import Path
-import time
+from packaging import version
 from ._settings_instance import InstanceSettings, is_local_db_url
 
 from lamin_utils import logger
@@ -247,6 +248,12 @@ def setup_django(
         if isettings._fine_grained_access and isettings._db_permissions == "jwt":
             db_token = DBToken(isettings)
             db_token_manager.set(db_token)  # sets for the default connection
+
+        if IS_RUN_FROM_IPYTHON:
+            from ipykernel import __version__ as ipykernel_version
+
+            if version.parse(ipykernel_version) >= version.parse("7.0.0"):
+                django.db.connections._connections = threading.local()
 
     if configure_only:
         return None
