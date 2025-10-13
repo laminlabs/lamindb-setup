@@ -270,10 +270,6 @@ def init(
         if _check_instance_setup() and not _test:
             from lamindb_setup.core.django import reset_django
 
-            if settings._instance_exists:
-                raise CannotSwitchDefaultInstance(
-                    "Cannot init new instance after connecting to an existing instance."
-                )
             reset_django()
         elif _write_settings:
             disconnect(mute=True)
