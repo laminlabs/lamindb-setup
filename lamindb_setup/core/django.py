@@ -245,15 +245,15 @@ def setup_django(
             "django.db.backends.base.base.BaseDatabaseWrapper.close_if_health_check_failed has been patched"
         )
 
-        if isettings._fine_grained_access and isettings._db_permissions == "jwt":
-            db_token = DBToken(isettings)
-            db_token_manager.set(db_token)  # sets for the default connection
-
         if IS_RUN_FROM_IPYTHON:
             from ipykernel import __version__ as ipykernel_version
 
             if version.parse(ipykernel_version) >= version.parse("7.0.0"):
                 django.db.connections._connections = threading.local()
+
+        if isettings._fine_grained_access and isettings._db_permissions == "jwt":
+            db_token = DBToken(isettings)
+            db_token_manager.set(db_token)  # sets for the default connection
 
     if configure_only:
         return None
