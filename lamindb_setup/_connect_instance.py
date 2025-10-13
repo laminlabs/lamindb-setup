@@ -263,6 +263,36 @@ def _connect_cli(
     return None
 
 
+def validate_connection_state(
+    owner: str, name: str, use_root_db_user: bool = False
+) -> None:
+    from django.db import connection
+
+    if (
+        settings._instance_exists
+        and f"{owner}/{name}" == settings.instance.slug
+        # below is to ensure that if another process interferes
+        # we don't use the in-memory mock database
+        # could be made more specific by checking whether the django
+        # configured database is the same as the one in settings
+        and connection.settings_dict["NAME"] != ":memory:"
+        and not use_root_db_user  # always re-connect for root db user
+    ):
+        logger.important(
+            f"doing nothing, already connected lamindb: {settings.instance.slug}"
+        )
+        return None
+    else:
+        if settings._instance_exists and settings.instance.slug != "none/none":
+            import lamindb as ln
+
+            if ln.context.transform is not None:
+                raise CannotSwitchDefaultInstance(
+                    "Cannot switch default instance while `ln.track()` is live: call `ln.finish()`"
+                )
+        reset_django()
+
+
 @unlock_cloud_sqlite_upon_exception(ignore_prev_locker=True)
 def connect(instance: str | None = None, **kwargs: Any) -> str | tuple | None:
     """Connect to an instance.
@@ -325,36 +355,11 @@ def connect(instance: str | None = None, **kwargs: Any) -> str | tuple | None:
             if _db is not None and isettings.dialect == "postgresql":
                 isettings._db = _db
         else:
-            from django.db import connection
-
             owner, name = get_owner_name_from_identifier(instance)
             if _check_instance_setup() and not _test:
-                if (
-                    settings._instance_exists
-                    and f"{owner}/{name}" == settings.instance.slug
-                    # below is to ensure that if another process interferes
-                    # we don't use the in-memory mock database
-                    # could be made more specific by checking whether the django
-                    # configured database is the same as the one in settings
-                    and connection.settings_dict["NAME"] != ":memory:"
-                    and not use_root_db_user  # always re-connect for root db user
-                ):
-                    logger.important(
-                        f"doing nothing, already connected lamindb: {settings.instance.slug}"
-                    )
-                    return None
-                else:
-                    if (
-                        settings._instance_exists
-                        and settings.instance.slug != "none/none"
-                    ):
-                        import lamindb as ln
-
-                        if ln.context.transform is not None:
-                            raise CannotSwitchDefaultInstance(
-                                "Cannot switch default instance while `ln.track()` is live: call `ln.finish()`"
-                            )
-                    reset_django()
+                validate_connection_state(
+                    owner, name, use_root_db_user=use_root_db_user
+                )
             elif (
                 _write_settings
                 and settings._instance_exists
