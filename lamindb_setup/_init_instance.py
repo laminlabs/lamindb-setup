@@ -248,6 +248,15 @@ def init(
     See Also:
         Init an instance for via the CLI, see `here <https://docs.lamin.ai/cli#init>`__.
     """
+    from ._check_setup import _check_instance_setup
+    from ._connect_instance import (
+        reset_django_module_variables,
+        validate_connection_state,
+    )
+    from .core._hub_core import init_instance_hub
+
+    silence_loggers()
+
     isettings = None
     ssettings = None
 
@@ -264,18 +273,6 @@ def init(
     access_token: str | None = None if _user is None else _user.access_token
 
     try:
-        silence_loggers()
-        from ._check_setup import _check_instance_setup
-
-        if _check_instance_setup() and not _test:
-            from lamindb_setup.core.django import reset_django
-
-            reset_django()
-        elif _write_settings:
-            disconnect(mute=True)
-        from ._connect_instance import reset_django_module_variables
-        from .core._hub_core import init_instance_hub
-
         name_str, instance_id, instance_state, _ = validate_init_args(
             storage=storage,
             name=name,
@@ -287,6 +284,10 @@ def init(
         )
         if instance_state == "connected":
             return None
+        if _check_instance_setup() and not _test:
+            validate_connection_state(user_handle, name_str)
+        elif _write_settings:
+            disconnect(mute=True)
         isettings = InstanceSettings(
             id=instance_id,  # type: ignore
             owner=user_handle,
