@@ -162,10 +162,12 @@ def _connect_instance(
                 schema_id=None
                 if (schema_id := instance_result["schema_id"]) is None
                 else UUID(schema_id),
-                fine_grained_access=bool(
-                    instance_result["fine_grained_access"]
-                ),  # can be None
-                db_permissions=instance_result.get("db_permissions", None),
+                fine_grained_access=bool(instance_result["fine_grained_access"])
+                if not use_root_db_user
+                else False,
+                db_permissions=instance_result.get("db_permissions", None)
+                if not not use_root_db_user
+                else "write",
             )
         else:
             if hub_result != "anonymous-user":
