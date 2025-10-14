@@ -121,7 +121,6 @@ def init_storage(
         # this means we constructed a hosted location of shape s3://bucket-name/uid
         # within LaminHub
         assert root_str.endswith(uid)
-    os.getenv("LAMIN_ENV")
     if root_str.startswith("create-s3"):
         if root_str != "create-s3":
             assert "--" in root_str, "example: `create-s3--eu-central-1`"
