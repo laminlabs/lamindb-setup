@@ -13,6 +13,7 @@ from postgrest.exceptions import APIError
 
 from lamindb_setup._migrate import check_whether_migrations_in_sync
 
+from ._aws_options import HOSTED_REGIONS
 from ._aws_storage import find_closest_aws_region
 from ._hub_client import (
     call_with_fallback,
@@ -422,7 +423,9 @@ def _init_instance_hub(
 
 
 # pass None if initializing an instance
-def _get_default_s3_root(instance_id: UUID | None, client: Client):
+def _get_default_s3_bucket(
+    instance_id: UUID | None, region: str | None, client: Client
+):
     infra_hub_id = None
     if instance_id is None:
         # the case for initializing an instance
@@ -449,17 +452,43 @@ def _get_default_s3_root(instance_id: UUID | None, client: Client):
             )
 
     if infra_hub_id is not None:
-        root = (
+        bucket_base = (
             client.rpc("get_root_by_infra_hub_id", {"p_infra_hub_id": infra_hub_id})
             .execute()
             .data
         )
-    elif os.getenv("LAMIN_ENV") in {None, "prod"}:
-        root = f"s3://lamin-{find_closest_aws_region()}"
+        if bucket_base is not None:
+            return f"s3://{bucket_base}"
+
+    if os.getenv("LAMIN_ENV") in {None, "prod"}:
+        if region is None:
+            region = find_closest_aws_region()
+        elif region not in HOSTED_REGIONS:
+            raise ValueError(f"region has to be one of {HOSTED_REGIONS}")
+        root = f"s3://lamin-{region}"
     else:
         root = "s3://lamin-hosted-test"
 
     return root
+
+
+# pass None if initializing an instance
+def get_default_s3_bucket(
+    instance_id: UUID | None, region: str | None = None, access_token: str | None = None
+):
+    if settings.user.handle != "anonymous" or access_token is not None:
+        return call_with_fallback_auth(
+            _get_default_s3_bucket,
+            instance_id=instance_id,
+            region=region,
+            access_token=access_token,
+        )
+    else:
+        return call_with_fallback(
+            _get_default_s3_bucket,
+            region=region,
+            instance_id=instance_id,
+        )
 
 
 def _connect_instance_hub(

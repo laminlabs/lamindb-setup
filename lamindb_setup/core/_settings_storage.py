@@ -101,7 +101,11 @@ def init_storage(
     StorageSettings,
     Literal["hub-record-not-created", "hub-record-retrieved", "hub-record-created"],
 ]:
-    from ._hub_core import delete_storage_record, init_storage_hub
+    from ._hub_core import (
+        delete_storage_record,
+        get_default_s3_bucket,
+        init_storage_hub,
+    )
 
     assert root is not None, "`root` argument can't be `None`"
 
@@ -117,20 +121,13 @@ def init_storage(
         # this means we constructed a hosted location of shape s3://bucket-name/uid
         # within LaminHub
         assert root_str.endswith(uid)
-    lamin_env = os.getenv("LAMIN_ENV")
+    os.getenv("LAMIN_ENV")
     if root_str.startswith("create-s3"):
         if root_str != "create-s3":
             assert "--" in root_str, "example: `create-s3--eu-central-1`"
             region = root_str.replace("create-s3--", "")
-        if region is None:
-            region = find_closest_aws_region()
-        else:
-            if region not in HOSTED_REGIONS:
-                raise ValueError(f"region has to be one of {HOSTED_REGIONS}")
-        if lamin_env is None or lamin_env == "prod":
-            root = f"s3://lamin-{region}/{uid}"
-        else:
-            root = f"s3://lamin-hosted-test/{uid}"
+        bucket = get_default_s3_bucket(None if init_instance else instance_id, region)
+        root = f"{bucket}/{uid}"
     elif (input_protocol := fsspec.utils.get_protocol(root_str)) not in VALID_PROTOCOLS:
         valid_protocols = ("local",) + VALID_PROTOCOLS[1:]  # show local instead of file
         raise ValueError(
