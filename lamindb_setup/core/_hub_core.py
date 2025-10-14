@@ -13,6 +13,7 @@ from postgrest.exceptions import APIError
 
 from lamindb_setup._migrate import check_whether_migrations_in_sync
 
+from ._aws_storage import find_closest_aws_region
 from ._hub_client import (
     call_with_fallback,
     call_with_fallback_auth,
@@ -418,6 +419,47 @@ def _init_instance_hub(
         return None
     if isettings.dialect != "sqlite" and isettings.is_remote:
         logger.important(f"go to: https://lamin.ai/{slug}")
+
+
+# pass None if initializing an instance
+def _get_default_s3_root(instance_id: UUID | None, client: Client):
+    infra_hub_id = None
+    if instance_id is None:
+        # the case for initializing an instance
+        try:
+            from laminhub_rest.core._env import env
+
+            infra_hub_id = env().LAMINHUB_ID
+        except Exception:
+            pass
+    else:
+        data = (
+            client.table("instance")
+            .select("resource_db_server(resource_api_server(infra_hub_id))")
+            .eq("id", instance_id.hex)
+            .execute()
+            .data
+        )
+        if data:
+            infra_hub_id = (
+                data[0]
+                .get("resource_db_server", {})
+                .get("resource_api_server", {})
+                .get("infra_hub_id")
+            )
+
+    if infra_hub_id is not None:
+        root = (
+            client.rpc("get_root_by_infra_hub_id", {"p_infra_hub_id": infra_hub_id})
+            .execute()
+            .data
+        )
+    elif os.getenv("LAMIN_ENV") in {None, "prod"}:
+        root = f"s3://lamin-{find_closest_aws_region()}"
+    else:
+        root = "s3://lamin-hosted-test"
+
+    return root
 
 
 def _connect_instance_hub(
