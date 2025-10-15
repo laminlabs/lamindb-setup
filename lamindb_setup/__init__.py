@@ -42,6 +42,8 @@ import warnings
 
 # ignore for now, remove this after supabase upgrade in the deps
 warnings.filterwarnings("ignore", category=DeprecationWarning, module="supabase")
+warnings.filterwarnings("ignore", category=DeprecationWarning, module="supafunc")
+warnings.filterwarnings("ignore", category=DeprecationWarning, module="postgrest")
 
 from packaging import version as packaging_version
 
