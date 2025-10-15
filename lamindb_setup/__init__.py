@@ -38,6 +38,10 @@ Modules & settings:
 __version__ = "1.12.0"  # denote a release candidate for 0.1.0 with 0.1rc1
 
 import os
+import warnings
+
+# ignore for now, remove this after supabase upgrade in the deps
+warnings.filterwarnings("ignore", category=DeprecationWarning, module="supabase")
 
 from packaging import version as packaging_version
 
