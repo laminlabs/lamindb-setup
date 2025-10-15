@@ -355,6 +355,19 @@ class InstanceSettings:
         return self._api_url
 
     @property
+    def ui_url(self) -> str | None:
+        """URL for UI.
+
+        Use this URL for accessing the UI related to this instance.
+        """
+        if self.api_url is None:
+            return None
+        if "lamin.ai" in self.api_url:
+            return "https://lamin.ai"
+        else:
+            return self.api_url.replace("/api", "")
+
+    @property
     def available_spaces(self) -> dict | None:
         """Available spaces with roles for instances fine-grained permissions.
 
