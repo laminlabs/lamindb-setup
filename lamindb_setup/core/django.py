@@ -108,6 +108,8 @@ class DBTokenManager:
                 connection.execute_wrappers.append(set_token_wrapper)
 
         dispatch_uid = f"dbtokenmanager:{id(self)}:{connection_name}"
+        # emitted when a database connection is established
+        # not when a database wrapper is created
         connection_created.connect(
             connection_callback, dispatch_uid=dispatch_uid, weak=False
         )
