@@ -98,8 +98,6 @@ class DBTokenManager:
                 result.nextset()
             return result
 
-        self.get_connection(connection_name).execute_wrappers.append(set_token_wrapper)
-
         def connection_callback(sender, connection, **kwargs):
             if connection.alias == connection_name:
                 connection.execute_wrappers.append(set_token_wrapper)
