@@ -98,8 +98,13 @@ class DBTokenManager:
                 result.nextset()
             return result
 
+        self.get_connection(connection_name).execute_wrappers.append(set_token_wrapper)
+
         def connection_callback(sender, connection, **kwargs):
-            if connection.alias == connection_name:
+            if (
+                connection.alias == connection_name
+                and set_token_wrapper not in connection.execute_wrappers
+            ):
                 connection.execute_wrappers.append(set_token_wrapper)
 
         dispatch_uid = f"dbtokenmanager:{id(self)}:{connection_name}"
