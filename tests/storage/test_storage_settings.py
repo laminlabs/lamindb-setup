@@ -1,3 +1,7 @@
+from uuid import UUID
+
+from lamindb_setup import login, logout
+from lamindb_setup.core._hub_core import get_default_bucket_for_instance
 from lamindb_setup.core._settings_storage import StorageSettings
 from lamindb_setup.core.upath import S3Path, UPath
 
@@ -22,3 +26,15 @@ def test_endpoint_url():
     assert ssettings.root.storage_options["endpoint_url"] == "http://localhost:8000/s3"
     assert isinstance(ssettings.root, S3Path)
     assert ssettings.type == "s3"
+
+
+def test_get_default_bucket_for_instance():
+    lamindata_id = UUID("037ba1e0-8d80-4f91-a902-75a47735076a")
+
+    assert get_default_bucket_for_instance(lamindata_id) == "s3://lamin-us-east-1"
+
+    logout()
+
+    assert get_default_bucket_for_instance(lamindata_id) == "s3://lamin-us-east-1"
+
+    login("testuser1")
