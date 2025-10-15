@@ -154,6 +154,7 @@ class DBTokenManager:
             from django.db.transaction import Atomic
 
             Atomic.__enter__ = self.original_atomic_enter
+            self.atomic_is_patched = False
 
 
 db_token_manager = DBTokenManager()
