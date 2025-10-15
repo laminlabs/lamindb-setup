@@ -422,38 +422,15 @@ def _init_instance_hub(
         logger.important(f"go to: https://lamin.ai/{slug}")
 
 
-# pass None if initializing an instance
-def _get_default_s3_bucket(
+def _get_default_bucket_for_instance(
     instance_id: UUID | None, region: str | None, client: Client
 ):
-    infra_hub_id = None
-    if instance_id is None:
-        # the case for initializing an instance
-        try:
-            from laminhub_rest.core._env import env
-
-            infra_hub_id = env().LAMINHUB_ID
-        except Exception:
-            pass
-    else:
-        data = (
-            client.table("instance")
-            .select("resource_db_server(resource_api_server(infra_hub_id))")
-            .eq("id", instance_id.hex)
-            .execute()
-            .data
-        )
-        if data:
-            infra_hub_id = (
-                data[0]
-                .get("resource_db_server", {})
-                .get("resource_api_server", {})
-                .get("infra_hub_id")
-            )
-
-    if infra_hub_id is not None:
+    if instance_id is not None:
         bucket_base = (
-            client.rpc("get_root_by_infra_hub_id", {"p_infra_hub_id": infra_hub_id})
+            client.rpc(
+                "get_api_server_default_bucket_by_instance_id",
+                {"p_instance_id": instance_id.hex},
+            )
             .execute()
             .data
         )
@@ -473,19 +450,21 @@ def _get_default_s3_bucket(
 
 
 # pass None if initializing an instance
-def get_default_s3_bucket(
+# this can be from the api server attached to the instance or the default bucket
+# that we use for instances with no api servers attached
+def get_default_bucket_for_instance(
     instance_id: UUID | None, region: str | None = None, access_token: str | None = None
 ):
     if settings.user.handle != "anonymous" or access_token is not None:
         return call_with_fallback_auth(
-            _get_default_s3_bucket,
+            _get_default_bucket_for_instance,
             instance_id=instance_id,
             region=region,
             access_token=access_token,
         )
     else:
         return call_with_fallback(
-            _get_default_s3_bucket,
+            _get_default_bucket_for_instance,
             region=region,
             instance_id=instance_id,
         )

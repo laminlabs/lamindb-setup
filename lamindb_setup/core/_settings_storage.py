@@ -103,7 +103,7 @@ def init_storage(
 ]:
     from ._hub_core import (
         delete_storage_record,
-        get_default_s3_bucket,
+        get_default_bucket_for_instance,
         init_storage_hub,
     )
 
@@ -125,7 +125,9 @@ def init_storage(
         if root_str != "create-s3":
             assert "--" in root_str, "example: `create-s3--eu-central-1`"
             region = root_str.replace("create-s3--", "")
-        bucket = get_default_s3_bucket(None if init_instance else instance_id, region)
+        bucket = get_default_bucket_for_instance(
+            None if init_instance else instance_id, region
+        )
         root = f"{bucket}/{uid}"
     elif (input_protocol := fsspec.utils.get_protocol(root_str)) not in VALID_PROTOCOLS:
         valid_protocols = ("local",) + VALID_PROTOCOLS[1:]  # show local instead of file
