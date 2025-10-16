@@ -131,12 +131,14 @@ def test_connect_with_db_parameter():
         # test ignore loading from cache because hub result has jwt access
         ln_setup.connect("laminlabs/lamindata", _test=True)
         assert "jwt" in ln_setup.settings.instance.db
-
-        # now take a user that has no collaborator status
-        ln_setup.login("testuser2")
-        # receives public connection
+        # anon should get public
+        ln_setup.logout()
         ln_setup.connect("laminlabs/lamindata", _test=True)
         assert "public" in ln_setup.settings.instance.db
+        # it is an org member, receives jwt connection
+        ln_setup.login("testuser2")
+        ln_setup.connect("laminlabs/lamindata", _test=True)
+        assert "jwt" in ln_setup.settings.instance.db
         # now pass the connection string
         ln_setup.connect("laminlabs/lamindata", _db=db, _test=True)
         assert "testdbuser" in ln_setup.settings.instance.db
@@ -160,3 +162,10 @@ def test_connect_renamed_instance():
         instance, _ = connect_instance_hub(owner="laminlabs", name="lamin-dev1072025")
         assert instance["name"] == "lamin-dev"
         assert "db_permissions" in instance
+
+
+def test_use_proxy_db():
+    # purely staging tests don't go into coverage
+    if os.getenv("LAMIN_ENV") == "staging":
+        ln_setup.connect("laminlabs/lamindata", _test=True, use_proxy_db=True)
+        assert "staging-nlb" in ln_setup.settings.instance.db
