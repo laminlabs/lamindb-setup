@@ -123,19 +123,14 @@ class InstanceSettings:
                     self._local_storage = ln.setup.settings.instance._local_storage
                 if self._local_storage is not None:
                     value_local = self.local_storage
-                    region_local = (
-                        f" ({value_local.region})" if value_local.region else ""
-                    )
-                    region_cloud = f" ({value.region})" if value.region else ""
+                    representation += f"\n - local storage: {value_local.root_as_str} ({value_local.region})"
                     representation += (
-                        f"\n - local storage: {value_local.root_as_str}{region_local}"
-                    )
-                    representation += (
-                        f"\n - cloud storage: {value.root_as_str}{region_cloud}"
+                        f"\n - cloud storage: {value.root_as_str} ({value.region})"
                     )
                 else:
-                    region = f" ({value.region})" if value.region else ""
-                    representation += f"\n - storage: {value.root_as_str}{region}"
+                    representation += (
+                        f"\n - storage: {value.root_as_str} ({value.region})"
+                    )
             elif attr == "db":
                 if self.dialect != "sqlite":
                     model = LaminDsnModel(db=value)
@@ -183,7 +178,6 @@ class InstanceSettings:
         except ProgrammingError:
             logger.error("not able to load Storage registry: please migrate")
             return None
-
         found = []
         for record in all_local_records:
             root_path = Path(record.root)
