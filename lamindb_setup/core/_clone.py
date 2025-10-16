@@ -27,6 +27,9 @@ def init_local_sqlite(
     The copy is intended for read-only access to instance data without requiring a Postgres connection.
     Data synchronization to complete the clone happens via a separate Lambda function.
 
+    Note that essential user, branch and storage tables are missing.
+    Therefore, it is not possible to store Artifacts without having replayed these records first.
+
     Args:
         instance: Pass a slug (`account/name`) or URL (`https://lamin.ai/account/name`).
             If `None`, looks for an environment variable `LAMIN_CURRENT_INSTANCE` to get the instance identifier.
