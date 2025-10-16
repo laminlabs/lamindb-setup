@@ -23,7 +23,7 @@ from .core._settings import settings
 from .core._settings_instance import InstanceSettings
 from .core._settings_load import load_instance_settings
 from .core._settings_storage import StorageSettings
-from .core._settings_store import instance_settings_file, settings_dir
+from .core._settings_store import instance_settings_file
 from .core.cloud_sqlite_locker import unlock_cloud_sqlite_upon_exception
 from .core.django import reset_django
 from .errors import CannotSwitchDefaultInstance
