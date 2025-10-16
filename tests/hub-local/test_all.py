@@ -8,6 +8,7 @@ from uuid import UUID
 import lamindb_setup as ln_setup
 import pytest
 from lamindb_setup.core._hub_client import (
+    Environment,
     connect_hub,
 )
 from lamindb_setup.core._hub_core import (
@@ -36,6 +37,11 @@ from laminhub_rest.core.instance_collaborator import InstanceCollaboratorHandler
 from laminhub_rest.core.organization import OrganizationMemberHandler
 from sqlalchemy.exc import OperationalError as SQLAlchemy_OperationalError
 from supafunc.errors import FunctionsHttpError
+
+
+def test_runs_locally():
+    assert os.environ["LAMIN_ENV"] == "local"
+    assert Environment().lamin_env == "local"
 
 
 def test_incomplete_signup():

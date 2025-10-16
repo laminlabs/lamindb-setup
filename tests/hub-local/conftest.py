@@ -7,7 +7,6 @@ import lamindb_setup as ln_setup
 import pytest
 from gotrue.errors import AuthApiError
 from lamindb_setup.core._hub_client import (
-    Environment,
     connect_hub_with_auth,
 )
 from lamindb_setup.core._hub_core import (
@@ -51,11 +50,6 @@ def pytest_configure():
 def pytest_unconfigure():
     if supabase_resources.edge_function_process:
         supabase_resources.stop_local_edge_functions()
-
-
-def test_runs_locally():
-    assert os.environ["LAMIN_ENV"] == "local"
-    assert Environment().lamin_env == "local"
 
 
 def sign_up_user(email: str, handle: str, save_as_settings: bool = False):

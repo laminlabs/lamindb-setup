@@ -65,7 +65,7 @@ def init_local_sqlite(
 
     isettings._persist(write_to_disk=True)
 
-    if not Path(isettings._sqlite_file_local).exists():
+    if not isettings._sqlite_file_local.exists():
         # Reset Django configuration before _init_db() because Django was already configured for the original Postgres instance.
         # Without this reset, the if not settings.configured check in setup_django() would skip reconfiguration,
         # causing migrations to run against the old Postgres database instead of the new SQLite clone database.
