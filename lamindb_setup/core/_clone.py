@@ -8,7 +8,6 @@
 """
 
 import os
-from pathlib import Path
 
 from lamindb_setup.core._settings_instance import InstanceSettings
 from lamindb_setup.core._settings_load import load_instance_settings
@@ -39,13 +38,14 @@ def init_local_sqlite(
     import lamindb_setup as ln_setup
 
     if instance is None:  # pragma: no cover
-        current_instance = os.environ.get("LAMIN_CURRENT_INSTANCE", None)
-        if current_instance is None:
-            raise ValueError(
-                "No instance identifier provided and LAMIN_CURRENT_INSTANCE is not set"
-            )
+        instance = os.environ.get("LAMIN_CURRENT_INSTANCE")
 
-    if instance is not None and ln_setup.settings.instance is None:  # pragma: no cover
+    if instance is None:
+        raise ValueError(
+            "No instance identifier provided and LAMIN_CURRENT_INSTANCE is not set"
+        )
+
+    if ln_setup.settings.instance is None:  # pragma: no cover
         ln_setup.connect(instance)
 
     name = (
