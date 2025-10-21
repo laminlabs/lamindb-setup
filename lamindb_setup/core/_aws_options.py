@@ -58,6 +58,8 @@ class AWSOptionsManager:
         from s3fs import S3FileSystem
 
         # this is cached so will be resued with the connection initialized
+        # these options are set for paths in _path_inject_options
+        # here we set the same options to cache the filesystem
         fs = S3FileSystem(
             cache_regions=True,
             use_listings_cache=True,
@@ -143,6 +145,7 @@ class AWSOptionsManager:
             "version_aware", False
         )
         # this is for better concurrency as the default batch_size is 128
+        # read https://github.com/laminlabs/lamindb-setup/pull/1146
         if "config_kwargs" not in storage_options:
             connection_options["config_kwargs"] = {"max_pool_connections": 64}
         elif "max_pool_connections" not in (
