@@ -334,27 +334,27 @@ def upload_from(
         callback = ProgressCallback(local_path.name, "uploading")
         kwargs["callback"] = callback
 
+    protocol = self.protocol
+    cleanup_cache = False
     source: str | list[str] = local_path.as_posix()
     destination: str | list[str] = self.as_posix()
     if local_path_is_dir:
-        size: int = 0
-        files: list[str] = []
-        for file in (path for path in local_path.rglob("*") if path.is_file()):
-            size += file.stat().st_size
-            files.append(file.as_posix())
-        # see https://github.com/fsspec/s3fs/issues/897
-        # here we reduce batch_size for folders bigger than 8 GiB
-        # to avoid the problem in the issue
-        # the default batch size for this case is 128
-        if "batch_size" not in kwargs and size >= 8 * 2**30:
-            kwargs["batch_size"] = 64
-
         if not create_folder:
-            source = files
+            source = [
+                path.as_posix() for path in local_path.rglob("*") if path.is_file()
+            ]
             destination = fsspec.utils.other_paths(
-                files, self.as_posix(), exists=False, flatten=False
+                source, self.as_posix(), exists=False, flatten=False
             )
-    elif self.protocol == "s3" and "chunksize" not in kwargs:
+        elif protocol == "s3" and (bucket := self.drive) not in self.fs.dircache:
+            # the below lines are to avoid s3fs triggering create_bucket in upload if
+            # dirs are present, it allows to avoid the permission error
+            self.fs.dircache[bucket] = [{}]
+            assert isinstance(destination, str)
+            if not destination.endswith(TRAILING_SEP):
+                destination += "/"
+            cleanup_cache = True
+    elif protocol == "s3" and "chunksize" not in kwargs:
         size = local_path.stat().st_size
         MiB = 1024**2
         DEFAULT_CHUNKSIZE = 50 * MiB  # so in s3fs
@@ -363,21 +363,6 @@ def upload_from(
             step = 5 * MiB
             rounded = math.ceil(raw / step) * step
             kwargs["chunksize"] = rounded
-
-    # the below lines are to avoid s3fs triggering create_bucket in upload if
-    # dirs are present, it allows to avoid the permission error
-    if self.protocol == "s3" and local_path_is_dir and create_folder:
-        bucket = self.drive
-        if bucket not in self.fs.dircache:
-            self.fs.dircache[bucket] = [{}]
-            assert isinstance(destination, str)
-            if not destination.endswith(TRAILING_SEP):  # type: ignore
-                destination += "/"
-            cleanup_cache = True
-        else:
-            cleanup_cache = False
-    else:
-        cleanup_cache = False
 
     self.fs.upload(source, destination, recursive=create_folder, **kwargs)
 
