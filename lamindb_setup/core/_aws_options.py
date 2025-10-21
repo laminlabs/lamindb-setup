@@ -167,6 +167,7 @@ class AWSOptionsManager:
             if "r2.cloudflarestorage.com" in endpoint_url:
                 # fixed_upload_size should always be True for R2
                 # this option is needed for correct uploads to R2
+                # TODO: maybe set max_pool_connections=64 here also
                 path = UPath(path, fixed_upload_size=True)
             return path
         # trailing slash is needed to avoid returning incorrect results with .startswith
