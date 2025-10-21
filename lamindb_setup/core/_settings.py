@@ -321,25 +321,28 @@ class SetupSettings:
 
     def __repr__(self) -> str:
         """Rich string representation."""
+        from lamin_utils import colors
+
         # do not show current setting representation when building docs
         if "sphinx" in sys.modules:
             return object.__repr__(self)
+
         repr = ""
         if self._instance_exists:
             instance_rep = self.instance.__repr__().split("\n")
-            repr += f"{instance_rep[0]}\n"
+            repr += f"{colors.cyan('Instance:')} {instance_rep[0].replace('Instance: ', '')}\n"
             repr += f" - work-dir: {self.work_dir}\n"
             repr += f" - branch: {self._read_branch_idlike_name()[1]}\n"
             repr += f" - space: {self._read_space_idlike_name()[1]}"
-            repr += "\nDetails:\n"
+            repr += f"\n{colors.yellow('Details:')}\n"
             repr += "\n".join(instance_rep[1:])
         else:
-            repr += "Instance: None"
-        repr += "\nCache & settings:\n"
+            repr += f"{colors.cyan('Instance:')} None"
+        repr += f"\n{colors.blue('Cache & settings:')}\n"
         repr += f" - cache: {self.cache_dir.as_posix()}\n"
         repr += f" - user settings: {settings_dir.as_posix()}\n"
         repr += f" - system settings: {system_settings_dir.as_posix()}"
-        repr += f"\nUser: {self.user.handle}"
+        repr += f"\n{colors.green('User:')} {self.user.handle}"
         return repr
 
 
