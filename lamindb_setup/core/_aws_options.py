@@ -59,7 +59,10 @@ class AWSOptionsManager:
 
         # this is cached so will be resued with the connection initialized
         fs = S3FileSystem(
-            cache_regions=True, use_listings_cache=True, version_aware=False
+            cache_regions=True,
+            use_listings_cache=True,
+            version_aware=False,
+            config_kwargs={"max_pool_connections": 64},
         )
 
         self._suppress_aiobotocore_traceback_logging()
@@ -139,7 +142,7 @@ class AWSOptionsManager:
         connection_options["version_aware"] = storage_options.get(
             "version_aware", False
         )
-
+        # this is for better concurrency as the default batch_size is 128
         if "config_kwargs" not in storage_options:
             connection_options["config_kwargs"] = {"max_pool_connections": 64}
         elif "max_pool_connections" not in (
