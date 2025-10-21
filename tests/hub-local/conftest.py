@@ -40,6 +40,8 @@ def pytest_configure():
     os.environ["LAMIN_TEST_INSTANCE_SCHEMA_STR"] = ""
     os.environ["LAMIN_TEST_INSTANCE_PUBLIC"] = "false"
     os.environ["LAMIN_TEST_INSTANCE_SCHEMA_STR"] = "bionty"
+    # Disable redis, it is not deployed here
+    os.environ["EXTERNAL_CACHE_DISABLED"] = "true"
     remove_lamin_local_settings()
     supabase_resources.start_local()
     supabase_resources.reset_local()
