@@ -98,6 +98,27 @@ class migrate:
 
     @classmethod
     def deploy(cls, package_name: str | None = None, number: int | None = None) -> None:
+        import os
+
+        # NOTE: this is a temporary solution to avoid breaking tests
+        LAMIN_MIGRATE_ON_LAMBDA = (
+            os.environ.get("LAMIN_MIGRATE_ON_LAMBDA", "false") == "true"
+        )
+
+        if settings.instance.is_on_hub and LAMIN_MIGRATE_ON_LAMBDA:
+            response = httpx.post(
+                f"{settings.instance.api_url}/instances/{settings.instance._id}/migrate",
+                headers={"Authorization": f"Bearer {settings.user.access_token}"},
+            )
+            if response.status_code != 200:
+                raise Exception(f"Failed to migrate instance: {response.text}")
+        else:
+            cls._deploy(package_name=package_name, number=number)
+
+    @classmethod
+    def _deploy(
+        cls, package_name: str | None = None, number: int | None = None
+    ) -> None:
         """Deploy a migration."""
         from lamindb_setup._connect_instance import connect
         from lamindb_setup._schema_metadata import update_schema_in_hub
@@ -143,13 +164,6 @@ class migrate:
             logger.important(f"updating lamindb version in hub: {lamindb.__version__}")
             if settings.instance.dialect != "sqlite":
                 update_schema_in_hub()
-                logger.warning(
-                    "clearing instance cache in hub; if this fails, re-run with latest lamindb version"
-                )
-                httpx.delete(
-                    f"{settings.instance.api_url}/cache/instances/{settings.instance._id.hex}",
-                    headers={"Authorization": f"Bearer {settings.user.access_token}"},
-                )
             call_with_fallback_auth(
                 update_instance,
                 instance_id=settings.instance._id.hex,
