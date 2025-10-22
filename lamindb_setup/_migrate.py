@@ -101,9 +101,11 @@ class migrate:
         import os
 
         # NOTE: this is a temporary solution to avoid breaking tests
-        LAMIN_RUN_ON_LAMBDA = os.environ.get("LAMIN_RUN_ON_LAMBDA", "false") == "true"
+        LAMIN_MIGRATE_ON_LAMBDA = (
+            os.environ.get("LAMIN_MIGRATE_ON_LAMBDA", "false") == "true"
+        )
 
-        if settings.instance.is_on_hub and LAMIN_RUN_ON_LAMBDA:
+        if settings.instance.is_on_hub and LAMIN_MIGRATE_ON_LAMBDA:
             response = httpx.post(
                 f"{settings.instance.api_url}/instances/{settings.instance._id}/migrate",
                 headers={"Authorization": f"Bearer {settings.user.access_token}"},
