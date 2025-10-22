@@ -58,8 +58,13 @@ class AWSOptionsManager:
         from s3fs import S3FileSystem
 
         # this is cached so will be resued with the connection initialized
+        # these options are set for paths in _path_inject_options
+        # here we set the same options to cache the filesystem
         fs = S3FileSystem(
-            cache_regions=True, use_listings_cache=True, version_aware=False
+            cache_regions=True,
+            use_listings_cache=True,
+            version_aware=False,
+            config_kwargs={"max_pool_connections": 64},
         )
 
         self._suppress_aiobotocore_traceback_logging()
@@ -109,10 +114,11 @@ class AWSOptionsManager:
     def _path_inject_options(
         self, path: UPath, credentials: dict, extra_parameters: dict | None = None
     ) -> UPath:
+        storage_options = path.storage_options
         if credentials == {}:
             # credentials were specified manually for the path
-            if "anon" in path.storage_options:
-                anon = path.storage_options["anon"]
+            if "anon" in storage_options:
+                anon = storage_options["anon"]
             elif path.fs.key is not None and path.fs.secret is not None:
                 anon = False
             else:
@@ -123,21 +129,30 @@ class AWSOptionsManager:
         else:
             connection_options = credentials
 
-        if "cache_regions" in path.storage_options:
-            connection_options["cache_regions"] = path.storage_options["cache_regions"]
+        if "cache_regions" in storage_options:
+            connection_options["cache_regions"] = storage_options["cache_regions"]
         else:
             connection_options["cache_regions"] = (
-                path.storage_options.get("endpoint_url", None) is None
+                storage_options.get("endpoint_url", None) is None
             )
         # we use cache to avoid some uneeded downloads or credential problems
         # see in upload_from
-        connection_options["use_listings_cache"] = path.storage_options.get(
+        connection_options["use_listings_cache"] = storage_options.get(
             "use_listings_cache", True
         )
         # normally we want to ignore objects vsrsions in a versioned bucket
-        connection_options["version_aware"] = path.storage_options.get(
+        connection_options["version_aware"] = storage_options.get(
             "version_aware", False
         )
+        # this is for better concurrency as the default batch_size is 128
+        # read https://github.com/laminlabs/lamindb-setup/pull/1146
+        if "config_kwargs" not in storage_options:
+            connection_options["config_kwargs"] = {"max_pool_connections": 64}
+        elif "max_pool_connections" not in (
+            config_kwargs := storage_options["config_kwargs"]
+        ):
+            config_kwargs["max_pool_connections"] = 64
+            connection_options["config_kwargs"] = config_kwargs
 
         if extra_parameters:
             connection_options.update(extra_parameters)
@@ -152,6 +167,7 @@ class AWSOptionsManager:
             if "r2.cloudflarestorage.com" in endpoint_url:
                 # fixed_upload_size should always be True for R2
                 # this option is needed for correct uploads to R2
+                # TODO: maybe set max_pool_connections=64 here also
                 path = UPath(path, fixed_upload_size=True)
             return path
         # trailing slash is needed to avoid returning incorrect results with .startswith

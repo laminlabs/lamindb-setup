@@ -13,6 +13,8 @@ from postgrest.exceptions import APIError
 
 from lamindb_setup._migrate import check_whether_migrations_in_sync
 
+from ._aws_options import HOSTED_REGIONS
+from ._aws_storage import find_closest_aws_region
 from ._hub_client import (
     call_with_fallback,
     call_with_fallback_auth,
@@ -420,10 +422,59 @@ def _init_instance_hub(
         logger.important(f"go to: https://lamin.ai/{slug}")
 
 
+def _get_default_bucket_for_instance(
+    instance_id: UUID | None, region: str | None, client: Client
+):
+    if instance_id is not None:
+        bucket_base = (
+            client.rpc(
+                "get_api_server_default_bucket_by_instance_id",
+                {"p_instance_id": instance_id.hex},
+            )
+            .execute()
+            .data
+        )
+        if bucket_base is not None:
+            return f"s3://{bucket_base}"
+
+    if os.getenv("LAMIN_ENV") in {None, "prod"}:
+        if region is None:
+            region = find_closest_aws_region()
+        elif region not in HOSTED_REGIONS:
+            raise ValueError(f"region has to be one of {HOSTED_REGIONS}")
+        root = f"s3://lamin-{region}"
+    else:
+        root = "s3://lamin-hosted-test"
+
+    return root
+
+
+# pass None if initializing an instance
+# this can be from the api server attached to the instance or the default bucket
+# that we use for instances with no api servers attached
+def get_default_bucket_for_instance(
+    instance_id: UUID | None, region: str | None = None, access_token: str | None = None
+):
+    if settings.user.handle != "anonymous" or access_token is not None:
+        return call_with_fallback_auth(
+            _get_default_bucket_for_instance,
+            instance_id=instance_id,
+            region=region,
+            access_token=access_token,
+        )
+    else:
+        return call_with_fallback(
+            _get_default_bucket_for_instance,
+            region=region,
+            instance_id=instance_id,
+        )
+
+
 def _connect_instance_hub(
     owner: str,  # account_handle
     name: str,  # instance_name
     use_root_db_user: bool,
+    use_proxy_db: bool,
     client: Client,
 ) -> tuple[dict, dict] | str:
     response = client.functions.invoke(
@@ -499,12 +550,26 @@ def _connect_instance_hub(
                     db_user["name" if fine_grained_access else "db_user_name"],
                     db_user["password" if fine_grained_access else "db_user_password"],
                 )
+
+        if use_proxy_db:
+            host = instance.get("proxy_host", None)
+            assert host is not None, (
+                "Database proxy host is not available, please do not pass 'use_proxy_db'."
+            )
+            port = instance.get("proxy_port", None)
+            assert port is not None, (
+                "Database proxy port is not available, please do not pass 'use_proxy_db'."
+            )
+        else:
+            host = instance["db_host"]
+            port = instance["db_port"]
+
         db_dsn = LaminDsn.build(
             scheme=instance["db_scheme"],
             user=db_user_name if db_user_name is not None else "none",
             password=db_user_password if db_user_password is not None else "none",
-            host=instance["db_host"],
-            port=instance["db_port"],
+            host=host,
+            port=port,
             database=instance["db_database"],
         )
         instance["db"] = db_dsn
@@ -518,6 +583,7 @@ def connect_instance_hub(
     name: str,  # instance_name
     access_token: str | None = None,
     use_root_db_user: bool = False,
+    use_proxy_db: bool = False,
 ) -> tuple[dict, dict] | str:
     from ._settings import settings
 
@@ -527,6 +593,7 @@ def connect_instance_hub(
             owner=owner,
             name=name,
             use_root_db_user=use_root_db_user,
+            use_proxy_db=use_proxy_db,
             access_token=access_token,
         )
     else:
@@ -535,6 +602,7 @@ def connect_instance_hub(
             owner=owner,
             name=name,
             use_root_db_user=use_root_db_user,
+            use_proxy_db=use_proxy_db,
         )
 
 

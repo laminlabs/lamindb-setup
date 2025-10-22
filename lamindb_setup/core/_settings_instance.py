@@ -112,8 +112,8 @@ class InstanceSettings:
 
     def __repr__(self):
         """Rich string representation."""
-        representation = "Current instance:"
-        attrs = ["slug", "storage", "db", "modules", "git_repo"]
+        representation = f"Instance: {self.slug}"
+        attrs = ["storage", "db", "modules", "git_repo"]
         for attr in attrs:
             value = getattr(self, attr)
             if attr == "storage":
@@ -145,8 +145,8 @@ class InstanceSettings:
                 else:
                     db_print = value
                 representation += f"\n - {attr}: {db_print}"
-            elif attr == "modules":
-                representation += f"\n - {attr}: {value if value else '{}'}"
+            elif attr == "modules" and value:
+                representation += f"\n - {attr}: {', '.join(value)}"
             else:
                 representation += f"\n - {attr}: {value}"
         return representation
@@ -342,7 +342,12 @@ class InstanceSettings:
 
         Provide the full git repo URL.
         """
-        return self._git_repo
+        if self._git_repo is not None:
+            return self._git_repo
+        elif os.environ.get("LAMINDB_SYNC_GIT_REPO") is not None:
+            return sanitize_git_repo_url(os.environ["LAMINDB_SYNC_GIT_REPO"])
+        else:
+            return None
 
     @property
     def api_url(self) -> str | None:
@@ -353,6 +358,19 @@ class InstanceSettings:
         if "LAMIN_API_URL" in os.environ:
             return os.environ["LAMIN_API_URL"]
         return self._api_url
+
+    @property
+    def ui_url(self) -> str | None:
+        """URL for UI.
+
+        Use this URL for accessing the UI related to this instance.
+        """
+        if self.api_url is None:
+            return None
+        if "lamin.ai" in self.api_url:
+            return "https://lamin.ai"
+        else:
+            return self.api_url.replace("/api", "")
 
     @property
     def available_spaces(self) -> dict | None:

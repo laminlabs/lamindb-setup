@@ -35,9 +35,15 @@ Modules & settings:
 
 """
 
-__version__ = "1.11.0"  # denote a release candidate for 0.1.0 with 0.1rc1
+__version__ = "1.12.2"  # denote a release candidate for 0.1.0 with 0.1rc1
 
 import os
+import warnings
+
+# ignore for now, remove this after supabase upgrade in the deps
+warnings.filterwarnings("ignore", category=DeprecationWarning, module="supabase")
+warnings.filterwarnings("ignore", category=DeprecationWarning, module="supafunc")
+warnings.filterwarnings("ignore", category=DeprecationWarning, module="postgrest")
 
 from packaging import version as packaging_version
 

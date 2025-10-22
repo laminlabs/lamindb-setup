@@ -32,13 +32,12 @@ Home = "https://github.com/laminlabs/lamindb-setup"
 
 [project.optional-dependencies]
 aws = [
-    "urllib3<2", # for botocore, TODO: check that really required
-    "aiobotocore[boto3]>=2.5.4,<3.0.0",
+    "aiobotocore[boto3]>=2.12.4,<3.0.0", # less problematic, supports urllib 2 via botocore bounds
     # exclude 2024.10.0 due to https://github.com/fsspec/s3fs/pull/910
-    "s3fs>=2023.12.2,<=2025.7.0,!=2024.10.0"
+    "s3fs>=2023.12.2,<=2025.9.0,!=2024.10.0"
 ]
 gcp = [
-    "gcsfs>=2023.12.2,<=2025.7.0"
+    "gcsfs>=2023.12.2,<=2025.9.0"
 ]
 erdiagram = [
     "django-schema-graph",
@@ -153,3 +152,10 @@ convention = "google"
 "docs/*" = ["I", "B018", "B017"]
 "tests/*" = ["D"]
 "*/__init__.py" = ["F401"]
+
+[tool.pytest.ini_options]
+filterwarnings = [
+    "ignore:Jupyter is migrating its paths to use standard platformdirs:DeprecationWarning",
+    "ignore:The 'timeout' parameter is deprecated. Please configure it in the http client instead.:DeprecationWarning",
+    "ignore:The 'verify' parameter is deprecated. Please configure it in the http client instead.:DeprecationWarning",
+]
