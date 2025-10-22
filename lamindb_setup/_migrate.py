@@ -99,7 +99,6 @@ class migrate:
     @classmethod
     def deploy(cls, package_name: str | None = None, number: int | None = None) -> None:
         if settings.instance.is_on_hub:
-            # TODO: call the API to migrate (the lambda function will run the _deploy method)
             response = httpx.post(
                 f"{settings.instance.api_url}/instances/{settings.instance._id}/migrate",
                 headers={"Authorization": f"Bearer {settings.user.access_token}"},
