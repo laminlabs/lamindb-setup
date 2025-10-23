@@ -136,7 +136,7 @@ class AWSOptionsManager:
                     connection_options["anon"] = anon
                     connection_options["session"] = self.empty_session
         else:
-            connection_options = credentials
+            connection_options.update(credentials)
             connection_options["session"] = self.empty_session
 
         if "cache_regions" in storage_options:
