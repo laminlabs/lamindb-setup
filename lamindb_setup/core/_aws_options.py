@@ -3,7 +3,9 @@ from __future__ import annotations
 import logging
 import os
 import time
+from typing import Any
 
+import aiobotocore
 from lamin_utils import logger
 from upath import UPath
 
@@ -87,6 +89,12 @@ class AWSOptionsManager:
             except Exception:
                 self.anon_public = True
 
+        empty_session = aiobotocore.session.AioSession(profile="lamindb_empty_profile")
+        empty_session.full_config["profiles"]["lamindb_empty_profile"] = {}
+        # this is set downstream to avoid using local configs when we provide credentials
+        # or when we set anon=True
+        self.empty_session = empty_session
+
     def _find_root(self, path_str: str) -> str | None:
         roots = self._credentials_cache.keys()
         if path_str in roots:
@@ -114,20 +122,22 @@ class AWSOptionsManager:
     def _path_inject_options(
         self, path: UPath, credentials: dict, extra_parameters: dict | None = None
     ) -> UPath:
+        connection_options: dict[str, Any] = {}
         storage_options = path.storage_options
         if credentials == {}:
-            # credentials were specified manually for the path
-            if "anon" in storage_options:
-                anon = storage_options["anon"]
-            elif path.fs.key is not None and path.fs.secret is not None:
-                anon = False
-            else:
+            # otherwise credentials were specified manually for the path
+            if "anon" not in storage_options and (
+                path.fs.key is None or path.fs.secret is None
+            ):
                 anon = self.anon
                 if not anon and self.anon_public and path.drive in PUBLIC_BUCKETS:
                     anon = True
-            connection_options = {"anon": anon}
+                if anon:
+                    connection_options["anon"] = anon
+                    connection_options["session"] = self.empty_session
         else:
             connection_options = credentials
+            connection_options["session"] = self.empty_session
 
         if "cache_regions" in storage_options:
             connection_options["cache_regions"] = storage_options["cache_regions"]
