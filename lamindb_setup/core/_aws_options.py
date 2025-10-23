@@ -5,7 +5,6 @@ import os
 import time
 from typing import Any
 
-import aiobotocore
 from lamin_utils import logger
 from upath import UPath
 
@@ -57,6 +56,7 @@ class AWSOptionsManager:
         self._credentials_cache = {}
         self._parameters_cache = {}  # this is not refreshed
 
+        from aiobotocore.session import AioSession
         from s3fs import S3FileSystem
 
         # this is cached so will be resued with the connection initialized
@@ -89,7 +89,7 @@ class AWSOptionsManager:
             except Exception:
                 self.anon_public = True
 
-        empty_session = aiobotocore.session.AioSession(profile="lamindb_empty_profile")
+        empty_session = AioSession(profile="lamindb_empty_profile")
         empty_session.full_config["profiles"]["lamindb_empty_profile"] = {}
         # this is set downstream to avoid using local configs when we provide credentials
         # or when we set anon=True
