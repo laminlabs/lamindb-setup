@@ -14,5 +14,5 @@ def test_aws_options_manager():
     assert "s3://cellxgene-data-public/" in aws_options_manager._credentials_cache
 
     path = aws_options_manager.enrich_path(UPath("s3://lamin-eu-west-2/folder"))
-    assert not path.storage_options["anon"]
+    assert "anon" not in path.storage_options
     assert "s3://lamin-eu-west-2/folder/" in aws_options_manager._credentials_cache
