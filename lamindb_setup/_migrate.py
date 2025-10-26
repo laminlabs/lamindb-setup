@@ -109,6 +109,7 @@ class migrate:
             response = httpx.post(
                 f"{settings.instance.api_url}/instances/{settings.instance._id}/migrate",
                 headers={"Authorization": f"Bearer {settings.user.access_token}"},
+                timeout=None,  # this can take time
             )
             if response.status_code != 200:
                 raise Exception(f"Failed to migrate instance: {response.text}")
