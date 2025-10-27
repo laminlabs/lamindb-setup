@@ -551,6 +551,9 @@ def _connect_instance_hub(
                     db_user["password" if fine_grained_access else "db_user_password"],
                 )
 
+        db_user_name = "none" if db_user_name is None else db_user_name
+        db_user_password = "none" if db_user_password is None else db_user_password
+
         if use_proxy_db:
             host = instance.get("proxy_host", None)
             assert host is not None, (
@@ -560,14 +563,16 @@ def _connect_instance_hub(
             assert port is not None, (
                 "Database proxy port is not available, please do not pass 'use_proxy_db'."
             )
+            # remove supabase project id if present
+            db_user_name = db_user_name.rsplit(".", 1)[0]
         else:
             host = instance["db_host"]
             port = instance["db_port"]
 
         db_dsn = LaminDsn.build(
             scheme=instance["db_scheme"],
-            user=db_user_name if db_user_name is not None else "none",
-            password=db_user_password if db_user_password is not None else "none",
+            user=db_user_name,
+            password=db_user_password,
             host=host,
             port=port,
             database=instance["db_database"],
