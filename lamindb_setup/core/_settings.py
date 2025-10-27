@@ -5,6 +5,7 @@ import sys
 from pathlib import Path
 from typing import TYPE_CHECKING
 
+import jwt
 from lamin_utils import logger
 from platformdirs import user_cache_dir
 
@@ -318,6 +319,35 @@ class SetupSettings:
         or `settings.paths.cloud_to_local`.
         """
         return SetupPaths
+
+    def _debug_db_access(self):
+        """Debug database access problems."""
+        instance = self.instance
+        db_permissions = instance._db_permissions
+        print("db connection: ", instance.db)
+        print("db permissions: ", db_permissions)
+        if db_permissions != "jwt":
+            return
+        # sets the token if not present yet
+        print("available spaces: ", instance.available_spaces)
+
+        from lamindb_setup.core.django import db_token_manager
+
+        tokens = db_token_manager.tokens
+        if tokens:
+            for conn, token in tokens.items():
+                token_encoded = token._token
+                if token_encoded is None:
+                    token._refresh_token()
+                    token_encoded = token._token
+                token_decoded = jwt.decode(
+                    token_encoded, options={"verify_signature": False}
+                )
+                print(
+                    f"db token for the connection '{conn}' is '{token_encoded}': {token_decoded}"
+                )
+        else:
+            print("no db tokens are present")
 
     def __repr__(self) -> str:
         """Rich string representation."""
