@@ -30,18 +30,26 @@ Modules & settings:
    settings
    core
    django
+   errors
+   types
 
 """
 
-__version__ = "1.5.2"  # denote a release candidate for 0.1.0 with 0.1rc1
+__version__ = "1.13.1"  # denote a release candidate for 0.1.0 with 0.1rc1
 
 import os
+import warnings
+
+# ignore for now, remove this after supabase upgrade in the deps
+warnings.filterwarnings("ignore", category=DeprecationWarning, module="supabase")
+warnings.filterwarnings("ignore", category=DeprecationWarning, module="supafunc")
+warnings.filterwarnings("ignore", category=DeprecationWarning, module="postgrest")
 
 from packaging import version as packaging_version
 
-from . import core
+from . import core, errors, types
 from ._check_setup import _check_instance_setup
-from ._connect_instance import connect, load
+from ._connect_instance import connect
 from ._delete import delete
 from ._disconnect import disconnect
 from ._django import django

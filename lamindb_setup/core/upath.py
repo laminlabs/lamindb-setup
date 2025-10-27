@@ -3,6 +3,7 @@
 
 from __future__ import annotations
 
+import math
 import os
 import warnings
 from collections import defaultdict
@@ -13,7 +14,6 @@ from pathlib import Path, PosixPath, PurePosixPath, WindowsPath
 from typing import TYPE_CHECKING, Any, Literal
 from urllib.parse import parse_qs, urlsplit
 
-import click
 import fsspec
 from lamin_utils import logger
 from upath import UPath
@@ -21,11 +21,14 @@ from upath.implementations.cloud import CloudPath, S3Path  # keep CloudPath!
 from upath.implementations.local import LocalPath
 from upath.registry import register_implementation
 
+from lamindb_setup.errors import StorageNotEmpty
+
 from ._aws_options import HOSTED_BUCKETS, get_aws_options_manager
+from ._deprecated import deprecated
 from .hashing import HASH_LENGTH, b16_to_b64, hash_from_hashes_list, hash_string
 
 if TYPE_CHECKING:
-    from .types import UPathStr
+    from lamindb_setup.types import UPathStr
 
 LocalPathClasses = (PosixPath, WindowsPath, LocalPath)
 
@@ -178,7 +181,7 @@ def print_hook(size: int, value: int, objectname: str, action: str):
         progress_in_percent = 100.0
     else:
         progress_in_percent = (value / size) * 100
-    out = f"... {action} {objectname}:" f" {min(progress_in_percent, 100):4.1f}%"
+    out = f"... {action} {objectname}: {min(progress_in_percent, 100):4.1f}%"
     if "NBPRJ_TEST_NBPATH" not in os.environ:
         end = "\n" if progress_in_percent >= 100 else "\r"
         print(out, end=end)
@@ -331,41 +334,35 @@ def upload_from(
         callback = ProgressCallback(local_path.name, "uploading")
         kwargs["callback"] = callback
 
+    protocol = self.protocol
+    cleanup_cache = False
     source: str | list[str] = local_path.as_posix()
     destination: str | list[str] = self.as_posix()
     if local_path_is_dir:
-        size: int = 0
-        files: list[str] = []
-        for file in (path for path in local_path.rglob("*") if path.is_file()):
-            size += file.stat().st_size
-            files.append(file.as_posix())
-        # see https://github.com/fsspec/s3fs/issues/897
-        # here we reduce batch_size for folders bigger than 8 GiB
-        # to avoid the problem in the issue
-        # the default batch size for this case is 128
-        if "batch_size" not in kwargs and size >= 8 * 2**30:
-            kwargs["batch_size"] = 64
-
         if not create_folder:
-            source = files
+            source = [
+                path.as_posix() for path in local_path.rglob("*") if path.is_file()
+            ]
             destination = fsspec.utils.other_paths(
-                files, self.as_posix(), exists=False, flatten=False
+                source, self.as_posix(), exists=False, flatten=False
             )
-
-    # the below lines are to avoid s3fs triggering create_bucket in upload if
-    # dirs are present, it allows to avoid the permission error
-    if self.protocol == "s3" and local_path_is_dir and create_folder:
-        bucket = self.drive
-        if bucket not in self.fs.dircache:
+        elif protocol == "s3" and (bucket := self.drive) not in self.fs.dircache:
+            # the below lines are to avoid s3fs triggering create_bucket in upload if
+            # dirs are present, it allows to avoid the permission error
             self.fs.dircache[bucket] = [{}]
             assert isinstance(destination, str)
-            if not destination.endswith(TRAILING_SEP):  # type: ignore
+            if not destination.endswith(TRAILING_SEP):
                 destination += "/"
             cleanup_cache = True
-        else:
-            cleanup_cache = False
-    else:
-        cleanup_cache = False
+    elif protocol == "s3" and "chunksize" not in kwargs:
+        size = local_path.stat().st_size
+        MiB = 1024**2
+        DEFAULT_CHUNKSIZE = 50 * MiB  # so in s3fs
+        if size / DEFAULT_CHUNKSIZE > 10000:  # should be no more than 10k parts for s3
+            raw = math.ceil(size / 10000)
+            step = 5 * MiB
+            rounded = math.ceil(raw / step) * step
+            kwargs["chunksize"] = rounded
 
     self.fs.upload(source, destination, recursive=create_folder, **kwargs)
 
@@ -380,42 +377,31 @@ def upload_from(
         return self
 
 
-def synchronize(
-    self,
-    objectpath: Path,
+def synchronize_to(
+    origin: UPath,
+    destination: Path,
     error_no_origin: bool = True,
     print_progress: bool = False,
-    callback: fsspec.callbacks.Callback | None = None,
-    timestamp: float | None = None,
     just_check: bool = False,
+    **kwargs,
 ) -> bool:
     """Sync to a local destination path."""
-    protocol = self.protocol
-    # optimize the number of network requests
-    if timestamp is not None:
-        is_dir = False
+    destination = destination.resolve()
+    protocol = origin.protocol
+    stat_kwargs = {"expand_info": True} if protocol == "hf" else {}
+    origin_str = str(origin)
+    try:
+        cloud_info = origin.fs.stat(origin_str, **stat_kwargs)
         exists = True
-        cloud_mts = timestamp
-    else:
-        try:
-            cloud_stat = self.stat()
-            cloud_info = cloud_stat.as_info()
-            exists = True
-            is_dir = cloud_info["type"] == "directory"
-            if not is_dir:
-                # hf requires special treatment
-                if protocol == "hf":
-                    cloud_mts = cloud_info["last_commit"].date.timestamp()
-                else:
-                    cloud_mts = cloud_stat.st_mtime
-        except FileNotFoundError:
-            exists = False
+        is_dir = cloud_info["type"] == "directory"
+    except FileNotFoundError:
+        exists = False
 
     if not exists:
-        warn_or_error = f"The original path {self} does not exist anymore."
-        if objectpath.exists():
+        warn_or_error = f"The original path {origin} does not exist anymore."
+        if destination.exists():
             warn_or_error += (
-                f"\nHowever, the local path {objectpath} still exists, you might want"
+                f"\nHowever, the local path {destination} still exists, you might want"
                 " to reupload the object back."
             )
             logger.warning(warn_or_error)
@@ -424,113 +410,116 @@ def synchronize(
             raise FileNotFoundError(warn_or_error)
         return False
 
-    # synchronization logic for directories
-    # to synchronize directories, it should be possible to get modification times
-    if is_dir:
-        files = self.fs.find(str(self), detail=True)
-        if protocol == "s3":
-            get_modified = lambda file_stat: file_stat["LastModified"]
-        elif protocol == "gs":
-            get_modified = lambda file_stat: file_stat["mtime"]
-        elif protocol == "hf":
-            get_modified = lambda file_stat: file_stat["last_commit"].date
-        else:
-            raise ValueError(f"Can't synchronize a directory for {protocol}.")
-        if objectpath.exists():
-            destination_exists = True
-            cloud_mts_max = max(
-                get_modified(file) for file in files.values()
-            ).timestamp()
-            local_mts = [
-                file.stat().st_mtime for file in objectpath.rglob("*") if file.is_file()
-            ]
-            n_local_files = len(local_mts)
-            local_mts_max = max(local_mts)
-            if local_mts_max == cloud_mts_max:
-                need_synchronize = n_local_files != len(files)
-            elif local_mts_max > cloud_mts_max:
-                need_synchronize = False
-            else:
-                need_synchronize = True
-        else:
-            destination_exists = False
-            need_synchronize = True
-        # just check if synchronization is needed
-        if just_check:
-            return need_synchronize
-        if need_synchronize:
-            callback = ProgressCallback.requires_progress(
-                callback, print_progress, objectpath.name, "synchronizing"
-            )
-            callback.set_size(len(files))
-            origin_file_keys = []
-            for file, stat in callback.wrap(files.items()):
-                file_key = PurePosixPath(file).relative_to(self.path).as_posix()
-                origin_file_keys.append(file_key)
-                timestamp = get_modified(stat).timestamp()
-                origin = f"{protocol}://{file}"
-                destination = objectpath / file_key
-                child = callback.branched(origin, destination.as_posix())
-                UPath(origin, **self.storage_options).synchronize(
-                    destination, callback=child, timestamp=timestamp
-                )
-                child.close()
-            if destination_exists:
-                local_files = [file for file in objectpath.rglob("*") if file.is_file()]
-                if len(local_files) > len(files):
-                    for file in local_files:
-                        if (
-                            file.relative_to(objectpath).as_posix()
-                            not in origin_file_keys
-                        ):
-                            file.unlink()
-                            parent = file.parent
-                            if next(parent.iterdir(), None) is None:
-                                parent.rmdir()
-        return need_synchronize
+    use_size: bool = False
+    # use casting to int to avoid problems when the local filesystem
+    # discards fractional parts of timestamps
+    if protocol == "s3":
+        get_modified = lambda file_stat: int(file_stat["LastModified"].timestamp())
+    elif protocol == "gs":
+        get_modified = lambda file_stat: int(file_stat["mtime"].timestamp())
+    elif protocol == "hf":
+        get_modified = lambda file_stat: int(file_stat["last_commit"].date.timestamp())
+    else:  #  http etc
+        use_size = True
+        get_modified = lambda file_stat: file_stat["size"]
 
-    # synchronization logic for files
-    callback = ProgressCallback.requires_progress(
-        callback, print_progress, objectpath.name, "synchronizing"
-    )
-    objectpath_exists = objectpath.exists()
-    if objectpath_exists:
-        if cloud_mts != 0:
-            local_mts_obj = objectpath.stat().st_mtime
-            need_synchronize = cloud_mts > local_mts_obj
-        else:
-            # this is true for http for example
-            # where size is present but st_mtime is not
-            # we assume that any change without the change in size is unlikely
-            cloud_size = cloud_stat.st_size
-            local_size_obj = objectpath.stat().st_size
-            need_synchronize = cloud_size != local_size_obj
+    if use_size:
+        is_sync_needed = lambda cloud_size, local_stat: cloud_size != local_stat.st_size
     else:
-        if not just_check:
-            objectpath.parent.mkdir(parents=True, exist_ok=True)
-        need_synchronize = True
-    # just check if synchronization is needed
-    if just_check:
-        return need_synchronize
-    if need_synchronize:
-        # just to be sure that overwriting an existing file doesn't corrupt it
-        # we saw some frequent corruption on some systems for unclear reasons
-        if objectpath_exists:
-            objectpath.unlink()
-        # hf has sync filesystem
-        # on sync filesystems ChildProgressCallback.branched()
-        # returns the default callback
-        # this is why a difference between s3 and hf in progress bars
-        self.download_to(
-            objectpath, recursive=False, print_progress=False, callback=callback
+        # no need to cast local_stat.st_mtime to int
+        # because if it has the fractional part and cloud_mtime doesn't
+        # and they have the same integer part then cloud_mtime can't be bigger
+        is_sync_needed = (
+            lambda cloud_mtime, local_stat: cloud_mtime > local_stat.st_mtime
         )
-        if cloud_mts != 0:
-            os.utime(objectpath, times=(cloud_mts, cloud_mts))
+
+    local_paths: list[Path] = []
+    cloud_stats: dict[str, int]
+    if is_dir:
+        cloud_stats = {
+            file: get_modified(stat)
+            for file, stat in origin.fs.find(
+                origin_str, detail=True, **stat_kwargs
+            ).items()
+        }
+        for cloud_path in cloud_stats:
+            file_key = PurePosixPath(cloud_path).relative_to(origin.path).as_posix()
+            local_paths.append(destination / file_key)
     else:
-        # nothing happens if parent_update is not defined
-        # because of Callback.no_op
-        callback.parent_update()
-    return need_synchronize
+        cloud_stats = {origin.path: get_modified(cloud_info)}
+        local_paths.append(destination)
+
+    local_paths_all: dict[Path, os.stat_result] = {}
+    if destination.exists():
+        if is_dir:
+            local_paths_all = {
+                path: path.stat() for path in destination.rglob("*") if path.is_file()
+            }
+            if not use_size:
+                # cast to int to remove the fractional parts
+                # there is a problem when a fractional part is allowed on one filesystem
+                # but not on the other
+                # so just normalize both to int
+                cloud_mts_max: int = max(cloud_stats.values())
+                local_mts_max: int = int(
+                    max(stat.st_mtime for stat in local_paths_all.values())
+                )
+                if local_mts_max > cloud_mts_max:
+                    return False
+                elif local_mts_max == cloud_mts_max:
+                    if len(local_paths_all) == len(cloud_stats):
+                        return False
+                    elif just_check:
+                        return True
+        else:
+            local_paths_all = {destination: destination.stat()}
+
+        cloud_files_sync = []
+        local_files_sync = []
+        for i, (cloud_file, cloud_stat) in enumerate(cloud_stats.items()):
+            local_path = local_paths[i]
+            if local_path not in local_paths_all or is_sync_needed(
+                cloud_stat, local_paths_all[local_path]
+            ):
+                cloud_files_sync.append(cloud_file)
+                local_files_sync.append(local_path.as_posix())
+    else:
+        cloud_files_sync = list(cloud_stats.keys())
+        local_files_sync = [local_path.as_posix() for local_path in local_paths]
+
+    if cloud_files_sync:
+        if just_check:
+            return True
+
+        callback = ProgressCallback.requires_progress(
+            maybe_callback=kwargs.pop("callback", None),
+            print_progress=print_progress,
+            objectname=destination.name,
+            action="synchronizing",
+            adjust_size=False,
+        )
+        origin.fs.download(
+            cloud_files_sync,
+            local_files_sync,
+            recursive=False,
+            callback=callback,
+            **kwargs,
+        )
+        if not use_size:
+            for i, cloud_file in enumerate(cloud_files_sync):
+                cloud_mtime = cloud_stats[cloud_file]
+                os.utime(local_files_sync[i], times=(cloud_mtime, cloud_mtime))
+    else:
+        return False
+
+    if is_dir and local_paths_all:
+        for path in (path for path in local_paths_all if path not in local_paths):
+            path.unlink()
+            parent = path.parent
+            if next(parent.iterdir(), None) is None:
+                parent.rmdir()
+
+    return True
 
 
 def modified(self) -> datetime | None:
@@ -656,7 +645,7 @@ def view_tree(
         skip_suffixes: Skip directories with these suffixes.
 
     Examples:
-        >>> dir_path = ln.core.datasets.generate_cell_ranger_files(
+        >>> dir_path = ln.examples.datasets.generate_cell_ranger_files(
         >>>     "sample_001", ln.settings.storage
         >>> )
         >>> ln.UPath(dir_path).view_tree()
@@ -709,14 +698,7 @@ def to_url(upath):
         raise ValueError("The provided UPath must be an S3 path.")
     key = "/".join(upath.parts[1:])
     bucket = upath.drive
-    if bucket == "scverse-spatial-eu-central-1":
-        region = "eu-central-1"
-    elif f"s3://{bucket}" not in HOSTED_BUCKETS:
-        response = upath.fs.call_s3("head_bucket", Bucket=bucket)
-        headers = response["ResponseMetadata"]["HTTPHeaders"]
-        region = headers.get("x-amz-bucket-region")
-    else:
-        region = bucket.replace("lamin_", "")
+    region = get_storage_region(upath)
     if region == "us-east-1":
         return f"https://{bucket}.s3.amazonaws.com/{key}"
     else:
@@ -726,20 +708,18 @@ def to_url(upath):
 # Why aren't we subclassing?
 #
 # The problem is that UPath defines a type system of paths
-# Its __new__ method returns instances of different subclasses rather than a
-# UPath object
+# Its __new__ method returns instances of different subclasses rather than a UPath object
 # If we create a custom subclass naively, subclasses of the parent UPath won't
 # be subclasses of our custom subclass
-# This makes life really hard in type checks involving local to cloud
-# comparisons, etc.
+# This makes life really hard in type checks involving local to cloud comparisons, etc.
 # Hence, we extend the existing UPath and amend the docs
-# Some of this might end up in the original UPath implementation over time,
-# we'll see.
+# Some of this might end up in the original UPath implementation over time, we'll see.
 
 
 # add custom functions
 UPath.modified = property(modified)
-UPath.synchronize = synchronize
+UPath.synchronize = deprecated("synchronize_to")(synchronize_to)
+UPath.synchronize_to = synchronize_to
 UPath.upload_from = upload_from
 UPath.to_url = to_url
 UPath.download_to = download_to
@@ -777,6 +757,8 @@ Paths are based on keys that offer the typical access patterns of file systems
 Args:
     pathlike: A string or Path to a local/cloud file/directory/folder.
 """
+
+logger.debug("upath.UPath has been patched")
 
 # suppress the warning from upath about hf (huggingface) filesystem
 # not being explicitly implemented in upath
@@ -820,8 +802,69 @@ class S3QueryPath(S3Path):
 register_implementation("s3", S3QueryPath, clobber=True)
 
 
-def create_path(path: UPathStr, access_token: str | None = None) -> UPath:
+def get_storage_region(path: UPathStr) -> str | None:
     upath = UPath(path)
+
+    if upath.protocol != "s3":
+        return None
+
+    bucket = upath.drive
+
+    if bucket == "scverse-spatial-eu-central-1":
+        return "eu-central-1"
+    elif f"s3://{bucket}" in HOSTED_BUCKETS:
+        return bucket.replace("lamin-", "")
+
+    from botocore.exceptions import ClientError
+
+    if isinstance(path, str):
+        import botocore.session
+        from botocore.config import Config
+
+        path_part = path.replace("s3://", "")
+        # check for endpoint_url in the path string
+        if "?" in path_part:
+            path_part, query = _split_path_query(path_part)
+            endpoint_url = query.get("endpoint_url", [None])[0]
+        else:
+            endpoint_url = None
+        session = botocore.session.get_session()
+        credentials = session.get_credentials()
+        if credentials is None or credentials.access_key is None:
+            config = Config(signature_version=botocore.session.UNSIGNED)
+        else:
+            config = None
+        s3_client = session.create_client(
+            "s3", endpoint_url=endpoint_url, config=config
+        )
+        try:
+            response = s3_client.head_bucket(Bucket=bucket)
+        except ClientError as exc:
+            response = getattr(exc, "response", {})
+            if response.get("Error", {}).get("Code") == "404":
+                raise exc
+    else:
+        upath = get_aws_options_manager()._path_inject_options(upath, {})
+        try:
+            response = upath.fs.call_s3("head_bucket", Bucket=bucket)
+        except Exception as exc:
+            cause = getattr(exc, "__cause__", None)
+            if not isinstance(cause, ClientError):
+                raise exc
+            response = getattr(cause, "response", {})
+            if response.get("Error", {}).get("Code") == "404":
+                raise exc
+
+    region = (
+        response.get("ResponseMetadata", {})
+        .get("HTTPHeaders", {})
+        .get("x-amz-bucket-region", None)
+    )
+    return region
+
+
+def create_path(path: UPathStr, access_token: str | None = None) -> UPath:
+    upath = UPath(path).expanduser()
 
     if upath.protocol == "s3":
         # add managed credentials and other options for AWS s3 paths
@@ -842,7 +885,7 @@ def create_path(path: UPathStr, access_token: str | None = None) -> UPath:
             storage_options["client_kwargs"] = client_kwargs
         # see download_to for the reason
         if "use_listings_cache" not in upath.storage_options:
-            storage_options["use_listings_cache"] = True
+            storage_options["use_listings_cache"] = True  # type: ignore
         if len(storage_options) > 0:
             return UPath(upath, **storage_options)
     return upath
@@ -913,18 +956,25 @@ def get_stat_dir_cloud(path: UPath) -> tuple[int, str | None, str | None, int]:
     return size, hash, hash_type, n_files
 
 
-class InstanceNotEmpty(click.ClickException):
-    def show(self, file=None):
-        pass
-
-
 # is as fast as boto3: https://lamin.ai/laminlabs/lamin-site-assets/transform/krGp3hT1f78N5zKv
 def check_storage_is_empty(
     root: UPathStr, *, raise_error: bool = True, account_for_sqlite_file: bool = False
 ) -> int:
+    from ._settings_storage import STORAGE_UID_FILE_KEY
+
     root_upath = UPath(root)
     root_string = root_upath.as_posix()  # type: ignore
     n_offset_objects = 1  # because of storage_uid.txt file, see mark_storage_root()
+    # if the storage_uid.txt was somehow deleted, we restore a dummy version of it
+    # because we need it to count files in an empty directory on S3 (otherwise permission error)
+    if not (root_upath / STORAGE_UID_FILE_KEY).exists():
+        try:
+            (root_upath / STORAGE_UID_FILE_KEY).write_text(
+                "was deleted, restored during delete"
+            )
+        except FileNotFoundError:
+            # this can happen if the root is a local non-existing path
+            pass
     if account_for_sqlite_file:
         n_offset_objects += 1  # the SQLite file is in the ".lamindb" directory
     if root_string.startswith(HOSTED_BUCKETS):
@@ -936,20 +986,20 @@ def check_storage_is_empty(
             root_string += "/"
         directory_string = root_string + ".lamindb"
     objects = root_upath.fs.find(directory_string)
+    if account_for_sqlite_file:
+        # ignore exclusion dir for cloud sqlite
+        objects = [o for o in objects if "/.lamindb/_exclusion/" not in o]
     n_files = len(objects)
     n_diff = n_files - n_offset_objects
     ask_for_deletion = (
-        "delete them prior to deleting the instance"
+        "delete them prior to deleting the storage location"
         if raise_error
         else "consider deleting them"
     )
-    message = (
-        f"Storage '{directory_string}' contains {n_files - n_offset_objects} objects"
-        f" - {ask_for_deletion}"
-    )
+    message = f"'{directory_string}' contains {n_diff} objects - {ask_for_deletion}"
     if n_diff > 0:
         if raise_error:
-            raise InstanceNotEmpty(message) from None
+            raise StorageNotEmpty(message) from None
         else:
             logger.warning(message)
     return n_diff

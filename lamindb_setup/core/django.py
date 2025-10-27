@@ -3,11 +3,16 @@ from __future__ import annotations
 # flake8: noqa
 import builtins
 import os
+import sys
+import importlib as il
 import jwt
 import time
+import threading
 from pathlib import Path
-import time
-from ._settings_instance import InstanceSettings
+from packaging import version
+from ._settings_instance import InstanceSettings, is_local_db_url
+
+from lamin_utils import logger
 
 
 IS_RUN_FROM_IPYTHON = getattr(builtins, "__IPYTHON__", False)
@@ -55,21 +60,21 @@ class DBTokenManager:
         from django.db.transaction import Atomic
 
         self.original_atomic_enter = Atomic.__enter__
+        self.atomic_is_patched = False
 
         self.tokens: dict[str, DBToken] = {}
 
     def get_connection(self, connection_name: str):
         from django.db import connections
 
-        connection = connections[connection_name]
-        assert connection.vendor == "postgresql"
-
-        return connection
+        return connections[connection_name]
 
     def set(self, token: DBToken, connection_name: str = "default"):
-        from django.db.transaction import Atomic
+        if connection_name in self.tokens:
+            return
 
-        connection = self.get_connection(connection_name)
+        from django.db.transaction import Atomic
+        from django.db.backends.signals import connection_created
 
         def set_token_wrapper(execute, sql, params, many, context):
             not_in_atomic_block = (
@@ -93,28 +98,49 @@ class DBTokenManager:
                 result.nextset()
             return result
 
-        connection.execute_wrappers.append(set_token_wrapper)
+        self.get_connection(connection_name).execute_wrappers.append(set_token_wrapper)
+
+        def connection_callback(sender, connection, **kwargs):
+            if (
+                connection.alias == connection_name
+                and set_token_wrapper not in connection.execute_wrappers
+            ):
+                connection.execute_wrappers.append(set_token_wrapper)
+
+        dispatch_uid = f"dbtokenmanager:{id(self)}:{connection_name}"
+        # emitted when a database connection is established
+        # not when a database wrapper is created
+        connection_created.connect(
+            connection_callback, dispatch_uid=dispatch_uid, weak=False
+        )
 
         self.tokens[connection_name] = token
 
-        # ensure we set the token only once for an outer atomic block
-        def __enter__(atomic):
-            self.original_atomic_enter(atomic)
-            connection_name = "default" if atomic.using is None else atomic.using
-            if connection_name in self.tokens:
-                # here we don't use the connection from the closure
-                # because Atomic is a single class to manage transactions for all connections
-                connection = self.get_connection(connection_name)
-                if len(connection.atomic_blocks) == 1:
-                    token = self.tokens[connection_name]
-                    # use raw psycopg2 connection here
-                    # atomic block ensures connection
-                    connection.connection.cursor().execute(token.token_query)
+        if not self.atomic_is_patched:
+            # ensure we set the token only once for an outer atomic block
+            def __enter__(atomic):
+                self.original_atomic_enter(atomic)
+                connection_name = "default" if atomic.using is None else atomic.using
+                if connection_name in self.tokens:
+                    # here we don't use the connection from the closure
+                    # because Atomic is a single class to manage transactions for all connections
+                    connection = self.get_connection(connection_name)
+                    if len(connection.atomic_blocks) == 1:
+                        token = self.tokens[connection_name]
+                        # use raw psycopg2 connection here
+                        # atomic block ensures connection
+                        connection.connection.cursor().execute(token.token_query)
 
-        Atomic.__enter__ = __enter__
+            Atomic.__enter__ = __enter__
+
+            self.atomic_is_patched = True
+            logger.debug("django.db.transaction.Atomic.__enter__ has been patched")
 
     def reset(self, connection_name: str = "default"):
-        from django.db.transaction import Atomic
+        if connection_name not in self.tokens:
+            return
+
+        from django.db.backends.signals import connection_created
 
         connection = self.get_connection(connection_name)
 
@@ -124,7 +150,16 @@ class DBTokenManager:
             if getattr(w, "__name__", None) != "set_token_wrapper"
         ]
 
+        dispatch_uid = f"dbtokenmanager:{id(self)}:{connection_name}"
+        connection_created.disconnect(dispatch_uid=dispatch_uid)
+
         self.tokens.pop(connection_name, None)
+
+        if not self.tokens:
+            from django.db.transaction import Atomic
+
+            Atomic.__enter__ = self.original_atomic_enter
+            self.atomic_is_patched = False
 
 
 db_token_manager = DBTokenManager()
@@ -145,24 +180,44 @@ def setup_django(
     configure_only: bool = False,
     init: bool = False,
     view_schema: bool = False,
+    appname_number: tuple[str, int] | None = None,
 ):
     if IS_RUN_FROM_IPYTHON:
         os.environ["DJANGO_ALLOW_ASYNC_UNSAFE"] = "true"
+        logger.debug("DJANGO_ALLOW_ASYNC_UNSAFE env variable has been set to 'true'")
 
     import dj_database_url
     import django
+    from django.apps import apps
     from django.conf import settings
     from django.core.management import call_command
 
     # configuration
     if not settings.configured:
+        instance_db = isettings.db
+        if isettings.dialect == "postgresql":
+            if os.getenv("LAMIN_DB_SSL_REQUIRE") == "false":
+                ssl_require = False
+            else:
+                ssl_require = not is_local_db_url(instance_db)
+            options = {
+                "connect_timeout": os.getenv("PGCONNECT_TIMEOUT", 20),
+                "gssencmode": "disable",
+            }
+        else:
+            ssl_require = False
+            options = {}
         default_db = dj_database_url.config(
             env="LAMINDB_DJANGO_DATABASE_URL",
-            default=isettings.db,
+            default=instance_db,
             # see comment next to patching BaseDatabaseWrapper below
             conn_max_age=CONN_MAX_AGE,
             conn_health_checks=True,
+            ssl_require=ssl_require,
         )
+        if options:
+            # do not overwrite keys in options if set
+            default_db["OPTIONS"] = {**options, **default_db.get("OPTIONS", {})}
         DATABASES = {
             "default": default_db,
         }
@@ -170,8 +225,7 @@ def setup_django(
 
         module_names = ["core"] + list(isettings.modules)
         raise_import_error = True if init else False
-        installed_apps = ["django.contrib.contenttypes"]
-        installed_apps += [
+        installed_apps = [
             package_name
             for name in module_names
             if (
@@ -231,11 +285,30 @@ def setup_django(
                 }
             )
         settings.configure(**kwargs)
+        # this isn't needed the first time django.setup() is called, but for unknown reason it's needed the second time
+        # the first time, it already defaults to true
+        apps.apps_ready = True
         django.setup(set_prefix=False)
         # https://laminlabs.slack.com/archives/C04FPE8V01W/p1698239551460289
         from django.db.backends.base.base import BaseDatabaseWrapper
 
         BaseDatabaseWrapper.close_if_health_check_failed = close_if_health_check_failed
+        logger.debug(
+            "django.db.backends.base.base.BaseDatabaseWrapper.close_if_health_check_failed has been patched"
+        )
+
+        disable_context: bool = False
+        if (
+            env_disable_context := os.getenv("LAMINDB_DISABLE_CONNECTION_CONTEXT")
+        ) is not None:
+            disable_context = env_disable_context == "true"
+        elif IS_RUN_FROM_IPYTHON:
+            from ipykernel import __version__ as ipykernel_version
+
+            disable_context = version.parse(ipykernel_version) >= version.parse("7.0.0")
+        if disable_context:
+            django.db.connections._connections = threading.local()
+            logger.debug("django.db.connections._connections has been patched")
 
         if isettings._fine_grained_access and isettings._db_permissions == "jwt":
             db_token = DBToken(isettings)
@@ -250,7 +323,11 @@ def setup_django(
         return None
 
     if deploy_migrations:
-        call_command("migrate", verbosity=2)
+        if appname_number is None:
+            call_command("migrate", verbosity=2)
+        else:
+            app_name, app_number = appname_number
+            call_command("migrate", app_name, app_number, verbosity=2)
         isettings._update_cloud_sqlite_file(unlock_cloud_sqlite=False)
     elif init:
         global IS_MIGRATING
@@ -262,4 +339,45 @@ def setup_django(
     IS_SETUP = True
 
     if isettings.keep_artifacts_local:
-        isettings._search_local_root()
+        isettings._local_storage = isettings._search_local_root()
+
+
+# these needs to be followed by
+# setup_django()
+# reset_django_module_variables()
+def reset_django():
+    from django.conf import settings
+    from django.apps import apps
+    from django.db import connections
+
+    if not settings.configured:
+        return
+
+    connections.close_all()
+
+    global db_token_manager
+
+    db_token_manager.reset()
+
+    if getattr(settings, "_wrapped", None) is not None:
+        settings._wrapped = None
+
+    app_names = {"django"} | {app.name for app in apps.get_app_configs()}
+
+    apps.app_configs.clear()
+    apps.all_models.clear()
+    apps.apps_ready = apps.models_ready = apps.ready = apps.loading = False
+    apps.clear_cache()
+
+    # i suspect it is enough to just drop django and all the apps from sys.modules
+    # the code above is just a precaution
+    for module_name in list(sys.modules):
+        if module_name.partition(".")[0] in app_names:
+            del sys.modules[module_name]
+
+    il.invalidate_caches()
+
+    db_token_manager = DBTokenManager()
+
+    global IS_SETUP
+    IS_SETUP = False

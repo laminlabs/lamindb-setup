@@ -11,14 +11,15 @@ dynamic = ["version", "description"]
 dependencies = [
     "lamin_utils>=0.3.3",
     # External dependencies
-    "django>=5.1,<5.2",
+    "django>=5.2,<5.3",
     "dj_database_url>=1.3.0,<3.0.0",
     "pydantic-settings",
-    "appdirs<2.0.0",
-    "requests",
+    "platformdirs<5.0.0",
+    "httpx_retries<1.0.0",
+    "requests", # keep for now for other packages (bionty etc)
     "universal_pathlib==0.2.6",  # is still experimental, need pinning
     "botocore<2.0.0",
-    "supabase>=2.8.1,<=2.15.0", # from 2.8.1 has correct lower bounds on gotrue
+    "supabase>=2.8.1,<=2.16.0", # from 2.8.1 has correct lower bounds on gotrue
     "gotrue<=2.12.0", # supabase doesn't have this upper bound
     "storage3!=0.11.2; python_version < '3.11'", # 0.11.2 breaks python 3.10 through usage of new types
     "pyjwt<3.0.0", # needed to decode jwt for sign in with the new api key
@@ -31,13 +32,12 @@ Home = "https://github.com/laminlabs/lamindb-setup"
 
 [project.optional-dependencies]
 aws = [
-    "urllib3<2", # for botocore, TODO: check that really required
-    "aiobotocore[boto3]>=2.5.4,<3.0.0",
+    "aiobotocore[boto3]>=2.12.4,<3.0.0", # less problematic, supports urllib 2 via botocore bounds
     # exclude 2024.10.0 due to https://github.com/fsspec/s3fs/pull/910
-    "s3fs>=2023.12.2,<=2025.3.2,!=2024.10.0"
+    "s3fs>=2023.12.2,<=2025.9.0,!=2024.10.0"
 ]
 gcp = [
-    "gcsfs>=2023.12.2,<=2025.3.2"
+    "gcsfs>=2023.12.2,<=2025.9.0"
 ]
 erdiagram = [
     "django-schema-graph",
@@ -48,7 +48,7 @@ dev = [
     "python-dotenv",
     "nox",
     "pytest>=6.0",
-    "pytest-cov",
+    "pytest-cov<7.0.0",
     "pytest-xdist",
     "nbproject-test>=0.4.3",
     "pandas",
@@ -152,3 +152,10 @@ convention = "google"
 "docs/*" = ["I", "B018", "B017"]
 "tests/*" = ["D"]
 "*/__init__.py" = ["F401"]
+
+[tool.pytest.ini_options]
+filterwarnings = [
+    "ignore:Jupyter is migrating its paths to use standard platformdirs:DeprecationWarning",
+    "ignore:The 'timeout' parameter is deprecated. Please configure it in the http client instead.:DeprecationWarning",
+    "ignore:The 'verify' parameter is deprecated. Please configure it in the http client instead.:DeprecationWarning",
+]

@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import httpx
 from django.db import connection
 from django.db.migrations.loader import MigrationLoader
 from lamin_utils import logger
@@ -63,16 +64,29 @@ def check_whether_migrations_in_sync(db_version_str: str):
         # logger.important("consider migrating your database: lamin migrate deploy")
 
 
-# for tests, see lamin-cli
 class migrate:
-    """Manage migrations.
+    """Manage database migrations.
+
+    Unless you maintain your own schema modules with your own Django models, you won't need this.
 
     Examples:
 
-    >>> import lamindb as ln
-    >>> ln.setup.migrate.create()
-    >>> ln.setup.migrate.deploy()
-    >>> ln.setup.migrate.check()
+        Create a migration::
+
+            import lamindb as ln
+
+            ln.setup.migrate.create()
+
+        Deploy a migration::
+
+            ln.setup.migrate.deploy()
+
+        Check migration consistency::
+
+            ln.setup.migrate.check()
+
+    See Also:
+        Migrate an instance via the CLI, see `here <https://docs.lamin.ai/cli#migrate>`__.
 
     """
 
@@ -80,18 +94,35 @@ class migrate:
     @disable_auto_connect
     def create(cls) -> None:
         """Create a migration."""
-        if _check_instance_setup():
-            raise RuntimeError("Restart Python session to create migration or use CLI!")
         setup_django(settings.instance, create_migrations=True)
 
     @classmethod
-    @disable_auto_connect
-    def deploy(cls) -> None:
-        """Deploy a migration."""
-        from ._schema_metadata import update_schema_in_hub
+    def deploy(cls, package_name: str | None = None, number: int | None = None) -> None:
+        import os
 
-        if _check_instance_setup():
-            raise RuntimeError("Restart Python session to migrate or use CLI!")
+        # NOTE: this is a temporary solution to avoid breaking tests
+        LAMIN_MIGRATE_ON_LAMBDA = (
+            os.environ.get("LAMIN_MIGRATE_ON_LAMBDA", "false") == "true"
+        )
+
+        if settings.instance.is_on_hub and LAMIN_MIGRATE_ON_LAMBDA:
+            response = httpx.post(
+                f"{settings.instance.api_url}/instances/{settings.instance._id}/migrate",
+                headers={"Authorization": f"Bearer {settings.user.access_token}"},
+                timeout=None,  # this can take time
+            )
+            if response.status_code != 200:
+                raise Exception(f"Failed to migrate instance: {response.text}")
+        else:
+            cls._deploy(package_name=package_name, number=number)
+
+    @classmethod
+    def _deploy(
+        cls, package_name: str | None = None, number: int | None = None
+    ) -> None:
+        """Deploy a migration."""
+        from lamindb_setup._connect_instance import connect
+        from lamindb_setup._schema_metadata import update_schema_in_hub
         from lamindb_setup.core._hub_client import call_with_fallback_auth
         from lamindb_setup.core._hub_crud import (
             select_collaborator,
@@ -105,22 +136,33 @@ class migrate:
                 select_collaborator,
                 instance_id=settings.instance._id,
                 account_id=settings.user._uuid,
+                fine_grained_access=settings.instance._fine_grained_access,
             )
             if collaborator is None or collaborator["role"] != "admin":
                 raise SystemExit(
                     "❌ Only admins can deploy migrations, please ensure that you're an"
                     f" admin: https://lamin.ai/{settings.instance.slug}/settings"
                 )
+            # ensure we connect with the root user
+            if "root" not in settings.instance.db:
+                connect(use_root_db_user=True)
+                assert "root" in (instance_db := settings.instance.db), instance_db
             # we need lamindb to be installed, otherwise we can't populate the version
             # information in the hub
             import lamindb
 
         # this sets up django and deploys the migrations
-        setup_django(settings.instance, deploy_migrations=True)
+        if package_name is not None and number is not None:
+            setup_django(
+                settings.instance,
+                deploy_migrations=True,
+                appname_number=(package_name, number),
+            )
+        else:
+            setup_django(settings.instance, deploy_migrations=True)
         # this populates the hub
         if settings.instance.is_on_hub:
             logger.important(f"updating lamindb version in hub: {lamindb.__version__}")
-            # TODO: integrate update of instance table within update_schema_in_hub & below
             if settings.instance.dialect != "sqlite":
                 update_schema_in_hub()
             call_with_fallback_auth(

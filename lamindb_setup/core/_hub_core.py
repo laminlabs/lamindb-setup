@@ -13,11 +13,13 @@ from postgrest.exceptions import APIError
 
 from lamindb_setup._migrate import check_whether_migrations_in_sync
 
+from ._aws_options import HOSTED_REGIONS
+from ._aws_storage import find_closest_aws_region
 from ._hub_client import (
     call_with_fallback,
     call_with_fallback_auth,
     connect_hub,
-    request_get_auth,
+    request_with_auth,
 )
 from ._hub_crud import (
     _delete_instance_record,
@@ -35,27 +37,35 @@ from ._hub_utils import (
 )
 from ._settings import settings
 from ._settings_instance import InstanceSettings
-from ._settings_storage import StorageSettings, base62
+from ._settings_storage import StorageSettings, base62, instance_uid_from_uuid
 
 if TYPE_CHECKING:
     from supabase import Client  # type: ignore
 
 
-def delete_storage_record(storage_uuid: UUID, access_token: str | None = None) -> None:
+def delete_storage_record(
+    storage_info: dict[str, str] | StorageSettings,
+    access_token: str | None = None,
+) -> None:
+    if isinstance(storage_info, StorageSettings):
+        storage_info = {"id": storage_info._uuid.hex, "root": storage_info.root_as_str}  # type: ignore
     return call_with_fallback_auth(
-        _delete_storage_record, storage_uuid=storage_uuid, access_token=access_token
+        _delete_storage_record, storage_info=storage_info, access_token=access_token
     )
 
 
-def _delete_storage_record(storage_uuid: UUID, client: Client) -> None:
+def _delete_storage_record(storage_info: dict[str, str], client: Client) -> None:
+    storage_uuid = UUID(storage_info["id"])
     if storage_uuid is None:
         return None
     response = client.table("storage").delete().eq("id", storage_uuid.hex).execute()
     if response.data:
-        logger.important(f"deleted storage record on hub {storage_uuid.hex}")
+        logger.important(
+            f"deleted storage record on hub {storage_uuid.hex} | {storage_info['root']}"
+        )
     else:
         raise PermissionError(
-            f"Deleting of storage with {storage_uuid.hex} was not successful. Probably, you"
+            f"Deleting of storage {storage_uuid.hex} ({storage_info['root']}) was not successful. Probably, you"
             " don't have sufficient permissions."
         )
 
@@ -84,7 +94,75 @@ def _get_storage_records_for_instance(
     return response.data
 
 
-def _select_storage(
+def select_space(lnid: str) -> dict | None:
+    return call_with_fallback_auth(
+        _select_space,
+        lnid=lnid,
+    )
+
+
+def _select_space(lnid: str, client: Client) -> dict | None:
+    response = client.table("space").select("*").eq("lnid", lnid).execute()
+    return response.data[0] if response.data else None
+
+
+def update_storage_with_space(storage_lnid: str, space_lnid: str) -> dict | None:
+    return call_with_fallback_auth(
+        _update_storage_with_space,
+        storage_lnid=storage_lnid,
+        space_lnid=space_lnid,
+    )
+
+
+def _update_storage_with_space(
+    storage_lnid: str, space_lnid: str, client: Client
+) -> dict | None:
+    # unfortunately these are two network requests
+    # but postgrest doesn't allow doing it in one
+    try:
+        space_response = (
+            client.table("space").select("id").eq("lnid", space_lnid).execute()
+        )
+
+        if not space_response.data:
+            raise ValueError(
+                f"Try again! Space with lnid '{space_lnid}' not found on hub"
+            )
+
+        space_id = space_response.data[0]["id"]
+
+        update_response = (
+            client.table("storage")
+            .update({"space_id": space_id})
+            .eq("lnid", storage_lnid)
+            .execute()
+        )
+
+        if not update_response.data:
+            raise ValueError(
+                f"Try again! Storage with lnid '{storage_lnid}' not found or update failed on hub"
+            )
+
+        return update_response.data[0]
+
+    except Exception as e:
+        print(f"Try again! Error updating storage in hub: {e}")
+        return None
+
+
+def select_storage(lnid: str) -> dict | None:
+    return call_with_fallback_auth(
+        _select_storage,
+        lnid=lnid,
+    )
+
+
+def _select_storage(lnid: str, client: Client) -> dict | None:
+    response = client.table("storage").select("*").eq("lnid", lnid).execute()
+    return response.data[0] if response.data else None
+
+
+def _select_storage_by_settings(
     ssettings: StorageSettings, update_uid: bool, client: Client
 ) -> bool:
     root = ssettings.root_as_str
@@ -93,21 +171,21 @@ def _select_storage(
         return False
     else:
         existing_storage = response.data[0]
-        if existing_storage["instance_id"] is not None:
-            if ssettings._instance_id is not None:
-                # consider storage settings that are meant to be managed by an instance
-                if UUID(existing_storage["instance_id"]) != ssettings._instance_id:
-                    # everything is alright if the instance_id matches
-                    # we're probably just switching storage locations
-                    # below can be turned into a warning and then delegate the error
-                    # to a unique constraint violation below
-                    raise ValueError(
-                        f"Storage root {root} is already managed by instance {existing_storage['instance_id']}."
-                    )
-            else:
-                # if the request is agnostic of the instance, that's alright,
-                # we'll update the instance_id with what's stored in the hub
-                ssettings._instance_id = UUID(existing_storage["instance_id"])
+        if existing_storage["instance_id"] is None:
+            # if there is no instance_id, the storage location should not be on the hub
+            # this can only occur if instance init fails halfway through and is not cleaned up
+            # we're patching the situation here
+            existing_storage["instance_id"] = (
+                ssettings._instance_id.hex
+                if ssettings._instance_id is not None
+                else None
+            )
+        if ssettings._instance_id is not None:
+            if UUID(existing_storage["instance_id"]) != ssettings._instance_id:
+                logger.debug(
+                    f"referencing storage location {root}, which is managed by instance {existing_storage['instance_id']}"
+                )
+        ssettings._instance_id = UUID(existing_storage["instance_id"])
         ssettings._uuid_ = UUID(existing_storage["id"])
         if update_uid:
             ssettings._uid = existing_storage["lnid"]
@@ -116,62 +194,87 @@ def _select_storage(
         return True
 
 
+def _select_storage_or_parent(path: str, client: Client) -> dict | None:
+    # add get=True when we upgrade supabase
+    # because otherwise it uses POST which is not retryable
+    result = client.rpc("existing_root_or_child", {"_path": path}).execute().data
+    if result["root"] is None:
+        return None
+    result["uid"] = result.pop("lnid")
+    result["instance_uid"] = instance_uid_from_uuid(UUID(result.pop("instance_id")))
+    return result
+
+
+def select_storage_or_parent(path: str, access_token: str | None = None) -> dict | None:
+    if settings.user.handle != "anonymous" or access_token is not None:
+        return call_with_fallback_auth(
+            _select_storage_or_parent,
+            path=path,
+            access_token=access_token,
+        )
+    else:
+        return call_with_fallback(_select_storage_or_parent, path=path)
+
+
 def init_storage_hub(
     ssettings: StorageSettings,
-    auto_populate_instance: bool = True,
     created_by: UUID | None = None,
     access_token: str | None = None,
-) -> Literal["hub-record-retrieved", "hub-record-created"]:
+    prevent_creation: bool = False,
+    is_default: bool = False,
+    space_id: UUID | None = None,
+) -> Literal["hub-record-retrieved", "hub-record-created", "hub-record-not-created"]:
+    """Creates or retrieves an existing storage record from the hub."""
     if settings.user.handle != "anonymous" or access_token is not None:
         return call_with_fallback_auth(
             _init_storage_hub,
             ssettings=ssettings,
-            auto_populate_instance=auto_populate_instance,
             created_by=created_by,
             access_token=access_token,
+            prevent_creation=prevent_creation,
+            is_default=is_default,
+            space_id=space_id,
         )
     else:
         storage_exists = call_with_fallback(
-            _select_storage, ssettings=ssettings, update_uid=True
+            _select_storage_by_settings, ssettings=ssettings, update_uid=True
         )
         if storage_exists:
             return "hub-record-retrieved"
         else:
-            raise ValueError("Log in to create a storage location on the hub.")
+            return "hub-record-not-created"
 
 
 def _init_storage_hub(
     client: Client,
     ssettings: StorageSettings,
-    auto_populate_instance: bool,
     created_by: UUID | None = None,
-) -> Literal["hub-record-retrieved", "hub-record-created"]:
+    prevent_creation: bool = False,
+    is_default: bool = False,
+    space_id: UUID | None = None,
+) -> Literal["hub-record-retrieved", "hub-record-created", "hub-record-not-created"]:
     from lamindb_setup import settings
 
     created_by = settings.user._uuid if created_by is None else created_by
-    # storage roots are always stored without the trailing slash in the SQL
-    # database
+    # storage roots are always stored without the trailing slash in the SQL database
     root = ssettings.root_as_str
-    if _select_storage(ssettings, update_uid=True, client=client):
+    if _select_storage_by_settings(ssettings, update_uid=True, client=client):
         return "hub-record-retrieved"
+    if prevent_creation:
+        return "hub-record-not-created"
     if ssettings.type_is_cloud:
-        id = uuid.uuid5(uuid.NAMESPACE_URL, root)
+        hash_string = (
+            root if ssettings.type_is_cloud else f"{ssettings.region}://{root}"
+        )
+        id = uuid.uuid5(uuid.NAMESPACE_URL, hash_string)
     else:
         id = uuid.uuid4()
-    if (
-        ssettings._instance_id is None
-        and settings._instance_exists
-        and auto_populate_instance
-    ):
+    if ssettings._instance_id is None and settings._instance_exists:
         logger.warning(
             f"will manage storage location {ssettings.root_as_str} with instance {settings.instance.slug}"
         )
         ssettings._instance_id = settings.instance._id
-    instance_id_hex = (
-        ssettings._instance_id.hex
-        if (ssettings._instance_id is not None and auto_populate_instance)
-        else None
-    )
+    assert ssettings._instance_id is not None, "connect to an instance"
     fields = {
         "id": id.hex,
         "lnid": ssettings.uid,
@@ -179,14 +282,12 @@ def _init_storage_hub(
         "root": root,
         "region": ssettings.region,
         "type": ssettings.type,
-        "instance_id": instance_id_hex,
-        # the empty string is important as we want the user flow to be through LaminHub
-        # if this errors with unique constraint error, the user has to update
-        # the description in LaminHub
+        "instance_id": ssettings._instance_id.hex,
         "description": "",
+        "is_default": is_default,
+        "space_id": space_id.hex if space_id is not None else None,
     }
-    # TODO: add error message for violated unique constraint
-    # on root & description
+    # TODO: add error message for violated unique constraint on root & description
     client.table("storage").upsert(fields).execute()
     ssettings._uuid_ = id
     return "hub-record-created"
@@ -241,7 +342,7 @@ def _delete_instance(
             )
             # gate storage and instance deletion on empty storage location for
             # normally auth.get_session() doesn't have access_token
-            # so this block is useless i think (Sergei)
+            # so this block is useless I think (Sergei)
             # the token is received from user settings inside create_path
             # might be needed in the hub though
             if client.auth.get_session() is not None:
@@ -249,17 +350,11 @@ def _delete_instance(
             else:
                 access_token = None
             root_path = create_path(root_string, access_token)
-            mark_storage_root(
-                root_path,
-                storage_record["lnid"],  # type: ignore
-            )  # address permission error
             check_storage_is_empty(
                 root_path, account_for_sqlite_file=account_for_sqlite_file
             )
-    # first delete the storage records because we will turn instance_id on
-    # storage into a FK soon
     for storage_record in storage_records:
-        _delete_storage_record(UUID(storage_record["id"]), client)  # type: ignore
+        _delete_storage_record(storage_record, client)  # type: ignore
     _delete_instance_record(UUID(instance_with_storage["id"]), client)
     return None
 
@@ -302,6 +397,7 @@ def _init_instance_hub(
         "schema_str": isettings._schema_str,
         "lamindb_version": lamindb_version,
         "public": False,
+        "created_by_id": account_id.hex,  # type: ignore
     }
     if isettings.dialect != "sqlite":
         db_dsn = LaminDsnModel(db=isettings.db)
@@ -322,25 +418,95 @@ def _init_instance_hub(
     except APIError:
         logger.warning(f"instance already existed at: https://lamin.ai/{slug}")
         return None
-    client.table("storage").update(
-        {"instance_id": isettings._id.hex, "is_default": True}
-    ).eq("id", isettings.storage._uuid.hex).execute()  # type: ignore
     if isettings.dialect != "sqlite" and isettings.is_remote:
         logger.important(f"go to: https://lamin.ai/{slug}")
+
+
+def _get_default_bucket_for_instance(
+    instance_id: UUID | None, region: str | None, client: Client
+):
+    if instance_id is not None:
+        bucket_base = (
+            client.rpc(
+                "get_api_server_default_bucket_by_instance_id",
+                {"p_instance_id": instance_id.hex},
+            )
+            .execute()
+            .data
+        )
+        if bucket_base is not None:
+            return f"s3://{bucket_base}"
+
+    if os.getenv("LAMIN_ENV") in {None, "prod"}:
+        if region is None:
+            region = find_closest_aws_region()
+        elif region not in HOSTED_REGIONS:
+            raise ValueError(f"region has to be one of {HOSTED_REGIONS}")
+        root = f"s3://lamin-{region}"
+    else:
+        root = "s3://lamin-hosted-test"
+
+    return root
+
+
+# pass None if initializing an instance
+# this can be from the api server attached to the instance or the default bucket
+# that we use for instances with no api servers attached
+def get_default_bucket_for_instance(
+    instance_id: UUID | None, region: str | None = None, access_token: str | None = None
+):
+    if settings.user.handle != "anonymous" or access_token is not None:
+        return call_with_fallback_auth(
+            _get_default_bucket_for_instance,
+            instance_id=instance_id,
+            region=region,
+            access_token=access_token,
+        )
+    else:
+        return call_with_fallback(
+            _get_default_bucket_for_instance,
+            region=region,
+            instance_id=instance_id,
+        )
 
 
 def _connect_instance_hub(
     owner: str,  # account_handle
     name: str,  # instance_name
+    use_root_db_user: bool,
+    use_proxy_db: bool,
     client: Client,
 ) -> tuple[dict, dict] | str:
     response = client.functions.invoke(
         "get-instance-settings-v1",
         invoke_options={"body": {"owner": owner, "name": name}},
     )
+    # check instance renames
+    if response == b"{}":
+        data = (
+            client.table("instance_previous_name")
+            .select(
+                "instance!instance_previous_name_instance_id_17ac5d61_fk_instance_id(name, account!instance_account_id_28936e8f_fk_account_id(handle))"
+            )
+            .eq("instance.account.handle", owner)
+            .eq("previous_name", name)
+            .execute()
+            .data
+        )
+        if len(data) != 0 and (instance_data := data[0]["instance"]) is not None:
+            new_name = instance_data["name"]
+            # the instance was renamed
+            if new_name != name:
+                logger.warning(
+                    f"'{owner}/{name}' was renamed, please use '{owner}/{new_name}'"
+                )
+                response = client.functions.invoke(
+                    "get-instance-settings-v1",
+                    invoke_options={"body": {"owner": owner, "name": new_name}},
+                )
     # no instance found, check why is that
     if response == b"{}":
-        # try the via single requests, will take more time
+        # try via separate requests, will take more time
         account = select_account_by_handle(owner, client)
         if account is None:
             return "account-not-exists"
@@ -352,7 +518,7 @@ def _connect_instance_hub(
         if storage is None:
             return "default-storage-does-not-exist-on-hub"
         logger.warning(
-            "Could not find instance via API, but found directly querying hub."
+            "could not find instance via API, but found directly querying hub"
         )
     else:
         instance = json.loads(response)
@@ -360,24 +526,50 @@ def _connect_instance_hub(
 
     if instance["db_scheme"] is not None:
         db_user_name, db_user_password = None, None
-        if "db_user_name" in instance and "db_user_password" in instance:
+        if (
+            "db_user_name" in instance
+            and "db_user_password" in instance
+            and not use_root_db_user
+        ):
             db_user_name, db_user_password = (
                 instance["db_user_name"],
                 instance["db_user_password"],
             )
         else:
-            db_user = select_db_user_by_instance(instance["id"], client)
+            if use_root_db_user:
+                fine_grained_access = False
+            else:
+                fine_grained_access = bool(
+                    instance["fine_grained_access"]
+                )  # can be None
+            db_user = select_db_user_by_instance(
+                instance["id"], fine_grained_access, client
+            )
             if db_user is not None:
                 db_user_name, db_user_password = (
-                    db_user["db_user_name"],
-                    db_user["db_user_password"],
+                    db_user["name" if fine_grained_access else "db_user_name"],
+                    db_user["password" if fine_grained_access else "db_user_password"],
                 )
+
+        if use_proxy_db:
+            host = instance.get("proxy_host", None)
+            assert host is not None, (
+                "Database proxy host is not available, please do not pass 'use_proxy_db'."
+            )
+            port = instance.get("proxy_port", None)
+            assert port is not None, (
+                "Database proxy port is not available, please do not pass 'use_proxy_db'."
+            )
+        else:
+            host = instance["db_host"]
+            port = instance["db_port"]
+
         db_dsn = LaminDsn.build(
             scheme=instance["db_scheme"],
             user=db_user_name if db_user_name is not None else "none",
             password=db_user_password if db_user_password is not None else "none",
-            host=instance["db_host"],
-            port=instance["db_port"],
+            host=host,
+            port=port,
             database=instance["db_database"],
         )
         instance["db"] = db_dsn
@@ -390,15 +582,28 @@ def connect_instance_hub(
     owner: str,  # account_handle
     name: str,  # instance_name
     access_token: str | None = None,
+    use_root_db_user: bool = False,
+    use_proxy_db: bool = False,
 ) -> tuple[dict, dict] | str:
     from ._settings import settings
 
     if settings.user.handle != "anonymous" or access_token is not None:
         return call_with_fallback_auth(
-            _connect_instance_hub, owner=owner, name=name, access_token=access_token
+            _connect_instance_hub,
+            owner=owner,
+            name=name,
+            use_root_db_user=use_root_db_user,
+            use_proxy_db=use_proxy_db,
+            access_token=access_token,
         )
     else:
-        return call_with_fallback(_connect_instance_hub, owner=owner, name=name)
+        return call_with_fallback(
+            _connect_instance_hub,
+            owner=owner,
+            name=name,
+            use_root_db_user=use_root_db_user,
+            use_proxy_db=use_proxy_db,
+        )
 
 
 def access_aws(storage_root: str, access_token: str | None = None) -> dict[str, dict]:
@@ -408,9 +613,9 @@ def access_aws(storage_root: str, access_token: str | None = None) -> dict[str, 
         storage_root_info = call_with_fallback_auth(
             _access_aws, storage_root=storage_root, access_token=access_token
         )
-        return storage_root_info
     else:
-        raise RuntimeError("Can only get access to AWS if authenticated.")
+        storage_root_info = call_with_fallback(_access_aws, storage_root=storage_root)
+    return storage_root_info
 
 
 def _access_aws(*, storage_root: str, client: Client) -> dict[str, dict]:
@@ -435,6 +640,8 @@ def _access_aws(*, storage_root: str, client: Client) -> dict[str, dict]:
         accessibility = storage_root_info["accessibility"]
         accessibility["storage_root"] = loaded_accessibility["storageRoot"]
         accessibility["is_managed"] = loaded_accessibility["isManaged"]
+        accessibility["extra_parameters"] = loaded_accessibility.get("extraParameters")
+
     return storage_root_info
 
 
@@ -444,10 +651,16 @@ def access_db(
     instance_id: UUID
     instance_slug: str
     instance_api_url: str | None
+    if (
+        "LAMIN_DB_TOKEN" in os.environ
+        and (env_db_token := os.environ["LAMIN_DB_TOKEN"]) != ""
+    ):
+        return env_db_token
+
     if isinstance(instance, InstanceSettings):
         instance_id = instance._id
         instance_slug = instance.slug
-        instance_api_url = instance._api_url
+        instance_api_url = instance.api_url
     else:
         instance_id = UUID(instance["id"])
         instance_slug = instance["owner"] + "/" + instance["name"]
@@ -464,7 +677,7 @@ def access_db(
     else:
         renew_token = False
     # local is used in tests
-    url = f"/access_v2/instances/{instance_id}/db_token"
+    url = f"/instances/{instance_id}/db_token"
     if os.environ.get("LAMIN_ENV", "prod") != "local":
         if instance_api_url is None:
             raise RuntimeError(
@@ -472,12 +685,14 @@ def access_db(
             )
         url = instance_api_url + url
 
-    response = request_get_auth(url, access_token, renew_token)  # type: ignore
-    response_json = response.json()
-    if response.status_code != 200:
+    response = request_with_auth(url, "get", access_token, renew_token)  # type: ignore
+    status_code = response.status_code
+    if not (200 <= status_code < 300):
         raise PermissionError(
-            f"Fine-grained access to {instance_slug} failed: {response_json}"
+            f"Fine-grained access to {instance_slug} failed: {status_code} {response.text}"
         )
+
+    response_json = response.json()
     if "token" not in response_json:
         raise RuntimeError("The response of access_db does not contain a db token.")
     return response_json["token"]
@@ -513,7 +728,12 @@ def _sign_in_hub(email: str, password: str, handle: str | None, client: Client):
             "password": password,
         }
     )
-    data = client.table("account").select("*").eq("id", auth.user.id).execute().data
+    # normally public.account.id is equal to auth.user.id
+    # but it might be not the case in the future
+    # this is why we check public.account.user_id that references auth.user.id
+    data = (
+        client.table("account").select("*").eq("user_id", auth.user.id).execute().data
+    )
     if data:  # sync data from hub to local cache in case it was updated on the hub
         user = data[0]
         user_uuid = UUID(user["id"])
@@ -562,8 +782,9 @@ def _sign_in_hub_api_key(api_key: str, client: Client):
     # probably need more info here to avoid additional queries
     # like handle, uid etc
     account_id = jwt.decode(access_token, options={"verify_signature": False})["sub"]
+
     client.postgrest.auth(access_token)
-    # normally public.account.id is equal to auth.user.id
+
     data = client.table("account").select("*").eq("id", account_id).execute().data
     if data:
         user = data[0]

@@ -8,7 +8,7 @@ from uuid import UUID
 
 import click
 from django.core.exceptions import FieldError
-from django.db.utils import OperationalError, ProgrammingError
+from django.db.utils import IntegrityError, OperationalError, ProgrammingError
 from lamin_utils import logger
 
 from ._disconnect import disconnect
@@ -16,15 +16,17 @@ from ._silence_loggers import silence_loggers
 from .core import InstanceSettings
 from .core._docs import doc_args
 from .core._settings import settings
-from .core._settings_instance import is_local_db_url
+from .core._settings_instance import check_is_instance_remote
 from .core._settings_storage import StorageSettings, init_storage
 from .core.upath import UPath
+from .errors import CannotSwitchDefaultInstance
 
 if TYPE_CHECKING:
+    from lamindb.models import Storage
     from pydantic import PostgresDsn
 
     from .core._settings_user import UserSettings
-    from .core.types import UPathStr
+    from .types import UPathStr
 
 
 class InstanceNotCreated(click.ClickException):
@@ -48,37 +50,31 @@ def get_schema_module_name(module_name, raise_import_error: bool = True) -> str 
     return None
 
 
-def register_storage_in_instance(ssettings: StorageSettings):
-    from lamindb.base.users import current_user_id
+def register_storage_in_instance(ssettings: StorageSettings) -> Storage:
     from lamindb.models import Storage
 
-    from .core.hashing import hash_and_encode_as_b62
-
-    if ssettings._instance_id is not None:
-        instance_uid = hash_and_encode_as_b62(ssettings._instance_id.hex)[:12]
-    else:
-        instance_uid = None
     # how do we ensure that this function is only called passing
     # the managing instance?
-    defaults = {
+    kwargs = {
         "root": ssettings.root_as_str,
         "type": ssettings.type,
         "region": ssettings.region,
-        "instance_uid": instance_uid,
-        "created_by_id": current_user_id(),
+        "instance_uid": ssettings.instance_uid,
         "run": None,
+        "_skip_preparation": True,
     }
     if ssettings._uid is not None:
-        defaults["uid"] = ssettings._uid
-    storage, _ = Storage.objects.update_or_create(
-        root=ssettings.root_as_str,
-        defaults=defaults,
-    )
+        kwargs["uid"] = ssettings._uid
+    # this checks if the storage already exists under the hood
+    storage = Storage(**kwargs).save()
     return storage
 
 
-def register_user(usettings):
+def register_user(usettings: UserSettings, update_user: bool = True) -> None:
     from lamindb.models import User
+
+    if not update_user and User.objects.filter(uid=usettings.uid).exists():
+        return
 
     try:
         # need to have try except because of integer primary key migration
@@ -90,20 +86,41 @@ def register_user(usettings):
             },
         )
     # for users with only read access, except via ProgrammingError
-    # ProgrammingError: permission denied for table lnschema_core_user
-    except (OperationalError, FieldError, ProgrammingError):
+    # ProgrammingError: permission denied for table lamindb_user
+    # IntegrityError: when trying to update a user on a fine-grained access instance
+    except (OperationalError, FieldError, ProgrammingError, IntegrityError):
         pass
 
 
-def register_initial_records(isettings: InstanceSettings, usettings):
+def register_initial_records(
+    isettings: InstanceSettings, usettings: UserSettings
+) -> None:
     """Register space, user & storage in DB."""
     from django.db.utils import OperationalError
-    from lamindb.models import Space
+    from lamindb.models import Branch, Space
 
     try:
         Space.objects.get_or_create(
-            name="All",
+            uid=12 * "a",
+            name="all",
             description="Every team & user with access to the instance has access.",
+        )
+        Branch.objects.get_or_create(
+            id=-1,
+            uid=12 * "t",
+            name="trash",
+            description="The trash.",
+        )
+        Branch.objects.get_or_create(
+            id=0,
+            uid=12 * "a",
+            name="archive",
+            description="The archive.",
+        )
+        Branch.objects.get_or_create(
+            uid=12 * "m",
+            name="main",
+            description="The main & default branch of the instance.",
         )
         register_user(usettings)
         register_storage_in_instance(isettings.storage)
@@ -160,7 +177,7 @@ def validate_init_args(
     _user: UserSettings | None = None,
 ) -> tuple[
     str,
-    UUID | None,
+    UUID,
     Literal[
         "connected",
         "instance-corrupted-or-deleted",
@@ -186,32 +203,20 @@ def validate_init_args(
         _write_settings=_write_settings,
         _user=_user,
     )
+    instance_id: UUID
     instance_state: Literal[
         "connected",
         "instance-corrupted-or-deleted",
         "account-not-exists",
         "instance-not-found",
-    ] = "connected"
-    instance_id = None
-    if response is not None:
+    ]
+    if response is None:
+        instance_state, instance_id = "connected", settings.instance._id
+    else:
         instance_id, instance_state = process_connect_response(response, instance_slug)
     modules = process_modules_arg(modules)
     return name_str, instance_id, instance_state, instance_slug
 
-
-class CannotSwitchDefaultInstance(SystemExit):
-    pass
-
-
-MESSAGE_CANNOT_SWITCH_DEFAULT_INSTANCE = """
-You cannot write to different instances in the same Python session.
-
-Do you want to read from another instance via `Record.using()`? For example:
-
-ln.Artifact.using("laminlabs/cellxgene").filter()
-
-Or do you want to switch off auto-connect via `lamin settings set auto-connect false`?
-"""
 
 DOC_STORAGE_ARG = "A local or remote folder (`'s3://...'` or `'gs://...'`). Defaults to current working directory."
 DOC_INSTANCE_NAME = (
@@ -239,7 +244,19 @@ def init(
         db: {}
         modules: {}
         **kwargs: {}
+
+    See Also:
+        Init an instance for via the CLI, see `here <https://docs.lamin.ai/cli#init>`__.
     """
+    from ._check_setup import _check_instance_setup
+    from ._connect_instance import (
+        reset_django_module_variables,
+        validate_connection_state,
+    )
+    from .core._hub_core import init_instance_hub
+
+    silence_loggers()
+
     isettings = None
     ssettings = None
 
@@ -256,15 +273,6 @@ def init(
     access_token: str | None = None if _user is None else _user.access_token
 
     try:
-        silence_loggers()
-        from ._check_setup import _check_instance_setup
-
-        if _check_instance_setup() and not _test:
-            raise CannotSwitchDefaultInstance(MESSAGE_CANNOT_SWITCH_DEFAULT_INSTANCE)
-        elif _write_settings:
-            disconnect(mute=True)
-        from .core._hub_core import init_instance_hub
-
         name_str, instance_id, instance_state, _ = validate_init_args(
             storage=storage,
             name=name,
@@ -275,45 +283,41 @@ def init(
             _user=_user,  # will get from settings.user if _user is None
         )
         if instance_state == "connected":
-            if _write_settings:
-                settings.auto_connect = True  # we can also debate this switch here
             return None
-        # the conditions here match `isettings.is_remote`, but I currently don't
-        # see a way of making this more elegant; should become possible if we
-        # remove the instance.storage_id FK on the hub
-        prevent_register_hub = is_local_db_url(db) if db is not None else False
-        ssettings, _ = init_storage(
-            storage,
-            instance_id=instance_id,
-            init_instance=True,
-            prevent_register_hub=prevent_register_hub,
-            created_by=user__uuid,
-            access_token=access_token,
-        )
+        if _check_instance_setup() and not _test:
+            validate_connection_state(user_handle, name_str)
+        elif _write_settings:
+            disconnect(mute=True)
         isettings = InstanceSettings(
             id=instance_id,  # type: ignore
             owner=user_handle,
             name=name_str,
-            storage=ssettings,
             db=db,
             modules=modules,
-            uid=ssettings.uid,
             # to lock passed user in isettings._cloud_sqlite_locker.lock()
             _locker_user=_user,  # only has effect if cloud sqlite
         )
         register_on_hub = (
-            isettings.is_remote and instance_state != "instance-corrupted-or-deleted"
+            check_is_instance_remote(root=storage, db=db)
+            and instance_state != "instance-corrupted-or-deleted"
         )
         if register_on_hub:
-            # can't register the instance in the hub
-            # if storage is not in the hub
-            # raise the exception and initiate cleanups
-            if not isettings.storage.is_on_hub:
-                raise InstanceNotCreated(
-                    "Unable to create the instance because failed to register the storage."
-                )
             init_instance_hub(
                 isettings, account_id=user__uuid, access_token=access_token
+            )
+        ssettings, _ = init_storage(
+            storage,
+            instance_id=instance_id,
+            instance_slug=f"{user_handle}/{name_str}",
+            init_instance=True,
+            register_hub=register_on_hub,
+            created_by=user__uuid,
+            access_token=access_token,
+        )
+        isettings._storage = ssettings
+        if register_on_hub and not ssettings.is_on_hub:
+            raise InstanceNotCreated(
+                "Unable to create the instance because failed to register the storage."
             )
         validate_sqlite_state(isettings)
         # why call it here if it is also called in load_from_isettings?
@@ -334,9 +338,8 @@ def init(
             from ._schema_metadata import update_schema_in_hub
 
             update_schema_in_hub(access_token=access_token)
-        if _write_settings:
-            settings.auto_connect = True
         importlib.reload(importlib.import_module("lamindb"))
+        reset_django_module_variables()
         logger.important(f"initialized lamindb: {isettings.slug}")
     except Exception as e:
         from ._delete import delete_by_isettings
@@ -347,16 +350,10 @@ def init(
                 delete_by_isettings(isettings)
             else:
                 settings._instance_settings = None
-        if (
-            ssettings is not None
-            and (user_handle != "anonymous" or access_token is not None)
-            and ssettings.is_on_hub
-        ):
-            delete_storage_record(ssettings._uuid, access_token=access_token)  # type: ignore
-        if isettings is not None:
-            if (
-                user_handle != "anonymous" or access_token is not None
-            ) and isettings.is_on_hub:
+        if user_handle != "anonymous" or access_token is not None:
+            if ssettings is not None and ssettings.is_on_hub:
+                delete_storage_record(ssettings, access_token=access_token)
+            if isettings is not None and isettings.is_on_hub:
                 delete_instance_record(isettings._id, access_token=access_token)
         raise e
     return None
@@ -381,13 +378,16 @@ def load_from_isettings(
     else:
         # when loading, django is already set up
         #
-        # only register user if the instance is connected
-        # for the first time in an environment
-        # this is our best proxy for that the user might not
-        # yet be registered
+        # only register user if the instance is connected for the first time in an environment
+        # this is our best proxy for that the user might not yet be registered
         if not isettings._get_settings_file().exists():
-            register_user(user)
+            # do not try to update the user on fine grained access instances
+            # this is blocked anyways, only select and insert are allowed
+            register_user(user, update_user=not isettings._fine_grained_access)
     isettings._persist(write_to_disk=write_settings)
+    # clear branch & space cache after reconnecting
+    settings._branch = None
+    settings._space = None
 
 
 def validate_sqlite_state(isettings: InstanceSettings) -> None:

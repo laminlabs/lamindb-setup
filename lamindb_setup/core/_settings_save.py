@@ -8,14 +8,15 @@ from ._settings_store import (
     InstanceSettingsStore,
     UserSettingsStore,
     current_user_settings_file,
-    system_storage_settings_file,
+    platform_user_storage_settings_file,
     user_settings_file_email,
     user_settings_file_handle,
 )
 
 if TYPE_CHECKING:
+    from lamindb_setup.types import UPathStr
+
     from ._settings_user import UserSettings
-    from .types import UPathStr
 
 
 def save_user_settings(settings: UserSettings):
@@ -40,9 +41,9 @@ def save_settings(
 ):
     with open(settings_file, "w") as f:
         for store_key, type_ in type_hints.items():
-            if type_ == Optional[str]:
+            if type_ == Optional[str]:  # noqa: UP045
                 type_ = str
-            if type_ == Optional[bool]:
+            if type_ == Optional[bool]:  # noqa: UP045
                 type_ = bool
             if "__" not in store_key:
                 if store_key == "model_config":
@@ -82,13 +83,13 @@ def save_instance_settings(settings: Any, settings_file: Path):
     save_settings(settings, settings_file, type_hints, prefix)
 
 
-def save_system_storage_settings(
+def save_platform_user_storage_settings(
     cache_path: UPathStr | None, settings_file: UPathStr | None = None
 ):
     cache_path = "null" if cache_path is None else cache_path
     if isinstance(cache_path, Path):  # also True for UPath
         cache_path = cache_path.as_posix()
     if settings_file is None:
-        settings_file = system_storage_settings_file()
+        settings_file = platform_user_storage_settings_file()
     with open(settings_file, "w") as f:
         f.write(f"lamindb_cache_path={cache_path}")

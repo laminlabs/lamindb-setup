@@ -11,11 +11,12 @@ def test_to_url():
         == "https://lamindata.s3.amazonaws.com/test-folder"
     )
     # private bucket
-    # next PR
-    # assert (
-    #     ln_setup.core.upath.create_path("s3://lamindb-setup-private-bucket/test-folder")
-    #     == "https://lamindb-setup-private-bucket.s3.amazonaws.com/test-folder"
-    # )
+    assert (
+        ln_setup.core.upath.create_path(
+            "s3://lamindb-setup-private-bucket/test-folder"
+        ).to_url()
+        == "https://lamindb-setup-private-bucket.s3.amazonaws.com/test-folder"
+    )
     # eu-central-1 / AWS Dev
     assert (
         ln_setup.core.upath.create_path("s3://lamindata-eu/test-folder").to_url()
@@ -27,5 +28,5 @@ def test_to_url():
         ln_setup.core.upath.create_path(
             "s3://lamin-eu-central-1/9fm7UN13/test-folder"
         ).to_url()
-        == "https://lamin-eu-central-1.s3-lamin-eu-central-1.amazonaws.com/9fm7UN13/test-folder"
+        == "https://lamin-eu-central-1.s3-eu-central-1.amazonaws.com/9fm7UN13/test-folder"
     )

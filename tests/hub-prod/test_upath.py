@@ -42,6 +42,13 @@ def test_create_path():
     assert upath.storage_options["cache_regions"]
     assert not upath.storage_options["version_aware"]
     assert upath.storage_options["use_listings_cache"]
+    # test max_pool_connections in config_kwargs
+    assert upath.storage_options["config_kwargs"]["max_pool_connections"] == 64
+    upath = create_path(UPath(upath, config_kwargs={"max_pool_connections": 32}))
+    assert upath.storage_options["config_kwargs"]["max_pool_connections"] == 32
+    upath = create_path(UPath(upath, config_kwargs={"retries": {"max_attempts": 10}}))
+    assert upath.storage_options["config_kwargs"]["max_pool_connections"] == 64
+    assert upath.storage_options["config_kwargs"]["retries"]["max_attempts"] == 10
     # test removal of training slash
     assert upath.as_posix()[-1] != "/"
     assert (

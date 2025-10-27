@@ -2,21 +2,20 @@ from __future__ import annotations
 
 import os
 import subprocess
-from uuid import UUID, uuid4
+from unittest.mock import patch
+from uuid import UUID
 
 import lamindb_setup as ln_setup
 import pytest
-from gotrue.errors import AuthApiError
 from lamindb_setup.core._hub_client import (
     Environment,
     connect_hub,
-    connect_hub_with_auth,
 )
 from lamindb_setup.core._hub_core import (
     _connect_instance_hub,
     connect_instance_hub,
-    init_instance_hub,
     init_storage_hub,
+    select_storage_or_parent,
     sign_in_hub,
     sign_up_local_hub,
 )
@@ -31,42 +30,13 @@ from lamindb_setup.core._hub_crud import (
 # typing
 # from lamindb.dev import UserSettings
 # from supabase import Client
-from lamindb_setup.core._hub_utils import LaminDsn, LaminDsnModel
-from lamindb_setup.core._settings_instance import InstanceSettings
-from lamindb_setup.core._settings_save import save_user_settings
-from lamindb_setup.core._settings_storage import base62
+from lamindb_setup.core._hub_utils import LaminDsn
 from lamindb_setup.core._settings_storage import init_storage as init_storage_base
 from lamindb_setup.core._settings_store import instance_settings_file
-from lamindb_setup.core._settings_user import UserSettings
-from laminhub_rest.core.legacy._instance_collaborator import InstanceCollaboratorHandler
-from laminhub_rest.core.organization import OrganizationHandler
-from laminhub_rest.test.instance.utils import (
-    create_hosted_test_instance,
-    delete_hosted_test_instance,
-)
-from postgrest.exceptions import APIError
+from laminhub_rest.core.instance_collaborator import InstanceCollaboratorHandler
+from laminhub_rest.core.organization import OrganizationMemberHandler
+from sqlalchemy.exc import OperationalError as SQLAlchemy_OperationalError
 from supafunc.errors import FunctionsHttpError
-
-
-def sign_up_user(email: str, handle: str, save_as_settings: bool = False):
-    """Sign up user."""
-    from lamindb_setup.core._hub_core import sign_up_local_hub
-
-    result_or_error = sign_up_local_hub(email)
-    if result_or_error == "user-exists":  # user already exists
-        return "user-exists"
-    account_id = UUID(result_or_error[1])
-    access_token = result_or_error[2]
-    user_settings = UserSettings(
-        handle=handle,
-        email=email,
-        password=result_or_error[0],
-        _uuid=account_id,
-        access_token=access_token,
-    )
-    if save_as_settings:
-        save_user_settings(user_settings)
-    return user_settings
 
 
 def test_runs_locally():
@@ -82,102 +52,6 @@ def test_incomplete_signup():
     assert response == "complete-signup"
 
 
-@pytest.fixture(scope="session")
-def create_testadmin1_session():  # -> Tuple[Client, UserSettings]
-    email = "testadmin1@gmail.com"
-    sign_up_user(email, "testadmin1", save_as_settings=True)
-    with pytest.raises(AuthApiError):
-        # test error with "User already registered"
-        sign_up_user(email, "testadmin1")
-    account_id = ln_setup.settings.user._uuid
-    account = {
-        "id": account_id.hex,
-        "user_id": account_id.hex,
-        "lnid": base62(8),
-        "handle": "testadmin1",
-    }
-    # uses ln_setup.settings.user.access_token
-    client = connect_hub_with_auth()
-    client.table("account").insert(account).execute()
-    yield client, ln_setup.settings.user
-    client.auth.sign_out()
-
-
-@pytest.fixture(scope="session")
-def create_testreader1_session():  # -> Tuple[Client, UserSettings]
-    email = "testreader1@gmail.com"
-    user_settings = sign_up_user(email, "testreader1")
-    account = {
-        "id": user_settings._uuid.hex,
-        "user_id": user_settings._uuid.hex,
-        "lnid": base62(8),
-        "handle": "testreader1",
-    }
-    client = connect_hub_with_auth(access_token=user_settings.access_token)
-    client.table("account").insert(account).execute()
-    yield client, user_settings
-    client.auth.sign_out()
-
-
-@pytest.fixture(scope="session")
-def create_myinstance(create_testadmin1_session):  # -> Dict
-    admin_client, usettings = create_testadmin1_session
-    instance_id = uuid4()
-    db_str = "postgresql://postgres:pwd@fakeserver.xyz:5432/mydb"
-    isettings = InstanceSettings(
-        id=instance_id,
-        owner=usettings.handle,
-        name="myinstance",
-        # cannot yet pass instance_id here as it does not yet exist
-        storage=init_storage_base(
-            "s3://lamindb-ci/myinstance",
-        )[0],
-        db=db_str,
-    )
-    init_instance_hub(isettings)
-    # test loading it
-    with pytest.raises(PermissionError) as error:
-        ln_setup.connect("testadmin1/myinstance", _test=True)
-    assert error.exconly().startswith(
-        "PermissionError: No database access, please ask your admin"
-    )
-    db_collaborator = select_collaborator(
-        instance_id=instance_id.hex,
-        account_id=ln_setup.settings.user._uuid.hex,
-        client=admin_client,
-    )
-    assert db_collaborator["role"] == "admin"
-    assert db_collaborator["db_user_id"] is None
-    db_dsn = LaminDsnModel(db=db_str)
-    db_user_name = db_dsn.db.user
-    db_user_password = db_dsn.db.password
-    insert_db_user(
-        name="write",
-        db_user_name=db_user_name,
-        db_user_password=db_user_password,
-        instance_id=instance_id,
-        client=admin_client,
-    )
-    instance = select_instance_by_name(
-        account_id=ln_setup.settings.user._uuid,
-        name="myinstance",
-        client=admin_client,
-    )
-    yield instance
-
-
-@pytest.fixture(scope="session")
-def create_instance_fine_grained_access(create_testadmin1_session):
-    client, testadmin1 = create_testadmin1_session
-
-    org_handler = OrganizationHandler(client)
-    org_handler.create(testadmin1._uuid)
-
-    instance = create_hosted_test_instance("instance_access_v2", access_v2=True)
-    yield instance
-    delete_hosted_test_instance(instance)
-
-
 def test_connection_string_decomp(create_myinstance, create_testadmin1_session):
     client, _ = create_testadmin1_session
     assert create_myinstance["db_scheme"] == "postgresql"
@@ -187,94 +61,111 @@ def test_connection_string_decomp(create_myinstance, create_testadmin1_session):
     db_collaborator = select_collaborator(
         instance_id=create_myinstance["id"],
         account_id=ln_setup.settings.user._uuid.hex,
+        fine_grained_access=True,
         client=client,
     )
     assert db_collaborator["role"] == "admin"
-    assert db_collaborator["db_user_id"] is None
 
 
 def test_db_user(
     create_myinstance, create_testadmin1_session, create_testreader1_session
 ):
     admin_client, admin_settings = create_testadmin1_session
-    instance_id = UUID(create_myinstance["id"])
+
+    instance_id_hex = create_myinstance["id"]
+    instance_id = UUID(instance_id_hex)
+
+    # check non-fine-grained access db user
     db_user = select_db_user_by_instance(
-        instance_id=instance_id,
-        client=admin_client,
+        instance_id=instance_id_hex, client=admin_client, fine_grained_access=False
     )
     assert db_user["db_user_name"] == "postgres"
     assert db_user["db_user_password"] == "pwd"
     assert db_user["name"] == "write"
+    # check fine-grained access db user
+    db_user = select_db_user_by_instance(
+        instance_id=instance_id_hex, client=admin_client, fine_grained_access=True
+    )
+    assert db_user["name"] == "postgres"
+    assert db_user["password"] == "pwd"
+    assert db_user["type"] == "jwt"
     reader_client, reader_settings = create_testreader1_session
     db_user = select_db_user_by_instance(
-        instance_id=instance_id,
+        instance_id=instance_id_hex,
+        fine_grained_access=True,
         client=reader_client,
     )
     assert db_user is None
     # check that testreader1 is not yet a collaborator
     db_collaborator = select_collaborator(
-        instance_id=instance_id.hex,
+        instance_id=instance_id_hex,
         account_id=reader_settings._uuid.hex,
+        fine_grained_access=True,
         client=admin_client,
     )
     assert db_collaborator is None
     # now add testreader1 as a collaborator
-    InstanceCollaboratorHandler(admin_client).add(
+    OrganizationMemberHandler(admin_client).add(
+        organization_id=UUID(create_myinstance["account_id"]),
         account_id=reader_settings._uuid,
-        instance_id=instance_id,
-        role="read",
-        schema_id=None,
-        skip_insert_user_table=True,
+        role="member",
     )
+    try:
+        InstanceCollaboratorHandler(admin_client).add(
+            account_id=reader_settings._uuid,
+            instance_id=instance_id,
+            role="read",
+        )
+    except SQLAlchemy_OperationalError:
+        # the function above tries to write to the db
+        # but the db for this instance is dummy
+        # the insertion in the supabase table succeeds anyways
+        pass
     # check that this was successful and can be read by the reader
     db_collaborator = select_collaborator(
-        instance_id=instance_id.hex,
+        instance_id=instance_id_hex,
         account_id=reader_settings._uuid.hex,
+        fine_grained_access=True,
         client=reader_client,
     )
     assert db_collaborator["role"] == "read"
-    assert UUID(db_collaborator["instance_id"]) == instance_id
+    assert db_collaborator["instance_id"] == instance_id_hex
     assert UUID(db_collaborator["account_id"]) == reader_settings._uuid
-    assert db_collaborator["db_user_id"] is None
-    # this alone doesn't set a db_user
+    # reader is a collaborator now, can see the jwt db user
     db_user = select_db_user_by_instance(
-        instance_id=instance_id,
+        instance_id=instance_id_hex,
+        fine_grained_access=True,
         client=reader_client,
     )
-    assert db_user is None
-    # now set the db_user
+    assert db_user["name"] == "postgres"
+    assert db_user["password"] == "pwd"
+    assert db_user["type"] == "jwt"
+    # now set the public db_user
     insert_db_user(
-        name="read",
+        name="public",
         db_user_name="dbreader",
         db_user_password="1234",
         instance_id=instance_id,
+        fine_grained_access=True,
         client=admin_client,
     )
-    # admin can access all db users
-    data = (
-        admin_client.table("db_user")
-        .select("*")
-        .eq("instance_id", instance_id)
-        .execute()
-        .data
-    )
-    assert len(data) == 2
-    # reader can only access the read-level db user
+    # admon and reader both still get the jwt db user
     db_user = select_db_user_by_instance(
-        instance_id=instance_id,
+        instance_id=instance_id_hex,
+        fine_grained_access=True,
         client=reader_client,
     )
-    assert db_user["db_user_name"] == "dbreader"
-    assert db_user["db_user_password"] == "1234"
-    assert db_user["name"] == "read"
-    # admin still gets the write-level connection string
+    assert db_user["name"] == "postgres"
+    assert db_user["password"] == "pwd"
+    assert db_user["type"] == "jwt"
     db_user = select_db_user_by_instance(
-        instance_id=instance_id,
+        instance_id=instance_id_hex,
+        fine_grained_access=True,
         client=admin_client,
     )
-    assert db_user["db_user_name"] == "postgres"
-    assert db_user["db_user_password"] == "pwd"
-    assert db_user["name"] == "write"
+    assert db_user["name"] == "postgres"
+    assert db_user["password"] == "pwd"
+    assert db_user["type"] == "jwt"
 
 
 # This tests lamindb_setup.core._hub_core.connect_instance_hub
@@ -287,34 +178,37 @@ def test_connect_instance_hub(create_myinstance, create_testadmin1_session):
     instance, storage = connect_instance_hub(owner=owner, name=name)
     assert instance["name"] == name
     assert instance["owner"] == owner
-    assert instance["api_url"] is None
-    assert instance["db_permissions"] == "write"
+    assert instance["api_url"] == "http://localhost:8000"
+    assert (
+        instance["db_permissions"] == "write"
+    )  # the instance has fine_grained_access=False
     assert storage["root"] == "s3://lamindb-ci/myinstance"
     assert "schema_id" in instance
     assert "lnid" in instance
+    # switch the instance to fine-grained access
+    update_instance(
+        instance_id=create_myinstance["id"],
+        instance_fields={"fine_grained_access": True},
+        client=admin_client,
+    )
+    instance, _ = connect_instance_hub(owner=owner, name=name)
+    assert instance["db_permissions"] == "jwt"
 
     db_user = select_db_user_by_instance(
         instance_id=create_myinstance["id"],
+        fine_grained_access=True,
         client=admin_client,
     )
     expected_dsn = LaminDsn.build(
         scheme=create_myinstance["db_scheme"],
-        user=db_user["db_user_name"],
-        password=db_user["db_user_password"],
+        user=db_user["name"],
+        password=db_user["password"],
         host=create_myinstance["db_host"],
         port=str(create_myinstance["db_port"]),
         database=create_myinstance["db_database"],
     )
     assert instance["name"] == create_myinstance["name"]
     assert instance["db"] == expected_dsn
-
-    # add resource_db_server from seed_local_test
-    admin_client.table("instance").update(
-        {"resource_db_server_id": "e36c7069-2129-4c78-b2c6-323e2354b741"}
-    ).eq("id", instance["id"]).execute()
-
-    instance, _ = connect_instance_hub(owner=owner, name=name)
-    assert instance["api_url"] == "http://localhost:8000"
 
     # test anon access to public instance
     update_instance(
@@ -324,7 +218,13 @@ def test_connect_instance_hub(create_myinstance, create_testadmin1_session):
     )
 
     anon_client = connect_hub()
-    instance, _ = _connect_instance_hub(owner=owner, name=name, client=anon_client)
+    instance, _ = _connect_instance_hub(
+        owner=owner,
+        name=name,
+        use_root_db_user=False,
+        use_proxy_db=False,
+        client=anon_client,
+    )
     assert instance["name"] == name
     assert instance["owner"] == owner
 
@@ -372,22 +272,48 @@ def test_connect_instance_hub_corrupted_or_expired_credentials(
     assert ln_setup.settings.user.access_token == access_token
 
 
-def test_init_storage_with_non_existing_bucket(create_testadmin1_session):
+def test_init_storage_with_non_existing_bucket(
+    create_myinstance, create_testadmin1_session
+):
     from botocore.exceptions import ClientError
 
     with pytest.raises(ClientError) as error:
         init_storage_hub(
             ssettings=init_storage_base(
-                "s3://non_existing_storage_root", instance_id=uuid4()
+                root="s3://non_existing_storage_root",
+                instance_id=UUID(create_myinstance["id"]),
+                instance_slug=f"testadmin1/{create_myinstance['id']}",
+                init_instance=True,
+                register_hub=True,
             )[0]
         )
     assert error.exconly().endswith("Not Found")
 
 
-def test_init_storage_incorrect_protocol():
+def test_init_storage_incorrect_protocol(create_myinstance):
     with pytest.raises(ValueError) as error:
-        init_storage_base("incorrect-protocol://some-path/some-path-level")
+        init_storage_base(
+            root="incorrect-protocol://some-path/some-path-level",
+            instance_id=create_myinstance["id"],
+            instance_slug=f"testadmin1/{create_myinstance['id']}",
+            init_instance=True,
+            register_hub=True,
+        )
     assert "Protocol incorrect-protocol is not supported" in error.exconly()
+
+
+def test_select_storage_or_parent(create_myinstance):
+    # check not exisitng
+    assert select_storage_or_parent("s3://does-not-exist") is None
+
+    root = "s3://lamindb-ci/myinstance"
+
+    result = select_storage_or_parent(root)
+    assert result["root"] == root
+    # check with a child path and anonymous user
+    with patch.object(ln_setup.settings.user, "handle", new="anonymous"):
+        result = select_storage_or_parent(root + "/subfolder")
+    assert result["root"] == root
 
 
 def test_fine_grained_access(
@@ -417,8 +343,11 @@ def test_fine_grained_access(
     isettings_file.unlink()
     # run from a script because test_update_schema_in_hub.py has ln_setup.init
     # which fails if we connect here
-    subprocess.run(
+    result = subprocess.run(
         "python ./tests/hub-local/scripts/script-connect-fine-grained-access.py",
         shell=True,
-        check=True,
+        capture_output=True,
     )
+    print(result.stdout.decode())
+    print(result.stderr.decode())
+    assert result.returncode == 0

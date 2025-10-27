@@ -14,10 +14,10 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 12
     steps:
-      - uses: actions/checkout@v3
-      - uses: actions/setup-python@v4
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v6
         with:
-          python-version: "3.10" # run one job on 3.9
+          python-version: "3.10"
           cache: "pip"
       - uses: aws-actions/configure-aws-credentials@v4
         with:
@@ -35,7 +35,7 @@ jobs:
 
   # tests both on production and staging hub
   hub-cloud:
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-latest
     strategy:
       fail-fast: false
       matrix:
@@ -43,7 +43,7 @@ jobs:
           - lamin_env: "prod"
             python-version: "3.11"
           - lamin_env: "staging"
-            python-version: "3.10" # test on 3.9
+            python-version: "3.10"
     timeout-minutes: 12
     steps:
       - uses: aws-actions/configure-aws-credentials@v4
@@ -52,7 +52,7 @@ jobs:
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           aws-region: eu-central-1
       - uses: actions/checkout@v4
-      - uses: actions/setup-python@v4
+      - uses: actions/setup-python@v6
         with:
           python-version: ${{ matrix.python-version }}
           cache: "pip"
@@ -97,7 +97,7 @@ jobs:
     timeout-minutes: 12
     steps:
       - uses: actions/checkout@v4
-      - uses: actions/setup-python@v4
+      - uses: actions/setup-python@v6
         with:
           python-version: "3.10"
           cache: "pip"
@@ -139,7 +139,7 @@ jobs:
           echo "AWS_ACCESS_KEY_ID_HOSTED_S3=${{ secrets.AWS_ACCESS_KEY_ID }}" >> .env.local
           echo "AWS_SECRET_ACCESS_KEY_HOSTED_S3=${{ secrets.AWS_SECRET_ACCESS_KEY }}" >> .env.local
         working-directory: laminhub/rest-hub/supabase
-      - uses: actions/setup-python@v4
+      - uses: actions/setup-python@v6
         with:
           python-version: "3.11" # we need to run everything for coverage on 3.11
           cache: "pip"
@@ -168,7 +168,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - uses: actions/setup-python@v4
+      - uses: actions/setup-python@v6
         with:
           python-version: "3.11"
           cache: "pip"
@@ -205,7 +205,7 @@ jobs:
           ssh-key: ${{ secrets.READ_LNDOCS }}
           path: lndocs
           ref: main
-      - uses: actions/setup-python@v4
+      - uses: actions/setup-python@v6
         with:
           python-version: "3.10"
           cache: "pip"
@@ -231,14 +231,6 @@ jobs:
     needs: [hub-local, hub-cloud]
     runs-on: ubuntu-latest
     steps:
-      - uses: voxmedia/github-action-slack-notify-build@v1
-        if: ${{ needs.hub-local.result == 'success' && needs.hub-cloud.result == 'success' && github.event_name == 'repository_dispatch' }}
-        env:
-          SLACK_BOT_TOKEN: ${{ secrets.SLACK_GITHUB_ACTION }}
-        with:
-          channel_id: C05S2C02JHM
-          status: SUCCESS
-          color: good
       - uses: voxmedia/github-action-slack-notify-build@v1
         if: ${{ ( needs.hub-local.result == 'failure' || needs.hub-cloud.result == 'failure' ) && github.event_name == 'repository_dispatch' }}
         env:

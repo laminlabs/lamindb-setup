@@ -44,9 +44,12 @@ def test_login_api_key():
 
     with pytest.raises(FunctionsHttpError):
         ln_setup.login(api_key="invalid-key")
-
+    # can't provide both
     with pytest.raises(ValueError):
-        ln_setup.login(user=None, api_key=None)
+        ln_setup.login(user="some_user", api_key="some_key")
+    # incorrect kwarg
+    with pytest.raises(TypeError):
+        ln_setup.login(user="some_user", some_arg="some_arg")
 
     os.environ["LAMIN_API_KEY"] = api_key
     ln_setup.login()

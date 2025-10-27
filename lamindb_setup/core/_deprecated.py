@@ -51,7 +51,7 @@ def deprecated(new_name: str):
             warnings.warn(
                 f"Use {new_name} instead of {func.__name__}, "
                 f"{func.__name__} will be removed in the future.",
-                category=FutureWarning,
+                category=DeprecationWarning,
                 stacklevel=2,
             )
             return func(*args, **kwargs)

@@ -2,36 +2,37 @@ from __future__ import annotations
 
 import importlib
 import os
-from typing import TYPE_CHECKING
+import sys
+import types
+from typing import TYPE_CHECKING, Any
 from uuid import UUID
 
 from lamin_utils import logger
 
-from ._check_setup import _check_instance_setup, _get_current_instance_settings
-from ._disconnect import disconnect
-from ._init_instance import (
-    MESSAGE_CANNOT_SWITCH_DEFAULT_INSTANCE,
-    CannotSwitchDefaultInstance,
-    load_from_isettings,
+from ._check_setup import (
+    _check_instance_setup,
+    _get_current_instance_settings,
+    find_module_candidates,
 )
+from ._disconnect import disconnect
+from ._init_instance import load_from_isettings
 from ._silence_loggers import silence_loggers
 from .core._hub_core import connect_instance_hub
-from .core._hub_utils import (
-    LaminDsn,
-    LaminDsnModel,
-)
+from .core._hub_utils import LaminDsnModel
 from .core._settings import settings
 from .core._settings_instance import InstanceSettings
 from .core._settings_load import load_instance_settings
 from .core._settings_storage import StorageSettings
-from .core._settings_store import instance_settings_file, settings_dir
+from .core._settings_store import instance_settings_file
 from .core.cloud_sqlite_locker import unlock_cloud_sqlite_upon_exception
+from .core.django import reset_django
+from .errors import CannotSwitchDefaultInstance
 
 if TYPE_CHECKING:
     from pathlib import Path
 
     from .core._settings_user import UserSettings
-    from .core.types import UPathStr
+    from .types import UPathStr
 
 # this is for testing purposes only
 # set to True only to test failed load
@@ -67,49 +68,32 @@ def update_db_using_local(
     db_updated = None
     # check if postgres
     if hub_instance_result["db_scheme"] == "postgresql":
-        db_dsn_hub = LaminDsnModel(db=hub_instance_result["db"])
         if db is not None:
-            db_dsn_local = LaminDsnModel(db=db)
-        else:
+            # use only the provided db if it is set
+            db_updated = db
+        elif (db_env := os.getenv("LAMINDB_INSTANCE_DB")) is not None:
+            logger.important("loading db URL from env variable LAMINDB_INSTANCE_DB")
             # read directly from the environment
-            if os.getenv("LAMINDB_INSTANCE_DB") is not None:
-                logger.important("loading db URL from env variable LAMINDB_INSTANCE_DB")
-                db_dsn_local = LaminDsnModel(db=os.getenv("LAMINDB_INSTANCE_DB"))
-            # read from a cached settings file in case the hub result is only
-            # read level or inexistent
-            elif settings_file.exists() and (
-                db_dsn_hub.db.user is None
-                or (db_dsn_hub.db.user is not None and "read" in db_dsn_hub.db.user)
-            ):
+            db_updated = db_env
+        else:
+            db_hub = hub_instance_result["db"]
+            db_dsn_hub = LaminDsnModel(db=db_hub)
+            # read from a cached settings file in case the hub result is inexistent
+            if db_dsn_hub.db.user in {None, "none"} and settings_file.exists():
                 isettings = load_instance_settings(settings_file)
-                db_dsn_local = LaminDsnModel(db=isettings.db)
+                db_updated = isettings.db
             else:
                 # just take the default hub result and ensure there is actually a user
                 if (
-                    db_dsn_hub.db.user == "none"
-                    and db_dsn_hub.db.password == "none"
+                    db_dsn_hub.db.user in {None, "none"}
+                    and db_dsn_hub.db.password in {None, "none"}
                     and raise_permission_error
                 ):
                     raise PermissionError(
                         "No database access, please ask your admin to provide you with"
                         " a DB URL and pass it via --db <db_url>"
                     )
-                db_dsn_local = db_dsn_hub
-        if not check_db_dsn_equal_up_to_credentials(db_dsn_hub.db, db_dsn_local.db):
-            raise ValueError(
-                "The local differs from the hub database information:\n 1. did you"
-                " pass a wrong db URL with --db?\n 2. did your database get updated by"
-                " an admin?\nConsider deleting your cached database environment:\nrm"
-                f" {settings_file.as_posix()}"
-            )
-        db_updated = LaminDsn.build(
-            scheme=db_dsn_hub.db.scheme,
-            user=db_dsn_local.db.user,
-            password=db_dsn_local.db.password,
-            host=db_dsn_hub.db.host,  # type: ignore
-            port=db_dsn_hub.db.port,
-            database=db_dsn_hub.db.database,
-        )
+                db_updated = db_hub
     return db_updated
 
 
@@ -119,6 +103,8 @@ def _connect_instance(
     *,
     db: str | None = None,
     raise_permission_error: bool = True,
+    use_root_db_user: bool = False,
+    use_proxy_db: bool = False,
     access_token: str | None = None,
 ) -> InstanceSettings:
     settings_file = instance_settings_file(name, owner)
@@ -126,14 +112,22 @@ def _connect_instance(
     if settings_file.exists():
         isettings = load_instance_settings(settings_file)
         # skip hub request for a purely local instance
-        make_hub_request = isettings.is_remote
+        if isettings.is_remote:
+            make_hub_request = True
+        else:
+            make_hub_request = False
+            if db is not None and isettings.dialect == "postgresql":
+                isettings._db = db
     if make_hub_request:
-        # the following will return a string if the instance does not exist
-        # on the hub
+        # the following will return a string if the instance does not exist on the hub
         # do not call hub if the user is anonymous
         if owner != "anonymous":
             hub_result = connect_instance_hub(
-                owner=owner, name=name, access_token=access_token
+                owner=owner,
+                name=name,
+                access_token=access_token,
+                use_root_db_user=use_root_db_user,
+                use_proxy_db=use_proxy_db,
             )
         else:
             hub_result = "anonymous-user"
@@ -157,7 +151,7 @@ def _connect_instance(
             isettings = InstanceSettings(
                 id=UUID(instance_result["id"]),
                 owner=owner,
-                name=name,
+                name=instance_result["name"],
                 storage=ssettings,
                 db=db_updated,
                 modules=instance_result["schema_str"],
@@ -168,8 +162,10 @@ def _connect_instance(
                 schema_id=None
                 if (schema_id := instance_result["schema_id"]) is None
                 else UUID(schema_id),
-                fine_grained_access=instance_result.get("fine_grained_access", False),
-                db_permissions=instance_result.get("db_permissions", None),
+                fine_grained_access=bool(instance_result["fine_grained_access"]),
+                db_permissions=instance_result.get("db_permissions", None)
+                if not use_root_db_user
+                else "write",
             )
         else:
             if hub_result != "anonymous-user":
@@ -187,16 +183,132 @@ def _connect_instance(
     return isettings
 
 
+def reset_django_module_variables():
+    # This function updates all module-level references to Django classes
+    # But it will fail to update function level references
+    # This is not a problem unless for the function that calls ln.connect() itself
+    # So, if a user has
+    #
+    # def my_function():
+    #     import lamindb as ln
+    #     ln.connect(...)
+    #
+    # Then it will **not** work and the `ln` variable becomes stale and hold a reference to the old classes
+    # Other functions that dynamically import are no problem because the variables
+    # are automatically refreshed when the function runs the next time after ln.connect() was called
+    logger.debug("resetting django module variables")
+
+    # django.apps needs to be a local import to refresh variables
+    from django.apps import apps
+
+    app_names = {app.name for app in apps.get_app_configs()}
+    # always copy before iterations over sys.modules
+    # see https://docs.python.org/3/library/sys.html#sys.modules
+    for name, module in sys.modules.copy().items():
+        if (
+            module is not None
+            and (not name.startswith("__") or name == "__main__")
+            and name not in sys.builtin_module_names
+            and not (
+                hasattr(module, "__file__")
+                and module.__file__
+                and any(
+                    path in module.__file__ for path in ["/lib/python", "\\lib\\python"]
+                )
+            )
+        ):
+            try:
+                for k, v in vars(module).items():
+                    if (
+                        isinstance(v, types.ModuleType)
+                        and not k.startswith("_")
+                        and getattr(v, "__name__", None) in app_names
+                    ):
+                        if v.__name__ in sys.modules:
+                            vars(module)[k] = sys.modules[v.__name__]
+                    # Also reset classes from Django apps - but check if the class module starts with any app name
+                    elif hasattr(v, "__module__") and getattr(v, "__module__", None):
+                        class_module = v.__module__
+                        # Check if the class module starts with any of our app names
+                        if any(
+                            class_module.startswith(app_name) for app_name in app_names
+                        ):
+                            if class_module in sys.modules:
+                                fresh_module = sys.modules[class_module]
+                                attr_name = getattr(v, "__name__", k)
+                                if hasattr(fresh_module, attr_name):
+                                    vars(module)[k] = getattr(fresh_module, attr_name)
+            except (AttributeError, TypeError):
+                continue
+
+
+def _connect_cli(
+    instance: str, use_root_db_user: bool = False, use_proxy_db: bool = False
+) -> None:
+    from lamindb_setup import settings as settings_
+
+    owner, name = get_owner_name_from_identifier(instance)
+    isettings = _connect_instance(
+        owner, name, use_root_db_user=use_root_db_user, use_proxy_db=use_proxy_db
+    )
+    isettings._persist(write_to_disk=True)
+    if not isettings.is_on_hub or isettings._is_cloud_sqlite:
+        # there are two reasons to call the full-blown connect
+        # (1) if the instance is not on the hub, we need to register
+        # potential users through register_user()
+        # (2) if the instance is cloud sqlite, we need to lock it
+        connect(_write_settings=False, _reload_lamindb=False)
+    else:
+        logger.important(f"connected lamindb: {isettings.slug}")
+    return None
+
+
+def validate_connection_state(
+    owner: str, name: str, use_root_db_user: bool = False
+) -> None:
+    from django.db import connection
+
+    if (
+        settings._instance_exists
+        and f"{owner}/{name}" == settings.instance.slug
+        # below is to ensure that if another process interferes
+        # we don't use the in-memory mock database
+        # could be made more specific by checking whether the django
+        # configured database is the same as the one in settings
+        and connection.settings_dict["NAME"] != ":memory:"
+        and not use_root_db_user  # always re-connect for root db user
+    ):
+        logger.important(
+            f"doing nothing, already connected lamindb: {settings.instance.slug}"
+        )
+        return None
+    else:
+        if settings._instance_exists and settings.instance.slug != "none/none":
+            import lamindb as ln
+
+            if ln.context.transform is not None:
+                raise CannotSwitchDefaultInstance(
+                    "Cannot switch default instance while `ln.track()` is live: call `ln.finish()`"
+                )
+        reset_django()
+
+
 @unlock_cloud_sqlite_upon_exception(ignore_prev_locker=True)
-def connect(instance: str | None = None, **kwargs) -> str | tuple | None:
+def connect(instance: str | None = None, **kwargs: Any) -> str | tuple | None:
     """Connect to an instance.
 
     Args:
         instance: Pass a slug (`account/name`) or URL (`https://lamin.ai/account/name`).
-            If `None`, looks for an environment variable `LAMIN_CURRENT_INSTANCE` to get the instance identifier. If it doesn't find this variable, it connects to the instance that was connected with `lamin connect` through the CLI.
+            If `None`, looks for an environment variable `LAMIN_CURRENT_INSTANCE` to get the instance identifier.
+            If it doesn't find this variable, it connects to the instance that was connected with `lamin connect` through the CLI.
+
+    See Also:
+        Configure an instance for auto-connect via the CLI, see `here <https://docs.lamin.ai/cli#connect>`__.
     """
     # validate kwargs
     valid_kwargs = {
+        "use_root_db_user",
+        "use_proxy_db",
         "_db",
         "_write_settings",
         "_raise_not_found_error",
@@ -207,13 +319,17 @@ def connect(instance: str | None = None, **kwargs) -> str | tuple | None:
     for kwarg in kwargs:
         if kwarg not in valid_kwargs:
             raise TypeError(f"connect() got unexpected keyword argument '{kwarg}'")
-    isettings: InstanceSettings = None  # type: ignore
+
+    use_root_db_user: bool = kwargs.get("use_root_db_user", False)
+    use_proxy_db = kwargs.get("use_proxy_db", False)
     # _db is still needed because it is called in init
     _db: str | None = kwargs.get("_db", None)
-    _write_settings: bool = kwargs.get("_write_settings", True)
+    _write_settings: bool = kwargs.get("_write_settings", False)
     _raise_not_found_error: bool = kwargs.get("_raise_not_found_error", True)
     _reload_lamindb: bool = kwargs.get("_reload_lamindb", True)
     _test: bool = kwargs.get("_test", False)
+
+    isettings: InstanceSettings = None  # type: ignore
 
     access_token: str | None = None
     _user: UserSettings | None = kwargs.get("_user", None)
@@ -224,25 +340,26 @@ def connect(instance: str | None = None, **kwargs) -> str | tuple | None:
 
     try:
         if instance is None:
-            isettings_or_none = _get_current_instance_settings()
-            if isettings_or_none is None:
-                raise ValueError(
-                    "No instance was connected through the CLI, pass a value to `instance` or connect via the CLI."
-                )
-            isettings = isettings_or_none
+            if settings._instance_exists:
+                isettings = settings.instance
+            else:
+                isettings_or_none = _get_current_instance_settings()
+                if isettings_or_none is None:
+                    raise ValueError(
+                        "No instance was connected through the CLI, pass a value to `instance` or connect via the CLI."
+                    )
+                isettings = isettings_or_none
+            if use_root_db_user:
+                reset_django()
+                owner, name = isettings.owner, isettings.name
+            if _db is not None and isettings.dialect == "postgresql":
+                isettings._db = _db
         else:
             owner, name = get_owner_name_from_identifier(instance)
             if _check_instance_setup() and not _test:
-                if (
-                    settings._instance_exists
-                    and f"{owner}/{name}" == settings.instance.slug
-                ):
-                    logger.important(f"connected lamindb: {settings.instance.slug}")
-                    return None
-                else:
-                    raise CannotSwitchDefaultInstance(
-                        MESSAGE_CANNOT_SWITCH_DEFAULT_INSTANCE
-                    )
+                validate_connection_state(
+                    owner, name, use_root_db_user=use_root_db_user
+                )
             elif (
                 _write_settings
                 and settings._instance_exists
@@ -250,9 +367,15 @@ def connect(instance: str | None = None, **kwargs) -> str | tuple | None:
             ):
                 disconnect(mute=True)
 
+        if instance is not None or use_root_db_user:
             try:
                 isettings = _connect_instance(
-                    owner, name, db=_db, access_token=access_token
+                    owner,
+                    name,
+                    db=_db,
+                    access_token=access_token,
+                    use_root_db_user=use_root_db_user,
+                    use_proxy_db=use_proxy_db,
                 )
             except InstanceNotFoundError as e:
                 if _raise_not_found_error:
@@ -269,15 +392,6 @@ def connect(instance: str | None = None, **kwargs) -> str | tuple | None:
         if _test:
             return None
         silence_loggers()
-        # migrate away from lnschema-core
-        no_lnschema_core_file = (
-            settings_dir / f"no_lnschema_core-{isettings.slug.replace('/', '--')}"
-        )
-        if not no_lnschema_core_file.exists():
-            # sqlite file for cloud sqlite instances is already updated here
-            migrate_lnschema_core(
-                isettings, no_lnschema_core_file, write_file=_write_settings
-            )
         check, msg = isettings._load_db()
         if not check:
             local_db = (
@@ -304,7 +418,8 @@ def connect(instance: str | None = None, **kwargs) -> str | tuple | None:
         load_from_isettings(isettings, user=_user, write_settings=_write_settings)
         if _reload_lamindb:
             importlib.reload(importlib.import_module("lamindb"))
-        else:
+            reset_django_module_variables()
+        if isettings.slug != "none/none":
             logger.important(f"connected lamindb: {isettings.slug}")
     except Exception as e:
         if isettings is not None:
@@ -315,138 +430,7 @@ def connect(instance: str | None = None, **kwargs) -> str | tuple | None:
     return None
 
 
-def load(slug: str) -> str | tuple | None:
-    """Connect to instance and set ``auto-connect`` to true.
-
-    This is exactly the same as ``ln.connect()`` except for that
-    ``ln.connect()`` doesn't change the state of ``auto-connect``.
-    """
-    print("Warning: This is deprecated and will be removed.")
-    result = connect(slug)
-    settings.auto_connect = True
-    return result
-
-
-def migrate_lnschema_core(
-    isettings: InstanceSettings, no_lnschema_core_file: Path, write_file: bool = True
-):
-    """Migrate lnschema_core tables to lamindb tables."""
-    from urllib.parse import urlparse
-
-    # we need to do this because the sqlite file should be already synced
-    # has no effect if not cloud sqlite
-    # errors if the sqlite file is not in the cloud and doesn't exist locally
-    # isettings.db syncs but doesn't error in this case due to error_no_origin=False
-    isettings._update_local_sqlite_file()
-
-    parsed_uri = urlparse(isettings.db)
-    db_type = parsed_uri.scheme
-
-    if db_type == "sqlite":
-        import sqlite3
-
-        conn = sqlite3.connect(parsed_uri.path)
-    elif db_type in ["postgresql", "postgres"]:
-        import psycopg2
-
-        conn = psycopg2.connect(isettings.db)
-    else:
-        raise ValueError("Unsupported database type. Use 'sqlite' or 'postgresql' URI.")
-
-    cur = conn.cursor()
-
-    try:
-        if db_type == "sqlite":
-            cur.execute(
-                "SELECT name FROM sqlite_master WHERE type='table' AND name='lamindb_user'"
-            )
-            migrated = cur.fetchone() is not None
-
-            # tables that need to be renamed
-            cur.execute(
-                "SELECT name FROM sqlite_master WHERE type='table' AND name LIKE 'lnschema_core_%'"
-            )
-            tables_to_rename = [
-                row[0][len("lnschema_core_") :] for row in cur.fetchall()
-            ]
-        else:  # postgres
-            cur.execute(
-                "SELECT EXISTS (SELECT FROM information_schema.tables WHERE table_name = 'lamindb_user')"
-            )
-            migrated = cur.fetchone()[0]
-
-            # tables that need to be renamed
-            cur.execute(
-                "SELECT table_name FROM information_schema.tables WHERE table_name LIKE 'lnschema_core_%'"
-            )
-            tables_to_rename = [
-                row[0][len("lnschema_core_") :] for row in cur.fetchall()
-            ]
-
-        if migrated:
-            if write_file:
-                no_lnschema_core_file.touch(exist_ok=True)
-        else:
-            try:
-                response = input(
-                    f"Do you want to migrate to lamindb 1.0 (integrate lnschema_core into lamindb)? (y/n) -- Will rename {tables_to_rename}"
-                )
-                if response != "y":
-                    print("Aborted.")
-                    quit()
-                if isettings.is_on_hub:
-                    from lamindb_setup.core._hub_client import call_with_fallback_auth
-                    from lamindb_setup.core._hub_crud import (
-                        select_collaborator,
-                    )
-
-                    # double check that user is an admin, otherwise will fail below
-                    # due to insufficient SQL permissions with cryptic error
-                    collaborator = call_with_fallback_auth(
-                        select_collaborator,
-                        instance_id=settings.instance._id,
-                        account_id=settings.user._uuid,
-                    )
-                    if collaborator is None or collaborator["role"] != "admin":
-                        raise SystemExit(
-                            "❌ Only admins can deploy migrations, please ensure that you're an"
-                            f" admin: https://lamin.ai/{settings.instance.slug}/settings"
-                        )
-                for table in tables_to_rename:
-                    if db_type == "sqlite":
-                        cur.execute(
-                            f"ALTER TABLE lnschema_core_{table} RENAME TO lamindb_{table}"
-                        )
-                    else:  # postgres
-                        cur.execute(
-                            f"ALTER TABLE lnschema_core_{table} RENAME TO lamindb_{table};"
-                        )
-
-                cur.execute(
-                    "UPDATE django_migrations SET app = 'lamindb' WHERE app = 'lnschema_core'"
-                )
-                print(
-                    "Renaming tables finished.\nNow, *please* call: lamin migrate deploy"
-                )
-                if write_file:
-                    no_lnschema_core_file.touch(exist_ok=True)
-            except Exception:
-                # read-only users can't rename tables
-                pass
-
-        conn.commit()
-
-    except Exception as e:
-        print(f"An error occurred: {e}")
-        conn.rollback()
-
-    finally:
-        # close the cursor and connection
-        cur.close()
-        conn.close()
-
-
-def get_owner_name_from_identifier(identifier: str):
+def get_owner_name_from_identifier(identifier: str) -> tuple[str, str]:
     if "/" in identifier:
         if identifier.startswith("https://lamin.ai/"):
             identifier = identifier.replace("https://lamin.ai/", "")

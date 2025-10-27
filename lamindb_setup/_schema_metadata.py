@@ -6,16 +6,7 @@ import json
 from typing import TYPE_CHECKING, Literal
 from uuid import UUID
 
-from django.db.models import (
-    Field,
-    ForeignKey,
-    ForeignObjectRel,
-    ManyToManyField,
-    ManyToManyRel,
-    ManyToOneRel,
-    OneToOneField,
-    OneToOneRel,
-)
+from lamin_utils import logger
 from pydantic import BaseModel
 
 from lamindb_setup import settings
@@ -25,11 +16,24 @@ from lamindb_setup.core._hub_client import call_with_fallback_auth
 # surpress pydantic warning about `model_` namespace
 try:
     BaseModel.model_config["protected_namespaces"] = ()
+    logger.debug(
+        "pydantic.BaseModel.model_config['protected_namespaces'] has been set to ()"
+    )
 except Exception:
     pass
 
 
 if TYPE_CHECKING:
+    from django.db.models import (
+        Field,
+        ForeignKey,
+        ForeignObjectRel,
+        ManyToManyField,
+        ManyToManyRel,
+        ManyToOneRel,
+        OneToOneField,
+        OneToOneRel,
+    )
     from supabase import Client
 
 
@@ -67,9 +71,9 @@ def _synchronize_schema(client: Client) -> tuple[bool, UUID, dict]:
         .eq("id", settings.instance._id.hex)
         .execute()
     )
-    assert (
-        len(instance_response.data) == 1
-    ), f"schema of instance {settings.instance._id.hex} could not be updated with schema {schema_uuid.hex}"
+    assert len(instance_response.data) == 1, (
+        f"schema of instance {settings.instance._id.hex} could not be updated with schema {schema_uuid.hex}"
+    )
 
     return is_new, schema_uuid, schema
 
@@ -159,7 +163,7 @@ class FieldMetadata(BaseModel):
 
 class _ModelHandler:
     def __init__(self, model, module_name: str, included_modules: list[str]) -> None:
-        from lamindb.models import LinkORM
+        from lamindb.models import IsLink
 
         self.model = model
         self.class_name = model.__name__
@@ -168,7 +172,7 @@ class _ModelHandler:
         self.table_name = model._meta.db_table
         self.included_modules = included_modules
         self.fields = self._get_fields_metadata(self.model)
-        self.is_link_table = issubclass(model, LinkORM)
+        self.is_link_table = issubclass(model, IsLink)
         self.name_field = model._name_field if hasattr(model, "_name_field") else None
         self.ontology_id_field = (
             model._ontology_id_field if hasattr(model, "_ontology_id_field") else None
@@ -245,7 +249,7 @@ class _ModelHandler:
         return related_fields
 
     def _get_field_metadata(self, model, field: Field):
-        from lamindb.models import LinkORM
+        from lamindb.models import IsLink
 
         internal_type = field.get_internal_type()
         model_name = field.model._meta.model_name
@@ -281,6 +285,9 @@ class _ModelHandler:
 
         column = None
         if relation_type not in ["many-to-many", "one-to-many"]:
+            # have to reload it here in case reset happened
+            from django.db.models import ForeignObjectRel
+
             if not isinstance(field, ForeignObjectRel):
                 column = field.column
 
@@ -296,7 +303,7 @@ class _ModelHandler:
             model_name=model_name,
             field_name=field_name,
             type=internal_type,
-            is_link_table=issubclass(field.model, LinkORM),
+            is_link_table=issubclass(field.model, IsLink),
             is_primary_key=is_primary_key,
             is_editable=is_editable,
             max_length=max_length,
@@ -312,6 +319,8 @@ class _ModelHandler:
 
     @staticmethod
     def _get_through_many_to_many(field_or_rel: ManyToManyField | ManyToManyRel):
+        # have to reload it here in case reset happened
+        from django.db.models import ManyToManyField, ManyToManyRel
         from lamindb.models import Registry
 
         if isinstance(field_or_rel, ManyToManyField):
@@ -345,6 +354,9 @@ class _ModelHandler:
     def _get_through(
         self, field_or_rel: ForeignKey | OneToOneField | ManyToOneRel | OneToOneRel
     ):
+        # have to reload it here in case reset happened
+        from django.db.models import ForeignObjectRel
+
         if isinstance(field_or_rel, ForeignObjectRel):
             rel_1 = field_or_rel.field.related_fields[0][0]
             rel_2 = field_or_rel.field.related_fields[0][1]
@@ -400,23 +412,27 @@ class _SchemaHandler:
         return self.to_dict(include_django_objects=False)
 
     def _get_modules_metadata(self):
-        from lamindb.models import Record, Registry
+        from django.apps import apps
+        from lamindb.models import Registry, SQLRecord
 
-        all_models = {
-            module_name: {
-                model._meta.model_name: _ModelHandler(
-                    model, module_name, self.included_modules
-                )
-                for model in self._get_schema_module(
-                    module_name
-                ).models.__dict__.values()
-                if model.__class__ is Registry
-                and model is not Record
+        all_models = {module_name: {} for module_name in self.included_modules}
+
+        # Iterate through all registered Django models
+        for model in apps.get_models():
+            # Check if model meets the criteria
+            if (
+                model.__class__ is Registry
+                and model is not SQLRecord
                 and not model._meta.abstract
-                and model.__get_module_name__() == module_name
-            }
-            for module_name in self.included_modules
-        }
+            ):
+                module_name = model.__get_module_name__()
+                # Only include if module is in our included list
+                if module_name in self.included_modules:
+                    model_name = model._meta.model_name
+                    all_models[module_name][model_name] = _ModelHandler(
+                        model, module_name, self.included_modules
+                    )
+
         assert all_models
         return all_models
 

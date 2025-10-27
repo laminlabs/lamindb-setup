@@ -4,7 +4,9 @@ import functools
 import importlib as il
 import inspect
 import os
+from importlib.metadata import distributions
 from typing import TYPE_CHECKING
+from uuid import UUID
 
 from lamin_utils import logger
 
@@ -12,7 +14,11 @@ from ._silence_loggers import silence_loggers
 from .core import django as django_lamin
 from .core._settings import settings
 from .core._settings_store import current_instance_settings_file
-from .core.exceptions import DefaultMessageException
+from .errors import (
+    MODULE_WASNT_CONFIGURED_MESSAGE_TEMPLATE,
+    InstanceNotSetupError,
+    ModuleWasntConfigured,
+)
 
 if TYPE_CHECKING:
     from collections.abc import Callable
@@ -20,22 +26,9 @@ if TYPE_CHECKING:
     from .core._settings_instance import InstanceSettings
 
 
-class InstanceNotSetupError(DefaultMessageException):
-    default_message = """\
-To use lamindb, you need to connect to an instance.
-
-Connect to an instance: `ln.connect()`. Init an instance: `ln.setup.init()`.
-
-If you used the CLI to set up lamindb in a notebook, restart the Python session.
-"""
-
-
 CURRENT_ISETTINGS: InstanceSettings | None = None
+MODULE_CANDIDATES: set[str] | None = None
 IS_LOADING: bool = False
-
-
-class ModuleWasntConfigured(SystemExit):
-    pass
 
 
 # decorator to disable auto-connect when importing a module such as lamindb
@@ -52,7 +45,25 @@ def disable_auto_connect(func: Callable):
     return wrapper
 
 
-def _get_current_instance_settings() -> InstanceSettings | None:
+def find_module_candidates():
+    """Find all local packages that depend on lamindb."""
+    global MODULE_CANDIDATES
+    if MODULE_CANDIDATES is not None:
+        return MODULE_CANDIDATES
+    all_dists = list(distributions())
+    lamindb_deps = {
+        dist.metadata["Name"].lower()
+        for dist in all_dists
+        if dist.requires and any("lamindb" in req.lower() for req in dist.requires)
+    }
+    lamindb_deps.remove("lamindb")
+    MODULE_CANDIDATES = lamindb_deps
+    return lamindb_deps
+
+
+def _get_current_instance_settings(from_module: str | None = None) -> InstanceSettings:
+    from .core._settings_instance import InstanceSettings
+
     global CURRENT_ISETTINGS
 
     if CURRENT_ISETTINGS is not None:
@@ -70,9 +81,17 @@ def _get_current_instance_settings() -> InstanceSettings | None:
                 " command line: `lamin connect <instance>` or `lamin init <...>`"
             )
             raise e
-        return isettings
     else:
-        return None
+        module_candidates = find_module_candidates()
+        isettings = InstanceSettings(
+            id=UUID("00000000-0000-0000-0000-000000000000"),
+            owner="none",
+            name="none",
+            storage=None,
+            modules=",".join(module_candidates),
+        )
+    CURRENT_ISETTINGS = isettings
+    return isettings
 
 
 def _normalize_module_name(module_name: str) -> str:
@@ -84,18 +103,15 @@ def _normalize_module_name(module_name: str) -> str:
 def _check_module_in_instance_modules(
     module: str, isettings: InstanceSettings | None = None
 ) -> None:
-    not_in_instance_msg = (
-        f"'{module}' is missing from this instance. "
-        "Please go to your instance settings page and add it under 'schema modules'."
-    )
-
     if isettings is not None:
         modules_raw = isettings.modules
         modules = set(modules_raw).union(
             _normalize_module_name(module) for module in modules_raw
         )
         if _normalize_module_name(module) not in modules and module not in modules:
-            raise ModuleWasntConfigured(not_in_instance_msg)
+            raise ModuleWasntConfigured(
+                MODULE_WASNT_CONFIGURED_MESSAGE_TEMPLATE.format(module)
+            )
         else:
             return
 
@@ -105,7 +121,7 @@ def _check_module_in_instance_modules(
         # app.name is always unnormalized module (python package) name
         if module == app.name or module == _normalize_module_name(app.name):
             return
-    raise ModuleWasntConfigured(not_in_instance_msg)
+    raise ModuleWasntConfigured(MODULE_WASNT_CONFIGURED_MESSAGE_TEMPLATE.format(module))
 
 
 # infer the name of the module that calls this function
@@ -145,12 +161,7 @@ def _check_instance_setup(from_module: str | None = None) -> bool:
         return True
     isettings = _get_current_instance_settings()
     if isettings is not None:
-        if (
-            from_module is not None
-            and settings.auto_connect
-            and not django_lamin.IS_SETUP
-            and not IS_LOADING
-        ):
+        if from_module is not None and not django_lamin.IS_SETUP and not IS_LOADING:
             if from_module != "lamindb":
                 _check_module_in_instance_modules(from_module, isettings)
 
@@ -159,10 +170,15 @@ def _check_instance_setup(from_module: str | None = None) -> bool:
                 il.reload(il.import_module(from_module))
             else:
                 django_lamin.setup_django(isettings)
-                logger.important(f"connected lamindb: {isettings.slug}")
+                if isettings.slug != "none/none":
+                    logger.important(f"connected lamindb: {isettings.slug}")
+                    # update of local storage location through search_local_root()
+                    settings._instance_settings = isettings
+                else:
+                    logger.warning("not connected, call: ln.connect('account/name')")
         return django_lamin.IS_SETUP
     else:
-        if from_module is not None and settings.auto_connect:
+        if from_module is not None:
             # the below enables users to auto-connect to an instance
             # simply by setting an environment variable, bypassing the
             # need of calling connect() manually

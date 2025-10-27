@@ -11,7 +11,6 @@ from lamindb_setup._init_instance import infer_instance_name
 from lamindb_setup.core._hub_client import connect_hub_with_auth
 from lamindb_setup.core._hub_core import _connect_instance_hub
 from lamindb_setup.core._hub_crud import (
-    Client,
     select_account_by_handle,
     select_default_storage_by_instance_id,
     select_instance_by_name,
@@ -69,9 +68,16 @@ def test_init_instance_postgres_default_name(get_hub_client):
     ln_setup.register(_test=True)
     assert ln_setup.settings.instance.slug == "testuser2/pgtest"
     # and check
-    instance, storage = _connect_instance_hub(
-        owner="testuser2", name=instance_name, client=hub
+    result = _connect_instance_hub(
+        owner="testuser2",
+        name=instance_name,
+        use_root_db_user=False,
+        use_proxy_db=False,
+        client=hub,
     )
+    if not isinstance(result, tuple):
+        raise TypeError(f"Expected tuple, got: {result}")
+    instance, _ = result  # no checks on storage
     # hub checks
     assert instance["db"].startswith("postgresql://none:none")
     assert instance["name"] == instance_name
@@ -108,7 +114,7 @@ def test_init_instance_postgres_custom_name():
 
 
 def test_init_instance_cwd():
-    # can't make it via fixture because need to chnage dir back before ln_setup.delete
+    # can't make it via fixture because need to change dir back before ln_setup.delete
     prev_wd = Path.cwd()
     storage = Path("./mystorage_cwd")
     storage.mkdir()
@@ -121,6 +127,13 @@ def test_init_instance_cwd():
     assert ln_setup.settings.instance.storage.root.as_posix() == Path.cwd().as_posix()
     os.chdir(prev_wd)
     ln_setup.delete("mystorage_cwd", force=True)
+
+
+def test_init_instance_user():
+    ln_setup.init(storage="~/mydata", _test=True)
+    assert not ln_setup.settings.instance.storage.type_is_cloud
+    assert ln_setup.settings.storage.root.is_relative_to(Path.home())
+    ln_setup.delete("mydata", force=True)
 
 
 def test_init_instance_cloud_aws_us():
@@ -209,29 +222,3 @@ def test_init_invalid_name():
         error.exconly()
         == "ValueError: Invalid instance name: '/' delimiter not allowed."
     )
-
-
-# def test_db_unique_error():
-#     ln_setup.login("testuser2")
-
-#     # postgres
-
-
-# #     with pytest.raises(RuntimeError):
-# #         ln_setup.init(
-# #             storage="s3://lamindb-ci",
-# #             modules="retro, bionty",
-# #             db="postgresql://batman:robin@35.222.187.204:5432/retro",
-# #         )
-
-# # sqlite
-# # this fails because there is already an sqlite with the same name in that bucket
-# # hence, the sqlite file would clash
-
-# # with pytest.raises(RuntimeError):
-# #     ln_setup.init(storage="s3://lamindb-ci")
-
-
-# def test_value_error_modules():
-#     with pytest.raises(ModuleNotFoundError):
-#         ln_setup.init(storage="tmpstorage1", modules="bionty, xyz1")

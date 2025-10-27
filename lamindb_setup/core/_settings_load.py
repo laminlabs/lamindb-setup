@@ -1,12 +1,15 @@
 from __future__ import annotations
 
 import os
+from pathlib import Path
 from typing import TYPE_CHECKING
 from uuid import UUID, uuid4
 
 from dotenv import dotenv_values
 from lamin_utils import logger
 from pydantic import ValidationError
+
+from lamindb_setup.errors import CurrentInstanceNotConfigured, SettingsEnvFileOutdated
 
 from ._settings_instance import InstanceSettings
 from ._settings_storage import StorageSettings
@@ -15,33 +18,39 @@ from ._settings_store import (
     UserSettingsStore,
     current_instance_settings_file,
     current_user_settings_file,
-    system_storage_settings_file,
+    platform_user_storage_settings_file,
+    system_settings_file,
 )
 from ._settings_user import UserSettings
 
-if TYPE_CHECKING:
-    from pathlib import Path
 
+def load_cache_path_from_settings(storage_settings: Path | None = None) -> Path | None:
+    if storage_settings is None:
+        paltform_user_storage_settings = platform_user_storage_settings_file()
+        if paltform_user_storage_settings.exists():
+            cache_path = dotenv_values(paltform_user_storage_settings).get(
+                "lamindb_cache_path", None
+            )
+        else:
+            cache_path = None
 
-class SettingsEnvFileOutdated(Exception):
-    pass
+        if cache_path in {None, "null", ""}:
+            storage_settings = system_settings_file()
+        else:
+            return Path(cache_path)
 
-
-def load_system_storage_settings(system_storage_settings: Path | None = None) -> dict:
-    if system_storage_settings is None:
-        system_storage_settings = system_storage_settings_file()
-
-    if system_storage_settings.exists():
-        return dotenv_values(system_storage_settings)
+    if storage_settings.exists():
+        cache_path = dotenv_values(storage_settings).get("lamindb_cache_path", None)
+        return Path(cache_path) if cache_path not in {None, "null", ""} else None
     else:
-        return {}
+        return None
 
 
 def load_instance_settings(instance_settings_file: Path | None = None):
     if instance_settings_file is None:
         instance_settings_file = current_instance_settings_file()
     if not instance_settings_file.exists():
-        raise SystemExit("No instance connected! Call `lamin connect` or `lamin init`")
+        raise CurrentInstanceNotConfigured
     try:
         settings_store = InstanceSettingsStore(_env_file=instance_settings_file)
     except (ValidationError, TypeError) as error:
@@ -113,7 +122,7 @@ def setup_instance_from_store(store: InstanceSettingsStore) -> InstanceSettings:
         git_repo=_null_to_value(store.git_repo),
         keep_artifacts_local=store.keep_artifacts_local,  # type: ignore
         api_url=_null_to_value(store.api_url),
-        schema_id=None if store.schema_id == "null" else UUID(store.schema_id),
+        schema_id=None if store.schema_id in {None, "null"} else UUID(store.schema_id),
         fine_grained_access=store.fine_grained_access,
         db_permissions=_null_to_value(store.db_permissions),
     )
