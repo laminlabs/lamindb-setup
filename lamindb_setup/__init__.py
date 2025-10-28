@@ -4,25 +4,17 @@ Many functions in this "setup API" have a matching command in the :doc:`docs:cli
 
 Guide: :doc:`docs:setup`.
 
-Basic operations:
+Basic operations
+----------------
 
-.. autosummary::
-   :toctree:
+.. autofunction:: login
+.. autofunction:: logout
+.. autofunction:: init
+.. autofunction:: disconnect
+.. autofunction:: delete
 
-   login
-   logout
-   init
-   disconnect
-   delete
-
-Instance operations:
-
-.. autosummary::
-   :toctree:
-
-   migrate
-
-Modules & settings:
+Modules & settings
+------------------
 
 .. autosummary::
    :toctree:
@@ -32,6 +24,14 @@ Modules & settings:
    django
    errors
    types
+
+Migration management
+--------------------
+
+.. autosummary::
+   :toctree:
+
+   migrate
 
 """
 
