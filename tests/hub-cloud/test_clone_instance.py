@@ -1,5 +1,8 @@
 import shutil
+from pathlib import Path
 from subprocess import DEVNULL, run
+from unittest.mock import MagicMock, Mock, patch
+from uuid import uuid4
 
 import lamindb_setup as ln_setup
 import pandas as pd
@@ -85,3 +88,48 @@ def test_connect_local_sqlite(local_postgres_instance):
 
     with pytest.raises(ValueError, match="SQLite clone not found"):
         ln_setup.core.connect_local_sqlite(f"{original_owner}/nonexistent")
+
+
+def test_connect_remote_sqlite():
+    """Test remote SQLite clone connection with mocked cloud storage download."""
+    mock_instance_id = uuid4()
+    mock_storage_root = "s3://my-bucket/data"
+
+    with (
+        patch("lamindb_setup.connect"),
+        patch("lamindb_setup.settings") as mock_settings,
+        patch("lamindb_setup.core._clone.InstanceSettings") as mock_isettings_cls,
+        patch("lamindb_setup.core._clone.create_path") as mock_create_path,
+        patch("lamindb_setup.core._clone.connect_local_sqlite") as mock_connect,
+    ):
+        mock_instance = Mock()
+        mock_instance._id = mock_instance_id
+        mock_instance.owner = "testowner"
+        mock_instance.name = "testname"
+        mock_instance.modules = ["module1", "module2"]
+        mock_instance.storage.root = mock_storage_root
+        mock_instance.storage.root_as_str = mock_storage_root
+
+        mock_settings.instance = mock_instance
+        mock_settings.storage = Mock()
+        mock_settings.cache_dir = Path("/cache")
+
+        mock_remote_file = MagicMock()
+        mock_create_path.return_value = mock_remote_file
+
+        from lamindb_setup.core._clone import connect_remote_sqlite
+
+        connect_remote_sqlite("testowner/testname", "-copy")
+
+        mock_isettings_cls.assert_called_once()
+        assert mock_isettings_cls.call_args[1]["name"] == "testname-copy"
+
+        mock_create_path.assert_called_once_with(
+            f"{mock_storage_root}/.lamindb/lamin.db"
+        )
+        mock_remote_file.download_to.assert_called_once()
+
+        target_path = mock_remote_file.download_to.call_args[0][0]
+        assert "my-bucket/data/.lamindb/lamin.db" in str(target_path)
+
+        mock_connect.assert_called_once_with(instance="testowner/testname-copy")

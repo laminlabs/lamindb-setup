@@ -13,6 +13,7 @@ from lamindb_setup.core._settings_instance import InstanceSettings
 from lamindb_setup.core._settings_load import load_instance_settings
 from lamindb_setup.core._settings_store import instance_settings_file
 from lamindb_setup.core.django import reset_django
+from lamindb_setup.core.upath import create_path
 
 
 def init_local_sqlite(
@@ -74,7 +75,7 @@ def init_local_sqlite(
 
 
 def connect_local_sqlite(instance: str) -> None:
-    """Load a SQLite instance of which a remote hub Postgres instance exists.
+    """Load a locally stored SQLite instance of which a remote hub Postgres instance exists.
 
     This function bypasses the hub lookup that `lamin connect` performs, loading the SQLite clone directly from local settings files.
     The clone must first be created via `init_local_sqlite()`.
@@ -91,3 +92,57 @@ def connect_local_sqlite(instance: str) -> None:
     isettings = load_instance_settings(settings_file)
     isettings._persist(write_to_disk=False)
     isettings._load_db()
+
+
+def connect_remote_sqlite(instance: str, copy_suffix: str | None) -> None:
+    """Load a remote SQLite instance of which a remote hub Postgres instance exists.
+
+    This function is the main building block for loading remote clones.
+
+    Args:
+        instance: Instance slug in the form `account/name` (e.g., `laminlabs/privatedata-local`).
+        copy_suffix:
+    """
+    import lamindb_setup as ln_setup
+
+    # Step 1: Create the settings file
+    # We need to connect to the real instance first
+    if ln_setup.settings.instance is None:  # pragma: no cover
+        ln_setup.connect(instance)
+
+    name = (
+        f"{ln_setup.settings.instance.name}{copy_suffix}"
+        if copy_suffix is not None
+        else ln_setup.settings.instance.name
+    )
+    isettings = InstanceSettings(
+        id=ln_setup.settings.instance._id,
+        owner=ln_setup.settings.instance.owner,  # type: ignore
+        name=name,
+        storage=ln_setup.settings.storage,
+        db=None,
+        modules=",".join(ln_setup.settings.instance.modules),
+        is_on_hub=False,
+    )
+
+    isettings._persist(write_to_disk=True)
+
+    # Step 2: Get the clone SQLIte file
+    def _strip_cloud_prefix(path: str) -> str:
+        if "://" in path:
+            return path.split("://", 1)[1]
+        return path
+
+    sqlite_file_path = create_path(
+        str(ln_setup.settings.instance.storage.root) + "/.lamindb/lamin.db"
+    )
+    local_sqlite_target_path = (
+        ln_setup.settings.cache_dir
+        / _strip_cloud_prefix(ln_setup.settings.instance.storage.root_as_str)
+        / ".lamindb"
+        / "lamin.db"
+    )
+    sqlite_file_path.download_to(local_sqlite_target_path)
+
+    # Step 3: Load the clone
+    connect_local_sqlite(instance=instance + (copy_suffix or ""))
