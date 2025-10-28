@@ -101,12 +101,12 @@ def connect_remote_sqlite(instance: str, copy_suffix: str | None) -> None:
 
     Args:
         instance: Instance slug in the form `account/name` (e.g., `laminlabs/privatedata-local`).
-        copy_suffix:
+        copy_suffix: Optional suffix of the local clone.
     """
     import lamindb_setup as ln_setup
 
     # Step 1: Create the settings file
-    # We need to connect to the real instance first
+    # We need to connect to the real instance to get the settings
     if ln_setup.settings.instance is None:  # pragma: no cover
         ln_setup.connect(instance)
 
@@ -144,5 +144,5 @@ def connect_remote_sqlite(instance: str, copy_suffix: str | None) -> None:
     )
     sqlite_file_path.download_to(local_sqlite_target_path)
 
-    # Step 3: Load the clone
+    # Step 3: connect to the clone
     connect_local_sqlite(instance=instance + (copy_suffix or ""))
