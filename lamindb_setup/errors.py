@@ -1,16 +1,13 @@
 """Errors.
 
-.. autosummary::
-   :toctree: .
-
-   CurrentInstanceNotConfigured
-   InstanceNotSetupError
-   ModuleWasntConfigured
-   StorageAlreadyManaged
-   StorageNotEmpty
-   InstanceLockedException
-   SettingsEnvFileOutdated
-   CannotSwitchDefaultInstance
+.. autoexception:: CurrentInstanceNotConfigured
+.. autoexception:: InstanceNotSetupError
+.. autoexception:: ModuleWasntConfigured
+.. autoexception:: StorageAlreadyManaged
+.. autoexception:: StorageNotEmpty
+.. autoexception:: InstanceLockedException
+.. autoexception:: SettingsEnvFileOutdated
+.. autoexception:: CannotSwitchDefaultInstance
 
 """
 
