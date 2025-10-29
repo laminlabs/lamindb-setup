@@ -127,7 +127,7 @@ def connect_remote_sqlite(instance: str, copy_suffix: str | None) -> None:
 
     isettings._persist(write_to_disk=True)
 
-    # Step 2: Get the clone SQLIte file
+    # Step 2: Get the clone SQLite file
     def _strip_cloud_prefix(path: str) -> str:
         if "://" in path:
             return path.split("://", 1)[1]
