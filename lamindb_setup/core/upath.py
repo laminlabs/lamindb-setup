@@ -737,25 +737,30 @@ UPath.exists.__doc__ = Path.exists.__doc__
 UPath.is_dir.__doc__ = Path.is_dir.__doc__
 UPath.is_file.__doc__ = Path.is_file.__doc__
 UPath.unlink.__doc__ = Path.unlink.__doc__
-UPath.rename.__doc__ = """Move file, see fsspec.AbstractFileSystem.mv.
+UPath.rename.__doc__ = """Move file, see `fsspec.AbstractFileSystem.mv`.
 
->>> upath = Upath("s3://my-bucket/my-file")
->>> upath.rename(UPath("s3://my-bucket/my-file-renamed"))
->>> upath.rename("my-file-renamed")
+For example::
 
->>> upath = Upath("local-folder/my-file")
->>> upath.rename("local-folder/my-file-renamed")
+    upath = UPath("s3://my-bucket/my-file")
+    upath.rename(UPath("s3://my-bucket/my-file-renamed"))
+    upath.rename("my-file-renamed")
 """
-UPath.__doc__ = """Paths: low-level key-value access to files/objects.
+UPath.__doc__ = """Paths: low-level key-value access to files.
 
-Paths are based on keys that offer the typical access patterns of file systems
- and object stores.
+Offers the typical access patterns of file systems and object stores, for instance::
 
->>> upath = UPath("s3://my-bucket/my-folder")
->>> upath.exists()
+    upath = UPath("s3://my-bucket/my-folder/my-file.txt")
+    upath.exists()  # file exists in storage
+
+LaminDB exposes `universal_pathlib.UPath` and adds functionality related to authentication and the following methods::
+
+    upath.view_tree()  # view a file tree
+    upath.upload_from("local-file.txt") # upload a local file
+    upath.download_to("local-file.txt") # download a file
+    upath.synchronize_to("local-folder/") # synchronize a folder
 
 Args:
-    pathlike: A string or Path to a local/cloud file/directory/folder.
+    pathlike: A string or `Path` to a local or cloud file/directory/folder.
 """
 
 logger.debug("upath.UPath has been patched")
