@@ -14,6 +14,13 @@ from lamindb_setup.core._settings_load import load_instance_settings
 from lamindb_setup.core._settings_store import instance_settings_file
 from lamindb_setup.core.django import reset_django
 from lamindb_setup.core.upath import create_path
+from lamindb_setup.errors import CurrentInstanceNotConfigured
+
+
+def _strip_cloud_prefix(path: str) -> str:
+    if "://" in path:
+        return path.split("://", 1)[1]
+    return path
 
 
 def init_local_sqlite(
@@ -107,8 +114,7 @@ def connect_remote_sqlite(instance: str, copy_suffix: str | None) -> None:
 
     # Step 1: Create the settings file
     # We need to connect to the real instance to get the settings
-    if ln_setup.settings.instance is None:  # pragma: no cover
-        ln_setup.connect(instance)
+    ln_setup.connect(instance)
 
     name = (
         f"{ln_setup.settings.instance.name}{copy_suffix}"
@@ -128,11 +134,6 @@ def connect_remote_sqlite(instance: str, copy_suffix: str | None) -> None:
     isettings._persist(write_to_disk=True)
 
     # Step 2: Get the clone SQLite file
-    def _strip_cloud_prefix(path: str) -> str:
-        if "://" in path:
-            return path.split("://", 1)[1]
-        return path
-
     sqlite_file_path = create_path(
         str(ln_setup.settings.instance.storage.root) + "/.lamindb/lamin.db"
     )
