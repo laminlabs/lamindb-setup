@@ -54,8 +54,7 @@ def is_local_db_url(db_url: str) -> bool:
 
 
 def check_is_instance_remote(root: UPathStr, db: str | None) -> bool:
-    # returns True for cloud SQLite
-    # and remote postgres
+    # returns True for cloud SQLite and remote postgres
     root_str = str(root)
     if not root_str.startswith("create-s3") and get_storage_type(root_str) == "local":
         return False
@@ -601,7 +600,20 @@ class InstanceSettings:
 
         disable_auto_connect(setup_django)(self, init=True)
 
-    def _load_db(self) -> tuple[bool, str]:
+    def _load_db(self, *, sqlite_read_only: bool = False) -> tuple[bool, str]:
+        """Load the database connection.
+
+        For cloud SQLite instances, downloads the database file from cloud storage.
+        For all instances, initializes Django ORM with the database connection.
+
+        Args:
+            readonly: If True, connect in read-only mode (SQLite only).
+                Prevents all write operations and skips cloud SQLite locking.
+                Only works reliably in fresh Python processes without prior Django connections.
+
+        Returns:
+            Tuple of (success: bool, error_message: str). Returns (True, "") on success.
+        """
         # Is the database available and initialized as LaminDB?
         # returns a tuple of status code and message
         if self.dialect == "sqlite" and not self._sqlite_file.exists():
@@ -615,13 +627,23 @@ class InstanceSettings:
                 return False, f"SQLite file {self._sqlite_file} does not exist"
         # we need the local sqlite to setup django
         self._update_local_sqlite_file()
-        # setting up django also performs a check for migrations & prints them
-        # as warnings
+
+        if sqlite_read_only:
+            os.environ["LAMINDB_DJANGO_DATABASE_URL"] = (
+                f"sqlite:///{self._sqlite_file_local}?mode=ro"
+            )
+            if self._is_cloud_sqlite:
+                self._cloud_sqlite_locker.unlock()
+
+        # setting up django also performs a check for migrations & prints them as warnings
         # this should fail, e.g., if the db is not reachable
         from lamindb_setup._check_setup import disable_auto_connect
 
         from .django import setup_django
 
         disable_auto_connect(setup_django)(self)
+
+        if sqlite_read_only:
+            os.environ.pop("LAMINDB_DJANGO_DATABASE_URL", None)
 
         return True, ""
