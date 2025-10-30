@@ -366,9 +366,9 @@ class SetupSettings:
         if self._instance_exists:
             instance_rep = self.instance.__repr__().split("\n")
             repr += f"{colors.cyan('Instance:')} {instance_rep[0].replace('Instance: ', '')}\n"
-            repr += f" - dev-dir: {self.dev_dir}\n"
             repr += f" - branch: {self._read_branch_idlike_name()[1]}\n"
-            repr += f" - space: {self._read_space_idlike_name()[1]}"
+            repr += f" - space: {self._read_space_idlike_name()[1]}\n"
+            repr += f" - dev-dir: {self.dev_dir}"
             repr += f"\n{colors.yellow('Details:')}\n"
             repr += "\n".join(instance_rep[1:])
         else:
