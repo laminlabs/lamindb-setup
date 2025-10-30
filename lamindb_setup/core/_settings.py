@@ -59,7 +59,7 @@ class SetupSettings:
 
     _auto_connect_path: Path = settings_dir / "auto_connect"
     _private_django_api_path: Path = settings_dir / "private_django_api"
-    _work_dir: Path = settings_dir / "work_dir.txt"
+    _dev_dir: Path = settings_dir / "dev_dir.txt"
 
     _cache_dir: Path | None = None
 
@@ -71,23 +71,23 @@ class SetupSettings:
         return current_instance_settings_file()
 
     @property
-    def work_dir(self) -> Path | None:
+    def dev_dir(self) -> Path | None:
         """Get or set the current working directory.
 
         If setting it to `None`, the working directory is unset
         """
-        if not self._work_dir.exists():
+        if not self._dev_dir.exists():
             return None
-        return Path(self._work_dir.read_text())
+        return Path(self._dev_dir.read_text())
 
-    @work_dir.setter
-    def work_dir(self, value: str | Path | None) -> None:
+    @dev_dir.setter
+    def dev_dir(self, value: str | Path | None) -> None:
         if value is None:
-            if self._work_dir.exists():
-                self._work_dir.unlink()
+            if self._dev_dir.exists():
+                self._dev_dir.unlink()
         else:
             value_str = Path(value).expanduser().resolve().as_posix()
-            self._work_dir.write_text(value_str)
+            self._dev_dir.write_text(value_str)
 
     @property
     def settings_dir(self) -> Path:
@@ -361,7 +361,7 @@ class SetupSettings:
         if self._instance_exists:
             instance_rep = self.instance.__repr__().split("\n")
             repr += f"{colors.cyan('Instance:')} {instance_rep[0].replace('Instance: ', '')}\n"
-            repr += f" - work-dir: {self.work_dir}\n"
+            repr += f" - dev-dir: {self.dev_dir}\n"
             repr += f" - branch: {self._read_branch_idlike_name()[1]}\n"
             repr += f" - space: {self._read_space_idlike_name()[1]}"
             repr += f"\n{colors.yellow('Details:')}\n"
