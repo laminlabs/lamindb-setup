@@ -116,5 +116,5 @@ test.ipynb
 
 # TO DELETE
 init_sandbox_clone.ipynb
-setup_and_backfill_postgres.py
-replay_to_sqlite.py
+init_clone_and_replay.py
+install_trigger.py

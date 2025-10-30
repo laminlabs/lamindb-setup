@@ -14,7 +14,6 @@ from lamindb_setup.core._settings_load import load_instance_settings
 from lamindb_setup.core._settings_store import instance_settings_file
 from lamindb_setup.core.django import reset_django
 from lamindb_setup.core.upath import create_path
-from lamindb_setup.errors import CurrentInstanceNotConfigured
 
 
 def _strip_cloud_prefix(path: str) -> str:
