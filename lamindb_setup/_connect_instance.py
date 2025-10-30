@@ -260,6 +260,10 @@ def _connect_cli(
         connect(_write_settings=False, _reload_lamindb=False)
     else:
         logger.important(f"connected lamindb: {isettings.slug}")
+    if settings_.dev_dir is None:
+        logger.important_hint(
+            "to map a local dev directory, call: lamin settings set dev-dir ."
+        )
     return None
 
 
@@ -427,6 +431,10 @@ def connect(instance: str | None = None, **kwargs: Any) -> str | tuple | None:
                 isettings._get_settings_file().unlink(missing_ok=True)  # type: ignore
             settings._instance_settings = None
         raise e
+    if settings.dev_dir is None:
+        logger.important_hint(
+            "to map a local dev directory, set: ln.setup.settings.dev_dir = '.'"
+        )
     return None
 
 
