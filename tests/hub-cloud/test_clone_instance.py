@@ -119,7 +119,7 @@ def test_connect_remote_sqlite():
 
         from lamindb_setup.core._clone import connect_remote_sqlite
 
-        connect_remote_sqlite("testowner/testname", "-copy")
+        connect_remote_sqlite("testowner/testname", copy_suffix="-copy")
 
         mock_isettings_cls.assert_called_once()
         assert mock_isettings_cls.call_args[1]["name"] == "testname-copy"
