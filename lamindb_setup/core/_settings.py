@@ -59,7 +59,6 @@ class SetupSettings:
 
     _auto_connect_path: Path = settings_dir / "auto_connect"
     _private_django_api_path: Path = settings_dir / "private_django_api"
-    _dev_dir: Path = settings_dir / "dev_dir.txt"
 
     _cache_dir: Path | None = None
 
@@ -69,25 +68,6 @@ class SetupSettings:
     @property
     def _instance_settings_path(self) -> Path:
         return current_instance_settings_file()
-
-    @property
-    def dev_dir(self) -> Path | None:
-        """Get or set the current working directory.
-
-        If setting it to `None`, the working directory is unset
-        """
-        if not self._dev_dir.exists():
-            return None
-        return Path(self._dev_dir.read_text())
-
-    @dev_dir.setter
-    def dev_dir(self, value: str | Path | None) -> None:
-        if value is None:
-            if self._dev_dir.exists():
-                self._dev_dir.unlink()
-        else:
-            value_str = Path(value).expanduser().resolve().as_posix()
-            self._dev_dir.write_text(value_str)
 
     @property
     def settings_dir(self) -> Path:
@@ -111,6 +91,31 @@ class SetupSettings:
             self._auto_connect_path.touch()
         else:
             self._auto_connect_path.unlink(missing_ok=True)
+
+    @property
+    def _dev_dir_path(self) -> Path:
+        return (
+            settings_dir / f"dev-dir--{self.instance.owner}--{self.instance.name}.txt"
+        )
+
+    @property
+    def dev_dir(self) -> Path | None:
+        """Get or set the local development directory for the current instance.
+
+        If setting it to `None`, the working development directory is unset.
+        """
+        if not self._dev_dir_path.exists():
+            return None
+        return Path(self._dev_dir_path.read_text())
+
+    @dev_dir.setter
+    def dev_dir(self, value: str | Path | None) -> None:
+        if value is None:
+            if self._dev_dir_path.exists():
+                self._dev_dir_path.unlink()
+        else:
+            value_str = Path(value).expanduser().resolve().as_posix()
+            self._dev_dir_path.write_text(value_str)
 
     @property
     def _branch_path(self) -> Path:
