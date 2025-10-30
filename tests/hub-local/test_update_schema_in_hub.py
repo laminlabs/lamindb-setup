@@ -44,7 +44,7 @@ def test_update_schema_in_hub(setup_instance):
     assert not schema["schema_json"]["core"]["artifact"]["is_link_table"]
     assert schema["schema_json"]["core"]["artifactulabel"]["is_link_table"]
 
-    assert schema["schema_json"]["core"]["artifact"]["name_field"] is None
+    assert schema["schema_json"]["core"]["artifact"]["name_field"] == "key"
     assert schema["schema_json"]["core"]["artifact"]["ontology_id_field"] is None
     assert schema["schema_json"]["bionty"]["gene"]["name_field"] == "symbol"
     assert (
