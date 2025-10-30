@@ -147,3 +147,21 @@ def connect_remote_sqlite(instance: str, *, copy_suffix: str | None) -> None:
 
     # Step 3: connect to the clone
     connect_local_sqlite(instance=instance + (copy_suffix or ""))
+
+
+def upload_sqlite_clone() -> None:
+    """Uploads the SQLite clone to the default storage."""
+    import lamindb_setup as ln_setup
+
+    local_path = (
+        ln_setup.settings.cache_dir
+        / _strip_cloud_prefix(ln_setup.settings.instance.storage.root_as_str)
+        / ".lamindb"
+        / "lamin.db"
+    )
+
+    cloud_destination = create_path(
+        str(ln_setup.settings.instance.storage.root) + "/.lamindb/lamin.db"
+    )
+
+    cloud_destination.upload_from(local_path, print_progress=True)
