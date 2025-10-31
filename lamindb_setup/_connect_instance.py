@@ -204,18 +204,12 @@ def reset_django_module_variables():
     app_names = {app.name for app in apps.get_app_configs()}
     # always copy before iterations over sys.modules
     # see https://docs.python.org/3/library/sys.html#sys.modules
+    # this whole thing runs about 50ms in a big env
     for name, module in sys.modules.copy().items():
         if (
             module is not None
             and (not name.startswith("__") or name == "__main__")
             and name not in sys.builtin_module_names
-            and not (
-                hasattr(module, "__file__")
-                and module.__file__
-                and any(
-                    path in module.__file__ for path in ["/lib/python", "\\lib\\python"]
-                )
-            )
         ):
             try:
                 for k, v in vars(module).items():
