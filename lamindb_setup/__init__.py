@@ -54,13 +54,11 @@ from ._delete import delete
 from ._disconnect import disconnect
 from ._django import django
 from ._entry_points import call_registered_entry_points as _call_registered_entry_points
-from ._exportdb import exportdb
+from ._import_export_db import export_db, import_db
 from ._init_instance import init
 from ._migrate import migrate
 from ._register_instance import register
 from ._setup_user import login, logout
-
-# from ._importdb import importdb
 from .core._settings import settings
 
 # check that the version of s3fs is higher than the lower bound
