@@ -1,68 +1,79 @@
 from __future__ import annotations
 
+import warnings
 from importlib import import_module
 from pathlib import Path
+from typing import TYPE_CHECKING
 
-MODELS = {
-    "lamindb": {
-        "Collection": False,
-        "Artifact": False,
-        "Transform": False,
-        "Run": True,
-        "User": False,
-        "Storage": False,
-        "Feature": False,
-        "Schema": False,
-        "ULabel": False,
-    },
-    # "bionty": {
-    #     "Organism": False,
-    #     "Gene": False,
-    #     "Protein": False,
-    #     "CellMarker": False,
-    #     "Tissue": False,
-    #     "CellType": False,
-    #     "Disease": False,
-    #     "CellLine": False,
-    #     "Phenotype": False,
-    #     "Pathway": False,
-    #     "ExperimentalFactor": False,
-    #     "DevelopmentalStage": False,
-    #     "Ethnicity": False,
-    #     "Source": False,
-    # },
-    # "wetlab": {
-    #     "ExperimentType": False,
-    #     "Experiment": False,
-    #     "Well": False,
-    #     "TreatmentTarget": False,
-    #     "Treatment": False,
-    #     "Biosample": False,
-    #     "Techsample": False,
-    # },
-}
+import pandas as pd
+from django.db import models
+
+if TYPE_CHECKING:
+    from collections.abc import Sequence
 
 
-def exportdb() -> None:
-    directory = Path("./lamindb_export/")
-    directory.mkdir(parents=True, exist_ok=True)
-    import pandas as pd
+def _get_registries(module_name: str) -> list[str]:
+    """Get registry class names from a lnschema module."""
+    schema_module = import_module(module_name)
+    exclude = {"SQLRecord"}
 
+    if module_name == "lamindb":
+        module_filter = (
+            lambda cls, name: cls.__module__ == f"{module_name}.models.{name.lower()}"
+        )
+    else:
+        module_filter = (
+            lambda cls, name: cls.__module__ == f"{module_name}.models"
+            and name in dir(schema_module)
+        )
+
+    return [
+        name
+        for name in dir(schema_module.models)
+        if (
+            name[0].isupper()
+            and isinstance(cls := getattr(schema_module.models, name, None), type)
+            and issubclass(cls, models.Model)
+            and module_filter(cls, name)
+            and name not in exclude
+        )
+    ]
+
+
+def _export_registry_to_parquet(registry: type[models.Model], directory: Path) -> None:
+    """Export a single registry table to parquet."""
     import lamindb_setup as ln_setup
 
-    def export_registry(registry, directory):
-        table_name = registry._meta.db_table
+    table_name = registry._meta.db_table
+    with warnings.catch_warnings():
+        warnings.filterwarnings("ignore", message="Skipped unsupported reflection")
         df = pd.read_sql_table(table_name, ln_setup.settings.instance.db)
-        df.to_parquet(directory / f"{table_name}.parquet", compression=None)
+    df.to_parquet(directory / f"{table_name}.parquet", compression=None)
 
-    # export data to parquet files
-    print(f"\nexporting data to parquet files in: {directory}\n")
-    for module_name, models in MODELS.items():
-        for model_name in models.keys():
-            schema_module = import_module(f"lnschema_{module_name}")
+
+def exportdb(
+    module_names: Sequence[str] | None = None,
+    output_dir: str | Path = "./lamindb_export/",
+) -> None:
+    """Export registry tables and many-to-many link tables to parquet files.
+
+    Args:
+        module_names: List of module names to export (e.g., ["lamindb", "bionty", "wetlab"]).
+            Defaults to "lamindb" if not provided.
+        output_dir: Directory path for exported parquet files.
+    """
+    directory = Path(output_dir)
+    directory.mkdir(parents=True, exist_ok=True)
+
+    module_names = module_names or ["lamindb"]
+    modules = {name: _get_registries(name) for name in module_names}
+
+    for module_name, model_names in modules.items():
+        schema_module = import_module(module_name)
+        for model_name in model_names:
             registry = getattr(schema_module, model_name)
-            export_registry(registry, directory)
-            many_to_many_names = [field.name for field in registry._meta.many_to_many]
-            for many_to_many_name in many_to_many_names:
-                link_orm = getattr(registry, many_to_many_name).through
-                export_registry(link_orm, directory)
+            _export_registry_to_parquet(registry, directory)
+
+            for field in registry._meta.many_to_many:
+                link_orm = getattr(registry, field.name).through
+                _export_registry_to_parquet(link_orm, directory)
