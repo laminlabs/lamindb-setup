@@ -11,13 +11,22 @@ if TYPE_CHECKING:
     from pathlib import Path
 
 
+@pytest.fixture(scope="session")
+def simple_instance():
+    import lamindb_setup as ln_setup
+
+    ln_setup.init(storage="./testdb", modules="bionty,wetlab")
+    yield
+    ln_setup.delete("testdb", force=True)
+
+
 @pytest.fixture
 def cleanup_export_dir(tmp_path) -> Generator[Path, None, None]:
     output_dir = tmp_path / "test_export"
     yield output_dir
 
 
-def test_get_registries_lamindb(create_myinstance: Callable):
+def test_get_registries_lamindb(simple_instance: Callable):
     registries = _get_registries("lamindb")
 
     assert "Artifact" in registries
@@ -29,7 +38,7 @@ def test_get_registries_lamindb(create_myinstance: Callable):
     assert "SQLRecord" not in registries
 
 
-def test_get_registries_bionty(create_myinstance: Callable):
+def test_get_registries_bionty(simple_instance: Callable):
     registries = _get_registries("bionty")
 
     assert "Gene" in registries
@@ -40,7 +49,7 @@ def test_get_registries_bionty(create_myinstance: Callable):
 
 
 def test_exportdb_creates_directory(
-    create_myinstance: Callable, cleanup_export_dir: Path
+    simple_instance: Callable, cleanup_export_dir: Path
 ):
     exportdb(output_dir=cleanup_export_dir, module_names=["lamindb"])
 
@@ -49,7 +58,7 @@ def test_exportdb_creates_directory(
 
 
 def test_exportdb_exports_parquet_files(
-    create_myinstance: Callable, cleanup_export_dir: Path
+    simple_instance: Callable, cleanup_export_dir: Path
 ):
     exportdb(output_dir=cleanup_export_dir, module_names=["lamindb"])
 
@@ -61,9 +70,7 @@ def test_exportdb_exports_parquet_files(
         assert isinstance(df, pd.DataFrame)
 
 
-def test_exportdb_multiple_modules(
-    create_myinstance: Callable, cleanup_export_dir: Path
-):
+def test_exportdb_multiple_modules(simple_instance: Callable, cleanup_export_dir: Path):
     import bionty as bt
 
     gene = bt.Gene.from_source(symbol="TCF7").save()
@@ -82,7 +89,7 @@ def test_exportdb_multiple_modules(
     gene.delete(permanent=True)
 
 
-def test_exportdb_default_module(create_myinstance: Callable, cleanup_export_dir: Path):
+def test_exportdb_default_module(simple_instance: Callable, cleanup_export_dir: Path):
     exportdb(output_dir=cleanup_export_dir)
 
     lamindb_files = list(cleanup_export_dir.glob("lamindb_*.parquet"))
@@ -90,7 +97,7 @@ def test_exportdb_default_module(create_myinstance: Callable, cleanup_export_dir
 
 
 def test_exportdb_exports_link_tables(
-    create_myinstance: Callable, cleanup_export_dir: Path
+    simple_instance: Callable, cleanup_export_dir: Path
 ):
     exportdb(output_dir=cleanup_export_dir, module_names=["lamindb"])
 
