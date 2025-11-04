@@ -51,7 +51,10 @@ def test_get_registries_bionty(simple_instance: Callable):
 def test_exportdb_creates_directory(
     simple_instance: Callable, cleanup_export_dir: Path
 ):
-    export_db(output_dir=cleanup_export_dir, module_names=["lamindb"])
+    export_db(
+        module_names=["lamindb"],
+        output_dir=cleanup_export_dir,
+    )
 
     assert cleanup_export_dir.exists()
     assert cleanup_export_dir.is_dir()
@@ -60,7 +63,10 @@ def test_exportdb_creates_directory(
 def test_exportdb_exports_parquet_files(
     simple_instance: Callable, cleanup_export_dir: Path
 ):
-    export_db(output_dir=cleanup_export_dir, module_names=["lamindb"])
+    export_db(
+        module_names=["lamindb"],
+        output_dir=cleanup_export_dir,
+    )
 
     parquet_files = list(cleanup_export_dir.glob("*.parquet"))
     assert len(parquet_files) > 0
@@ -75,7 +81,10 @@ def test_exportdb_multiple_modules(simple_instance: Callable, cleanup_export_dir
 
     gene = bt.Gene.from_source(symbol="TCF7").save()
 
-    export_db(output_dir=cleanup_export_dir, module_names=["lamindb", "bionty"])
+    export_db(
+        module_names=["lamindb", "bionty"],
+        output_dir=cleanup_export_dir,
+    )
 
     lamindb_files = list(cleanup_export_dir.glob("lamindb_*.parquet"))
     bionty_files = list(cleanup_export_dir.glob("bionty_*.parquet"))
@@ -99,7 +108,7 @@ def test_exportdb_default_module(simple_instance: Callable, cleanup_export_dir: 
 def test_exportdb_exports_link_tables(
     simple_instance: Callable, cleanup_export_dir: Path
 ):
-    export_db(output_dir=cleanup_export_dir, module_names=["lamindb"])
+    export_db(module_names=["lamindb"], output_dir=cleanup_export_dir)
 
     parquet_files = [f.name for f in cleanup_export_dir.glob("*.parquet")]
     link_tables = [f for f in parquet_files if "_" in f and "artifact" in f.lower()]

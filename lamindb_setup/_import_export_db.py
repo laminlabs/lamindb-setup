@@ -54,6 +54,7 @@ def _export_registry_to_parquet(registry: type[models.Model], directory: Path) -
 
 def export_db(
     module_names: Sequence[str] | None = None,
+    *,
     output_dir: str | Path = "./lamindb_export/",
 ) -> None:
     """Export registry tables and many-to-many link tables to parquet files.
@@ -108,8 +109,9 @@ def _import_registry(
 
 
 def import_db(
-    input_dir: str | Path = "./lamindb_export/",
     module_names: Sequence[str] | None = None,
+    *,
+    input_dir: str | Path = "./lamindb_export/",
     if_exists: Literal["fail", "replace", "append"] = "replace",
 ) -> None:
     """Import registry and link tables from parquet files.
