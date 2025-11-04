@@ -108,6 +108,11 @@ def test_exportdb_exports_link_tables(
 
 
 def test_import_db_from_parquet(simple_instance: Callable, tmp_path):
+    """Tests imports of a parquet file.
+
+    Implicitly also tests whether `import_db` can deal with FK constraints because
+    gene records usually require existing Organism records.
+    """
     import bionty as bt
     import lamindb_setup as ln_setup
 
