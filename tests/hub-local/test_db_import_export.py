@@ -114,7 +114,7 @@ def test_import_db_from_parquet(simple_instance: Callable, tmp_path):
     export_dir = tmp_path / "export"
     export_dir.mkdir()
 
-    # Create a minimal gene parquet file manually
+    # Minimal gene parquet file
     gene_data = pd.DataFrame(
         {
             "id": [999],
@@ -134,7 +134,7 @@ def test_import_db_from_parquet(simple_instance: Callable, tmp_path):
     )
     gene_data.to_parquet(export_dir / "bionty_gene.parquet", index=False)
 
-    # Verify gene doesn't exist
+    # The gene should not exist now
     assert bt.Gene.filter(id=999).count() == 0
 
     ln_setup.import_db(
@@ -143,10 +143,9 @@ def test_import_db_from_parquet(simple_instance: Callable, tmp_path):
         if_exists="append",
     )
 
-    # Verify gene was imported
+    # the gene should exist after the import
     imported_gene = bt.Gene.get(id=999)
     assert imported_gene.symbol == "TESTGENE"
     assert imported_gene.ensembl_gene_id == "ENSG00000999"
 
-    # Cleanup
     imported_gene.delete(permanent=True)

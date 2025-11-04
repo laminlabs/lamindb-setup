@@ -59,7 +59,7 @@ def export_db(
     """Export registry tables and many-to-many link tables to parquet files.
 
     Args:
-        module_names: List of module names to export (e.g., ["lamindb", "bionty", "wetlab"]).
+        module_names: Module names to export (e.g., ["lamindb", "bionty", "wetlab"]).
             Defaults to "lamindb" if not provided.
         output_dir: Directory path for exported parquet files.
     """
@@ -85,7 +85,10 @@ def _import_registry(
     directory: Path,
     if_exists: Literal["fail", "replace", "append"] = "replace",
 ) -> None:
-    """Import a single registry table from parquet."""
+    """Import a single registry table from parquet.
+
+    Uses raw SQL export instead of django to later circumvent FK constraints.
+    """
     table_name = registry._meta.db_table
     parquet_file = directory / f"{table_name}.parquet"
 
@@ -109,11 +112,14 @@ def import_db(
     module_names: Sequence[str] | None = None,
     if_exists: Literal["fail", "replace", "append"] = "replace",
 ) -> None:
-    """Import registry and link tables from parquet files using Django connection.
+    """Import registry and link tables from parquet files.
+
+    Temporarily disables FK constraints to allow insertion in arbitrary order.
+    Requires superuser/RDS admin privileges for postgres databases.
 
     Args:
         input_dir: Directory containing parquet files to import.
-        module_names: Module names to import.
+        module_names: Module names to import (e.g., ["lamindb", "bionty", "wetlab"]).
         if_exists: How to behave if table exists: 'fail', 'replace', or 'append'.
     """
     from django.db import connection
@@ -134,9 +140,13 @@ def import_db(
 
     modules = {name: _get_registries(name) for name in module_names}
 
+    # Disable FK constraints to allow insertion in arbitrary order
     if ln_setup.settings.instance.dialect == "sqlite":
         with connection.cursor() as cursor:
-            cursor.execute("PRAGMA foreign_keys = OFF")
+            if ln_setup.settings.instance.dialect == "postgresql":
+                cursor.execute("SET session_replication_role = 'replica'")
+            elif ln_setup.settings.instance.dialect == "sqlite":
+                cursor.execute("PRAGMA foreign_keys = OFF")
 
     with transaction.atomic():
         if ln_setup.settings.instance.dialect == "postgresql":
@@ -153,6 +163,10 @@ def import_db(
                     link_orm = getattr(registry, field.name).through
                     _import_registry(link_orm, directory, if_exists=if_exists)
 
+    # Re-enable FK constraints again
     if ln_setup.settings.instance.dialect == "sqlite":
         with connection.cursor() as cursor:
-            cursor.execute("PRAGMA foreign_keys = ON")
+            if ln_setup.settings.instance.dialect == "postgresql":
+                cursor.execute("SET session_replication_role = 'origin'")
+            elif ln_setup.settings.instance.dialect == "sqlite":
+                cursor.execute("PRAGMA foreign_keys = ON")
