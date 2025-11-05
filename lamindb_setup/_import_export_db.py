@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import json
 import warnings
 from importlib import import_module
 from pathlib import Path
@@ -7,6 +8,7 @@ from typing import TYPE_CHECKING
 
 import pandas as pd
 from django.db import models, transaction
+from rich.progress import Progress
 
 if TYPE_CHECKING:
     from collections.abc import Sequence
@@ -14,14 +16,14 @@ if TYPE_CHECKING:
 
 
 def _get_registries(module_name: str) -> list[str]:
-    """Get registry class names from a lnschema module."""
+    """Get registry class names from a module."""
     schema_module = import_module(module_name)
     exclude = {"SQLRecord"}
 
     if module_name == "lamindb":
-        module_filter = (
-            lambda cls, name: cls.__module__ == f"{module_name}.models.{name.lower()}"
-        )
+        module_filter = lambda cls, name: cls.__module__.startswith(
+            f"{module_name}.models."
+        ) and name in dir(schema_module)
     else:
         module_filter = (
             lambda cls, name: cls.__module__ == f"{module_name}.models"
@@ -59,6 +61,8 @@ def export_db(
 ) -> None:
     """Export registry tables and many-to-many link tables to parquet files.
 
+    Ensure that you connect to postgres instances using `use_root_db_user=True`.
+
     Args:
         module_names: Module names to export (e.g., ["lamindb", "bionty", "wetlab"]).
             Defaults to "lamindb" if not provided.
@@ -69,16 +73,20 @@ def export_db(
 
     module_names = module_names or ["lamindb"]
     modules = {name: _get_registries(name) for name in module_names}
+    total_models = sum(len(models) for models in modules.values())
 
-    for module_name, model_names in modules.items():
-        schema_module = import_module(module_name)
-        for model_name in model_names:
-            registry = getattr(schema_module, model_name)
-            _export_registry_to_parquet(registry, directory)
-
-            for field in registry._meta.many_to_many:
-                link_orm = getattr(registry, field.name).through
-                _export_registry_to_parquet(link_orm, directory)
+    with Progress() as progress:
+        task = progress.add_task("Exporting", total=total_models)
+        for module_name, model_names in modules.items():
+            schema_module = import_module(module_name)
+            for model_name in model_names:
+                progress.update(task, description=f"[cyan]{module_name}.{model_name}")
+                registry = getattr(schema_module, model_name)
+                _export_registry_to_parquet(registry, directory)
+                for field in registry._meta.many_to_many:
+                    link_orm = getattr(registry, field.name).through
+                    _export_registry_to_parquet(link_orm, directory)
+                progress.advance(task)
 
 
 def _import_registry(
@@ -102,6 +110,12 @@ def _import_registry(
     old_foreign_key_columns = [col for col in df.columns if col.endswith("_old")]
     if old_foreign_key_columns:
         df = df.drop(columns=old_foreign_key_columns)
+
+    for col in df.columns:
+        if df[col].dtype == "object":
+            df[col] = df[col].apply(
+                lambda x: json.dumps(x) if isinstance(x, (dict, list)) else x
+            )
 
     from django.db import connection
 
@@ -141,6 +155,7 @@ def import_db(
         module_names = sorted(detected_modules)
 
     modules = {name: _get_registries(name) for name in module_names}
+    total_models = sum(len(models) for models in modules.values())
 
     # Disable FK constraints to allow insertion in arbitrary order
     if ln_setup.settings.instance.dialect == "sqlite":
@@ -155,15 +170,20 @@ def import_db(
             with connection.cursor() as cursor:
                 cursor.execute("SET CONSTRAINTS ALL DEFERRED")
 
-        for module_name, model_names in modules.items():
-            schema_module = import_module(module_name)
-            for model_name in model_names:
-                registry = getattr(schema_module, model_name)
-                _import_registry(registry, directory, if_exists=if_exists)
-
-                for field in registry._meta.many_to_many:
-                    link_orm = getattr(registry, field.name).through
-                    _import_registry(link_orm, directory, if_exists=if_exists)
+        with Progress() as progress:
+            task = progress.add_task("Importing", total=total_models)
+            for module_name, model_names in modules.items():
+                schema_module = import_module(module_name)
+                for model_name in model_names:
+                    progress.update(
+                        task, description=f"[cyan]{module_name}.{model_name}"
+                    )
+                    registry = getattr(schema_module, model_name)
+                    _import_registry(registry, directory, if_exists=if_exists)
+                    for field in registry._meta.many_to_many:
+                        link_orm = getattr(registry, field.name).through
+                        _import_registry(link_orm, directory, if_exists=if_exists)
+                    progress.advance(task)
 
     # Re-enable FK constraints again
     if ln_setup.settings.instance.dialect == "sqlite":

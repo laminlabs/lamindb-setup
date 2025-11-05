@@ -69,8 +69,13 @@ def test_exportdb_exports_parquet_files(
 
 def test_exportdb_multiple_modules(simple_instance: Callable, cleanup_export_dir: Path):
     import bionty as bt
+    import lamindb as ln
 
+    artifact = ln.Artifact.from_dataframe(
+        pd.DataFrame({"col": [1, 2, 3]}), key="test_artifact.parquet"
+    ).save()
     gene = bt.Gene.from_source(symbol="TCF7").save()
+    artifact.genes.add(gene)
 
     export_db(
         module_names=["lamindb", "bionty"],
@@ -86,6 +91,21 @@ def test_exportdb_multiple_modules(simple_instance: Callable, cleanup_export_dir
     gene_df = pd.read_parquet(cleanup_export_dir / "bionty_gene.parquet")
     assert "TCF7" in gene_df["symbol"].values
 
+    artifact_df = pd.read_parquet(cleanup_export_dir / "lamindb_artifact.parquet")
+    assert artifact.uid in artifact_df["uid"].values
+
+    link_df = pd.read_parquet(cleanup_export_dir / "bionty_artifactgene.parquet")
+    assert (
+        len(
+            link_df[
+                (link_df["artifact_id"] == artifact.id)
+                & (link_df["gene_id"] == gene.id)
+            ]
+        )
+        == 1
+    )
+
+    artifact.delete(permanent=True)
     gene.delete(permanent=True)
 
 
@@ -110,16 +130,37 @@ def test_exportdb_exports_link_tables(
 def test_import_db_from_parquet(simple_instance: Callable, tmp_path):
     """Tests imports of a parquet file.
 
-    Implicitly also tests whether `import_db` can deal with FK constraints because
-    gene records usually require existing Organism records.
+    Implicitly also tests whether `import_db` can deal with FK constraints.
     """
     import bionty as bt
+    import lamindb as ln
     import lamindb_setup as ln_setup
 
     export_dir = tmp_path / "export"
     export_dir.mkdir()
 
-    # Minimal gene parquet file
+    artifact_data = pd.DataFrame(
+        {
+            "id": [888],
+            "uid": ["test_artifact_uid"],
+            "key": ["test_key"],
+            "_key_is_virtual": [False],
+            "_overwrite_versions": [False],
+            "description": ["Test artifact"],
+            "suffix": [".txt"],
+            "kind": ["dataset"],
+            "size": [1024],
+            "hash": ["testhash123"],
+            "is_latest": [True],
+            "is_locked": [False],
+            "storage_id": [1],
+            "created_by_id": [ln_setup.settings.user.id],
+            "created_at": [pd.Timestamp.now()],
+            "updated_at": [pd.Timestamp.now()],
+        }
+    )
+    artifact_data.to_parquet(export_dir / "lamindb_artifact.parquet", index=False)
+
     gene_data = pd.DataFrame(
         {
             "id": [999],
@@ -139,18 +180,36 @@ def test_import_db_from_parquet(simple_instance: Callable, tmp_path):
     )
     gene_data.to_parquet(export_dir / "bionty_gene.parquet", index=False)
 
-    # The gene should not exist now
-    assert bt.Gene.filter(id=999).count() == 0
+    link_data = pd.DataFrame(
+        {
+            "id": [1],
+            "artifact_id": [888],
+            "gene_id": [999],
+            "feature_id": [None],
+            "feature_ref_is_name": [None],
+            "label_ref_is_name": [None],
+            "created_at": [pd.Timestamp.now()],
+            "created_by_id": [ln_setup.settings.user.id],
+            "run_id": [None],
+        }
+    )
+    link_data.to_parquet(export_dir / "bionty_artifactgene.parquet", index=False)
 
     ln_setup.import_db(
         input_dir=export_dir,
-        module_names=["bionty"],
+        module_names=["lamindb", "bionty"],
         if_exists="append",
     )
 
-    # the gene should exist after the import
+    # gene and artifact should exist after the import
     imported_gene = bt.Gene.get(id=999)
     assert imported_gene.symbol == "TESTGENE"
     assert imported_gene.ensembl_gene_id == "ENSG00000999"
+    imported_artifact = ln.Artifact.get(id=888)
+    assert imported_artifact.key == "test_key"
+    assert imported_artifact.genes.count() == 1
 
-    imported_gene.delete(permanent=True)
+    # they should also be linked
+    linked_gene = imported_artifact.genes.first()
+    assert linked_gene.id == 999
+    assert linked_gene.symbol == "TESTGENE"
