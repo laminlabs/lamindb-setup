@@ -245,3 +245,11 @@ def get_aws_options_manager() -> AWSOptionsManager:
         _aws_options_manager = AWSOptionsManager()
 
     return _aws_options_manager
+
+
+def reset_aws_options_cache():
+    global _aws_options_manager
+
+    if _aws_options_manager is not None:
+        _aws_options_manager._credentials_cache = {}
+        _aws_options_manager._parameters_cache = {}
