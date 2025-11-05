@@ -5,9 +5,11 @@
 
    init_local_sqlite
    connect_local_sqlite
+   upload_sqlite_clone
 """
 
 import os
+from pathlib import Path
 
 from lamindb_setup.core._settings_instance import InstanceSettings
 from lamindb_setup.core._settings_load import load_instance_settings
@@ -101,7 +103,7 @@ def connect_local_sqlite(instance: str, *, read_only: bool = True) -> None:
     isettings._load_db(sqlite_read_only=read_only)
 
 
-def connect_remote_sqlite(instance: str, *, copy_suffix: str | None) -> None:
+def connect_remote_sqlite(instance: str, *, copy_suffix: str | None = None) -> None:
     """Load a remote SQLite instance of which a remote hub Postgres instance exists.
 
     This function is the main building block for loading remote clones.
@@ -149,19 +151,30 @@ def connect_remote_sqlite(instance: str, *, copy_suffix: str | None) -> None:
     connect_local_sqlite(instance=instance + (copy_suffix or ""))
 
 
-def upload_sqlite_clone() -> None:
-    """Uploads the SQLite clone to the default storage."""
+def upload_sqlite_clone(local_sqlite_path: Path | str | None = None) -> None:
+    """Uploads the SQLite clone to the default storage.
+
+    Args:
+        local_sqlite_path: Path to the SQLite file.
+            Defaults to the local storage path if not specified.
+    """
     import lamindb_setup as ln_setup
 
-    local_path = (
-        ln_setup.settings.cache_dir
-        / _strip_cloud_prefix(ln_setup.settings.instance.storage.root_as_str)
-        / ".lamindb"
-        / "lamin.db"
-    )
+    if local_sqlite_path is None:
+        local_sqlite_path = (
+            ln_setup.settings.cache_dir
+            / _strip_cloud_prefix(ln_setup.settings.instance.storage.root_as_str)
+            / ".lamindb"
+            / "lamin.db"
+        )
+
+    local_sqlite_path = Path(local_sqlite_path)
+
+    if not local_sqlite_path.exists():
+        raise FileNotFoundError(f"Database not found at {local_sqlite_path}")
 
     cloud_destination = create_path(
         str(ln_setup.settings.instance.storage.root) + "/.lamindb/lamin.db"
     )
 
-    cloud_destination.upload_from(local_path, print_progress=True)
+    cloud_destination.upload_from(local_sqlite_path, print_progress=True)
