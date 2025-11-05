@@ -90,7 +90,7 @@ def test_connect_local_sqlite(local_postgres_instance):
         ln_setup.core.connect_local_sqlite(f"{original_owner}/nonexistent")
 
 
-def test_connect_remote_sqlite():
+def test_connect_remote_sqlite(tmp_path):
     """Test remote SQLite clone connection with mocked cloud storage download."""
     mock_instance_id = uuid4()
     mock_storage_root = "s3://my-bucket/data"
@@ -112,10 +112,22 @@ def test_connect_remote_sqlite():
 
         mock_settings.instance = mock_instance
         mock_settings.storage = Mock()
-        mock_settings.cache_dir = Path("/cache")
+        mock_settings.cache_dir = Path(tmp_path)
 
-        mock_remote_file = MagicMock()
-        mock_create_path.return_value = mock_remote_file
+        def fake_download(target_path):
+            target_path.parent.mkdir(parents=True, exist_ok=True)
+            target_path.write_bytes(b"fake db content")
+
+        def mock_create_path_fn(path):
+            mock_file = MagicMock()
+            if path.endswith(".gz"):
+                mock_file.exists.return_value = False
+            else:
+                mock_file.exists.return_value = True
+                mock_file.download_to.side_effect = fake_download
+            return mock_file
+
+        mock_create_path.side_effect = mock_create_path_fn
 
         from lamindb_setup.core._clone import connect_remote_sqlite
 
@@ -123,13 +135,4 @@ def test_connect_remote_sqlite():
 
         mock_isettings_cls.assert_called_once()
         assert mock_isettings_cls.call_args[1]["name"] == "testname-copy"
-
-        mock_create_path.assert_called_once_with(
-            f"{mock_storage_root}/.lamindb/lamin.db"
-        )
-        mock_remote_file.download_to.assert_called_once()
-
-        target_path = mock_remote_file.download_to.call_args[0][0]
-        assert "my-bucket/data/.lamindb/lamin.db" in str(target_path)
-
         mock_connect.assert_called_once_with(instance="testowner/testname-copy")

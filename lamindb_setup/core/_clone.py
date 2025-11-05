@@ -152,6 +152,7 @@ def connect_remote_sqlite(
     )
 
     if not local_sqlite_target_path.exists() or overwrite:
+        local_sqlite_target_path.parent.mkdir(parents=True, exist_ok=True)
         cloud_db_path = (
             str(ln_setup.settings.instance.storage.root) + "/.lamindb/lamin.db"
         )
@@ -176,7 +177,7 @@ def connect_remote_sqlite(
 
 def upload_sqlite_clone(
     local_sqlite_path: Path | str | None = None, compress: bool = True
-) -> None:  # TODO add compression
+) -> None:
     """Uploads the SQLite clone to the default storage.
 
     Args:
