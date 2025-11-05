@@ -1,7 +1,7 @@
 from uuid import UUID
 
 import pytest
-from lamindb_setup import login, logout, settings
+from lamindb_setup import login, logout
 from lamindb_setup.core._hub_core import get_default_bucket_for_instance
 from lamindb_setup.core._settings_storage import StorageSettings
 from lamindb_setup.core.upath import S3Path, UPath
@@ -42,7 +42,5 @@ def test_get_default_bucket_for_instance():
     logout()
 
     assert get_default_bucket_for_instance(lamindata_id) == "s3://lamin-us-east-1"
-
-    print(settings.instance.slug)
 
     login("testuser1")
