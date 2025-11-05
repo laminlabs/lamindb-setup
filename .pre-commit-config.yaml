@@ -44,5 +44,5 @@ repos:
           (?x)(
               tests/hub-local/conftest.py|
               tests/hub-prod/conftest.py|
-              tests/io/conftest.py
+              tests/storage/conftest.py
           )
