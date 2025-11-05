@@ -4,7 +4,7 @@ from typing import TYPE_CHECKING
 
 import pandas as pd
 import pytest
-from lamindb_setup._import_export_db import _get_registries, export_db
+from lamindb_setup.io import _get_registries, export_db, import_db
 
 if TYPE_CHECKING:
     from collections.abc import Callable, Generator
@@ -195,7 +195,7 @@ def test_import_db_from_parquet(simple_instance: Callable, tmp_path):
     )
     link_data.to_parquet(export_dir / "bionty_artifactgene.parquet", index=False)
 
-    ln_setup.import_db(
+    import_db(
         input_dir=export_dir,
         module_names=["lamindb", "bionty"],
         if_exists="append",

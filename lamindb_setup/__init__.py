@@ -47,14 +47,13 @@ warnings.filterwarnings("ignore", category=DeprecationWarning, module="postgrest
 
 from packaging import version as packaging_version
 
-from . import core, errors, types
+from . import core, errors, io, types
 from ._check_setup import _check_instance_setup
 from ._connect_instance import connect
 from ._delete import delete
 from ._disconnect import disconnect
 from ._django import django
 from ._entry_points import call_registered_entry_points as _call_registered_entry_points
-from ._import_export_db import export_db, import_db
 from ._init_instance import init
 from ._migrate import migrate
 from ._register_instance import register

@@ -77,15 +77,6 @@ def sign_up_user(email: str, handle: str, save_as_settings: bool = False):
 
 
 @pytest.fixture(scope="session")
-def simple_instance():
-    import lamindb_setup as ln_setup
-
-    ln_setup.init(storage="./testdb", modules="bionty,wetlab")
-    yield
-    ln_setup.delete("testdb", force=True)
-
-
-@pytest.fixture(scope="session")
 def create_testadmin1_session():  # -> Tuple[Client, UserSettings]
     email = "testadmin1@gmail.com"
     sign_up_user(email, "testadmin1", save_as_settings=True)

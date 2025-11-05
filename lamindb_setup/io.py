@@ -18,7 +18,7 @@ if TYPE_CHECKING:
 def _get_registries(module_name: str) -> list[str]:
     """Get registry class names from a module."""
     schema_module = import_module(module_name)
-    exclude = {"SQLRecord"}
+    exclude = {"SQLRecord", "BaseSQLRecord"}
 
     if module_name == "lamindb":
         module_filter = lambda cls, name: cls.__module__.startswith(
