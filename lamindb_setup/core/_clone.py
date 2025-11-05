@@ -8,7 +8,9 @@
    upload_sqlite_clone
 """
 
+import gzip
 import os
+import shutil
 from pathlib import Path
 
 from lamindb_setup.core._settings_instance import InstanceSettings
@@ -103,7 +105,9 @@ def connect_local_sqlite(instance: str, *, read_only: bool = True) -> None:
     isettings._load_db(sqlite_read_only=read_only)
 
 
-def connect_remote_sqlite(instance: str, *, copy_suffix: str | None = None) -> None:
+def connect_remote_sqlite(
+    instance: str, *, copy_suffix: str | None = None, overwrite: bool = False
+) -> None:
     """Load a remote SQLite instance of which a remote hub Postgres instance exists.
 
     This function is the main building block for loading remote clones.
@@ -111,6 +115,7 @@ def connect_remote_sqlite(instance: str, *, copy_suffix: str | None = None) -> N
     Args:
         instance: Instance slug in the form `account/name` (e.g., `laminlabs/privatedata-local`).
         copy_suffix: Optional suffix of the local clone.
+        overwrite: Whether to overwrite existing local database.
     """
     import lamindb_setup as ln_setup
 
@@ -132,31 +137,52 @@ def connect_remote_sqlite(instance: str, *, copy_suffix: str | None = None) -> N
         modules=",".join(ln_setup.settings.instance.modules),
         is_on_hub=False,
     )
-
     isettings._persist(write_to_disk=True)
 
     # Step 2: Get the clone SQLite file
-    sqlite_file_path = create_path(
-        str(ln_setup.settings.instance.storage.root) + "/.lamindb/lamin.db"
-    )
+    cloud_db_path = str(ln_setup.settings.instance.storage.root) + "/.lamindb/lamin.db"
+    sqlite_file_path_gz = create_path(cloud_db_path + ".gz")
+    sqlite_file_path = create_path(cloud_db_path)
+
     local_sqlite_target_path = (
         ln_setup.settings.cache_dir
         / _strip_cloud_prefix(ln_setup.settings.instance.storage.root_as_str)
         / ".lamindb"
         / "lamin.db"
     )
-    sqlite_file_path.download_to(local_sqlite_target_path)
+
+    if not local_sqlite_target_path.exists() or overwrite:
+        cloud_db_path = (
+            str(ln_setup.settings.instance.storage.root) + "/.lamindb/lamin.db"
+        )
+        sqlite_file_path_gz = create_path(cloud_db_path + ".gz")
+        sqlite_file_path = create_path(cloud_db_path)
+
+        if sqlite_file_path_gz.exists():
+            temp_gz_path = local_sqlite_target_path.with_suffix(".db.gz")
+            sqlite_file_path_gz.download_to(temp_gz_path)
+            with (
+                gzip.open(temp_gz_path, "rb") as f_in,
+                open(local_sqlite_target_path, "wb") as f_out,
+            ):
+                shutil.copyfileobj(f_in, f_out)
+            temp_gz_path.unlink()
+        else:
+            sqlite_file_path.download_to(local_sqlite_target_path)
 
     # Step 3: connect to the clone
     connect_local_sqlite(instance=instance + (copy_suffix or ""))
 
 
-def upload_sqlite_clone(local_sqlite_path: Path | str | None = None) -> None:
+def upload_sqlite_clone(
+    local_sqlite_path: Path | str | None = None, compress: bool = True
+) -> None:  # TODO add compression
     """Uploads the SQLite clone to the default storage.
 
     Args:
         local_sqlite_path: Path to the SQLite file.
             Defaults to the local storage path if not specified.
+        compress: Whether to compress the database with gzip before uploading.
     """
     import lamindb_setup as ln_setup
 
@@ -173,8 +199,18 @@ def upload_sqlite_clone(local_sqlite_path: Path | str | None = None) -> None:
     if not local_sqlite_path.exists():
         raise FileNotFoundError(f"Database not found at {local_sqlite_path}")
 
-    cloud_destination = create_path(
-        str(ln_setup.settings.instance.storage.root) + "/.lamindb/lamin.db"
-    )
+    cloud_db_path = str(ln_setup.settings.instance.storage.root) + "/.lamindb/lamin.db"
 
-    cloud_destination.upload_from(local_sqlite_path, print_progress=True)
+    if compress:
+        temp_gz_path = local_sqlite_path.with_suffix(".db.gz")
+        with (
+            open(local_sqlite_path, "rb") as f_in,
+            gzip.open(temp_gz_path, "wb") as f_out,
+        ):
+            shutil.copyfileobj(f_in, f_out)
+        cloud_destination = create_path(cloud_db_path + ".gz")
+        cloud_destination.upload_from(temp_gz_path, print_progress=True)
+        temp_gz_path.unlink()
+    else:
+        cloud_destination = create_path(cloud_db_path)
+        cloud_destination.upload_from(local_sqlite_path, print_progress=True)
