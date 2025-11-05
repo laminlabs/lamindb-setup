@@ -47,7 +47,7 @@ warnings.filterwarnings("ignore", category=DeprecationWarning, module="postgrest
 
 from packaging import version as packaging_version
 
-from . import core, errors, types
+from . import core, errors, io, types
 from ._check_setup import _check_instance_setup
 from ._connect_instance import connect
 from ._delete import delete
