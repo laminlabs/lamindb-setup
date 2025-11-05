@@ -35,7 +35,7 @@ Migration management
 
 """
 
-__version__ = "1.13.1"  # denote a release candidate for 0.1.0 with 0.1rc1
+__version__ = "1.14.1"  # denote a release candidate for 0.1.0 with 0.1rc1
 
 import os
 import warnings
@@ -47,7 +47,7 @@ warnings.filterwarnings("ignore", category=DeprecationWarning, module="postgrest
 
 from packaging import version as packaging_version
 
-from . import core, errors, types
+from . import core, errors, io, types
 from ._check_setup import _check_instance_setup
 from ._connect_instance import connect
 from ._delete import delete

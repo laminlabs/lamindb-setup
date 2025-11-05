@@ -59,7 +59,6 @@ class SetupSettings:
 
     _auto_connect_path: Path = settings_dir / "auto_connect"
     _private_django_api_path: Path = settings_dir / "private_django_api"
-    _work_dir: Path = settings_dir / "work_dir.txt"
 
     _cache_dir: Path | None = None
 
@@ -69,25 +68,6 @@ class SetupSettings:
     @property
     def _instance_settings_path(self) -> Path:
         return current_instance_settings_file()
-
-    @property
-    def work_dir(self) -> Path | None:
-        """Get or set the current working directory.
-
-        If setting it to `None`, the working directory is unset
-        """
-        if not self._work_dir.exists():
-            return None
-        return Path(self._work_dir.read_text())
-
-    @work_dir.setter
-    def work_dir(self, value: str | Path | None) -> None:
-        if value is None:
-            if self._work_dir.exists():
-                self._work_dir.unlink()
-        else:
-            value_str = Path(value).expanduser().resolve().as_posix()
-            self._work_dir.write_text(value_str)
 
     @property
     def settings_dir(self) -> Path:
@@ -111,6 +91,31 @@ class SetupSettings:
             self._auto_connect_path.touch()
         else:
             self._auto_connect_path.unlink(missing_ok=True)
+
+    @property
+    def _dev_dir_path(self) -> Path:
+        return (
+            settings_dir / f"dev-dir--{self.instance.owner}--{self.instance.name}.txt"
+        )
+
+    @property
+    def dev_dir(self) -> Path | None:
+        """Get or set the local development directory for the current instance.
+
+        If setting it to `None`, the working development directory is unset.
+        """
+        if not self._dev_dir_path.exists():
+            return None
+        return Path(self._dev_dir_path.read_text())
+
+    @dev_dir.setter
+    def dev_dir(self, value: str | Path | None) -> None:
+        if value is None:
+            if self._dev_dir_path.exists():
+                self._dev_dir_path.unlink()
+        else:
+            value_str = Path(value).expanduser().resolve().as_posix()
+            self._dev_dir_path.write_text(value_str)
 
     @property
     def _branch_path(self) -> Path:
@@ -361,9 +366,9 @@ class SetupSettings:
         if self._instance_exists:
             instance_rep = self.instance.__repr__().split("\n")
             repr += f"{colors.cyan('Instance:')} {instance_rep[0].replace('Instance: ', '')}\n"
-            repr += f" - work-dir: {self.work_dir}\n"
             repr += f" - branch: {self._read_branch_idlike_name()[1]}\n"
-            repr += f" - space: {self._read_space_idlike_name()[1]}"
+            repr += f" - space: {self._read_space_idlike_name()[1]}\n"
+            repr += f" - dev-dir: {self.dev_dir}"
             repr += f"\n{colors.yellow('Details:')}\n"
             repr += "\n".join(instance_rep[1:])
         else:
