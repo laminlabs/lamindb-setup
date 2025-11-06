@@ -84,7 +84,9 @@ def init_local_sqlite(
         isettings._init_db()
 
 
-def connect_local_sqlite(instance: str, *, read_only: bool = True) -> None:
+def connect_local_sqlite(
+    instance: str,
+) -> None:
     """Load a locally stored SQLite instance of which a remote hub Postgres instance exists.
 
     This function bypasses the hub lookup that `lamin connect` performs, loading the SQLite clone directly from local settings files.
@@ -92,7 +94,6 @@ def connect_local_sqlite(instance: str, *, read_only: bool = True) -> None:
 
     Args:
         instance: Instance slug in the form `account/name` (e.g., `laminlabs/privatedata-local`).
-        read_only: Whether to connect to the clone in read_only mode.
     """
     owner, name = instance.split("/")
     settings_file = instance_settings_file(name=name, owner=owner)
@@ -102,7 +103,7 @@ def connect_local_sqlite(instance: str, *, read_only: bool = True) -> None:
 
     isettings = load_instance_settings(settings_file)
     isettings._persist(write_to_disk=False)
-    isettings._load_db(sqlite_read_only=read_only)
+    isettings._load_db()
 
 
 def connect_remote_sqlite(
