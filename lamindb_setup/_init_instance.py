@@ -7,8 +7,6 @@ from typing import TYPE_CHECKING, Literal
 from uuid import UUID
 
 import click
-from django.core.exceptions import FieldError
-from django.db.utils import IntegrityError, OperationalError, ProgrammingError
 from lamin_utils import logger
 
 from ._disconnect import disconnect
@@ -71,6 +69,10 @@ def register_storage_in_instance(ssettings: StorageSettings) -> Storage:
 
 
 def register_user(usettings: UserSettings, update_user: bool = True) -> None:
+    # we have to import this here dynamically because otherwise
+    # the except below will fail on re-connect due to reset
+    from django.core.exceptions import FieldError
+    from django.db.utils import IntegrityError, OperationalError, ProgrammingError
     from lamindb.models import User
 
     if not update_user and User.objects.filter(uid=usettings.uid).exists():
