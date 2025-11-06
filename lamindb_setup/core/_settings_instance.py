@@ -82,7 +82,8 @@ class InstanceSettings:
         schema_id: UUID | None = None,
         fine_grained_access: bool = False,
         db_permissions: str | None = None,
-        _locker_user: UserSettings | None = None,  # user to lock for if cloud sqlite
+        _locker_user: UserSettings | None = None,  # user to lock for if cloud sqlite,
+        _is_clone: bool = False,
     ):
         from ._hub_utils import validate_db_arg
 
@@ -108,6 +109,7 @@ class InstanceSettings:
         self._db_permissions = db_permissions
         # if None then settings.user is used
         self._locker_user = _locker_user
+        self._is_clone = _is_clone
 
     def __repr__(self):
         """Rich string representation."""
@@ -433,7 +435,7 @@ class InstanceSettings:
 
     def _update_cloud_sqlite_file(self, unlock_cloud_sqlite: bool = True) -> None:
         """Upload the local sqlite file to the cloud file."""
-        if self._is_cloud_sqlite:
+        if self._is_cloud_sqlite and not self._is_clone:
             sqlite_file = self._sqlite_file
             logger.warning(
                 f"updating{' & unlocking' if unlock_cloud_sqlite else ''} cloud SQLite "
