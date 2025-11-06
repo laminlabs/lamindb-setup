@@ -20,12 +20,6 @@ from lamindb_setup.core.django import reset_django
 from lamindb_setup.core.upath import create_path
 
 
-def _strip_cloud_prefix(path: str) -> str:
-    if "://" in path:
-        return path.split("://", 1)[1]
-    return path
-
-
 def init_local_sqlite(
     instance: str | None = None, copy_suffix: str | None = None
 ) -> None:
@@ -78,7 +72,7 @@ def init_local_sqlite(
 
     if not isettings._sqlite_file_local.exists():
         # Reset Django configuration before _init_db() because Django was already configured for the original Postgres instance.
-        # Without this reset, the if not settings.configured check in setup_django() would skip reconfiguration,
+        # Without this reset, the `if not settings.configured`` check in `setup_django()` would skip reconfiguration,
         # causing migrations to run against the old Postgres database instead of the new SQLite clone database.
         reset_django()
         isettings._init_db()
@@ -99,48 +93,47 @@ def connect_local_sqlite(
     settings_file = instance_settings_file(name=name, owner=owner)
 
     if not settings_file.exists():
-        raise ValueError("SQLite clone not found. Run init_local_sqlite() first.")
+        raise ValueError(
+            "SQLite clone not found."
+            " Run `init_local_sqlite()` to create a local copy or connect to a remote copy using `connect_remote_sqlite`."
+        )
 
     isettings = load_instance_settings(settings_file)
     isettings._persist(write_to_disk=False)
-    isettings._load_db()
+
+    # Using `setup_django`` instead of `_load_db` to not ping AWS RDS
+    from lamindb_setup._check_setup import disable_auto_connect
+
+    from .django import setup_django
+
+    disable_auto_connect(setup_django)(isettings)
 
 
-def connect_remote_sqlite(
-    instance: str, *, copy_suffix: str | None = None, overwrite: bool = False
-) -> None:
-    """Load a remote SQLite instance of which a remote hub Postgres instance exists.
-
-    This function is the main building block for loading remote clones.
+def connect_remote_sqlite(instance: str, *, copy_suffix: str | None = None) -> None:
+    """Load an existing SQLite copy of a hub instance.
 
     Args:
         instance: Instance slug in the form `account/name` (e.g., `laminlabs/privatedata-local`).
         copy_suffix: Optional suffix of the local clone.
-        overwrite: Whether to overwrite existing local database.
     """
     import lamindb_setup as ln_setup
 
-    # Step 1: Create the settings file
-    # We need to connect to the real instance to get the settings
-    ln_setup.connect(instance)
+    owner, name = instance.split("/")
 
+    # Step 1: Create the settings file
+    isettings = ln_setup._connect_instance._connect_instance(owner=owner, name=name)
+    isettings._db = None
+    isettings._is_on_hub = False
+    isettings._fine_grained_access = False
+    isettings._db_permissions = "read"
     name = (
-        f"{ln_setup.settings.instance.name}{copy_suffix}"
-        if copy_suffix is not None
-        else ln_setup.settings.instance.name
+        f"{isettings.name}{copy_suffix}" if copy_suffix is not None else isettings.name
     )
-    isettings = InstanceSettings(
-        id=ln_setup.settings.instance._id,
-        owner=ln_setup.settings.instance.owner,  # type: ignore
-        name=name,
-        storage=ln_setup.settings.storage,
-        db=None,
-        modules=",".join(ln_setup.settings.instance.modules),
-        is_on_hub=False,
-    )
+    isettings._name = name
     isettings._persist(write_to_disk=True)
 
-    # Step 2: Get the clone SQLite file
+    # TODO This used to be the full download code that also enabled reading compressed files
+    """
     cloud_db_path = str(ln_setup.settings.instance.storage.root) + "/.lamindb/lamin.db"
     sqlite_file_path_gz = create_path(cloud_db_path + ".gz")
     sqlite_file_path = create_path(cloud_db_path)
@@ -171,8 +164,8 @@ def connect_remote_sqlite(
             temp_gz_path.unlink()
         else:
             sqlite_file_path.download_to(local_sqlite_target_path)
+    """
 
-    # Step 3: connect to the clone
     connect_local_sqlite(instance=instance + (copy_suffix or ""))
 
 
@@ -189,19 +182,14 @@ def upload_sqlite_clone(
     import lamindb_setup as ln_setup
 
     if local_sqlite_path is None:
-        local_sqlite_path = (
-            ln_setup.settings.cache_dir
-            / _strip_cloud_prefix(ln_setup.settings.instance.storage.root_as_str)
-            / ".lamindb"
-            / "lamin.db"
-        )
-
-    local_sqlite_path = Path(local_sqlite_path)
+        local_sqlite_path = ln_setup.settings.instance._sqlite_file_local
+    else:
+        local_sqlite_path = Path(local_sqlite_path)
 
     if not local_sqlite_path.exists():
         raise FileNotFoundError(f"Database not found at {local_sqlite_path}")
 
-    cloud_db_path = str(ln_setup.settings.instance.storage.root) + "/.lamindb/lamin.db"
+    cloud_db_path = ln_setup.settings.instance._sqlite_file
 
     if compress:
         temp_gz_path = local_sqlite_path.with_suffix(".db.gz")
@@ -210,7 +198,7 @@ def upload_sqlite_clone(
             gzip.open(temp_gz_path, "wb") as f_out,
         ):
             shutil.copyfileobj(f_in, f_out)
-        cloud_destination = create_path(cloud_db_path + ".gz")
+        cloud_destination = create_path(f"{cloud_db_path}.gz")
         cloud_destination.upload_from(temp_gz_path, print_progress=True)
         temp_gz_path.unlink()
     else:

@@ -320,8 +320,7 @@ class SetupSettings:
     def paths(self) -> type[SetupPaths]:
         """Convert cloud paths to lamindb local paths.
 
-        Use `settings.paths.cloud_to_local_no_update`
-        or `settings.paths.cloud_to_local`.
+        Use `settings.paths.cloud_to_local_no_update` or `settings.paths.cloud_to_local`.
         """
         return SetupPaths
 
