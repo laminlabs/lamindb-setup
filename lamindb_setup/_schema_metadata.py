@@ -418,14 +418,10 @@ class _SchemaHandler:
         all_models = {module_name: {} for module_name in self.included_modules}
 
         # Iterate through all registered Django models
-        for model in apps.get_models():
+        for model in apps.get_models(include_auto_created=True):
             # Check if model meets the criteria
-            if (
-                model.__class__ is Registry
-                and model is not SQLRecord
-                and not model._meta.abstract
-            ):
-                module_name = model.__get_module_name__()
+            if model is not SQLRecord and not model._meta.abstract:
+                module_name = Registry.__get_module_name__(model)
                 # Only include if module is in our included list
                 if module_name in self.included_modules:
                     model_name = model._meta.model_name
