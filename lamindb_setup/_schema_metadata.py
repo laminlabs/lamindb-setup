@@ -249,13 +249,13 @@ class _ModelHandler:
         return related_fields
 
     def _get_field_metadata(self, model, field: Field):
-        from lamindb.models import IsLink
+        from lamindb.models import IsLink, Registry
 
         internal_type = field.get_internal_type()
         model_name = field.model._meta.model_name
         relation_type = self._get_relation_type(model, field)
 
-        schema_name = field.model.__get_module_name__()
+        schema_name = Registry.__get_module_name__(field.related_model)
 
         if field.related_model is None:
             related_model_name = None
@@ -265,7 +265,7 @@ class _ModelHandler:
             max_length = field.max_length
         else:
             related_model_name = field.related_model._meta.model_name
-            related_schema_name = field.related_model.__get_module_name__()
+            related_schema_name = Registry.__get_module_name__(field.related_model)
             related_field_name = field.remote_field.name
             is_editable = False
             max_length = None
