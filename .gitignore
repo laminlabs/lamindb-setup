@@ -114,10 +114,10 @@ _docs_tmp*
 storage_uid.txt
 test.ipynb
 test2.ipynb
-lamindb_export
 
 # TO DELETE
 init_sandbox_clone.ipynb
 init_clone_and_replay.py
 install_trigger.py
 test3.ipynb
+*_export

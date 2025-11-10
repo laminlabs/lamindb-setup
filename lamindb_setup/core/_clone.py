@@ -101,7 +101,7 @@ def connect_local_sqlite(
     isettings = load_instance_settings(settings_file)
     isettings._persist(write_to_disk=False)
 
-    # Using `setup_django`` instead of `_load_db` to not ping AWS RDS
+    # Using `setup_django` instead of `_load_db` to not ping AWS RDS
     from lamindb_setup._check_setup import disable_auto_connect
 
     from .django import setup_django
