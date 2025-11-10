@@ -63,6 +63,7 @@ def save_settings(
                         "schema_id",
                         "fine_grained_access",
                         "db_permissions",
+                        "is_clone",
                     }:
                         settings_key = f"_{store_key.rstrip('_')}"
                     else:

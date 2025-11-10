@@ -124,6 +124,7 @@ def setup_instance_from_store(store: InstanceSettingsStore) -> InstanceSettings:
         schema_id=None if store.schema_id in {None, "null"} else UUID(store.schema_id),
         fine_grained_access=store.fine_grained_access,
         db_permissions=_null_to_value(store.db_permissions),
+        _is_clone=store.is_clone,
     )
 
 

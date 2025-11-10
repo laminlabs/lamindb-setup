@@ -66,6 +66,7 @@ def init_local_sqlite(
         db=None,
         modules=",".join(ln_setup.settings.instance.modules),
         is_on_hub=False,
+        _is_clone=True,
     )
 
     isettings._persist(write_to_disk=True)

@@ -67,8 +67,8 @@ class InstanceSettingsStore(BaseSettings):
     owner: str
     name: str
     storage_root: str
-    storage_region: str | None  # take old type annotations here because pydantic
-    db: str | None  # doesn't like new types on 3.9 even with future annotations
+    storage_region: str | None
+    db: str | None
     schema_str: str | None
     schema_id: str | None = None
     fine_grained_access: bool = False
@@ -76,6 +76,7 @@ class InstanceSettingsStore(BaseSettings):
     id: str
     git_repo: str | None
     keep_artifacts_local: bool | None
+    is_clone: bool = False
     model_config = SettingsConfigDict(env_prefix="lamindb_instance_", env_file=".env")
 
 
