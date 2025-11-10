@@ -255,7 +255,7 @@ class _ModelHandler:
         model_name = field.model._meta.model_name
         relation_type = self._get_relation_type(model, field)
 
-        schema_name = Registry.__get_module_name__(field.related_model)
+        schema_name = Registry.__get_module_name__(field.model)
 
         if field.related_model is None:
             related_model_name = None
