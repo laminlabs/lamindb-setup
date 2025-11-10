@@ -172,7 +172,8 @@ class _ModelHandler:
         self.table_name = model._meta.db_table
         self.included_modules = included_modules
         self.fields = self._get_fields_metadata(self.model)
-        self.is_link_table = issubclass(model, IsLink)
+        self.is_auto_created = bool(model._meta.auto_created)
+        self.is_link_table = issubclass(model, IsLink) or self.is_auto_created
         self.name_field = model._name_field if hasattr(model, "_name_field") else None
         self.ontology_id_field = (
             model._ontology_id_field if hasattr(model, "_ontology_id_field") else None
@@ -183,6 +184,7 @@ class _ModelHandler:
             "fields": self.fields.copy(),
             "class_name": self.class_name,
             "table_name": self.table_name,
+            "is_auto_created": self.is_auto_created,
             "is_link_table": self.is_link_table,
             "name_field": self.name_field,
             "ontology_id_field": self.ontology_id_field,

@@ -42,7 +42,9 @@ def test_update_schema_in_hub(setup_instance):
     assert "wetlab" in schema["schema_json"]
 
     assert not schema["schema_json"]["core"]["artifact"]["is_link_table"]
+    assert not schema["schema_json"]["core"]["artifact"]["is_auto_created"]
     assert schema["schema_json"]["core"]["artifactulabel"]["is_link_table"]
+    assert schema["schema_json"]["core"]["artifact_input_of_runs"]["is_auto_created"]
 
     assert schema["schema_json"]["core"]["artifact"]["name_field"] == "key"
     assert schema["schema_json"]["core"]["artifact"]["ontology_id_field"] is None
