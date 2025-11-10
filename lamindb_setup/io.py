@@ -52,6 +52,8 @@ def _export_full_table(
     chunk_size: int,
 ) -> list[tuple[str, Path]] | str:
     """Export a full table to parquet."""
+    from django.db import connection
+
     import lamindb_setup as ln_setup
 
     module_name, model_name, field_name = registry_info
@@ -64,31 +66,55 @@ def _export_full_table(
     table_name = registry._meta.db_table
 
     try:
-        with warnings.catch_warnings():
-            warnings.filterwarnings("ignore", message="Skipped unsupported reflection")
-            row_count = pd.read_sql(
-                f"SELECT COUNT(*) as count FROM {table_name}",
-                ln_setup.settings.instance.db,
-            ).iloc[0]["count"]
+        if ln_setup.settings.instance.dialect == "postgresql":
+            buffer = io.StringIO()
+            with connection.cursor() as cursor:
+                cursor.copy_expert(
+                    f'COPY "{table_name}" TO STDOUT WITH (FORMAT CSV, HEADER TRUE)',
+                    buffer,
+                )
+            buffer.seek(0)
+            df = pd.read_csv(buffer)
+            df.to_parquet(directory / f"{table_name}.parquet", compression=None)
+            return (
+                f"{module_name}.{model_name}.{field_name}"
+                if field_name
+                else f"{module_name}.{model_name}"
+            )
+        else:
+            with warnings.catch_warnings():
+                warnings.filterwarnings(
+                    "ignore", message="Skipped unsupported reflection"
+                )
+                row_count = pd.read_sql(
+                    f"SELECT COUNT(*) as count FROM {table_name}",
+                    ln_setup.settings.instance.db,
+                ).iloc[0]["count"]
 
-            if row_count > chunk_size:
-                chunk_files = []
-                num_chunks = (row_count + chunk_size - 1) // chunk_size
-                for chunk_id in range(num_chunks):
-                    offset = chunk_id * chunk_size
-                    df = pd.read_sql(
-                        f"SELECT * FROM {table_name} LIMIT {chunk_size} OFFSET {offset}",
-                        ln_setup.settings.instance.db,
+                if row_count > chunk_size:
+                    chunk_files = []
+                    num_chunks = (row_count + chunk_size - 1) // chunk_size
+                    for chunk_id in range(num_chunks):
+                        offset = chunk_id * chunk_size
+                        df = pd.read_sql(
+                            f"SELECT * FROM {table_name} LIMIT {chunk_size} OFFSET {offset}",
+                            ln_setup.settings.instance.db,
+                        )
+                        chunk_file = (
+                            directory / f"{table_name}_chunk_{chunk_id}.parquet"
+                        )
+                        df.to_parquet(chunk_file, compression=None)
+                        chunk_files.append((table_name, chunk_file))
+                    return chunk_files
+                else:
+                    df = pd.read_sql_table(table_name, ln_setup.settings.instance.db)
+                    df.to_parquet(directory / f"{table_name}.parquet", compression=None)
+                    return (
+                        f"{module_name}.{model_name}.{field_name}"
+                        if field_name
+                        else f"{module_name}.{model_name}"
                     )
-                    chunk_file = directory / f"{table_name}_chunk_{chunk_id}.parquet"
-                    df.to_parquet(chunk_file, compression=None)
-                    chunk_files.append((table_name, chunk_file))
-                return chunk_files
-            else:
-                df = pd.read_sql_table(table_name, ln_setup.settings.instance.db)
-                df.to_parquet(directory / f"{table_name}.parquet", compression=None)
-                return table_name
-    except ValueError:
+    except (ValueError, pd.errors.DatabaseError):
         raise ValueError(
             f"Table '{table_name}' was not found. The instance might need to be migrated."
         ) from None
