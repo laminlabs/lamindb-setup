@@ -43,6 +43,14 @@ def load_user(email: str | None = None, handle: str | None = None) -> UserSettin
     return user_settings
 
 
+def current_user_uid() -> str:
+    current_user_settings = current_user_settings_file()
+    if current_user_settings.exists():
+        return load_user_settings(current_user_settings).uid
+
+    return "00000000"  # anonymous
+
+
 def login(
     user: str | None = None, *, api_key: str | None = None, **kwargs
 ) -> UserSettings:
@@ -81,9 +89,6 @@ def login(
     elif api_key is not None:
         raise ValueError("Please provide either 'user' or 'api_key', not both.")
 
-    # get it here for further checks, load_user below already saves the new user
-    previous_user_uid = settings.user.uid
-
     for kwarg in kwargs:
         if kwarg != "key":
             raise TypeError(f"login() got unexpected keyword argument '{kwarg}'")
@@ -92,6 +97,9 @@ def login(
         logger.warning(
             "the legacy API key is deprecated and will likely be removed in a future version"
         )
+
+    # do this here because load_user overwrites current_user_settings_file()
+    previous_user_uid = current_user_uid()
 
     if api_key is None:
         if "@" in user:  # type: ignore
