@@ -81,6 +81,9 @@ def login(
     elif api_key is not None:
         raise ValueError("Please provide either 'user' or 'api_key', not both.")
 
+    # get it here for further checks, load_user below already saves the new user
+    previous_user_uid = settings.user.uid
+
     for kwarg in kwargs:
         if kwarg != "key":
             raise TypeError(f"login() got unexpected keyword argument '{kwarg}'")
@@ -144,8 +147,15 @@ def login(
     user_settings.api_key = api_key
     save_user_settings(user_settings)
 
-    if settings._instance_exists and _check_instance_setup():
-        register_user(user_settings)
+    if settings._instance_exists:
+        if (
+            isettings := settings.instance
+        ).is_on_hub and previous_user_uid != user_settings.uid:
+            logger.important_hint(
+                f"consider re-connecting to update permissions: lamin connect {isettings.slug}"
+            )
+        if _check_instance_setup():
+            register_user(user_settings)
 
     settings._user_settings = None
     # aws s3 credentials are scoped to the user
