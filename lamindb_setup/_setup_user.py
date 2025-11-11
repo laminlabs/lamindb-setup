@@ -98,7 +98,7 @@ def login(
             "the legacy API key is deprecated and will likely be removed in a future version"
         )
 
-    # do this here because load_user overwrites current_user_settings_file()
+    # do this here because load_user overwrites current_user_settings_file
     previous_user_uid = current_user_uid()
 
     if api_key is None:
