@@ -131,6 +131,7 @@ def connect_remote_sqlite(instance: str, *, copy_suffix: str | None = None) -> N
         f"{isettings.name}{copy_suffix}" if copy_suffix is not None else isettings.name
     )
     isettings._name = name
+    isettings._is_clone = True
     isettings._persist(write_to_disk=True)
 
     # TODO This used to be the full download code that also enabled reading compressed files
