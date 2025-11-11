@@ -237,6 +237,10 @@ def _import_registry(
             if mask.any():
                 df.loc[mask, col] = df.loc[mask, col].map(_serialize_value)
 
+    for field in registry._meta.fields:
+        if field.column in df.columns and not field.null:
+            df[field.column] = df[field.column].fillna("")
+
     if df.empty:
         return
 
@@ -261,6 +265,14 @@ def _import_registry(
                 buffer,
             )
     else:
+        with connection.cursor() as cursor:
+            if if_exists == "replace":
+                cursor.execute(f'DELETE FROM "{table_name}"')
+            elif if_exists == "fail":
+                cursor.execute(f'SELECT COUNT(*) FROM "{table_name}"')
+                if cursor.fetchone()[0] > 0:
+                    raise ValueError(f"Table {table_name} already contains data")
+
         num_cols = len(df.columns)
         max_vars = 900  # SQLite has a limit of 999 variables per statement
         chunksize = max(1, max_vars // num_cols)
@@ -268,7 +280,7 @@ def _import_registry(
         df.to_sql(
             table_name,
             connection.connection,
-            if_exists=if_exists,
+            if_exists="append",
             index=False,
             method="multi",
             chunksize=chunksize,
@@ -352,3 +364,5 @@ def import_db(
                 cursor.execute("PRAGMA synchronous = FULL")
                 cursor.execute("PRAGMA journal_mode = DELETE")
                 cursor.execute("PRAGMA foreign_keys = ON")
+                # Reclaim space from DELETEs
+                cursor.execute("VACUUM")
