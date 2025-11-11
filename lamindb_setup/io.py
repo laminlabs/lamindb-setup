@@ -291,7 +291,6 @@ def import_db(
     Args:
         input_dir: Directory containing parquet files to import.
         module_names: Module names to import (e.g., ["lamindb", "bionty", "wetlab"]).
-        if_exists: How to behave if table exists: 'fail', 'replace', or 'append'.
     """
     from django.db import connection
 

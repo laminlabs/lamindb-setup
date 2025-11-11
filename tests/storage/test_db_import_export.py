@@ -198,7 +198,6 @@ def test_import_db_from_parquet(simple_instance: Callable, tmp_path):
     import_db(
         input_dir=export_dir,
         module_names=["lamindb", "bionty"],
-        if_exists="append",
     )
 
     # gene and artifact should exist after the import
