@@ -20,6 +20,7 @@ lamin_env = os.getenv("LAMIN_ENV")
 if lamin_env is None or lamin_env == "prod":
     HOSTED_BUCKETS = tuple([f"s3://lamin-{region}" for region in HOSTED_REGIONS])
 else:
+    logger.warning("loaded LAMIN_ENV: staging")
     HOSTED_BUCKETS = ("s3://lamin-hosted-test",)  # type: ignore
 
 
