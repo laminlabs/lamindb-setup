@@ -134,40 +134,6 @@ def connect_remote_sqlite(instance: str, *, copy_suffix: str | None = None) -> N
     isettings._is_clone = True
     isettings._persist(write_to_disk=True)
 
-    # TODO This used to be the full download code that also enabled reading compressed files
-    """
-    cloud_db_path = str(ln_setup.settings.instance.storage.root) + "/.lamindb/lamin.db"
-    sqlite_file_path_gz = create_path(cloud_db_path + ".gz")
-    sqlite_file_path = create_path(cloud_db_path)
-
-    local_sqlite_target_path = (
-        ln_setup.settings.cache_dir
-        / _strip_cloud_prefix(ln_setup.settings.instance.storage.root_as_str)
-        / ".lamindb"
-        / "lamin.db"
-    )
-
-    if not local_sqlite_target_path.exists() or overwrite:
-        local_sqlite_target_path.parent.mkdir(parents=True, exist_ok=True)
-        cloud_db_path = (
-            str(ln_setup.settings.instance.storage.root) + "/.lamindb/lamin.db"
-        )
-        sqlite_file_path_gz = create_path(cloud_db_path + ".gz")
-        sqlite_file_path = create_path(cloud_db_path)
-
-        if sqlite_file_path_gz.exists():
-            temp_gz_path = local_sqlite_target_path.with_suffix(".db.gz")
-            sqlite_file_path_gz.download_to(temp_gz_path)
-            with (
-                gzip.open(temp_gz_path, "rb") as f_in,
-                open(local_sqlite_target_path, "wb") as f_out,
-            ):
-                shutil.copyfileobj(f_in, f_out)
-            temp_gz_path.unlink()
-        else:
-            sqlite_file_path.download_to(local_sqlite_target_path)
-    """
-
     connect_local_sqlite(instance=instance + (copy_suffix or ""))
 
 
