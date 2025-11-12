@@ -198,6 +198,7 @@ def test_import_db_from_parquet(simple_instance: Callable, tmp_path):
     import_db(
         input_dir=export_dir,
         module_names=["lamindb", "bionty"],
+        if_exists="append",
     )
 
     # gene and artifact should exist after the import
@@ -212,3 +213,13 @@ def test_import_db_from_parquet(simple_instance: Callable, tmp_path):
     linked_gene = imported_artifact.genes.first()
     assert linked_gene.id == 999
     assert linked_gene.symbol == "TESTGENE"
+
+    # Verify PRIMARY KEY constraint is preserved for "append" mode that we used here
+    from django.db import connection
+
+    with connection.cursor() as cursor:
+        cursor.execute(
+            "SELECT sql FROM sqlite_master WHERE type='table' AND name='lamindb_artifact'"
+        )
+        create_stmt = cursor.fetchone()[0]
+        assert "PRIMARY KEY" in create_stmt

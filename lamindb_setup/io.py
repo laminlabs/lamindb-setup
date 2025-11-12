@@ -172,7 +172,14 @@ def export_db(
 
     with Progress() as progress:
         task_id = progress.add_task("Exporting", total=len(tasks))
-        with ProcessPoolExecutor(max_workers=max_workers) as executor:
+
+        import multiprocessing
+
+        mp_context = multiprocessing.get_context("spawn")
+
+        with ProcessPoolExecutor(
+            max_workers=max_workers, mp_context=mp_context
+        ) as executor:
             futures = {
                 executor.submit(_export_full_table, task, directory, chunk_size): task
                 for task in tasks
@@ -206,6 +213,7 @@ def _serialize_value(val):
 def _import_registry(
     registry: type[models.Model],
     directory: Path,
+    if_exists: Literal["fail", "replace", "append"] = "replace",
 ) -> None:
     """Import a single registry table from parquet.
 
@@ -236,18 +244,21 @@ def _import_registry(
             if mask.any():
                 df.loc[mask, col] = df.loc[mask, col].map(_serialize_value)
 
-    # Fill NULL values in NOT NULL columns to handle schema mismatches between postgres source and SQLite target
-    # This allows importing data where fields were nullable
-    for field in registry._meta.fields:
-        if field.column in df.columns and not field.null:
-            df[field.column] = df[field.column].fillna("")
+    if if_exists == "append":
+        # Fill NULL values in NOT NULL columns to handle schema mismatches between postgres source and SQLite target
+        # This allows importing data where fields were nullable
+        for field in registry._meta.fields:
+            if field.column in df.columns and not field.null:
+                df[field.column] = df[field.column].fillna("")
 
     if df.empty:
         return
 
-    # Clear existing data before import
-    with connection.cursor() as cursor:
-        cursor.execute(f'DELETE FROM "{table_name}"')
+    if if_exists == "append":
+        # Clear existing data before import
+        # When appending we would run into duplicate errors because of existing values like branches etc
+        with connection.cursor() as cursor:
+            cursor.execute(f'DELETE FROM "{table_name}"')
 
     if connection.vendor == "postgresql":
         columns = df.columns.tolist()
@@ -258,6 +269,13 @@ def _import_registry(
         buffer.seek(0)
 
         with connection.cursor() as cursor:
+            if if_exists == "replace":
+                cursor.execute(f'DELETE FROM "{table_name}"')
+            elif if_exists == "fail":
+                cursor.execute(f'SELECT COUNT(*) FROM "{table_name}"')
+                if cursor.fetchone()[0] > 0:
+                    raise ValueError(f"Table {table_name} already contains data")
+
             cursor.copy_expert(
                 f"COPY \"{table_name}\" ({column_names}) FROM STDIN WITH (FORMAT CSV, DELIMITER E'\\t', NULL '\\N')",
                 buffer,
@@ -271,7 +289,7 @@ def _import_registry(
         df.to_sql(
             table_name,
             connection.connection,
-            if_exists="append",
+            if_exists=if_exists,
             index=False,
             method="multi",
             chunksize=chunksize,
@@ -282,6 +300,7 @@ def import_db(
     module_names: Sequence[str] | None = None,
     *,
     input_dir: str | Path = "./lamindb_export/",
+    if_exists: Literal["fail", "replace", "append"] = "replace",
 ) -> None:
     """Import registry and link tables from parquet files.
 
@@ -291,6 +310,10 @@ def import_db(
     Args:
         input_dir: Directory containing parquet files to import.
         module_names: Module names to import (e.g., ["lamindb", "bionty", "wetlab"]).
+        if_exists: How to behave if table exists: 'fail', 'replace', or 'append'.
+            If set to 'replace', existing data is deleted and new data is imported. PKs and indices are not guaranteed to be preserved which can lead to write errors.
+            If set to 'append', new data is added to existing data without clearing the table. PKs and indices are preserved but database size will greatly increase.
+            If set to 'fail', raises an error if the table contains any data.
     """
     from django.db import connection
 
@@ -340,10 +363,10 @@ def import_db(
                             task, description=f"[cyan]{module_name}.{model_name}"
                         )
                         registry = getattr(schema_module, model_name)
-                        _import_registry(registry, directory)
+                        _import_registry(registry, directory, if_exists=if_exists)
                         for field in registry._meta.many_to_many:
                             link_orm = getattr(registry, field.name).through
-                            _import_registry(link_orm, directory)
+                            _import_registry(link_orm, directory, if_exists=if_exists)
                         progress.advance(task)
     finally:
         with connection.cursor() as cursor:
