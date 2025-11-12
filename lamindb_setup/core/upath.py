@@ -908,12 +908,9 @@ def get_stat_file_cloud(stat: dict) -> tuple[int, str | None, str | None]:
     elif "blob_id" in stat:
         hash = b16_to_b64(stat["blob_id"])
         hash_type = "sha1"
-    # s3
-    # StorageClass is checked to be sure that it is indeed s3
-    # because http also has ETag
     elif "ETag" in stat:
         etag = stat["ETag"]
-        if "mimetype" in stat:
+        if "mimetype" in stat or ("url" in stat and stat["url"].startswith("http")):
             # http
             hash = hash_string(etag.strip('"'))
             hash_type = "md5-etag"
