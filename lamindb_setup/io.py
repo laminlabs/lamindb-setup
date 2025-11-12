@@ -172,7 +172,14 @@ def export_db(
 
     with Progress() as progress:
         task_id = progress.add_task("Exporting", total=len(tasks))
-        with ProcessPoolExecutor(max_workers=max_workers) as executor:
+
+        import multiprocessing
+
+        mp_context = multiprocessing.get_context("spawn")
+
+        with ProcessPoolExecutor(
+            max_workers=max_workers, mp_context=mp_context
+        ) as executor:
             futures = {
                 executor.submit(_export_full_table, task, directory, chunk_size): task
                 for task in tasks
@@ -237,8 +244,21 @@ def _import_registry(
             if mask.any():
                 df.loc[mask, col] = df.loc[mask, col].map(_serialize_value)
 
+    if if_exists == "append":
+        # Fill NULL values in NOT NULL columns to handle schema mismatches between postgres source and SQLite target
+        # This allows importing data where fields were nullable
+        for field in registry._meta.fields:
+            if field.column in df.columns and not field.null:
+                df[field.column] = df[field.column].fillna("")
+
     if df.empty:
         return
+
+    if if_exists == "append":
+        # Clear existing data before import
+        # When appending we would run into duplicate errors because of existing values like branches etc
+        with connection.cursor() as cursor:
+            cursor.execute(f'DELETE FROM "{table_name}"')
 
     if connection.vendor == "postgresql":
         columns = df.columns.tolist()
@@ -265,6 +285,7 @@ def _import_registry(
         max_vars = 900  # SQLite has a limit of 999 variables per statement
         chunksize = max(1, max_vars // num_cols)
 
+        # Always use append mode since we set up the tables from a fresh instance
         df.to_sql(
             table_name,
             connection.connection,
@@ -290,6 +311,9 @@ def import_db(
         input_dir: Directory containing parquet files to import.
         module_names: Module names to import (e.g., ["lamindb", "bionty", "wetlab"]).
         if_exists: How to behave if table exists: 'fail', 'replace', or 'append'.
+            If set to 'replace', existing data is deleted and new data is imported. PKs and indices are not guaranteed to be preserved which can lead to write errors.
+            If set to 'append', new data is added to existing data without clearing the table. PKs and indices are preserved but database size will greatly increase.
+            If set to 'fail', raises an error if the table contains any data.
     """
     from django.db import connection
 
@@ -352,3 +376,5 @@ def import_db(
                 cursor.execute("PRAGMA synchronous = FULL")
                 cursor.execute("PRAGMA journal_mode = DELETE")
                 cursor.execute("PRAGMA foreign_keys = ON")
+                # Reclaim space from DELETEs
+                cursor.execute("VACUUM")
