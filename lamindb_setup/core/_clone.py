@@ -45,8 +45,6 @@ def init_local_sqlite(
     if instance is None:  # pragma: no cover
         instance = os.environ.get("LAMIN_CURRENT_INSTANCE")
 
-    owner, name = instance.split("/")  # type: ignore
-
     if instance is None:
         raise ValueError(
             "No instance identifier provided and LAMIN_CURRENT_INSTANCE is not set"
@@ -60,7 +58,9 @@ def init_local_sqlite(
         if copy_suffix is not None
         else ln_setup.settings.instance.name
     )
-    isettings = ln_setup._connect_instance._connect_instance(owner=owner, name=name)
+    isettings = ln_setup._connect_instance._connect_instance(
+        owner=ln_setup.settings.instance.owner, name=name
+    )
     isettings._db = None
     isettings._is_on_hub = False
     isettings._fine_grained_access = False
