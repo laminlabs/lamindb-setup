@@ -69,8 +69,7 @@ def load_or_create_user_settings(api_key: str | None = None) -> UserSettings:
     """Return current user settings.
 
     Args:
-        api_key: if provided and there is no current user,
-            perform login and return the user settings.
+        api_key: if provided and there is no current user, perform login and return the user settings.
     """
     current_user_settings = current_user_settings_file()
     if not current_user_settings.exists():
@@ -125,6 +124,7 @@ def setup_instance_from_store(store: InstanceSettingsStore) -> InstanceSettings:
         schema_id=None if store.schema_id in {None, "null"} else UUID(store.schema_id),
         fine_grained_access=store.fine_grained_access,
         db_permissions=_null_to_value(store.db_permissions),
+        _is_clone=store.is_clone,
     )
 
 

@@ -62,8 +62,7 @@ def mark_storage_root(
     root: UPathStr, uid: str, instance_id: UUID, instance_slug: str
 ) -> Literal["__marked__"] | str:
     # we need a file in folder-like storage locations on S3 to avoid
-    # permission errors from leveraging s3fs on an empty hosted storage location
-    # (path.fs.find raises a PermissionError)
+    # permission errors from leveraging s3fs on an empty hosted storage location (path.fs.find raises a PermissionError)
     # we also need it in case a storage location is ambiguous because a server / local environment
     # doesn't have a globally unique identifier, then we screen for this file to map the
     # path on a storage location in the registry

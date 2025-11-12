@@ -54,8 +54,7 @@ def is_local_db_url(db_url: str) -> bool:
 
 
 def check_is_instance_remote(root: UPathStr, db: str | None) -> bool:
-    # returns True for cloud SQLite
-    # and remote postgres
+    # returns True for cloud SQLite and remote postgres
     root_str = str(root)
     if not root_str.startswith("create-s3") and get_storage_type(root_str) == "local":
         return False
@@ -83,7 +82,8 @@ class InstanceSettings:
         schema_id: UUID | None = None,
         fine_grained_access: bool = False,
         db_permissions: str | None = None,
-        _locker_user: UserSettings | None = None,  # user to lock for if cloud sqlite
+        _locker_user: UserSettings | None = None,  # user to lock for if cloud sqlite,
+        _is_clone: bool = False,
     ):
         from ._hub_utils import validate_db_arg
 
@@ -109,6 +109,7 @@ class InstanceSettings:
         self._db_permissions = db_permissions
         # if None then settings.user is used
         self._locker_user = _locker_user
+        self._is_clone = _is_clone
 
     def __repr__(self):
         """Rich string representation."""
@@ -434,7 +435,7 @@ class InstanceSettings:
 
     def _update_cloud_sqlite_file(self, unlock_cloud_sqlite: bool = True) -> None:
         """Upload the local sqlite file to the cloud file."""
-        if self._is_cloud_sqlite:
+        if self._is_cloud_sqlite and not self._is_clone:
             sqlite_file = self._sqlite_file
             logger.warning(
                 f"updating{' & unlocking' if unlock_cloud_sqlite else ''} cloud SQLite "
@@ -602,6 +603,14 @@ class InstanceSettings:
         disable_auto_connect(setup_django)(self, init=True)
 
     def _load_db(self) -> tuple[bool, str]:
+        """Load the database connection.
+
+        For cloud SQLite instances, downloads the database file from cloud storage.
+        For all instances, initializes Django ORM with the database connection.
+
+        Returns:
+            Tuple of (success: bool, error_message: str). Returns (True, "") on success.
+        """
         # Is the database available and initialized as LaminDB?
         # returns a tuple of status code and message
         if self.dialect == "sqlite" and not self._sqlite_file.exists():
@@ -615,8 +624,8 @@ class InstanceSettings:
                 return False, f"SQLite file {self._sqlite_file} does not exist"
         # we need the local sqlite to setup django
         self._update_local_sqlite_file()
-        # setting up django also performs a check for migrations & prints them
-        # as warnings
+
+        # setting up django also performs a check for migrations & prints them as warnings
         # this should fail, e.g., if the db is not reachable
         from lamindb_setup._check_setup import disable_auto_connect
 

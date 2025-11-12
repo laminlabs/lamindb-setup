@@ -12,7 +12,6 @@ from lamin_utils import logger
 from ._check_setup import (
     _check_instance_setup,
     _get_current_instance_settings,
-    find_module_candidates,
 )
 from ._disconnect import disconnect
 from ._init_instance import load_from_isettings

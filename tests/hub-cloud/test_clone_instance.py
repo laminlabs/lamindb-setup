@@ -1,5 +1,8 @@
 import shutil
+from pathlib import Path
 from subprocess import DEVNULL, run
+from unittest.mock import MagicMock, Mock, patch
+from uuid import uuid4
 
 import lamindb_setup as ln_setup
 import pandas as pd
@@ -85,3 +88,50 @@ def test_connect_local_sqlite(local_postgres_instance):
 
     with pytest.raises(ValueError, match="SQLite clone not found"):
         ln_setup.core.connect_local_sqlite(f"{original_owner}/nonexistent")
+
+
+def test_connect_remote_sqlite(tmp_path):
+    mock_instance_id = uuid4()
+    mock_storage_root = "s3://my-bucket/data"
+
+    with (
+        patch(
+            "lamindb_setup._connect_instance._connect_instance"
+        ) as mock_connect_instance,
+        patch("lamindb_setup.settings") as mock_settings,
+        patch("lamindb_setup.core._clone.InstanceSettings"),
+        patch("lamindb_setup.core._clone.create_path") as mock_create_path,
+        patch("lamindb_setup.core._clone.connect_local_sqlite"),
+    ):
+        mock_instance = Mock()
+        mock_instance._id = mock_instance_id
+        mock_instance.owner = "testowner"
+        mock_instance.name = "testname"
+        mock_instance.modules = ["module1", "module2"]
+        mock_instance.storage.root = mock_storage_root
+        mock_instance.storage.root_as_str = mock_storage_root
+
+        mock_settings.instance = mock_instance
+        mock_settings.storage = Mock()
+        mock_settings.cache_dir = Path(tmp_path)
+
+        mock_connect_instance.return_value = mock_instance
+
+        def fake_download(target_path):
+            target_path.parent.mkdir(parents=True, exist_ok=True)
+            target_path.write_bytes(b"fake db content")
+
+        def mock_create_path_fn(path):
+            mock_file = MagicMock()
+            if path.endswith(".gz"):
+                mock_file.exists.return_value = False
+            else:
+                mock_file.exists.return_value = True
+                mock_file.download_to.side_effect = fake_download
+            return mock_file
+
+        mock_create_path.side_effect = mock_create_path_fn
+
+        from lamindb_setup.core._clone import connect_remote_sqlite
+
+        connect_remote_sqlite("testowner/testname", copy_suffix="-copy")
