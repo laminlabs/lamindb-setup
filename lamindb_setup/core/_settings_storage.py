@@ -65,18 +65,19 @@ def sanitize_root_user_input(root: UPathStr) -> UPath:
             root_upath = root_upath.resolve()
         except Exception:
             logger.warning(f"unable to create .lamindb/ folder in {root_upath}")
+    return root_upath
+
+
+def convert_root_path_to_str(root: UPathStr) -> str:
+    """Format a root path string."""
+    root_upath = sanitize_root_user_input(root)
     # embed endpoint_url into path string for storing and displaying
     if root_upath.protocol == "s3":
         endpoint_url = root_upath.storage_options.get("endpoint_url", None)
         # LAMIN_ENDPOINTS include None
         if endpoint_url not in LAMIN_ENDPOINTS:
             return f"s3://{root_upath.path.rstrip('/')}?endpoint_url={endpoint_url}"
-    return root_upath
-
-
-def convert_root_path_to_str(root: UPathStr) -> str:
-    """Format a root path string."""
-    return sanitize_root_user_input(root).as_posix().rstrip("/")
+    return root_upath.as_posix().rstrip("/")
 
 
 def mark_storage_root(
