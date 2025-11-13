@@ -23,16 +23,6 @@ def _get_registries(module_name: str) -> list[str]:
     schema_module = import_module(module_name)
     exclude = {"SQLRecord", "BaseSQLRecord"}
 
-    if module_name == "lamindb":
-        module_filter = lambda cls, name: cls.__module__.startswith(
-            f"{module_name}.models."
-        ) and name in dir(schema_module)
-    else:
-        module_filter = (
-            lambda cls, name: cls.__module__ == f"{module_name}.models"
-            and name in dir(schema_module)
-        )
-
     return [
         name
         for name in dir(schema_module.models)
@@ -40,8 +30,8 @@ def _get_registries(module_name: str) -> list[str]:
             name[0].isupper()
             and isinstance(cls := getattr(schema_module.models, name, None), type)
             and issubclass(cls, models.Model)
-            and module_filter(cls, name)
             and name not in exclude
+            and not cls._meta.db_table.startswith("None_")  # type: ignore
         )
     ]
 
@@ -73,7 +63,7 @@ def _export_full_table(
 
     module_name, model_name, field_name = registry_info
     schema_module = import_module(module_name)
-    registry = getattr(schema_module, model_name)
+    registry = getattr(schema_module.models, model_name)
 
     if field_name:
         registry = getattr(registry, field_name).through
@@ -163,7 +153,9 @@ def export_db(
     for module_name, model_names in modules.items():
         schema_module = import_module(module_name)
         for model_name in model_names:
-            registry = getattr(schema_module, model_name)
+            registry = getattr(schema_module, model_name, None)
+            if registry is None:
+                registry = getattr(schema_module.models, model_name)
             tasks.append((module_name, model_name, None))
             for field in registry._meta.many_to_many:
                 tasks.append((module_name, model_name, field.name))
@@ -229,7 +221,6 @@ def _import_registry(
     parquet_file = directory / f"{table_name}.parquet"
 
     if not parquet_file.exists():
-        print(f"Skipped {table_name} (file not found)")
         return
 
     df = pd.read_parquet(parquet_file)
@@ -362,7 +353,7 @@ def import_db(
                         progress.update(
                             task, description=f"[cyan]{module_name}.{model_name}"
                         )
-                        registry = getattr(schema_module, model_name)
+                        registry = getattr(schema_module.models, model_name)
                         _import_registry(registry, directory, if_exists=if_exists)
                         for field in registry._meta.many_to_many:
                             link_orm = getattr(registry, field.name).through
