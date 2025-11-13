@@ -68,9 +68,7 @@ def sanitize_root_user_input(root: UPathStr) -> UPath:
     return root_upath
 
 
-def convert_root_path_to_str(root: UPathStr) -> str:
-    """Format a root path string."""
-    root_upath = sanitize_root_user_input(root)
+def convert_sanitized_root_path_to_str(root_upath: UPath) -> str:
     # embed endpoint_url into path string for storing and displaying
     if root_upath.protocol == "s3":
         endpoint_url = root_upath.storage_options.get("endpoint_url", None)
@@ -78,6 +76,12 @@ def convert_root_path_to_str(root: UPathStr) -> str:
         if endpoint_url not in LAMIN_ENDPOINTS:
             return f"s3://{root_upath.path.rstrip('/')}?endpoint_url={endpoint_url}"
     return root_upath.as_posix().rstrip("/")
+
+
+def convert_root_path_to_str(root: UPathStr) -> str:
+    """Format a root path string."""
+    sanitized_root_upath = sanitize_root_user_input(root)
+    return convert_sanitized_root_path_to_str(sanitized_root_upath)
 
 
 def mark_storage_root(
@@ -350,7 +354,7 @@ class StorageSettings:
     @property
     def root_as_str(self) -> str:
         """Formatted root string."""
-        return convert_root_path_to_str(self._root_init)
+        return convert_sanitized_root_path_to_str(self._root_init)
 
     @property
     def cache_dir(
