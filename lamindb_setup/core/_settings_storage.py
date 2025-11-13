@@ -55,15 +55,17 @@ def get_storage_type(root_as_str: str) -> StorageType:
     return convert.get(protocol, protocol)  # type: ignore
 
 
-def convert_root_path_to_str(root: UPath) -> str:
+def convert_root_path_to_str(root: UPathStr) -> str:
     """Format a root path string."""
+    root_upath = root if isinstance(root, UPath) else UPath(root)
+    root_upath = root_upath.expanduser()
     # embed endpoint_url into path string for storing and displaying
-    if root.protocol == "s3":
-        endpoint_url = root.storage_options.get("endpoint_url", None)
+    if root_upath.protocol == "s3":
+        endpoint_url = root_upath.storage_options.get("endpoint_url", None)
         # LAMIN_ENDPOINTS include None
         if endpoint_url not in LAMIN_ENDPOINTS:
-            return f"s3://{root.path.rstrip('/')}?endpoint_url={endpoint_url}"
-    return root.as_posix().rstrip("/")
+            return f"s3://{root_upath.path.rstrip('/')}?endpoint_url={endpoint_url}"
+    return root_upath.as_posix().rstrip("/")
 
 
 def mark_storage_root(
