@@ -41,7 +41,7 @@ def set_managed_storage(root: UPathStr, host: str | None = None, **fs_kwargs):
             "use a tuple of (local_root, host) instead"
         )
 
-    # here the storage is registered in the hub
+    # here the storage location is registered in the hub
     # hub_record_status="hub-record-created" if a new record is created
     # "hub-record-retrieved" if the storage is in the hub already
     ssettings, hub_record_status = init_storage(
@@ -65,5 +65,13 @@ def set_managed_storage(root: UPathStr, host: str | None = None, **fs_kwargs):
             delete_storage_record(ssettings)
         raise e
 
-    settings.instance._storage = ssettings
-    settings.storage._set_fs_kwargs(**fs_kwargs)
+    if ssettings._instance_id != settings.instance._id:
+        logger.warning(
+            f"registered storage location {root} as read-only for this instance (it's written by instance with uid: {ssettings.instance_uid})"
+        )
+        logger.warning(
+            f"did *not* switch default storage location, it's still: {settings.storage.root_as_str}"
+        )
+    else:
+        settings.instance._storage = ssettings
+        settings.storage._set_fs_kwargs(**fs_kwargs)
