@@ -170,9 +170,9 @@ def test_update_schema_in_hub(setup_instance):
         "type": "ManyToManyField",
         "column_name": None,
         "through": {
-            "left_key": "from_transform_id",
-            "right_key": "to_transform_id",
-            "link_table_name": "lamindb_transform_predecessors",
+            "left_key": "successor_id",
+            "right_key": "predecessor_id",
+            "link_table_name": "lamindb_transformtransform",
         },
         "field_name": "predecessors",
         "model_name": "transform",
