@@ -3,7 +3,7 @@ from __future__ import annotations
 import io
 import json
 import warnings
-from concurrent.futures import ProcessPoolExecutor, as_completed
+from concurrent.futures import ThreadPoolExecutor, as_completed
 from importlib import import_module
 from pathlib import Path
 from typing import TYPE_CHECKING
@@ -21,7 +21,6 @@ if TYPE_CHECKING:
 def _get_registries(module_name: str) -> list[str]:
     """Get registry class names from a module."""
     schema_module = import_module(module_name)
-    exclude = {"SQLRecord", "BaseSQLRecord"}
 
     return [
         name
@@ -30,7 +29,7 @@ def _get_registries(module_name: str) -> list[str]:
             name[0].isupper()
             and isinstance(cls := getattr(schema_module.models, name, None), type)
             and issubclass(cls, models.Model)
-            and name not in exclude
+            # Table names starting with `None_` are abstract base classes or Django mixins
             and not cls._meta.db_table.startswith("None_")  # type: ignore
         )
     ]
@@ -49,7 +48,7 @@ def _export_full_table(
     For SQLite with large tables, reads in chunks to avoid memory issues when tables exceed available RAM.
 
     Args:
-        registry_info: Tuple of (module_name, model_name, field_name) where field_name
+        registry_info: Tuple of (module_name, model_name, field_name) where `field_name`
             is None for regular tables or the field name for M2M link tables.
         directory: Output directory for parquet files.
         chunk_size: Maximum rows per chunk for SQLite large tables.
@@ -165,13 +164,8 @@ def export_db(
     with Progress() as progress:
         task_id = progress.add_task("Exporting", total=len(tasks))
 
-        import multiprocessing
-
-        mp_context = multiprocessing.get_context("spawn")
-
-        with ProcessPoolExecutor(
-            max_workers=max_workers, mp_context=mp_context
-        ) as executor:
+        # This must be a ThreadPoolExecutor and not a ProcessPoolExecutor to inherit JWTs
+        with ThreadPoolExecutor(max_workers=max_workers) as executor:
             futures = {
                 executor.submit(_export_full_table, task, directory, chunk_size): task
                 for task in tasks
