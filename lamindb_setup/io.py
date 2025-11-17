@@ -152,9 +152,7 @@ def export_db(
     for module_name, model_names in modules.items():
         schema_module = import_module(module_name)
         for model_name in model_names:
-            registry = getattr(schema_module, model_name, None)
-            if registry is None:
-                registry = getattr(schema_module.models, model_name)
+            registry = getattr(schema_module.models, model_name)
             tasks.append((module_name, model_name, None))
             for field in registry._meta.many_to_many:
                 tasks.append((module_name, model_name, field.name))
