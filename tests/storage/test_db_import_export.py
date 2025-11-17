@@ -345,3 +345,39 @@ def test_import_db_converts_empty_strings_to_none(
     imported = ln.Artifact.get(id=666)
     assert imported._real_key is None
     assert imported.description is None
+
+
+def test_import_db_converts_numeric_strings(simple_instance: Callable, tmp_path: Path):
+    import lamindb as ln
+    import lamindb_setup as ln_setup
+
+    export_dir = tmp_path / "export"
+    export_dir.mkdir()
+
+    artifact_data = pd.DataFrame(
+        {
+            "id": ["555"],
+            "uid": ["test_numeric_uid"],
+            "key": ["test_numeric_key"],
+            "_key_is_virtual": ["f"],
+            "_overwrite_versions": ["f"],
+            "description": ["Test numeric conversion"],
+            "suffix": [".txt"],
+            "kind": ["dataset"],
+            "size": ["2048"],
+            "hash": ["testhash999"],
+            "is_latest": ["t"],
+            "is_locked": ["f"],
+            "storage_id": ["1"],
+            "created_by_id": [str(ln_setup.settings.user.id)],
+            "created_at": [pd.Timestamp.now()],
+            "updated_at": [pd.Timestamp.now()],
+        }
+    )
+    artifact_data.to_parquet(export_dir / "lamindb_artifact.parquet", index=False)
+
+    import_db(input_dir=export_dir, module_names=["lamindb"], if_exists="append")
+
+    imported = ln.Artifact.get(id=555)
+    assert isinstance(imported.size, int)
+    assert imported.size == 2048
