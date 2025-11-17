@@ -43,6 +43,14 @@ def load_user(email: str | None = None, handle: str | None = None) -> UserSettin
     return user_settings
 
 
+def current_user_uid() -> str:
+    current_user_settings = current_user_settings_file()
+    if current_user_settings.exists():
+        return load_user_settings(current_user_settings).uid
+
+    return "00000000"  # anonymous
+
+
 def login(
     user: str | None = None, *, api_key: str | None = None, **kwargs
 ) -> UserSettings:
@@ -89,6 +97,9 @@ def login(
         logger.warning(
             "the legacy API key is deprecated and will likely be removed in a future version"
         )
+
+    # do this here because load_user overwrites current_user_settings_file
+    previous_user_uid = current_user_uid()
 
     if api_key is None:
         if "@" in user:  # type: ignore
@@ -144,8 +155,15 @@ def login(
     user_settings.api_key = api_key
     save_user_settings(user_settings)
 
-    if settings._instance_exists and _check_instance_setup():
-        register_user(user_settings)
+    if settings._instance_exists:
+        if (
+            isettings := settings.instance
+        ).is_on_hub and previous_user_uid != user_settings.uid:
+            logger.important_hint(
+                f"consider re-connecting to update permissions: lamin connect {isettings.slug}"
+            )
+        if _check_instance_setup():
+            register_user(user_settings)
 
     settings._user_settings = None
     # aws s3 credentials are scoped to the user
