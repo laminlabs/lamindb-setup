@@ -119,7 +119,9 @@ def extract_suffix_from_path(path: Path, arg_name: str | None = None) -> str:
         # use ".gz" in such a case
         if suffixes[-2] in VALID_SIMPLE_SUFFIXES:
             suffix = "".join(suffixes[-2:])
-            # Sergei: we need .h5ad.tar.gz, not just .tar.gz
+            # if the suffix preceding the compression suffixes is a valid suffix,
+            # we account for it; otherwise we don't.
+            # i.e. we should have .h5ad.tar.gz or .csv.tar.gz, not just .tar.gz
             if (
                 suffix == ".tar.gz"
                 and len(suffixes) > 2
