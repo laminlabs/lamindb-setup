@@ -20,6 +20,7 @@ def test_extract_suffix_from_path():
         ("salmon.merged.gene_counts.tsv", ".tsv"),
         ("salmon.merged.gene_counts.tsv.gz", ".tsv.gz"),
         ("filename.v1.1.0.anndata.zarr", ".anndata.zarr"),
+        ("filename.h5ad.tar.gz", ".h5ad.tar.gz"),
     ]
     for path, suffix in collection:
         filepath = Path(path)
