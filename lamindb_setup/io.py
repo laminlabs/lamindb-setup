@@ -228,12 +228,23 @@ def _import_registry(
             if mask.any():
                 df.loc[mask, col] = df.loc[mask, col].map(_serialize_value)
 
+    # Convert PostgreSQL boolean string literals ('t'/'f') to Python booleans for SQLite compatibility
+    for field in registry._meta.fields:
+        if field.get_internal_type() == "BooleanField" and field.column in df.columns:
+            df[field.column] = df[field.column].map(
+                {"t": True, "f": False, True: True, False: False, None: None}
+            )
+
+        # PostgreSQL CSV export writes NULL as empty string; convert back to None for nullable fields
+        if field.null and field.column in df.columns:
+            df[field.column] = df[field.column].replace("", None)
+
     if if_exists == "append":
         # Fill NULL values in NOT NULL columns to handle schema mismatches between postgres source and SQLite target
         # This allows importing data where fields were nullable
         for field in registry._meta.fields:
             if field.column in df.columns and not field.null:
-                df[field.column] = df[field.column].fillna("")
+                df[field.column] = df[field.column].fillna("").infer_objects(copy=False)
 
     if df.empty:
         return
