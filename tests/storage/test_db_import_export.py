@@ -137,7 +137,42 @@ def test_exportdb_exports_link_tables(
     assert len(link_tables) > 0
 
 
-def test_import_db_from_parquet(simple_instance: Callable, tmp_path):
+def test_exportdb_handles_mixed_null_and_string_values(
+    simple_instance: Callable, cleanup_export_dir: Path
+):
+    import bionty as bt
+    import lamindb_setup as ln_setup
+
+    organism = bt.Organism.filter(name="human").one()
+
+    # Create one gene with ncbi_gene_ids populated
+    gene1 = bt.Gene(
+        symbol="GENE1",
+        ensembl_gene_id="ENSG00000001",
+        ncbi_gene_ids="12345,67890",  # String value
+        organism=organism,
+        source_id=1,
+        created_by_id=ln_setup.settings.user.id,
+    ).save()
+
+    # Create one gene with ncbi_gene_ids NULL
+    gene2 = bt.Gene(
+        symbol="GENE2",
+        ensembl_gene_id="ENSG00000002",
+        ncbi_gene_ids=None,  # NULL value
+        organism=organism,
+        source_id=1,
+        created_by_id=ln_setup.settings.user.id,
+    ).save()
+
+    # This would crash with ArrowTypeError without keep_default_na=False
+    export_db(module_names=["bionty"], output_dir=cleanup_export_dir)
+
+    gene1.delete(permanent=True)
+    gene2.delete(permanent=True)
+
+
+def test_import_db_from_parquet(simple_instance: Callable, tmp_path: Path):
     """Tests imports of a parquet file.
 
     Implicitly also tests whether `import_db` can deal with FK constraints.

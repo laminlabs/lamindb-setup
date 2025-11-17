@@ -78,7 +78,8 @@ def _export_full_table(
                     buffer,
                 )
             buffer.seek(0)
-            df = pd.read_csv(buffer)
+            # Prevent pandas from converting empty strings to float NaN (which PyArrow rejects)
+            df = pd.read_csv(buffer, keep_default_na=False)
             df.to_parquet(directory / f"{table_name}.parquet", compression=None)
             return (
                 f"{module_name}.{model_name}.{field_name}"
