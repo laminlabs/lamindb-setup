@@ -93,10 +93,12 @@ def extract_suffix_from_path(path: Path, arg_name: str | None = None) -> str:
         else:
             return suffix
 
-    if len(path.suffixes) <= 1:
+    suffixes = path.suffixes
+
+    if len(suffixes) <= 1:
         return process_digits(path.suffix)
 
-    total_suffix = "".join(path.suffixes)
+    total_suffix = "".join(suffixes)
     if total_suffix in VALID_SIMPLE_SUFFIXES:
         return total_suffix
     elif total_suffix.endswith(tuple(VALID_COMPOSITE_SUFFIXES)):
@@ -115,14 +117,18 @@ def extract_suffix_from_path(path: Path, arg_name: str | None = None) -> str:
         # in COMPRESSION_SUFFIXES to detect something like .random.gz and then
         # add ".random.gz" but concluded it's too dangerous it's safer to just
         # use ".gz" in such a case
-        if path.suffixes[-2] in VALID_SIMPLE_SUFFIXES:
-            suffix = "".join(path.suffixes[-2:])
-            msg += f"inferring: '{suffix}'"
+        if suffixes[-2] in VALID_SIMPLE_SUFFIXES:
+            suffix = "".join(suffixes[-2:])
+            # added by Sergei, we need .h5ad.tar.gz, not just .tar.gz
+            if suffix == ".tar.gz" and len(suffixes) > 2:
+                suffix = "".join(suffixes[-3:])
             # do not print a warning for things like .tar.gz, .fastq.gz
-            if path.suffixes[-1] == ".gz":
+            if suffixes[-1] == ".gz":
                 print_hint = False
+            else:
+                msg += f"inferring: '{suffix}'"
         else:
-            suffix = path.suffixes[-1]  # this is equivalent to path.suffix
+            suffix = suffixes[-1]  # this is equivalent to path.suffix
             msg += (
                 f"using only last suffix: '{suffix}' - if you want your composite"
                 " suffix to be recognized add it to"
