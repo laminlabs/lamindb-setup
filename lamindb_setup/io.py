@@ -3,7 +3,7 @@ from __future__ import annotations
 import io
 import json
 import warnings
-from concurrent.futures import ProcessPoolExecutor, as_completed
+from concurrent.futures import ThreadPoolExecutor, as_completed
 from importlib import import_module
 from pathlib import Path
 from typing import TYPE_CHECKING
@@ -21,17 +21,6 @@ if TYPE_CHECKING:
 def _get_registries(module_name: str) -> list[str]:
     """Get registry class names from a module."""
     schema_module = import_module(module_name)
-    exclude = {"SQLRecord", "BaseSQLRecord"}
-
-    if module_name == "lamindb":
-        module_filter = lambda cls, name: cls.__module__.startswith(
-            f"{module_name}.models."
-        ) and name in dir(schema_module)
-    else:
-        module_filter = (
-            lambda cls, name: cls.__module__ == f"{module_name}.models"
-            and name in dir(schema_module)
-        )
 
     return [
         name
@@ -40,8 +29,8 @@ def _get_registries(module_name: str) -> list[str]:
             name[0].isupper()
             and isinstance(cls := getattr(schema_module.models, name, None), type)
             and issubclass(cls, models.Model)
-            and module_filter(cls, name)
-            and name not in exclude
+            # Table names starting with `None_` are abstract base classes or Django mixins
+            and not cls._meta.db_table.startswith("None_")  # type: ignore
         )
     ]
 
@@ -59,7 +48,7 @@ def _export_full_table(
     For SQLite with large tables, reads in chunks to avoid memory issues when tables exceed available RAM.
 
     Args:
-        registry_info: Tuple of (module_name, model_name, field_name) where field_name
+        registry_info: Tuple of (module_name, model_name, field_name) where `field_name`
             is None for regular tables or the field name for M2M link tables.
         directory: Output directory for parquet files.
         chunk_size: Maximum rows per chunk for SQLite large tables.
@@ -73,7 +62,7 @@ def _export_full_table(
 
     module_name, model_name, field_name = registry_info
     schema_module = import_module(module_name)
-    registry = getattr(schema_module, model_name)
+    registry = getattr(schema_module.models, model_name)
 
     if field_name:
         registry = getattr(registry, field_name).through
@@ -163,7 +152,7 @@ def export_db(
     for module_name, model_names in modules.items():
         schema_module = import_module(module_name)
         for model_name in model_names:
-            registry = getattr(schema_module, model_name)
+            registry = getattr(schema_module.models, model_name)
             tasks.append((module_name, model_name, None))
             for field in registry._meta.many_to_many:
                 tasks.append((module_name, model_name, field.name))
@@ -173,13 +162,8 @@ def export_db(
     with Progress() as progress:
         task_id = progress.add_task("Exporting", total=len(tasks))
 
-        import multiprocessing
-
-        mp_context = multiprocessing.get_context("spawn")
-
-        with ProcessPoolExecutor(
-            max_workers=max_workers, mp_context=mp_context
-        ) as executor:
+        # This must be a ThreadPoolExecutor and not a ProcessPoolExecutor to inherit JWTs
+        with ThreadPoolExecutor(max_workers=max_workers) as executor:
             futures = {
                 executor.submit(_export_full_table, task, directory, chunk_size): task
                 for task in tasks
@@ -229,7 +213,6 @@ def _import_registry(
     parquet_file = directory / f"{table_name}.parquet"
 
     if not parquet_file.exists():
-        print(f"Skipped {table_name} (file not found)")
         return
 
     df = pd.read_parquet(parquet_file)
@@ -362,7 +345,7 @@ def import_db(
                         progress.update(
                             task, description=f"[cyan]{module_name}.{model_name}"
                         )
-                        registry = getattr(schema_module, model_name)
+                        registry = getattr(schema_module.models, model_name)
                         _import_registry(registry, directory, if_exists=if_exists)
                         for field in registry._meta.many_to_many:
                             link_orm = getattr(registry, field.name).through

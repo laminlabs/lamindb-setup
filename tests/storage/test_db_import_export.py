@@ -76,6 +76,8 @@ def test_exportdb_multiple_modules(simple_instance: Callable, cleanup_export_dir
     ).save()
     gene = bt.Gene.from_source(symbol="TCF7").save()
     artifact.genes.add(gene)
+    feature = ln.Feature(name="temperature", dtype=int).save()
+    artifact.features.add_values({"temperature": 10})
 
     export_db(
         module_names=["lamindb", "bionty"],
@@ -90,6 +92,13 @@ def test_exportdb_multiple_modules(simple_instance: Callable, cleanup_export_dir
 
     gene_df = pd.read_parquet(cleanup_export_dir / "bionty_gene.parquet")
     assert "TCF7" in gene_df["symbol"].values
+
+    featurevalue_df = pd.read_parquet(
+        cleanup_export_dir / "lamindb_featurevalue.parquet"
+    )
+    assert len(featurevalue_df) == 1
+    assert featurevalue_df.iloc[0]["feature_id"] == feature.id
+    assert featurevalue_df.iloc[0]["value"] == "10"
 
     artifact_df = pd.read_parquet(cleanup_export_dir / "lamindb_artifact.parquet")
     assert artifact.uid in artifact_df["uid"].values
@@ -107,6 +116,7 @@ def test_exportdb_multiple_modules(simple_instance: Callable, cleanup_export_dir
 
     artifact.delete(permanent=True)
     gene.delete(permanent=True)
+    feature.delete(permanent=True)
 
 
 def test_exportdb_default_module(simple_instance: Callable, cleanup_export_dir: Path):
