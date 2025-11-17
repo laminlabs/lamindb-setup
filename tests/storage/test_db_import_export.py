@@ -268,3 +268,80 @@ def test_import_db_from_parquet(simple_instance: Callable, tmp_path: Path):
         )
         create_stmt = cursor.fetchone()[0]
         assert "PRIMARY KEY" in create_stmt
+
+
+def test_import_db_converts_boolean_strings(simple_instance: Callable, tmp_path: Path):
+    import lamindb as ln
+    import lamindb_setup as ln_setup
+
+    export_dir = tmp_path / "export"
+    export_dir.mkdir()
+
+    artifact_data = pd.DataFrame(
+        {
+            "id": [777],
+            "uid": ["test_bool_uid"],
+            "key": ["test_bool_key"],
+            "_key_is_virtual": ["t"],
+            "_overwrite_versions": ["f"],
+            "description": ["Test boolean conversion"],
+            "suffix": [".txt"],
+            "kind": ["dataset"],
+            "size": [1024],
+            "hash": ["testhash456"],
+            "is_latest": ["t"],
+            "is_locked": ["f"],
+            "storage_id": [1],
+            "created_by_id": [ln_setup.settings.user.id],
+            "created_at": [pd.Timestamp.now()],
+            "updated_at": [pd.Timestamp.now()],
+        }
+    )
+    artifact_data.to_parquet(export_dir / "lamindb_artifact.parquet", index=False)
+
+    import_db(input_dir=export_dir, module_names=["lamindb"], if_exists="append")
+
+    imported = ln.Artifact.get(id=777)
+    assert imported._key_is_virtual is True
+    assert imported._overwrite_versions is False
+    assert imported.is_latest is True
+    assert imported.is_locked is False
+
+
+def test_import_db_converts_empty_strings_to_none(
+    simple_instance: Callable, tmp_path: Path
+):
+    import lamindb as ln
+    import lamindb_setup as ln_setup
+
+    export_dir = tmp_path / "export"
+    export_dir.mkdir()
+
+    artifact_data = pd.DataFrame(
+        {
+            "id": [666],
+            "uid": ["test_empty_str_uid"],
+            "key": ["test_empty_str_key"],
+            "_key_is_virtual": ["f"],
+            "_overwrite_versions": ["f"],
+            "_real_key": [""],
+            "description": [""],
+            "suffix": [".txt"],
+            "kind": ["dataset"],
+            "size": [1024],
+            "hash": ["testhash789"],
+            "is_latest": ["t"],
+            "is_locked": ["f"],
+            "storage_id": [1],
+            "created_by_id": [ln_setup.settings.user.id],
+            "created_at": [pd.Timestamp.now()],
+            "updated_at": [pd.Timestamp.now()],
+        }
+    )
+    artifact_data.to_parquet(export_dir / "lamindb_artifact.parquet", index=False)
+
+    import_db(input_dir=export_dir, module_names=["lamindb"], if_exists="append")
+
+    imported = ln.Artifact.get(id=666)
+    assert imported._real_key is None
+    assert imported.description is None
