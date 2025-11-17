@@ -160,4 +160,5 @@ filterwarnings = [
     "ignore:The 'verify' parameter is deprecated. Please configure it in the http client instead.:DeprecationWarning",
     "ignore:There is no current event loop:DeprecationWarning",
     "ignore:DateTimeField.*received a naive datetime.*while time zone support is active:RuntimeWarning",
+    "ignore::sqlalchemy.exc.SAWarning"
 ]
