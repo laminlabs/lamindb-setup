@@ -381,3 +381,37 @@ def test_import_db_converts_numeric_strings(simple_instance: Callable, tmp_path:
     imported = ln.Artifact.get(id=555)
     assert isinstance(imported.size, int)
     assert imported.size == 2048
+
+
+def test_exportdb_handles_mixed_type_object_columns(
+    simple_instance: Callable, cleanup_export_dir: Path
+):
+    import bionty as bt
+    import lamindb_setup as ln_setup
+
+    organism = bt.Organism.filter(name="human").one()
+
+    gene1 = bt.Gene(
+        symbol="GENE1",
+        ensembl_gene_id="ENSG00000001",
+        source_id=1,
+        organism=organism,
+        created_by_id=ln_setup.settings.user.id,
+    ).save()
+
+    gene2 = bt.Gene(
+        symbol="GENE2",
+        ensembl_gene_id="ENSG00000002",
+        source_id="text_source",
+        organism=organism,
+        created_by_id=ln_setup.settings.user.id,
+    ).save()
+
+    export_db(module_names=["bionty"], output_dir=cleanup_export_dir)
+
+    gene_df = pd.read_parquet(cleanup_export_dir / "bionty_gene.parquet")
+    assert "1" in gene_df["source_id"].astype(str).values
+    assert "text_source" in gene_df["source_id"].values
+
+    gene1.delete(permanent=True)
+    gene2.delete(permanent=True)
