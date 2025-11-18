@@ -81,6 +81,8 @@ def _export_full_table(
             buffer.seek(0)
             # Prevent pandas from converting empty strings to float NaN (which PyArrow rejects)
             df = pd.read_csv(buffer, keep_default_na=False)
+            # Convert object columns to string to handle mixed types from data corruption,
+            # schema migrations, or manual SQL inserts. PyArrow rejects mixed-type objects.
             df = df.astype(
                 {col: str for col in df.columns if df[col].dtype == "object"}
             )
