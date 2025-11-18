@@ -5,6 +5,7 @@
 
    init_local_sqlite
    connect_local_sqlite
+   connect_remote_sqlite
    upload_sqlite_clone
 """
 
@@ -13,7 +14,6 @@ import os
 import shutil
 from pathlib import Path
 
-from lamindb_setup.core._settings_instance import InstanceSettings
 from lamindb_setup.core._settings_load import load_instance_settings
 from lamindb_setup.core._settings_store import instance_settings_file
 from lamindb_setup.core.django import reset_django

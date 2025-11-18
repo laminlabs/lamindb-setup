@@ -99,8 +99,8 @@ def test_connect_remote_sqlite(tmp_path):
             "lamindb_setup._connect_instance._connect_instance"
         ) as mock_connect_instance,
         patch("lamindb_setup.settings") as mock_settings,
-        patch("lamindb_setup.core._clone.InstanceSettings"),
-        patch("lamindb_setup.core._clone.create_path") as mock_create_path,
+        patch("lamindb_setup.core._settings_instance.InstanceSettings"),
+        patch("lamindb_setup.core.upath.create_path") as mock_create_path,
         patch("lamindb_setup.core._clone.connect_local_sqlite"),
     ):
         mock_instance = Mock()
