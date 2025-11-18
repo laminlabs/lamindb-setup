@@ -14,7 +14,7 @@ from django.db import models, transaction
 from rich.progress import Progress
 
 if TYPE_CHECKING:
-    from collections.abc import Sequence
+    from collections.abc import Iterable, Sequence
     from typing import Literal
 
 
@@ -73,6 +73,7 @@ def _export_full_table(
         if ln_setup.settings.instance.dialect == "postgresql":
             buffer = io.StringIO()
             with connection.cursor() as cursor:
+                cursor.execute("SET statement_timeout = 0")
                 cursor.copy_expert(
                     f'COPY "{table_name}" TO STDOUT WITH (FORMAT CSV, HEADER TRUE)',
                     buffer,
@@ -80,6 +81,11 @@ def _export_full_table(
             buffer.seek(0)
             # Prevent pandas from converting empty strings to float NaN (which PyArrow rejects)
             df = pd.read_csv(buffer, keep_default_na=False)
+            # Convert object columns to string to handle mixed types from data corruption,
+            # schema migrations, or manual SQL inserts. PyArrow rejects mixed-type objects.
+            df = df.astype(
+                {col: str for col in df.columns if df[col].dtype == "object"}
+            )
             df.to_parquet(directory / f"{table_name}.parquet", compression=None)
             return (
                 f"{module_name}.{model_name}.{field_name}"
@@ -108,11 +114,21 @@ def _export_full_table(
                         chunk_file = (
                             directory / f"{table_name}_chunk_{chunk_id}.parquet"
                         )
+                        df = df.astype(
+                            {
+                                col: str
+                                for col in df.columns
+                                if df[col].dtype == "object"
+                            }
+                        )
                         df.to_parquet(chunk_file, compression=None)
                         chunk_files.append((table_name, chunk_file))
                     return chunk_files
                 else:
                     df = pd.read_sql_table(table_name, ln_setup.settings.instance.db)
+                    df = df.astype(
+                        {col: str for col in df.columns if df[col].dtype == "object"}
+                    )
                     df.to_parquet(directory / f"{table_name}.parquet", compression=None)
                     return (
                         f"{module_name}.{model_name}.{field_name}"
@@ -306,7 +322,7 @@ def _import_registry(
 
 
 def import_db(
-    module_names: Sequence[str] | None = None,
+    module_names: Iterable[str] | None = None,
     *,
     input_dir: str | Path = "./lamindb_export/",
     if_exists: Literal["fail", "replace", "append"] = "replace",
