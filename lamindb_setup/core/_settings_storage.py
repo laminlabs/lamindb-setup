@@ -122,6 +122,7 @@ def init_storage(
     access_token: str | None = None,
     region: str | None = None,
     space_uuid: UUID | None = None,
+    skip_mark_storage_root: bool = False,
 ) -> tuple[
     StorageSettings,
     Literal["hub-record-not-created", "hub-record-retrieved", "hub-record-created"],
@@ -181,7 +182,8 @@ def init_storage(
         space_id=space_uuid,
     )
     # we check the write access here if the storage record has not been retrieved from the hub
-    if hub_record_status != "hub-record-retrieved":
+    # Sergei: should it in fact still go through if hub_record_status == "hub-record-not-created"?
+    if hub_record_status != "hub-record-retrieved" and not skip_mark_storage_root:
         try:
             # (federated) credentials for AWS access are provisioned under-the-hood
             # discussion: https://laminlabs.slack.com/archives/C04FPE8V01W/p1719260587167489
