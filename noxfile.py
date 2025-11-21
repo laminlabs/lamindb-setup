@@ -24,7 +24,7 @@ def lint(session: nox.Session) -> None:
 @nox.session
 @nox.parametrize(
     "group",
-    ["hub-local", "hub-prod", "hub-cloud", "storage", "docs"],
+    ["hub-local", "hub-prod", "hub-cloud", "storage", "connectivity", "docs"],
 )
 def install(session: nox.Session, group: str) -> None:
     no_deps_packages = "git+https://github.com/laminlabs/lamindb git+https://github.com/laminlabs/wetlab git+https://github.com/laminlabs/lamin-cli"
@@ -106,6 +106,11 @@ def storage(session: nox.Session):
     del os.environ["AWS_ACCESS_KEY_ID"]
     del os.environ["AWS_SECRET_ACCESS_KEY"]
     run(session, f"pytest {COVERAGE_ARGS} ./tests/storage", env=os.environ)
+
+
+@nox.session
+def connectivity(session: nox.Session):
+    run(session, "pytest ./tests/connectivity")
 
 
 @nox.session

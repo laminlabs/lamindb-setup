@@ -175,6 +175,7 @@ jobs:
           cache: "pip"
           cache-dependency-path: ".github/workflows/build.yml"
       - run: pip install "laminci@git+https://x-access-token:${{ secrets.LAMIN_BUILD_DOCS }}@github.com/laminlabs/laminci"
+      - run: nox -s "install(group='connectivity')"
       - name: start mitmproxy
         run: |
           # Start mitmdump (headless mitmproxy) as a forward proxy on 8080
@@ -196,6 +197,12 @@ jobs:
           # Copy CA cert from inside the container to the workspace
           docker cp mitmproxy:/home/mitmproxy/.mitmproxy/mitmproxy-ca-cert.pem ./mitmproxy-ca.pem
           ls -l ./mitmproxy-ca.pem
+      - name: run tests
+        env:
+          HTTP_PROXY: http://127.0.0.1:8080
+          HTTPS_PROXY: http://127.0.0.1:8080
+          NO_PROXY: localhost,127.0.0.1
+        run: nox -s connectivity
 
   coverage:
     needs: [hub-prod, hub-cloud, storage, hub-local]
