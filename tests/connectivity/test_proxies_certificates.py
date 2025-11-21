@@ -26,6 +26,7 @@ def test_setup():
 
 
 def test_connect_without_certificate():
+    # this fails because mitmproxy requires the certificate it generated
     with pytest.raises(Exception) as e:
         ln_setup.connect("laminlabs/lamindata")
     assert "SSL: CERTIFICATE_VERIFY_FAILED" in str(e)
@@ -34,10 +35,12 @@ def test_connect_without_certificate():
 def test_connect_with_certificate():
     cert_file = Path("./mitmproxy-ca.pem")
     assert cert_file.exists()
-
+    # here we provide the certificate
     os.environ["SSL_CERT_FILE"] = cert_file.resolve().as_posix()
 
     try:
+        # direct requests are blocked so if this succeeds
+        # we are sure all requests went through the proxy and the certificate was used
         ln_setup.connect("laminlabs/lamindata")
     finally:
         del os.environ["SSL_CERT_FILE"]
