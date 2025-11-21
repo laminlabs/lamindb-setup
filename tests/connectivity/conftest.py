@@ -6,44 +6,27 @@ import pytest
 def run_iptables(args: list[str]) -> None:
     """Run a single iptables command via sudo."""
     cmd = ["sudo", "iptables"] + args
-    subprocess.run(cmd, check=True)
+    subprocess.run(cmd, check=True, capture_output=True)
 
 
 def pytest_sessionstart(session: pytest.Session):
     # Allow loopback
     run_iptables(["-A", "OUTPUT", "-o", "lo", "-j", "ACCEPT"])
     # Allow traffic to proxy port on localhost
-    run_iptables(
-        [
-            "-A",
-            "OUTPUT",
-            "-p",
-            "tcp",
-            "--dport",
-            "8080",
-            "-j",
-            "ACCEPT",
-        ]
-    )
-    # Allow established connections
-    run_iptables(
-        [
-            "-A",
-            "OUTPUT",
-            "-m",
-            "conntrack",
-            "--ctstate",
-            "ESTABLISHED,RELATED",
-            "-j",
-            "ACCEPT",
-        ]
-    )
-    # Drop everything else
-    run_iptables(["-A", "OUTPUT", "-j", "DROP"])
+    run_iptables(["-A", "OUTPUT", "-p", "tcp", "--dport", "8080", "-j", "ACCEPT"])
+    # block direct HTTP
+    run_iptables(["-A", "OUTPUT", "-p", "tcp", "--dport", "80", "-j", "REJECT"])
+    # block direct HTTPS
+    run_iptables(["-A", "OUTPUT", "-p", "tcp", "--dport", "443", "-j", "REJECT"])
 
 
 def pytest_sessionfinish(session: pytest.Session):
-    # Flush rules in OUTPUT
-    run_iptables(["-F", "OUTPUT"])
-    # Set default policy to ACCEPT
-    run_iptables(["-P", "OUTPUT", "ACCEPT"])
+    # Remove in reverse order of insertion
+    # remove block direct HTTPS
+    run_iptables(["-D", "OUTPUT", "-p", "tcp", "--dport", "443", "-j", "REJECT"])
+    # remove block direct HTTP
+    run_iptables(["-D", "OUTPUT", "-p", "tcp", "--dport", "80", "-j", "REJECT"])
+    # remove allow traffic to proxy port
+    run_iptables(["-D", "OUTPUT", "-p", "tcp", "--dport", "8080", "-j", "ACCEPT"])
+    # remove allow loopback
+    run_iptables(["-D", "OUTPUT", "-o", "lo", "-j", "ACCEPT"])
