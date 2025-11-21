@@ -21,7 +21,8 @@ def test_setup():
     finally:
         s.close()
     # check that direct requests are blocked
-    httpx.get("https://hub.lamin.ai", timeout=2, trust_env=False)
+    with pytest.raises(httpx.ConnectError):
+        httpx.get("https://hub.lamin.ai", timeout=2, trust_env=False)
 
 
 def test_connect_without_certificate():
