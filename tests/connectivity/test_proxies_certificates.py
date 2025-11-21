@@ -1,6 +1,8 @@
 import os
 import socket
 
+import lamindb_setup as ln_setup
+
 
 def test_setup():
     # see .github/workflows/build.yml connectivity and noxfile.py connectivity
@@ -15,3 +17,7 @@ def test_setup():
         s.connect(("127.0.0.1", 8080))
     finally:
         s.close()
+
+
+def test_connect_no_certificate():
+    ln_setup.connect("laminlabs/lamindata")
