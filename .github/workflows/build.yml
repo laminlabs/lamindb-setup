@@ -177,28 +177,24 @@ jobs:
       - run: pip install "laminci@git+https://x-access-token:${{ secrets.LAMIN_BUILD_DOCS }}@github.com/laminlabs/laminci"
       - name: start mitmproxy
         run: |
-          # Directory on the runner where mitmproxy will store its config & CA
-          mkdir -p /tmp/mitmproxy
-          # Start mitmdump (headless mitmproxy) as a plain forward proxy
+          # Start mitmdump (headless mitmproxy) as a forward proxy on 8080
           docker run -d \
             --name mitmproxy \
             -p 8080:8080 \
-            -v /tmp/mitmproxy:/home/mitmproxy/.mitmproxy \
             mitmproxy/mitmproxy:latest \
             mitmdump --mode regular --listen-port 8080
           # Give it a few seconds to start and generate the CA
           sleep 10
           echo "mitmproxy state:"
           docker ps -a
-          echo "Contents of /tmp/mitmproxy (should contain mitmproxy-ca-cert.pem):"
-          ls -l /tmp/mitmproxy
-          echo "If it still exited, here are the logs:"
+          echo "Container ~/.mitmproxy contents:"
+          docker exec mitmproxy ls -l /home/mitmproxy/.mitmproxy || true
+          echo "Container logs (if it still exited):"
           docker logs mitmproxy || true
       - name: export mitmproxy certificate
         run: |
-          # mitmproxy writes its CA to ~/.mitmproxy/mitmproxy-ca-cert.pem
-          # We mounted that dir to /tmp/mitmproxy on the host.
-          cp /tmp/mitmproxy/mitmproxy-ca-cert.pem ./mitmproxy-ca.pem
+          # Copy CA cert from inside the container to the workspace
+          docker cp mitmproxy:/home/mitmproxy/.mitmproxy/mitmproxy-ca-cert.pem ./mitmproxy-ca.pem
           ls -l ./mitmproxy-ca.pem
 
   coverage:
