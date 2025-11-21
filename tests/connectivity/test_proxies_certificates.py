@@ -3,7 +3,7 @@ import socket
 
 
 def test_setup():
-    # see .github/workflows/build.yml connectivity
+    # see .github/workflows/build.yml connectivity and noxfile.py connectivity
     # check that the env varibales are properly setup
     assert os.getenv("HTTP_PROXY") == "http://127.0.0.1:8080"
     assert os.getenv("HTTPS_PROXY") == "http://127.0.0.1:8080"

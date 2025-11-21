@@ -111,7 +111,14 @@ def storage(session: nox.Session):
 
 @nox.session
 def connectivity(session: nox.Session):
-    run(session, "pytest ./tests/connectivity")
+    login_testuser1(session)
+
+    env = {
+        "HTTP_PROXY": "http://127.0.0.1:8080",
+        "HTTPS_PROXY": "http://127.0.0.1:8080",
+        "NO_PROXY": "localhost,127.0.0.1",
+    }
+    run(session, "pytest ./tests/connectivity", env=env)
 
 
 @nox.session

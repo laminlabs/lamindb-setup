@@ -198,10 +198,6 @@ jobs:
           docker cp mitmproxy:/home/mitmproxy/.mitmproxy/mitmproxy-ca-cert.pem ./mitmproxy-ca.pem
           ls -l ./mitmproxy-ca.pem
       - name: run tests
-        env:
-          HTTP_PROXY: http://127.0.0.1:8080
-          HTTPS_PROXY: http://127.0.0.1:8080
-          NO_PROXY: localhost,127.0.0.1
         run: nox -s connectivity
 
   coverage:
