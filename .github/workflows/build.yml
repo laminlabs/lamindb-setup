@@ -179,20 +179,21 @@ jobs:
         run: |
           # Directory on the runner where mitmproxy will store its config & CA
           mkdir -p /tmp/mitmproxy
-          # Start mitmproxy in the background as a plain forward proxy
+          # Start mitmdump (headless mitmproxy) as a plain forward proxy
           docker run -d \
             --name mitmproxy \
             -p 8080:8080 \
             -v /tmp/mitmproxy:/home/mitmproxy/.mitmproxy \
             mitmproxy/mitmproxy:latest \
-            mitmproxy --mode regular --listen-port 8080 \
-                      --save-stream-file /home/mitmproxy/flows
+            mitmdump --mode regular --listen-port 8080
           # Give it a few seconds to start and generate the CA
           sleep 10
           echo "mitmproxy state:"
           docker ps -a
           echo "Contents of /tmp/mitmproxy (should contain mitmproxy-ca-cert.pem):"
           ls -l /tmp/mitmproxy
+          echo "If it still exited, here are the logs:"
+          docker logs mitmproxy || true
       - name: export mitmproxy certificate
         run: |
           # mitmproxy writes its CA to ~/.mitmproxy/mitmproxy-ca-cert.pem
