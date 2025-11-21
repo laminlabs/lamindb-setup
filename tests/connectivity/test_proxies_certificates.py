@@ -12,6 +12,6 @@ def test_setup():
     s = socket.socket()
     s.settimeout(2)
     try:
-        s.connect(("127.0.0.1", "8080"))
+        s.connect(("127.0.0.1", 8080))
     finally:
         s.close()
