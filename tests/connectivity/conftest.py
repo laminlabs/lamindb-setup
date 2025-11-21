@@ -11,7 +11,7 @@ def run_iptables(args: list[str]) -> None:
 
 def pytest_sessionstart(session: pytest.Session):
     # Allow loopback
-    run_iptables(["-A", "OUTPUT", "-o", "lo", "-j", " ACCEPT"])
+    run_iptables(["-A", "OUTPUT", "-o", "lo", "-j", "ACCEPT"])
     # Allow traffic to proxy port on localhost
     run_iptables(
         [
