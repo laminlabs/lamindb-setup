@@ -1,7 +1,9 @@
 import os
 import socket
+from pathlib import Path
 
 import lamindb_setup as ln_setup
+import pytest
 
 
 def test_setup():
@@ -19,5 +21,19 @@ def test_setup():
         s.close()
 
 
-def test_connect_no_certificate():
-    ln_setup.connect("laminlabs/lamindata")
+def test_connect_without_certificate():
+    with pytest.raises(Exception) as e:
+        ln_setup.connect("laminlabs/lamindata")
+    assert "SSL: CERTIFICATE_VERIFY_FAILED" in str(e)
+
+
+def test_connect_with_certificate():
+    cert_file = Path("./mitmproxy-ca.pem")
+    assert cert_file.exists()
+
+    os.environ["SSL_CERT_FILE"] = cert_file.resolve().as_posix()
+
+    try:
+        ln_setup.connect("laminlabs/lamindata")
+    finally:
+        del os.environ["SSL_CERT_FILE"]
