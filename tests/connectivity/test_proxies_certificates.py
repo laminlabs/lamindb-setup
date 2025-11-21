@@ -2,6 +2,7 @@ import os
 import socket
 from pathlib import Path
 
+import httpx
 import lamindb_setup as ln_setup
 import pytest
 
@@ -19,6 +20,8 @@ def test_setup():
         s.connect(("127.0.0.1", 8080))
     finally:
         s.close()
+    # check that direct requests are blocked
+    httpx.get("https://hub.lamin.ai", timeout=2, trust_env=False)
 
 
 def test_connect_without_certificate():
