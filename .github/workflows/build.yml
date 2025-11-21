@@ -168,6 +168,11 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 13
     steps:
+      - uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: eu-central-1
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v6
         with:
