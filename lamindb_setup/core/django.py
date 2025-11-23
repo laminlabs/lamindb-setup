@@ -238,6 +238,8 @@ def setup_django(
         if view_schema:
             installed_apps = installed_apps[::-1]  # to fix how apps appear
             installed_apps += ["schema_graph", "django.contrib.staticfiles"]
+        if isettings.dialect == "postgresql":
+            installed_apps += ["pgtrigger"]
 
         kwargs = dict(
             INSTALLED_APPS=installed_apps,
