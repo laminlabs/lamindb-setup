@@ -10,7 +10,7 @@ import pytest
 from laminci.db import setup_local_test_postgres
 
 
-@pytest.fixture
+@pytest.fixture(scope="module")
 def local_postgres_instance():
     pgurl = setup_local_test_postgres()
     ln_setup.init(
