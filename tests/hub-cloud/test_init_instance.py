@@ -2,10 +2,12 @@ from __future__ import annotations
 
 import os
 from pathlib import Path
+from subprocess import DEVNULL, run
 from uuid import UUID
 
 import lamindb_setup as ln_setup
 import pytest
+from laminci.db import setup_local_test_postgres
 from lamindb_setup._connect_instance import InstanceNotFoundError
 from lamindb_setup._init_instance import infer_instance_name
 from lamindb_setup.core._hub_client import connect_hub_with_auth
@@ -25,6 +27,23 @@ def get_hub_client():
     hub = connect_hub_with_auth()
     yield hub
     hub.auth.sign_out()
+
+
+def local_postgres_instance():
+    pgurl = setup_local_test_postgres()
+    ln_setup.init(
+        storage="./test-postgres-local",
+        name="test-postgres-local",
+        db=pgurl,
+    )
+
+    ln_setup.delete("test-postgres-local", force=True)
+    run("docker stop pgtest && docker rm pgtest", shell=True, stdout=DEVNULL)
+
+
+def test_double_init_postgres():
+    local_postgres_instance()
+    local_postgres_instance()
 
 
 def test_infer_instance_name():
