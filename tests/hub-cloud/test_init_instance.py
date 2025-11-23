@@ -42,7 +42,7 @@ def local_postgres_instance():
 
 
 def test_double_init_postgres():
-    if os.getenv["LAMIN_ENV"] == "prod":
+    if os.getenv("LAMIN_ENV") == "prod":
         local_postgres_instance()
         local_postgres_instance()
 
