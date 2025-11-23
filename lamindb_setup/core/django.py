@@ -313,6 +313,9 @@ def setup_django(
     elif init:
         global IS_MIGRATING
         IS_MIGRATING = True
+        import lamindb
+        import pgtrigger
+
         call_command("migrate", verbosity=0)
         IS_MIGRATING = False
 
