@@ -37,7 +37,6 @@ def private_django_api(reverse=False):
         "MultipleObjectsReturned",
         "add_to_class",
         "adelete",
-        "refresh_from_db",
         "asave",
         "clean",
         "clean_fields",
