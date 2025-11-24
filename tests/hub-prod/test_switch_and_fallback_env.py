@@ -4,7 +4,7 @@ import os
 
 import lamindb_setup as ln_setup
 import pytest
-from gotrue.errors import AuthRetryableError
+from httpx import ConnectError
 from lamindb_setup import login, settings
 from lamindb_setup.core._hub_core import (
     connect_instance_hub,
@@ -35,7 +35,7 @@ def test_connect_instance_fallbacks():
     ln_setup.core._hub_client.PROD_URL = (  # deactivated prod url
         "https://inactive.lamin.ai"
     )
-    with pytest.raises(AuthRetryableError):
+    with pytest.raises(ConnectError):
         ln_setup.core._hub_client.connect_hub_with_auth(renew_token=True)
     assert not isinstance(
         sign_in_hub(
