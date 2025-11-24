@@ -28,6 +28,8 @@ def test_setup():
 
 
 def test_httpx_client_proxy():
+    # check httpx client internals
+    # existing ._mounts means that proxies are properly configured
     with httpx_client() as client:
         patterns = {p.scheme for p in client._mounts}
     assert patterns == {"http", "https"}
@@ -50,6 +52,7 @@ def test_connect_with_certificate():
         # direct requests are blocked so if this succeeds
         # we are sure all requests went through the proxy and the certificate was used
         ln_setup.connect("laminlabs/lamindata")
+        # check with a direct request to a lamin endpoint, uses httpx_client
         access_db(ln_setup.settings.instance)
     finally:
         del os.environ["SSL_CERT_FILE"]
