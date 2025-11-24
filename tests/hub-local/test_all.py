@@ -245,7 +245,7 @@ def test_connect_instance_hub_corrupted_or_expired_credentials(
 ):
     # assume token & password are corrupted or expired
     # make realisticly looking token that passes
-    # supafunc is_valid_jwt but is actually not a real token
+    # supabase_functions is_valid_jwt but is actually not a real token
     invalid_token = "header1.payload1.signature1"
     ln_setup.settings.user.access_token = invalid_token
     correct_password = ln_setup.settings.user.password
