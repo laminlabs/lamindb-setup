@@ -59,6 +59,8 @@ uv pip install --system git+https://github.com/laminlabs/bionty
         cmds += "\nuv pip install --system -e ./laminhub/rest-hub --no-build-isolation"
         # check that just installing psycopg (psycopg3) doesn't break fine-grained access
         cmds += "\nuv pip install --system psycopg[binary]"
+        # force new supabase
+        cmds += "\nuv pip install --system 'supabase>=2.20.0,<=2.24.0'"
 
     run(session, "uv pip install --system pandera")  # needed to import lamindb
     [run(session, line) for line in cmds.splitlines()]

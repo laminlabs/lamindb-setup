@@ -8,7 +8,7 @@ import lamindb_setup as ln_setup
 import pytest
 from lamindb_setup.core._hub_client import connect_hub_with_auth
 from lamindb_setup.core._hub_core import create_api_key
-from supafunc.errors import FunctionsHttpError
+from supabase_functions.errors import FunctionsHttpError
 
 
 def test_login():
