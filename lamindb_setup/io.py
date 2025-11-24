@@ -332,12 +332,15 @@ def import_db(
     Temporarily disables FK constraints to allow insertion in arbitrary order.
     Requires superuser/RDS admin privileges for postgres databases.
 
+    Note: When running in a subprocess, add a short delay or explicit connection close after `import_db()`
+    to ensure all SQLite writes are flushed to disk before process termination.
+
     Args:
         input_dir: Directory containing parquet files to import.
         module_names: Module names to import (e.g., ["lamindb", "bionty", "wetlab"]).
         if_exists: How to behave if table exists: 'fail', 'replace', or 'append'.
-            If set to 'replace', existing data is deleted and new data is imported. PKs and indices are not guaranteed to be preserved which can lead to write errors.
-            If set to 'append', new data is added to existing data without clearing the table. PKs and indices are preserved but database size will greatly increase.
+            If set to 'replace', existing data is deleted and new data is imported. All PKs and indices are not guaranteed to be preserved which can lead to write errors.
+            If set to 'append', new data is added to existing data without clearing the table. All PKs and indices are preserved allowing write operations but database size will greatly increase.
             If set to 'fail', raises an error if the table contains any data.
     """
     from django.db import connection
