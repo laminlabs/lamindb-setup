@@ -5,6 +5,7 @@ from pathlib import Path
 import httpx
 import lamindb_setup as ln_setup
 import pytest
+from lamindb_setup.core._hub_client import httpx_client
 from lamindb_setup.core._hub_core import access_db
 
 
@@ -24,6 +25,12 @@ def test_setup():
     # check that direct requests are blocked
     with pytest.raises(httpx.ConnectError):
         httpx.get("https://hub.lamin.ai", timeout=2, trust_env=False)
+
+
+def test_httpx_client_proxy():
+    with httpx_client() as client:
+        patterns = {p.scheme for p in client._mounts}
+    assert patterns == {"http", "https"}
 
 
 def test_connect_without_certificate():
