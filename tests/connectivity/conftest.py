@@ -9,6 +9,7 @@ def run_iptables(args: list[str]) -> None:
     subprocess.run(cmd, check=True, capture_output=True)
 
 
+# this test is intended to be run on github actions
 def pytest_sessionstart(session: pytest.Session):
     # Allow loopback
     run_iptables(["-A", "OUTPUT", "-o", "lo", "-j", "ACCEPT"])
