@@ -5,6 +5,7 @@ from pathlib import Path
 import httpx
 import lamindb_setup as ln_setup
 import pytest
+from lamindb_setup.core._hub_core import access_db
 
 
 def test_setup():
@@ -42,5 +43,6 @@ def test_connect_with_certificate():
         # direct requests are blocked so if this succeeds
         # we are sure all requests went through the proxy and the certificate was used
         ln_setup.connect("laminlabs/lamindata")
+        access_db(ln_setup.settings.instance)
     finally:
         del os.environ["SSL_CERT_FILE"]
