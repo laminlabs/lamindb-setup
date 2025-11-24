@@ -32,7 +32,7 @@ def test_httpx_client_proxy():
     # existing ._mounts means that proxies are properly configured
     with httpx_client() as client:
         patterns = {p.scheme for p in client._mounts}
-    assert patterns == {"http", "https"}
+    assert patterns == {"http", "https", ""}
 
 
 def test_connect_without_certificate():
