@@ -11,8 +11,7 @@ import httpx
 from httpx_retries import Retry, RetryTransport
 from lamin_utils import logger
 from pydantic_settings import BaseSettings
-from supabase import Client, create_client  # type: ignore
-from supabase.lib.client_options import ClientOptions
+from supabase import Client, ClientOptions, create_client
 
 from ._settings_save import save_user_settings
 
