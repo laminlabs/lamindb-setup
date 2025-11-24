@@ -181,6 +181,18 @@ jobs:
           cache-dependency-path: ".github/workflows/build.yml"
       - run: pip install "laminci@git+https://x-access-token:${{ secrets.LAMIN_BUILD_DOCS }}@github.com/laminlabs/laminci"
       - run: nox -s "install(group='connectivity')"
+      - name: cache mitmproxy
+        id: cache-mitmproxy
+        uses: actions/cache@v4
+        with:
+          path: ~/mitmproxy.tar
+          key: cache-mitmproxy-0
+      - name: cache mitmproxy miss
+        if: ${{ steps.cache-mitmproxy.outputs.cache-hit != 'true' }}
+        run: docker pull mitmproxy/mitmproxy:latest && docker image save mitmproxy/mitmproxy:latest --output ~/mitmproxy.tar
+      - name: cache mitmproxy use
+        if: ${{ steps.cache-mitmproxy.outputs.cache-hit == 'true' }}
+        run: docker image load --input ~/mitmproxy.tar
       - name: start mitmproxy
         run: |
           # Start mitmdump (headless mitmproxy) as a forward proxy on 8080
