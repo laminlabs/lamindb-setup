@@ -163,6 +163,60 @@ jobs:
           path: .coverage
           include-hidden-files: true
 
+  # test custom proxies and certificates
+  connectivity:
+    runs-on: ubuntu-latest
+    timeout-minutes: 13
+    steps:
+      - uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: eu-central-1
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.11"
+          cache: "pip"
+          cache-dependency-path: ".github/workflows/build.yml"
+      - run: pip install "laminci@git+https://x-access-token:${{ secrets.LAMIN_BUILD_DOCS }}@github.com/laminlabs/laminci"
+      - run: nox -s "install(group='connectivity')"
+      - name: cache mitmproxy
+        id: cache-mitmproxy
+        uses: actions/cache@v4
+        with:
+          path: ~/mitmproxy.tar
+          key: cache-mitmproxy-0
+      - name: cache mitmproxy miss
+        if: ${{ steps.cache-mitmproxy.outputs.cache-hit != 'true' }}
+        run: docker pull mitmproxy/mitmproxy:latest && docker image save mitmproxy/mitmproxy:latest --output ~/mitmproxy.tar
+      - name: cache mitmproxy use
+        if: ${{ steps.cache-mitmproxy.outputs.cache-hit == 'true' }}
+        run: docker image load --input ~/mitmproxy.tar
+      - name: start mitmproxy
+        run: |
+          # Start mitmdump (headless mitmproxy) as a forward proxy on 8080
+          docker run -d \
+            --name mitmproxy \
+            -p 8080:8080 \
+            mitmproxy/mitmproxy:latest \
+            mitmdump --mode regular --listen-port 8080
+          # Give it a few seconds to start and generate the CA
+          sleep 10
+          echo "mitmproxy state:"
+          docker ps -a
+          echo "Container ~/.mitmproxy contents:"
+          docker exec mitmproxy ls -l /home/mitmproxy/.mitmproxy || true
+          echo "Container logs (if it still exited):"
+          docker logs mitmproxy || true
+      - name: export mitmproxy certificate
+        run: |
+          # Copy CA cert from inside the container to the workspace
+          docker cp mitmproxy:/home/mitmproxy/.mitmproxy/mitmproxy-ca-cert.pem ./mitmproxy-ca.pem
+          ls -l ./mitmproxy-ca.pem
+      - name: run tests
+        run: nox -s connectivity
+
   coverage:
     needs: [hub-prod, hub-cloud, storage, hub-local]
     runs-on: ubuntu-latest

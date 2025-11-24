@@ -24,7 +24,7 @@ def lint(session: nox.Session) -> None:
 @nox.session
 @nox.parametrize(
     "group",
-    ["hub-local", "hub-prod", "hub-cloud", "storage", "docs"],
+    ["hub-local", "hub-prod", "hub-cloud", "storage", "connectivity", "docs"],
 )
 def install(session: nox.Session, group: str) -> None:
     no_deps_packages = "git+https://github.com/laminlabs/lamindb git+https://github.com/laminlabs/wetlab git+https://github.com/laminlabs/lamin-cli"
@@ -44,10 +44,11 @@ uv pip install --system git+https://github.com/laminlabs/bionty
     elif group == "hub-prod":
         # cmds = "git clone --depth 1 https://github.com/django/django\n"
         # cmds += "uv pip install --system -e ./django\n"
-        cmds = ""
-        cmds += modules_deps.strip()
+        cmds = modules_deps.strip()
         cmds += """\nuv pip install --system gcsfs huggingface_hub"""
     elif group == "hub-local":
+        cmds = modules_deps.strip()
+    elif group == "connectivity":
         cmds = modules_deps.strip()
     # current package
     cmds += """\nuv pip install --system -e '.[aws,dev]'"""
@@ -106,6 +107,18 @@ def storage(session: nox.Session):
     del os.environ["AWS_ACCESS_KEY_ID"]
     del os.environ["AWS_SECRET_ACCESS_KEY"]
     run(session, f"pytest {COVERAGE_ARGS} ./tests/storage", env=os.environ)
+
+
+@nox.session
+def connectivity(session: nox.Session):
+    login_testuser1(session)
+
+    env = {
+        "HTTP_PROXY": "http://127.0.0.1:8080",
+        "HTTPS_PROXY": "http://127.0.0.1:8080",
+        "NO_PROXY": "localhost,127.0.0.1",
+    }
+    run(session, "pytest ./tests/connectivity", env=env)
 
 
 @nox.session
