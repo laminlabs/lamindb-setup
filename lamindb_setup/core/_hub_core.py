@@ -713,7 +713,7 @@ def get_lamin_site_base_url():
 
 
 def sign_up_local_hub(email) -> str | tuple[str, str, str]:
-    # raises gotrue.errors.AuthApiError: User already registered
+    # raises AuthApiError: User already registered
     password = base62(40)  # generate new password
     sign_up_kwargs = {"email": email, "password": password}
     client = connect_hub()

@@ -36,7 +36,7 @@ from lamindb_setup.core._settings_store import instance_settings_file
 from laminhub_rest.core.instance_collaborator import InstanceCollaboratorHandler
 from laminhub_rest.core.organization import OrganizationMemberHandler
 from sqlalchemy.exc import OperationalError as SQLAlchemy_OperationalError
-from supafunc.errors import FunctionsHttpError
+from supabase_functions.errors import FunctionsHttpError
 
 
 def test_runs_locally():
@@ -245,7 +245,7 @@ def test_connect_instance_hub_corrupted_or_expired_credentials(
 ):
     # assume token & password are corrupted or expired
     # make realisticly looking token that passes
-    # supafunc is_valid_jwt but is actually not a real token
+    # supabase_functions is_valid_jwt but is actually not a real token
     invalid_token = "header1.payload1.signature1"
     ln_setup.settings.user.access_token = invalid_token
     correct_password = ln_setup.settings.user.password

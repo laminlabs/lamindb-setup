@@ -5,7 +5,6 @@ from uuid import UUID, uuid4
 
 import lamindb_setup as ln_setup
 import pytest
-from gotrue.errors import AuthApiError
 from lamindb_setup.core._hub_client import (
     connect_hub_with_auth,
 )
@@ -30,6 +29,7 @@ from laminhub_rest.dev import (
     seed_local_test,
 )
 from laminhub_rest.test.instance import create_instance
+from supabase_auth.errors import AuthApiError
 
 supabase_resources = SupabaseResources()
 
