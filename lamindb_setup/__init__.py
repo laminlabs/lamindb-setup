@@ -38,6 +38,15 @@ Migration management
 __version__ = "1.16.0"  # denote a release candidate for 0.1.0 with 0.1rc1
 
 import os
+import warnings
+
+# ignore for now, this is for timeout parameter,
+# it is more convenient to specify it directly for now
+warnings.filterwarnings("ignore", category=DeprecationWarning, module="supabase")
+warnings.filterwarnings(
+    "ignore", category=DeprecationWarning, module="supabase_functions"
+)
+warnings.filterwarnings("ignore", category=DeprecationWarning, module="postgrest")
 
 from packaging import version as packaging_version
 
