@@ -125,24 +125,10 @@ class migrate:
         from lamindb_setup._schema_metadata import update_schema_in_hub
         from lamindb_setup.core._hub_client import call_with_fallback_auth
         from lamindb_setup.core._hub_crud import (
-            select_collaborator,
             update_instance,
         )
 
         if settings.instance.is_on_hub:
-            # double check that user is an admin, otherwise will fail below
-            # due to insufficient SQL permissions with cryptic error
-            collaborator = call_with_fallback_auth(
-                select_collaborator,
-                instance_id=settings.instance._id,
-                account_id=settings.user._uuid,
-                fine_grained_access=settings.instance._fine_grained_access,
-            )
-            if collaborator is None or collaborator["role"] != "admin":
-                raise SystemExit(
-                    "❌ Only admins can deploy migrations, please ensure that you're an"
-                    f" admin: https://lamin.ai/{settings.instance.slug}/settings"
-                )
             # ensure we connect with the root user
             if "root" not in settings.instance.db:
                 connect(use_root_db_user=True)
