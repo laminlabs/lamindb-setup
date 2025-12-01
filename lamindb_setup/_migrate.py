@@ -125,7 +125,6 @@ class migrate:
         from lamindb_setup._schema_metadata import update_schema_in_hub
         from lamindb_setup.core._hub_client import call_with_fallback_auth
         from lamindb_setup.core._hub_crud import (
-            select_collaborator,
             update_instance,
         )
 
