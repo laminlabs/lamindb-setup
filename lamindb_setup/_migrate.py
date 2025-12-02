@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import httpx
+import requests  # type: ignore
 from django.db import connection
 from django.db.migrations.loader import MigrationLoader
 from lamin_utils import logger
@@ -146,11 +147,21 @@ class migrate:
             )
         else:
             setup_django(settings.instance, deploy_migrations=True)
-        # this populates the hub
+        # handle the hub
         if settings.instance.is_on_hub:
             logger.important(f"updating lamindb version in hub: {lamindb.__version__}")
             if settings.instance.dialect != "sqlite":
                 update_schema_in_hub()
+            response = requests.delete(
+                f"{settings.instance.api_url}/cache/instances/{settings.instance._id}",
+                headers={"Authorization": f"Bearer {settings.user.access_token}"},
+            )
+            if response.status_code == 200:
+                logger.debug("cleared instance cache in hub")
+            else:
+                logger.warning(
+                    f"failed to clear instance cache in hub: {response.status_code} {response.text}"
+                )
             call_with_fallback_auth(
                 update_instance,
                 instance_id=settings.instance._id.hex,
