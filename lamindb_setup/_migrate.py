@@ -156,9 +156,7 @@ class migrate:
                 f"{settings.instance.api_url}/cache/instances/{settings.instance._id}",
                 headers={"Authorization": f"Bearer {settings.user.access_token}"},
             )
-            if response.status_code == 200:
-                logger.debug("cleared instance cache in hub")
-            else:
+            if response.status_code != 200:
                 logger.warning(
                     f"failed to clear instance cache in hub: {response.status_code} {response.text}"
                 )
