@@ -383,8 +383,8 @@ def _init_instance_hub(
 ) -> None:
     from ._settings import settings
 
-    account_id = settings.user._uuid if account_id is None else account_id
-    organization_id = os.getenv("LAMINDB_ORGANIZATION_ID_INIT", None)
+    account_id = settings.user._uuid.hex if account_id is None else account_id.hex  # type: ignore
+    organization_id = os.getenv("LAMINDB_ORGANIZATION_ID_INIT", account_id)
 
     try:
         lamindb_version = metadata.version("lamindb")
@@ -392,13 +392,13 @@ def _init_instance_hub(
         lamindb_version = None
     fields = {
         "id": isettings._id.hex,
-        "account_id": organization_id if organization_id else account_id.hex,  # type: ignore
+        "account_id": organization_id,
         "name": isettings.name,
         "lnid": isettings.uid,
         "schema_str": isettings._schema_str,
         "lamindb_version": lamindb_version,
         "public": False,
-        "created_by_id": account_id.hex,  # type: ignore
+        "created_by_id": account_id,
     }
     if isettings.dialect != "sqlite":
         db_dsn = LaminDsnModel(db=isettings.db)
@@ -408,7 +408,7 @@ def _init_instance_hub(
             "db_port": db_dsn.db.port,
             "db_database": db_dsn.db.database,
         }
-        fields.update(db_fields)
+        fields.update(db_fields)  # type: ignore
     slug = isettings.slug
     # I'd like the following to be an upsert, but this seems to violate RLS
     # Similarly, if we don't specify `returning="minimal"`, we'll violate RLS
