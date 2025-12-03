@@ -384,7 +384,7 @@ def _init_instance_hub(
     from ._settings import settings
 
     created_by_id = settings.user._uuid.hex if account_id is None else account_id.hex  # type: ignore
-    owner_account_id = os.getenv("LAMINDB_ACCOUNT_ID_INIT", account_id)
+    owner_account_id = os.getenv("LAMINDB_ACCOUNT_ID_INIT", created_by_id)
 
     try:
         lamindb_version = metadata.version("lamindb")
