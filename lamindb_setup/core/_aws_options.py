@@ -72,15 +72,23 @@ class AWSOptionsManager:
 
         self._suppress_aiobotocore_traceback_logging()
 
-        try:
-            fs.connect()
-            self.anon: bool = fs.session._credentials is None
-        except Exception as e:
+        if os.getenv("LAMIN_S3_ANON") == "true":
+            self.anon: bool = True
             logger.warning(
-                f"There is a problem with your default AWS Credentials: {e}\n"
-                "`anon` mode will be used for all non-managed buckets."
+                "`anon` mode will be used for all non-managed buckets "
+                "because the environment variable LAMIN_S3_ANON was set to 'true'"
             )
-            self.anon = True
+        else:
+            try:
+                fs.connect()
+                self.anon = fs.session._credentials is None
+            except Exception as e:
+                logger.warning(
+                    f"There is a problem with your default AWS Credentials: {e}\n"
+                    "`anon` mode will be used for all non-managed buckets"
+                )
+                self.anon = True
+
         self.anon_public: bool | None = None
         if not self.anon:
             try:
