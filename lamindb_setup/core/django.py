@@ -323,7 +323,7 @@ def setup_django(
             IS_MIGRATING = False
         else:
             with gzip.open(Path(__file__).parent / "lamin.db.gz", "rb") as f_in:
-                with open(isettings._sqlite_file, "wb") as f_out:
+                with open(isettings._sqlite_file_local, "wb") as f_out:
                     shutil.copyfileobj(f_in, f_out)
 
     global IS_SETUP
