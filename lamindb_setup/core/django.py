@@ -5,10 +5,12 @@ import builtins
 import os
 import sys
 import importlib as il
+import gzip
 import jwt
 import time
 import threading
 from pathlib import Path
+import shutil
 from packaging import version
 from ._settings_instance import InstanceSettings, is_local_db_url
 
@@ -311,10 +313,18 @@ def setup_django(
             call_command("migrate", app_name, app_number, verbosity=2)
         isettings._update_cloud_sqlite_file(unlock_cloud_sqlite=False)
     elif init:
-        global IS_MIGRATING
-        IS_MIGRATING = True
-        call_command("migrate", verbosity=0)
-        IS_MIGRATING = False
+        if (
+            isettings.dialect == "postgresql"
+            or os.getenv("LAMINDB_INIT_FROM_SCRATCH", "false") == "true"
+        ):
+            global IS_MIGRATING
+            IS_MIGRATING = True
+            call_command("migrate", verbosity=0)
+            IS_MIGRATING = False
+        else:
+            with gzip.open(Path(__file__).parent / "lamin.db.gz", "rb") as f_in:
+                with open(isettings._sqlite_file, "wb") as f_out:
+                    shutil.copyfileobj(f_in, f_out)
 
     global IS_SETUP
     IS_SETUP = True
