@@ -314,19 +314,21 @@ def setup_django(
         isettings._update_cloud_sqlite_file(unlock_cloud_sqlite=False)
     elif init:
         modules_beyond_bionty = isettings.modules.copy()
+        compressed_sqlite_path = Path(__file__).parent / "lamin.db.gz"
         if "bionty" in modules_beyond_bionty:
             modules_beyond_bionty.remove("bionty")
         if (
             isettings.dialect == "postgresql"
             or os.getenv("LAMINDB_INIT_FROM_SCRATCH", "false") == "true"
             or len(modules_beyond_bionty) > 0
+            or not compressed_sqlite_path.exists()
         ):
             global IS_MIGRATING
             IS_MIGRATING = True
             call_command("migrate", verbosity=0)
             IS_MIGRATING = False
         else:
-            with gzip.open(Path(__file__).parent / "lamin.db.gz", "rb") as f_in:
+            with gzip.open(compressed_sqlite_path, "rb") as f_in:
                 with open(isettings._sqlite_file_local, "wb") as f_out:
                     shutil.copyfileobj(f_in, f_out)
 
