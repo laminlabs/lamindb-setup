@@ -314,7 +314,8 @@ def setup_django(
         isettings._update_cloud_sqlite_file(unlock_cloud_sqlite=False)
     elif init:
         modules_beyond_bionty = isettings.modules.copy()
-        modules_beyond_bionty.remove("bionty")
+        if "bionty" in modules_beyond_bionty:
+            modules_beyond_bionty.remove("bionty")
         if (
             isettings.dialect == "postgresql"
             or os.getenv("LAMINDB_INIT_FROM_SCRATCH", "false") == "true"
