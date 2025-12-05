@@ -313,9 +313,12 @@ def setup_django(
             call_command("migrate", app_name, app_number, verbosity=2)
         isettings._update_cloud_sqlite_file(unlock_cloud_sqlite=False)
     elif init:
+        modules_beyond_bionty = isettings.modules.copy()
+        modules_beyond_bionty.remove("bionty")
         if (
             isettings.dialect == "postgresql"
             or os.getenv("LAMINDB_INIT_FROM_SCRATCH", "false") == "true"
+            or len(modules_beyond_bionty) > 0
         ):
             global IS_MIGRATING
             IS_MIGRATING = True
