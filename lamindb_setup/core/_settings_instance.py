@@ -525,6 +525,7 @@ class InstanceSettings:
             assert self._db.startswith("postgresql"), f"Unexpected DB value: {self._db}"
             return "postgresql"
 
+    @property
     def vendor(self) -> Literal["sqlite", "postgresql"]:
         """Database vendor.
 
