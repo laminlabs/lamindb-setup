@@ -414,11 +414,11 @@ def _init_instance_hub(
     # Similarly, if we don't specify `returning="minimal"`, we'll violate RLS
     # we could make this idempotent by catching an error, but this seems dangerous
     # as then init_instance is no longer idempotent
-    try:
-        client.table("instance").insert(fields, returning="minimal").execute()
-    except APIError:
-        logger.warning(f"instance already existed at: https://lamin.ai/{slug}")
-        return None
+    #    try:
+    client.table("instance").insert(fields, returning="minimal").execute()
+    #    except APIError:
+    #        logger.warning(f"instance already existed at: https://lamin.ai/{slug}")
+    #        return None
     if isettings.dialect != "sqlite" and isettings.is_remote:
         logger.important(f"go to: https://lamin.ai/{slug}")
 
