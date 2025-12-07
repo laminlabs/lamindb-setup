@@ -513,12 +513,27 @@ class InstanceSettings:
 
     @property
     def dialect(self) -> Literal["sqlite", "postgresql"]:
-        """SQL dialect."""
+        """SQL dialect.
+
+        Equivalent to :attr:`vendor`.
+
+        "vendor" is the Django terminology for the type of database. "dialect" is the SQLAlchemy terminology.
+        """
         if self._db is None or self._db.startswith("sqlite://"):
             return "sqlite"
         else:
             assert self._db.startswith("postgresql"), f"Unexpected DB value: {self._db}"
             return "postgresql"
+
+    @property
+    def vendor(self) -> Literal["sqlite", "postgresql"]:
+        """Database vendor.
+
+        Equivalent to :attr:`dialect`.
+
+        "vendor" is the Django terminology for the type of database. "dialect" is the SQLAlchemy terminology.
+        """
+        return self.dialect
 
     @property
     def _is_cloud_sqlite(self) -> bool:

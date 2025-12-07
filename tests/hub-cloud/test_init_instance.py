@@ -91,6 +91,7 @@ def test_init_instance_postgres_default_name(get_hub_client):
     assert not ln_setup.settings.instance.storage.type_is_cloud
     assert ln_setup.settings.instance.owner == ln_setup.settings.user.handle
     assert ln_setup.settings.instance.dialect == "postgresql"
+    assert ln_setup.settings.instance.vendor == ln_setup.settings.instance.dialect
     assert ln_setup.settings.instance.db == pgurl
     assert (
         ln_setup.settings.instance.storage.root.as_posix()
