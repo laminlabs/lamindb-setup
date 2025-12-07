@@ -97,6 +97,7 @@ def create_testadmin1_session():  # -> Tuple[Client, UserSettings]
     # uses ln_setup.settings.user.access_token
     client = connect_hub_with_auth()
     client.table("account").insert(account).execute()
+    client.table("account_instance_limit").insert({"account_id": account_id}).execute()
     yield SupabaseClientWrapper(client), ln_setup.settings.user
     client.auth.sign_out()
 
