@@ -416,7 +416,9 @@ def _init_instance_hub(
     # as then init_instance is no longer idempotent
     try:
         client.table("instance").insert(fields, returning="minimal").execute()
-    except APIError:
+    except APIError as e:
+        if "new row violates row-level security policy" in str(e):
+            raise e
         logger.warning(f"instance already existed at: https://lamin.ai/{slug}")
         return None
     if isettings.dialect != "sqlite" and isettings.is_remote:
