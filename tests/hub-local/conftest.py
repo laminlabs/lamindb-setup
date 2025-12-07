@@ -132,7 +132,17 @@ def create_myinstance(create_testadmin1_session):  # -> Dict
         name=instance_name,
         db=db_str,
     )
-    init_instance_hub(isettings)
+    try:
+        init_instance_hub(isettings)
+    except Exception as e:
+        results = (
+            admin_client.table("instance")
+            .select("name, account_id, created_by_id")
+            .eq("account_id", usettings._uuid)
+            .execute()
+            .data
+        )
+        raise Exception(results) from e
     storage = init_storage_base(
         "s3://lamindb-ci/myinstance",
         instance_id=instance_id,
