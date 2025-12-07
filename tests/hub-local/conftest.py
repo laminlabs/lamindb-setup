@@ -122,6 +122,15 @@ def create_testreader1_session():  # -> Tuple[Client, UserSettings]
 @pytest.fixture(scope="session")
 def create_myinstance(create_testadmin1_session):  # -> Dict
     admin_client, usettings = create_testadmin1_session
+    print("create_myinstance begin")
+    results = (
+        admin_client.table("instance")
+        .select("name, account_id, created_by_id")
+        .eq("account_id", usettings._uuid)
+        .execute()
+        .data
+    )
+    print(results)
     instance_id = uuid4()
     db_str = "postgresql://postgres:pwd@fakeserver.xyz:5432/mydb"
     instance_name = "myinstance"
