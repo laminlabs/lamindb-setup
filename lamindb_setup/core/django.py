@@ -11,7 +11,7 @@ from pathlib import Path
 import shutil
 from packaging import version
 from ._settings_instance import InstanceSettings, is_local_db_url
-
+from django.db.models import deletion
 from lamin_utils import logger
 
 
@@ -306,7 +306,7 @@ def setup_django(
             db_token = DBToken(isettings)
             db_token_manager.set(db_token)  # sets for the default connection
     elif init:
-        reconnect_django(isettings)
+        reconnect_django(isettings, init=init)
 
     if configure_only:
         return None
@@ -350,7 +350,38 @@ def setup_django(
         isettings._local_storage = isettings._search_local_root()
 
 
-def reconnect_django(isettings: InstanceSettings):
+_original_get_candidate_relations = deletion.get_candidate_relations_to_delete
+_active_apps = None
+
+
+def set_active_apps(apps_set):
+    """Set which apps have tables in the current database"""
+    global _active_apps
+    _active_apps = set(apps_set) if apps_set else None
+
+
+def filtered_get_candidate_relations_to_delete(opts):
+    """
+    Filter out relations to models whose apps are not active.
+    """
+    relations = _original_get_candidate_relations(opts)
+
+    if _active_apps is None:
+        # No filtering
+        return relations
+
+    # Filter out relations to inactive apps
+    for relation in relations:
+        related_model_app = relation.related_model._meta.app_label
+        if related_model_app in _active_apps:
+            yield relation
+
+
+# Apply the monkey patch
+deletion.get_candidate_relations_to_delete = filtered_get_candidate_relations_to_delete
+
+
+def reconnect_django(isettings: InstanceSettings, init: bool = False):
     """Reconfigure Django to use a new database connection."""
     from django.db import connections
     from django.conf import settings
@@ -369,6 +400,8 @@ def reconnect_django(isettings: InstanceSettings):
     # Force Django to forget about the cached connection wrapper
     if hasattr(connections._connections, "default"):
         delattr(connections._connections, "default")
+
+    set_active_apps(get_installed_apps(isettings, init=init))
 
     # Re-register JWT token if needed for the new connection
     if isettings._fine_grained_access and isettings._db_permissions == "jwt":
