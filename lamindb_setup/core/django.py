@@ -202,6 +202,24 @@ def get_django_default_db(isettings: InstanceSettings):
     return default_db
 
 
+def get_installed_apps(isettings: InstanceSettings, init: bool = False) -> list[str]:
+    from .._init_instance import get_schema_module_name
+
+    module_names = ["core"] + list(isettings.modules)
+    raise_import_error = True if init else False
+    installed_apps = [
+        package_name
+        for name in module_names
+        if (
+            package_name := get_schema_module_name(
+                name, raise_import_error=raise_import_error
+            )
+        )
+        is not None
+    ]
+    return installed_apps
+
+
 # this bundles set up and migration management
 def setup_django(
     isettings: InstanceSettings,
@@ -227,20 +245,7 @@ def setup_django(
         DATABASES = {
             "default": default_db,
         }
-        from .._init_instance import get_schema_module_name
-
-        module_names = ["core"] + list(isettings.modules)
-        raise_import_error = True if init else False
-        installed_apps = [
-            package_name
-            for name in module_names
-            if (
-                package_name := get_schema_module_name(
-                    name, raise_import_error=raise_import_error
-                )
-            )
-            is not None
-        ]
+        installed_apps = get_installed_apps(isettings, init=init)
         if view_schema:
             installed_apps = installed_apps[::-1]  # to fix how apps appear
             installed_apps += ["schema_graph", "django.contrib.staticfiles"]
