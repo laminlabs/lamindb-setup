@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import os
+from time import sleep
 from typing import TYPE_CHECKING
 
 from lamin_utils import logger
@@ -59,14 +60,13 @@ def login(
 
     `login()` prompts for your API key unless you set it via the `LAMIN_API_KEY` environment variable or pass it as an argument.
 
-    You can create your API key in your account settings on LaminHub (top right corner).
+    You can create your API key in your account settings on LaminHub at `lamin.ai/settings <https://lamin.ai/settings>`__.
+
+    Note that the preferred method is to use the CLI command `lamin login`: `docs.lamin.ai/cli#login <https://docs.lamin.ai/cli#login>`__.
 
     Args:
         user: User handle.
         api_key: API key.
-
-    See Also:
-        Login via the CLI command `lamin login`, see `here <https://docs.lamin.ai/cli#login>`__.
 
     Examples:
 
@@ -80,12 +80,28 @@ def login(
 
             ln.setup.login("myhandle")  # pass your user handle
     """
+    import webbrowser
+
     if user is None:
         if api_key is None:
             if "LAMIN_API_KEY" in os.environ:
                 api_key = os.environ["LAMIN_API_KEY"]
             else:
-                api_key = input("Your API key: ")
+                print("Copy your API key at https://lamin.ai/settings")
+                for i in range(3):
+                    print(
+                        f"Paste it: (opening browser in {4 - i}s)", end="\r", flush=True
+                    )
+                    sleep(1)
+                # following line is necessary to overwrite "(opening browser in Xs)" text
+                print("Paste it:                        ", end="\r", flush=True)
+                sleep(1)
+                # following line is necessary to have blank space for pasting appearing with "Paste it: "
+                # before browser opens
+                print("Paste it:", end=" ", flush=True)
+                webbrowser.open("https://lamin.ai/settings")
+                # consume the input
+                api_key = input()
     elif api_key is not None:
         raise ValueError("Please provide either 'user' or 'api_key', not both.")
 
