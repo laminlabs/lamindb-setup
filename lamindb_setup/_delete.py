@@ -11,6 +11,7 @@ from .core._aws_options import HOSTED_BUCKETS
 from .core._hub_core import delete_instance as delete_instance_on_hub
 from .core._hub_core import get_storage_records_for_instance
 from .core._settings import settings
+from .core._settings_load import load_instance_settings
 from .core._settings_storage import StorageSettings
 from .core.upath import LocalPathClasses, check_storage_is_empty
 
@@ -38,6 +39,8 @@ def delete_exclusion_dir(isettings: InstanceSettings) -> None:
 
 
 def delete_by_isettings(isettings: InstanceSettings) -> None:
+    assert isettings.slug != "none/none"
+
     settings_file = isettings._get_settings_file()
     if settings_file.exists():
         settings_file.unlink()
@@ -51,12 +54,14 @@ def delete_by_isettings(isettings: InstanceSettings) -> None:
                 "Did not have permission to delete SQLite file:"
                 f" {isettings._sqlite_file}"
             )
-            pass
     # unset the global instance settings
-    if settings._instance_exists and isettings.slug == settings.instance.slug:
-        if settings._instance_settings_path.exists():
-            settings._instance_settings_path.unlink()
-        settings._instance_settings = None
+    # settings.instance can differ from instance in current_settings_file()
+    # due to connect() in the same process
+    isettings_on_disk = load_instance_settings()
+    if isettings_on_disk.slug == isettings.slug:
+        settings._instance_settings_path.unlink()
+        if settings.instance.slug == isettings.slug:
+            settings._instance_settings = None
 
 
 def delete(slug: str, force: bool = False, require_empty: bool = True) -> int | None:
