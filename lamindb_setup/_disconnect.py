@@ -15,7 +15,9 @@ def disconnect(mute: bool = False) -> None:
     See Also:
         Clear default instance configuration via the CLI, see `here <https://docs.lamin.ai/cli#disconnect>`__.
     """
-    if settings._instance_exists:
+    instance_settings_file = current_instance_settings_file()
+    # settings._instance_exists can be true due to connect even without having a file
+    if instance_settings_file.exists() and settings._instance_exists:
         instance = settings.instance
         try:
             instance._update_cloud_sqlite_file()
@@ -30,6 +32,5 @@ def disconnect(mute: bool = False) -> None:
         clear_locker()
         if not mute:
             logger.success(f"disconnected instance: {instance.slug}")
-    else:
-        if not mute:
-            logger.info("no instance loaded")
+    elif not mute:
+        logger.info("no instance loaded")
