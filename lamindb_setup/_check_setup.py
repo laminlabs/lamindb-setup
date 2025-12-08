@@ -142,7 +142,6 @@ def _check_instance_setup(from_module: str | None = None) -> bool:
         if from_module is not None:
             if from_module != "lamindb":
                 _check_module_in_instance_modules(from_module)
-                il.reload(il.import_module(from_module))
         else:
             infer_module = _infer_callers_module_name()
             if infer_module is not None and infer_module not in {
@@ -165,11 +164,10 @@ def _check_instance_setup(from_module: str | None = None) -> bool:
             if from_module != "lamindb":
                 _check_module_in_instance_modules(from_module, isettings)
 
-                import lamindb
-
-                il.reload(il.import_module(from_module))
+                import lamindb  # connect to the instance
             else:
-                django_lamin.setup_django(isettings)
+                # disable_auto_connect to avoid triggering _check_instance_setup in modules
+                disable_auto_connect(django_lamin.setup_django)(isettings)
                 if isettings.slug != "none/none":
                     logger.important(f"connected lamindb: {isettings.slug}")
                     # update of local storage location through search_local_root()
