@@ -357,10 +357,6 @@ def reconnect_django(isettings: InstanceSettings):
     default_db = get_django_default_db(isettings)
     settings.DATABASES["default"].update(default_db)
 
-    # Clear the cached connection
-    if "default" in connections:
-        del connections["default"]
-
     # Re-register JWT token if needed for the new connection
     if isettings._fine_grained_access and isettings._db_permissions == "jwt":
         db_token = DBToken(isettings)
