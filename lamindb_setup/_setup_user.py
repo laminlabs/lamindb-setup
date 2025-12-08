@@ -80,28 +80,15 @@ def login(
 
             ln.setup.login("myhandle")  # pass your user handle
     """
-    import webbrowser
+    from getpass import getpass
 
     if user is None:
         if api_key is None:
             if "LAMIN_API_KEY" in os.environ:
                 api_key = os.environ["LAMIN_API_KEY"]
             else:
-                print("Copy your API key at https://lamin.ai/settings")
-                for i in range(3):
-                    print(
-                        f"Paste it: (opening browser in {4 - i}s)", end="\r", flush=True
-                    )
-                    sleep(1)
-                # following line is necessary to overwrite "(opening browser in Xs)" text
-                print("Paste it:                        ", end="\r", flush=True)
-                sleep(1)
-                # following line is necessary to have blank space for pasting appearing with "Paste it: "
-                # before browser opens
-                print("Paste it:", end=" ", flush=True)
-                webbrowser.open("https://lamin.ai/settings")
-                # consume the input
-                api_key = input()
+                print("Copy your API key. To create one: https://lamin.ai/settings")
+                api_key = getpass("Paste it: ")
     elif api_key is not None:
         raise ValueError("Please provide either 'user' or 'api_key', not both.")
 
