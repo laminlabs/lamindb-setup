@@ -15,7 +15,6 @@ def disconnect(mute: bool = False) -> None:
     See Also:
         Clear default instance configuration via the CLI, see `here <https://docs.lamin.ai/cli#disconnect>`__.
     """
-    current_instance_settings_file()
     # settings._instance_exists can be true due to connect even without having a file
     if settings._instance_exists:
         instance = settings.instance
