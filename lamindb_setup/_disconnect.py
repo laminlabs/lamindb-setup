@@ -3,7 +3,7 @@ from __future__ import annotations
 from lamin_utils import logger
 
 from .core._settings import settings
-from .core._settings_store import current_instance_settings_file
+from .core._settings_load import load_instance_settings
 from .core.cloud_sqlite_locker import clear_locker
 
 
@@ -27,8 +27,10 @@ def disconnect(mute: bool = False) -> None:
                 logger.warning("did not upload cache file - not enough permissions")
             else:
                 raise e
-        current_instance_settings_file().unlink(missing_ok=True)
         clear_locker()
+        # instance in current instance file can differ from instance in settings
+        if load_instance_settings().slug == instance.slug:
+            settings._instance_settings_path.unlink(missing_ok=True)
         settings._instance_settings = None
         if not mute:
             logger.success(f"disconnected instance: {instance.slug}")
