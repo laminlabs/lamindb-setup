@@ -300,6 +300,8 @@ def setup_django(
         if isettings._fine_grained_access and isettings._db_permissions == "jwt":
             db_token = DBToken(isettings)
             db_token_manager.set(db_token)  # sets for the default connection
+    elif init:
+        reconnect_django(isettings)
 
     if configure_only:
         return None
