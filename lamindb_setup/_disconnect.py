@@ -15,9 +15,9 @@ def disconnect(mute: bool = False) -> None:
     See Also:
         Clear default instance configuration via the CLI, see `here <https://docs.lamin.ai/cli#disconnect>`__.
     """
-    instance_settings_file = current_instance_settings_file()
+    current_instance_settings_file()
     # settings._instance_exists can be true due to connect even without having a file
-    if instance_settings_file.exists() and settings._instance_exists:
+    if settings._instance_exists:
         instance = settings.instance
         try:
             instance._update_cloud_sqlite_file()
@@ -28,8 +28,9 @@ def disconnect(mute: bool = False) -> None:
                 logger.warning("did not upload cache file - not enough permissions")
             else:
                 raise e
-        current_instance_settings_file().unlink()
+        current_instance_settings_file().unlink(missing_ok=True)
         clear_locker()
+        settings._instance_settings = None
         if not mute:
             logger.success(f"disconnected instance: {instance.slug}")
     elif not mute:
