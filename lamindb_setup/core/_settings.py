@@ -222,10 +222,9 @@ class SetupSettings:
         If `True`, the current instance is connected, meaning that the db and other settings
         are properly configured for use.
         """
-        if self._instance_exists:
-            return self.instance.slug != "none/none"
-        else:
-            return False
+        from . import django
+
+        return self._instance_exists and django.IS_SETUP
 
     @property
     def private_django_api(self) -> bool:
@@ -284,12 +283,7 @@ class SetupSettings:
 
     @property
     def _instance_exists(self):
-        try:
-            self.instance  # noqa
-            return True
-        # this is implicit logic that catches if no instance is loaded
-        except CurrentInstanceNotConfigured:
-            return False
+        return self.instance.slug != "none/none"
 
     @property
     def cache_dir(self) -> UPath:

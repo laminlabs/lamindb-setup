@@ -9,10 +9,7 @@ from uuid import UUID
 
 from lamin_utils import logger
 
-from ._check_setup import (
-    _check_instance_setup,
-    _get_current_instance_settings,
-)
+from ._check_setup import _check_instance_setup
 from ._disconnect import disconnect
 from ._init_instance import load_from_isettings
 from ._silence_loggers import silence_loggers
@@ -266,13 +263,8 @@ def validate_connection_state(
     from django.db import connection
 
     if (
-        settings._instance_exists
+        settings._instance_exists  # exists only for real instances, not for none/none
         and f"{owner}/{name}" == settings.instance.slug
-        # below is to ensure that if another process interferes
-        # we don't use the in-memory mock database
-        # could be made more specific by checking whether the django
-        # configured database is the same as the one in settings
-        and connection.settings_dict["NAME"] != ":memory:"
         and not use_root_db_user  # always re-connect for root db user
     ):
         logger.important(
@@ -280,7 +272,7 @@ def validate_connection_state(
         )
         return None
     else:
-        if settings._instance_exists and settings.instance.slug != "none/none":
+        if settings._instance_exists:
             import lamindb as ln
 
             if ln.context.transform is not None:
@@ -340,12 +332,9 @@ def connect(instance: str | None = None, **kwargs: Any) -> str | tuple | None:
             if settings._instance_exists:
                 isettings = settings.instance
             else:
-                isettings_or_none = _get_current_instance_settings()
-                if isettings_or_none is None:
-                    raise ValueError(
-                        "No instance was connected through the CLI, pass a value to `instance` or connect via the CLI."
-                    )
-                isettings = isettings_or_none
+                raise ValueError(
+                    "No instance was connected through the CLI, pass a value to `instance` or connect via the CLI."
+                )
             if use_root_db_user:
                 reset_django()
                 owner, name = isettings.owner, isettings.name

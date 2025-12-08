@@ -125,10 +125,11 @@ class InstanceSettings:
                 if self._local_storage is not None:
                     value_local = self.local_storage
                     representation += f"\n - local storage: {value_local.root_as_str} ({value_local.region})"
-                    representation += (
-                        f"\n - cloud storage: {value.root_as_str} ({value.region})"
-                    )
-                else:
+                    if value is not None:
+                        representation += (
+                            f"\n - cloud storage: {value.root_as_str} ({value.region})"
+                        )
+                elif value is not None:
                     representation += (
                         f"\n - storage: {value.root_as_str} ({value.region})"
                     )
