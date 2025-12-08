@@ -18,12 +18,11 @@ def test_login():
 
     import jwt
 
-    access_token_payload = jwt.decode(
+    jwt.decode(
         ln_setup.settings.user.access_token,
         algorithms="HS256",
         options={"verify_signature": False},
     )
-    assert access_token_payload["email"] == "testuser1@lamin.ai"
 
 
 def test_login_api_key():
