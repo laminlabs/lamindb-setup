@@ -85,8 +85,6 @@ def _infer_callers_module_name() -> str | None:
 # users should not see it
 def _check_instance_setup(from_module: str | None = None) -> bool:
     if django_lamin.IS_SETUP:
-        # reload logic here because module might not yet have been imported
-        # upon first setup
         if from_module is not None:
             if from_module != "lamindb":
                 _check_module_in_instance_modules(from_module)
@@ -106,33 +104,31 @@ def _check_instance_setup(from_module: str | None = None) -> bool:
             "errors in regular lamindb usage"
         )
         return True
-    isettings = settings.instance
-    if isettings is not None:
-        if from_module is not None and not django_lamin.IS_SETUP and not IS_LOADING:
-            if from_module != "lamindb":
-                _check_module_in_instance_modules(from_module, isettings)
 
-                import lamindb  # connect to the instance
-            else:
-                # disable_auto_connect to avoid triggering _check_instance_setup in modules
-                disable_auto_connect(django_lamin.setup_django)(isettings)
-                if isettings.slug != "none/none":
-                    logger.important(f"connected lamindb: {isettings.slug}")
-                    # update of local storage location through search_local_root()
-                    settings._instance_settings = isettings
-                else:
-                    logger.warning("not connected, call: ln.connect('account/name')")
+    if IS_LOADING or from_module is None:
+        return False
+
+    if (
+        not settings._instance_exists
+        and os.environ.get("LAMIN_CURRENT_INSTANCE") is not None
+    ):
+        from ._connect_instance import connect
+
+        connect(_write_settings=False, _reload_lamindb=False)
         return django_lamin.IS_SETUP
     else:
-        if from_module is not None:
-            # the below enables users to auto-connect to an instance
-            # simply by setting an environment variable, bypassing the
-            # need of calling connect() manually
-            if os.environ.get("LAMIN_CURRENT_INSTANCE") is not None:
-                from ._connect_instance import connect
+        isettings = settings.instance
+        if from_module != "lamindb":
+            _check_module_in_instance_modules(from_module, isettings)
 
-                connect(_write_settings=False, _reload_lamindb=False)
-                return django_lamin.IS_SETUP
+            import lamindb  # connect to the instance
+        else:
+            # disable_auto_connect to avoid triggering _check_instance_setup in modules
+            disable_auto_connect(django_lamin.setup_django)(isettings)
+            if isettings.slug != "none/none":
+                logger.important(f"connected lamindb: {isettings.slug}")
+                # update of local storage location through search_local_root()
+                settings._instance_settings = isettings
             else:
-                logger.warning(InstanceNotSetupError.default_message)
-        return False
+                logger.warning("not connected, call: ln.connect('account/name')")
+    return django_lamin.IS_SETUP
