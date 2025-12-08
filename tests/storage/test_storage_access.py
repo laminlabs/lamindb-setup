@@ -14,7 +14,7 @@ from lamindb_setup.core._hub_crud import (
 
 
 def test_connect_instance_with_private_storage_and_no_storage_access():
-    ln_setup.login("testuser1@lamin.ai")
+    ln_setup.login("testuser1")
     # this should fail because of insufficient AWS permission for the storage bucket
     # that has the SQLite file on it, but because _test=True, we don't actually try to
     # pull the SQLite file -> see the line below to proxy this
@@ -31,7 +31,7 @@ def test_connect_instance_with_private_storage_and_no_storage_access():
 
 
 def test_init_instance_with_private_storage_and_no_storage_access():
-    ln_setup.login("testuser1@lamin.ai")
+    ln_setup.login("testuser1")
     # test creating with no access to a cloud storage
     with pytest.raises(InstanceNotCreated):
         ln_setup.init(
@@ -44,7 +44,7 @@ def test_connect_instance_with_public_storage():
     # this loads a persistent instance created with a public s3 bucket
     # with s3:GetObject and s3:ListBucket policies enabled for all
     # the bucket is s3://lamin-site-assets
-    ln_setup.login("testuser1@lamin.ai")
+    ln_setup.login("testuser1")
     ln_setup.connect("laminlabs/lamin-site-assets")
     # Alex doesn't fully understand why we're testing the load from hub, here, but OK
     client = connect_hub_with_auth()
