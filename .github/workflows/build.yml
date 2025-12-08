@@ -107,7 +107,6 @@ jobs:
       - run: nox -s lint
       - run: nox -s storage
         env:
-          TEST_INSTANCE_PRIVATE_POSTGRES: ${{ secrets.TEST_INSTANCE_PRIVATE_POSTGRES }}
           TMP_AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
           TMP_AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
       - uses: actions/upload-artifact@v4
