@@ -539,7 +539,11 @@ class InstanceSettings:
     @property
     def _is_cloud_sqlite(self) -> bool:
         """Is this a cloud instance with sqlite db."""
-        return self.dialect == "sqlite" and self.storage.type_is_cloud
+        return (
+            self.dialect == "sqlite"
+            and self.storage is not None
+            and self.storage.type_is_cloud
+        )
 
     @property
     def _cloud_sqlite_locker(self):
@@ -559,6 +563,8 @@ class InstanceSettings:
     @property
     def is_remote(self) -> bool:
         """Boolean indicating if an instance has no local component."""
+        if self.storage is None and self.db == "sqlite:///:memory:":
+            return False
         return check_is_instance_remote(self.storage.root_as_str, self.db)
 
     @property
