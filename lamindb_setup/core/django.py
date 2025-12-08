@@ -9,7 +9,6 @@ import time
 import threading
 from pathlib import Path
 import shutil
-from threading import Lock
 from packaging import version
 from ._settings_instance import InstanceSettings, is_local_db_url
 
@@ -203,24 +202,6 @@ def get_django_default_db(isettings: InstanceSettings):
     return default_db
 
 
-def get_installed_apps(isettings: InstanceSettings, init: bool = False) -> list[str]:
-    from .._init_instance import get_schema_module_name
-
-    module_names = ["core"] + list(isettings.modules)
-    raise_import_error = True if init else False
-    installed_apps = [
-        package_name
-        for name in module_names
-        if (
-            package_name := get_schema_module_name(
-                name, raise_import_error=raise_import_error
-            )
-        )
-        is not None
-    ]
-    return installed_apps
-
-
 # this bundles set up and migration management
 def setup_django(
     isettings: InstanceSettings,
@@ -246,7 +227,20 @@ def setup_django(
         DATABASES = {
             "default": default_db,
         }
-        installed_apps = get_installed_apps(isettings, init=init)
+        from .._init_instance import get_schema_module_name
+
+        module_names = ["core"] + list(isettings.modules)
+        raise_import_error = True if init else False
+        installed_apps = [
+            package_name
+            for name in module_names
+            if (
+                package_name := get_schema_module_name(
+                    name, raise_import_error=raise_import_error
+                )
+            )
+            is not None
+        ]
         if view_schema:
             installed_apps = installed_apps[::-1]  # to fix how apps appear
             installed_apps += ["schema_graph", "django.contrib.staticfiles"]
@@ -256,7 +250,6 @@ def setup_django(
         kwargs = dict(
             INSTALLED_APPS=installed_apps,
             DATABASES=DATABASES,
-            DATABASE_ROUTERS=["lamindb_setup.core.django.DynamicDatabaseRouter"],
             DEFAULT_AUTO_FIELD="django.db.models.BigAutoField",
             TIME_ZONE="UTC",
             USE_TZ=True,
@@ -308,7 +301,7 @@ def setup_django(
             db_token = DBToken(isettings)
             db_token_manager.set(db_token)  # sets for the default connection
     elif init:
-        reconnect_django(isettings, init=init)
+        reconnect_django(isettings)
 
     if configure_only:
         return None
@@ -352,104 +345,7 @@ def setup_django(
         isettings._local_storage = isettings._search_local_root()
 
 
-class DynamicDatabaseRouter:
-    """
-    Router that can be dynamically reconfigured at runtime.
-    Thread-safe for multi-user scenarios.
-    """
-
-    # Class-level configuration that can be updated
-    _config_lock = Lock()
-    _active_apps = None  # Will be set dynamically
-
-    @classmethod
-    def set_active_apps(cls, apps_set):
-        """
-        Update which apps are active for the current database connection.
-
-        Args:
-            apps_set: Set of app labels that exist in the connected database
-                     e.g., {'app1', 'app2', 'auth', 'contenttypes'}
-        """
-        with cls._config_lock:
-            cls._active_apps = set(apps_set) if apps_set else None
-
-    @classmethod
-    def clear_active_apps(cls):
-        """Reset to allow all apps (no filtering)"""
-        with cls._config_lock:
-            cls._active_apps = None
-
-    @classmethod
-    def get_active_apps(cls):
-        """Get current active apps configuration"""
-        with cls._config_lock:
-            return cls._active_apps.copy() if cls._active_apps else None
-
-    def _is_app_active(self, app_label):
-        """Check if an app is currently active"""
-        active_apps = self.get_active_apps()
-        if active_apps is None:
-            # No restriction - all apps allowed
-            return True
-        return app_label in active_apps
-
-    def db_for_read(self, model, **hints):
-        """
-        Return 'default' if app is active, None otherwise.
-        Returning None means Django will use the default behavior.
-        """
-        app_label = model._meta.app_label
-
-        if not self._is_app_active(app_label):
-            # Returning None for inactive apps prevents queries
-            # This will cause queries to these models to fail
-            return (
-                "default"  # Still use default, but allow_relation will block cascades
-            )
-
-        return "default"
-
-    def db_for_write(self, model, **hints):
-        """Same logic as db_for_read"""
-        return self.db_for_read(model, **hints)
-
-    def allow_relation(self, obj1, obj2, **hints):
-        """
-        Only allow relations between objects if both apps are active.
-        This is KEY for preventing CASCADE from following relationships
-        to models whose tables don't exist.
-        """
-        app1 = obj1._meta.app_label
-        app2 = obj2._meta.app_label
-
-        active_apps = self.get_active_apps()
-        if active_apps is None:
-            # No restrictions
-            return True
-
-        # Only allow relation if BOTH apps are active
-        if app1 in active_apps and app2 in active_apps:
-            return True
-
-        # Block the relation
-        return False
-
-    def allow_migrate(self, db, app_label, model_name=None, **hints):
-        """
-        Control which apps can be migrated to which database.
-        """
-        if db != "default":
-            return None
-
-        active_apps = self.get_active_apps()
-        if active_apps is None:
-            return None  # No restriction
-
-        return app_label in active_apps
-
-
-def reconnect_django(isettings: InstanceSettings, init: bool = False):
+def reconnect_django(isettings: InstanceSettings):
     """Reconfigure Django to use a new database connection."""
     from django.db import connections
     from django.conf import settings
@@ -468,8 +364,6 @@ def reconnect_django(isettings: InstanceSettings, init: bool = False):
     # Force Django to forget about the cached connection wrapper
     if hasattr(connections._connections, "default"):
         delattr(connections._connections, "default")
-
-    DynamicDatabaseRouter.set_active_apps(get_installed_apps(isettings, init=True))
 
     # Re-register JWT token if needed for the new connection
     if isettings._fine_grained_access and isettings._db_permissions == "jwt":
