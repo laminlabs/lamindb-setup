@@ -1,13 +1,4 @@
-"""Utilities to copy, clone and load Postgres instances as local SQLite databases.
-
-.. autosummary::
-   :toctree:
-
-   init_local_sqlite
-   connect_local_sqlite
-   connect_remote_sqlite
-   upload_sqlite_clone
-"""
+# This entire module is experimental and not used in production
 
 import gzip
 import os
@@ -16,6 +7,7 @@ from pathlib import Path
 
 from lamindb_setup.core._settings_load import load_instance_settings
 from lamindb_setup.core._settings_store import instance_settings_file
+from lamindb_setup.core.django import reset_django
 from lamindb_setup.core.upath import create_path
 
 
@@ -74,7 +66,8 @@ def init_local_sqlite(
         # Reset Django configuration before _init_db() because Django was already configured for the original Postgres instance.
         # Without this reset, the `if not settings.configured`` check in `setup_django()` would skip reconfiguration,
         # causing migrations to run against the old Postgres database instead of the new SQLite clone database.
-        isettings._load_db()
+        reset_django()
+        isettings._init_db()
 
 
 def connect_local_sqlite(

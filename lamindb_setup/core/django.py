@@ -365,3 +365,45 @@ def reconnect_django(isettings: InstanceSettings):
     if isettings._fine_grained_access and isettings._db_permissions == "jwt":
         db_token = DBToken(isettings)
         db_token_manager.set(db_token)
+
+
+# calling this should be avoided because global variables can get stale
+# we'll likely remove it from the code base
+def reset_django():
+    from django.conf import settings
+    from django.apps import apps
+    from django.db import connections
+    import importlib as il
+    import sys
+
+    if not settings.configured:
+        return
+
+    connections.close_all()
+
+    global db_token_manager
+
+    db_token_manager.reset()
+
+    if getattr(settings, "_wrapped", None) is not None:
+        settings._wrapped = None
+
+    app_names = {"django"} | {app.name for app in apps.get_app_configs()}
+
+    apps.app_configs.clear()
+    apps.all_models.clear()
+    apps.apps_ready = apps.models_ready = apps.ready = apps.loading = False
+    apps.clear_cache()
+
+    # i suspect it is enough to just drop django and all the apps from sys.modules
+    # the code above is just a precaution
+    for module_name in list(sys.modules):
+        if module_name.partition(".")[0] in app_names:
+            del sys.modules[module_name]
+
+    il.invalidate_caches()
+
+    db_token_manager = DBTokenManager()
+
+    global IS_SETUP
+    IS_SETUP = False
