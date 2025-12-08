@@ -23,11 +23,7 @@ def test_connect_instance_with_private_storage_and_no_storage_access():
         (ln_setup.settings.storage.root / "test_file").exists()
     # connecting to a postgres instance should work because it doesn't touch
     # storage during connection
-    ln_setup.connect(
-        "laminlabs/test-instance-private-postgres",
-        _db=os.environ["TEST_INSTANCE_PRIVATE_POSTGRES"],
-        _test=True,
-    )
+    ln_setup.connect("laminlabs/lamin-dev", _test=True)
     # accessing storage in the instance should fail:
     with pytest.raises(PermissionError):
         path = ln_setup.settings.storage.root
