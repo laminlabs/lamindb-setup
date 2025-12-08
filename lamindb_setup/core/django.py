@@ -348,14 +348,20 @@ def reconnect_django(isettings: InstanceSettings):
     from django.db import connections
     from django.conf import settings
 
-    connections.close_all()
-
     # Reset the JWT token manager for the old connection
     db_token_manager.reset("default")
 
-    # Update database settings
+    # Update database settings BEFORE closing
     default_db = get_django_default_db(isettings)
     settings.DATABASES["default"].update(default_db)
+
+    # Now close and clear the connection
+    # This ensures the next access creates a new connection with updated settings
+    connections.close_all()
+
+    # Force Django to forget about the cached connection wrapper
+    if hasattr(connections._connections, "default"):
+        delattr(connections._connections, "default")
 
     # Re-register JWT token if needed for the new connection
     if isettings._fine_grained_access and isettings._db_permissions == "jwt":
