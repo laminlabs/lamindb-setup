@@ -55,11 +55,11 @@ def delete_by_isettings(isettings: InstanceSettings) -> None:
                 f" {isettings._sqlite_file}"
             )
     # unset the global instance settings
-    # settings.instance can differ from instance in current_settings_file()
-    # due to connect() in the same process
     isettings_on_disk = load_instance_settings()
     if isettings_on_disk.slug == isettings.slug:
-        settings._instance_settings_path.unlink()
+        settings._instance_settings_path.unlink()  # current instance settings file
+        # settings.instance can differ from instance in current_settings_file()
+        # due to connect() in the same process
         if settings.instance.slug == isettings.slug:
             settings._instance_settings = None
 
