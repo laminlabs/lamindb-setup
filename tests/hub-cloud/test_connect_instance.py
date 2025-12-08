@@ -29,7 +29,7 @@ def test_connect_anonymous_owned_instance_from_hub():
 def test_connect_after_revoked_access():
     # can't currently test this on staging as I'm missing the accounts
     if os.getenv("LAMIN_ENV") == "prod":
-        ln_setup.login("testuser1@lamin.ai")
+        ln_setup.login("testuser1")
         admin_hub = connect_hub_with_auth()
         collaborator_handler = InstanceCollaboratorHandler(admin_hub)
         try:
@@ -43,7 +43,7 @@ def test_connect_after_revoked_access():
             )
         except APIError:
             pass
-        ln_setup.login("testuser2@lamin.ai")
+        ln_setup.login("testuser2")
         ln_setup.connect(
             "https://lamin.ai/testuser1/static-test-instance-private-sqlite", _test=True
         )
@@ -68,7 +68,7 @@ def test_connect_after_private_public_switch():
     # can't currently test this on staging as I'm missing the accounts
     if os.getenv("LAMIN_ENV") == "prod":
         # this assumes that testuser1 is an admin of static-test-instance-private-sqlite
-        ln_setup.login("testuser1@lamin.ai")
+        ln_setup.login("testuser1")
         ln_setup.connect(
             "https://lamin.ai/testuser1/static-test-instance-private-sqlite", _test=True
         )

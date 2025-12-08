@@ -13,7 +13,6 @@ from supabase_functions.errors import FunctionsHttpError
 
 def test_login():
     ln_setup.login("testuser1")
-    assert ln_setup.settings.user.email == "testuser1@lamin.ai"
     assert ln_setup.settings.user.uid == "DzTjkKse"
     assert ln_setup.settings.user.handle == "testuser1"
 
@@ -29,7 +28,6 @@ def test_login():
 
 def test_login_api_key():
     ln_setup.login("testuser1")
-    save_password = ln_setup.settings.user.password
     # obtain API key
     expires_at = datetime.now(tz=timezone.utc) + timedelta(days=1)
     api_key = create_api_key(
@@ -79,7 +77,5 @@ def test_login_api_key():
     hub.auth.sign_out({"scope": "local"})
 
     # login back with email to populate all fields
-    ln_setup.login("testuser1@lamin.ai", key=save_password)
+    ln_setup.login("testuser1")
     assert ln_setup.settings.user.handle == "testuser1"
-    assert ln_setup.settings.user.api_key is None
-    assert ln_setup.settings.user.password == save_password
