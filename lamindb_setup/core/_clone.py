@@ -16,7 +16,6 @@ from pathlib import Path
 
 from lamindb_setup.core._settings_load import load_instance_settings
 from lamindb_setup.core._settings_store import instance_settings_file
-from lamindb_setup.core.django import reset_django
 from lamindb_setup.core.upath import create_path
 
 
@@ -75,8 +74,7 @@ def init_local_sqlite(
         # Reset Django configuration before _init_db() because Django was already configured for the original Postgres instance.
         # Without this reset, the `if not settings.configured`` check in `setup_django()` would skip reconfiguration,
         # causing migrations to run against the old Postgres database instead of the new SQLite clone database.
-        reset_django()
-        isettings._init_db()
+        isettings._load_db()
 
 
 def connect_local_sqlite(

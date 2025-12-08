@@ -3,8 +3,6 @@ from __future__ import annotations
 # flake8: noqa
 import builtins
 import os
-import sys
-import importlib as il
 import gzip
 import jwt
 import time
@@ -174,6 +172,36 @@ def close_if_health_check_failed(self) -> None:
         self.close_at = time.monotonic() + CONN_MAX_AGE
 
 
+def get_django_default_db(isettings: InstanceSettings):
+    import dj_database_url
+
+    instance_db = isettings.db
+    if isettings.dialect == "postgresql":
+        if os.getenv("LAMIN_DB_SSL_REQUIRE") == "false":
+            ssl_require = False
+        else:
+            ssl_require = not is_local_db_url(instance_db)
+        options = {
+            "connect_timeout": os.getenv("PGCONNECT_TIMEOUT", 20),
+            "gssencmode": "disable",
+        }
+    else:
+        ssl_require = False
+        options = {}
+    default_db = dj_database_url.config(
+        env="LAMINDB_DJANGO_DATABASE_URL",
+        default=instance_db,
+        # see comment next to patching BaseDatabaseWrapper below
+        conn_max_age=CONN_MAX_AGE,
+        conn_health_checks=True,
+        ssl_require=ssl_require,
+    )
+    if options:
+        # do not overwrite keys in options if set
+        default_db["OPTIONS"] = {**options, **default_db.get("OPTIONS", {})}
+    return default_db
+
+
 # this bundles set up and migration management
 def setup_django(
     isettings: InstanceSettings,
@@ -188,7 +216,6 @@ def setup_django(
         os.environ["DJANGO_ALLOW_ASYNC_UNSAFE"] = "true"
         logger.debug("DJANGO_ALLOW_ASYNC_UNSAFE env variable has been set to 'true'")
 
-    import dj_database_url
     import django
     from django.apps import apps
     from django.conf import settings
@@ -196,30 +223,7 @@ def setup_django(
 
     # configuration
     if not settings.configured:
-        instance_db = isettings.db
-        if isettings.dialect == "postgresql":
-            if os.getenv("LAMIN_DB_SSL_REQUIRE") == "false":
-                ssl_require = False
-            else:
-                ssl_require = not is_local_db_url(instance_db)
-            options = {
-                "connect_timeout": os.getenv("PGCONNECT_TIMEOUT", 20),
-                "gssencmode": "disable",
-            }
-        else:
-            ssl_require = False
-            options = {}
-        default_db = dj_database_url.config(
-            env="LAMINDB_DJANGO_DATABASE_URL",
-            default=instance_db,
-            # see comment next to patching BaseDatabaseWrapper below
-            conn_max_age=CONN_MAX_AGE,
-            conn_health_checks=True,
-            ssl_require=ssl_require,
-        )
-        if options:
-            # do not overwrite keys in options if set
-            default_db["OPTIONS"] = {**options, **default_db.get("OPTIONS", {})}
+        default_db = get_django_default_db(isettings)
         DATABASES = {
             "default": default_db,
         }
@@ -339,42 +343,14 @@ def setup_django(
         isettings._local_storage = isettings._search_local_root()
 
 
-# these needs to be followed by
-# setup_django()
-# reset_django_module_variables()
-def reset_django():
-    from django.conf import settings
-    from django.apps import apps
+def reconnect_django(isettings: InstanceSettings):
+    """Reconfigure Django to use a new database connection."""
     from django.db import connections
-
-    if not settings.configured:
-        return
+    from django.conf import settings
 
     connections.close_all()
-
-    global db_token_manager
-
-    db_token_manager.reset()
-
-    if getattr(settings, "_wrapped", None) is not None:
-        settings._wrapped = None
-
-    app_names = {"django"} | {app.name for app in apps.get_app_configs()}
-
-    apps.app_configs.clear()
-    apps.all_models.clear()
-    apps.apps_ready = apps.models_ready = apps.ready = apps.loading = False
-    apps.clear_cache()
-
-    # i suspect it is enough to just drop django and all the apps from sys.modules
-    # the code above is just a precaution
-    for module_name in list(sys.modules):
-        if module_name.partition(".")[0] in app_names:
-            del sys.modules[module_name]
-
-    il.invalidate_caches()
-
-    db_token_manager = DBTokenManager()
-
-    global IS_SETUP
-    IS_SETUP = False
+    default_db = get_django_default_db(isettings)
+    settings.DATABASES["default"] = default_db
+    connections.databases = settings.DATABASES
+    if "default" in connections:
+        del connections["default"]

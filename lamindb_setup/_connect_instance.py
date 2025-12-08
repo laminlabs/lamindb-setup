@@ -2,8 +2,6 @@ from __future__ import annotations
 
 import importlib
 import os
-import sys
-import types
 from typing import TYPE_CHECKING, Any
 from uuid import UUID
 
@@ -24,7 +22,7 @@ from .core._settings_load import load_instance_settings
 from .core._settings_storage import StorageSettings
 from .core._settings_store import instance_settings_file
 from .core.cloud_sqlite_locker import unlock_cloud_sqlite_upon_exception
-from .core.django import reset_django
+from .core.django import reconnect_django
 from .errors import CannotSwitchDefaultInstance
 
 if TYPE_CHECKING:
@@ -182,59 +180,6 @@ def _connect_instance(
     return isettings
 
 
-def reset_django_module_variables():
-    # This function updates all module-level references to Django classes
-    # But it will fail to update function level references
-    # This is not a problem unless for the function that calls ln.connect() itself
-    # So, if a user has
-    #
-    # def my_function():
-    #     import lamindb as ln
-    #     ln.connect(...)
-    #
-    # Then it will **not** work and the `ln` variable becomes stale and hold a reference to the old classes
-    # Other functions that dynamically import are no problem because the variables
-    # are automatically refreshed when the function runs the next time after ln.connect() was called
-    logger.debug("resetting django module variables")
-
-    # django.apps needs to be a local import to refresh variables
-    from django.apps import apps
-
-    app_names = {app.name for app in apps.get_app_configs()}
-    # always copy before iterations over sys.modules
-    # see https://docs.python.org/3/library/sys.html#sys.modules
-    # this whole thing runs about 50ms in a big env
-    for name, module in sys.modules.copy().items():
-        if (
-            module is not None
-            and (not name.startswith("__") or name == "__main__")
-            and name not in sys.builtin_module_names
-        ):
-            try:
-                for k, v in vars(module).items():
-                    if (
-                        isinstance(v, types.ModuleType)
-                        and not k.startswith("_")
-                        and getattr(v, "__name__", None) in app_names
-                    ):
-                        if v.__name__ in sys.modules:
-                            vars(module)[k] = sys.modules[v.__name__]
-                    # Also reset classes from Django apps - but check if the class module starts with any app name
-                    elif hasattr(v, "__module__") and getattr(v, "__module__", None):
-                        class_module = v.__module__
-                        # Check if the class module starts with any of our app names
-                        if any(
-                            class_module.startswith(app_name) for app_name in app_names
-                        ):
-                            if class_module in sys.modules:
-                                fresh_module = sys.modules[class_module]
-                                attr_name = getattr(v, "__name__", k)
-                                if hasattr(fresh_module, attr_name):
-                                    vars(module)[k] = getattr(fresh_module, attr_name)
-            except (AttributeError, TypeError):
-                continue
-
-
 def _connect_cli(
     instance: str, use_root_db_user: bool = False, use_proxy_db: bool = False
 ) -> None:
@@ -287,7 +232,6 @@ def validate_connection_state(
                 raise CannotSwitchDefaultInstance(
                     "Cannot switch default instance while `ln.track()` is live: call `ln.finish()`"
                 )
-        reset_django()
 
 
 @unlock_cloud_sqlite_upon_exception(ignore_prev_locker=True)
@@ -347,7 +291,6 @@ def connect(instance: str | None = None, **kwargs: Any) -> str | tuple | None:
                     )
                 isettings = isettings_or_none
             if use_root_db_user:
-                reset_django()
                 owner, name = isettings.owner, isettings.name
             if _db is not None and isettings.dialect == "postgresql":
                 isettings._db = _db
@@ -415,7 +358,6 @@ def connect(instance: str | None = None, **kwargs: Any) -> str | tuple | None:
         load_from_isettings(isettings, user=_user, write_settings=_write_settings)
         if _reload_lamindb:
             importlib.reload(importlib.import_module("lamindb"))
-            reset_django_module_variables()
         if isettings.slug != "none/none":
             logger.important(f"connected lamindb: {isettings.slug}")
     except Exception as e:
