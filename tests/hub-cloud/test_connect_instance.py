@@ -17,9 +17,7 @@ def test_connect_pass_none():
 
     with pytest.raises(ValueError) as e:
         ln_setup.connect(_test=True)
-    assert str(e).startswith(
-        "No instance was connected through the CLI, pass a value to"
-    )
+    assert "No instance was connected through the CLI, pass a value to" in str(e)
 
 
 # do not call hub if the owner is set to anonymous
