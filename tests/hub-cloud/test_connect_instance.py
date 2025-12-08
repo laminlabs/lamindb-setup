@@ -13,6 +13,7 @@ from postgrest.exceptions import APIError
 
 
 def test_connect_pass_none():
+    assert not ln_setup.settings._instance_exists, ln_setup.settings.instance.slug
     # this doesn't log anything and connects to the mock instance
     ln_setup.connect(_test=True)
 
