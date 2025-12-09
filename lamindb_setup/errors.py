@@ -1,7 +1,6 @@
 """Errors.
 
 .. autoexception:: CurrentInstanceNotConfigured
-.. autoexception:: InstanceNotSetupError
 .. autoexception:: ModuleWasntConfigured
 .. autoexception:: StorageAlreadyManaged
 .. autoexception:: StorageNotEmpty
@@ -23,17 +22,6 @@ class DefaultMessageException(Exception):
         if message is None:
             message = self.default_message
         super().__init__(message)
-
-
-# TODO: remove this exception sooner or later because we don't have a need for it anymore
-class InstanceNotSetupError(DefaultMessageException):
-    default_message = """\
-To use lamindb, you need to connect to an instance.
-
-Connect to an instance: `ln.connect()`. Init an instance: `ln.setup.init()`.
-
-If you used the CLI to set up lamindb in a notebook, restart the Python session.
-"""
 
 
 class CurrentInstanceNotConfigured(DefaultMessageException):

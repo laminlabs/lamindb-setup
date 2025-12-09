@@ -15,7 +15,6 @@ from .core._settings import settings
 from .core._settings_store import current_instance_settings_file
 from .errors import (
     MODULE_WASNT_CONFIGURED_MESSAGE_TEMPLATE,
-    InstanceNotSetupError,
     ModuleWasntConfigured,
 )
 
