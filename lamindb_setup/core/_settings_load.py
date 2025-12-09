@@ -80,10 +80,8 @@ def load_instance_settings(instance_settings_file: Path | None = None):
     try:
         settings_store = InstanceSettingsStore(_env_file=isettings_file)
     except (ValidationError, TypeError) as error:
-        with open(isettings_file) as f:
-            content = f.read()
         raise SettingsEnvFileOutdated(
-            f"\n\n{error}\n\nYour instance settings file with\n\n{content}\nis invalid"
+            f"\n\n{error}\n\nYour instance settings file with\n\n{isettings_file.read_text()}\nis invalid"
             f" (likely outdated), see validation error. Please delete {isettings_file} &"
             " reload (remote) or re-initialize (local) the instance with the same name & storage location."
         ) from error
