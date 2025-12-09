@@ -13,7 +13,7 @@ from pathlib import Path
 import shutil
 from packaging import version
 from ._settings_instance import InstanceSettings, is_local_db_url
-
+from ..errors import CurrentInstanceNotConfigured
 from lamin_utils import logger
 
 
@@ -21,6 +21,24 @@ IS_RUN_FROM_IPYTHON = getattr(builtins, "__IPYTHON__", False)
 IS_SETUP = False
 IS_MIGRATING = False
 CONN_MAX_AGE = 299
+
+
+def get_connection(connection_name: str):
+    from django.db import connections
+
+    return connections[connection_name]
+
+
+def error_no_instance_wrapper(execute, sql, params, many, context):
+    connection = context["connection"]
+
+    if (
+        connection.vendor == "sqlite"
+        and connection.settings_dict.get("NAME") == ":memory:"
+    ):
+        raise CurrentInstanceNotConfigured
+
+    return execute(sql, params, many, context)
 
 
 # db token that refreshes on access if needed
@@ -66,11 +84,6 @@ class DBTokenManager:
 
         self.tokens: dict[str, DBToken] = {}
 
-    def get_connection(self, connection_name: str):
-        from django.db import connections
-
-        return connections[connection_name]
-
     def set(self, token: DBToken, connection_name: str = "default"):
         if connection_name in self.tokens:
             return
@@ -79,11 +92,7 @@ class DBTokenManager:
         from django.db.backends.signals import connection_created
 
         def set_token_wrapper(execute, sql, params, many, context):
-            not_in_atomic_block = (
-                context is None
-                or "connection" not in context
-                or not context["connection"].in_atomic_block
-            )
+            not_in_atomic_block = not context["connection"].in_atomic_block
             # ignore atomic blocks
             if not_in_atomic_block:
                 sql = token.token_query + sql
@@ -100,7 +109,7 @@ class DBTokenManager:
                 result.nextset()
             return result
 
-        self.get_connection(connection_name).execute_wrappers.append(set_token_wrapper)
+        get_connection(connection_name).execute_wrappers.append(set_token_wrapper)
 
         def connection_callback(sender, connection, **kwargs):
             if (
@@ -126,7 +135,7 @@ class DBTokenManager:
                 if connection_name in self.tokens:
                     # here we don't use the connection from the closure
                     # because Atomic is a single class to manage transactions for all connections
-                    connection = self.get_connection(connection_name)
+                    connection = get_connection(connection_name)
                     if len(connection.atomic_blocks) == 1:
                         token = self.tokens[connection_name]
                         # use raw psycopg2 connection here
@@ -144,7 +153,7 @@ class DBTokenManager:
 
         from django.db.backends.signals import connection_created
 
-        connection = self.get_connection(connection_name)
+        connection = get_connection(connection_name)
 
         connection.execute_wrappers = [
             w
@@ -292,6 +301,9 @@ def setup_django(
         if disable_context:
             django.db.connections._connections = threading.local()
             logger.debug("django.db.connections._connections has been patched")
+
+        # error if trying to query with the default connection without setting up an instance
+        get_connection("default").execute_wrappers.insert(0, error_no_instance_wrapper)
 
         if isettings._fine_grained_access and isettings._db_permissions == "jwt":
             db_token = DBToken(isettings)
