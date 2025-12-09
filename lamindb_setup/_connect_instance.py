@@ -403,7 +403,6 @@ def connect(instance: str | None = None, **kwargs: Any) -> str | tuple | None:
 
         load_from_isettings(isettings, user=_user, write_settings=_write_settings)
         if _reload_lamindb:
-            importlib.reload(importlib.import_module("lamindb"))
             reset_django_module_variables()
         if isettings.slug != "none/none":
             logger.important(f"connected lamindb: {isettings.slug}")
