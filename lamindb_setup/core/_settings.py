@@ -46,6 +46,12 @@ def _process_cache_path(cache_path: UPathStr | None) -> UPath | None:
     return cache_dir
 
 
+# returned by settings.branch for none/none instance
+class MainBranchMock:
+    id = 1
+    name = "main"
+
+
 class SetupSettings:
     """Setup settings."""
 
@@ -140,6 +146,10 @@ class SetupSettings:
     # and we never need a DB request
     def branch(self) -> Branch:
         """Default branch."""
+        # this is needed for .filter() with non-default connections
+        if not self._instance_exists:
+            return MainBranchMock()
+
         if self._branch is None:
             from lamindb import Branch
 
