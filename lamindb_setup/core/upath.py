@@ -1005,13 +1005,22 @@ def check_storage_is_empty(
         objects = [o for o in objects if "/.lamindb/_exclusion/" not in o]
     n_files = len(objects)
     n_diff = n_files - n_offset_objects
-    ask_for_deletion = (
-        "delete them prior to deleting the storage location"
-        if raise_error
-        else "consider deleting them"
-    )
-    message = f"'{directory_string}' contains {n_diff} objects - {ask_for_deletion}"
     if n_diff > 0:
+        ask_for_deletion = (
+            "delete them prior to deleting the storage location"
+            if raise_error
+            else "consider deleting them"
+        )
+        message = f"'{directory_string}' contains {n_diff} objects:\n"
+        message += "\n".join(
+            [
+                o
+                for o in objects
+                if not o.endswith(".lamindb/storage_uid.txt")
+                and not (account_for_sqlite_file and o.endswith(".lamindb/lamin.db"))
+            ]
+        )
+        message += f"\n{ask_for_deletion}"
         if raise_error:
             raise StorageNotEmpty(message) from None
         else:
