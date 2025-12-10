@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import os
+from importlib.metadata import distributions
 from pathlib import Path
 from typing import TYPE_CHECKING
 from uuid import UUID, uuid4
@@ -46,19 +47,42 @@ def load_cache_path_from_settings(storage_settings: Path | None = None) -> Path 
         return None
 
 
+def find_module_candidates():
+    """Find all local packages that depend on lamindb."""
+    all_dists = list(distributions())
+    lamindb_deps = {
+        dist.metadata["Name"].lower()
+        for dist in all_dists
+        if dist.requires and any("lamindb" in req.lower() for req in dist.requires)
+    }
+    lamindb_deps.remove("lamindb")
+    return lamindb_deps
+
+
 def load_instance_settings(instance_settings_file: Path | None = None):
     if instance_settings_file is None:
-        instance_settings_file = current_instance_settings_file()
-    if not instance_settings_file.exists():
+        isettings_file = current_instance_settings_file()
+        if not isettings_file.exists():
+            isettings = InstanceSettings(
+                id=UUID("00000000-0000-0000-0000-000000000000"),
+                owner="none",
+                name="none",
+                storage=None,
+                modules=",".join(find_module_candidates()),
+            )
+            return isettings
+    else:
+        isettings_file = instance_settings_file
+
+    if not isettings_file.exists():
+        # this errors only if the file was explicitly provided
         raise CurrentInstanceNotConfigured
     try:
-        settings_store = InstanceSettingsStore(_env_file=instance_settings_file)
+        settings_store = InstanceSettingsStore(_env_file=isettings_file)
     except (ValidationError, TypeError) as error:
-        with open(instance_settings_file) as f:
-            content = f.read()
         raise SettingsEnvFileOutdated(
-            f"\n\n{error}\n\nYour instance settings file with\n\n{content}\nis invalid"
-            f" (likely outdated), see validation error. Please delete {instance_settings_file} &"
+            f"\n\n{error}\n\nYour instance settings file with\n\n{isettings_file.read_text()}\nis invalid"
+            f" (likely outdated), see validation error. Please delete {isettings_file} &"
             " reload (remote) or re-initialize (local) the instance with the same name & storage location."
         ) from error
     isettings = setup_instance_from_store(settings_store)

@@ -340,7 +340,6 @@ def init(
             from ._schema_metadata import update_schema_in_hub
 
             update_schema_in_hub(access_token=access_token)
-        importlib.reload(importlib.import_module("lamindb"))
         reset_django_module_variables()
         logger.important(f"initialized lamindb: {isettings.slug}")
     except Exception as e:

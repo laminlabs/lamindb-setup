@@ -421,11 +421,7 @@ def _init_instance_hub(
             raise e
         logger.warning(f"instance already existed at: https://lamin.ai/{slug}")
         return None
-    # isettings._storage is not None check is needed because
-    # there will be an error in isettings.is_remote if isettings._storage is None
-    if isettings.dialect != "sqlite" and (
-        isettings._storage is not None and isettings.is_remote
-    ):
+    if isettings.dialect != "sqlite" and isettings.is_remote:
         logger.important(f"go to: https://lamin.ai/{slug}")
 
 
