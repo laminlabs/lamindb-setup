@@ -252,7 +252,6 @@ def init(
     """
     from ._check_setup import _check_instance_setup
     from ._connect_instance import (
-        reset_django_module_variables,
         validate_connection_state,
     )
     from .core._hub_core import init_instance_hub
@@ -341,7 +340,6 @@ def init(
 
             update_schema_in_hub(access_token=access_token)
         importlib.reload(importlib.import_module("lamindb"))
-        reset_django_module_variables()
         logger.important(f"initialized lamindb: {isettings.slug}")
     except Exception as e:
         from ._delete import delete_by_isettings

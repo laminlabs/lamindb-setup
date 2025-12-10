@@ -1,13 +1,4 @@
-"""Utilities to copy, clone and load Postgres instances as local SQLite databases.
-
-.. autosummary::
-   :toctree:
-
-   init_local_sqlite
-   connect_local_sqlite
-   connect_remote_sqlite
-   upload_sqlite_clone
-"""
+# This entire module is experimental and not used in production
 
 import gzip
 import os

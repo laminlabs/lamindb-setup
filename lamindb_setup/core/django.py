@@ -3,8 +3,6 @@ from __future__ import annotations
 # flake8: noqa
 import builtins
 import os
-import sys
-import importlib as il
 import gzip
 import jwt
 import time
@@ -13,7 +11,7 @@ from pathlib import Path
 import shutil
 from packaging import version
 from ._settings_instance import InstanceSettings, is_local_db_url
-
+from django.db.models import deletion
 from lamin_utils import logger
 
 
@@ -174,6 +172,54 @@ def close_if_health_check_failed(self) -> None:
         self.close_at = time.monotonic() + CONN_MAX_AGE
 
 
+def get_django_default_db(isettings: InstanceSettings):
+    import dj_database_url
+
+    instance_db = isettings.db
+    if isettings.dialect == "postgresql":
+        if os.getenv("LAMIN_DB_SSL_REQUIRE") == "false":
+            ssl_require = False
+        else:
+            ssl_require = not is_local_db_url(instance_db)
+        options = {
+            "connect_timeout": os.getenv("PGCONNECT_TIMEOUT", 20),
+            "gssencmode": "disable",
+        }
+    else:
+        ssl_require = False
+        options = {}
+    default_db = dj_database_url.config(
+        env="LAMINDB_DJANGO_DATABASE_URL",
+        default=instance_db,
+        # see comment next to patching BaseDatabaseWrapper below
+        conn_max_age=CONN_MAX_AGE,
+        conn_health_checks=True,
+        ssl_require=ssl_require,
+    )
+    if options:
+        # do not overwrite keys in options if set
+        default_db["OPTIONS"] = {**options, **default_db.get("OPTIONS", {})}
+    return default_db
+
+
+def get_installed_apps(isettings: InstanceSettings, init: bool = False) -> list[str]:
+    from .._init_instance import get_schema_module_name
+
+    module_names = ["core"] + list(isettings.modules)
+    raise_import_error = True if init else False
+    installed_apps = [
+        package_name
+        for name in module_names
+        if (
+            package_name := get_schema_module_name(
+                name, raise_import_error=raise_import_error
+            )
+        )
+        is not None
+    ]
+    return installed_apps
+
+
 # this bundles set up and migration management
 def setup_django(
     isettings: InstanceSettings,
@@ -188,7 +234,6 @@ def setup_django(
         os.environ["DJANGO_ALLOW_ASYNC_UNSAFE"] = "true"
         logger.debug("DJANGO_ALLOW_ASYNC_UNSAFE env variable has been set to 'true'")
 
-    import dj_database_url
     import django
     from django.apps import apps
     from django.conf import settings
@@ -196,47 +241,11 @@ def setup_django(
 
     # configuration
     if not settings.configured:
-        instance_db = isettings.db
-        if isettings.dialect == "postgresql":
-            if os.getenv("LAMIN_DB_SSL_REQUIRE") == "false":
-                ssl_require = False
-            else:
-                ssl_require = not is_local_db_url(instance_db)
-            options = {
-                "connect_timeout": os.getenv("PGCONNECT_TIMEOUT", 20),
-                "gssencmode": "disable",
-            }
-        else:
-            ssl_require = False
-            options = {}
-        default_db = dj_database_url.config(
-            env="LAMINDB_DJANGO_DATABASE_URL",
-            default=instance_db,
-            # see comment next to patching BaseDatabaseWrapper below
-            conn_max_age=CONN_MAX_AGE,
-            conn_health_checks=True,
-            ssl_require=ssl_require,
-        )
-        if options:
-            # do not overwrite keys in options if set
-            default_db["OPTIONS"] = {**options, **default_db.get("OPTIONS", {})}
+        default_db = get_django_default_db(isettings)
         DATABASES = {
             "default": default_db,
         }
-        from .._init_instance import get_schema_module_name
-
-        module_names = ["core"] + list(isettings.modules)
-        raise_import_error = True if init else False
-        installed_apps = [
-            package_name
-            for name in module_names
-            if (
-                package_name := get_schema_module_name(
-                    name, raise_import_error=raise_import_error
-                )
-            )
-            is not None
-        ]
+        installed_apps = get_installed_apps(isettings, init=init)
         if view_schema:
             installed_apps = installed_apps[::-1]  # to fix how apps appear
             installed_apps += ["schema_graph", "django.contrib.staticfiles"]
@@ -296,6 +305,8 @@ def setup_django(
         if isettings._fine_grained_access and isettings._db_permissions == "jwt":
             db_token = DBToken(isettings)
             db_token_manager.set(db_token)  # sets for the default connection
+    elif init:
+        reconnect_django(isettings, init=init)
 
     if configure_only:
         return None
@@ -339,13 +350,73 @@ def setup_django(
         isettings._local_storage = isettings._search_local_root()
 
 
-# these needs to be followed by
-# setup_django()
-# reset_django_module_variables()
+_original_get_candidate_relations = deletion.get_candidate_relations_to_delete
+_active_apps = None
+
+
+def set_active_apps(apps_set):
+    """Set which apps have tables in the current database"""
+    global _active_apps
+    _active_apps = set(apps_set) if apps_set else None
+
+
+def filtered_get_candidate_relations_to_delete(opts):
+    """
+    Filter out relations to models whose apps are not active.
+    """
+    relations = _original_get_candidate_relations(opts)
+
+    if _active_apps is None:
+        # No filtering
+        return relations
+
+    # Filter out relations to inactive apps
+    for relation in relations:
+        related_model_app = relation.related_model._meta.app_label
+        if related_model_app in _active_apps:
+            yield relation
+
+
+# Apply the monkey patch
+deletion.get_candidate_relations_to_delete = filtered_get_candidate_relations_to_delete
+
+
+def reconnect_django(isettings: InstanceSettings, init: bool = False):
+    """Reconfigure Django to use a new database connection."""
+    from django.db import connections
+    from django.conf import settings
+
+    # Reset the JWT token manager for the old connection
+    db_token_manager.reset("default")
+
+    # Update database settings BEFORE closing
+    default_db = get_django_default_db(isettings)
+    settings.DATABASES["default"].update(default_db)
+
+    # Now close and clear the connection
+    # This ensures the next access creates a new connection with updated settings
+    connections.close_all()
+
+    # Force Django to forget about the cached connection wrapper
+    if hasattr(connections._connections, "default"):
+        delattr(connections._connections, "default")
+
+    set_active_apps(get_installed_apps(isettings, init=init))
+
+    # Re-register JWT token if needed for the new connection
+    if isettings._fine_grained_access and isettings._db_permissions == "jwt":
+        db_token = DBToken(isettings)
+        db_token_manager.set(db_token)
+
+
+# calling this should be avoided because global variables can get stale
+# we'll likely remove it from the code base
 def reset_django():
     from django.conf import settings
     from django.apps import apps
     from django.db import connections
+    import importlib as il
+    import sys
 
     if not settings.configured:
         return
