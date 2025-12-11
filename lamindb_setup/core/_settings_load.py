@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import os
-from importlib.metadata import distributions
+from importlib.util import find_spec
 from pathlib import Path
 from typing import TYPE_CHECKING
 from uuid import UUID, uuid4
@@ -49,14 +49,8 @@ def load_cache_path_from_settings(storage_settings: Path | None = None) -> Path 
 
 def find_module_candidates():
     """Find all local packages that depend on lamindb."""
-    all_dists = list(distributions())
-    lamindb_deps = {
-        dist.metadata["Name"].lower()
-        for dist in all_dists
-        if dist.requires and any("lamindb" in req.lower() for req in dist.requires)
-    }
-    lamindb_deps.remove("lamindb")
-    return lamindb_deps
+    candidates = ["bionty", "wetlab"]
+    return [c for c in candidates if find_spec(c) is not None]
 
 
 def load_instance_settings(instance_settings_file: Path | None = None):
