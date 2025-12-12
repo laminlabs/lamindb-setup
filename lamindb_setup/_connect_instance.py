@@ -286,7 +286,7 @@ def validate_connection_state(
 def connect(instance: str | None = None, **kwargs: Any) -> str | tuple | None:
     """Connect the global default instance.
 
-    If you want to create a read-only database client, use :class:`~lamindb.QueryDB` instead.
+    If you want to create a read-only database client, use :class:`~lamindb.DB` instead.
 
     Args:
         instance: Pass a slug (`account/name`) or URL (`https://lamin.ai/account/name`).
