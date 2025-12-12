@@ -74,7 +74,7 @@ def test_exportdb_multiple_modules(simple_instance: Callable, cleanup_export_dir
     artifact = ln.Artifact.from_dataframe(
         pd.DataFrame({"col": [1, 2, 3]}), key="test_artifact.parquet"
     ).save()
-    gene = bt.Gene.from_source(symbol="TCF7").save()
+    gene = bt.Gene.from_source(symbol="TCF7", organism="human").save()
     artifact.genes.add(gene)
     feature = ln.Feature(name="temperature", dtype=int).save()
     artifact.features.add_values({"temperature": 10})
@@ -143,7 +143,7 @@ def test_exportdb_handles_mixed_null_and_string_values(
     import bionty as bt
     import lamindb_setup as ln_setup
 
-    organism = bt.Organism.filter(name="human").one()
+    organism = bt.Organism.get(name="human")
 
     # Create one gene with ncbi_gene_ids populated
     gene1 = bt.Gene(
