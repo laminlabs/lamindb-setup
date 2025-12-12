@@ -128,6 +128,4 @@ def _check_instance_setup(from_module: str | None = None) -> bool:
                 logger.important(f"connected lamindb: {isettings.slug}")
                 # update of local storage location through search_local_root()
                 settings._instance_settings = isettings
-            else:
-                logger.warning("not connected, call: ln.connect('account/name')")
     return django_lamin.IS_SETUP
