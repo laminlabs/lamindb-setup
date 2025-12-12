@@ -284,7 +284,9 @@ def validate_connection_state(
 
 @unlock_cloud_sqlite_upon_exception(ignore_prev_locker=True)
 def connect(instance: str | None = None, **kwargs: Any) -> str | tuple | None:
-    """Connect to an instance.
+    """Connect the global default instance.
+
+    If you want to create a read-only database client, use :class:`~lamindb.QueryDB` instead.
 
     Args:
         instance: Pass a slug (`account/name`) or URL (`https://lamin.ai/account/name`).
