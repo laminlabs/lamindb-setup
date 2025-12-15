@@ -7,6 +7,7 @@
 .. autoexception:: InstanceLockedException
 .. autoexception:: SettingsEnvFileOutdated
 .. autoexception:: CannotSwitchDefaultInstance
+.. autoexception:: InstanceNotFoundError
 
 """
 
@@ -49,6 +50,10 @@ class StorageAlreadyManaged(Exception):
 class StorageNotEmpty(click.ClickException):
     def show(self, file=None):
         pass
+
+
+class InstanceNotFoundError(Exception):
+    pass
 
 
 # raise if a cloud SQLite instance is already locked
