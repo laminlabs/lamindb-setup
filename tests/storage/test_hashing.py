@@ -39,6 +39,7 @@ def test_compute_hash():
         assert computed_hash == hash
         assert computed_hash_type == hash_type
         assert computed_size == file_size
+        assert computed_size == filepath.stat().st_size
         filepath.unlink()
 
 
