@@ -17,25 +17,28 @@ from lamindb_setup.core.hashing import (
 
 def test_compute_hash():
     files = [
-        # file_content, hash, chunk_size, hash_type
-        ("a", "DMF1ucDxtqgxw5niaXcmYQ", None, "md5"),
-        ("b", "kutf_uauL-w61xx3dTFXjw", None, "md5"),
-        ("abc", "kAFQmDzST7DWlj99KOF_cg", None, "md5"),
-        ("a", "DMF1ucDxtqgxw5niaXcmYQ", 1, "md5"),
-        ("b", "kutf_uauL-w61xx3dTFXjw", 1, "md5"),
+        # file_content, hash, chunk_size, hash_type, file_size
+        ("a", "DMF1ucDxtqgxw5niaXcmYQ", None, "md5", 1),
+        ("b", "kutf_uauL-w61xx3dTFXjw", None, "md5", 1),
+        ("abc", "kAFQmDzST7DWlj99KOF_cg", None, "md5", 3),
+        ("a", "DMF1ucDxtqgxw5niaXcmYQ", 1, "md5", 1),
+        ("b", "kutf_uauL-w61xx3dTFXjw", 1, "md5", 1),
         # the last case here triggers multi-chunk compute with sha1
-        ("abc", "p0EbDbQEP1wS-Tw6TuBjKS", 1, "sha1-fl"),
+        ("abc", "p0EbDbQEP1wS-Tw6TuBjKS", 1, "sha1-fl", 3),
     ]
-    for content, hash, chunk_size, hash_type in files:
+    for content, hash, chunk_size, hash_type, file_size in files:
         assert len(hash) == HASH_LENGTH
         filepath = Path("file_1")
         filepath.write_text(content)
         if hash_type == "md5":
             computed_hash_from_string = hash_string(content)
             assert computed_hash_from_string == hash
-        computed_hash, computed_hash_type = hash_file(filepath, chunk_size=chunk_size)
+        computed_size, computed_hash, computed_hash_type = hash_file(
+            filepath, chunk_size=chunk_size
+        )
         assert computed_hash == hash
         assert computed_hash_type == hash_type
+        assert computed_size == file_size
         filepath.unlink()
 
 
