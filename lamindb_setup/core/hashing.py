@@ -114,8 +114,8 @@ def hash_dir(path: Path) -> tuple[int, str, str, int]:
     files = (subpath for subpath in path.rglob("*") if subpath.is_file())
 
     def hash_size(file):
-        file_size = file.stat().st_size
-        return hash_file(file, file_size)[0], file_size
+        size, hash, _ = hash_file(file)
+        return hash, size
 
     try:
         n_workers = len(psutil.Process().cpu_affinity())
