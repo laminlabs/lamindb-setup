@@ -569,10 +569,10 @@ class InstanceSettings:
 
     @property
     def is_on_hub(self) -> bool:
-        """Is this instance on the hub?
+        """Is this instance registered on the hub?
 
-        Can only reliably establish if user has access to the instance.
-        Will return `False` in case the instance isn't found.
+        Can only establish if user has access to the instance.
+        Will return `False` in case the user token can't find the instance.
         """
         if self._is_on_hub is None:
             from ._hub_client import call_with_fallback_auth
@@ -593,6 +593,15 @@ class InstanceSettings:
             else:
                 self._is_on_hub = True
         return self._is_on_hub
+
+    @property
+    def is_managed_by_hub(self) -> bool:
+        """Is this instance managed by the hub?
+
+        Returns `True` if the instance is _managed_ by LaminHub, i.e.,
+        it was connected to LaminHub to manage access, migrations, a REST API, a UI, etc.
+        """
+        return self.api_url is not None
 
     def _get_settings_file(self) -> Path:
         return instance_settings_file(self.name, self.owner)
