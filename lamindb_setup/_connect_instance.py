@@ -22,7 +22,7 @@ from .core._settings_storage import StorageSettings
 from .core._settings_store import instance_settings_file
 from .core.cloud_sqlite_locker import unlock_cloud_sqlite_upon_exception
 from .core.django import reset_django
-from .errors import CannotSwitchDefaultInstance
+from .errors import CannotSwitchDefaultInstance, InstanceNotFoundError
 
 if TYPE_CHECKING:
     from pathlib import Path
@@ -33,17 +33,11 @@ if TYPE_CHECKING:
 # this is for testing purposes only
 # set to True only to test failed load
 _TEST_FAILED_LOAD = False
-
-
 INSTANCE_NOT_FOUND_MESSAGE = (
     "'{owner}/{name}' not found:"
     " '{hub_result}'\nCheck your permissions:"
     " https://lamin.ai/{owner}/{name}"
 )
-
-
-class InstanceNotFoundError(SystemExit):
-    pass
 
 
 def check_db_dsn_equal_up_to_credentials(db_dsn_hub, db_dsn_local):
@@ -102,6 +96,7 @@ def _connect_instance(
     use_root_db_user: bool = False,
     use_proxy_db: bool = False,
     access_token: str | None = None,
+    raise_systemexit: bool = False,
 ) -> InstanceSettings:
     settings_file = instance_settings_file(name, owner)
     make_hub_request = True
@@ -170,12 +165,17 @@ def _connect_instance(
                 )
             else:
                 message = "It is not possible to load an anonymous-owned instance from the hub"
+            exception = (
+                SystemExit(message)
+                if raise_systemexit
+                else InstanceNotFoundError(message)
+            )
             if settings_file.exists():
                 isettings = load_instance_settings(settings_file)
                 if isettings.is_remote:
-                    raise InstanceNotFoundError(message)
+                    raise exception
             else:
-                raise InstanceNotFoundError(message)
+                raise exception
     return isettings
 
 
@@ -239,7 +239,11 @@ def _connect_cli(
 
     owner, name = get_owner_name_from_identifier(instance)
     isettings = _connect_instance(
-        owner, name, use_root_db_user=use_root_db_user, use_proxy_db=use_proxy_db
+        owner,
+        name,
+        use_root_db_user=use_root_db_user,
+        use_proxy_db=use_proxy_db,
+        raise_systemexit=True,
     )
     isettings._persist(write_to_disk=True)
     if not isettings.is_on_hub or isettings._is_cloud_sqlite:
