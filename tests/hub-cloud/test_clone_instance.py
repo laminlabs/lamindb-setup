@@ -59,6 +59,7 @@ def test_init_copy_successful(local_postgres_instance):
     assert str(ln_setup.settings.storage.root) == original_storage
     assert ln_setup.settings.instance.dialect == "sqlite"
     assert ln_setup.settings.instance.is_on_hub is False
+    assert ln_setup.settings.instance.is_managed_by_hub is False
 
 
 def test_connect_local_sqlite(local_postgres_instance):

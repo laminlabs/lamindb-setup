@@ -16,6 +16,9 @@ if TYPE_CHECKING:
 def set_managed_storage(root: UPathStr, host: str | None = None, **fs_kwargs):
     """Add or switch to another managed storage location.
 
+    Note: This function should be called `set_writeable_storage_location` instead. But likely it will disappear
+    in refactoring that consolidates with the `ln.Storage()` path.
+
     Args:
         root: `UPathStr` - The new storage root, e.g., an S3 bucket.
         host: `str | None = None` For a shared local storage location, pass a globally unique host identifier, e.g. `"my-institute-cluster-1"`, `"my-server-abcd"`, ...
