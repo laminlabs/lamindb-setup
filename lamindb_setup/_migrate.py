@@ -100,6 +100,10 @@ class migrate:
 
     @classmethod
     def deploy(cls, package_name: str | None = None, number: int | None = None) -> None:
+        assert settings._instance_exists, (
+            "Not connected to an instance, please connect to migrate."
+        )
+
         # NOTE: this is a temporary solution to avoid breaking tests
         LAMIN_MIGRATE_ON_LAMBDA = (
             os.getenv("LAMIN_MIGRATE_ON_LAMBDA", "false") == "true"
