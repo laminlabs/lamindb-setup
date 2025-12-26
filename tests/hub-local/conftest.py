@@ -79,7 +79,9 @@ def sign_up_user(email: str, handle: str, save_as_settings: bool = False):
 @pytest.fixture(scope="session")
 def create_testadmin1_session():  # -> Tuple[Client, UserSettings]
     email = "testadmin1@gmail.com"
-    sign_up_user(email, "testadmin1", save_as_settings=True)
+    usettings = sign_up_user(email, "testadmin1", save_as_settings=True)
+    assert usettings.handle == "testadmin1"
+
     with pytest.raises(AuthApiError):
         # test error with "User already registered"
         sign_up_user(email, "testadmin1")
