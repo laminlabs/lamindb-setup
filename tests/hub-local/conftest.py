@@ -47,6 +47,7 @@ def pytest_configure():
     supabase_resources.reset_local()
     supabase_resources.migrate()
     seed_local_test()
+    del os.environ["LAMIN_API_KEY"]
 
 
 def pytest_unconfigure():
