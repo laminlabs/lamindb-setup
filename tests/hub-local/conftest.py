@@ -48,7 +48,6 @@ def pytest_configure():
     supabase_resources.migrate()
     seed_local_test()
     # reset user
-    del os.environ["LAMIN_API_KEY"]
     ln_setup.settings._user_settings = None
 
 
