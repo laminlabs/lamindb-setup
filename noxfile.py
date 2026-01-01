@@ -65,8 +65,6 @@ uv pip install --system git+https://github.com/laminlabs/bionty
     run(session, "uv pip install --system pandera")  # needed to import lamindb
     [run(session, line) for line in cmds.splitlines()]
 
-    run(session, "uv pip install --system gcsfs s3fs")
-
 
 @nox.session
 @nox.parametrize(
