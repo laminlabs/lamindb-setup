@@ -35,7 +35,7 @@ uv pip install --system git+https://github.com/laminlabs/bionty
         cmds = (
             modules_deps
             + "uv pip install --system sentry_sdk line_profiler wheel==0.45.1 flit"
-            + "\nuv pip install --system ./laminhub/rest-hub --no-build-isolation"
+            + "\nuv pip install --system ./laminhub/backend --no-build-isolation"
         )
     elif group == "docs":
         cmds = modules_deps.strip()
@@ -56,7 +56,7 @@ uv pip install --system git+https://github.com/laminlabs/bionty
     # above downgrades django, I don't understand why, try this
     if group == "hub-local":
         cmds += "\nuv pip install --system sentry_sdk line_profiler wheel==0.45.1 flit"
-        cmds += "\nuv pip install --system -e ./laminhub/rest-hub --no-build-isolation"
+        cmds += "\nuv pip install --system -e ./laminhub/backend --no-build-isolation"
         # check that just installing psycopg (psycopg3) doesn't break fine-grained access
         cmds += "\nuv pip install --system psycopg[binary]"
         # force new supabase
