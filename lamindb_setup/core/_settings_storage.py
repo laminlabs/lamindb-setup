@@ -256,11 +256,6 @@ class StorageSettings:
         self._local = None
 
     @property
-    @deprecated("_id")
-    def id(self) -> int:
-        return self._id
-
-    @property
     def _id(self) -> int:
         """Storage id.
 
