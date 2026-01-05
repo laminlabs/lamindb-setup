@@ -43,8 +43,8 @@ def pytest_configure():
     # Disable redis, it is not deployed here
     os.environ["EXTERNAL_CACHE_DISABLED"] = "true"
     _remove_lamin_local_settings()
-    supabase_resources.start_local()
-    supabase_resources.reset_local()
+    supabase_resources.start()
+    supabase_resources.reset()
     supabase_resources.migrate()
     seed_local_test()
     # reset user
