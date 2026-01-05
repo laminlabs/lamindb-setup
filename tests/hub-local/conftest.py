@@ -54,7 +54,7 @@ def pytest_configure():
 
 def pytest_unconfigure():
     if supabase_resources.edge_function_process:
-        supabase_resources.stop_local_edge_functions()
+        supabase_resources.stop_edge_functions()
 
 
 def sign_up_user(email: str, handle: str, save_as_settings: bool = False):
