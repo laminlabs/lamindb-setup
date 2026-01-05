@@ -107,7 +107,6 @@ jobs:
       - run: nox -s lint
       - run: nox -s storage
         env:
-          TEST_INSTANCE_PRIVATE_POSTGRES: ${{ secrets.TEST_INSTANCE_PRIVATE_POSTGRES }}
           TMP_AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
           TMP_AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
       - uses: actions/upload-artifact@v4
@@ -138,7 +137,7 @@ jobs:
           touch .env.local
           echo "AWS_ACCESS_KEY_ID_HOSTED_S3=${{ secrets.AWS_ACCESS_KEY_ID }}" >> .env.local
           echo "AWS_SECRET_ACCESS_KEY_HOSTED_S3=${{ secrets.AWS_SECRET_ACCESS_KEY }}" >> .env.local
-        working-directory: laminhub/rest-hub/supabase
+        working-directory: laminhub/backend/supabase
       - uses: actions/setup-python@v6
         with:
           python-version: "3.11" # we need to run everything for coverage on 3.11

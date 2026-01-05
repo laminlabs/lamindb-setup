@@ -12,7 +12,7 @@ from lamindb_setup.core.hashing import hash_and_encode_as_b62
 def test_edge_request():
     if os.environ["LAMIN_ENV"] == "prod":
         # login to have access_token in ln_setup.settings.user
-        ln_setup.login("testuser1@lamin.ai")
+        ln_setup.login("testuser1")
         # this is hub prod url
         # normally it is configured through
         # lamindb_setup.core._hub_client.Environment

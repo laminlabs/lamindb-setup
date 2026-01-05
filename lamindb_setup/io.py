@@ -14,13 +14,16 @@ from django.db import models, transaction
 from rich.progress import Progress
 
 if TYPE_CHECKING:
-    from collections.abc import Iterable, Sequence
+    from collections.abc import Iterable
     from typing import Literal
 
 
 def _get_registries(module_name: str) -> list[str]:
     """Get registry class names from a module."""
     schema_module = import_module(module_name)
+
+    # Ensure that models are loaded; we've observed empty exports otherwise
+    from django.db import models
 
     return [
         name
@@ -142,9 +145,9 @@ def _export_full_table(
 
 
 def export_db(
-    module_names: Sequence[str] | None = None,
+    module_names: Iterable[str] | None = None,
     *,
-    output_dir: str | Path = "./lamindb_export/",
+    output_dir: str | Path | None = None,
     max_workers: int = 8,
     chunk_size: int = 500_000,
 ) -> None:
@@ -159,6 +162,11 @@ def export_db(
         max_workers: Number of parallel processes.
         chunk_size: Number of rows per chunk for large tables.
     """
+    import lamindb_setup as ln_setup
+
+    if output_dir is None:
+        output_dir = f"./{ln_setup.settings.instance.name}_export/"
+
     directory = Path(output_dir)
     directory.mkdir(parents=True, exist_ok=True)
 

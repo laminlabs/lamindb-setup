@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+import os
+
 import httpx
 import requests  # type: ignore
 from django.db import connection
@@ -99,16 +101,19 @@ class migrate:
 
     @classmethod
     def deploy(cls, package_name: str | None = None, number: int | None = None) -> None:
-        import os
+        assert settings._instance_exists, (
+            "Not connected to an instance, please connect to migrate."
+        )
 
         # NOTE: this is a temporary solution to avoid breaking tests
         LAMIN_MIGRATE_ON_LAMBDA = (
-            os.environ.get("LAMIN_MIGRATE_ON_LAMBDA", "false") == "true"
+            os.getenv("LAMIN_MIGRATE_ON_LAMBDA", "false") == "true"
         )
+        isettings = settings.instance
 
-        if settings.instance.is_on_hub and LAMIN_MIGRATE_ON_LAMBDA:
+        if isettings.is_on_hub and LAMIN_MIGRATE_ON_LAMBDA:
             response = httpx.post(
-                f"{settings.instance.api_url}/instances/{settings.instance._id}/migrate",
+                f"{isettings.api_url}/instances/{isettings._id}/migrate",
                 headers={"Authorization": f"Bearer {settings.user.access_token}"},
                 timeout=None,  # this can take time
             )
@@ -129,28 +134,34 @@ class migrate:
             update_instance,
         )
 
-        if settings.instance.is_on_hub:
+        isettings = settings.instance
+        is_managed_by_hub = isettings.is_managed_by_hub
+        is_on_hub = is_managed_by_hub or isettings.is_on_hub
+
+        if is_managed_by_hub and "root" not in isettings.db:
             # ensure we connect with the root user
-            if "root" not in settings.instance.db:
-                connect(use_root_db_user=True)
-                assert "root" in (instance_db := settings.instance.db), instance_db
+            connect(use_root_db_user=True)
+            assert "root" in (instance_db := settings.instance.db), instance_db
+        if is_on_hub:
             # we need lamindb to be installed, otherwise we can't populate the version
             # information in the hub
+            # this also connects
             import lamindb
-
+        # this is needed to avoid connecting on importing apps inside setup_django process
+        setup_django_disable_autoconnect = disable_auto_connect(setup_django)
         # this sets up django and deploys the migrations
         if package_name is not None and number is not None:
-            setup_django(
-                settings.instance,
+            setup_django_disable_autoconnect(
+                isettings,
                 deploy_migrations=True,
                 appname_number=(package_name, number),
             )
         else:
-            setup_django(settings.instance, deploy_migrations=True)
-        # handle the hub
-        if settings.instance.is_on_hub:
+            setup_django_disable_autoconnect(isettings, deploy_migrations=True)
+        # this populates the hub
+        if is_on_hub:
             logger.important(f"updating lamindb version in hub: {lamindb.__version__}")
-            if settings.instance.dialect != "sqlite":
+            if isettings.dialect != "sqlite":
                 update_schema_in_hub()
             response = requests.delete(
                 f"{settings.instance.api_url}/cache/instances/{settings.instance._id}",
@@ -162,7 +173,7 @@ class migrate:
                 )
             call_with_fallback_auth(
                 update_instance,
-                instance_id=settings.instance._id.hex,
+                instance_id=isettings._id.hex,
                 instance_fields={"lamindb_version": lamindb.__version__},
             )
 

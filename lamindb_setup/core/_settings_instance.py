@@ -125,10 +125,11 @@ class InstanceSettings:
                 if self._local_storage is not None:
                     value_local = self.local_storage
                     representation += f"\n - local storage: {value_local.root_as_str} ({value_local.region})"
-                    representation += (
-                        f"\n - cloud storage: {value.root_as_str} ({value.region})"
-                    )
-                else:
+                    if value is not None:
+                        representation += (
+                            f"\n - cloud storage: {value.root_as_str} ({value.region})"
+                        )
+                elif value is not None:
                     representation += (
                         f"\n - storage: {value.root_as_str} ({value.region})"
                     )
@@ -323,16 +324,6 @@ class InstanceSettings:
             logger.warning(f"could not set this local storage location: {local_root}")
 
     @property
-    @deprecated("local_storage")
-    def storage_local(self) -> StorageSettings:
-        return self.local_storage
-
-    @storage_local.setter
-    @deprecated("local_storage")
-    def storage_local(self, local_root_host: tuple[Path | str, str]):
-        self.local_storage = local_root_host  # type: ignore
-
-    @property
     def slug(self) -> str:
         """Unique semantic identifier of form `"{account_handle}/{instance_name}"`."""
         return f"{self.owner}/{self.name}"
@@ -416,11 +407,6 @@ class InstanceSettings:
             return set()
         else:
             return {module for module in self._schema_str.split(",") if module != ""}
-
-    @property
-    @deprecated("modules")
-    def schema(self) -> set[str]:
-        return self.modules
 
     @property
     def _sqlite_file(self) -> UPath:
@@ -513,7 +499,12 @@ class InstanceSettings:
 
     @property
     def dialect(self) -> Literal["sqlite", "postgresql"]:
-        """SQL dialect."""
+        """SQL dialect.
+
+        Equivalent to :attr:`vendor`.
+
+        "vendor" is the Django terminology for the type of database. "dialect" is the SQLAlchemy terminology.
+        """
         if self._db is None or self._db.startswith("sqlite://"):
             return "sqlite"
         else:
@@ -521,9 +512,23 @@ class InstanceSettings:
             return "postgresql"
 
     @property
+    def vendor(self) -> Literal["sqlite", "postgresql"]:
+        """Database vendor.
+
+        Equivalent to :attr:`dialect`.
+
+        "vendor" is the Django terminology for the type of database. "dialect" is the SQLAlchemy terminology.
+        """
+        return self.dialect
+
+    @property
     def _is_cloud_sqlite(self) -> bool:
         """Is this a cloud instance with sqlite db."""
-        return self.dialect == "sqlite" and self.storage.type_is_cloud
+        return (
+            self.dialect == "sqlite"
+            and self.storage is not None
+            and self.storage.type_is_cloud
+        )
 
     @property
     def _cloud_sqlite_locker(self):
@@ -543,14 +548,16 @@ class InstanceSettings:
     @property
     def is_remote(self) -> bool:
         """Boolean indicating if an instance has no local component."""
+        if self.storage is None and self.db == "sqlite:///:memory:":
+            return False
         return check_is_instance_remote(self.storage.root_as_str, self.db)
 
     @property
     def is_on_hub(self) -> bool:
-        """Is this instance on the hub?
+        """Is this instance registered on the hub?
 
-        Can only reliably establish if user has access to the instance.
-        Will return `False` in case the instance isn't found.
+        Can only establish if user has access to the instance.
+        Will return `False` in case the user token can't find the instance.
         """
         if self._is_on_hub is None:
             from ._hub_client import call_with_fallback_auth
@@ -571,6 +578,15 @@ class InstanceSettings:
             else:
                 self._is_on_hub = True
         return self._is_on_hub
+
+    @property
+    def is_managed_by_hub(self) -> bool:
+        """Is this instance managed by the hub?
+
+        Returns `True` if the instance is _managed_ by LaminHub, i.e.,
+        it was connected to LaminHub to manage access, migrations, a REST API, a UI, etc.
+        """
+        return self.api_url is not None
 
     def _get_settings_file(self) -> Path:
         return instance_settings_file(self.name, self.owner)

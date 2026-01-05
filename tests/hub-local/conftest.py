@@ -22,7 +22,7 @@ from lamindb_setup.core._settings_save import save_user_settings
 from lamindb_setup.core._settings_storage import base62
 from lamindb_setup.core._settings_storage import init_storage as init_storage_base
 from lamindb_setup.core._settings_user import UserSettings
-from laminhub_rest.core._central_client import SupabaseClientWrapper
+from laminhub_rest.core._central_client import CentralClient, SupabaseClientWrapper
 from laminhub_rest.dev import (
     SupabaseResources,
     remove_lamin_local_settings,
@@ -47,6 +47,9 @@ def pytest_configure():
     supabase_resources.reset_local()
     supabase_resources.migrate()
     seed_local_test()
+    # reset user
+    del os.environ["LAMIN_API_KEY"]
+    ln_setup.settings._user_settings = None
 
 
 def pytest_unconfigure():
@@ -79,7 +82,9 @@ def sign_up_user(email: str, handle: str, save_as_settings: bool = False):
 @pytest.fixture(scope="session")
 def create_testadmin1_session():  # -> Tuple[Client, UserSettings]
     email = "testadmin1@gmail.com"
-    sign_up_user(email, "testadmin1", save_as_settings=True)
+    usettings = sign_up_user(email, "testadmin1", save_as_settings=True)
+    assert usettings.handle == "testadmin1"
+
     with pytest.raises(AuthApiError):
         # test error with "User already registered"
         sign_up_user(email, "testadmin1")
@@ -97,6 +102,12 @@ def create_testadmin1_session():  # -> Tuple[Client, UserSettings]
     # uses ln_setup.settings.user.access_token
     client = connect_hub_with_auth()
     client.table("account").insert(account).execute()
+
+    with CentralClient().connect_service_role() as service_client:
+        service_client.table("account_instance_limit").insert(
+            {"account_id": account_id}
+        ).execute()
+
     yield SupabaseClientWrapper(client), ln_setup.settings.user
     client.auth.sign_out()
 

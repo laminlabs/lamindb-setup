@@ -8,13 +8,22 @@ from lamindb_setup._connect_instance import InstanceNotFoundError
 from lamindb_setup.core._hub_client import connect_hub_with_auth
 from lamindb_setup.core._hub_core import connect_instance_hub
 from lamindb_setup.core._hub_crud import select_instance_by_name, update_instance
+from lamindb_setup.core._settings import MainBranchMock
 from laminhub_rest.core.legacy._instance_collaborator import InstanceCollaboratorHandler
 from postgrest.exceptions import APIError
 
 
-def test_connect_pass_none():
-    # this doesn't log anything and connects to the mock instance
-    ln_setup.connect(_test=True)
+def test_connect_pass_none_disconnected():
+    ln_setup.disconnect()
+
+    with pytest.raises(ValueError) as e:
+        ln_setup.connect(_test=True)
+    assert "No instance was connected through the CLI, pass a value to" in str(e)
+    # check that none/none returns a mock branch
+    mock_branch = ln_setup.settings.branch
+    assert isinstance(mock_branch, MainBranchMock)
+    assert mock_branch.id == 1
+    assert mock_branch.name == "main"
 
 
 # do not call hub if the owner is set to anonymous
@@ -29,7 +38,7 @@ def test_connect_anonymous_owned_instance_from_hub():
 def test_connect_after_revoked_access():
     # can't currently test this on staging as I'm missing the accounts
     if os.getenv("LAMIN_ENV") == "prod":
-        ln_setup.login("testuser1@lamin.ai")
+        ln_setup.login("testuser1")
         admin_hub = connect_hub_with_auth()
         collaborator_handler = InstanceCollaboratorHandler(admin_hub)
         try:
@@ -43,7 +52,7 @@ def test_connect_after_revoked_access():
             )
         except APIError:
             pass
-        ln_setup.login("testuser2@lamin.ai")
+        ln_setup.login("testuser2")
         ln_setup.connect(
             "https://lamin.ai/testuser1/static-test-instance-private-sqlite", _test=True
         )
@@ -68,7 +77,7 @@ def test_connect_after_private_public_switch():
     # can't currently test this on staging as I'm missing the accounts
     if os.getenv("LAMIN_ENV") == "prod":
         # this assumes that testuser1 is an admin of static-test-instance-private-sqlite
-        ln_setup.login("testuser1@lamin.ai")
+        ln_setup.login("testuser1")
         ln_setup.connect(
             "https://lamin.ai/testuser1/static-test-instance-private-sqlite", _test=True
         )

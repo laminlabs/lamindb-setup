@@ -88,7 +88,7 @@ def hash_file(
     file_path: Path,
     file_size: int | None = None,
     chunk_size: int | None = 50 * 1024 * 1024,
-) -> tuple[str, str]:
+) -> tuple[int, str, str]:
     with open(file_path, "rb") as fp:
         if file_size is None:
             fp.seek(0, 2)
@@ -107,15 +107,15 @@ def hash_file(
                 hashlib.sha1(first_chunk).digest() + hashlib.sha1(last_chunk).digest()
             ).digest()
             hash_type = "sha1-fl"
-    return to_b64_str(digest)[:HASH_LENGTH], hash_type
+    return file_size, to_b64_str(digest)[:HASH_LENGTH], hash_type
 
 
-def hash_dir(path: Path):
+def hash_dir(path: Path) -> tuple[int, str, str, int]:
     files = (subpath for subpath in path.rglob("*") if subpath.is_file())
 
     def hash_size(file):
-        file_size = file.stat().st_size
-        return hash_file(file, file_size)[0], file_size
+        size, hash, _ = hash_file(file)
+        return hash, size
 
     try:
         n_workers = len(psutil.Process().cpu_affinity())
