@@ -36,6 +36,7 @@ uv pip install --system git+https://github.com/laminlabs/bionty
             modules_deps
             + "uv pip install --system sentry_sdk line_profiler wheel==0.45.1 flit"
             + "\nuv pip install --system ./laminhub/backend --no-build-isolation"
+            + "\nuv pip install --system ./laminhub/backend/central"
         )
     elif group == "docs":
         cmds = modules_deps.strip()
