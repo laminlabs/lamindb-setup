@@ -24,9 +24,6 @@ Storage
 
 from . import django, upath
 from ._clone import (
-    connect_local_sqlite,
-    connect_remote_sqlite,
-    init_local_sqlite,
     upload_sqlite_clone,
 )
 from ._deprecated import deprecated  # documented in lamindb.base
