@@ -231,8 +231,6 @@ def test_import_db_from_parquet(simple_instance: Callable, tmp_path: Path):
             "artifact_id": [888],
             "gene_id": [999],
             "feature_id": [None],
-            "feature_ref_is_name": [None],
-            "label_ref_is_name": [None],
             "created_at": [pd.Timestamp.now()],
             "created_by_id": [ln_setup.settings.user.id],
             "run_id": [None],
