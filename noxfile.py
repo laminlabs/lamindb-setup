@@ -59,9 +59,7 @@ uv pip install --system git+https://github.com/laminlabs/bionty
         cmds += "\nuv pip install --system sentry_sdk line_profiler wheel==0.45.1 flit"
         cmds += "\nuv pip install --system -e ./laminhub/backend --no-build-isolation"
         cmds += "\nuv pip install --system -e ./laminhub/backend/central"
-        cmds += (
-            "\nuv pip install --system -e ./laminhub/backend/laminhub_rest/hubmodule"
-        )
+        cmds += "\nuv pip install --system --no-deps -e ./laminhub/backend/laminhub_rest/hubmodule"
         # check that just installing psycopg (psycopg3) doesn't break fine-grained access
         cmds += "\nuv pip install --system psycopg[binary]"
         # force new supabase
