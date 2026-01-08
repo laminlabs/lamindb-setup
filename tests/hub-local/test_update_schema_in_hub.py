@@ -149,23 +149,23 @@ def test_update_schema_in_hub(setup_instance):
         "related_schema_name": "bionty",
     }
 
-    assert schema["schema_json"]["wetlab"]["well"]["fields"]["artifacts"] == {
+    assert schema["schema_json"]["wetlab"]["compound"]["fields"]["artifacts"] == {
         "type": "ManyToManyField",
         "column_name": None,
         "through": {
-            "left_key": "well_id",
+            "left_key": "compound_id",
             "right_key": "artifact_id",
-            "link_table_name": "wetlab_artifactwell",
+            "link_table_name": "wetlab_artifactcompound",
         },
         "field_name": "artifacts",
-        "model_name": "well",
+        "model_name": "compound",
         "schema_name": "wetlab",
         "is_link_table": False,
         "is_primary_key": False,
         "is_editable": False,
         "max_length": None,
         "relation_type": "many-to-many",
-        "related_field_name": "wells",
+        "related_field_name": "compounds",
         "related_model_name": "artifact",
         "related_schema_name": "core",
     }
