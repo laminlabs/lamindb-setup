@@ -93,12 +93,10 @@ def test_exportdb_multiple_modules(simple_instance: Callable, cleanup_export_dir
     gene_df = pd.read_parquet(cleanup_export_dir / "bionty_gene.parquet")
     assert "TCF7" in gene_df["symbol"].values
 
-    featurevalue_df = pd.read_parquet(
-        cleanup_export_dir / "lamindb_featurevalue.parquet"
-    )
-    assert len(featurevalue_df) == 1
-    assert featurevalue_df.iloc[0]["feature_id"] == feature.id
-    assert featurevalue_df.iloc[0]["value"] == "10"
+    jsonvalue_df = pd.read_parquet(cleanup_export_dir / "lamindb_jsonvalue.parquet")
+    assert len(jsonvalue_df) == 1
+    assert jsonvalue_df.iloc[0]["feature_id"] == feature.id
+    assert jsonvalue_df.iloc[0]["value"] == "10"
 
     artifact_df = pd.read_parquet(cleanup_export_dir / "lamindb_artifact.parquet")
     assert artifact.uid in artifact_df["uid"].values
