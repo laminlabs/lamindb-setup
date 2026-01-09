@@ -172,16 +172,45 @@ class migrate:
     @disable_auto_connect
     def check(cls) -> bool:
         """Check whether Registry definitions are in sync with migrations."""
+        import io
+
         from django.core.management import call_command
 
         setup_django(settings.instance)
+
+        # Capture stdout/stderr to show what migrations are needed if check fails
+        stdout = io.StringIO()
+        stderr = io.StringIO()
+
         try:
-            call_command("makemigrations", check_changes=True)
+            call_command(
+                "makemigrations", check_changes=True, stdout=stdout, stderr=stderr
+            )
         except SystemExit:
             logger.error(
                 "migrations are not in sync with ORMs, please create a migration: lamin"
                 " migrate create"
             )
+            # Print captured output from the check
+            if stdout.getvalue():
+                logger.error(f"makemigrations --check stdout:\n{stdout.getvalue()}")
+            if stderr.getvalue():
+                logger.error(f"makemigrations --check stderr:\n{stderr.getvalue()}")
+
+            # Run makemigrations --dry-run to show what would be created
+            stdout2 = io.StringIO()
+            stderr2 = io.StringIO()
+            try:
+                call_command(
+                    "makemigrations", dry_run=True, stdout=stdout2, stderr=stderr2
+                )
+            except SystemExit:
+                pass
+            if stdout2.getvalue():
+                logger.error(f"makemigrations --dry-run stdout:\n{stdout2.getvalue()}")
+            if stderr2.getvalue():
+                logger.error(f"makemigrations --dry-run stderr:\n{stderr2.getvalue()}")
+
             return False
         return True
 
