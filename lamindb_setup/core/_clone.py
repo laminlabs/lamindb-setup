@@ -1,140 +1,16 @@
-"""Utilities to copy, clone and load Postgres instances as local SQLite databases.
+"""Utilities to work with Postgres Snapshots.
 
 .. autosummary::
    :toctree:
 
-   init_local_sqlite
-   connect_local_sqlite
-   connect_remote_sqlite
    upload_sqlite_clone
 """
 
 import gzip
-import os
 import shutil
 from pathlib import Path
 
-from lamindb_setup.core._settings_load import load_instance_settings
-from lamindb_setup.core._settings_store import instance_settings_file
-from lamindb_setup.core.django import reset_django
 from lamindb_setup.core.upath import create_path
-
-
-def init_local_sqlite(
-    instance: str | None = None, copy_suffix: str | None = None
-) -> None:
-    """Initialize SQLite copy of an existing Postgres instance.
-
-    Creates a SQLite database with the same schema as the source Postgres instance.
-    The copy shares the same storage location as the original instance.
-
-    The copy is intended for read-only access to instance data without requiring a Postgres connection.
-    Data synchronization to complete the clone happens via a separate Lambda function.
-
-    Note that essential user, branch and storage tables are missing.
-    Therefore, it is not possible to store Artifacts without having replayed these records first.
-
-    Args:
-        instance: Pass a slug (`account/name`) or URL (`https://lamin.ai/account/name`).
-            If `None`, looks for an environment variable `LAMIN_CURRENT_INSTANCE` to get the instance identifier.
-            If it doesn't find this variable, it connects to the instance that was connected with `lamin connect` through the CLI.
-        copy_suffix: Optional suffix to append to the local clone name.
-    """
-    import lamindb_setup as ln_setup
-
-    if instance is None:  # pragma: no cover
-        instance = os.environ.get("LAMIN_CURRENT_INSTANCE")
-
-    if instance is None:
-        raise ValueError(
-            "No instance identifier provided and LAMIN_CURRENT_INSTANCE is not set"
-        )
-
-    if ln_setup.settings.instance is None:  # pragma: no cover
-        ln_setup.connect(instance)
-
-    name = (
-        f"{ln_setup.settings.instance.name}{copy_suffix}"
-        if copy_suffix is not None
-        else ln_setup.settings.instance.name
-    )
-    isettings = ln_setup._connect_instance._connect_instance(
-        owner=ln_setup.settings.instance.owner, name=name
-    )
-    isettings._db = None
-    isettings._is_on_hub = False
-    isettings._fine_grained_access = False
-    name = (
-        f"{isettings.name}{copy_suffix}" if copy_suffix is not None else isettings.name
-    )
-    isettings._name = name
-    isettings._is_clone = True
-    isettings._persist(write_to_disk=True)
-
-    if not isettings._sqlite_file_local.exists():
-        # Reset Django configuration before _init_db() because Django was already configured for the original Postgres instance.
-        # Without this reset, the `if not settings.configured`` check in `setup_django()` would skip reconfiguration,
-        # causing migrations to run against the old Postgres database instead of the new SQLite clone database.
-        reset_django()
-        isettings._init_db()
-
-
-def connect_local_sqlite(
-    instance: str,
-) -> None:
-    """Load a locally stored SQLite instance of which a remote hub Postgres instance exists.
-
-    This function bypasses the hub lookup that `lamin connect` performs, loading the SQLite clone directly from local settings files.
-    The clone must first be created via `init_local_sqlite()`.
-
-    Args:
-        instance: Instance slug in the form `account/name` (e.g., `laminlabs/privatedata-local`).
-    """
-    owner, name = instance.split("/")
-    settings_file = instance_settings_file(name=name, owner=owner)
-
-    if not settings_file.exists():
-        raise ValueError(
-            "SQLite clone not found."
-            " Run `init_local_sqlite()` to create a local copy or connect to a remote copy using `connect_remote_sqlite`."
-        )
-
-    isettings = load_instance_settings(settings_file)
-    isettings._persist(write_to_disk=False)
-
-    # Using `setup_django` instead of `_load_db` to not ping AWS RDS
-    from lamindb_setup._check_setup import disable_auto_connect
-
-    from .django import setup_django
-
-    disable_auto_connect(setup_django)(isettings)
-
-
-def connect_remote_sqlite(instance: str, *, copy_suffix: str | None = None) -> None:
-    """Load an existing SQLite copy of a hub instance.
-
-    Args:
-        instance: Instance slug in the form `account/name` (e.g., `laminlabs/privatedata-local`).
-        copy_suffix: Optional suffix of the local clone.
-    """
-    import lamindb_setup as ln_setup
-
-    owner, name = instance.split("/")
-
-    # Step 1: Create the settings file
-    isettings = ln_setup._connect_instance._connect_instance(owner=owner, name=name)
-    isettings._db = None
-    isettings._is_on_hub = False
-    isettings._fine_grained_access = False
-    isettings._db_permissions = "read"
-    name = (
-        f"{isettings.name}{copy_suffix}" if copy_suffix is not None else isettings.name
-    )
-    isettings._name = name
-    isettings._is_clone = True
-    isettings._persist(write_to_disk=True)
-
-    connect_local_sqlite(instance=instance + (copy_suffix or ""))
 
 
 def upload_sqlite_clone(

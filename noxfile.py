@@ -36,6 +36,10 @@ uv pip install --system git+https://github.com/laminlabs/bionty
             modules_deps
             + "uv pip install --system sentry_sdk line_profiler wheel==0.45.1 flit"
             + "\nuv pip install --system ./laminhub/backend --no-build-isolation"
+            + "\nuv pip install --system ./laminhub/backend/utils"
+            + "\nuv pip install --system ./laminhub/backend/central"
+            + "\nuv pip install --system ./laminhub/backend/dbinstance"
+            + "\nuv pip install --system ./laminhub/backend/aws"
         )
     elif group == "docs":
         cmds = modules_deps.strip()
@@ -53,10 +57,15 @@ uv pip install --system git+https://github.com/laminlabs/bionty
     # current package
     cmds += """\nuv pip install --system -e '.[aws,dev]'"""
 
-    # above downgrades django, I don't understand why, try this
+    # above downgrades django
     if group == "hub-local":
         cmds += "\nuv pip install --system sentry_sdk line_profiler wheel==0.45.1 flit"
         cmds += "\nuv pip install --system -e ./laminhub/backend --no-build-isolation"
+        cmds += "\nuv pip install --system -e ./laminhub/backend/utils"
+        cmds += "\nuv pip install --system -e ./laminhub/backend/central"
+        cmds += "\nuv pip install --system -e ./laminhub/backend/dbinstance"
+        cmds += "\nuv pip install --system -e ./laminhub/backend/aws"
+        cmds += "\nuv pip install --system --no-deps -e ./laminhub/backend/laminhub_rest/hubmodule"
         # check that just installing psycopg (psycopg3) doesn't break fine-grained access
         cmds += "\nuv pip install --system psycopg[binary]"
         # force new supabase

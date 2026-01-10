@@ -5,6 +5,11 @@ from uuid import UUID, uuid4
 
 import lamindb_setup as ln_setup
 import pytest
+from lamincentral.client import SupabaseClientWrapper, connect_central
+from lamincentral.dev._local_supabase import (
+    _remove_lamin_local_settings,
+    _SupabaseLocalResources,
+)
 from lamindb_setup.core._hub_client import (
     connect_hub_with_auth,
 )
@@ -22,16 +27,11 @@ from lamindb_setup.core._settings_save import save_user_settings
 from lamindb_setup.core._settings_storage import base62
 from lamindb_setup.core._settings_storage import init_storage as init_storage_base
 from lamindb_setup.core._settings_user import UserSettings
-from laminhub_rest.core._central_client import CentralClient, SupabaseClientWrapper
-from laminhub_rest.dev import (
-    SupabaseResources,
-    remove_lamin_local_settings,
-    seed_local_test,
-)
+from laminhub_rest.dev import seed_local_test
 from laminhub_rest.test.instance import create_instance
 from supabase_auth.errors import AuthApiError
 
-supabase_resources = SupabaseResources()
+supabase_resources = _SupabaseLocalResources()
 
 
 def pytest_configure():
@@ -42,9 +42,9 @@ def pytest_configure():
     os.environ["LAMIN_TEST_INSTANCE_SCHEMA_STR"] = "bionty"
     # Disable redis, it is not deployed here
     os.environ["EXTERNAL_CACHE_DISABLED"] = "true"
-    remove_lamin_local_settings()
-    supabase_resources.start_local()
-    supabase_resources.reset_local()
+    _remove_lamin_local_settings()
+    supabase_resources.start()
+    supabase_resources.reset()
     supabase_resources.migrate()
     seed_local_test()
     # reset user
@@ -54,7 +54,7 @@ def pytest_configure():
 
 def pytest_unconfigure():
     if supabase_resources.edge_function_process:
-        supabase_resources.stop_local_edge_functions()
+        supabase_resources.stop_edge_functions()
 
 
 def sign_up_user(email: str, handle: str, save_as_settings: bool = False):
@@ -103,7 +103,7 @@ def create_testadmin1_session():  # -> Tuple[Client, UserSettings]
     client = connect_hub_with_auth()
     client.table("account").insert(account).execute()
 
-    with CentralClient().connect_service_role() as service_client:
+    with connect_central(service_role=True) as service_client:
         service_client.table("account_instance_limit").insert(
             {"account_id": account_id}
         ).execute()
