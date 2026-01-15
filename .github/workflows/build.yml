@@ -137,7 +137,7 @@ jobs:
           touch .env.local
           echo "AWS_ACCESS_KEY_ID_HOSTED_S3=${{ secrets.AWS_ACCESS_KEY_ID }}" >> .env.local
           echo "AWS_SECRET_ACCESS_KEY_HOSTED_S3=${{ secrets.AWS_SECRET_ACCESS_KEY }}" >> .env.local
-        working-directory: laminhub/backend/central/supabase
+        working-directory: laminhub/backend/services/central/supabase
       - uses: actions/setup-python@v6
         with:
           python-version: "3.11" # we need to run everything for coverage on 3.11
