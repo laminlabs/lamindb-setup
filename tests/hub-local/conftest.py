@@ -9,6 +9,7 @@ from lamincentral.client import SupabaseClientWrapper, connect_central
 from lamincentral.dev._local_supabase import (
     _remove_lamin_local_settings,
     _SupabaseLocalResources,
+    start_supabase,
 )
 from lamindb_setup.core._hub_client import (
     connect_hub_with_auth,
@@ -27,7 +28,7 @@ from lamindb_setup.core._settings_save import save_user_settings
 from lamindb_setup.core._settings_storage import base62
 from lamindb_setup.core._settings_storage import init_storage as init_storage_base
 from lamindb_setup.core._settings_user import UserSettings
-from laminhub_rest.dev import seed_local_test
+from laminhub_rest.dev._seed import LocalSeed
 from laminhub_rest.test.instance import create_instance
 from supabase_auth.errors import AuthApiError
 
@@ -42,11 +43,9 @@ def pytest_configure():
     os.environ["LAMIN_TEST_INSTANCE_SCHEMA_STR"] = "bionty"
     # Disable redis, it is not deployed here
     os.environ["EXTERNAL_CACHE_DISABLED"] = "true"
-    _remove_lamin_local_settings()
-    supabase_resources.start()
-    supabase_resources.reset()
-    supabase_resources.migrate()
-    seed_local_test()
+    # _remove_lamin_local_settings()
+    start_supabase()
+    LocalSeed.populate()
     # reset user
     del os.environ["LAMIN_API_KEY"]
     ln_setup.settings._user_settings = None
