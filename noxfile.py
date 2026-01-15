@@ -64,9 +64,9 @@ uv pip install --system git+https://github.com/laminlabs/bionty
         cmds += "\nuv pip install --system -e ./laminhub/backend --no-build-isolation"
         cmds += "\nuv pip install --system -e ./laminhub/backend/utils"
         cmds += "\nuv pip install --system -e ./laminhub/backend/services/central"
-        cmds += "\nuv pip install --system -e ./laminhub/backend/services/dbinstance"
+        cmds += "\nuv pip install --system -e ./laminhub/backend/services/instancedb"
         cmds += "\nuv pip install --system -e ./laminhub/backend/services/aws"
-        cmds += "\nuv pip install --system --no-deps -e ./laminhub/backend/services/dbinstance/hubmodule"
+        cmds += "\nuv pip install --system --no-deps -e ./laminhub/backend/services/instancedb/hubmodule"
         # check that just installing psycopg (psycopg3) doesn't break fine-grained access
         cmds += "\nuv pip install --system psycopg[binary]"
         # force new supabase
