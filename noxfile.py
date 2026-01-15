@@ -37,9 +37,9 @@ uv pip install --system git+https://github.com/laminlabs/bionty
             + "uv pip install --system sentry_sdk line_profiler wheel==0.45.1 flit"
             + "\nuv pip install --system ./laminhub/backend --no-build-isolation"
             + "\nuv pip install --system ./laminhub/backend/utils"
-            + "\nuv pip install --system ./laminhub/backend/central"
-            + "\nuv pip install --system ./laminhub/backend/dbinstance"
-            + "\nuv pip install --system ./laminhub/backend/aws"
+            + "\nuv pip install --system ./laminhub/backend/services/central"
+            + "\nuv pip install --system ./laminhub/backend/services/dbinstance"
+            + "\nuv pip install --system ./laminhub/backend/services/aws"
         )
     elif group == "docs":
         cmds = modules_deps.strip()
@@ -62,10 +62,10 @@ uv pip install --system git+https://github.com/laminlabs/bionty
         cmds += "\nuv pip install --system sentry_sdk line_profiler wheel==0.45.1 flit"
         cmds += "\nuv pip install --system -e ./laminhub/backend --no-build-isolation"
         cmds += "\nuv pip install --system -e ./laminhub/backend/utils"
-        cmds += "\nuv pip install --system -e ./laminhub/backend/central"
-        cmds += "\nuv pip install --system -e ./laminhub/backend/dbinstance"
-        cmds += "\nuv pip install --system -e ./laminhub/backend/aws"
-        cmds += "\nuv pip install --system --no-deps -e ./laminhub/backend/laminhub_rest/hubmodule"
+        cmds += "\nuv pip install --system -e ./laminhub/backend/services/central"
+        cmds += "\nuv pip install --system -e ./laminhub/backend/services/dbinstance"
+        cmds += "\nuv pip install --system -e ./laminhub/backend/services/aws"
+        cmds += "\nuv pip install --system --no-deps -e ./laminhub/backend/services/dbinstance/hubmodule"
         # check that just installing psycopg (psycopg3) doesn't break fine-grained access
         cmds += "\nuv pip install --system psycopg[binary]"
         # force new supabase
