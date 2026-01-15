@@ -38,9 +38,9 @@ uv pip install --system git+https://github.com/laminlabs/bionty
             + "\nuv pip install --system ./laminhub/backend --no-build-isolation"
             + "\nuv pip install --system ./laminhub/backend/utils"
             + "\nuv pip install --system ./laminhub/backend/services/central"
-            + "\nuv pip install --system ./laminhub/backend/services/dbinstance"
+            + "\nuv pip install --system ./laminhub/backend/services/instancedb"
             + "\nuv pip install --system ./laminhub/backend/services/aws"
-            + "\nuv pip install --system --no-deps ./laminhub/backend/services/dbinstance/hubmodule"
+            + "\nuv pip install --system --no-deps ./laminhub/backend/services/instancedb/hubmodule"
         )
     elif group == "docs":
         cmds = modules_deps.strip()
