@@ -276,7 +276,7 @@ def setup_django(
                 ],
                 STATIC_URL="static/",
             )
-        if True:
+        if logger._verbosity == 5:  # debug-level verbosity
             kwargs.update(
                 {
                     "DEBUG": True,
