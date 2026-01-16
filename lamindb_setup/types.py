@@ -1,10 +1,7 @@
 """Types.
 
-.. autosummary::
-   :toctree: .
-
-   UPathStr
-   StorageType
+.. autoclass:: UPathStr
+.. autoclass:: StorageType
 """
 
 from __future__ import annotations

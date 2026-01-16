@@ -5,7 +5,12 @@ from uuid import UUID, uuid4
 
 import lamindb_setup as ln_setup
 import pytest
-from gotrue.errors import AuthApiError
+from lamincentral.client import SupabaseClientWrapper, connect_central
+from lamincentral.dev._local_supabase import (
+    _remove_lamin_local_settings,
+    _SupabaseLocalResources,
+    start_supabase,
+)
 from lamindb_setup.core._hub_client import (
     connect_hub_with_auth,
 )
@@ -23,15 +28,11 @@ from lamindb_setup.core._settings_save import save_user_settings
 from lamindb_setup.core._settings_storage import base62
 from lamindb_setup.core._settings_storage import init_storage as init_storage_base
 from lamindb_setup.core._settings_user import UserSettings
-from laminhub_rest.core._central_client import SupabaseClientWrapper
-from laminhub_rest.dev import (
-    SupabaseResources,
-    remove_lamin_local_settings,
-    seed_local_test,
-)
+from laminhub_rest.dev._seed import LocalSeed
 from laminhub_rest.test.instance import create_instance
+from supabase_auth.errors import AuthApiError
 
-supabase_resources = SupabaseResources()
+supabase_resources = _SupabaseLocalResources()
 
 
 def pytest_configure():
@@ -42,16 +43,17 @@ def pytest_configure():
     os.environ["LAMIN_TEST_INSTANCE_SCHEMA_STR"] = "bionty"
     # Disable redis, it is not deployed here
     os.environ["EXTERNAL_CACHE_DISABLED"] = "true"
-    remove_lamin_local_settings()
-    supabase_resources.start_local()
-    supabase_resources.reset_local()
-    supabase_resources.migrate()
-    seed_local_test()
+    # _remove_lamin_local_settings()
+    start_supabase()
+    LocalSeed.populate()
+    # reset user
+    del os.environ["LAMIN_API_KEY"]
+    ln_setup.settings._user_settings = None
 
 
 def pytest_unconfigure():
     if supabase_resources.edge_function_process:
-        supabase_resources.stop_local_edge_functions()
+        supabase_resources.stop_edge_functions()
 
 
 def sign_up_user(email: str, handle: str, save_as_settings: bool = False):
@@ -79,7 +81,9 @@ def sign_up_user(email: str, handle: str, save_as_settings: bool = False):
 @pytest.fixture(scope="session")
 def create_testadmin1_session():  # -> Tuple[Client, UserSettings]
     email = "testadmin1@gmail.com"
-    sign_up_user(email, "testadmin1", save_as_settings=True)
+    usettings = sign_up_user(email, "testadmin1", save_as_settings=True)
+    assert usettings.handle == "testadmin1"
+
     with pytest.raises(AuthApiError):
         # test error with "User already registered"
         sign_up_user(email, "testadmin1")
@@ -97,6 +101,12 @@ def create_testadmin1_session():  # -> Tuple[Client, UserSettings]
     # uses ln_setup.settings.user.access_token
     client = connect_hub_with_auth()
     client.table("account").insert(account).execute()
+
+    with connect_central(service_role=True) as service_client:
+        service_client.table("account_instance_limit").insert(
+            {"account_id": account_id}
+        ).execute()
+
     yield SupabaseClientWrapper(client), ln_setup.settings.user
     client.auth.sign_out()
 

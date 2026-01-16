@@ -4,25 +4,17 @@ Many functions in this "setup API" have a matching command in the :doc:`docs:cli
 
 Guide: :doc:`docs:setup`.
 
-Basic operations:
+Basic operations
+----------------
 
-.. autosummary::
-   :toctree:
+.. autofunction:: login
+.. autofunction:: logout
+.. autofunction:: init
+.. autofunction:: disconnect
+.. autofunction:: delete
 
-   login
-   logout
-   init
-   disconnect
-   delete
-
-Instance operations:
-
-.. autosummary::
-   :toctree:
-
-   migrate
-
-Modules & settings:
+Modules & settings
+------------------
 
 .. autosummary::
    :toctree:
@@ -33,21 +25,32 @@ Modules & settings:
    errors
    types
 
+Migration management
+--------------------
+
+.. autosummary::
+   :toctree:
+
+   migrate
+
 """
 
-__version__ = "1.13.1"  # denote a release candidate for 0.1.0 with 0.1rc1
+__version__ = "1.18.1"  # denote a release candidate for 0.1.0 with 0.1rc1
 
 import os
 import warnings
 
-# ignore for now, remove this after supabase upgrade in the deps
+# ignore for now, this is for timeout parameter,
+# it is more convenient to specify it directly for now
 warnings.filterwarnings("ignore", category=DeprecationWarning, module="supabase")
-warnings.filterwarnings("ignore", category=DeprecationWarning, module="supafunc")
+warnings.filterwarnings(
+    "ignore", category=DeprecationWarning, module="supabase_functions"
+)
 warnings.filterwarnings("ignore", category=DeprecationWarning, module="postgrest")
 
 from packaging import version as packaging_version
 
-from . import core, errors, types
+from . import core, errors, io, types
 from ._check_setup import _check_instance_setup
 from ._connect_instance import connect
 from ._delete import delete

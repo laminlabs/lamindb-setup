@@ -5,13 +5,15 @@ import builtins
 import os
 import sys
 import importlib as il
+import gzip
 import jwt
 import time
 import threading
 from pathlib import Path
+import shutil
 from packaging import version
 from ._settings_instance import InstanceSettings, is_local_db_url
-
+from ..errors import CurrentInstanceNotConfigured
 from lamin_utils import logger
 
 
@@ -19,6 +21,24 @@ IS_RUN_FROM_IPYTHON = getattr(builtins, "__IPYTHON__", False)
 IS_SETUP = False
 IS_MIGRATING = False
 CONN_MAX_AGE = 299
+
+
+def get_connection(connection_name: str):
+    from django.db import connections
+
+    return connections[connection_name]
+
+
+def error_no_instance_wrapper(execute, sql, params, many, context):
+    connection = context["connection"]
+
+    if (
+        connection.vendor == "sqlite"
+        and connection.settings_dict.get("NAME") == ":memory:"
+    ):
+        raise CurrentInstanceNotConfigured
+
+    return execute(sql, params, many, context)
 
 
 # db token that refreshes on access if needed
@@ -64,11 +84,6 @@ class DBTokenManager:
 
         self.tokens: dict[str, DBToken] = {}
 
-    def get_connection(self, connection_name: str):
-        from django.db import connections
-
-        return connections[connection_name]
-
     def set(self, token: DBToken, connection_name: str = "default"):
         if connection_name in self.tokens:
             return
@@ -77,11 +92,7 @@ class DBTokenManager:
         from django.db.backends.signals import connection_created
 
         def set_token_wrapper(execute, sql, params, many, context):
-            not_in_atomic_block = (
-                context is None
-                or "connection" not in context
-                or not context["connection"].in_atomic_block
-            )
+            not_in_atomic_block = not context["connection"].in_atomic_block
             # ignore atomic blocks
             if not_in_atomic_block:
                 sql = token.token_query + sql
@@ -98,7 +109,7 @@ class DBTokenManager:
                 result.nextset()
             return result
 
-        self.get_connection(connection_name).execute_wrappers.append(set_token_wrapper)
+        get_connection(connection_name).execute_wrappers.append(set_token_wrapper)
 
         def connection_callback(sender, connection, **kwargs):
             if (
@@ -124,7 +135,7 @@ class DBTokenManager:
                 if connection_name in self.tokens:
                     # here we don't use the connection from the closure
                     # because Atomic is a single class to manage transactions for all connections
-                    connection = self.get_connection(connection_name)
+                    connection = get_connection(connection_name)
                     if len(connection.atomic_blocks) == 1:
                         token = self.tokens[connection_name]
                         # use raw psycopg2 connection here
@@ -142,7 +153,7 @@ class DBTokenManager:
 
         from django.db.backends.signals import connection_created
 
-        connection = self.get_connection(connection_name)
+        connection = get_connection(connection_name)
 
         connection.execute_wrappers = [
             w
@@ -238,6 +249,8 @@ def setup_django(
         if view_schema:
             installed_apps = installed_apps[::-1]  # to fix how apps appear
             installed_apps += ["schema_graph", "django.contrib.staticfiles"]
+        if isettings.dialect == "postgresql":
+            installed_apps.insert(0, "pgtrigger")
 
         kwargs = dict(
             INSTALLED_APPS=installed_apps,
@@ -310,6 +323,9 @@ def setup_django(
             django.db.connections._connections = threading.local()
             logger.debug("django.db.connections._connections has been patched")
 
+        # error if trying to query with the default connection without setting up an instance
+        get_connection("default").execute_wrappers.insert(0, error_no_instance_wrapper)
+
         if isettings._fine_grained_access and isettings._db_permissions == "jwt":
             db_token = DBToken(isettings)
             db_token_manager.set(db_token)  # sets for the default connection
@@ -330,6 +346,20 @@ def setup_django(
             call_command("migrate", app_name, app_number, verbosity=2)
         isettings._update_cloud_sqlite_file(unlock_cloud_sqlite=False)
     elif init:
+        modules_beyond_bionty = isettings.modules.copy()
+        compressed_sqlite_path = Path(__file__).parent / "lamin.db.gz"
+        if "bionty" in modules_beyond_bionty:
+            modules_beyond_bionty.remove("bionty")
+        # seed from compressed sqlite file
+        if (
+            isettings.dialect == "sqlite"
+            and os.getenv("LAMINDB_INIT_FROM_SCRATCH", "false") != "true"
+            and len(modules_beyond_bionty) == 0
+            and compressed_sqlite_path.exists()
+        ):
+            with gzip.open(compressed_sqlite_path, "rb") as f_in:
+                with open(isettings._sqlite_file_local, "wb") as f_out:
+                    shutil.copyfileobj(f_in, f_out)
         global IS_MIGRATING
         IS_MIGRATING = True
         call_command("migrate", verbosity=0)

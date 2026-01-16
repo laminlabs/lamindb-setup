@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+import os
+
 import httpx
 from django.db import connection
 from django.db.migrations.loader import MigrationLoader
@@ -98,16 +100,19 @@ class migrate:
 
     @classmethod
     def deploy(cls, package_name: str | None = None, number: int | None = None) -> None:
-        import os
+        assert settings._instance_exists, (
+            "Not connected to an instance, please connect to migrate."
+        )
 
         # NOTE: this is a temporary solution to avoid breaking tests
         LAMIN_MIGRATE_ON_LAMBDA = (
-            os.environ.get("LAMIN_MIGRATE_ON_LAMBDA", "false") == "true"
+            os.getenv("LAMIN_MIGRATE_ON_LAMBDA", "false") == "true"
         )
+        isettings = settings.instance
 
-        if settings.instance.is_on_hub and LAMIN_MIGRATE_ON_LAMBDA:
+        if isettings.is_on_hub and LAMIN_MIGRATE_ON_LAMBDA:
             response = httpx.post(
-                f"{settings.instance.api_url}/instances/{settings.instance._id}/migrate",
+                f"{isettings.api_url}/instances/{isettings._id}/migrate",
                 headers={"Authorization": f"Bearer {settings.user.access_token}"},
                 timeout=None,  # this can take time
             )
@@ -125,49 +130,41 @@ class migrate:
         from lamindb_setup._schema_metadata import update_schema_in_hub
         from lamindb_setup.core._hub_client import call_with_fallback_auth
         from lamindb_setup.core._hub_crud import (
-            select_collaborator,
             update_instance,
         )
 
-        if settings.instance.is_on_hub:
-            # double check that user is an admin, otherwise will fail below
-            # due to insufficient SQL permissions with cryptic error
-            collaborator = call_with_fallback_auth(
-                select_collaborator,
-                instance_id=settings.instance._id,
-                account_id=settings.user._uuid,
-                fine_grained_access=settings.instance._fine_grained_access,
-            )
-            if collaborator is None or collaborator["role"] != "admin":
-                raise SystemExit(
-                    "❌ Only admins can deploy migrations, please ensure that you're an"
-                    f" admin: https://lamin.ai/{settings.instance.slug}/settings"
-                )
+        isettings = settings.instance
+        is_managed_by_hub = isettings.is_managed_by_hub
+        is_on_hub = is_managed_by_hub or isettings.is_on_hub
+
+        if is_managed_by_hub and "root" not in isettings.db:
             # ensure we connect with the root user
-            if "root" not in settings.instance.db:
-                connect(use_root_db_user=True)
-                assert "root" in (instance_db := settings.instance.db), instance_db
+            connect(use_root_db_user=True)
+            assert "root" in (instance_db := settings.instance.db), instance_db
+        if is_on_hub:
             # we need lamindb to be installed, otherwise we can't populate the version
             # information in the hub
+            # this also connects
             import lamindb
-
+        # this is needed to avoid connecting on importing apps inside setup_django process
+        setup_django_disable_autoconnect = disable_auto_connect(setup_django)
         # this sets up django and deploys the migrations
         if package_name is not None and number is not None:
-            setup_django(
-                settings.instance,
+            setup_django_disable_autoconnect(
+                isettings,
                 deploy_migrations=True,
                 appname_number=(package_name, number),
             )
         else:
-            setup_django(settings.instance, deploy_migrations=True)
+            setup_django_disable_autoconnect(isettings, deploy_migrations=True)
         # this populates the hub
-        if settings.instance.is_on_hub:
+        if is_on_hub:
             logger.important(f"updating lamindb version in hub: {lamindb.__version__}")
-            if settings.instance.dialect != "sqlite":
+            if isettings.dialect != "sqlite":
                 update_schema_in_hub()
             call_with_fallback_auth(
                 update_instance,
-                instance_id=settings.instance._id.hex,
+                instance_id=isettings._id.hex,
                 instance_fields={"lamindb_version": lamindb.__version__},
             )
 
@@ -175,16 +172,45 @@ class migrate:
     @disable_auto_connect
     def check(cls) -> bool:
         """Check whether Registry definitions are in sync with migrations."""
+        import io
+
         from django.core.management import call_command
 
         setup_django(settings.instance)
+
+        # Capture stdout/stderr to show what migrations are needed if check fails
+        stdout = io.StringIO()
+        stderr = io.StringIO()
+
         try:
-            call_command("makemigrations", check_changes=True)
+            call_command(
+                "makemigrations", check_changes=True, stdout=stdout, stderr=stderr
+            )
         except SystemExit:
             logger.error(
                 "migrations are not in sync with ORMs, please create a migration: lamin"
                 " migrate create"
             )
+            # Print captured output from the check
+            if stdout.getvalue():
+                logger.error(f"makemigrations --check stdout:\n{stdout.getvalue()}")
+            if stderr.getvalue():
+                logger.error(f"makemigrations --check stderr:\n{stderr.getvalue()}")
+
+            # Run makemigrations --dry-run to show what would be created
+            stdout2 = io.StringIO()
+            stderr2 = io.StringIO()
+            try:
+                call_command(
+                    "makemigrations", dry_run=True, stdout=stdout2, stderr=stderr2
+                )
+            except SystemExit:
+                pass
+            if stdout2.getvalue():
+                logger.error(f"makemigrations --dry-run stdout:\n{stdout2.getvalue()}")
+            if stderr2.getvalue():
+                logger.error(f"makemigrations --dry-run stderr:\n{stderr2.getvalue()}")
+
             return False
         return True
 

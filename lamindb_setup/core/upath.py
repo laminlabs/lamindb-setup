@@ -93,10 +93,12 @@ def extract_suffix_from_path(path: Path, arg_name: str | None = None) -> str:
         else:
             return suffix
 
-    if len(path.suffixes) <= 1:
+    suffixes = path.suffixes
+
+    if len(suffixes) <= 1:
         return process_digits(path.suffix)
 
-    total_suffix = "".join(path.suffixes)
+    total_suffix = "".join(suffixes)
     if total_suffix in VALID_SIMPLE_SUFFIXES:
         return total_suffix
     elif total_suffix.endswith(tuple(VALID_COMPOSITE_SUFFIXES)):
@@ -115,14 +117,24 @@ def extract_suffix_from_path(path: Path, arg_name: str | None = None) -> str:
         # in COMPRESSION_SUFFIXES to detect something like .random.gz and then
         # add ".random.gz" but concluded it's too dangerous it's safer to just
         # use ".gz" in such a case
-        if path.suffixes[-2] in VALID_SIMPLE_SUFFIXES:
-            suffix = "".join(path.suffixes[-2:])
-            msg += f"inferring: '{suffix}'"
+        if suffixes[-2] in VALID_SIMPLE_SUFFIXES:
+            suffix = "".join(suffixes[-2:])
+            # if the suffix preceding the compression suffixes is a valid suffix,
+            # we account for it; otherwise we don't.
+            # i.e. we should have .h5ad.tar.gz or .csv.tar.gz, not just .tar.gz
+            if (
+                suffix == ".tar.gz"
+                and len(suffixes) > 2
+                and (suffix_3 := suffixes[-3]) in VALID_SIMPLE_SUFFIXES
+            ):
+                suffix = suffix_3 + suffix
             # do not print a warning for things like .tar.gz, .fastq.gz
-            if path.suffixes[-1] == ".gz":
+            if suffixes[-1] == ".gz":
                 print_hint = False
+            else:
+                msg += f"inferring: '{suffix}'"
         else:
-            suffix = path.suffixes[-1]  # this is equivalent to path.suffix
+            suffix = suffixes[-1]  # this is equivalent to path.suffix
             msg += (
                 f"using only last suffix: '{suffix}' - if you want your composite"
                 " suffix to be recognized add it to"
@@ -737,25 +749,30 @@ UPath.exists.__doc__ = Path.exists.__doc__
 UPath.is_dir.__doc__ = Path.is_dir.__doc__
 UPath.is_file.__doc__ = Path.is_file.__doc__
 UPath.unlink.__doc__ = Path.unlink.__doc__
-UPath.rename.__doc__ = """Move file, see fsspec.AbstractFileSystem.mv.
+UPath.rename.__doc__ = """Move file, see `fsspec.AbstractFileSystem.mv`.
 
->>> upath = Upath("s3://my-bucket/my-file")
->>> upath.rename(UPath("s3://my-bucket/my-file-renamed"))
->>> upath.rename("my-file-renamed")
+For example::
 
->>> upath = Upath("local-folder/my-file")
->>> upath.rename("local-folder/my-file-renamed")
+    upath = UPath("s3://my-bucket/my-file")
+    upath.rename(UPath("s3://my-bucket/my-file-renamed"))
+    upath.rename("my-file-renamed")
 """
-UPath.__doc__ = """Paths: low-level key-value access to files/objects.
+UPath.__doc__ = """Paths: low-level key-value access to files.
 
-Paths are based on keys that offer the typical access patterns of file systems
- and object stores.
+Offers the typical access patterns of file systems and object stores, for instance::
 
->>> upath = UPath("s3://my-bucket/my-folder")
->>> upath.exists()
+    upath = UPath("s3://my-bucket/my-folder/my-file.txt")
+    upath.exists()  # file exists in storage
+
+LaminDB exposes `universal_pathlib.UPath` and adds functionality related to authentication and the following methods::
+
+    upath.view_tree()  # view a file tree
+    upath.upload_from("local-file.txt") # upload a local file
+    upath.download_to("local-file.txt") # download a file
+    upath.synchronize_to("local-folder/") # synchronize a folder
 
 Args:
-    pathlike: A string or Path to a local/cloud file/directory/folder.
+    pathlike: A string or `Path` to a local or cloud file/directory/folder.
 """
 
 logger.debug("upath.UPath has been patched")
@@ -903,12 +920,9 @@ def get_stat_file_cloud(stat: dict) -> tuple[int, str | None, str | None]:
     elif "blob_id" in stat:
         hash = b16_to_b64(stat["blob_id"])
         hash_type = "sha1"
-    # s3
-    # StorageClass is checked to be sure that it is indeed s3
-    # because http also has ETag
     elif "ETag" in stat:
         etag = stat["ETag"]
-        if "mimetype" in stat:
+        if "mimetype" in stat or ("url" in stat and stat["url"].startswith("http")):
             # http
             hash = hash_string(etag.strip('"'))
             hash_type = "md5-etag"
@@ -991,13 +1005,22 @@ def check_storage_is_empty(
         objects = [o for o in objects if "/.lamindb/_exclusion/" not in o]
     n_files = len(objects)
     n_diff = n_files - n_offset_objects
-    ask_for_deletion = (
-        "delete them prior to deleting the storage location"
-        if raise_error
-        else "consider deleting them"
-    )
-    message = f"'{directory_string}' contains {n_diff} objects - {ask_for_deletion}"
     if n_diff > 0:
+        ask_for_deletion = (
+            "delete them prior to deleting the storage location"
+            if raise_error
+            else "consider deleting them"
+        )
+        message = f"'{directory_string}' contains {n_diff} objects:\n"
+        message += "\n".join(
+            [
+                o
+                for o in objects
+                if not o.endswith(".lamindb/storage_uid.txt")
+                and not (account_for_sqlite_file and o.endswith(".lamindb/lamin.db"))
+            ]
+        )
+        message += f"\n{ask_for_deletion}"
         if raise_error:
             raise StorageNotEmpty(message) from None
         else:

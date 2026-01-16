@@ -20,6 +20,7 @@ lamin_env = os.getenv("LAMIN_ENV")
 if lamin_env is None or lamin_env == "prod":
     HOSTED_BUCKETS = tuple([f"s3://lamin-{region}" for region in HOSTED_REGIONS])
 else:
+    logger.warning(f"loaded LAMIN_ENV: {lamin_env}")
     HOSTED_BUCKETS = ("s3://lamin-hosted-test",)  # type: ignore
 
 
@@ -59,6 +60,7 @@ class AWSOptionsManager:
         from aiobotocore.session import AioSession
         from s3fs import S3FileSystem
 
+        anon_env = os.getenv("LAMIN_S3_ANON") == "true"
         # this is cached so will be resued with the connection initialized
         # these options are set for paths in _path_inject_options
         # here we set the same options to cache the filesystem
@@ -67,19 +69,28 @@ class AWSOptionsManager:
             use_listings_cache=True,
             version_aware=False,
             config_kwargs={"max_pool_connections": 64},
+            anon=anon_env,
         )
 
         self._suppress_aiobotocore_traceback_logging()
 
-        try:
-            fs.connect()
-            self.anon: bool = fs.session._credentials is None
-        except Exception as e:
+        if anon_env:
+            self.anon: bool = True
             logger.warning(
-                f"There is a problem with your default AWS Credentials: {e}\n"
-                "`anon` mode will be used for all non-managed buckets."
+                "`anon` mode will be used for all non-managed buckets "
+                "because the environment variable LAMIN_S3_ANON was set to 'true'"
             )
-            self.anon = True
+        else:
+            try:
+                fs.connect()
+                self.anon = fs.session._credentials is None
+            except Exception as e:
+                logger.warning(
+                    f"There is a problem with your default AWS Credentials: {e}\n"
+                    "`anon` mode will be used for all non-managed buckets"
+                )
+                self.anon = True
+
         self.anon_public: bool | None = None
         if not self.anon:
             try:
@@ -245,3 +256,11 @@ def get_aws_options_manager() -> AWSOptionsManager:
         _aws_options_manager = AWSOptionsManager()
 
     return _aws_options_manager
+
+
+def reset_aws_options_cache():
+    global _aws_options_manager
+
+    if _aws_options_manager is not None:
+        _aws_options_manager._credentials_cache = {}
+        _aws_options_manager._parameters_cache = {}

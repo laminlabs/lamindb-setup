@@ -12,17 +12,14 @@ from lamin_utils import logger
 from lamindb_setup.errors import StorageAlreadyManaged
 
 from ._aws_options import (
-    HOSTED_REGIONS,
     LAMIN_ENDPOINTS,
     get_aws_options_manager,
 )
-from ._aws_storage import find_closest_aws_region
 from ._deprecated import deprecated
 from .hashing import hash_and_encode_as_b62
 from .upath import (
     LocalPathClasses,
     UPath,
-    _split_path_query,
     create_path,
     get_storage_region,
 )
@@ -58,12 +55,40 @@ def get_storage_type(root_as_str: str) -> StorageType:
     return convert.get(protocol, protocol)  # type: ignore
 
 
+def sanitize_root_user_input(root: UPathStr) -> UPath:
+    """Format a root path string."""
+    root_upath = root if isinstance(root, UPath) else UPath(root)
+    root_upath = root_upath.expanduser()
+    if isinstance(root_upath, LocalPathClasses):  # local paths
+        try:
+            (root_upath / ".lamindb").mkdir(parents=True, exist_ok=True)
+            root_upath = root_upath.resolve()
+        except Exception:
+            logger.warning(f"unable to create .lamindb/ folder in {root_upath}")
+    return root_upath
+
+
+def convert_sanitized_root_path_to_str(root_upath: UPath) -> str:
+    # embed endpoint_url into path string for storing and displaying
+    if root_upath.protocol == "s3":
+        endpoint_url = root_upath.storage_options.get("endpoint_url", None)
+        # LAMIN_ENDPOINTS include None
+        if endpoint_url not in LAMIN_ENDPOINTS:
+            return f"s3://{root_upath.path.rstrip('/')}?endpoint_url={endpoint_url}"
+    return root_upath.as_posix().rstrip("/")
+
+
+def convert_root_path_to_str(root: UPathStr) -> str:
+    """Format a root path string."""
+    sanitized_root_upath = sanitize_root_user_input(root)
+    return convert_sanitized_root_path_to_str(sanitized_root_upath)
+
+
 def mark_storage_root(
     root: UPathStr, uid: str, instance_id: UUID, instance_slug: str
 ) -> Literal["__marked__"] | str:
     # we need a file in folder-like storage locations on S3 to avoid
-    # permission errors from leveraging s3fs on an empty hosted storage location
-    # (path.fs.find raises a PermissionError)
+    # permission errors from leveraging s3fs on an empty hosted storage location (path.fs.find raises a PermissionError)
     # we also need it in case a storage location is ambiguous because a server / local environment
     # doesn't have a globally unique identifier, then we screen for this file to map the
     # path on a storage location in the registry
@@ -97,6 +122,7 @@ def init_storage(
     access_token: str | None = None,
     region: str | None = None,
     space_uuid: UUID | None = None,
+    skip_mark_storage_root: bool = False,
 ) -> tuple[
     StorageSettings,
     Literal["hub-record-not-created", "hub-record-retrieved", "hub-record-created"],
@@ -156,7 +182,8 @@ def init_storage(
         space_id=space_uuid,
     )
     # we check the write access here if the storage record has not been retrieved from the hub
-    if hub_record_status != "hub-record-retrieved":
+    # Sergei: should it in fact still go through if hub_record_status == "hub-record-not-created"?
+    if hub_record_status != "hub-record-retrieved" and not skip_mark_storage_root:
         try:
             # (federated) credentials for AWS access are provisioned under-the-hood
             # discussion: https://laminlabs.slack.com/archives/C04FPE8V01W/p1719260587167489
@@ -214,15 +241,7 @@ class StorageSettings:
     ):
         self._uid = uid
         self._uuid_ = uuid
-        self._root_init = UPath(root).expanduser()
-        if isinstance(self._root_init, LocalPathClasses):  # local paths
-            try:
-                (self._root_init / ".lamindb").mkdir(parents=True, exist_ok=True)
-                self._root_init = self._root_init.resolve()
-            except Exception:
-                logger.warning(
-                    f"unable to create .lamindb/ folder in {self._root_init}"
-                )
+        self._root_init: UPath = sanitize_root_user_input(root)
         self._root = None
         self._instance_id = instance_id
         # we don't yet infer region here to make init fast
@@ -235,11 +254,6 @@ class StorageSettings:
         # local storage
         self._has_local = False
         self._local = None
-
-    @property
-    @deprecated("_id")
-    def id(self) -> int:
-        return self._id
 
     @property
     def _id(self) -> int:
@@ -337,13 +351,7 @@ class StorageSettings:
     @property
     def root_as_str(self) -> str:
         """Formatted root string."""
-        # embed endpoint_url into path string for storing and displaying
-        if self._root_init.protocol == "s3":
-            endpoint_url = self._root_init.storage_options.get("endpoint_url", None)
-            # LAMIN_ENDPOINTS include None
-            if endpoint_url not in LAMIN_ENDPOINTS:
-                return f"s3://{self._root_init.path.rstrip('/')}?endpoint_url={endpoint_url}"
-        return self._root_init.as_posix().rstrip("/")
+        return convert_sanitized_root_path_to_str(self._root_init)
 
     @property
     def cache_dir(

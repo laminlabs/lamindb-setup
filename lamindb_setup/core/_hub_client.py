@@ -11,8 +11,7 @@ import httpx
 from httpx_retries import Retry, RetryTransport
 from lamin_utils import logger
 from pydantic_settings import BaseSettings
-from supabase import Client, create_client  # type: ignore
-from supabase.lib.client_options import ClientOptions
+from supabase import Client, ClientOptions, create_client
 
 from ._settings_save import save_user_settings
 
@@ -96,9 +95,12 @@ def connect_hub(
         transports.append(
             RetryTransport(
                 retry=LogRetry(total=2, backoff_factor=0.2),
-                transport=httpx.HTTPTransport(verify=True, http2=True),
+                transport=httpx.HTTPTransport(verify=True, http2=True, trust_env=True),
             )
         )
+    # this overwrites transports of existing httpx clients
+    # if proxies are set, the default transports that were created on clients init
+    # will be used, irrespective of these re-settings
     client.auth._http_client._transport = transports[0]
     client.postgrest.session._transport = transports[1]
     # POST is not retryable by default, but for our functions it should be safe to retry
@@ -116,7 +118,7 @@ def connect_hub(
                 "POST",
             ],
         ),
-        transport=httpx.HTTPTransport(verify=True, http2=True),
+        transport=httpx.HTTPTransport(verify=True, http2=True, trust_env=True),
     )
     return client
 
@@ -246,9 +248,13 @@ def httpx_client():
         else:
             transport = RetryTransport(
                 retry=LogRetry(total=2, backoff_factor=0.2),
-                transport=httpx.HTTPTransport(verify=True, http2=True),
+                transport=httpx.HTTPTransport(verify=True, http2=True, trust_env=True),
             )
-            client = httpx.Client(transport=transport)
+            # first we create a client to build the proxy map from the env variables
+            # if proxies are set, the default transports will be used
+            # otherwise the RetryTransport object that we assign below
+            client = httpx.Client(trust_env=True)
+            client._transport = transport
         yield client
     finally:
         if client is not None:

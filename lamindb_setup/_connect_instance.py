@@ -9,11 +9,7 @@ from uuid import UUID
 
 from lamin_utils import logger
 
-from ._check_setup import (
-    _check_instance_setup,
-    _get_current_instance_settings,
-    find_module_candidates,
-)
+from ._check_setup import _check_instance_setup
 from ._disconnect import disconnect
 from ._init_instance import load_from_isettings
 from ._silence_loggers import silence_loggers
@@ -26,7 +22,7 @@ from .core._settings_storage import StorageSettings
 from .core._settings_store import instance_settings_file
 from .core.cloud_sqlite_locker import unlock_cloud_sqlite_upon_exception
 from .core.django import reset_django
-from .errors import CannotSwitchDefaultInstance
+from .errors import CannotSwitchDefaultInstance, InstanceNotFoundError
 
 if TYPE_CHECKING:
     from pathlib import Path
@@ -37,17 +33,11 @@ if TYPE_CHECKING:
 # this is for testing purposes only
 # set to True only to test failed load
 _TEST_FAILED_LOAD = False
-
-
 INSTANCE_NOT_FOUND_MESSAGE = (
     "'{owner}/{name}' not found:"
     " '{hub_result}'\nCheck your permissions:"
     " https://lamin.ai/{owner}/{name}"
 )
-
-
-class InstanceNotFoundError(SystemExit):
-    pass
 
 
 def check_db_dsn_equal_up_to_credentials(db_dsn_hub, db_dsn_local):
@@ -106,6 +96,7 @@ def _connect_instance(
     use_root_db_user: bool = False,
     use_proxy_db: bool = False,
     access_token: str | None = None,
+    raise_systemexit: bool = False,
 ) -> InstanceSettings:
     settings_file = instance_settings_file(name, owner)
     make_hub_request = True
@@ -174,12 +165,17 @@ def _connect_instance(
                 )
             else:
                 message = "It is not possible to load an anonymous-owned instance from the hub"
+            exception = (
+                SystemExit(message)
+                if raise_systemexit
+                else InstanceNotFoundError(message)
+            )
             if settings_file.exists():
                 isettings = load_instance_settings(settings_file)
                 if isettings.is_remote:
-                    raise InstanceNotFoundError(message)
+                    raise exception
             else:
-                raise InstanceNotFoundError(message)
+                raise exception
     return isettings
 
 
@@ -204,18 +200,12 @@ def reset_django_module_variables():
     app_names = {app.name for app in apps.get_app_configs()}
     # always copy before iterations over sys.modules
     # see https://docs.python.org/3/library/sys.html#sys.modules
+    # this whole thing runs about 50ms in a big env
     for name, module in sys.modules.copy().items():
         if (
             module is not None
             and (not name.startswith("__") or name == "__main__")
             and name not in sys.builtin_module_names
-            and not (
-                hasattr(module, "__file__")
-                and module.__file__
-                and any(
-                    path in module.__file__ for path in ["/lib/python", "\\lib\\python"]
-                )
-            )
         ):
             try:
                 for k, v in vars(module).items():
@@ -249,7 +239,11 @@ def _connect_cli(
 
     owner, name = get_owner_name_from_identifier(instance)
     isettings = _connect_instance(
-        owner, name, use_root_db_user=use_root_db_user, use_proxy_db=use_proxy_db
+        owner,
+        name,
+        use_root_db_user=use_root_db_user,
+        use_proxy_db=use_proxy_db,
+        raise_systemexit=True,
     )
     isettings._persist(write_to_disk=True)
     if not isettings.is_on_hub or isettings._is_cloud_sqlite:
@@ -260,6 +254,10 @@ def _connect_cli(
         connect(_write_settings=False, _reload_lamindb=False)
     else:
         logger.important(f"connected lamindb: {isettings.slug}")
+    if settings_.dev_dir is None:
+        logger.important_hint(
+            "to map a local dev directory, call: lamin settings set dev-dir ."
+        )
     return None
 
 
@@ -269,13 +267,8 @@ def validate_connection_state(
     from django.db import connection
 
     if (
-        settings._instance_exists
+        settings._instance_exists  # exists only for real instances, not for none/none
         and f"{owner}/{name}" == settings.instance.slug
-        # below is to ensure that if another process interferes
-        # we don't use the in-memory mock database
-        # could be made more specific by checking whether the django
-        # configured database is the same as the one in settings
-        and connection.settings_dict["NAME"] != ":memory:"
         and not use_root_db_user  # always re-connect for root db user
     ):
         logger.important(
@@ -283,7 +276,7 @@ def validate_connection_state(
         )
         return None
     else:
-        if settings._instance_exists and settings.instance.slug != "none/none":
+        if settings._instance_exists:
             import lamindb as ln
 
             if ln.context.transform is not None:
@@ -295,7 +288,9 @@ def validate_connection_state(
 
 @unlock_cloud_sqlite_upon_exception(ignore_prev_locker=True)
 def connect(instance: str | None = None, **kwargs: Any) -> str | tuple | None:
-    """Connect to an instance.
+    """Connect the global default instance.
+
+    If you want to create a read-only database client, use :class:`~lamindb.DB` instead.
 
     Args:
         instance: Pass a slug (`account/name`) or URL (`https://lamin.ai/account/name`).
@@ -343,12 +338,9 @@ def connect(instance: str | None = None, **kwargs: Any) -> str | tuple | None:
             if settings._instance_exists:
                 isettings = settings.instance
             else:
-                isettings_or_none = _get_current_instance_settings()
-                if isettings_or_none is None:
-                    raise ValueError(
-                        "No instance was connected through the CLI, pass a value to `instance` or connect via the CLI."
-                    )
-                isettings = isettings_or_none
+                raise ValueError(
+                    "No instance was connected through the CLI, pass a value to `instance` or connect via the CLI."
+                )
             if use_root_db_user:
                 reset_django()
                 owner, name = isettings.owner, isettings.name
@@ -417,7 +409,6 @@ def connect(instance: str | None = None, **kwargs: Any) -> str | tuple | None:
 
         load_from_isettings(isettings, user=_user, write_settings=_write_settings)
         if _reload_lamindb:
-            importlib.reload(importlib.import_module("lamindb"))
             reset_django_module_variables()
         if isettings.slug != "none/none":
             logger.important(f"connected lamindb: {isettings.slug}")

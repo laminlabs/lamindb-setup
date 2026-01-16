@@ -172,7 +172,8 @@ class _ModelHandler:
         self.table_name = model._meta.db_table
         self.included_modules = included_modules
         self.fields = self._get_fields_metadata(self.model)
-        self.is_link_table = issubclass(model, IsLink)
+        self.is_auto_created = bool(model._meta.auto_created)
+        self.is_link_table = issubclass(model, IsLink) or self.is_auto_created
         self.name_field = model._name_field if hasattr(model, "_name_field") else None
         self.ontology_id_field = (
             model._ontology_id_field if hasattr(model, "_ontology_id_field") else None
@@ -183,6 +184,7 @@ class _ModelHandler:
             "fields": self.fields.copy(),
             "class_name": self.class_name,
             "table_name": self.table_name,
+            "is_auto_created": self.is_auto_created,
             "is_link_table": self.is_link_table,
             "name_field": self.name_field,
             "ontology_id_field": self.ontology_id_field,
@@ -249,13 +251,13 @@ class _ModelHandler:
         return related_fields
 
     def _get_field_metadata(self, model, field: Field):
-        from lamindb.models import IsLink
+        from lamindb.models import IsLink, Registry
 
         internal_type = field.get_internal_type()
         model_name = field.model._meta.model_name
         relation_type = self._get_relation_type(model, field)
 
-        schema_name = field.model.__get_module_name__()
+        schema_name = Registry.__get_module_name__(field.model)
 
         if field.related_model is None:
             related_model_name = None
@@ -265,7 +267,7 @@ class _ModelHandler:
             max_length = field.max_length
         else:
             related_model_name = field.related_model._meta.model_name
-            related_schema_name = field.related_model.__get_module_name__()
+            related_schema_name = Registry.__get_module_name__(field.related_model)
             related_field_name = field.remote_field.name
             is_editable = False
             max_length = None
@@ -418,14 +420,10 @@ class _SchemaHandler:
         all_models = {module_name: {} for module_name in self.included_modules}
 
         # Iterate through all registered Django models
-        for model in apps.get_models():
+        for model in apps.get_models(include_auto_created=True):
             # Check if model meets the criteria
-            if (
-                model.__class__ is Registry
-                and model is not SQLRecord
-                and not model._meta.abstract
-            ):
-                module_name = model.__get_module_name__()
+            if model is not SQLRecord and not model._meta.abstract:
+                module_name = Registry.__get_module_name__(model)
                 # Only include if module is in our included list
                 if module_name in self.included_modules:
                     model_name = model._meta.model_name

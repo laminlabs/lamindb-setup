@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import os
+from importlib.util import find_spec
 from pathlib import Path
 from typing import TYPE_CHECKING
 from uuid import UUID, uuid4
@@ -46,19 +47,36 @@ def load_cache_path_from_settings(storage_settings: Path | None = None) -> Path 
         return None
 
 
+def find_module_candidates():
+    """Find all local packages that depend on lamindb."""
+    candidates = ["bionty", "wetlab"]
+    return [c for c in candidates if find_spec(c) is not None]
+
+
 def load_instance_settings(instance_settings_file: Path | None = None):
     if instance_settings_file is None:
-        instance_settings_file = current_instance_settings_file()
-    if not instance_settings_file.exists():
+        isettings_file = current_instance_settings_file()
+        if not isettings_file.exists():
+            isettings = InstanceSettings(
+                id=UUID("00000000-0000-0000-0000-000000000000"),
+                owner="none",
+                name="none",
+                storage=None,
+                modules=",".join(find_module_candidates()),
+            )
+            return isettings
+    else:
+        isettings_file = instance_settings_file
+
+    if not isettings_file.exists():
+        # this errors only if the file was explicitly provided
         raise CurrentInstanceNotConfigured
     try:
-        settings_store = InstanceSettingsStore(_env_file=instance_settings_file)
+        settings_store = InstanceSettingsStore(_env_file=isettings_file)
     except (ValidationError, TypeError) as error:
-        with open(instance_settings_file) as f:
-            content = f.read()
         raise SettingsEnvFileOutdated(
-            f"\n\n{error}\n\nYour instance settings file with\n\n{content}\nis invalid"
-            f" (likely outdated), see validation error. Please delete {instance_settings_file} &"
+            f"\n\n{error}\n\nYour instance settings file with\n\n{isettings_file.read_text()}\nis invalid"
+            f" (likely outdated), see validation error. Please delete {isettings_file} &"
             " reload (remote) or re-initialize (local) the instance with the same name & storage location."
         ) from error
     isettings = setup_instance_from_store(settings_store)
@@ -69,8 +87,7 @@ def load_or_create_user_settings(api_key: str | None = None) -> UserSettings:
     """Return current user settings.
 
     Args:
-        api_key: if provided and there is no current user,
-            perform login and return the user settings.
+        api_key: if provided and there is no current user, perform login and return the user settings.
     """
     current_user_settings = current_user_settings_file()
     if not current_user_settings.exists():
@@ -125,6 +142,7 @@ def setup_instance_from_store(store: InstanceSettingsStore) -> InstanceSettings:
         schema_id=None if store.schema_id in {None, "null"} else UUID(store.schema_id),
         fine_grained_access=store.fine_grained_access,
         db_permissions=_null_to_value(store.db_permissions),
+        _is_clone=store.is_clone,
     )
 
 

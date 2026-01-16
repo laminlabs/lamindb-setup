@@ -5,6 +5,7 @@ import sys
 from pathlib import Path
 from typing import TYPE_CHECKING
 
+import jwt
 from lamin_utils import logger
 from platformdirs import user_cache_dir
 
@@ -45,6 +46,12 @@ def _process_cache_path(cache_path: UPathStr | None) -> UPath | None:
     return cache_dir
 
 
+# returned by settings.branch for none/none instance
+class MainBranchMock:
+    id = 1
+    name = "main"
+
+
 class SetupSettings:
     """Setup settings."""
 
@@ -58,7 +65,6 @@ class SetupSettings:
 
     _auto_connect_path: Path = settings_dir / "auto_connect"
     _private_django_api_path: Path = settings_dir / "private_django_api"
-    _work_dir: Path = settings_dir / "work_dir.txt"
 
     _cache_dir: Path | None = None
 
@@ -68,25 +74,6 @@ class SetupSettings:
     @property
     def _instance_settings_path(self) -> Path:
         return current_instance_settings_file()
-
-    @property
-    def work_dir(self) -> Path | None:
-        """Get or set the current working directory.
-
-        If setting it to `None`, the working directory is unset
-        """
-        if not self._work_dir.exists():
-            return None
-        return Path(self._work_dir.read_text())
-
-    @work_dir.setter
-    def work_dir(self, value: str | Path | None) -> None:
-        if value is None:
-            if self._work_dir.exists():
-                self._work_dir.unlink()
-        else:
-            value_str = Path(value).expanduser().resolve().as_posix()
-            self._work_dir.write_text(value_str)
 
     @property
     def settings_dir(self) -> Path:
@@ -112,6 +99,31 @@ class SetupSettings:
             self._auto_connect_path.unlink(missing_ok=True)
 
     @property
+    def _dev_dir_path(self) -> Path:
+        return (
+            settings_dir / f"dev-dir--{self.instance.owner}--{self.instance.name}.txt"
+        )
+
+    @property
+    def dev_dir(self) -> Path | None:
+        """Get or set the local development directory for the current instance.
+
+        If setting it to `None`, the working development directory is unset.
+        """
+        if not self._dev_dir_path.exists():
+            return None
+        return Path(self._dev_dir_path.read_text())
+
+    @dev_dir.setter
+    def dev_dir(self, value: str | Path | None) -> None:
+        if value is None:
+            if self._dev_dir_path.exists():
+                self._dev_dir_path.unlink()
+        else:
+            value_str = Path(value).expanduser().resolve().as_posix()
+            self._dev_dir_path.write_text(value_str)
+
+    @property
     def _branch_path(self) -> Path:
         return (
             settings_dir
@@ -134,6 +146,10 @@ class SetupSettings:
     # and we never need a DB request
     def branch(self) -> Branch:
         """Default branch."""
+        # this is needed for .filter() with non-default connections
+        if not self._instance_exists:
+            return MainBranchMock()
+
         if self._branch is None:
             from lamindb import Branch
 
@@ -216,10 +232,9 @@ class SetupSettings:
         If `True`, the current instance is connected, meaning that the db and other settings
         are properly configured for use.
         """
-        if self._instance_exists:
-            return self.instance.slug != "none/none"
-        else:
-            return False
+        from . import django
+
+        return self._instance_exists and django.IS_SETUP
 
     @property
     def private_django_api(self) -> bool:
@@ -278,12 +293,7 @@ class SetupSettings:
 
     @property
     def _instance_exists(self):
-        try:
-            self.instance  # noqa
-            return True
-        # this is implicit logic that catches if no instance is loaded
-        except CurrentInstanceNotConfigured:
-            return False
+        return self.instance.slug != "none/none"
 
     @property
     def cache_dir(self) -> UPath:
@@ -314,10 +324,38 @@ class SetupSettings:
     def paths(self) -> type[SetupPaths]:
         """Convert cloud paths to lamindb local paths.
 
-        Use `settings.paths.cloud_to_local_no_update`
-        or `settings.paths.cloud_to_local`.
+        Use `settings.paths.cloud_to_local_no_update` or `settings.paths.cloud_to_local`.
         """
         return SetupPaths
+
+    def _debug_db_access(self):
+        """Debug database access problems."""
+        instance = self.instance
+        db_permissions = instance._db_permissions
+        print("db connection: ", instance.db)
+        print("db permissions: ", db_permissions)
+        if db_permissions != "jwt":
+            return
+        # sets the token if not present yet
+        print("available spaces: ", instance.available_spaces)
+
+        from lamindb_setup.core.django import db_token_manager
+
+        tokens = db_token_manager.tokens
+        if tokens:
+            for conn, token in tokens.items():
+                token_encoded = token._token
+                if token_encoded is None:
+                    token._refresh_token()
+                    token_encoded = token._token
+                token_decoded = jwt.decode(
+                    token_encoded, options={"verify_signature": False}
+                )
+                print(
+                    f"db token for the connection '{conn}' is '{token_encoded}': {token_decoded}"
+                )
+        else:
+            print("no db tokens are present")
 
     def __repr__(self) -> str:
         """Rich string representation."""
@@ -331,9 +369,9 @@ class SetupSettings:
         if self._instance_exists:
             instance_rep = self.instance.__repr__().split("\n")
             repr += f"{colors.cyan('Instance:')} {instance_rep[0].replace('Instance: ', '')}\n"
-            repr += f" - work-dir: {self.work_dir}\n"
             repr += f" - branch: {self._read_branch_idlike_name()[1]}\n"
-            repr += f" - space: {self._read_space_idlike_name()[1]}"
+            repr += f" - space: {self._read_space_idlike_name()[1]}\n"
+            repr += f" - dev-dir: {self.dev_dir}"
             repr += f"\n{colors.yellow('Details:')}\n"
             repr += "\n".join(instance_rep[1:])
         else:

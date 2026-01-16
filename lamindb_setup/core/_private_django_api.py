@@ -34,10 +34,9 @@ def private_django_api(reverse=False):
     # the order here matters
     # changing it might break the tests
     attributes = [
-        "MultipleObjectsReturned",
         "add_to_class",
+        "arefresh_from_db",
         "adelete",
-        "refresh_from_db",
         "asave",
         "clean",
         "clean_fields",
@@ -52,10 +51,8 @@ def private_django_api(reverse=False):
         "validate_unique",
     ]
     if reverse:
-        attributes.append("arefresh_from_db")
         attributes.append("full_clean")
     else:
-        attributes.append("a_refresh_from_db")
         attributes.append("full__clean")
 
     django_path = Path(db.__file__).parent.parent

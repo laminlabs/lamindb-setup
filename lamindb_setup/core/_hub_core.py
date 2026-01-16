@@ -383,7 +383,8 @@ def _init_instance_hub(
 ) -> None:
     from ._settings import settings
 
-    account_id = settings.user._uuid if account_id is None else account_id
+    created_by_id = settings.user._uuid.hex if account_id is None else account_id.hex  # type: ignore
+    owner_account_id = os.getenv("LAMINDB_ACCOUNT_ID_INIT", created_by_id)
 
     try:
         lamindb_version = metadata.version("lamindb")
@@ -391,13 +392,13 @@ def _init_instance_hub(
         lamindb_version = None
     fields = {
         "id": isettings._id.hex,
-        "account_id": account_id.hex,  # type: ignore
+        "account_id": owner_account_id,
         "name": isettings.name,
         "lnid": isettings.uid,
         "schema_str": isettings._schema_str,
         "lamindb_version": lamindb_version,
         "public": False,
-        "created_by_id": account_id.hex,  # type: ignore
+        "created_by_id": created_by_id,
     }
     if isettings.dialect != "sqlite":
         db_dsn = LaminDsnModel(db=isettings.db)
@@ -407,7 +408,7 @@ def _init_instance_hub(
             "db_port": db_dsn.db.port,
             "db_database": db_dsn.db.database,
         }
-        fields.update(db_fields)
+        fields.update(db_fields)  # type: ignore
     slug = isettings.slug
     # I'd like the following to be an upsert, but this seems to violate RLS
     # Similarly, if we don't specify `returning="minimal"`, we'll violate RLS
@@ -415,7 +416,9 @@ def _init_instance_hub(
     # as then init_instance is no longer idempotent
     try:
         client.table("instance").insert(fields, returning="minimal").execute()
-    except APIError:
+    except APIError as e:
+        if "new row violates row-level security policy" in str(e):
+            raise e
         logger.warning(f"instance already existed at: https://lamin.ai/{slug}")
         return None
     if isettings.dialect != "sqlite" and isettings.is_remote:
@@ -551,6 +554,9 @@ def _connect_instance_hub(
                     db_user["password" if fine_grained_access else "db_user_password"],
                 )
 
+        db_user_name = "none" if db_user_name is None else db_user_name
+        db_user_password = "none" if db_user_password is None else db_user_password
+
         if use_proxy_db:
             host = instance.get("proxy_host", None)
             assert host is not None, (
@@ -560,14 +566,16 @@ def _connect_instance_hub(
             assert port is not None, (
                 "Database proxy port is not available, please do not pass 'use_proxy_db'."
             )
+            # remove supabase project id if present
+            db_user_name = db_user_name.rsplit(".", 1)[0]
         else:
             host = instance["db_host"]
             port = instance["db_port"]
 
         db_dsn = LaminDsn.build(
             scheme=instance["db_scheme"],
-            user=db_user_name if db_user_name is not None else "none",
-            password=db_user_password if db_user_password is not None else "none",
+            user=db_user_name,
+            password=db_user_password,
             host=host,
             port=port,
             database=instance["db_database"],
@@ -708,7 +716,7 @@ def get_lamin_site_base_url():
 
 
 def sign_up_local_hub(email) -> str | tuple[str, str, str]:
-    # raises gotrue.errors.AuthApiError: User already registered
+    # raises AuthApiError: User already registered
     password = base62(40)  # generate new password
     sign_up_kwargs = {"email": email, "password": password}
     client = connect_hub()

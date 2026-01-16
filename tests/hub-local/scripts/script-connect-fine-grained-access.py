@@ -41,6 +41,9 @@ with connection.cursor() as cur:
 # check available spaces call
 assert ln_setup.settings.instance.available_spaces
 
+# run debug function for coverage
+ln_setup.settings._debug_db_access()
+
 # check reset
 db_token_manager.reset()
 assert not db_token_manager.tokens

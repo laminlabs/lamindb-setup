@@ -1,16 +1,13 @@
 """Errors.
 
-.. autosummary::
-   :toctree: .
-
-   CurrentInstanceNotConfigured
-   InstanceNotSetupError
-   ModuleWasntConfigured
-   StorageAlreadyManaged
-   StorageNotEmpty
-   InstanceLockedException
-   SettingsEnvFileOutdated
-   CannotSwitchDefaultInstance
+.. autoexception:: CurrentInstanceNotConfigured
+.. autoexception:: ModuleWasntConfigured
+.. autoexception:: StorageAlreadyManaged
+.. autoexception:: StorageNotEmpty
+.. autoexception:: InstanceLockedException
+.. autoexception:: SettingsEnvFileOutdated
+.. autoexception:: CannotSwitchDefaultInstance
+.. autoexception:: InstanceNotFoundError
 
 """
 
@@ -26,17 +23,6 @@ class DefaultMessageException(Exception):
         if message is None:
             message = self.default_message
         super().__init__(message)
-
-
-# TODO: remove this exception sooner or later because we don't have a need for it anymore
-class InstanceNotSetupError(DefaultMessageException):
-    default_message = """\
-To use lamindb, you need to connect to an instance.
-
-Connect to an instance: `ln.connect()`. Init an instance: `ln.setup.init()`.
-
-If you used the CLI to set up lamindb in a notebook, restart the Python session.
-"""
 
 
 class CurrentInstanceNotConfigured(DefaultMessageException):
@@ -64,6 +50,10 @@ class StorageAlreadyManaged(Exception):
 class StorageNotEmpty(click.ClickException):
     def show(self, file=None):
         pass
+
+
+class InstanceNotFoundError(Exception):
+    pass
 
 
 # raise if a cloud SQLite instance is already locked
