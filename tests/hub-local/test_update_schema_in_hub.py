@@ -155,7 +155,7 @@ def test_update_schema_in_hub(setup_instance):
         "through": {
             "left_key": "compound_id",
             "right_key": "artifact_id",
-            "link_table_name": "pertdb_artifactcompound",
+            "link_table_name": "wetlab_artifactcompound",
         },
         "field_name": "artifacts",
         "model_name": "compound",
