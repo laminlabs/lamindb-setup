@@ -7,7 +7,7 @@ from lamindb_setup._schema_metadata import _dict_to_uuid, update_schema_in_hub
 def setup_instance():
     ln_setup.init(
         storage="./test_storage",
-        modules="bionty,wetlab",
+        modules="bionty,pertdb",
         db="postgresql://postgres:postgres@127.0.0.1:54322/postgres",
         name="test-update-modules",
     )
@@ -34,12 +34,12 @@ def test_update_schema_in_hub(setup_instance):
     assert module_set_info[1]["id"] == 0
     assert module_set_info[1]["name"] == "core"
     assert module_set_info[2]["id"] == 0
-    assert module_set_info[2]["name"] == "wetlab"
+    assert module_set_info[2]["name"] == "pertdb"
 
     assert len(schema["schema_json"].keys()) == 3
     assert "core" in schema["schema_json"]
     assert "bionty" in schema["schema_json"]
-    assert "wetlab" in schema["schema_json"]
+    assert "pertdb" in schema["schema_json"]
 
     assert not schema["schema_json"]["core"]["artifact"]["is_link_table"]
     assert not schema["schema_json"]["core"]["artifact"]["is_auto_created"]
@@ -149,17 +149,17 @@ def test_update_schema_in_hub(setup_instance):
         "related_schema_name": "bionty",
     }
 
-    assert schema["schema_json"]["wetlab"]["compound"]["fields"]["artifacts"] == {
+    assert schema["schema_json"]["pertdb"]["compound"]["fields"]["artifacts"] == {
         "type": "ManyToManyField",
         "column_name": None,
         "through": {
             "left_key": "compound_id",
             "right_key": "artifact_id",
-            "link_table_name": "wetlab_artifactcompound",
+            "link_table_name": "pertdb_artifactcompound",
         },
         "field_name": "artifacts",
         "model_name": "compound",
-        "schema_name": "wetlab",
+        "schema_name": "pertdb",
         "is_link_table": False,
         "is_primary_key": False,
         "is_editable": False,
