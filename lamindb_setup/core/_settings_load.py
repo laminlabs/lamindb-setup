@@ -49,7 +49,7 @@ def load_cache_path_from_settings(storage_settings: Path | None = None) -> Path 
 
 def find_module_candidates():
     """Find all local packages that depend on lamindb."""
-    candidates = ["bionty", "wetlab"]
+    candidates = ["bionty", "pertdb"]
     return [c for c in candidates if find_spec(c) is not None]
 
 

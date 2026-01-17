@@ -5,6 +5,6 @@ import pytest
 def simple_instance():
     import lamindb_setup as ln_setup
 
-    ln_setup.init(storage="./testdb", modules="bionty,wetlab")
+    ln_setup.init(storage="./testdb", modules="bionty,pertdb")
     yield
     ln_setup.delete("testdb", force=True)

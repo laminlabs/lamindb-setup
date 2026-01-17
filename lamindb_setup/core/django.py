@@ -362,7 +362,7 @@ def setup_django(
                     shutil.copyfileobj(f_in, f_out)
         global IS_MIGRATING
         IS_MIGRATING = True
-        call_command("migrate", verbosity=0)
+        call_command("migrate", verbosity=2)
         IS_MIGRATING = False
 
     global IS_SETUP
