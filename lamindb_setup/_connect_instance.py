@@ -22,10 +22,9 @@ from .core._settings_load import load_instance_settings
 from .core._settings_storage import StorageSettings
 from .core._settings_store import instance_settings_file
 from .core.cloud_sqlite_locker import unlock_cloud_sqlite_upon_exception
-from .lazy_import import disable_lazy_imports as _disable_lazy_imports
 from .core.django import reset_django
 from .errors import CannotSwitchDefaultInstance, InstanceNotFoundError
-
+from .lazy_import import disable_lazy_imports as _disable_lazy_imports
 
 if TYPE_CHECKING:
     from pathlib import Path
