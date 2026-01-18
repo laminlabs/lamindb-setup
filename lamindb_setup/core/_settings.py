@@ -2,30 +2,38 @@ from __future__ import annotations
 
 import os
 import sys
+from pathlib import Path
 from typing import TYPE_CHECKING
 
-from appdirs import AppDirs
+import jwt
 from lamin_utils import logger
+from platformdirs import user_cache_dir
+
+from lamindb_setup.errors import CurrentInstanceNotConfigured
 
 from ._settings_load import (
+    load_cache_path_from_settings,
     load_instance_settings,
     load_or_create_user_settings,
-    load_system_storage_settings,
 )
-from ._settings_store import current_instance_settings_file, settings_dir
+from ._settings_store import (
+    current_instance_settings_file,
+    settings_dir,
+    system_settings_dir,
+)
 from .upath import LocalPathClasses, UPath
 
 if TYPE_CHECKING:
-    from pathlib import Path
+    from lamindb.models import Branch, Space
 
     from lamindb_setup.core import InstanceSettings, StorageSettings, UserSettings
     from lamindb_setup.types import UPathStr
 
 
-DEFAULT_CACHE_DIR = UPath(AppDirs("lamindb", "laminlabs").user_cache_dir)
+DEFAULT_CACHE_DIR = UPath(user_cache_dir(appname="lamindb", appauthor="laminlabs"))
 
 
-def _process_cache_path(cache_path: UPathStr | None):
+def _process_cache_path(cache_path: UPathStr | None) -> UPath | None:
     if cache_path is None or cache_path == "null":
         return None
     cache_dir = UPath(cache_path)
@@ -33,7 +41,15 @@ def _process_cache_path(cache_path: UPathStr | None):
         raise ValueError("cache dir should be a local path.")
     if cache_dir.exists() and not cache_dir.is_dir():
         raise ValueError("cache dir should be a directory.")
+    if not cache_dir.is_absolute():
+        raise ValueError("A path to the cache dir should be absolute.")
     return cache_dir
+
+
+# returned by settings.branch for none/none instance
+class MainBranchMock:
+    id = 1
+    name = "main"
 
 
 class SetupSettings:
@@ -52,6 +68,9 @@ class SetupSettings:
 
     _cache_dir: Path | None = None
 
+    _branch = None  # do not have types here
+    _space = None  # do not have types here
+
     @property
     def _instance_settings_path(self) -> Path:
         return current_instance_settings_file()
@@ -65,25 +84,146 @@ class SetupSettings:
     def auto_connect(self) -> bool:
         """Auto-connect to current instance upon `import lamindb`.
 
-        Upon installing `lamindb`, this setting is `False`.
-
-        Upon calling `lamin init` or `lamin connect` on the CLI, this setting is switched to `True`.
-
-        `ln.connect()` doesn't change the value of this setting.
-
-        You can manually change this setting
-
-        - in Python: `ln.setup.settings.auto_connect = True/False`
-        - via the CLI: `lamin settings set auto-connect true/false`
+        This setting is always `True` and will be removed in a future version.
         """
-        return self._auto_connect_path.exists()
+        return True
 
     @auto_connect.setter
     def auto_connect(self, value: bool) -> None:
+        logger.warning(
+            "setting auto_connect to `False` no longer has an effect and the setting will likely be removed in the future",
+        )
         if value:
             self._auto_connect_path.touch()
         else:
             self._auto_connect_path.unlink(missing_ok=True)
+
+    @property
+    def _dev_dir_path(self) -> Path:
+        return (
+            settings_dir / f"dev-dir--{self.instance.owner}--{self.instance.name}.txt"
+        )
+
+    @property
+    def dev_dir(self) -> Path | None:
+        """Get or set the local development directory for the current instance.
+
+        If setting it to `None`, the working development directory is unset.
+        """
+        if not self._dev_dir_path.exists():
+            return None
+        return Path(self._dev_dir_path.read_text())
+
+    @dev_dir.setter
+    def dev_dir(self, value: str | Path | None) -> None:
+        if value is None:
+            if self._dev_dir_path.exists():
+                self._dev_dir_path.unlink()
+        else:
+            value_str = Path(value).expanduser().resolve().as_posix()
+            self._dev_dir_path.write_text(value_str)
+
+    @property
+    def _branch_path(self) -> Path:
+        return (
+            settings_dir
+            / f"current-branch--{self.instance.owner}--{self.instance.name}.txt"
+        )
+
+    def _read_branch_idlike_name(self) -> tuple[int | str, str]:
+        idlike: str | int = 1
+        name: str = "main"
+        try:
+            branch_path = self._branch_path
+        except SystemExit:  # in case no instance setup
+            return idlike, name
+        if branch_path.exists():
+            idlike, name = branch_path.read_text().split("\n")
+        return idlike, name
+
+    @property
+    # TODO: refactor so that it returns a BranchMock object
+    # and we never need a DB request
+    def branch(self) -> Branch:
+        """Default branch."""
+        # this is needed for .filter() with non-default connections
+        if not self._instance_exists:
+            return MainBranchMock()
+
+        if self._branch is None:
+            from lamindb import Branch
+
+            idlike, _ = self._read_branch_idlike_name()
+            self._branch = Branch.get(idlike)
+        return self._branch
+
+    @branch.setter
+    def branch(self, value: str | Branch) -> None:
+        from lamindb import Branch, Q
+        from lamindb.errors import DoesNotExist
+
+        if isinstance(value, Branch):
+            assert value._state.adding is False, "Branch must be saved"
+            branch_record = value
+        else:
+            branch_record = Branch.filter(Q(name=value) | Q(uid=value)).one_or_none()
+            if branch_record is None:
+                raise DoesNotExist(
+                    f"Branch '{value}', please check on the hub UI whether you have the correct `uid` or `name`."
+                )
+        # we are sure that the current instance is setup because
+        # it will error on lamindb import otherwise
+        self._branch_path.write_text(f"{branch_record.uid}\n{branch_record.name}")
+        self._branch = branch_record
+
+    @property
+    def _space_path(self) -> Path:
+        return (
+            settings_dir
+            / f"current-space--{self.instance.owner}--{self.instance.name}.txt"
+        )
+
+    def _read_space_idlike_name(self) -> tuple[int | str, str]:
+        idlike: str | int = 1
+        name: str = "all"
+        try:
+            space_path = self._space_path
+        except SystemExit:  # in case no instance setup
+            return idlike, name
+        if space_path.exists():
+            idlike, name = space_path.read_text().split("\n")
+        return idlike, name
+
+    @property
+    # TODO: refactor so that it returns a BranchMock object
+    # and we never need a DB request
+    def space(self) -> Space:
+        """Default space."""
+        if self._space is None:
+            from lamindb import Space
+
+            idlike, _ = self._read_space_idlike_name()
+            self._space = Space.get(idlike)
+        return self._space
+
+    @space.setter
+    def space(self, value: str | Space) -> None:
+        from lamindb import Q, Space
+        from lamindb.errors import DoesNotExist
+
+        if isinstance(value, Space):
+            assert value._state.adding is False, "Space must be saved"
+            space_record = value
+        else:
+            space_record = Space.filter(Q(name=value) | Q(uid=value)).one_or_none()
+            if space_record is None:
+                raise DoesNotExist(
+                    f"Space '{value}', please check on the hub UI whether you have the correct `uid` or `name`."
+                )
+        # we are sure that the current instance is setup because
+        # it will error on lamindb import otherwise
+        self._space_path.write_text(f"{space_record.uid}\n{space_record.name}")
+        self._space = space_record
 
     @property
     def is_connected(self) -> bool:
@@ -92,16 +232,16 @@ class SetupSettings:
         If `True`, the current instance is connected, meaning that the db and other settings
         are properly configured for use.
         """
-        from .django import IS_SETUP  # always import to protect from assignment
+        from . import django
 
-        return IS_SETUP
+        return self._instance_exists and django.IS_SETUP
 
     @property
     def private_django_api(self) -> bool:
         """Turn internal Django API private to clean up the API (default `False`).
 
-        This patches your local pip-installed django installation. You can undo
-        the patch by setting this back to `False`.
+        This patches your local pip-installed django installation.
+        You can undo the patch by setting this back to `False`.
         """
         return self._private_django_api_path.exists()
 
@@ -153,12 +293,7 @@ class SetupSettings:
 
     @property
     def _instance_exists(self):
-        try:
-            self.instance  # noqa
-            return True
-        # this is implicit logic that catches if no instance is loaded
-        except SystemExit:
-            return False
+        return self.instance.slug != "none/none"
 
     @property
     def cache_dir(self) -> UPath:
@@ -166,7 +301,7 @@ class SetupSettings:
         if "LAMIN_CACHE_DIR" in os.environ:
             cache_dir = UPath(os.environ["LAMIN_CACHE_DIR"])
         elif self._cache_dir is None:
-            cache_path = load_system_storage_settings().get("lamindb_cache_path", None)
+            cache_path = load_cache_path_from_settings()
             cache_dir = _process_cache_path(cache_path)
             if cache_dir is None:
                 cache_dir = DEFAULT_CACHE_DIR
@@ -189,24 +324,63 @@ class SetupSettings:
     def paths(self) -> type[SetupPaths]:
         """Convert cloud paths to lamindb local paths.
 
-        Use `settings.paths.cloud_to_local_no_update`
-        or `settings.paths.cloud_to_local`.
+        Use `settings.paths.cloud_to_local_no_update` or `settings.paths.cloud_to_local`.
         """
         return SetupPaths
 
+    def _debug_db_access(self):
+        """Debug database access problems."""
+        instance = self.instance
+        db_permissions = instance._db_permissions
+        print("db connection: ", instance.db)
+        print("db permissions: ", db_permissions)
+        if db_permissions != "jwt":
+            return
+        # sets the token if not present yet
+        print("available spaces: ", instance.available_spaces)
+
+        from lamindb_setup.core.django import db_token_manager
+
+        tokens = db_token_manager.tokens
+        if tokens:
+            for conn, token in tokens.items():
+                token_encoded = token._token
+                if token_encoded is None:
+                    token._refresh_token()
+                    token_encoded = token._token
+                token_decoded = jwt.decode(
+                    token_encoded, options={"verify_signature": False}
+                )
+                print(
+                    f"db token for the connection '{conn}' is '{token_encoded}': {token_decoded}"
+                )
+        else:
+            print("no db tokens are present")
+
     def __repr__(self) -> str:
         """Rich string representation."""
+        from lamin_utils import colors
+
         # do not show current setting representation when building docs
         if "sphinx" in sys.modules:
             return object.__repr__(self)
-        repr = self.user.__repr__()
-        repr += f"\nAuto-connect in Python: {self.auto_connect}\n"
-        repr += f"Private Django API: {self.private_django_api}\n"
-        repr += f"Cache directory: {self.cache_dir.as_posix()}\n"
+
+        repr = ""
         if self._instance_exists:
-            repr += self.instance.__repr__()
+            instance_rep = self.instance.__repr__().split("\n")
+            repr += f"{colors.cyan('Instance:')} {instance_rep[0].replace('Instance: ', '')}\n"
+            repr += f" - branch: {self._read_branch_idlike_name()[1]}\n"
+            repr += f" - space: {self._read_space_idlike_name()[1]}\n"
+            repr += f" - dev-dir: {self.dev_dir}"
+            repr += f"\n{colors.yellow('Details:')}\n"
+            repr += "\n".join(instance_rep[1:])
         else:
-            repr += "\nNo instance connected"
+            repr += f"{colors.cyan('Instance:')} None"
+        repr += f"\n{colors.blue('Cache & settings:')}\n"
+        repr += f" - cache: {self.cache_dir.as_posix()}\n"
+        repr += f" - user settings: {settings_dir.as_posix()}\n"
+        repr += f" - system settings: {system_settings_dir.as_posix()}"
+        repr += f"\n{colors.green('User:')} {self.user.handle}"
         return repr
 
 
@@ -246,7 +420,7 @@ class SetupPaths:
         local_filepath = SetupPaths.cloud_to_local_no_update(filepath, cache_key)
         if not isinstance(filepath, LocalPathClasses):
             local_filepath.parent.mkdir(parents=True, exist_ok=True)
-            filepath.synchronize(local_filepath, **kwargs)  # type: ignore
+            filepath.synchronize_to(local_filepath, **kwargs)  # type: ignore
         return local_filepath
 
 

@@ -7,7 +7,7 @@ from lamindb_setup._schema_metadata import _dict_to_uuid, update_schema_in_hub
 def setup_instance():
     ln_setup.init(
         storage="./test_storage",
-        modules="bionty,wetlab",
+        modules="bionty,pertdb",
         db="postgresql://postgres:postgres@127.0.0.1:54322/postgres",
         name="test-update-modules",
     )
@@ -34,17 +34,21 @@ def test_update_schema_in_hub(setup_instance):
     assert module_set_info[1]["id"] == 0
     assert module_set_info[1]["name"] == "core"
     assert module_set_info[2]["id"] == 0
-    assert module_set_info[2]["name"] == "wetlab"
+    assert module_set_info[2]["name"] == "pertdb"
 
     assert len(schema["schema_json"].keys()) == 3
     assert "core" in schema["schema_json"]
     assert "bionty" in schema["schema_json"]
-    assert "wetlab" in schema["schema_json"]
+    assert "pertdb" in schema["schema_json"]
 
     assert not schema["schema_json"]["core"]["artifact"]["is_link_table"]
+    assert not schema["schema_json"]["core"]["artifact"]["is_auto_created"]
     assert schema["schema_json"]["core"]["artifactulabel"]["is_link_table"]
+    assert not schema["schema_json"]["core"]["artifactulabel"]["is_auto_created"]
+    assert schema["schema_json"]["core"]["artifact_input_of_runs"]["is_link_table"]
+    assert schema["schema_json"]["core"]["artifact_input_of_runs"]["is_auto_created"]
 
-    assert schema["schema_json"]["core"]["artifact"]["name_field"] is None
+    assert schema["schema_json"]["core"]["artifact"]["name_field"] == "key"
     assert schema["schema_json"]["core"]["artifact"]["ontology_id_field"] is None
     assert schema["schema_json"]["bionty"]["gene"]["name_field"] == "symbol"
     assert (
@@ -145,23 +149,23 @@ def test_update_schema_in_hub(setup_instance):
         "related_schema_name": "bionty",
     }
 
-    assert schema["schema_json"]["wetlab"]["well"]["fields"]["artifacts"] == {
+    assert schema["schema_json"]["pertdb"]["compound"]["fields"]["artifacts"] == {
         "type": "ManyToManyField",
         "column_name": None,
         "through": {
-            "left_key": "well_id",
+            "left_key": "compound_id",
             "right_key": "artifact_id",
-            "link_table_name": "wetlab_artifactwell",
+            "link_table_name": "wetlab_artifactcompound",
         },
         "field_name": "artifacts",
-        "model_name": "well",
-        "schema_name": "wetlab",
+        "model_name": "compound",
+        "schema_name": "pertdb",
         "is_link_table": False,
         "is_primary_key": False,
         "is_editable": False,
         "max_length": None,
         "relation_type": "many-to-many",
-        "related_field_name": "wells",
+        "related_field_name": "compounds",
         "related_model_name": "artifact",
         "related_schema_name": "core",
     }
@@ -170,9 +174,9 @@ def test_update_schema_in_hub(setup_instance):
         "type": "ManyToManyField",
         "column_name": None,
         "through": {
-            "left_key": "from_transform_id",
-            "right_key": "to_transform_id",
-            "link_table_name": "lamindb_transform_predecessors",
+            "left_key": "successor_id",
+            "right_key": "predecessor_id",
+            "link_table_name": "lamindb_transformtransform",
         },
         "field_name": "predecessors",
         "model_name": "transform",
@@ -191,9 +195,9 @@ def test_update_schema_in_hub(setup_instance):
         "type": "ManyToManyField",
         "column_name": None,
         "through": {
-            "left_key": "to_transform_id",
-            "right_key": "from_transform_id",
-            "link_table_name": "lamindb_transform_predecessors",
+            "left_key": "predecessor_id",
+            "right_key": "successor_id",
+            "link_table_name": "lamindb_transformtransform",
         },
         "field_name": "successors",
         "model_name": "transform",

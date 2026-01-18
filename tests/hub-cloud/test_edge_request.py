@@ -12,7 +12,7 @@ from lamindb_setup.core.hashing import hash_and_encode_as_b62
 def test_edge_request():
     if os.environ["LAMIN_ENV"] == "prod":
         # login to have access_token in ln_setup.settings.user
-        ln_setup.login("testuser1@lamin.ai")
+        ln_setup.login("testuser1")
         # this is hub prod url
         # normally it is configured through
         # lamindb_setup.core._hub_client.Environment
@@ -43,7 +43,7 @@ def test_edge_request():
         assert instance["owner"] == "laminlabs"
         assert instance["name"] == "lamindata"
         assert instance["api_url"] == "https://aws.us-east-1.lamin.ai/api"
-        assert instance["schema_str"].startswith("bionty,wetlab")
+        assert instance["schema_str"].startswith("bionty,pertdb")
         assert "schema_id" in instance
         # check that schema_id is well-formed UUID
         # if not, throws ValueError

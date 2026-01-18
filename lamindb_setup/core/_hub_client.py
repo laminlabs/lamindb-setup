@@ -2,13 +2,16 @@ from __future__ import annotations
 
 import json
 import os
+from contextlib import contextmanager
+from datetime import datetime
 from typing import Literal
 from urllib.request import urlretrieve
 
+import httpx
+from httpx_retries import Retry, RetryTransport
 from lamin_utils import logger
 from pydantic_settings import BaseSettings
-from supabase import Client, create_client  # type: ignore
-from supabase.lib.client_options import ClientOptions
+from supabase import Client, ClientOptions, create_client
 
 from ._settings_save import save_user_settings
 
@@ -60,20 +63,64 @@ class Environment:
         self.supabase_anon_key: str = key
 
 
+DEFAULT_TIMEOUT = 12
+
+
+# needed to log retries
+class LogRetry(Retry):
+    def increment(self):
+        new = super().increment()
+        now = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        # new.attempts_made is the 1-based retry count
+        logger.warning(f"{now} HTTP retry attempt {new.attempts_made}/{new.total}")
+        return new
+
+
 # runs ~0.5s
 def connect_hub(
     fallback_env: bool = False, client_options: ClientOptions | None = None
 ) -> Client:
     env = Environment(fallback=fallback_env)
     if client_options is None:
-        # function_client_timeout=5 by default
-        # increase to avoid rare timeouts for edge functions
         client_options = ClientOptions(
             auto_refresh_token=False,
-            function_client_timeout=20,
-            postgrest_client_timeout=20,
+            function_client_timeout=DEFAULT_TIMEOUT,
+            postgrest_client_timeout=DEFAULT_TIMEOUT,
         )
-    return create_client(env.supabase_api_url, env.supabase_anon_key, client_options)
+    client = create_client(env.supabase_api_url, env.supabase_anon_key, client_options)
+    # needed to enable retries for http requests in supabase
+    # these are separate clients and need separate transports
+    transports = []
+    for _ in range(2):
+        transports.append(
+            RetryTransport(
+                retry=LogRetry(total=2, backoff_factor=0.2),
+                transport=httpx.HTTPTransport(verify=True, http2=True, trust_env=True),
+            )
+        )
+    # this overwrites transports of existing httpx clients
+    # if proxies are set, the default transports that were created on clients init
+    # will be used, irrespective of these re-settings
+    client.auth._http_client._transport = transports[0]
+    client.postgrest.session._transport = transports[1]
+    # POST is not retryable by default, but for our functions it should be safe to retry
+    client.functions._client._transport = RetryTransport(
+        retry=LogRetry(
+            total=2,
+            backoff_factor=0.2,
+            allowed_methods=[
+                "HEAD",
+                "GET",
+                "PUT",
+                "DELETE",
+                "OPTIONS",
+                "TRACE",
+                "POST",
+            ],
+        ),
+        transport=httpx.HTTPTransport(verify=True, http2=True, trust_env=True),
+    )
+    return client
 
 
 def connect_hub_with_auth(
@@ -114,6 +161,11 @@ def get_access_token(
             }
         )
         return auth_response.session.access_token
+    except Exception as e:
+        # we need to log the problem here because the exception is usually caught outside
+        # in call_with_fallback_auth
+        logger.warning(f"failed to update your lamindb access token: {e}")
+        raise e
     finally:
         hub.auth.sign_out(options={"scope": "local"})
 
@@ -125,17 +177,18 @@ def call_with_fallback_auth(
     access_token = kwargs.pop("access_token", None)
 
     if access_token is not None:
+        client = None
         try:
             client = connect_hub_with_auth(access_token=access_token)
             result = callable(**kwargs, client=client)
         finally:
-            try:
+            if client is not None:
                 client.auth.sign_out(options={"scope": "local"})
-            except NameError:
-                pass
+
         return result
 
     for renew_token, fallback_env in [(False, False), (True, False), (False, True)]:
+        client = None
         try:
             client = connect_hub_with_auth(
                 renew_token=renew_token, fallback_env=fallback_env
@@ -156,10 +209,9 @@ def call_with_fallback_auth(
             if fallback_env:
                 raise e
         finally:
-            try:
+            if client is not None:
                 client.auth.sign_out(options={"scope": "local"})
-            except NameError:
-                pass
+
     return result
 
 
@@ -168,6 +220,7 @@ def call_with_fallback(
     **kwargs,
 ):
     for fallback_env in [False, True]:
+        client = None
         try:
             client = connect_hub(fallback_env=fallback_env)
             result = callable(**kwargs, client=client)
@@ -176,25 +229,36 @@ def call_with_fallback(
             if fallback_env:
                 raise e
         finally:
-            try:
+            if client is not None:
                 # in case there was sign in
                 client.auth.sign_out(options={"scope": "local"})
-            except NameError:
-                pass
     return result
 
 
-def requests_client():
-    # local is used in tests
-    if os.environ.get("LAMIN_ENV", "prod") == "local":
-        from fastapi.testclient import TestClient
-        from laminhub_rest.main import app
+@contextmanager
+def httpx_client():
+    client = None
+    try:
+        # local is used in tests
+        if os.environ.get("LAMIN_ENV", "prod") == "local":
+            from fastapi.testclient import TestClient
+            from laminhub_rest.main import app
 
-        return TestClient(app)
-
-    import requests  # type: ignore
-
-    return requests
+            client = TestClient(app)
+        else:
+            transport = RetryTransport(
+                retry=LogRetry(total=2, backoff_factor=0.2),
+                transport=httpx.HTTPTransport(verify=True, http2=True, trust_env=True),
+            )
+            # first we create a client to build the proxy map from the env variables
+            # if proxies are set, the default transports will be used
+            # otherwise the RetryTransport object that we assign below
+            client = httpx.Client(trust_env=True)
+            client._transport = transport
+        yield client
+    finally:
+        if client is not None:
+            client.close()
 
 
 def request_with_auth(
@@ -204,25 +268,27 @@ def request_with_auth(
     renew_token: bool = True,
     **kwargs,
 ):
-    requests = requests_client()
-
     headers = kwargs.pop("headers", {})
     headers["Authorization"] = f"Bearer {access_token}"
+    timeout = kwargs.pop("timeout", DEFAULT_TIMEOUT)
 
-    make_request = getattr(requests, method)
-    response = make_request(url, headers=headers, **kwargs)
-    # upate access_token and try again if failed
-    if response.status_code != 200 and renew_token:
-        from lamindb_setup import settings
+    with httpx_client() as client:
+        make_request = getattr(client, method)
+        response = make_request(url, headers=headers, timeout=timeout, **kwargs)
+        status_code = response.status_code
+        # update access_token and try again if failed
+        if not (200 <= status_code < 300) and renew_token:
+            from lamindb_setup import settings
 
-        access_token = get_access_token(
-            settings.user.email, settings.user.password, settings.user.api_key
-        )
+            logger.debug(f"{method} {url} failed: {status_code} {response.text}")
 
-        settings.user.access_token = access_token
-        save_user_settings(settings.user)
+            access_token = get_access_token(
+                settings.user.email, settings.user.password, settings.user.api_key
+            )
 
-        headers["Authorization"] = f"Bearer {access_token}"
+            settings.user.access_token = access_token
+            save_user_settings(settings.user)
 
-        response = make_request(url, headers=headers, **kwargs)
+            headers["Authorization"] = f"Bearer {access_token}"
+            response = make_request(url, headers=headers, timeout=timeout, **kwargs)
     return response

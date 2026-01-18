@@ -68,9 +68,16 @@ def test_init_instance_postgres_default_name(get_hub_client):
     ln_setup.register(_test=True)
     assert ln_setup.settings.instance.slug == "testuser2/pgtest"
     # and check
-    instance, storage = _connect_instance_hub(
-        owner="testuser2", name=instance_name, client=hub
+    result = _connect_instance_hub(
+        owner="testuser2",
+        name=instance_name,
+        use_root_db_user=False,
+        use_proxy_db=False,
+        client=hub,
     )
+    if not isinstance(result, tuple):
+        raise TypeError(f"Expected tuple, got: {result}")
+    instance, _ = result  # no checks on storage
     # hub checks
     assert instance["db"].startswith("postgresql://none:none")
     assert instance["name"] == instance_name
@@ -84,6 +91,7 @@ def test_init_instance_postgres_default_name(get_hub_client):
     assert not ln_setup.settings.instance.storage.type_is_cloud
     assert ln_setup.settings.instance.owner == ln_setup.settings.user.handle
     assert ln_setup.settings.instance.dialect == "postgresql"
+    assert ln_setup.settings.instance.vendor == ln_setup.settings.instance.dialect
     assert ln_setup.settings.instance.db == pgurl
     assert (
         ln_setup.settings.instance.storage.root.as_posix()
@@ -107,7 +115,7 @@ def test_init_instance_postgres_custom_name():
 
 
 def test_init_instance_cwd():
-    # can't make it via fixture because need to chnage dir back before ln_setup.delete
+    # can't make it via fixture because need to change dir back before ln_setup.delete
     prev_wd = Path.cwd()
     storage = Path("./mystorage_cwd")
     storage.mkdir()

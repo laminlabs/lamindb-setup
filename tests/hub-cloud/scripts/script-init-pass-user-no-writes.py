@@ -16,7 +16,7 @@ current_instance_exists = current_instance_file.exists()
 testuser1 = load_user_settings(user_settings_file_handle("testuser1"))
 assert testuser1.handle == "testuser1"
 
-storage = f"s3://lamindb-ci/{os.environ['LAMIN_ENV']}_test/test-init-no-writes"
+storage = f"s3://lamindb-ci/{os.getenv('LAMIN_ENV', 'prod')}_test/test-init-no-writes"
 
 ln_setup.init(
     storage=storage,

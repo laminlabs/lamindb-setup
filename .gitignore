@@ -69,6 +69,9 @@ instance/
 # Scrapy stuff:
 .scrapy
 
+# Ruff
+.ruff_cache
+
 # Sphinx documentation
 docs/_build/
 
@@ -110,3 +113,6 @@ _docs_tmp*
 *.db
 storage_uid.txt
 test.ipynb
+test2.ipynb
+*_export
+update_clone.py

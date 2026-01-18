@@ -12,14 +12,17 @@ from lamin_utils import logger
 from lamindb_setup.errors import StorageAlreadyManaged
 
 from ._aws_options import (
-    HOSTED_REGIONS,
     LAMIN_ENDPOINTS,
     get_aws_options_manager,
 )
-from ._aws_storage import find_closest_aws_region
 from ._deprecated import deprecated
 from .hashing import hash_and_encode_as_b62
-from .upath import LocalPathClasses, UPath, _split_path_query, create_path
+from .upath import (
+    LocalPathClasses,
+    UPath,
+    create_path,
+    get_storage_region,
+)
 
 if TYPE_CHECKING:
     from lamindb_setup.types import StorageType, UPathStr
@@ -43,56 +46,49 @@ def instance_uid_from_uuid(instance_id: UUID) -> str:
     return hash_and_encode_as_b62(instance_id.hex)[:12]
 
 
-def get_storage_region(path: UPathStr) -> str | None:
-    path_str = str(path)
-    if path_str.startswith("s3://"):
-        import botocore.session
-        from botocore.config import Config
-        from botocore.exceptions import ClientError
+def get_storage_type(root_as_str: str) -> StorageType:
+    import fsspec
 
-        # check for endpoint_url in storage options if upath
-        if isinstance(path, UPath):
-            endpoint_url = path.storage_options.get("endpoint_url", None)
-        else:
-            endpoint_url = None
-        path_part = path_str.replace("s3://", "")
-        # check for endpoint_url in the path string
-        if "?" in path_part:
-            assert endpoint_url is None
-            path_part, query = _split_path_query(path_part)
-            endpoint_url = query.get("endpoint_url", [None])[0]
-        bucket = path_part.split("/")[0]
-        session = botocore.session.get_session()
-        credentials = session.get_credentials()
-        if credentials is None or credentials.access_key is None:
-            config = Config(signature_version=botocore.session.UNSIGNED)
-        else:
-            config = None
-        s3_client = session.create_client(
-            "s3", endpoint_url=endpoint_url, config=config
-        )
+    convert = {"file": "local"}
+    # init_storage checks that the root protocol belongs to VALID_PROTOCOLS
+    protocol = fsspec.utils.get_protocol(root_as_str)
+    return convert.get(protocol, protocol)  # type: ignore
+
+
+def sanitize_root_user_input(root: UPathStr) -> UPath:
+    """Format a root path string."""
+    root_upath = root if isinstance(root, UPath) else UPath(root)
+    root_upath = root_upath.expanduser()
+    if isinstance(root_upath, LocalPathClasses):  # local paths
         try:
-            response = s3_client.head_bucket(Bucket=bucket)
-        except ClientError as exc:
-            response = getattr(exc, "response", {})
-            if response.get("Error", {}).get("Code") == "404":
-                raise exc
-        region = (
-            response.get("ResponseMetadata", {})
-            .get("HTTPHeaders", {})
-            .get("x-amz-bucket-region", None)
-        )
-    else:
-        region = None
-    return region
+            (root_upath / ".lamindb").mkdir(parents=True, exist_ok=True)
+            root_upath = root_upath.resolve()
+        except Exception:
+            logger.warning(f"unable to create .lamindb/ folder in {root_upath}")
+    return root_upath
+
+
+def convert_sanitized_root_path_to_str(root_upath: UPath) -> str:
+    # embed endpoint_url into path string for storing and displaying
+    if root_upath.protocol == "s3":
+        endpoint_url = root_upath.storage_options.get("endpoint_url", None)
+        # LAMIN_ENDPOINTS include None
+        if endpoint_url not in LAMIN_ENDPOINTS:
+            return f"s3://{root_upath.path.rstrip('/')}?endpoint_url={endpoint_url}"
+    return root_upath.as_posix().rstrip("/")
+
+
+def convert_root_path_to_str(root: UPathStr) -> str:
+    """Format a root path string."""
+    sanitized_root_upath = sanitize_root_user_input(root)
+    return convert_sanitized_root_path_to_str(sanitized_root_upath)
 
 
 def mark_storage_root(
     root: UPathStr, uid: str, instance_id: UUID, instance_slug: str
 ) -> Literal["__marked__"] | str:
     # we need a file in folder-like storage locations on S3 to avoid
-    # permission errors from leveraging s3fs on an empty hosted storage location
-    # (path.fs.find raises a PermissionError)
+    # permission errors from leveraging s3fs on an empty hosted storage location (path.fs.find raises a PermissionError)
     # we also need it in case a storage location is ambiguous because a server / local environment
     # doesn't have a globally unique identifier, then we screen for this file to map the
     # path on a storage location in the registry
@@ -121,15 +117,21 @@ def init_storage(
     instance_id: UUID,
     instance_slug: str,
     register_hub: bool | None = None,
-    prevent_register_hub: bool = False,
     init_instance: bool = False,
     created_by: UUID | None = None,
     access_token: str | None = None,
+    region: str | None = None,
+    space_uuid: UUID | None = None,
+    skip_mark_storage_root: bool = False,
 ) -> tuple[
     StorageSettings,
     Literal["hub-record-not-created", "hub-record-retrieved", "hub-record-created"],
 ]:
-    from ._hub_core import delete_storage_record, init_storage_hub
+    from ._hub_core import (
+        delete_storage_record,
+        get_default_bucket_for_instance,
+        init_storage_hub,
+    )
 
     assert root is not None, "`root` argument can't be `None`"
 
@@ -145,21 +147,14 @@ def init_storage(
         # this means we constructed a hosted location of shape s3://bucket-name/uid
         # within LaminHub
         assert root_str.endswith(uid)
-    region = None
-    lamin_env = os.getenv("LAMIN_ENV")
     if root_str.startswith("create-s3"):
         if root_str != "create-s3":
             assert "--" in root_str, "example: `create-s3--eu-central-1`"
             region = root_str.replace("create-s3--", "")
-        if region is None:
-            region = find_closest_aws_region()
-        else:
-            if region not in HOSTED_REGIONS:
-                raise ValueError(f"region has to be one of {HOSTED_REGIONS}")
-        if lamin_env is None or lamin_env == "prod":
-            root = f"s3://lamin-{region}/{uid}"
-        else:
-            root = f"s3://lamin-hosted-test/{uid}"
+        bucket = get_default_bucket_for_instance(
+            None if init_instance else instance_id, region
+        )
+        root = f"{bucket}/{uid}"
     elif (input_protocol := fsspec.utils.get_protocol(root_str)) not in VALID_PROTOCOLS:
         valid_protocols = ("local",) + VALID_PROTOCOLS[1:]  # show local instead of file
         raise ValueError(
@@ -174,18 +169,21 @@ def init_storage(
     )
     # this retrieves the storage record if it exists already in the hub
     # and updates uid and instance_id in ssettings
-    register_hub = (
-        register_hub or ssettings.type_is_cloud
-    )  # default to registering cloud storage
+    if register_hub and not ssettings.type_is_cloud and ssettings.host is None:
+        raise ValueError(
+            "`host` must be set for local storage locations that are registered on the hub"
+        )
     hub_record_status = init_storage_hub(
         ssettings,
-        auto_populate_instance=not init_instance,
         created_by=created_by,
         access_token=access_token,
-        prevent_creation=prevent_register_hub or not register_hub,
+        prevent_creation=not register_hub,
+        is_default=init_instance,
+        space_id=space_uuid,
     )
     # we check the write access here if the storage record has not been retrieved from the hub
-    if hub_record_status != "hub-record-retrieved":
+    # Sergei: should it in fact still go through if hub_record_status == "hub-record-not-created"?
+    if hub_record_status != "hub-record-retrieved" and not skip_mark_storage_root:
         try:
             # (federated) credentials for AWS access are provisioned under-the-hood
             # discussion: https://laminlabs.slack.com/archives/C04FPE8V01W/p1719260587167489
@@ -226,7 +224,10 @@ def init_storage(
 
 
 class StorageSettings:
-    """Settings for a storage location (local or cloud)."""
+    """Settings for a storage location (local or cloud).
+
+    Do not instantiate this class yourself, use `ln.Storage` instead.
+    """
 
     def __init__(
         self,
@@ -240,15 +241,7 @@ class StorageSettings:
     ):
         self._uid = uid
         self._uuid_ = uuid
-        self._root_init = UPath(root).expanduser()
-        if isinstance(self._root_init, LocalPathClasses):  # local paths
-            try:
-                (self._root_init / ".lamindb").mkdir(parents=True, exist_ok=True)
-                self._root_init = self._root_init.resolve()
-            except Exception:
-                logger.warning(
-                    f"unable to create .lamindb/ folder in {self._root_init}"
-                )
+        self._root_init: UPath = sanitize_root_user_input(root)
         self._root = None
         self._instance_id = instance_id
         # we don't yet infer region here to make init fast
@@ -261,11 +254,6 @@ class StorageSettings:
         # local storage
         self._has_local = False
         self._local = None
-
-    @property
-    @deprecated("_id")
-    def id(self) -> int:
-        return self._id
 
     @property
     def _id(self) -> int:
@@ -363,13 +351,7 @@ class StorageSettings:
     @property
     def root_as_str(self) -> str:
         """Formatted root string."""
-        # embed endpoint_url into path string for storing and displaying
-        if self._root_init.protocol == "s3":
-            endpoint_url = self._root_init.storage_options.get("endpoint_url", None)
-            # LAMIN_ENDPOINTS include None
-            if endpoint_url not in LAMIN_ENDPOINTS:
-                return f"s3://{self._root_init.path.rstrip('/')}?endpoint_url={endpoint_url}"
-        return self._root_init.as_posix().rstrip("/")
+        return convert_sanitized_root_path_to_str(self._root_init)
 
     @property
     def cache_dir(
@@ -386,6 +368,18 @@ class StorageSettings:
         return self.type != "local"
 
     @property
+    def host(self) -> str | None:
+        """Host identifier for local storage locations.
+
+        Is `None` for locations with `type != "local"`.
+
+        A globally unique user-defined host identifier (cluster, server, laptop, etc.).
+        """
+        if self.type != "local":
+            return None
+        return self.region
+
+    @property
     def region(self) -> str | None:
         """Storage region."""
         if self._region is None:
@@ -398,12 +392,7 @@ class StorageSettings:
 
         Returns the protocol as a stringe, e.g., "local", "s3", "gs", "http", "https".
         """
-        import fsspec
-
-        convert = {"file": "local"}
-        # init_storage checks that the root protocol belongs to VALID_PROTOCOLS
-        protocol = fsspec.utils.get_protocol(self.root_as_str)
-        return convert.get(protocol, protocol)  # type: ignore
+        return get_storage_type(self.root_as_str)
 
     @property
     def is_on_hub(self) -> bool:

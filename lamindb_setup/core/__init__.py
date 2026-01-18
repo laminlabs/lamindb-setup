@@ -1,20 +1,33 @@
 """Core setup library.
 
-Settings:
+General
+-------
 
-.. autosummary::
-   :toctree:
+.. autoclass:: SetupSettings
 
-   SetupSettings
-   UserSettings
-   InstanceSettings
-   StorageSettings
+User
+----
+
+.. autoclass:: UserSettings
+
+Instance
+--------
+
+.. autoclass:: InstanceSettings
+
+Storage
+-------
+
+.. autoclass:: StorageSettings
 
 """
 
 from . import django, upath
-from ._deprecated import deprecated
-from ._docs import doc_args
+from ._clone import (
+    upload_sqlite_clone,
+)
+from ._deprecated import deprecated  # documented in lamindb.base
+from ._docs import doc_args  # documented in lamindb.base
 from ._settings import SetupSettings
 from ._settings_instance import InstanceSettings
 from ._settings_storage import StorageSettings
