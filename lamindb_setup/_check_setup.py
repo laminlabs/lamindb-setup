@@ -123,8 +123,8 @@ def _check_instance_setup(from_module: str | None = None) -> bool:
             import lamindb  # connect to the instance
         else:
             # disable_auto_connect to avoid triggering _check_instance_setup in modules
-            disable_auto_connect(django_lamin.setup_django)(isettings)
             if isettings.slug != "none/none":
+                disable_auto_connect(django_lamin.setup_django)(isettings)
                 logger.important(f"connected lamindb: {isettings.slug}")
                 # update of local storage location through search_local_root()
                 settings._instance_settings = isettings
