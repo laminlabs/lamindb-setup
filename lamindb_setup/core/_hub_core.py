@@ -627,8 +627,6 @@ def access_aws(storage_root: str, access_token: str | None = None) -> dict[str, 
 
 
 def _access_aws(*, storage_root: str, client: Client) -> dict[str, dict]:
-    import lamindb_setup
-
     storage_root_info: dict[str, dict] = {"credentials": {}, "accessibility": {}}
     response = client.functions.invoke(
         "get-cloud-access-v1",
