@@ -37,6 +37,8 @@ Migration management
 
 __version__ = "1.18.2"  # denote a release candidate for 0.1.0 with 0.1rc1
 
+import importlib
+import importlib.metadata
 import os
 import warnings
 
@@ -49,6 +51,36 @@ warnings.filterwarnings(
 warnings.filterwarnings("ignore", category=DeprecationWarning, module="postgrest")
 
 from packaging import version as packaging_version
+from packaging.requirements import Requirement
+
+
+def _check_plugin_compatibility(package_name: str) -> None:
+    try:
+        dist = importlib.metadata.distribution(package_name)
+        lamindb_requirement = None
+
+        for req_str in dist.requires or []:
+            req = Requirement(req_str)
+            if req.name == "lamindb":
+                lamindb_requirement = req
+                break
+
+        if not lamindb_requirement:
+            return
+
+        if not lamindb_requirement.specifier.contains(__version__):
+            raise RuntimeError(
+                f"Your lamindb version ({__version__}) is higher than what {package_name} supports. "
+                f"Please upgrade them together: pip install -U 'lamindb[{package_name}]'."
+            )
+
+    except (importlib.metadata.PackageNotFoundError, ModuleNotFoundError):
+        pass
+
+
+for plugin in ["bionty", "wetlab", "clinicore"]:
+    _check_plugin_compatibility(plugin)
+
 
 from . import core, errors, io, types
 from ._check_setup import _check_instance_setup
