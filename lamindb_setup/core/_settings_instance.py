@@ -5,12 +5,9 @@ import shutil
 from pathlib import Path
 from typing import TYPE_CHECKING, Literal
 
-from django.db import connection
-from django.db.utils import ProgrammingError
 from lamin_utils import logger
 
 from ._deprecated import deprecated
-from ._hub_client import call_with_fallback
 from ._hub_crud import select_account_handle_name_by_lnid
 from ._hub_utils import LaminDsn, LaminDsnModel
 from ._settings_save import save_instance_settings
@@ -166,6 +163,7 @@ class InstanceSettings:
     def _search_local_root(
         self, local_root: str | None = None, mute_warning: bool = False
     ) -> StorageSettings | None:
+        from django.db.utils import ProgrammingError
         from lamindb.models import Storage
 
         if local_root is not None:
@@ -375,6 +373,7 @@ class InstanceSettings:
         if self._db_permissions != "jwt":
             return None
 
+        from django.db import connection
         from lamindb.models import Space
 
         spaces: dict = {"admin": [], "write": [], "read": []}
@@ -452,6 +451,8 @@ class InstanceSettings:
             sqlite_file.synchronize_to(cache_file, print_progress=True)  # type: ignore
 
     def _check_sqlite_lock(self):
+        from ._hub_client import call_with_fallback
+
         if not self._cloud_sqlite_locker.has_lock:
             locked_by = self._cloud_sqlite_locker._locked_by
             lock_msg = "Cannot load the instance, it is locked by "
@@ -560,7 +561,7 @@ class InstanceSettings:
         Will return `False` in case the user token can't find the instance.
         """
         if self._is_on_hub is None:
-            from ._hub_client import call_with_fallback_auth
+            from ._hub_client import call_with_fallback, call_with_fallback_auth
             from ._hub_crud import select_instance_by_id
             from ._settings import settings
 
