@@ -2,9 +2,7 @@ from __future__ import annotations
 
 import os
 
-import httpx
 from django.db import connection
-from django.db.migrations.loader import MigrationLoader
 from lamin_utils import logger
 from packaging import version
 
@@ -111,6 +109,9 @@ class migrate:
         isettings = settings.instance
 
         if isettings.is_on_hub and LAMIN_MIGRATE_ON_LAMBDA:
+            # dynamic import to avoid importing the heavy httpx at root
+            import httpx
+
             response = httpx.post(
                 f"{isettings.api_url}/instances/{isettings._id}/migrate",
                 headers={"Authorization": f"Bearer {settings.user.access_token}"},
@@ -300,6 +301,9 @@ class migrate:
 
             return latest_migrations
         else:
+            # import dynamically to avoid importing the heavy django.db.migrations at the root
+            from django.db.migrations.loader import MigrationLoader
+
             # Load all migrations using Django's migration loader
             loader = MigrationLoader(connection)
             squashed_replacements = set()
