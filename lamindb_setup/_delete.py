@@ -74,13 +74,6 @@ def delete(slug: str, force: bool = False, require_empty: bool = True) -> int | 
     See Also:
         Delete an instance via the CLI, see `here <https://docs.lamin.ai/cli#delete>`__.
     """
-    from .core._hub_core import (
-        delete_instance as delete_instance_on_hub,
-    )
-    from .core._hub_core import (
-        get_storage_records_for_instance,
-    )
-
     owner, name = get_owner_name_from_identifier(slug)
     isettings = _connect_instance(owner, name, raise_permission_error=False)
     if isettings.dialect != "sqlite":
@@ -125,6 +118,9 @@ def delete(slug: str, force: bool = False, require_empty: bool = True) -> int | 
         )
     # now everything that's on the hub
     if settings.user.handle != "anonymous":
+        # dynamic import to avoid importing hub logic at root
+        from .core._hub_core import get_storage_records_for_instance
+
         storage_records = get_storage_records_for_instance(isettings._id)
         for storage_record in storage_records:
             if storage_record["root"] == isettings.storage.root_as_str:
@@ -144,7 +140,10 @@ def delete(slug: str, force: bool = False, require_empty: bool = True) -> int | 
     if settings.user.handle != "anonymous" and isettings.is_on_hub:
         # start with deleting things on the hub
         # this will error if the user doesn't have permission
-        delete_instance_on_hub(isettings._id, require_empty=False)
+        # dynamic import to avoid importing hub logic at root
+        from .core._hub_core import delete_instance
+
+        delete_instance(isettings._id, require_empty=False)
     delete_by_isettings(isettings)
     # if lamin.db file was delete, then we might count -1
     if n_files <= 0 and isettings.storage.type == "local":
