@@ -58,7 +58,15 @@ class AWSOptionsManager:
         self._parameters_cache = {}  # this is not refreshed
 
         from aiobotocore.session import AioSession
+        from packaging import version as packaging_version
         from s3fs import S3FileSystem
+        from s3fs import __version__ as s3fs_version
+
+        if packaging_version.parse(s3fs_version) < packaging_version.parse("2023.12.2"):
+            raise RuntimeError(
+                f"The version of s3fs you have ({s3fs_version}) is impompatible "
+                "with lamindb, please upgrade it: pip install s3fs>=2023.12.2"
+            )
 
         anon_env = os.getenv("LAMIN_S3_ANON") == "true"
         # this is cached so will be resued with the connection initialized
