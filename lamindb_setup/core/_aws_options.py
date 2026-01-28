@@ -59,6 +59,8 @@ class AWSOptionsManager:
 
         from aiobotocore.session import AioSession
         from packaging import version as packaging_version
+
+        # takes 100ms to import, so keep it here to avoid delaying the import of the main module
         from s3fs import S3FileSystem
         from s3fs import __version__ as s3fs_version
 
