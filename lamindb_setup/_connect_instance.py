@@ -233,7 +233,8 @@ def reset_django_module_variables():
 
 
 def _connect_cli(
-    instance: str, use_root_db_user: bool = False, use_proxy_db: bool = False
+    instance: str,
+    use_root_db_user: bool = False,
 ) -> None:
     from lamindb_setup import settings as settings_
 
@@ -242,7 +243,6 @@ def _connect_cli(
         owner,
         name,
         use_root_db_user=use_root_db_user,
-        use_proxy_db=use_proxy_db,
         raise_systemexit=True,
     )
     isettings._persist(write_to_disk=True)
