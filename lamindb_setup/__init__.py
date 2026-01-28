@@ -48,7 +48,9 @@ warnings.filterwarnings(
 )
 warnings.filterwarnings("ignore", category=DeprecationWarning, module="postgrest")
 
-from . import core, errors, io, types
+# do not import io by default to reduce import time
+# it's not immediately needed in the default user workflows
+from . import core, errors, types
 from ._check_setup import _check_instance_setup
 from ._connect_instance import connect
 from ._delete import delete
@@ -95,6 +97,5 @@ _TESTING = _is_CI_environment()
 _call_registered_entry_points("lamindb_setup.on_import")
 
 settings.__doc__ = """Global :class:`~lamindb.setup.core.SetupSettings`."""
-
 
 close = disconnect  # backward compatibility
