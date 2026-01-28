@@ -241,7 +241,7 @@ jobs:
       - run: pyinstrument tests/profiling/scripts/import_lamindb_setup.py
       - run: pyinstrument tests/profiling/scripts/import_lamindb_setup.py
       - run: script -q -c "pyinstrument tests/profiling/scripts/import_lamindb_setup.py" profile.txt
-      - run: python tests/profiling/check_profiling_result.py
+      - run: python tests/profiling/check_profiling_result_lamindb_setup.py
 
   coverage:
     needs: [hub-prod, hub-cloud, storage, hub-local]
