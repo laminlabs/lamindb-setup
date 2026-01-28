@@ -8,7 +8,6 @@ from typing import TYPE_CHECKING, Literal
 from lamin_utils import logger
 
 from ._deprecated import deprecated
-from ._hub_utils import LaminDsn, LaminDsnModel
 from ._settings_save import save_instance_settings
 from ._settings_storage import (
     LEGACY_STORAGE_UID_FILE_KEY,
@@ -81,6 +80,7 @@ class InstanceSettings:
         _locker_user: UserSettings | None = None,  # user to lock for if cloud sqlite,
         _is_clone: bool = False,
     ):
+        # dynamic import to avoid importing pydantic at root
         from ._hub_utils import validate_db_arg
 
         self._id_: UUID = id
@@ -131,6 +131,9 @@ class InstanceSettings:
                     )
             elif attr == "db":
                 if self.dialect != "sqlite":
+                    # dynamic import to avoid importing pydantic at root
+                    from ._hub_utils import LaminDsn, LaminDsnModel
+
                     model = LaminDsnModel(db=value)
                     db_print = LaminDsn.build(
                         scheme=model.db.scheme,

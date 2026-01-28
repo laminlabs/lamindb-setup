@@ -13,7 +13,6 @@ from ._check_setup import _check_instance_setup
 from ._disconnect import disconnect
 from ._init_instance import load_from_isettings
 from ._silence_loggers import silence_loggers
-from .core._hub_utils import LaminDsnModel
 from .core._settings import settings
 from .core._settings_instance import InstanceSettings
 from .core._settings_load import load_instance_settings
@@ -65,6 +64,9 @@ def update_db_using_local(
             # read directly from the environment
             db_updated = db_env
         else:
+            # dynamic import to avoid importing the heavy LaminDsnModel at root
+            from .core._hub_utils import LaminDsnModel
+
             db_hub = hub_instance_result["db"]
             db_dsn_hub = LaminDsnModel(db=db_hub)
             # read from a cached settings file in case the hub result is inexistent
