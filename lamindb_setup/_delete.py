@@ -8,8 +8,6 @@ from lamin_utils import logger
 
 from ._connect_instance import _connect_instance, get_owner_name_from_identifier
 from .core._aws_options import HOSTED_BUCKETS
-from .core._hub_core import delete_instance as delete_instance_on_hub
-from .core._hub_core import get_storage_records_for_instance
 from .core._settings import settings
 from .core._settings_load import load_instance_settings
 from .core._settings_storage import StorageSettings
@@ -76,6 +74,13 @@ def delete(slug: str, force: bool = False, require_empty: bool = True) -> int | 
     See Also:
         Delete an instance via the CLI, see `here <https://docs.lamin.ai/cli#delete>`__.
     """
+    from .core._hub_core import (
+        delete_instance as delete_instance_on_hub,
+    )
+    from .core._hub_core import (
+        get_storage_records_for_instance,
+    )
+
     owner, name = get_owner_name_from_identifier(slug)
     isettings = _connect_instance(owner, name, raise_permission_error=False)
     if isettings.dialect != "sqlite":
