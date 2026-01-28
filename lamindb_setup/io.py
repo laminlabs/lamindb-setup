@@ -8,8 +8,6 @@ from importlib import import_module
 from pathlib import Path
 from typing import TYPE_CHECKING
 
-import numpy as np
-import pandas as pd
 from django.db import models, transaction
 from rich.progress import Progress
 
@@ -59,6 +57,7 @@ def _export_full_table(
     Returns:
         String identifier for single-file exports, or list of (table_name, chunk_path) tuples for chunked exports that need merging.
     """
+    import pandas as pd
     from django.db import connection
 
     import lamindb_setup as ln_setup
@@ -162,6 +161,8 @@ def export_db(
         max_workers: Number of parallel processes.
         chunk_size: Number of rows per chunk for large tables.
     """
+    import pandas as pd
+
     import lamindb_setup as ln_setup
 
     if output_dir is None:
@@ -212,6 +213,9 @@ def export_db(
 
 def _serialize_value(val):
     """Convert value to JSON string if it's a dict, list, or numpy array, otherwise return as-is."""
+    # keep dynamic import to minimize import time
+    import numpy as np
+
     if isinstance(val, (dict, list, np.ndarray)):
         return json.dumps(
             val, default=lambda o: o.tolist() if isinstance(o, np.ndarray) else None
@@ -232,6 +236,8 @@ def _import_registry(
     For SQLite, uses multi-row INSERTs with dynamic chunking to stay under the 999
     variable limit (2-5x faster than single-row INSERTs).
     """
+    import numpy as np
+    import pandas as pd
     from django.db import connection
 
     table_name = registry._meta.db_table
