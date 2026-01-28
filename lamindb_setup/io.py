@@ -9,7 +9,6 @@ from pathlib import Path
 from typing import TYPE_CHECKING
 
 from django.db import models, transaction
-from rich.progress import Progress
 
 if TYPE_CHECKING:
     from collections.abc import Iterable
@@ -162,6 +161,7 @@ def export_db(
         chunk_size: Number of rows per chunk for large tables.
     """
     import pandas as pd
+    from rich.progress import Progress
 
     import lamindb_setup as ln_setup
 
@@ -358,6 +358,7 @@ def import_db(
             If set to 'fail', raises an error if the table contains any data.
     """
     from django.db import connection
+    from rich.progress import Progress
 
     import lamindb_setup as ln_setup
 
