@@ -13,7 +13,6 @@ from ._check_setup import _check_instance_setup
 from ._disconnect import disconnect
 from ._init_instance import load_from_isettings
 from ._silence_loggers import silence_loggers
-from .core._hub_core import connect_instance_hub
 from .core._hub_utils import LaminDsnModel
 from .core._settings import settings
 from .core._settings_instance import InstanceSettings
@@ -113,6 +112,8 @@ def _connect_instance(
         # the following will return a string if the instance does not exist on the hub
         # do not call hub if the user is anonymous
         if owner != "anonymous":
+            from .core._hub_core import connect_instance_hub
+
             hub_result = connect_instance_hub(
                 owner=owner,
                 name=name,

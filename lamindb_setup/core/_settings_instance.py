@@ -8,7 +8,6 @@ from typing import TYPE_CHECKING, Literal
 from lamin_utils import logger
 
 from ._deprecated import deprecated
-from ._hub_crud import select_account_handle_name_by_lnid
 from ._hub_utils import LaminDsn, LaminDsnModel
 from ._settings_save import save_instance_settings
 from ._settings_storage import (
@@ -452,6 +451,7 @@ class InstanceSettings:
 
     def _check_sqlite_lock(self):
         from ._hub_client import call_with_fallback
+        from ._hub_crud import select_account_handle_name_by_lnid
 
         if not self._cloud_sqlite_locker.has_lock:
             locked_by = self._cloud_sqlite_locker._locked_by

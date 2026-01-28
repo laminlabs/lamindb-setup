@@ -6,7 +6,7 @@ import lamindb_setup as ln_setup
 ln.connect("laminlabs/lamindata")
 ln.track()
 
-threshold = 1.05
+threshold = 0.62
 # Parse duration from pyinstrument text output
 with open("profile.txt") as f:
     content = f.read()
