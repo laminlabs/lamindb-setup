@@ -8,12 +8,11 @@
 .. autoexception:: SettingsEnvFileOutdated
 .. autoexception:: CannotSwitchDefaultInstance
 .. autoexception:: InstanceNotFoundError
+.. autoexception:: InstanceNotCreated
 
 """
 
 from __future__ import annotations
-
-import click
 
 
 class DefaultMessageException(Exception):
@@ -47,12 +46,15 @@ class StorageAlreadyManaged(Exception):
     pass
 
 
-class StorageNotEmpty(click.ClickException):
-    def show(self, file=None):
-        pass
+class StorageNotEmpty(Exception):
+    pass
 
 
 class InstanceNotFoundError(Exception):
+    pass
+
+
+class InstanceNotCreated(Exception):
     pass
 
 
