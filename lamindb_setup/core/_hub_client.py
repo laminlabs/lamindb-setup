@@ -10,22 +10,16 @@ from urllib.request import urlretrieve
 import httpx
 from httpx_retries import Retry, RetryTransport
 from lamin_utils import logger
-from pydantic_settings import BaseSettings
 from supabase import Client, ClientOptions, create_client
 
 from ._settings_save import save_user_settings
-
-
-class Connector(BaseSettings):
-    url: str
-    key: str
+from ._settings_store import Connector
 
 
 def load_fallback_connector() -> Connector:
     url = "https://lamin-site-assets.s3.amazonaws.com/connector.env"
     connector_file, _ = urlretrieve(url)
-    connector = Connector(_env_file=connector_file)
-    return connector
+    return Connector.from_env_file(connector_file, "")
 
 
 PROD_URL = "https://hub.lamin.ai"

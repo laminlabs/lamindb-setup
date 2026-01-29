@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from pathlib import Path
-from typing import TYPE_CHECKING, Any, Optional, get_type_hints
+from typing import TYPE_CHECKING, Any, Optional, get_args, get_type_hints
 from uuid import UUID
 
 from ._settings_store import (
@@ -33,6 +33,21 @@ def save_user_settings(settings: UserSettings):
         )
 
 
+def _coerce_type_for_write(type_: Any) -> Any:
+    """Resolve union types to the non-None part for coercion when value is not None."""
+    if type_ in (str, bool):
+        return type_
+    if type_ == Optional[str]:  # noqa: UP045
+        return str
+    if type_ == Optional[bool]:  # noqa: UP045
+        return bool
+    args = get_args(type_) or ()
+    if type(None) in args:
+        non_none = next((a for a in args if a is not type(None)), type_)
+        return non_none if non_none in (str, bool) else type_
+    return type_
+
+
 def save_settings(
     settings: Any,
     settings_file: Path,
@@ -41,10 +56,7 @@ def save_settings(
 ):
     with open(settings_file, "w") as f:
         for store_key, type_ in type_hints.items():
-            if type_ == Optional[str]:  # noqa: UP045
-                type_ = str
-            if type_ == Optional[bool]:  # noqa: UP045
-                type_ = bool
+            type_ = _coerce_type_for_write(type_)
             if "__" not in store_key:
                 if store_key == "model_config":
                     continue
