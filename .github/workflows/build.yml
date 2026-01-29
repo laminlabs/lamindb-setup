@@ -238,14 +238,20 @@ jobs:
       - run: uv pip install --system git+https://github.com/laminlabs/laminprofiler
       - run: uv pip install --system pyinstrument
       - run: uv pip install --system -e .
+      - run: lamin login
+      - run: lamin connect laminlabs/lamindata
       - run: |
           script -q -c "pyinstrument tests/profiling/import_lamindb_setup.py" profile.txt
           script -q -c "pyinstrument tests/profiling/import_lamindb_setup.py" profile.txt
           script -q -c "pyinstrument tests/profiling/import_lamindb_setup.py" profile.txt
           script -q -c "pyinstrument tests/profiling/import_lamindb_setup.py" profile.txt
-      - run: lamin login
-      - run: lamin connect laminlabs/lamindata
       - run: laminprofiler check tests/profiling/import_lamindb_setup.py --threshold 0.25
+      - run: |
+          script -q -c "pyinstrument tests/profiling/print_lamindb_setup_settings.py" profile.txt
+          script -q -c "pyinstrument tests/profiling/print_lamindb_setup_settings.py" profile.txt
+          script -q -c "pyinstrument tests/profiling/print_lamindb_setup_settings.py" profile.txt
+          script -q -c "pyinstrument tests/profiling/print_lamindb_setup_settings.py" profile.txt
+      - run: laminprofiler check tests/profiling/print_lamindb_setup_settings.py --threshold 0.30
 
   coverage:
     needs: [hub-prod, hub-cloud, storage, hub-local]
