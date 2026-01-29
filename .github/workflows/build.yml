@@ -233,6 +233,7 @@ jobs:
                 '3.13'
                 }}
       - run: pip install git+https://github.com/laminlabs/laminci
+      - run: uv pip install --system git+https://github.com/laminlabs/lamin-cli
       - run: uv pip install --system git+https://github.com/laminlabs/lamindb
       - run: uv pip install --system git+https://github.com/laminlabs/laminprofiler
       - run: uv pip install --system pyinstrument
