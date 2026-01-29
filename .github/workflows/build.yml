@@ -232,16 +232,16 @@ jobs:
             ${{ github.ref == 'refs/heads/release' && '3.11' ||
                 '3.13'
                 }}
-      - run: pip install "laminci@git+https://github.com/laminlabs/laminci"
+      - run: pip install git+https://github.com/laminlabs/laminci
+      - run: uv pip install --system git+https://github.com/laminlabs/lamin-cli
       - run: uv pip install --system git+https://github.com/laminlabs/lamindb
+      - run: uv pip install --system git+https://github.com/laminlabs/laminprofiler
       - run: uv pip install --system -e .
       - run: lamin login
-      - run: uv pip install --system pyinstrument
-      - run: pyinstrument tests/profiling/scripts/import_lamindb_setup.py
-      - run: pyinstrument tests/profiling/scripts/import_lamindb_setup.py
-      - run: pyinstrument tests/profiling/scripts/import_lamindb_setup.py
-      - run: script -q -c "pyinstrument tests/profiling/scripts/import_lamindb_setup.py" profile.txt
-      - run: python tests/profiling/check_profiling_result_lamindb_setup.py
+      - run: lamin connect laminlabs/lamindata
+      - run: laminprofiler check tests/profiling/import_lamindb_setup.py --threshold 0.25
+      - run: laminprofiler check tests/profiling/print_lamindb_setup_settings.py --threshold 0.4
+      - run: laminprofiler check tests/profiling/connect_cli.py --threshold 2.0
 
   coverage:
     needs: [hub-prod, hub-cloud, storage, hub-local]
