@@ -24,7 +24,7 @@ def lint(session: nox.Session) -> None:
 @nox.session
 @nox.parametrize(
     "group",
-    ["hub-local", "hub-prod", "hub-cloud", "storage", "connectivity", "docs"],
+    ["hub-local", "hub-prod", "hub-cloud", "core", "connectivity", "docs"],
 )
 def install(session: nox.Session, group: str) -> None:
     no_deps_packages = "git+https://github.com/laminlabs/lamindb git+https://github.com/laminlabs/pertdb git+https://github.com/laminlabs/lamin-cli"
@@ -44,7 +44,7 @@ uv pip install --system git+https://github.com/laminlabs/bionty
         )
     elif group == "docs":
         cmds = modules_deps.strip()
-    elif group == "storage":
+    elif group == "core":
         cmds = modules_deps + "uv pip install --system gcsfs huggingface_hub sqlalchemy"
     elif group == "hub-prod":
         # cmds = "git clone --depth 1 https://github.com/django/django\n"
@@ -109,7 +109,7 @@ def hub_local(session: nox.Session):
 
 
 @nox.session
-def storage(session: nox.Session):
+def core(session: nox.Session):
     # we need AWS to retrieve credentials for testuser1, but want to eliminate
     # them after that
     os.environ["AWS_ACCESS_KEY_ID"] = os.environ["TMP_AWS_ACCESS_KEY_ID"]
@@ -118,7 +118,7 @@ def storage(session: nox.Session):
     # mimic anonymous access
     del os.environ["AWS_ACCESS_KEY_ID"]
     del os.environ["AWS_SECRET_ACCESS_KEY"]
-    run(session, f"pytest {COVERAGE_ARGS} ./tests/storage", env=os.environ)
+    run(session, f"pytest {COVERAGE_ARGS} ./tests/core", env=os.environ)
 
 
 @nox.session
