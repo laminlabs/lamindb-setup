@@ -91,8 +91,7 @@ jobs:
           path: .coverage
           include-hidden-files: true
 
-  # test user access to storage
-  storage:
+  core:
     runs-on: ubuntu-latest
     timeout-minutes: 13
     steps:
@@ -103,15 +102,15 @@ jobs:
           cache: "pip"
           cache-dependency-path: ".github/workflows/build.yml"
       - run: pip install "laminci@git+https://x-access-token:${{ secrets.LAMIN_BUILD_DOCS }}@github.com/laminlabs/laminci"
-      - run: nox -s "install(group='storage')"
+      - run: nox -s "install(group='core')"
       - run: nox -s lint
-      - run: nox -s storage
+      - run: nox -s core
         env:
           TMP_AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
           TMP_AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
       - uses: actions/upload-artifact@v4
         with:
-          name: coverage--storage
+          name: coverage--core
           path: .coverage
           include-hidden-files: true
 
@@ -244,7 +243,7 @@ jobs:
       - run: laminprofiler check tests/profiling/connect_cli.py --threshold 2.0
 
   coverage:
-    needs: [hub-prod, hub-cloud, storage, hub-local]
+    needs: [hub-prod, hub-cloud, core, hub-local]
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
