@@ -11,6 +11,15 @@ if TYPE_CHECKING:
     from pathlib import Path
 
 
+@pytest.fixture(scope="session")
+def simple_instance():
+    import lamindb_setup as ln_setup
+
+    ln_setup.init(storage="./testdb", modules="bionty,pertdb")
+    yield
+    ln_setup.delete("testdb", force=True)
+
+
 @pytest.fixture
 def cleanup_export_dir(tmp_path) -> Generator[Path, None, None]:
     output_dir = tmp_path / "test_export"
