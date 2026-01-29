@@ -16,8 +16,8 @@ with open("profile.txt") as f:
 
 print(content)
 print(f"Extracted duration: {duration:.3f}s")
-sheet = ln.Record.get(name="import_lamindb_setup.py")
-record = ln.Record(type=sheet).save()
+task = ln.Record.get(name="import_lamindb_setup.py")
+record = ln.Record(type=task).save()
 record.features.add_values(
     {
         "duration_in_sec": duration,
