@@ -237,11 +237,13 @@ jobs:
       - run: uv pip install --system git+https://github.com/laminlabs/laminprofiler
       - run: uv pip install --system pyinstrument
       - run: uv pip install --system -e .
+      - run: |
+          script -q -c "pyinstrument tests/profiling/import_lamindb_setup.py" profile.txt
+          script -q -c "pyinstrument tests/profiling/import_lamindb_setup.py" profile.txt
+          script -q -c "pyinstrument tests/profiling/import_lamindb_setup.py" profile.txt
+          script -q -c "pyinstrument tests/profiling/import_lamindb_setup.py" profile.txt
       - run: lamin login
-      - run: pyinstrument tests/profiling/import_lamindb_setup.py
-      - run: pyinstrument tests/profiling/import_lamindb_setup.py
-      - run: pyinstrument tests/profiling/import_lamindb_setup.py
-      - run: script -q -c "pyinstrument tests/profiling/import_lamindb_setup.py" profile.txt
+      - run: lamin connect laminlabs/lamindata
       - run: laminprofiler check tests/profiling/import_lamindb_setup.py --threshold 0.25
 
   coverage:
