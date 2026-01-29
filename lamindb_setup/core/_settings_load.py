@@ -8,7 +8,6 @@ from uuid import UUID, uuid4
 
 from dotenv import dotenv_values
 from lamin_utils import logger
-from pydantic import ValidationError
 
 from lamindb_setup.errors import CurrentInstanceNotConfigured, SettingsEnvFileOutdated
 
@@ -72,8 +71,10 @@ def load_instance_settings(instance_settings_file: Path | None = None):
         # this errors only if the file was explicitly provided
         raise CurrentInstanceNotConfigured
     try:
-        settings_store = InstanceSettingsStore(_env_file=isettings_file)
-    except (ValidationError, TypeError) as error:
+        settings_store = InstanceSettingsStore.from_env_file(
+            isettings_file, "lamindb_instance_"
+        )
+    except (ValueError, KeyError, TypeError) as error:
         raise SettingsEnvFileOutdated(
             f"\n\n{error}\n\nYour instance settings file with\n\n{isettings_file.read_text()}\nis invalid"
             f" (likely outdated), see validation error. Please delete {isettings_file} &"
@@ -108,8 +109,10 @@ def load_or_create_user_settings(api_key: str | None = None) -> UserSettings:
 
 def load_user_settings(user_settings_file: Path):
     try:
-        settings_store = UserSettingsStore(_env_file=user_settings_file)
-    except (ValidationError, TypeError) as error:
+        settings_store = UserSettingsStore.from_env_file(
+            user_settings_file, "lamin_user_"
+        )
+    except (ValueError, KeyError, TypeError) as error:
         msg = (
             "Your user settings file is invalid, please delete"
             f" {user_settings_file} and log in again."
@@ -121,7 +124,7 @@ def load_user_settings(user_settings_file: Path):
 
 
 def _null_to_value(field, value=None):
-    return field if field != "null" else value
+    return value if field in (None, "null") else field
 
 
 def setup_instance_from_store(store: InstanceSettingsStore) -> InstanceSettings:
@@ -155,5 +158,5 @@ def setup_user_from_store(store: UserSettingsStore) -> UserSettings:
     settings.uid = store.uid
     settings.handle = _null_to_value(store.handle, value="anonymous")
     settings.name = _null_to_value(store.name)
-    settings._uuid = UUID(store.uuid) if store.uuid != "null" else None
+    settings._uuid = UUID(store.uuid) if store.uuid not in (None, "null") else None
     return settings
