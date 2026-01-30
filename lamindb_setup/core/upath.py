@@ -28,6 +28,9 @@ from ._deprecated import deprecated
 from .hashing import HASH_LENGTH, b16_to_b64, hash_from_hashes_list, hash_string
 
 if TYPE_CHECKING:
+    from botocore.client import BaseClient
+    from s3fs import S3FileSystem
+
     from lamindb_setup.types import UPathStr
 
 LocalPathClasses = (PosixPath, WindowsPath, LocalPath)
@@ -84,6 +87,71 @@ VALID_SIMPLE_SUFFIXES = {
 VALID_COMPOSITE_SUFFIXES = {".anndata.zarr"}
 
 TRAILING_SEP = (os.sep, os.altsep) if os.altsep is not None else os.sep
+
+
+BOTO3_CLIENTS: dict[int, BaseClient] = {}
+
+
+def s3fs_to_boto3_client(fs: S3FileSystem) -> BaseClient:
+    fs_id = id(fs)
+    if fs_id in BOTO3_CLIENTS:
+        return BOTO3_CLIENTS[fs_id]
+
+    from boto3.session import Session as Boto3Session
+    from botocore.config import Config
+    from botocore.session import Session
+
+    session = Session()
+    ignore_attrs = (
+        "_original_handler",
+        "_events",
+        "_components",
+        "_internal_components",
+        "user_agent_name",
+        "user_agent_version",
+        "user_agent_extra",
+    )
+    for k, v in fs.session.__dict__.items():
+        if k not in ignore_attrs:
+            session.__dict__[k] = v
+    boto3_session = Boto3Session(botocore_session=session)
+
+    client_kwargs = fs.client_kwargs.copy()
+    init_kwargs = {
+        "aws_access_key_id": fs.key,
+        "aws_secret_access_key": fs.secret,
+        "aws_session_token": fs.token,
+        "endpoint_url": fs.endpoint_url,
+    }
+    init_kwargs = {
+        key: value
+        for key, value in init_kwargs.items()
+        if value is not None and value != client_kwargs.get(key)
+    }
+    if "use_ssl" not in client_kwargs.keys():
+        init_kwargs["use_ssl"] = fs.use_ssl
+    config_kwargs = fs._prepare_config_kwargs()
+    if fs.anon:
+        from botocore import UNSIGNED
+
+        drop_keys = {
+            "aws_access_key_id",
+            "aws_secret_access_key",
+            "aws_session_token",
+        }
+        init_kwargs = {
+            key: value for key, value in init_kwargs.items() if key not in drop_keys
+        }
+        client_kwargs = {
+            key: value for key, value in client_kwargs.items() if key not in drop_keys
+        }
+        config_kwargs["signature_version"] = UNSIGNED
+    client = boto3_session.client(
+        "s3", config=Config(**config_kwargs), **init_kwargs, **client_kwargs
+    )
+    BOTO3_CLIENTS[fs_id] = client
+
+    return client
 
 
 def extract_suffix_from_path(path: Path, arg_name: str | None = None) -> str:
