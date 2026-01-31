@@ -23,7 +23,7 @@ def load_fallback_connector() -> Connector:
 
 
 PROD_URL = "https://hub.lamin.ai"
-PROD_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImxhZXNhdW1tZHlkbGxwcGdmY2h1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE2NTY4NDA1NTEsImV4cCI6MTk3MjQxNjU1MX0.WUeCRiun0ExUxKIv5-CtjF6878H8u26t0JmCWx3_2-c"
+PROD_ANON_KEY = "sb_publishable_YVa4h8hQ-yBhXpfa2cP39w_PhoLW6Nu"
 
 
 class Environment:
