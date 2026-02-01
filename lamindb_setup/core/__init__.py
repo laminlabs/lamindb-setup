@@ -1,22 +1,10 @@
 """Core setup library.
 
-General
--------
-
 .. autoclass:: SetupSettings
-
-User
-----
 
 .. autoclass:: UserSettings
 
-Instance
---------
-
 .. autoclass:: InstanceSettings
-
-Storage
--------
 
 .. autoclass:: StorageSettings
 
