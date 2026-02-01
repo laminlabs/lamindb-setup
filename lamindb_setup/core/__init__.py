@@ -1,23 +1,11 @@
 """Setup core library.
 
-SetupSettings
--------------
+Settings
+--------
 
 .. autoclass:: SetupSettings
-
-UserSettings
-------------
-
 .. autoclass:: UserSettings
-
-InstanceSettings
-----------------
-
 .. autoclass:: InstanceSettings
-
-StorageSettings
----------------
-
 .. autoclass:: StorageSettings
 
 """
