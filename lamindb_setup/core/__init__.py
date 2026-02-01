@@ -4,8 +4,11 @@ Settings
 --------
 
 .. autoclass:: SetupSettings
+
 .. autoclass:: UserSettings
+
 .. autoclass:: InstanceSettings
+
 .. autoclass:: StorageSettings
 
 """
