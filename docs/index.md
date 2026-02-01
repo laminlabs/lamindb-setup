@@ -7,6 +7,6 @@
 :maxdepth: 1
 
 notebooks
-reference
+api
 changelog
 ```
