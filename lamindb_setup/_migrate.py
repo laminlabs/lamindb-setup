@@ -4,7 +4,7 @@ import os
 from django.db import connection
 from lamin_utils import logger
 from packaging import version
-
+import requests
 from ._check_setup import _check_instance_setup, disable_auto_connect
 from .core._settings import settings
 from .core.django import setup_django
