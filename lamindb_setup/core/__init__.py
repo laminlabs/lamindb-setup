@@ -1,22 +1,22 @@
 """Setup core library.
 
-lamindb.setup.core.SetupSettings
---------------------------------
+SetupSettings
+-------------
 
 .. autoclass:: SetupSettings
 
-lamindb.setup.core.UserSettings
--------------------------------
+UserSettings
+------------
 
 .. autoclass:: UserSettings
 
-lamindb.setup.core.InstanceSettings
------------------------------------
+InstanceSettings
+----------------
 
 .. autoclass:: InstanceSettings
 
-lamindb.setup.core.StorageSettings
-----------------------------------
+StorageSettings
+---------------
 
 .. autoclass:: StorageSettings
 
