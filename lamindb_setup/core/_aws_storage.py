@@ -1,10 +1,12 @@
 from __future__ import annotations
 
-import httpx
 from lamin_utils import logger
 
 
 def get_location(ip="ipinfo.io"):
+    # dynamic import to avoid importing the heavy httpx at root
+    import httpx
+
     response = httpx.get(f"http://{ip}/json").json()
     loc = response["loc"].split(",")
     return {"latitude": float(loc[0]), "longitude": float(loc[1])}

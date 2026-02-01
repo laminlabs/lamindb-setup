@@ -6,7 +6,6 @@ import uuid
 from typing import TYPE_CHECKING, Literal
 from uuid import UUID
 
-import click
 from lamin_utils import logger
 
 from ._disconnect import disconnect
@@ -17,7 +16,7 @@ from .core._settings import settings
 from .core._settings_instance import check_is_instance_remote
 from .core._settings_storage import StorageSettings, init_storage
 from .core.upath import UPath
-from .errors import CannotSwitchDefaultInstance
+from .errors import CannotSwitchDefaultInstance, InstanceNotCreated
 
 if TYPE_CHECKING:
     from lamindb.models import Storage
@@ -25,11 +24,6 @@ if TYPE_CHECKING:
 
     from .core._settings_user import UserSettings
     from .types import UPathStr
-
-
-class InstanceNotCreated(click.ClickException):
-    def show(self, file=None):
-        pass
 
 
 def get_schema_module_name(module_name, raise_import_error: bool = True) -> str | None:

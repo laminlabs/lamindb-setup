@@ -5,12 +5,12 @@ from uuid import UUID
 
 import lamindb_setup as ln_setup
 import pytest
-from lamindb_setup._init_instance import InstanceNotCreated
 from lamindb_setup.core._hub_client import connect_hub_with_auth
 from lamindb_setup.core._hub_crud import (
     select_account_by_handle,
     select_instance_by_name,
 )
+from lamindb_setup.errors import InstanceNotCreated
 
 
 def test_connect_instance_with_private_storage_and_no_storage_access():

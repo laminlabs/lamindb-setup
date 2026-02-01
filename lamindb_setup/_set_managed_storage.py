@@ -5,7 +5,6 @@ from typing import TYPE_CHECKING
 from lamin_utils import logger
 
 from ._init_instance import register_storage_in_instance
-from .core._hub_core import delete_storage_record
 from .core._settings import settings
 from .core._settings_storage import StorageSettings, init_storage
 
@@ -65,6 +64,8 @@ def set_managed_storage(root: UPathStr, host: str | None = None, **fs_kwargs):
         register_storage_in_instance(ssettings)
     except Exception as e:
         if hub_record_status == "hub-record-created" and ssettings._uuid is not None:
+            from .core._hub_core import delete_storage_record
+
             delete_storage_record(ssettings)
         raise e
 

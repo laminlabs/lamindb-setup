@@ -35,7 +35,7 @@ Migration management
 
 """
 
-__version__ = "1.18.0"  # denote a release candidate for 0.1.0 with 0.1rc1
+__version__ = "1.18.2"  # denote a release candidate for 0.1.0 with 0.1rc1
 
 import os
 import warnings
@@ -48,9 +48,9 @@ warnings.filterwarnings(
 )
 warnings.filterwarnings("ignore", category=DeprecationWarning, module="postgrest")
 
-from packaging import version as packaging_version
-
-from . import core, errors, io, types
+# do not import io by default to reduce import time
+# it's not immediately needed in the default user workflows
+from . import core, errors, types
 from ._check_setup import _check_instance_setup
 from ._connect_instance import connect
 from ._delete import delete
@@ -62,20 +62,6 @@ from ._migrate import migrate
 from ._register_instance import register
 from ._setup_user import login, logout
 from .core._settings import settings
-
-# check that the version of s3fs is higher than the lower bound
-# needed because spatialdata installs old versions of s3fs
-try:
-    from s3fs import __version__ as s3fs_version
-
-    if packaging_version.parse(s3fs_version) < packaging_version.parse("2023.12.2"):
-        raise RuntimeError(
-            f"The version of s3fs you have ({s3fs_version}) is impompatible "
-            "with lamindb, please upgrade it: pip install s3fs>=2023.12.2"
-        )
-except ImportError:
-    # might be not installed
-    pass
 
 
 def _is_CI_environment() -> bool:
@@ -111,6 +97,5 @@ _TESTING = _is_CI_environment()
 _call_registered_entry_points("lamindb_setup.on_import")
 
 settings.__doc__ = """Global :class:`~lamindb.setup.core.SetupSettings`."""
-
 
 close = disconnect  # backward compatibility

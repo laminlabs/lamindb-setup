@@ -1,0 +1,1 @@
+import lamindb_setup

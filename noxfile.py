@@ -24,10 +24,10 @@ def lint(session: nox.Session) -> None:
 @nox.session
 @nox.parametrize(
     "group",
-    ["hub-local", "hub-prod", "hub-cloud", "storage", "connectivity", "docs"],
+    ["hub-local", "hub-prod", "hub-cloud", "core", "connectivity", "docs"],
 )
 def install(session: nox.Session, group: str) -> None:
-    no_deps_packages = "git+https://github.com/laminlabs/lamindb git+https://github.com/laminlabs/wetlab git+https://github.com/laminlabs/lamin-cli"
+    no_deps_packages = "git+https://github.com/laminlabs/lamindb git+https://github.com/laminlabs/pertdb git+https://github.com/laminlabs/lamin-cli"
     modules_deps = f"""uv pip install --system --no-deps {no_deps_packages}
 uv pip install --system git+https://github.com/laminlabs/bionty
 """
@@ -37,13 +37,14 @@ uv pip install --system git+https://github.com/laminlabs/bionty
             + "uv pip install --system sentry_sdk line_profiler wheel==0.45.1 flit"
             + "\nuv pip install --system ./laminhub/backend --no-build-isolation"
             + "\nuv pip install --system ./laminhub/backend/utils"
-            + "\nuv pip install --system ./laminhub/backend/central"
-            + "\nuv pip install --system ./laminhub/backend/dbinstance"
-            + "\nuv pip install --system ./laminhub/backend/aws"
+            + "\nuv pip install --system ./laminhub/backend/services/central"
+            + "\nuv pip install --system ./laminhub/backend/services/instancedb"
+            + "\nuv pip install --system ./laminhub/backend/services/aws"
+            + "\nuv pip install --system --no-deps ./laminhub/backend/services/instancedb/hubmodule"
         )
     elif group == "docs":
         cmds = modules_deps.strip()
-    elif group == "storage":
+    elif group == "core":
         cmds = modules_deps + "uv pip install --system gcsfs huggingface_hub sqlalchemy"
     elif group == "hub-prod":
         # cmds = "git clone --depth 1 https://github.com/django/django\n"
@@ -62,10 +63,10 @@ uv pip install --system git+https://github.com/laminlabs/bionty
         cmds += "\nuv pip install --system sentry_sdk line_profiler wheel==0.45.1 flit"
         cmds += "\nuv pip install --system -e ./laminhub/backend --no-build-isolation"
         cmds += "\nuv pip install --system -e ./laminhub/backend/utils"
-        cmds += "\nuv pip install --system -e ./laminhub/backend/central"
-        cmds += "\nuv pip install --system -e ./laminhub/backend/dbinstance"
-        cmds += "\nuv pip install --system -e ./laminhub/backend/aws"
-        cmds += "\nuv pip install --system --no-deps -e ./laminhub/backend/laminhub_rest/hubmodule"
+        cmds += "\nuv pip install --system -e ./laminhub/backend/services/central"
+        cmds += "\nuv pip install --system -e ./laminhub/backend/services/instancedb"
+        cmds += "\nuv pip install --system -e ./laminhub/backend/services/aws"
+        cmds += "\nuv pip install --system --no-deps -e ./laminhub/backend/services/instancedb/hubmodule"
         # check that just installing psycopg (psycopg3) doesn't break fine-grained access
         cmds += "\nuv pip install --system psycopg[binary]"
         # force new supabase
@@ -108,7 +109,7 @@ def hub_local(session: nox.Session):
 
 
 @nox.session
-def storage(session: nox.Session):
+def core(session: nox.Session):
     # we need AWS to retrieve credentials for testuser1, but want to eliminate
     # them after that
     os.environ["AWS_ACCESS_KEY_ID"] = os.environ["TMP_AWS_ACCESS_KEY_ID"]
@@ -117,7 +118,7 @@ def storage(session: nox.Session):
     # mimic anonymous access
     del os.environ["AWS_ACCESS_KEY_ID"]
     del os.environ["AWS_SECRET_ACCESS_KEY"]
-    run(session, f"pytest {COVERAGE_ARGS} ./tests/storage", env=os.environ)
+    run(session, f"pytest {COVERAGE_ARGS} ./tests/core", env=os.environ)
 
 
 @nox.session

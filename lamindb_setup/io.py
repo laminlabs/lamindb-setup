@@ -8,10 +8,7 @@ from importlib import import_module
 from pathlib import Path
 from typing import TYPE_CHECKING
 
-import numpy as np
-import pandas as pd
 from django.db import models, transaction
-from rich.progress import Progress
 
 if TYPE_CHECKING:
     from collections.abc import Iterable
@@ -59,6 +56,7 @@ def _export_full_table(
     Returns:
         String identifier for single-file exports, or list of (table_name, chunk_path) tuples for chunked exports that need merging.
     """
+    import pandas as pd
     from django.db import connection
 
     import lamindb_setup as ln_setup
@@ -156,12 +154,15 @@ def export_db(
     Ensure that you connect to postgres instances using `use_root_db_user=True`.
 
     Args:
-        module_names: Module names to export (e.g., ["lamindb", "bionty", "wetlab"]).
+        module_names: Module names to export (e.g., ["lamindb", "bionty", "pertdb"]).
             Defaults to "lamindb" if not provided.
         output_dir: Directory path for exported parquet files.
         max_workers: Number of parallel processes.
         chunk_size: Number of rows per chunk for large tables.
     """
+    import pandas as pd
+    from rich.progress import Progress
+
     import lamindb_setup as ln_setup
 
     if output_dir is None:
@@ -212,6 +213,9 @@ def export_db(
 
 def _serialize_value(val):
     """Convert value to JSON string if it's a dict, list, or numpy array, otherwise return as-is."""
+    # keep dynamic import to minimize import time
+    import numpy as np
+
     if isinstance(val, (dict, list, np.ndarray)):
         return json.dumps(
             val, default=lambda o: o.tolist() if isinstance(o, np.ndarray) else None
@@ -232,6 +236,8 @@ def _import_registry(
     For SQLite, uses multi-row INSERTs with dynamic chunking to stay under the 999
     variable limit (2-5x faster than single-row INSERTs).
     """
+    import numpy as np
+    import pandas as pd
     from django.db import connection
 
     table_name = registry._meta.db_table
@@ -345,13 +351,14 @@ def import_db(
 
     Args:
         input_dir: Directory containing parquet files to import.
-        module_names: Module names to import (e.g., ["lamindb", "bionty", "wetlab"]).
+        module_names: Module names to import (e.g., ["lamindb", "bionty", "pertdb"]).
         if_exists: How to behave if table exists: 'fail', 'replace', or 'append'.
             If set to 'replace', existing data is deleted and new data is imported. All PKs and indices are not guaranteed to be preserved which can lead to write errors.
             If set to 'append', new data is added to existing data without clearing the table. All PKs and indices are preserved allowing write operations but database size will greatly increase.
             If set to 'fail', raises an error if the table contains any data.
     """
     from django.db import connection
+    from rich.progress import Progress
 
     import lamindb_setup as ln_setup
 

@@ -10,26 +10,20 @@ from urllib.request import urlretrieve
 import httpx
 from httpx_retries import Retry, RetryTransport
 from lamin_utils import logger
-from pydantic_settings import BaseSettings
 from supabase import Client, ClientOptions, create_client
 
 from ._settings_save import save_user_settings
-
-
-class Connector(BaseSettings):
-    url: str
-    key: str
+from ._settings_store import Connector
 
 
 def load_fallback_connector() -> Connector:
     url = "https://lamin-site-assets.s3.amazonaws.com/connector.env"
     connector_file, _ = urlretrieve(url)
-    connector = Connector(_env_file=connector_file)
-    return connector
+    return Connector.from_env_file(connector_file, "")
 
 
 PROD_URL = "https://hub.lamin.ai"
-PROD_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImxhZXNhdW1tZHlkbGxwcGdmY2h1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE2NTY4NDA1NTEsImV4cCI6MTk3MjQxNjU1MX0.WUeCRiun0ExUxKIv5-CtjF6878H8u26t0JmCWx3_2-c"
+PROD_ANON_KEY = "sb_publishable_YVa4h8hQ-yBhXpfa2cP39w_PhoLW6Nu"
 
 
 class Environment:
@@ -48,13 +42,13 @@ class Environment:
                 key = connector.key
         elif lamin_env == "staging":
             url = "https://amvrvdwndlqdzgedrqdv.supabase.co"
-            key = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImFtdnJ2ZHduZGxxZHpnZWRycWR2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE2NzcxNTcxMzMsImV4cCI6MTk5MjczMzEzM30.Gelt3dQEi8tT4j-JA36RbaZuUvxRnczvRr3iyRtzjY0"
+            key = "sb_publishable_amVjtilv_Yj4VmGLmxtq6A_sYlLoQx5"
         elif lamin_env == "staging-test":
             url = "https://iugyyajllqftbpidapak.supabase.co"
-            key = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Iml1Z3l5YWpsbHFmdGJwaWRhcGFrIiwicm9sZSI6ImFub24iLCJpYXQiOjE2OTQyMjYyODMsImV4cCI6MjAwOTgwMjI4M30.s7B0gMogFhUatMSwlfuPJ95kWhdCZMn1ROhZ3t6Og90"
+            key = "sb_publishable_XmXroXqTLQw-eeT5kysCww_k8vJv-4L"
         elif lamin_env == "prod-test":
             url = "https://xtdacpwiqwpbxsatoyrv.supabase.co"
-            key = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inh0ZGFjcHdpcXdwYnhzYXRveXJ2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE2OTQyMjYxNDIsImV4cCI6MjAwOTgwMjE0Mn0.Dbi27qujTt8Ei9gfp9KnEWTYptE5KUbZzEK6boL46k4"
+            key = "sb_publishable_G-pyO5aW6VFErTzJyVvM5w_NAv1_Mf7"
         else:
             url = os.environ["SUPABASE_API_URL"]
             key = os.environ["SUPABASE_ANON_KEY"]

@@ -13,8 +13,6 @@ from ._check_setup import _check_instance_setup
 from ._disconnect import disconnect
 from ._init_instance import load_from_isettings
 from ._silence_loggers import silence_loggers
-from .core._hub_core import connect_instance_hub
-from .core._hub_utils import LaminDsnModel
 from .core._settings import settings
 from .core._settings_instance import InstanceSettings
 from .core._settings_load import load_instance_settings
@@ -66,6 +64,9 @@ def update_db_using_local(
             # read directly from the environment
             db_updated = db_env
         else:
+            # dynamic import to avoid importing the heavy LaminDsnModel at root
+            from .core._hub_utils import LaminDsnModel
+
             db_hub = hub_instance_result["db"]
             db_dsn_hub = LaminDsnModel(db=db_hub)
             # read from a cached settings file in case the hub result is inexistent
@@ -113,6 +114,8 @@ def _connect_instance(
         # the following will return a string if the instance does not exist on the hub
         # do not call hub if the user is anonymous
         if owner != "anonymous":
+            from .core._hub_core import connect_instance_hub
+
             hub_result = connect_instance_hub(
                 owner=owner,
                 name=name,
@@ -233,7 +236,8 @@ def reset_django_module_variables():
 
 
 def _connect_cli(
-    instance: str, use_root_db_user: bool = False, use_proxy_db: bool = False
+    instance: str,
+    use_root_db_user: bool = False,
 ) -> None:
     from lamindb_setup import settings as settings_
 
@@ -242,7 +246,6 @@ def _connect_cli(
         owner,
         name,
         use_root_db_user=use_root_db_user,
-        use_proxy_db=use_proxy_db,
         raise_systemexit=True,
     )
     isettings._persist(write_to_disk=True)

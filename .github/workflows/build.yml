@@ -91,8 +91,7 @@ jobs:
           path: .coverage
           include-hidden-files: true
 
-  # test user access to storage
-  storage:
+  core:
     runs-on: ubuntu-latest
     timeout-minutes: 13
     steps:
@@ -103,15 +102,15 @@ jobs:
           cache: "pip"
           cache-dependency-path: ".github/workflows/build.yml"
       - run: pip install "laminci@git+https://x-access-token:${{ secrets.LAMIN_BUILD_DOCS }}@github.com/laminlabs/laminci"
-      - run: nox -s "install(group='storage')"
+      - run: nox -s "install(group='core')"
       - run: nox -s lint
-      - run: nox -s storage
+      - run: nox -s core
         env:
           TMP_AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
           TMP_AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
       - uses: actions/upload-artifact@v4
         with:
-          name: coverage--storage
+          name: coverage--core
           path: .coverage
           include-hidden-files: true
 
@@ -137,7 +136,7 @@ jobs:
           touch .env.local
           echo "AWS_ACCESS_KEY_ID_HOSTED_S3=${{ secrets.AWS_ACCESS_KEY_ID }}" >> .env.local
           echo "AWS_SECRET_ACCESS_KEY_HOSTED_S3=${{ secrets.AWS_SECRET_ACCESS_KEY }}" >> .env.local
-        working-directory: laminhub/backend/central/supabase
+        working-directory: laminhub/backend/services/central/supabase
       - uses: actions/setup-python@v6
         with:
           python-version: "3.11" # we need to run everything for coverage on 3.11
@@ -152,7 +151,7 @@ jobs:
           key: cache-supabase
       - uses: supabase/setup-cli@v1
         with:
-          version: "2.6.8"
+          version: "2.72.7"
       - run: nox -s hub_local
         env:
           LAMIN_ENV: "local"
@@ -216,8 +215,35 @@ jobs:
       - name: run tests
         run: nox -s connectivity
 
+  profile:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    env:
+      LAMIN_API_KEY: ${{ secrets.LAMIN_API_KEY_TESTUSER1 }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: recursive
+          fetch-depth: 0
+      - uses: actions/setup-python@v6
+        with:
+          python-version: |
+            ${{ github.ref == 'refs/heads/release' && '3.11' ||
+                '3.13'
+                }}
+      - run: pip install git+https://github.com/laminlabs/laminci
+      - run: uv pip install --system git+https://github.com/laminlabs/lamin-cli
+      - run: uv pip install --system git+https://github.com/laminlabs/lamindb
+      - run: uv pip install --system git+https://github.com/laminlabs/laminprofiler
+      - run: uv pip install --system -e .
+      - run: lamin login
+      - run: lamin connect laminlabs/lamindata
+      - run: laminprofiler check tests/profiling/import_lamindb_setup.py --threshold 0.25
+      - run: laminprofiler check tests/profiling/print_lamindb_setup_settings.py --threshold 0.4
+      - run: laminprofiler check tests/profiling/connect_cli.py --threshold 2.0
+
   coverage:
-    needs: [hub-prod, hub-cloud, storage, hub-local]
+    needs: [hub-prod, hub-cloud, core, hub-local]
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
