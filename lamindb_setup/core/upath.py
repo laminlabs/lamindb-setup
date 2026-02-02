@@ -121,9 +121,9 @@ def s3fs_to_boto3_client(fs: S3FileSystem) -> BaseClient:
             session.__dict__[k] = v
     session.session_var_map._session = session
     session._credentials = Credentials(
-        access_key=fs_session.key,
-        secret_key=fs_session.secret,
-        token=fs_session.token,
+        access_key=fs_session.access_key,
+        secret_key=fs_session.secret_key,
+        token=fs_session.session_token,
         method=fs_session.method,
         account_id=fs_session.account_id,
     )
