@@ -390,11 +390,11 @@ def download_to(
     local_path_str = str(local_path)
 
     if use_boto3 and self.protocol == "s3":
-        stat_info = self.stat().as_info()
+        stat_info = kwargs.pop("stat_info", self.stat().as_info())
         if stat_info["type"] == "file":
-            size = stat_info["size"]
             boto3_cb: None | Callable[[int], None] = None
             if (callback := kwargs.pop("callback", None)) is not None:
+                size = stat_info["size"]
                 downloaded = 0
 
                 def boto3_cb(chunk: int):
