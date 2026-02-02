@@ -120,12 +120,13 @@ def s3fs_to_boto3_client(fs: S3FileSystem) -> BaseClient:
         if k not in ignore_attrs:
             session.__dict__[k] = v
     session.session_var_map._session = session
+    fs_credentials = fs_session._credentials
     session._credentials = Credentials(
-        access_key=fs_session.access_key,
-        secret_key=fs_session.secret_key,
-        token=fs_session.session_token,
-        method=fs_session.method,
-        account_id=fs_session.account_id,
+        access_key=fs_credentials.access_key,
+        secret_key=fs_credentials.secret_key,
+        token=fs_credentials.session_token,
+        method=fs_credentials.method,
+        account_id=fs_credentials.account_id,
     )
     boto3_session = Boto3Session(botocore_session=session)
 
@@ -277,7 +278,7 @@ def print_hook(size: int, value: int, objectname: str, action: str):
     out = f"... {action} {objectname}: {min(progress_in_percent, 100):4.1f}%"
     if "NBPRJ_TEST_NBPATH" not in os.environ:
         end = "\n" if progress_in_percent >= 100 else "\r"
-        print(out, end=end)
+        print(f"{out:<80}", end=end, flush=True)
 
 
 class ProgressCallback(fsspec.callbacks.Callback):
