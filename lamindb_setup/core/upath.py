@@ -815,6 +815,9 @@ class S3QueryPath(S3Path):
 
         return (path, *args[1:]), protocol, storage_options
 
+    def is_bucket_versioned(self) -> bool:
+        return self.fs.is_bucket_versioned(self.drive)
+
 
 register_implementation("s3", S3QueryPath, clobber=True)
 
