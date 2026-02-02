@@ -380,16 +380,25 @@ def download_to(
     use_boto3: bool = False,
     **kwargs,
 ):
-    """Download from self (a destination in the cloud) to the local path."""
+    """Download from self (a destination in the cloud) to the local path.
+
+    Args:
+        local_path: A local path to download to.
+        print_progress: Print progress.
+        use_boto3: Use boto3 instead of s3fs to download a single file from s3.
+            Ignored if the path is not a file or not in s3
+        **kwargs: Additional arguments for the download.
+    """
     if print_progress and "callback" not in kwargs:
         callback = ProgressCallback(
             PurePosixPath(local_path).name, "downloading", adjust_size=True
         )
         kwargs["callback"] = callback
 
+    protocol = self.protocol
     local_path_str = str(local_path)
 
-    if use_boto3 and self.protocol == "s3":
+    if use_boto3 and protocol == "s3":
         stat_info = kwargs.pop("stat_info", self.stat().as_info())
         if stat_info["type"] == "file":
             boto3_cb: None | Callable[[int], None] = None
@@ -422,7 +431,7 @@ def download_to(
     # otherwise fsspec calls fs._ls_real where it reads the body and parses links
     # so the file is downloaded 2 times
     # upath doesn't call fs.ls to infer type, so it is safe to call
-    if self.protocol in {"http", "https"} and self.stat().as_info()["type"] == "file":
+    if protocol in {"http", "https"} and self.stat().as_info()["type"] == "file":
         self.fs.use_listings_cache = True
         self.fs.dircache[cloud_path_str] = []
 
@@ -511,6 +520,7 @@ def synchronize_to(
     error_no_origin: bool = True,
     print_progress: bool = False,
     just_check: bool = False,
+    disable_boto3: bool = False,
     **kwargs,
 ) -> bool:
     """Sync to a local destination path."""
@@ -629,15 +639,15 @@ def synchronize_to(
 
         if (
             protocol == "s3"
-            and not kwargs.pop("disable_boto3", False)
             and not is_dir
+            and not disable_boto3
             and cloud_info["size"] >= 524288000
         ):
             # use boto3 to download large single files as this is faster than s3fs
             assert len(local_files_sync) == 1
             origin.download_to(
                 local_files_sync[0],
-                callback=callback,
+                callback=callback,  # ProgressCallback or passed or NoOpCallback
                 use_boto3=True,
                 stat_info=cloud_info,
                 **kwargs,
