@@ -115,6 +115,7 @@ def s3fs_to_boto3_client(fs: S3FileSystem) -> BaseClient:
         "user_agent_version",
         "user_agent_extra",
     )
+    fs.connect()
     fs_session = fs.session
     for k, v in fs_session.__dict__.items():
         if k not in ignore_attrs:
