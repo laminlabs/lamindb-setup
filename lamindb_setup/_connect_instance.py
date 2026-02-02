@@ -211,14 +211,16 @@ def reset_django_module_variables():
             and name not in sys.builtin_module_names
         ):
             try:
-                for k, v in vars(module).items():
+                module_vars = vars(module)  # references the original
+                # copy to avoid changing size during the loop
+                for k, v in module_vars.copy().items():
                     if (
                         isinstance(v, types.ModuleType)
                         and not k.startswith("_")
                         and getattr(v, "__name__", None) in app_names
                     ):
                         if v.__name__ in sys.modules:
-                            vars(module)[k] = sys.modules[v.__name__]
+                            module_vars[k] = sys.modules[v.__name__]
                     # Also reset classes from Django apps - but check if the class module starts with any app name
                     elif hasattr(v, "__module__") and getattr(v, "__module__", None):
                         class_module = v.__module__
@@ -230,7 +232,7 @@ def reset_django_module_variables():
                                 fresh_module = sys.modules[class_module]
                                 attr_name = getattr(v, "__name__", k)
                                 if hasattr(fresh_module, attr_name):
-                                    vars(module)[k] = getattr(fresh_module, attr_name)
+                                    module_vars[k] = getattr(fresh_module, attr_name)
             except (AttributeError, TypeError):
                 continue
 
