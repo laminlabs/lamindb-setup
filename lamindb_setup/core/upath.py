@@ -393,7 +393,9 @@ def download_to(
         stat_info = kwargs.pop("stat_info", self.stat().as_info())
         if stat_info["type"] == "file":
             boto3_cb: None | Callable[[int], None] = None
-            if (callback := kwargs.pop("callback", None)) is not None:
+            if (
+                callback := kwargs.pop("callback", None)
+            ) is not None and callback.hooks:
                 size = stat_info["size"]
                 downloaded = 0
 
@@ -624,13 +626,30 @@ def synchronize_to(
             action="synchronizing",
             adjust_size=False,
         )
-        origin.fs.download(
-            cloud_files_sync,
-            local_files_sync,
-            recursive=False,
-            callback=callback,
-            **kwargs,
-        )
+
+        if (
+            protocol == "s3"
+            and not is_dir
+            and os.getenv("LAMIN_DISABLE_BOTO3_DOWNLOAD") != "true"
+            and cloud_info["size"] >= 524288000
+        ):
+            # use boto3 to download large single files as this is faster than s3fs
+            assert len(local_files_sync) == 1
+            origin.download_to(
+                local_files_sync[0],
+                callback=callback,
+                use_boto3=True,
+                stat_info=cloud_info,
+                **kwargs,
+            )
+        else:
+            origin.fs.download(
+                cloud_files_sync,
+                local_files_sync,
+                recursive=False,
+                callback=callback,
+                **kwargs,
+            )
         if not use_size:
             for i, cloud_file in enumerate(cloud_files_sync):
                 cloud_mtime = cloud_stats[cloud_file]
