@@ -277,8 +277,8 @@ def print_hook(size: int, value: int, objectname: str, action: str):
         progress_in_percent = (value / size) * 100
     out = f"... {action} {objectname}: {min(progress_in_percent, 100):4.1f}%"
     if "NBPRJ_TEST_NBPATH" not in os.environ:
-        end = "\n" if progress_in_percent >= 100 else "\r"
-        print(out, end=end, flush=True)
+        end = "\n" if progress_in_percent >= 100 else ""
+        print("\r" + out, end=end, flush=True)
 
 
 class ProgressCallback(fsspec.callbacks.Callback):
