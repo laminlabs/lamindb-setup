@@ -131,7 +131,7 @@ def s3fs_to_boto3_client(fs: S3FileSystem) -> BaseClient:
             account_id=fs_credentials.account_id,
         )
     else:
-        assert session._credentials is None
+        session._credentials = None
     boto3_session = Boto3Session(botocore_session=session)
 
     client_kwargs = fs.client_kwargs.copy()
