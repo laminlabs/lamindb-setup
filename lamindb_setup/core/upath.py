@@ -637,9 +637,11 @@ def synchronize_to(
             adjust_size=False,
         )
 
+        use_boto3 = False
         if protocol == "s3" and not is_dir and not disable_boto3:
             # use boto3 to download large single files as this is faster than s3fs
             use_boto3 = kwargs.pop("use_boto3", cloud_info["size"] >= 524288000)
+
         if use_boto3:
             assert len(local_files_sync) == 1
             origin.download_to(
