@@ -101,8 +101,9 @@ def s3fs_to_boto3_client(fs: S3FileSystem) -> BaseClient:
 
     from boto3.session import Session as Boto3Session
     from botocore.config import Config
-    from botocore.credentials import Credentials
     from botocore.session import Session
+
+    fs.connect()
 
     session = Session()
     ignore_attrs = (
@@ -115,7 +116,6 @@ def s3fs_to_boto3_client(fs: S3FileSystem) -> BaseClient:
         "user_agent_version",
         "user_agent_extra",
     )
-    fs.connect()
     fs_session = fs.session
     for k, v in fs_session.__dict__.items():
         if k not in ignore_attrs:
@@ -123,6 +123,8 @@ def s3fs_to_boto3_client(fs: S3FileSystem) -> BaseClient:
     session.session_var_map._session = session
     fs_credentials = fs_session._credentials
     if fs_credentials is not None:
+        from botocore.credentials import Credentials
+
         session._credentials = Credentials(
             access_key=fs_credentials.access_key,
             secret_key=fs_credentials.secret_key,
