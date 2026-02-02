@@ -124,7 +124,7 @@ def s3fs_to_boto3_client(fs: S3FileSystem) -> BaseClient:
     session._credentials = Credentials(
         access_key=fs_credentials.access_key,
         secret_key=fs_credentials.secret_key,
-        token=fs_credentials.session_token,
+        token=fs_credentials.token,
         method=fs_credentials.method,
         account_id=fs_credentials.account_id,
     )
@@ -278,7 +278,7 @@ def print_hook(size: int, value: int, objectname: str, action: str):
     out = f"... {action} {objectname}: {min(progress_in_percent, 100):4.1f}%"
     if "NBPRJ_TEST_NBPATH" not in os.environ:
         end = "\n" if progress_in_percent >= 100 else "\r"
-        print(f"{out:<80}", end=end, flush=True)
+        print(out, end=end, flush=True)
 
 
 class ProgressCallback(fsspec.callbacks.Callback):
