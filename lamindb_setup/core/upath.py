@@ -629,8 +629,8 @@ def synchronize_to(
 
         if (
             protocol == "s3"
+            and not kwargs.pop("disable_boto3", False)
             and not is_dir
-            and os.getenv("LAMIN_DISABLE_BOTO3_DOWNLOAD") != "true"
             and cloud_info["size"] >= 524288000
         ):
             # use boto3 to download large single files as this is faster than s3fs
