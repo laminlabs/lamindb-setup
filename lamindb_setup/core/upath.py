@@ -28,6 +28,8 @@ from ._deprecated import deprecated
 from .hashing import HASH_LENGTH, b16_to_b64, hash_from_hashes_list, hash_string
 
 if TYPE_CHECKING:
+    from collections.abc import Callable
+
     from botocore.client import BaseClient
     from s3fs import S3FileSystem
 
@@ -358,18 +360,49 @@ class ChildProgressCallback(fsspec.callbacks.Callback):
             self.parent_update(1)
 
 
-def download_to(self, local_path: UPathStr, print_progress: bool = True, **kwargs):
+def download_to(
+    self,
+    local_path: UPathStr,
+    print_progress: bool = True,
+    use_boto3: bool = False,
+    **kwargs,
+):
     """Download from self (a destination in the cloud) to the local path."""
-    if "recursive" not in kwargs:
-        kwargs["recursive"] = True
     if print_progress and "callback" not in kwargs:
         callback = ProgressCallback(
             PurePosixPath(local_path).name, "downloading", adjust_size=True
         )
         kwargs["callback"] = callback
 
-    cloud_path_str = str(self)
     local_path_str = str(local_path)
+
+    if use_boto3 and self.protocol == "s3":
+        stat_info = self.stat().as_info()
+        if stat_info["type"] == "file":
+            size = stat_info["size"]
+            boto3_cb: None | Callable[[int], None] = None
+            if (callback := kwargs.pop("callback", None)) is not None:
+                downloaded = 0
+
+                def boto3_cb(chunk: int):
+                    nonlocal downloaded
+                    downloaded += chunk
+                    for hook in callback.hooks.values():
+                        hook(size, downloaded, **callback.kw)
+
+            boto3_client = s3fs_to_boto3_client(self.fs)
+            bucket = self.drive
+            key = "/".join(self.parts[1:])
+            boto3_client.download_file(
+                bucket, key, local_path_str, Callback=boto3_cb, **kwargs
+            )
+            return
+
+    cloud_path_str = str(self)
+
+    if "recursive" not in kwargs:
+        kwargs["recursive"] = True
+
     # needed due to https://github.com/fsspec/filesystem_spec/issues/1766
     # otherwise fsspec calls fs._ls_real where it reads the body and parses links
     # so the file is downloaded 2 times
