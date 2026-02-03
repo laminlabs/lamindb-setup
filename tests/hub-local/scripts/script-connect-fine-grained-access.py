@@ -44,6 +44,10 @@ assert ln_setup.settings.instance.available_spaces
 # run debug function for coverage
 ln_setup.settings._debug_db_access()
 
+# check token is present and returned by _db_token
+assert ln_setup.settings._get_db_token() is not None
+assert ln_setup.settings._get_db_token("default") is not None
+
 # check reset
 db_token_manager.reset()
 assert not db_token_manager.tokens
