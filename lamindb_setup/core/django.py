@@ -51,7 +51,8 @@ class DBToken:
         # initialized in token_query
         self._token: str | None = None
         self._token_query: str | None = None
-        self._expiration: float
+        self._expiration: float | None = None
+        self._type: str | None = None
 
     def _refresh_token(self):
         from ._hub_core import access_db
@@ -61,14 +62,14 @@ class DBToken:
         self._token_query = (
             f"SELECT set_token({adapt(self._token).getquoted().decode()}, true);"
         )
-        self._expiration = jwt.decode(self._token, options={"verify_signature": False})[
-            "exp"
-        ]
+        token_decoded = jwt.decode(self._token, options={"verify_signature": False})
+        self._expiration = token_decoded["exp"]
+        self._type = token_decoded["type"]
 
     @property
     def token_query(self) -> str:
         # refresh token if needed
-        if self._token is None or time.time() >= self._expiration:
+        if self._token is None or time.time() >= self._expiration:  # type: ignore
             self._refresh_token()
 
         return self._token_query  # type: ignore

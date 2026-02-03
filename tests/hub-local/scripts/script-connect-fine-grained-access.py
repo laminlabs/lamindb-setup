@@ -39,10 +39,17 @@ with connection.cursor() as cur:
     cur.execute("SELECT * FROM check_access();")
 
 # check available spaces call
-assert ln_setup.settings.instance.available_spaces
+assert isettings.available_spaces
+
+# check not read-only connection
+assert not isettings.is_read_only_connection
 
 # run debug function for coverage
 ln_setup.settings._debug_db_access()
+
+# check token is present and returned by _get_db_token
+assert ln_setup.settings._get_db_token() is not None
+assert ln_setup.settings._get_db_token("default") is not None
 
 # check reset
 db_token_manager.reset()

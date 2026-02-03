@@ -7,7 +7,6 @@ from typing import TYPE_CHECKING, Literal
 
 from lamin_utils import logger
 
-from ._deprecated import deprecated
 from ._settings_save import save_instance_settings
 from ._settings_storage import (
     LEGACY_STORAGE_UID_FILE_KEY,
@@ -363,6 +362,28 @@ class InstanceSettings:
             return "https://lamin.ai"
         else:
             return self.api_url.replace("/api", "")
+
+    @property
+    def is_read_only_connection(self) -> bool:
+        """Whether the current connection to the database is read-only."""
+        # should we check for self._is_clone?
+        if self.dialect == "postgresql":
+            db_url = self.db
+            if "read" in db_url or "public" in db_url:
+                return True
+            # works only for the default instance
+            if self._db_permissions == "jwt":
+                from ._settings import settings
+
+                db_token = settings._get_db_token()
+                # should not happen
+                if db_token is None:
+                    logger.warning("DB token is not set")
+                    return False
+                # inits or refreshes the token if needed
+                db_token._token_query  # noqa: B018
+                return db_token._type == "read-only"
+        return False
 
     @property
     def available_spaces(self) -> dict | None:
