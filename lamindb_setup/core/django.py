@@ -51,8 +51,8 @@ class DBToken:
         # initialized in token_query
         self._token: str | None = None
         self._token_query: str | None = None
-        self._expiration: float
-        self._type: str
+        self._expiration: float | None = None
+        self._type: str | None = None
 
     def _refresh_token(self):
         from ._hub_core import access_db
@@ -69,7 +69,7 @@ class DBToken:
     @property
     def token_query(self) -> str:
         # refresh token if needed
-        if self._token is None or time.time() >= self._expiration:
+        if self._token is None or time.time() >= self._expiration:  # type: ignore
             self._refresh_token()
 
         return self._token_query  # type: ignore
