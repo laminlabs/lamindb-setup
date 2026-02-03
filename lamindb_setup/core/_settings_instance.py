@@ -381,7 +381,7 @@ class InstanceSettings:
                     logger.warning("DB token is not set")
                     return False
                 # inits or refreshes the token if needed
-                db_token._token_query  # noqa: B018
+                db_token.token_query  # noqa: B018
                 return db_token._type == "read-only"
         return False
 
