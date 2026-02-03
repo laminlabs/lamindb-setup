@@ -39,7 +39,10 @@ with connection.cursor() as cur:
     cur.execute("SELECT * FROM check_access();")
 
 # check available spaces call
-assert ln_setup.settings.instance.available_spaces
+assert isettings.available_spaces
+
+# check not read-only connection
+assert not isettings.is_read_only_connection
 
 # run debug function for coverage
 ln_setup.settings._debug_db_access()
