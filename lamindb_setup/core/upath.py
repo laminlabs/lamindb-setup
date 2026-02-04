@@ -148,7 +148,7 @@ def s3fs_to_boto3_client(fs: S3FileSystem) -> BaseClient:
         for key, value in init_kwargs.items()
         if value is not None and value != client_kwargs.get(key)
     }
-    if "use_ssl" not in client_kwargs.keys():
+    if "use_ssl" not in client_kwargs:
         init_kwargs["use_ssl"] = fs.use_ssl
     config_kwargs = fs._prepare_config_kwargs()
     if fs.anon:
