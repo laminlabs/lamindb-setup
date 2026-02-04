@@ -426,10 +426,10 @@ def download_to(
 
             bucket = self.drive
             key = "/".join(self.parts[1:])
-            extra = {**fs.req_kw, **kwargs.get("ExtraArgs", {})}
-            if (version_id := kwargs.get("version_id")) is not None:
+            extra = {**fs.req_kw, **kwargs.pop("ExtraArgs", {})}
+            if (version_id := kwargs.pop("version_id", None)) is not None:
                 extra["VersionId"] = version_id
-            config = kwargs.get("Config")
+            config = kwargs.pop("Config", None)
 
             boto3_client.download_file(
                 bucket,
