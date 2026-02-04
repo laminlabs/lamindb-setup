@@ -136,7 +136,7 @@ def s3fs_to_boto3_client(fs: S3FileSystem) -> BaseClient:
         session._credentials = None
     boto3_session = Boto3Session(botocore_session=session)
 
-    client_kwargs = fs.client_kwargs.copy()
+    client_kwargs = fs.client_kwargs
     init_kwargs = {
         "aws_access_key_id": fs.key,
         "aws_secret_access_key": fs.secret,
