@@ -28,6 +28,11 @@ from ._deprecated import deprecated
 from .hashing import HASH_LENGTH, b16_to_b64, hash_from_hashes_list, hash_string
 
 if TYPE_CHECKING:
+    from collections.abc import Callable
+
+    from botocore.client import BaseClient
+    from s3fs import S3FileSystem
+
     from lamindb_setup.types import UPathStr
 
 LocalPathClasses = (PosixPath, WindowsPath, LocalPath)
@@ -84,6 +89,89 @@ VALID_SIMPLE_SUFFIXES = {
 VALID_COMPOSITE_SUFFIXES = {".anndata.zarr"}
 
 TRAILING_SEP = (os.sep, os.altsep) if os.altsep is not None else os.sep
+
+
+BOTO3_CLIENTS: dict[int, BaseClient] = {}
+
+
+def s3fs_to_boto3_client(fs: S3FileSystem) -> BaseClient:
+    fs_id = id(fs)
+    if fs_id in BOTO3_CLIENTS:
+        return BOTO3_CLIENTS[fs_id]
+
+    from boto3.session import Session as Boto3Session
+    from botocore.config import Config
+    from botocore.session import Session
+
+    fs.connect()
+
+    session = Session()
+    ignore_attrs = (
+        "_credentials",
+        "_original_handler",
+        "_events",
+        "_components",
+        "_internal_components",
+        "user_agent_name",
+        "user_agent_version",
+        "user_agent_extra",
+    )
+    fs_session = fs.session
+    for k, v in fs_session.__dict__.items():
+        if k not in ignore_attrs:
+            session.__dict__[k] = v
+    session.session_var_map._session = session
+    fs_credentials = fs_session._credentials
+    if fs_credentials is not None:
+        from botocore.credentials import Credentials
+
+        session._credentials = Credentials(
+            access_key=fs_credentials.access_key,
+            secret_key=fs_credentials.secret_key,
+            token=fs_credentials.token,
+            method=fs_credentials.method,
+            account_id=fs_credentials.account_id,
+        )
+    else:
+        session._credentials = None
+    boto3_session = Boto3Session(botocore_session=session)
+
+    client_kwargs = fs.client_kwargs
+    init_kwargs = {
+        "aws_access_key_id": fs.key,
+        "aws_secret_access_key": fs.secret,
+        "aws_session_token": fs.token,
+        "endpoint_url": fs.endpoint_url,
+    }
+    init_kwargs = {
+        key: value
+        for key, value in init_kwargs.items()
+        if value is not None and value != client_kwargs.get(key)
+    }
+    if "use_ssl" not in client_kwargs:
+        init_kwargs["use_ssl"] = fs.use_ssl
+    config_kwargs = fs._prepare_config_kwargs()
+    if fs.anon:
+        from botocore import UNSIGNED
+
+        drop_keys = {
+            "aws_access_key_id",
+            "aws_secret_access_key",
+            "aws_session_token",
+        }
+        init_kwargs = {
+            key: value for key, value in init_kwargs.items() if key not in drop_keys
+        }
+        client_kwargs = {
+            key: value for key, value in client_kwargs.items() if key not in drop_keys
+        }
+        config_kwargs["signature_version"] = UNSIGNED
+    client = boto3_session.client(
+        "s3", config=Config(**config_kwargs), **init_kwargs, **client_kwargs
+    )
+    BOTO3_CLIENTS[fs_id] = client
+
+    return client
 
 
 def extract_suffix_from_path(path: Path, arg_name: str | None = None) -> str:
@@ -195,8 +283,9 @@ def print_hook(size: int, value: int, objectname: str, action: str):
         progress_in_percent = (value / size) * 100
     out = f"... {action} {objectname}: {min(progress_in_percent, 100):4.1f}%"
     if "NBPRJ_TEST_NBPATH" not in os.environ:
-        end = "\n" if progress_in_percent >= 100 else "\r"
-        print(out, end=end)
+        # sometimes it doesn't reach 100%, probably due to precision issues
+        end = "\n" if progress_in_percent >= 99.9999999999 else ""
+        print("\r" + out, end=end, flush=True)
 
 
 class ProgressCallback(fsspec.callbacks.Callback):
@@ -290,27 +379,84 @@ class ChildProgressCallback(fsspec.callbacks.Callback):
             self.parent_update(1)
 
 
-def download_to(self, local_path: UPathStr, print_progress: bool = True, **kwargs):
-    """Download from self (a destination in the cloud) to the local path."""
-    if "recursive" not in kwargs:
-        kwargs["recursive"] = True
+def download_to(
+    self,
+    local_path: UPathStr,
+    print_progress: bool = True,
+    use_boto3: bool = False,
+    **kwargs,
+):
+    """Download from self (a destination in the cloud) to the local path.
+
+    Args:
+        local_path: A local path to download to.
+        print_progress: Print progress.
+        use_boto3: Use boto3 instead of s3fs to download a single file from s3.
+            Ignored if the path is not a file or not in s3
+        **kwargs: Additional arguments for the download.
+    """
+    fs = self.fs
+
     if print_progress and "callback" not in kwargs:
         callback = ProgressCallback(
             PurePosixPath(local_path).name, "downloading", adjust_size=True
         )
         kwargs["callback"] = callback
 
-    cloud_path_str = str(self)
+    protocol = self.protocol
     local_path_str = str(local_path)
+
+    # as of Feb. 2026 s3fs doesn't support concurrent downloading of pieces of a single file
+    # so we allow to use boto3 to download large single files as this is much faster than s3fs
+    if use_boto3 and protocol == "s3":
+        stat_info = kwargs.pop("stat_info", self.stat().as_info())
+        if stat_info["type"] == "file":
+            boto3_cb: None | Callable[[int], None] = None
+            if (
+                callback := kwargs.pop("callback", None)
+            ) is not None and callback.hooks:
+                size = stat_info["size"]
+                downloaded = 0
+
+                def boto3_cb(chunk: int):
+                    nonlocal downloaded
+                    downloaded += chunk
+                    for hook in callback.hooks.values():
+                        hook(size, downloaded, **callback.kw)
+
+            boto3_client = s3fs_to_boto3_client(fs)
+
+            bucket = self.drive
+            key = "/".join(self.parts[1:])
+            extra = {**fs.req_kw, **kwargs.pop("ExtraArgs", {})}
+            if (version_id := kwargs.pop("version_id", None)) is not None:
+                extra["VersionId"] = version_id
+            config = kwargs.pop("Config", None)
+
+            boto3_client.download_file(
+                bucket,
+                key,
+                local_path_str,
+                Callback=boto3_cb,
+                ExtraArgs=extra if extra else None,
+                Config=config,
+            )
+            return
+
+    cloud_path_str = str(self)
+
+    if "recursive" not in kwargs:
+        kwargs["recursive"] = True
+
     # needed due to https://github.com/fsspec/filesystem_spec/issues/1766
     # otherwise fsspec calls fs._ls_real where it reads the body and parses links
     # so the file is downloaded 2 times
     # upath doesn't call fs.ls to infer type, so it is safe to call
-    if self.protocol in {"http", "https"} and self.stat().as_info()["type"] == "file":
+    if protocol in {"http", "https"} and self.stat().as_info()["type"] == "file":
         self.fs.use_listings_cache = True
         self.fs.dircache[cloud_path_str] = []
 
-    self.fs.download(cloud_path_str, local_path_str, **kwargs)
+    fs.download(cloud_path_str, local_path_str, **kwargs)
 
 
 def upload_from(
@@ -395,6 +541,7 @@ def synchronize_to(
     error_no_origin: bool = True,
     print_progress: bool = False,
     just_check: bool = False,
+    disable_boto3: bool = False,
     **kwargs,
 ) -> bool:
     """Sync to a local destination path."""
@@ -510,13 +657,29 @@ def synchronize_to(
             action="synchronizing",
             adjust_size=False,
         )
-        origin.fs.download(
-            cloud_files_sync,
-            local_files_sync,
-            recursive=False,
-            callback=callback,
-            **kwargs,
-        )
+
+        use_boto3 = False
+        if protocol == "s3" and not is_dir and not disable_boto3:
+            # use boto3 to download large single files as this is faster than s3fs
+            use_boto3 = kwargs.pop("use_boto3", cloud_info["size"] >= 524288000)
+
+        if use_boto3:
+            assert len(local_files_sync) == 1
+            origin.download_to(
+                local_files_sync[0],
+                callback=callback,  # ProgressCallback or passed or NoOpCallback
+                use_boto3=True,
+                stat_info=cloud_info,
+                **kwargs,
+            )
+        else:
+            origin.fs.download(
+                cloud_files_sync,
+                local_files_sync,
+                recursive=False,
+                callback=callback,
+                **kwargs,
+            )
         if not use_size:
             for i, cloud_file in enumerate(cloud_files_sync):
                 cloud_mtime = cloud_stats[cloud_file]
