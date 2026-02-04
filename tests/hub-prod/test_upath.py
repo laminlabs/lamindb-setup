@@ -98,6 +98,7 @@ def test_s3fs_to_boto3_client():
         path.exists()
 
     client = s3fs_to_boto3_client(path.fs)  # anon is passed
+    assert client is s3fs_to_boto3_client(path.fs)  # check caching
     assert client.meta.config.signature_version is botocore.UNSIGNED
     # private bucket
     with pytest.raises(botocore.exceptions.ClientError) as error:
