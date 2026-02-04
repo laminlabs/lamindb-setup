@@ -406,6 +406,8 @@ def download_to(
     protocol = self.protocol
     local_path_str = str(local_path)
 
+    # as of Feb. 2026 s3fs doesn't support concurrent downloading of pieces of a single file
+    # so we allow to use boto3 to download large single files as this is much faster than s3fs
     if use_boto3 and protocol == "s3":
         stat_info = kwargs.pop("stat_info", self.stat().as_info())
         if stat_info["type"] == "file":
