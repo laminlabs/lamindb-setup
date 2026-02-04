@@ -395,6 +395,8 @@ def download_to(
             Ignored if the path is not a file or not in s3
         **kwargs: Additional arguments for the download.
     """
+    fs = self.fs
+
     if print_progress and "callback" not in kwargs:
         callback = ProgressCallback(
             PurePosixPath(local_path).name, "downloading", adjust_size=True
@@ -420,11 +422,22 @@ def download_to(
                     for hook in callback.hooks.values():
                         hook(size, downloaded, **callback.kw)
 
-            boto3_client = s3fs_to_boto3_client(self.fs)
+            boto3_client = s3fs_to_boto3_client(fs)
+
             bucket = self.drive
             key = "/".join(self.parts[1:])
+            extra = {**fs.req_kw, **kwargs.get("ExtraArgs", {})}
+            if (version_id := kwargs.get("version_id")) is not None:
+                extra["VersionId"] = version_id
+            config = kwargs.get("Config")
+
             boto3_client.download_file(
-                bucket, key, local_path_str, Callback=boto3_cb, **kwargs
+                bucket,
+                key,
+                local_path_str,
+                Callback=boto3_cb,
+                ExtraArgs=extra if extra else None,
+                Config=config,
             )
             return
 
@@ -441,7 +454,7 @@ def download_to(
         self.fs.use_listings_cache = True
         self.fs.dircache[cloud_path_str] = []
 
-    self.fs.download(cloud_path_str, local_path_str, **kwargs)
+    fs.download(cloud_path_str, local_path_str, **kwargs)
 
 
 def upload_from(
