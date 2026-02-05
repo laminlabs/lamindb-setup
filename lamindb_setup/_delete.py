@@ -119,6 +119,7 @@ def delete(slug: str, force: bool = False, require_empty: bool = True) -> int | 
             )
         require_empty = True
     # first the default storage
+    logger.debug(f"checking whether {root} is empty")
     n_files = check_storage_is_empty(
         root,
         raise_error=require_empty,
