@@ -386,6 +386,10 @@ def _init_instance_hub(
     created_by_id = settings.user._uuid.hex if account_id is None else account_id.hex  # type: ignore
     owner_account_id = os.getenv("LAMINDB_ACCOUNT_ID_INIT", created_by_id)
 
+    iname = isettings.name
+    logger.debug(
+        f"creating instance {iname} for account {owner_account_id} by {created_by_id}"
+    )
     try:
         lamindb_version = metadata.version("lamindb")
     except metadata.PackageNotFoundError:
@@ -393,7 +397,7 @@ def _init_instance_hub(
     fields = {
         "id": isettings._id.hex,
         "account_id": owner_account_id,
-        "name": isettings.name,
+        "name": iname,
         "lnid": isettings.uid,
         "schema_str": isettings._schema_str,
         "lamindb_version": lamindb_version,
@@ -417,10 +421,38 @@ def _init_instance_hub(
     try:
         client.table("instance").insert(fields, returning="minimal").execute()
     except APIError as e:
-        if "new row violates row-level security policy" in str(e):
-            raise e
-        logger.warning(f"instance already existed at: https://lamin.ai/{slug}")
-        return None
+        e_str = str(e)
+        if "duplicate key value violates unique constraint" in e_str:
+            logger.warning(f"instance already existed at: https://lamin.ai/{slug}")
+            return None
+        if "new row violates row-level security policy" in e_str:
+            is_same_account = created_by_id == owner_account_id
+            # is_same_account is False only for internal use cases so it is fine to output internal ids
+            if (
+                not is_same_account
+                and not client.rpc(
+                    "can_manage_organization",
+                    {
+                        "_account_id": created_by_id,
+                        "_organization_id": owner_account_id,
+                    },
+                )
+                .execute()
+                .data
+            ):
+                raise PermissionError(
+                    f"{created_by_id} does not have permissions to create instances for {owner_account_id}."
+                ) from e
+            if (
+                not client.rpc("has_instance_quota", {"_account_id": owner_account_id})
+                .execute()
+                .data
+            ):
+                raise RuntimeError(
+                    f"Instance quota reached for {'this account' if is_same_account else owner_account_id}."
+                ) from e
+        raise e
+
     if isettings.dialect != "sqlite" and isettings.is_remote:
         logger.important(f"go to: https://lamin.ai/{slug}")
 
