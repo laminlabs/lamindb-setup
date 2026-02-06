@@ -430,14 +430,6 @@ def _init_instance_hub(
             is_same_account = created_by_id == owner_account_id
             # is_same_account is False only for internal use cases so it is fine to output internal ids
             if (
-                not client.rpc("has_instance_quota", {"_account_id": owner_account_id})
-                .execute()
-                .data
-            ):
-                raise RuntimeError(
-                    f"Instance quota reached for {'this account' if is_same_account else owner_account_id}."
-                ) from e
-            if (
                 not is_same_account
                 and not client.rpc(
                     "can_manage_organization",
@@ -451,6 +443,14 @@ def _init_instance_hub(
             ):
                 raise PermissionError(
                     f"{created_by_id} does not have permissions to create instances for {owner_account_id}."
+                ) from e
+            if (
+                not client.rpc("has_instance_quota", {"_account_id": owner_account_id})
+                .execute()
+                .data
+            ):
+                raise RuntimeError(
+                    f"Instance quota reached for {'this account' if is_same_account else owner_account_id}."
                 ) from e
         raise e
 
