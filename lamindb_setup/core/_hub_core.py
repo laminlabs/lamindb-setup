@@ -36,7 +36,7 @@ from ._hub_utils import (
     LaminDsnModel,
 )
 from ._settings import settings
-from ._settings_instance import InstanceSettings
+from ._settings_instance import InstanceSettings, is_local_db_url
 from ._settings_storage import StorageSettings, base62, instance_uid_from_uuid
 
 if TYPE_CHECKING:
@@ -452,9 +452,6 @@ def _init_instance_hub(
                     f"Instance quota reached for {'this account' if is_same_account else owner_account_id}."
                 ) from e
         raise e
-
-    if isettings.dialect != "sqlite" and isettings.is_remote:
-        logger.important(f"go to: https://lamin.ai/{slug}")
 
 
 def _get_default_bucket_for_instance(
