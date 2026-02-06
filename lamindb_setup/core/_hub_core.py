@@ -36,7 +36,7 @@ from ._hub_utils import (
     LaminDsnModel,
 )
 from ._settings import settings
-from ._settings_instance import InstanceSettings, is_local_db_url
+from ._settings_instance import InstanceSettings
 from ._settings_storage import StorageSettings, base62, instance_uid_from_uuid
 
 if TYPE_CHECKING:
