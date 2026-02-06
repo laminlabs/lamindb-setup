@@ -4,7 +4,6 @@ import json
 import os
 import uuid
 from importlib import metadata
-from tkinter.constants import E
 from typing import TYPE_CHECKING, Literal
 from uuid import UUID
 
