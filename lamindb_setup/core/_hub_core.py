@@ -453,9 +453,6 @@ def _init_instance_hub(
                 ) from e
         raise e
 
-    if isettings.dialect != "sqlite" and isettings.is_remote:
-        logger.important(f"go to: https://lamin.ai/{slug}")
-
 
 def _get_default_bucket_for_instance(
     instance_id: UUID | None, region: str | None, client: Client
