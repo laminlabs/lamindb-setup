@@ -687,6 +687,29 @@ def _access_aws(*, storage_root: str, client: Client) -> dict[str, dict]:
     return storage_root_info
 
 
+def _access_aws_endpoint(
+    api_url: str, role_arn: str, path: str, access_token: str | None = None
+):
+    url = f"{api_url}/storages/cloud-access-v1"
+
+    renew_token = False
+    if access_token is None and settings.user.handle != "anonymous":
+        access_token = settings.user.access_token
+        renew_token = True
+
+    response = request_with_auth(
+        url,
+        "post",
+        access_token,
+        renew_token,
+        body={"role_arn": role_arn, "path": path},
+    )
+    status_code = response.status_code
+    if not (200 <= status_code < 300):
+        raise PermissionError(f"Access to {path} failed: {status_code} {response.text}")
+    return response.json()
+
+
 def access_db(
     instance: InstanceSettings | dict, access_token: str | None = None
 ) -> str:
