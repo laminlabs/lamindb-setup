@@ -654,37 +654,66 @@ def access_aws(storage_root: str, access_token: str | None = None) -> dict[str, 
     from ._settings import settings
 
     if settings.user.handle != "anonymous" or access_token is not None:
-        storage_root_info = call_with_fallback_auth(
-            _access_aws, storage_root=storage_root, access_token=access_token
+        route_info = call_with_fallback_auth(
+            _access_aws_route, storage_root=storage_root, access_token=access_token
         )
     else:
-        storage_root_info = call_with_fallback(_access_aws, storage_root=storage_root)
-    return storage_root_info
+        route_info = call_with_fallback(_access_aws_route, storage_root=storage_root)
 
-
-def _access_aws(*, storage_root: str, client: Client) -> dict[str, dict]:
     storage_root_info: dict[str, dict] = {"credentials": {}, "accessibility": {}}
-    response = client.functions.invoke(
-        "get-cloud-access-v1",
-        invoke_options={"body": {"storage_root": storage_root}},
-    )
-    if response is not None and response != b"{}":
-        data = json.loads(response)
+    if route_info is None:
+        return storage_root_info
+    if "api_url" in route_info:
+        data = _access_aws_endpoint(
+            route_info["api_url"],
+            route_info["assumed_role_arn"],
+            storage_root,
+            access_token,
+        )
+        if not data:
+            return storage_root_info
+    else:
+        data = route_info
 
-        loaded_credentials = data["Credentials"]
-        loaded_accessibility = data["StorageAccessibility"]
+    loaded_credentials = data["Credentials"]
+    loaded_accessibility = data["StorageAccessibility"]
 
-        credentials = storage_root_info["credentials"]
-        credentials["key"] = loaded_credentials["AccessKeyId"]
-        credentials["secret"] = loaded_credentials["SecretAccessKey"]
-        credentials["token"] = loaded_credentials["SessionToken"]
+    credentials = storage_root_info["credentials"]
+    credentials["key"] = loaded_credentials["AccessKeyId"]
+    credentials["secret"] = loaded_credentials["SecretAccessKey"]
+    credentials["token"] = loaded_credentials["SessionToken"]
 
-        accessibility = storage_root_info["accessibility"]
-        accessibility["storage_root"] = loaded_accessibility["storageRoot"]
-        accessibility["is_managed"] = loaded_accessibility["isManaged"]
-        accessibility["extra_parameters"] = loaded_accessibility.get("extraParameters")
+    accessibility = storage_root_info["accessibility"]
+    accessibility["storage_root"] = loaded_accessibility["storageRoot"]
+    accessibility["is_managed"] = loaded_accessibility["isManaged"]
+    accessibility["extra_parameters"] = loaded_accessibility.get("extraParameters")
 
     return storage_root_info
+
+
+def _access_aws_route(*, storage_root: str, client: Client) -> dict | None:
+    api_info = (
+        client.rpc(
+            "get_storage_api_info_from_path",
+            {"_path": storage_root},
+        )
+        .execute()
+        .data
+    )
+
+    if api_info["api_url"] is None:
+        return None
+
+    if api_info["assumed_role_arn"] is None:
+        response = client.functions.invoke(
+            "get-cloud-access-v1",
+            invoke_options={"body": {"storage_root": storage_root}},
+        )
+        if response is not None and response != b"{}":
+            return json.loads(response)
+        return None
+    else:
+        return api_info
 
 
 def _access_aws_endpoint(
