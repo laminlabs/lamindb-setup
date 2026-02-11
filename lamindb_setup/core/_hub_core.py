@@ -657,7 +657,7 @@ def access_aws(storage_root: str, access_token: str | None = None) -> dict[str, 
     if "api_url" in route_info:
         data = _access_aws_endpoint(
             route_info["api_url"],
-            route_info["assumed_role_arn"],
+            route_info["assume_role_arn"],
             storage_root,
             access_token,
         )
@@ -697,7 +697,7 @@ def _access_aws_route(*, storage_root: str, client: Client) -> dict | None:
     api_info = result[0]
     if api_info["api_url"] is None:
         return None
-    if api_info["assumed_role_arn"] is None:
+    if api_info["assume_role_arn"] is None:
         response = client.functions.invoke(
             "get-cloud-access-v1",
             invoke_options={"body": {"storage_root": storage_root}},
