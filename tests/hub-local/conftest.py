@@ -7,7 +7,6 @@ import lamindb_setup as ln_setup
 import pytest
 from lamincentral.client import SupabaseClientWrapper, connect_central
 from lamincentral.dev._local_supabase import (
-    _remove_lamin_local_settings,
     _SupabaseLocalResources,
     start_supabase,
 )
@@ -142,7 +141,10 @@ def create_myinstance(create_testadmin1_session):  # -> Dict
         name=instance_name,
         db=db_str,
     )
-    init_instance_hub(isettings)
+    # add resource_db_server from seed_local_test
+    init_instance_hub(
+        isettings, resource_db_server_id=UUID("e36c7069-2129-4c78-b2c6-323e2354b741")
+    )
     storage = init_storage_base(
         "s3://lamindb-ci/myinstance",
         instance_id=instance_id,
@@ -151,10 +153,6 @@ def create_myinstance(create_testadmin1_session):  # -> Dict
         register_hub=True,
     )[0]
     isettings._storage = storage
-    # add resource_db_server from seed_local_test
-    admin_client.table("instance").update(
-        {"resource_db_server_id": "e36c7069-2129-4c78-b2c6-323e2354b741"}
-    ).eq("id", instance_id.hex).execute()
     # test loading it
     with pytest.raises(PermissionError) as error:
         ln_setup.connect("testadmin1/myinstance", _test=True)
