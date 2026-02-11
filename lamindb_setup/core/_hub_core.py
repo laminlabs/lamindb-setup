@@ -659,7 +659,7 @@ def access_aws(storage_root: str, access_token: str | None = None) -> dict[str, 
             route_info["api_url"],
             route_info["assume_role_arn"],
             storage_root,
-            access_token,
+            access_token=access_token,
         )
         if not data:
             return storage_root_info
@@ -708,7 +708,11 @@ def _access_aws_route(*, storage_root: str, client: Client) -> dict | None:
 
 
 def _access_aws_endpoint(
-    api_url: str, role_arn: str, path: str, access_token: str | None = None
+    api_url: str,
+    role_arn: str,
+    path: str,
+    duration_seconds: int = 43200,
+    access_token: str | None = None,
 ):
     url = f"{api_url}/storages/cloud-access-v1"
     renew_token = False
@@ -721,7 +725,7 @@ def _access_aws_endpoint(
         "post",
         access_token,
         renew_token,
-        json={"role_arn": role_arn, "path": path, "duration_seconds": 43200},
+        json={"role_arn": role_arn, "path": path, "duration_seconds": duration_seconds},
     )
     status_code = response.status_code
     if not (200 <= status_code < 300):
