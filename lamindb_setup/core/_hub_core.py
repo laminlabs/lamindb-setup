@@ -711,18 +711,17 @@ def _access_aws_endpoint(
     api_url: str, role_arn: str, path: str, access_token: str | None = None
 ):
     url = f"{api_url}/storages/cloud-access-v1"
-
     renew_token = False
     if access_token is None and settings.user.handle != "anonymous":
         access_token = settings.user.access_token
         renew_token = True
-
+    logger.debug(f"calling {url} with role_arn {role_arn} and path {path}")
     response = request_with_auth(
         url,
         "post",
         access_token,
         renew_token,
-        json={"role_arn": role_arn, "path": path},
+        json={"role_arn": role_arn, "path": path, "duration_seconds": 43200},
     )
     status_code = response.status_code
     if not (200 <= status_code < 300):
