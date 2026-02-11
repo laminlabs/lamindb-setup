@@ -653,8 +653,13 @@ def access_aws(storage_root: str, access_token: str | None = None) -> dict[str, 
 
     storage_root_info: dict[str, dict] = {"credentials": {}, "accessibility": {}}
     if route_info is None:
+        # the storage is not managed or no access granted via the edge function
         return storage_root_info
+
     if "api_url" in route_info:
+        # the storage is managed
+        # and get_storage_api_info_from_path returned the correct api info
+        # to call the endpoint to get the credentials directly
         data = _access_aws_endpoint(
             route_info["api_url"],
             route_info["assume_role_arn"],
@@ -664,6 +669,8 @@ def access_aws(storage_root: str, access_token: str | None = None) -> dict[str, 
         if not data:
             return storage_root_info
     else:
+        # the request was routed to the edge function
+        # so we can use the data directly
         data = route_info
 
     loaded_credentials = data["Credentials"]
@@ -692,9 +699,12 @@ def _access_aws_route(*, storage_root: str, client: Client) -> dict | None:
         .data
     )
     if not result:
+        # [] means that the storage is not managed
         return None
 
     api_info = result[0]
+    # both are needed to call the endpoint
+    # if not available, route to the edge function
     if api_info["assume_role_arn"] is None or api_info["api_url"] is None:
         logger.debug(
             f"calling the edge function get-cloud-access-v1 for {storage_root}"
@@ -707,6 +717,7 @@ def _access_aws_route(*, storage_root: str, client: Client) -> dict | None:
             return json.loads(response)
         return None
     else:
+        # call the endpoint downstream
         return api_info
 
 
