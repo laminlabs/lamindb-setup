@@ -696,6 +696,9 @@ def _access_aws_route(*, storage_root: str, client: Client) -> dict | None:
 
     api_info = result[0]
     if api_info["assume_role_arn"] is None or api_info["api_url"] is None:
+        logger.debug(
+            f"calling the edge function get-cloud-access-v1 for {storage_root}"
+        )
         response = client.functions.invoke(
             "get-cloud-access-v1",
             invoke_options={"body": {"storage_root": storage_root}},
@@ -719,7 +722,9 @@ def _access_aws_endpoint(
     if access_token is None and settings.user.handle != "anonymous":
         access_token = settings.user.access_token
         renew_token = True
-    logger.debug(f"calling {url} with role_arn {role_arn} and path {path}")
+    logger.debug(
+        f"calling {url} with role_arn {role_arn}, path {path}, duration_seconds {duration_seconds}"
+    )
     response = request_with_auth(
         url,
         "post",
