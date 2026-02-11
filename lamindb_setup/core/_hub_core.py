@@ -253,8 +253,6 @@ def _init_storage_hub(
     is_default: bool = False,
     space_id: UUID | None = None,
 ) -> Literal["hub-record-retrieved", "hub-record-created", "hub-record-not-created"]:
-    from lamindb_setup import settings
-
     created_by = settings.user._uuid if created_by is None else created_by
     # storage roots are always stored without the trailing slash in the SQL database
     root = ssettings.root_as_str
@@ -307,7 +305,6 @@ def _delete_instance(
     This function deletes the relevant instance and storage records in the hub,
     conditional on the emptiness of the storage location.
     """
-    from ._settings_storage import mark_storage_root
     from .upath import check_storage_is_empty, create_path
 
     # the "/" check is for backward compatibility with the old identifier format
@@ -386,8 +383,6 @@ def _init_instance_hub(
     account_id: UUID | None = None,
     resource_db_server_id: UUID | None = None,
 ) -> None:
-    from ._settings import settings
-
     created_by_id = settings.user._uuid.hex if account_id is None else account_id.hex  # type: ignore
     owner_account_id = os.getenv("LAMINDB_ACCOUNT_ID_INIT", created_by_id)
 
@@ -629,8 +624,6 @@ def connect_instance_hub(
     use_root_db_user: bool = False,
     use_proxy_db: bool = False,
 ) -> tuple[dict, dict] | str:
-    from ._settings import settings
-
     if settings.user.handle != "anonymous" or access_token is not None:
         return call_with_fallback_auth(
             _connect_instance_hub,
@@ -651,8 +644,6 @@ def connect_instance_hub(
 
 
 def access_aws(storage_root: str, access_token: str | None = None) -> dict[str, dict]:
-    from ._settings import settings
-
     if settings.user.handle != "anonymous" or access_token is not None:
         route_info = call_with_fallback_auth(
             _access_aws_route, storage_root=storage_root, access_token=access_token
@@ -692,7 +683,7 @@ def access_aws(storage_root: str, access_token: str | None = None) -> dict[str, 
 
 
 def _access_aws_route(*, storage_root: str, client: Client) -> dict | None:
-    api_info = (
+    result = (
         client.rpc(
             "get_storage_api_info_from_path",
             {"_path": storage_root},
@@ -700,16 +691,18 @@ def _access_aws_route(*, storage_root: str, client: Client) -> dict | None:
         .execute()
         .data
     )
-
-    if api_info["api_url"] is None:
+    if not result:
         return None
 
+    api_info = result[0]
+    if api_info["api_url"] is None:
+        return None
     if api_info["assumed_role_arn"] is None:
         response = client.functions.invoke(
             "get-cloud-access-v1",
             invoke_options={"body": {"storage_root": storage_root}},
         )
-        if response is not None and response != b"{}":
+        if response != b"{}":
             return json.loads(response)
         return None
     else:
