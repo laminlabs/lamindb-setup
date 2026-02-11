@@ -695,9 +695,7 @@ def _access_aws_route(*, storage_root: str, client: Client) -> dict | None:
         return None
 
     api_info = result[0]
-    if api_info["api_url"] is None:
-        return None
-    if api_info["assume_role_arn"] is None:
+    if api_info["assume_role_arn"] is None or api_info["api_url"] is None:
         response = client.functions.invoke(
             "get-cloud-access-v1",
             invoke_options={"body": {"storage_root": storage_root}},
