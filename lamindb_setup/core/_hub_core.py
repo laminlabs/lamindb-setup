@@ -368,18 +368,23 @@ def delete_instance_record(instance_id: UUID, access_token: str | None = None) -
 def init_instance_hub(
     isettings: InstanceSettings,
     account_id: UUID | None = None,
+    resource_db_server_id: UUID | None = None,
     access_token: str | None = None,
 ) -> None:
     return call_with_fallback_auth(
         _init_instance_hub,
         isettings=isettings,
         account_id=account_id,
+        resource_db_server_id=resource_db_server_id,
         access_token=access_token,
     )
 
 
 def _init_instance_hub(
-    client: Client, isettings: InstanceSettings, account_id: UUID | None = None
+    client: Client,
+    isettings: InstanceSettings,
+    account_id: UUID | None = None,
+    resource_db_server_id: UUID | None = None,
 ) -> None:
     from ._settings import settings
 
@@ -404,6 +409,8 @@ def _init_instance_hub(
         "public": False,
         "created_by_id": created_by_id,
     }
+    if resource_db_server_id is not None:
+        fields["resource_db_server_id"] = resource_db_server_id.hex
     if isettings.dialect != "sqlite":
         db_dsn = LaminDsnModel(db=isettings.db)
         db_fields = {
