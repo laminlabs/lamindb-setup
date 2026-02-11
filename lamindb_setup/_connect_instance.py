@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import functools
 import importlib
 import os
 import sys
@@ -21,6 +22,7 @@ from .core._settings_store import instance_settings_file
 from .core.cloud_sqlite_locker import unlock_cloud_sqlite_upon_exception
 from .core.django import reset_django
 from .errors import CannotSwitchDefaultInstance, InstanceNotFoundError
+from .lazy_import import disable_lazy_imports as _disable_lazy_imports
 
 if TYPE_CHECKING:
     from pathlib import Path
@@ -182,6 +184,15 @@ def _connect_instance(
     return isettings
 
 
+def _with_disable_lazy_imports(func):
+    @functools.wraps(func)
+    def wrapper(*args, **kwargs):
+        with _disable_lazy_imports():
+            return func(*args, **kwargs)
+
+    return wrapper
+
+
 def reset_django_module_variables():
     # This function updates all module-level references to Django classes
     # But it will fail to update function level references
@@ -291,6 +302,7 @@ def validate_connection_state(
         reset_django()
 
 
+@_with_disable_lazy_imports
 @unlock_cloud_sqlite_upon_exception(ignore_prev_locker=True)
 def connect(instance: str | None = None, **kwargs: Any) -> str | tuple | None:
     """Connect the default database.
