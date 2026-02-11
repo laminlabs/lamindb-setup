@@ -724,7 +724,7 @@ def _access_aws_endpoint(
         "post",
         access_token,
         renew_token,
-        body={"role_arn": role_arn, "path": path},
+        data={"role_arn": role_arn, "path": path},
     )
     status_code = response.status_code
     if not (200 <= status_code < 300):
