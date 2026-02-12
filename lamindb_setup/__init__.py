@@ -58,6 +58,7 @@ from ._disconnect import disconnect
 from ._django import django
 from ._entry_points import call_registered_entry_points as _call_registered_entry_points
 from ._init_instance import init
+from ._merge import merge
 from ._migrate import migrate
 from ._register_instance import register
 from ._setup_user import login, logout
