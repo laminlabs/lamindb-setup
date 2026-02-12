@@ -728,7 +728,11 @@ def _access_aws_endpoint(
     duration_seconds: int = 43200,
     access_token: str | None = None,
 ):
-    url = f"{api_url}/storages/cloud-access-v1"
+    # local is used in tests
+    url = "/storages/cloud-access-v1"
+    if os.getenv("LAMIN_ENV") != "local":
+        url = api_url + url
+
     renew_token = False
     if access_token is None and settings.user.handle != "anonymous":
         access_token = settings.user.access_token
@@ -782,7 +786,7 @@ def access_db(
         renew_token = False
     # local is used in tests
     url = f"/instances/{instance_id}/db_token"
-    if os.environ.get("LAMIN_ENV", "prod") != "local":
+    if os.getenv("LAMIN_ENV") != "local":
         if instance_api_url is None:
             raise RuntimeError(
                 f"Can only get fine-grained access to {instance_slug} if api_url is present."
