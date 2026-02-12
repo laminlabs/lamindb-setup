@@ -53,7 +53,7 @@ def check_is_instance_remote(root: UPathStr, db: str | None) -> bool:
         not root_str.startswith("create-s3") and get_storage_type(root_str) == "local"
     )
     is_local_db = db is None or db.startswith("sqlite://") or is_local_db_url(db)
-    return is_local_storage and is_local_db
+    return not (is_local_storage or is_local_db)
 
 
 class InstanceSettings:
