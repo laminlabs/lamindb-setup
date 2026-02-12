@@ -235,9 +235,10 @@ def httpx_client():
     try:
         # local is used in tests
         if os.environ.get("LAMIN_ENV", "prod") == "local":
-            from laminhub_rest.main import client as test_client
+            from fastapi.testclient import TestClient
+            from laminhub_rest.main import app
 
-            client = test_client
+            client = TestClient(app)
         else:
             transport = RetryTransport(
                 retry=LogRetry(total=2, backoff_factor=0.2),
