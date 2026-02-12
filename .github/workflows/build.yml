@@ -130,7 +130,7 @@ jobs:
           repository: laminlabs/laminhub
           token: ${{ secrets.GH_TOKEN_DEPLOY_LAMINAPP }}
           path: laminhub
-          ref: main
+          ref: init_with_db_server
       - name: Set env file for local test of edge functions
         run: |
           touch .env.local
