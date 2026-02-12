@@ -13,6 +13,12 @@ Basic operations
 .. autofunction:: disconnect
 .. autofunction:: delete
 
+Change management
+-----------------
+
+- :func:`lamindb.setup.switch` – switch branch or space
+- :func:`lamindb.setup.merge` – merge a branch into the current branch
+
 Modules & settings
 ------------------
 
