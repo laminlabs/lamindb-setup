@@ -656,17 +656,26 @@ def access_aws(storage_root: str, access_token: str | None = None) -> dict[str, 
         # the storage is not managed or no access granted via the edge function
         return storage_root_info
 
+    data = None
     if "api_url" in route_info:
         # the storage is managed
         # and get_storage_api_info_from_path returned the correct api info
         # to call the endpoint to get the credentials directly
-        data = _access_aws_endpoint(
-            route_info["api_url"],
-            route_info["assume_role_arn"],
-            storage_root,
-            access_token=access_token,
-        )
-        if not data:
+        try:
+            data = _access_aws_endpoint(
+                route_info["api_url"],
+                route_info["assume_role_arn"],
+                storage_root,
+                access_token=access_token,
+            )
+        except Exception as e:
+            # it might be that the user doesn't have access to the storage via hub
+            # but has access via local credentials
+            # so we don't throw an error here
+            logger.warning(
+                f"storage credentials for {storage_root} were not received: {e}"
+            )
+        if not data:  # None or empty dict
             return storage_root_info
     else:
         # the request was routed to the edge function
@@ -709,12 +718,20 @@ def _access_aws_route(*, storage_root: str, client: Client) -> dict | None:
         logger.debug(
             f"calling the edge function get-cloud-access-v1 for {storage_root}"
         )
-        response = client.functions.invoke(
-            "get-cloud-access-v1",
-            invoke_options={"body": {"storage_root": storage_root}},
-        )
-        if response != b"{}":
-            return json.loads(response)
+        try:
+            response = client.functions.invoke(
+                "get-cloud-access-v1",
+                invoke_options={"body": {"storage_root": storage_root}},
+            )
+            if response != b"{}":
+                return json.loads(response)
+        except Exception as e:
+            # it might be that the user doesn't have access to the storage via hub
+            # but has access via local credentials
+            # so we don't throw an error here
+            logger.warning(
+                f"storage credentials for {storage_root} were not received: {e}"
+            )
         return None
     else:
         # call the endpoint downstream
