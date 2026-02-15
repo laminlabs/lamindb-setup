@@ -1,11 +1,10 @@
 from __future__ import annotations
 
 import os
-
 from django.db import connection
 from lamin_utils import logger
 from packaging import version
-
+import requests
 from ._check_setup import _check_instance_setup, disable_auto_connect
 from .core._settings import settings
 from .core.django import setup_django
@@ -163,6 +162,14 @@ class migrate:
             logger.important(f"updating lamindb version in hub: {lamindb.__version__}")
             if isettings.dialect != "sqlite":
                 update_schema_in_hub()
+            response = requests.delete(
+                f"{settings.instance.api_url}/cache/instances/{settings.instance._id}",
+                headers={"Authorization": f"Bearer {settings.user.access_token}"},
+            )
+            if response.status_code != 200:
+                logger.warning(
+                    f"failed to clear instance cache in hub: {response.status_code} {response.text}"
+                )
             call_with_fallback_auth(
                 update_instance,
                 instance_id=isettings._id.hex,
