@@ -260,6 +260,7 @@ def init(
     if modules is None:
         modules = kwargs.get("schema", None)
     _test: bool = kwargs.get("_test", False)
+    _resource_db_server_id: UUID | None = kwargs.get("_resource_db_server_id", None)
 
     # use this user instead of settings.user
     # contains access_token
@@ -299,7 +300,10 @@ def init(
         )
         if register_on_hub:
             init_instance_hub(
-                isettings, account_id=user__uuid, access_token=access_token
+                isettings,
+                account_id=user__uuid,
+                resource_db_server_id=_resource_db_server_id,
+                access_token=access_token,
             )
         ssettings, _ = init_storage(
             storage,

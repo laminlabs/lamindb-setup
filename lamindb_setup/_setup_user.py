@@ -32,7 +32,7 @@ def load_user(email: str | None = None, handle: str | None = None) -> UserSettin
     else:
         if email is None:
             raise SystemExit(
-                "✗ Use your email for your first login in a compute environment. "
+                "✗ Use your API key for your first login in a compute environment. "
                 "After that, you can use your handle."
             )
         user_settings = UserSettings(handle=handle, email=email, uid="null")  # type: ignore

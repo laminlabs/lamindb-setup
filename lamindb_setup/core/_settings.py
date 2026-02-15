@@ -9,8 +9,6 @@ import jwt
 from lamin_utils import logger
 from platformdirs import user_cache_dir
 
-from lamindb_setup.errors import CurrentInstanceNotConfigured
-
 from ._settings_load import (
     load_cache_path_from_settings,
     load_instance_settings,
@@ -27,6 +25,7 @@ if TYPE_CHECKING:
     from lamindb.models import Branch, Space
 
     from lamindb_setup.core import InstanceSettings, StorageSettings, UserSettings
+    from lamindb_setup.core.django import DBToken, DBTokenManager
     from lamindb_setup.types import UPathStr
 
 
@@ -328,6 +327,15 @@ class SetupSettings:
         """
         return SetupPaths
 
+    @property
+    def _db_token_manager(self) -> DBTokenManager:
+        from lamindb_setup.core.django import db_token_manager
+
+        return db_token_manager
+
+    def _get_db_token(self, connection_name: str = "default") -> DBToken | None:
+        return self._db_token_manager.tokens.get(connection_name, None)
+
     def _debug_db_access(self):
         """Debug database access problems."""
         instance = self.instance
@@ -339,9 +347,7 @@ class SetupSettings:
         # sets the token if not present yet
         print("available spaces: ", instance.available_spaces)
 
-        from lamindb_setup.core.django import db_token_manager
-
-        tokens = db_token_manager.tokens
+        tokens = self._db_token_manager.tokens
         if tokens:
             for conn, token in tokens.items():
                 token_encoded = token._token

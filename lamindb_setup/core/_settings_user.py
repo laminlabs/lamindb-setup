@@ -26,7 +26,7 @@ class UserSettings:
     api_key: str | None = None
     """API key."""
     password: str | None = None
-    """legacy API key or legacy password."""
+    """Legacy password."""
     access_token: str | None = None
     """User access token."""
     uid: str = "null"

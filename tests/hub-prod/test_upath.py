@@ -2,8 +2,14 @@ from __future__ import annotations
 
 from pathlib import Path
 
+import botocore
 import pytest
-from lamindb_setup.core.upath import ProgressCallback, UPath, create_path
+from lamindb_setup.core.upath import (
+    ProgressCallback,
+    UPath,
+    create_path,
+    s3fs_to_boto3_client,
+)
 
 
 def test_view_tree():
@@ -84,3 +90,34 @@ def test_progress_callback_size():
     pcb.branch(cwd, cwd, {})
 
     assert pcb.size == 7
+
+
+def test_s3fs_to_boto3_client():
+    path = UPath("s3://lamindb-setup-private-bucket/no_such_file", anon=True)
+    with pytest.raises(PermissionError):
+        path.exists()
+
+    client = s3fs_to_boto3_client(path.fs)  # anon is passed
+    assert client is s3fs_to_boto3_client(path.fs)  # check caching
+    assert client.meta.config.signature_version is botocore.UNSIGNED
+    # private bucket
+    with pytest.raises(botocore.exceptions.ClientError) as error:
+        client.head_object(Bucket=path.drive, Key=path.name)
+    assert (
+        "An error occurred (403) when calling the HeadObject operation: Forbidden"
+        in str(error)
+    )
+    # public bucket
+    assert client.head_object(Bucket="lamindata", Key="tomato.png")
+
+    path = UPath("s3://lamindb-setup-private-bucket/no_such_file")
+    assert not path.exists()
+
+    client = s3fs_to_boto3_client(path.fs)  # anon is not passed
+
+    with pytest.raises(botocore.exceptions.ClientError) as error:
+        client.head_object(Bucket=path.drive, Key=path.name)
+    assert (
+        "An error occurred (404) when calling the HeadObject operation: Not Found"
+        in str(error)
+    )

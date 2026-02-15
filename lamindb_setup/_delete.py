@@ -74,6 +74,11 @@ def delete(slug: str, force: bool = False, require_empty: bool = True) -> int | 
     See Also:
         Delete an instance via the CLI, see `here <https://docs.lamin.ai/cli#delete>`__.
     """
+    logger.debug(f"deleting instance: {slug}")
+
+    user_handle = settings.user.handle
+    logger.debug(f"current user: {user_handle}")
+
     owner, name = get_owner_name_from_identifier(slug)
     isettings = _connect_instance(owner, name, raise_permission_error=False)
     if isettings.dialect != "sqlite":
@@ -94,6 +99,13 @@ def delete(slug: str, force: bool = False, require_empty: bool = True) -> int | 
         if user_input not in valid_responses:
             return -1
 
+    root = isettings.storage.root
+    logger.debug(f"default storage root: {root}")
+    if root.protocol == "s3":
+        storage_options = root.storage_options
+        logger.debug(f"key in storage options: {'key' in storage_options}")
+        logger.debug(f"secret in storage options: {'secret' in storage_options}")
+        logger.debug(f"token in storage options: {'token' in storage_options}")
     # the actual deletion process begins here
     if isettings.dialect == "sqlite" and isettings.is_remote:
         # delete the exlusion dir first because it's hard to count its objects
@@ -107,8 +119,9 @@ def delete(slug: str, force: bool = False, require_empty: bool = True) -> int | 
             )
         require_empty = True
     # first the default storage
+    logger.debug(f"checking whether {root} is empty")
     n_files = check_storage_is_empty(
-        isettings.storage.root,
+        root,
         raise_error=require_empty,
         account_for_sqlite_file=isettings.dialect == "sqlite",
     )
@@ -117,7 +130,7 @@ def delete(slug: str, force: bool = False, require_empty: bool = True) -> int | 
             missing_ok=True  # this is totally weird, but needed on Py3.11
         )
     # now everything that's on the hub
-    if settings.user.handle != "anonymous":
+    if user_handle != "anonymous":
         # dynamic import to avoid importing hub logic at root
         from .core._hub_core import get_storage_records_for_instance
 
@@ -126,8 +139,22 @@ def delete(slug: str, force: bool = False, require_empty: bool = True) -> int | 
             if storage_record["root"] == isettings.storage.root_as_str:
                 continue
             ssettings = StorageSettings(storage_record["root"])  # type: ignore
+
+            ssettings_root = ssettings.root
+            logger.debug(f"checking whether {ssettings_root} is empty")
+            if ssettings_root.protocol == "s3":
+                ssettings_storage_options = ssettings_root.storage_options
+                logger.debug(
+                    f"key in storage options: {'key' in ssettings_storage_options}"
+                )
+                logger.debug(
+                    f"secret in storage options: {'secret' in ssettings_storage_options}"
+                )
+                logger.debug(
+                    f"token in storage options: {'token' in ssettings_storage_options}"
+                )
             check_storage_is_empty(
-                ssettings.root,  # type: ignore
+                ssettings_root,
                 raise_error=require_empty,
             )
             if ssettings._mark_storage_root.exists():
@@ -137,7 +164,7 @@ def delete(slug: str, force: bool = False, require_empty: bool = True) -> int | 
     logger.info(f"deleting instance {isettings.slug}")
     # below we can skip check_storage_is_empty() because we already called
     # it above
-    if settings.user.handle != "anonymous" and isettings.is_on_hub:
+    if user_handle != "anonymous" and isettings.is_on_hub:
         # start with deleting things on the hub
         # this will error if the user doesn't have permission
         # dynamic import to avoid importing hub logic at root

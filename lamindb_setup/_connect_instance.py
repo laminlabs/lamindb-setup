@@ -211,14 +211,16 @@ def reset_django_module_variables():
             and name not in sys.builtin_module_names
         ):
             try:
-                for k, v in vars(module).items():
+                module_vars = vars(module)  # references the original
+                # copy to avoid changing size during the loop
+                for k, v in module_vars.copy().items():
                     if (
                         isinstance(v, types.ModuleType)
                         and not k.startswith("_")
                         and getattr(v, "__name__", None) in app_names
                     ):
                         if v.__name__ in sys.modules:
-                            vars(module)[k] = sys.modules[v.__name__]
+                            module_vars[k] = sys.modules[v.__name__]
                     # Also reset classes from Django apps - but check if the class module starts with any app name
                     elif hasattr(v, "__module__") and getattr(v, "__module__", None):
                         class_module = v.__module__
@@ -230,7 +232,7 @@ def reset_django_module_variables():
                                 fresh_module = sys.modules[class_module]
                                 attr_name = getattr(v, "__name__", k)
                                 if hasattr(fresh_module, attr_name):
-                                    vars(module)[k] = getattr(fresh_module, attr_name)
+                                    module_vars[k] = getattr(fresh_module, attr_name)
             except (AttributeError, TypeError):
                 continue
 
@@ -291,17 +293,17 @@ def validate_connection_state(
 
 @unlock_cloud_sqlite_upon_exception(ignore_prev_locker=True)
 def connect(instance: str | None = None, **kwargs: Any) -> str | tuple | None:
-    """Connect the global default instance.
+    """Connect the default database.
 
-    If you want to create a read-only database client, use :class:`~lamindb.DB` instead.
+    Alternatively, to use a database client, create a :class:`~lamindb.DB` object.
 
     Args:
         instance: Pass a slug (`account/name`) or URL (`https://lamin.ai/account/name`).
-            If `None`, looks for an environment variable `LAMIN_CURRENT_INSTANCE` to get the instance identifier.
-            If it doesn't find this variable, it connects to the instance that was connected with `lamin connect` through the CLI.
+            If `None`, looks for an environment variable `LAMIN_CURRENT_INSTANCE` to get the database instance identifier.
+            If it doesn't find this variable, it connects to the database that was connected with `lamin connect` through the CLI.
 
     See Also:
-        Configure an instance for auto-connect via the CLI, see `here <https://docs.lamin.ai/cli#connect>`__.
+        To set a default database for auto-connection in your environment via the CLI, see `here <https://docs.lamin.ai/cli#connect>`__.
     """
     # validate kwargs
     valid_kwargs = {

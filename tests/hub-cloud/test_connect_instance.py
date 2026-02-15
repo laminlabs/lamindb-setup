@@ -144,6 +144,7 @@ def test_connect_with_db_parameter():
         ln_setup.logout()
         ln_setup.connect("laminlabs/lamindata", _test=True)
         assert "public" in ln_setup.settings.instance.db
+        assert ln_setup.settings.instance.is_read_only_connection
         # it is an org member, receives jwt connection
         ln_setup.login("testuser2")
         ln_setup.connect("laminlabs/lamindata", _test=True)
