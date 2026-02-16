@@ -47,6 +47,10 @@ def main() -> None:
         conn.execute("PRAGMA foreign_keys = OFF")
         conn.execute("DELETE FROM lamindb_storage")
         conn.execute("DELETE FROM lamindb_user")
+        conn.execute("DELETE FROM bionty_source")
+        conn.execute(
+            "UPDATE sqlite_sequence SET seq = 0 WHERE name IN ('lamindb_storage', 'lamindb_user', 'bionty_source')"
+        )
         conn.commit()
     finally:
         conn.close()

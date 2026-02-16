@@ -347,15 +347,11 @@ def setup_django(
             call_command("migrate", app_name, app_number, verbosity=2)
         isettings._update_cloud_sqlite_file(unlock_cloud_sqlite=False)
     elif init:
-        modules_beyond_bionty = isettings.modules.copy()
         compressed_sqlite_path = Path(__file__).parent / "lamin.db.gz"
-        if "bionty" in modules_beyond_bionty:
-            modules_beyond_bionty.remove("bionty")
         # seed from compressed sqlite file
         if (
             isettings.dialect == "sqlite"
             and os.getenv("LAMINDB_INIT_FROM_SCRATCH", "false") != "true"
-            and len(modules_beyond_bionty) == 0
             and compressed_sqlite_path.exists()
         ):
             with gzip.open(compressed_sqlite_path, "rb") as f_in:
