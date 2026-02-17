@@ -101,6 +101,7 @@ def register_initial_records(
             name="all",
             description="Every team & user with access to the instance has access.",
         )
+        register_user(usettings)
         Branch.objects.get_or_create(
             id=-1,
             uid=12 * "t",
@@ -118,7 +119,6 @@ def register_initial_records(
             name="main",
             description="The main & default branch of the instance.",
         )
-        register_user(usettings)
         register_storage_in_instance(isettings.storage)
     except OperationalError as error:
         logger.warning(f"instance seems not set up ({error})")
