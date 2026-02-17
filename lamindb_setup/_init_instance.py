@@ -107,17 +107,20 @@ def register_initial_records(
             uid=12 * "t",
             name="trash",
             description="The trash.",
+            created_by_id=1,
         )
         Branch.objects.get_or_create(
             id=0,
             uid=12 * "a",
             name="archive",
             description="The archive.",
+            created_by_id=1,
         )
         Branch.objects.get_or_create(
             uid=12 * "m",
             name="main",
             description="The main & default branch of the instance.",
+            created_by_id=1,
         )
         register_storage_in_instance(isettings.storage)
     except OperationalError as error:
