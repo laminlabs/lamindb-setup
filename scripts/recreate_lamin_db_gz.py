@@ -50,7 +50,7 @@ def main() -> None:
         conn.execute("DELETE FROM lamindb_branch")
         conn.execute("DELETE FROM bionty_source")
         conn.execute(
-            "UPDATE sqlite_sequence SET seq = 0 WHERE name IN ('lamindb_storage', 'lamindb_user', 'bionty_source')"
+            "UPDATE sqlite_sequence SET seq = 0 WHERE name IN ('lamindb_storage', 'lamindb_user', 'bionty_source', 'lamindb_branch')"
         )
         conn.commit()
     finally:
