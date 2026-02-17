@@ -722,6 +722,8 @@ def _access_aws_route(*, storage_root: str, client: Client) -> dict | None:
     if (
         api_info["assume_role_arn"] is None
         or api_info["api_url"] is None
+        # this is to skip calling the endpoint in local lambdas
+        # because they don't have access to TestClient from fastapi
         or IS_LOCAL_LAMBDA
     ):
         logger.debug(
