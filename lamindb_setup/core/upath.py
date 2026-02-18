@@ -857,17 +857,17 @@ def view_tree(
     logger.print(message)
 
 
-def to_url(upath):
+def to_url(upath) -> str:
     """Public storage URL.
 
     Generates a public URL for an object in an S3 bucket using fsspec's UPath,
     considering the bucket's region.
 
     Args:
-    - upath: A UPath object representing an S3 path.
+        upath: a UPath object representing an S3 path.
 
     Returns:
-    - A string containing the public URL to the S3 object.
+        A string containing the public URL to the S3 object.
     """
     if upath.protocol != "s3":
         raise ValueError("The provided UPath must be an S3 path.")
@@ -878,6 +878,22 @@ def to_url(upath):
         return f"https://{bucket}.s3.amazonaws.com/{key}"
     else:
         return f"https://{bucket}.s3-{region}.amazonaws.com/{key}"
+
+
+def from_auth(path: UPathStr) -> UPath:
+    """Create a UPath with authentication credentials from LaminHub.
+
+    LaminHub credentials are only applied for S3 paths in managed storage.
+    For other S3 paths (or if not managed), the returned path uses environment
+    or existing credentials. Non-S3 paths are returned unchanged.
+
+    Args:
+        path: A path (typically S3; only S3 receives LaminHub credentials).
+
+    Returns:
+        A UPath with LaminHub credentials embedded when the path is in managed S3.
+    """
+    return create_path(path)
 
 
 # Why aren't we subclassing?
@@ -899,6 +915,7 @@ UPath.upload_from = upload_from
 UPath.to_url = to_url
 UPath.download_to = download_to
 UPath.view_tree = view_tree
+UPath.from_auth = staticmethod(from_auth)
 # unfortunately, we also have to do this for the subclasses
 Path.view_tree = view_tree  # type: ignore
 
@@ -927,9 +944,13 @@ Offers the typical access patterns of file systems and object stores, for instan
     upath = UPath("s3://my-bucket/my-folder/my-file.txt")
     upath.exists()  # file exists in storage
 
+If the path is in an S3 storage managed by LaminHub, you need to use `UPath.from_auth`
+to create a UPath object with authentication credentials requested from LaminHub.
+
 LaminDB exposes `universal_pathlib.UPath` and adds functionality related to authentication and the following methods::
 
-    upath.view_tree()  # view a file tree
+    UPath.from_auth("s3://managed-bucket/object") # request credentials from LaminHub for managed S3
+    upath.view_tree() # view a file tree
     upath.upload_from("local-file.txt") # upload a local file
     upath.download_to("local-file.txt") # download a file
     upath.synchronize_to("local-folder/") # synchronize a folder
