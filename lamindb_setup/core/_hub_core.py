@@ -43,6 +43,11 @@ if TYPE_CHECKING:
     from supabase import Client  # type: ignore
 
 
+IS_LOCAL_LAMBDA = (
+    os.getenv("LAMIN_ENV") == "local" and "AWS_LAMBDA_FUNCTION_NAME" in os.environ
+)
+
+
 def delete_storage_record(
     storage_info: dict[str, str] | StorageSettings,
     access_token: str | None = None,
@@ -714,7 +719,11 @@ def _access_aws_route(*, storage_root: str, client: Client) -> dict | None:
     api_info = result[0]
     # both are needed to call the endpoint
     # if not available, route to the edge function
-    if api_info["assume_role_arn"] is None or api_info["api_url"] is None:
+    if (
+        api_info["assume_role_arn"] is None
+        or api_info["api_url"] is None
+        or IS_LOCAL_LAMBDA
+    ):
         logger.debug(
             f"calling the edge function get-cloud-access-v1 for {storage_root}"
         )
