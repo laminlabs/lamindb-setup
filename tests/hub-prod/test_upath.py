@@ -41,6 +41,8 @@ def test_create_path():
     upath = UPath("s3://lamindb-ci/xyz/", default_fill_cache=False)
     assert "default_fill_cache" in upath.storage_options
 
+    assert UPath.from_auth(upath).storage_options["cache_regions"]
+
     upath = create_path(upath)
     # test option inheritance
     assert not upath.storage_options["default_fill_cache"]
