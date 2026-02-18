@@ -864,7 +864,7 @@ def to_url(upath) -> str:
     considering the bucket's region.
 
     Args:
-        upath: a UPath object representing an S3 path.
+        upath: A UPath object representing an S3 path.
 
     Returns:
         A string containing the public URL to the S3 object.
@@ -881,17 +881,20 @@ def to_url(upath) -> str:
 
 
 def from_auth(path: UPathStr) -> UPath:
-    """Create a UPath with authentication credentials from LaminHub.
+    """Create an authenticated path object.
 
-    LaminHub credentials are only applied for S3 paths in managed storage.
-    For other S3 paths (or if not managed), the returned path uses environment
-    or existing credentials. Non-S3 paths are returned unchanged.
+    This method makes a request to a LaminHub to obtain standard
+    federated AWS credentials for the `UPath` object, compliant with
+    `universal_pathlib` and `fsspec`.
+
+    Note: This only works for paths inside storage locations whose access is
+    managed by LaminHub (see the `Lamin docs <https://docs.lamin.ai/permissions#how-does-it-work>`__).
+    For paths outside managed storage locations, local or environment credentials are
+    used (as with vanilla `UPath`, e.g. from AWS environment variables or AWS configuration files).
+    Non-S3 paths are returned unchanged.
 
     Args:
-        path: A path (typically S3; only S3 receives LaminHub credentials).
-
-    Returns:
-        A UPath with LaminHub credentials embedded when the path is in managed S3.
+        path: A path (typically S3; only S3 receives federated AWS credentials).
     """
     return create_path(path)
 
