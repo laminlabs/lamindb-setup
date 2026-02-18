@@ -880,7 +880,7 @@ def to_url(upath) -> str:
         return f"https://{bucket}.s3-{region}.amazonaws.com/{key}"
 
 
-def from_auth(path: UPathStr) -> UPath:
+def from_auth(cls, path: UPathStr) -> UPath:
     """Create an authenticated path object.
 
     This method makes a request to a LaminHub to obtain standard
@@ -918,7 +918,7 @@ UPath.upload_from = upload_from
 UPath.to_url = to_url
 UPath.download_to = download_to
 UPath.view_tree = view_tree
-UPath.from_auth = staticmethod(from_auth)
+UPath.from_auth = classmethod(from_auth)
 # unfortunately, we also have to do this for the subclasses
 Path.view_tree = view_tree  # type: ignore
 
