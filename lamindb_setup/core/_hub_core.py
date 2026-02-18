@@ -712,6 +712,7 @@ def _access_aws_route(*, storage_root: str, client: Client) -> dict | None:
         .execute()
         .data
     )
+    logger.debug(f"called get_storage_api_info_from_path for {storage_root}: {result}")
     if not result:
         # [] means that the storage is not managed
         return None
