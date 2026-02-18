@@ -864,7 +864,7 @@ def to_url(upath) -> str:
     considering the bucket's region.
 
     Args:
-        upath: A UPath object representing an S3 path.
+        upath: A `UPath` object representing an S3 path.
 
     Returns:
         A string containing the public URL to the S3 object.
