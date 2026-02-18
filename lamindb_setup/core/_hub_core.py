@@ -253,6 +253,8 @@ def _init_storage_hub(
     is_default: bool = False,
     space_id: UUID | None = None,
 ) -> Literal["hub-record-retrieved", "hub-record-created", "hub-record-not-created"]:
+    from lamindb_setup import settings
+
     created_by = settings.user._uuid if created_by is None else created_by
     # storage roots are always stored without the trailing slash in the SQL database
     root = ssettings.root_as_str
@@ -305,6 +307,7 @@ def _delete_instance(
     This function deletes the relevant instance and storage records in the hub,
     conditional on the emptiness of the storage location.
     """
+    from ._settings_storage import mark_storage_root
     from .upath import check_storage_is_empty, create_path
 
     # the "/" check is for backward compatibility with the old identifier format
@@ -383,6 +386,8 @@ def _init_instance_hub(
     account_id: UUID | None = None,
     resource_db_server_id: UUID | None = None,
 ) -> None:
+    from ._settings import settings
+
     created_by_id = settings.user._uuid.hex if account_id is None else account_id.hex  # type: ignore
     owner_account_id = os.getenv("LAMINDB_ACCOUNT_ID_INIT", created_by_id)
 
@@ -624,6 +629,8 @@ def connect_instance_hub(
     use_root_db_user: bool = False,
     use_proxy_db: bool = False,
 ) -> tuple[dict, dict] | str:
+    from ._settings import settings
+
     if settings.user.handle != "anonymous" or access_token is not None:
         return call_with_fallback_auth(
             _connect_instance_hub,
@@ -644,130 +651,40 @@ def connect_instance_hub(
 
 
 def access_aws(storage_root: str, access_token: str | None = None) -> dict[str, dict]:
+    from ._settings import settings
+
     if settings.user.handle != "anonymous" or access_token is not None:
-        route_info = call_with_fallback_auth(
-            _access_aws_route, storage_root=storage_root, access_token=access_token
+        storage_root_info = call_with_fallback_auth(
+            _access_aws, storage_root=storage_root, access_token=access_token
         )
     else:
-        route_info = call_with_fallback(_access_aws_route, storage_root=storage_root)
-
-    storage_root_info: dict[str, dict] = {"credentials": {}, "accessibility": {}}
-    if route_info is None:
-        # the storage is not managed or no access granted via the edge function
-        return storage_root_info
-
-    data = None
-    if "api_url" in route_info:
-        # the storage is managed
-        # and get_storage_api_info_from_path returned the correct api info
-        # to call the endpoint to get the credentials directly
-        try:
-            data = _access_aws_endpoint(
-                route_info["api_url"],
-                route_info["assume_role_arn"],
-                storage_root,
-                access_token=access_token,
-            )
-        except Exception as e:
-            # it might be that the user doesn't have access to the storage via hub
-            # but has access via local credentials
-            # so we don't throw an error here
-            logger.warning(
-                f"storage credentials for {storage_root} were not received: {e}"
-            )
-        if not data:  # None or empty dict
-            return storage_root_info
-    else:
-        # the request was routed to the edge function
-        # so we can use the data directly
-        data = route_info
-
-    loaded_credentials = data["Credentials"]
-    loaded_accessibility = data["StorageAccessibility"]
-
-    credentials = storage_root_info["credentials"]
-    credentials["key"] = loaded_credentials["AccessKeyId"]
-    credentials["secret"] = loaded_credentials["SecretAccessKey"]
-    credentials["token"] = loaded_credentials["SessionToken"]
-
-    accessibility = storage_root_info["accessibility"]
-    accessibility["storage_root"] = loaded_accessibility["storageRoot"]
-    accessibility["is_managed"] = loaded_accessibility["isManaged"]
-    accessibility["extra_parameters"] = loaded_accessibility.get("extraParameters")
-
+        storage_root_info = call_with_fallback(_access_aws, storage_root=storage_root)
     return storage_root_info
 
 
-def _access_aws_route(*, storage_root: str, client: Client) -> dict | None:
-    result = (
-        client.rpc(
-            "get_storage_api_info_from_path",
-            {"_path": storage_root},
-        )
-        .execute()
-        .data
+def _access_aws(*, storage_root: str, client: Client) -> dict[str, dict]:
+    storage_root_info: dict[str, dict] = {"credentials": {}, "accessibility": {}}
+    response = client.functions.invoke(
+        "get-cloud-access-v1",
+        invoke_options={"body": {"storage_root": storage_root}},
     )
-    if not result:
-        # [] means that the storage is not managed
-        return None
+    if response is not None and response != b"{}":
+        data = json.loads(response)
 
-    api_info = result[0]
-    # both are needed to call the endpoint
-    # if not available, route to the edge function
-    if api_info["assume_role_arn"] is None or api_info["api_url"] is None:
-        logger.debug(
-            f"calling the edge function get-cloud-access-v1 for {storage_root}"
-        )
-        try:
-            response = client.functions.invoke(
-                "get-cloud-access-v1",
-                invoke_options={"body": {"storage_root": storage_root}},
-            )
-            if response != b"{}":
-                return json.loads(response)
-        except Exception as e:
-            # it might be that the user doesn't have access to the storage via hub
-            # but has access via local credentials
-            # so we don't throw an error here
-            logger.warning(
-                f"storage credentials for {storage_root} were not received: {e}"
-            )
-        return None
-    else:
-        # call the endpoint downstream
-        return api_info
+        loaded_credentials = data["Credentials"]
+        loaded_accessibility = data["StorageAccessibility"]
 
+        credentials = storage_root_info["credentials"]
+        credentials["key"] = loaded_credentials["AccessKeyId"]
+        credentials["secret"] = loaded_credentials["SecretAccessKey"]
+        credentials["token"] = loaded_credentials["SessionToken"]
 
-def _access_aws_endpoint(
-    api_url: str,
-    role_arn: str,
-    path: str,
-    duration_seconds: int = 43200,
-    access_token: str | None = None,
-):
-    # local is used in tests
-    url = "/storages/cloud-access-v1"
-    if os.getenv("LAMIN_ENV") != "local":
-        url = api_url + url
+        accessibility = storage_root_info["accessibility"]
+        accessibility["storage_root"] = loaded_accessibility["storageRoot"]
+        accessibility["is_managed"] = loaded_accessibility["isManaged"]
+        accessibility["extra_parameters"] = loaded_accessibility.get("extraParameters")
 
-    renew_token = False
-    if access_token is None and settings.user.handle != "anonymous":
-        access_token = settings.user.access_token
-        renew_token = True
-    logger.debug(
-        f"calling {url} with role_arn {role_arn}, path {path}, duration_seconds {duration_seconds}"
-    )
-    response = request_with_auth(
-        url,
-        "post",
-        access_token,
-        renew_token,
-        json={"role_arn": role_arn, "path": path, "duration_seconds": duration_seconds},
-    )
-    status_code = response.status_code
-    if not (200 <= status_code < 300):
-        raise PermissionError(f"Access to {path} failed: {status_code} {response.text}")
-    return response.json()
+    return storage_root_info
 
 
 def access_db(
@@ -803,7 +720,7 @@ def access_db(
         renew_token = False
     # local is used in tests
     url = f"/instances/{instance_id}/db_token"
-    if os.getenv("LAMIN_ENV") != "local":
+    if os.environ.get("LAMIN_ENV", "prod") != "local":
         if instance_api_url is None:
             raise RuntimeError(
                 f"Can only get fine-grained access to {instance_slug} if api_url is present."

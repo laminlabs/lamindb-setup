@@ -258,15 +258,12 @@ def httpx_client():
 def request_with_auth(
     url: str,
     method: Literal["get", "post", "put", "delete", "head", "options"],
-    access_token: str | None,
-    renew_token: bool,
+    access_token: str,
+    renew_token: bool = True,
     **kwargs,
 ):
     headers = kwargs.pop("headers", {})
-    if access_token is not None:
-        headers["Authorization"] = f"Bearer {access_token}"
-    else:
-        assert not renew_token, "Cannot renew token if access_token is None"
+    headers["Authorization"] = f"Bearer {access_token}"
     timeout = kwargs.pop("timeout", DEFAULT_TIMEOUT)
 
     with httpx_client() as client:
