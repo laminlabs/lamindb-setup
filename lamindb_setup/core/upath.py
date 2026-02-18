@@ -948,7 +948,7 @@ Offers the typical access patterns of file systems and object stores, for instan
     upath.exists()  # file exists in storage
 
 If the path is in an S3 storage managed by LaminHub, you need to use `UPath.from_auth`
-to create a `UPath` object with authentication credentials requested from LaminHub.
+to create a `UPath` object with federated AWS credentials requested from LaminHub.
 
 LaminDB exposes `universal_pathlib.UPath` and adds functionality related to authentication and the following methods::
 
