@@ -887,7 +887,7 @@ def from_auth(path: UPathStr) -> UPath:
     federated AWS credentials for the `UPath` object, compliant with
     `universal_pathlib` and `fsspec`.
 
-    Note: This only works for paths inside storage locations whose access is
+    **Note:** This only works for paths inside storage locations whose access is
     managed by LaminHub (see the `Lamin docs <https://docs.lamin.ai/permissions#how-does-it-work>`__).
     For paths outside managed storage locations, local or environment credentials are
     used (according to the standard `UPath` search strategy, from AWS environment variables or AWS configuration files).
