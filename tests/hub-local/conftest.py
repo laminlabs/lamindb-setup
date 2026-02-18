@@ -5,7 +5,6 @@ from uuid import UUID, uuid4
 
 import lamindb_setup as ln_setup
 import pytest
-from lamin_utils import logger
 from lamincentral.client import SupabaseClientWrapper, connect_central
 from lamincentral.dev._local_supabase import (
     _SupabaseLocalResources,
@@ -36,9 +35,6 @@ supabase_resources = _SupabaseLocalResources()
 
 
 def pytest_configure():
-    # Use highest verbosity so lamin_utils logger emits DEBUG
-    logger.set_verbosity(5)
-
     os.environ["LAMIN_ENV"] = "local"
     os.environ["LAMIN_CLOUD_VERSION"] = "0.1"
     os.environ["LAMIN_TEST_INSTANCE_SCHEMA_STR"] = ""
