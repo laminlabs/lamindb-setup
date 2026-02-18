@@ -819,31 +819,35 @@ def view_tree(
         include_paths: Restrict to these paths.
         skip_suffixes: Skip directories with these suffixes.
 
-    Examples:
-        >>> dir_path = ln.examples.datasets.generate_cell_ranger_files(
-        >>>     "sample_001", ln.settings.storage
-        >>> )
-        >>> ln.UPath(dir_path).view_tree()
-        3 subdirectories, 15 files
-        sample_001
-        ├── web_summary.html
-        ├── metrics_summary.csv
-        ├── molecule_info.h5
-        ├── filtered_feature_bc_matrix
-        │   ├── features.tsv.gz
-        │   ├── barcodes.tsv.gz
-        │   └── matrix.mtx.gz
-        ├── analysis
-        │   └── analysis.csv
-        ├── raw_feature_bc_matrix
-        │   ├── features.tsv.gz
-        │   ├── barcodes.tsv.gz
-        │   └── matrix.mtx.gz
-        ├── possorted_genome_bam.bam.bai
-        ├── cloupe.cloupe
-        ├── possorted_genome_bam.bam
-        ├── filtered_feature_bc_matrix.h5
-        └── raw_feature_bc_matrix.h5
+    Example:
+
+        View the file tree of a directory::
+
+            import lamindb as ln
+            dir_path = ln.examples.datasets.generate_cell_ranger_files(
+                "sample_001", ln.settings.storage
+            )
+            ln.UPath(dir_path).view_tree()
+            #> 3 subdirectories, 15 files
+            #> sample_001
+            #> ├── web_summary.html
+            #> ├── metrics_summary.csv
+            #> ├── molecule_info.h5
+            #> ├── filtered_feature_bc_matrix
+            #> │   ├── features.tsv.gz
+            #> │   ├── barcodes.tsv.gz
+            #> │   └── matrix.mtx.gz
+            #> ├── analysis
+            #> │   └── analysis.csv
+            #> ├── raw_feature_bc_matrix
+            #> │   ├── features.tsv.gz
+            #> │   ├── barcodes.tsv.gz
+            #> │   └── matrix.mtx.gz
+            #> ├── possorted_genome_bam.bam.bai
+            #> ├── cloupe.cloupe
+            #> ├── possorted_genome_bam.bam
+            #> ├── filtered_feature_bc_matrix.h5
+            #> └── raw_feature_bc_matrix.h5
     """
     message, _ = compute_file_tree(
         path,
@@ -857,17 +861,17 @@ def view_tree(
     logger.print(message)
 
 
-def to_url(upath):
+def to_url(upath) -> str:
     """Public storage URL.
 
     Generates a public URL for an object in an S3 bucket using fsspec's UPath,
     considering the bucket's region.
 
     Args:
-    - upath: A UPath object representing an S3 path.
+        upath: A `UPath` object representing an S3 path.
 
     Returns:
-    - A string containing the public URL to the S3 object.
+        A string containing the public URL to the S3 object.
     """
     if upath.protocol != "s3":
         raise ValueError("The provided UPath must be an S3 path.")
@@ -878,6 +882,30 @@ def to_url(upath):
         return f"https://{bucket}.s3.amazonaws.com/{key}"
     else:
         return f"https://{bucket}.s3-{region}.amazonaws.com/{key}"
+
+
+def from_auth(cls, path: UPathStr) -> UPath:
+    """Create an authenticated path object.
+
+    This method makes a request to a LaminHub to obtain standard
+    federated AWS credentials for the `UPath` object, compliant with
+    `universal_pathlib` and `fsspec`.
+
+    **Note:** This only works for paths inside storage locations whose access is
+    managed by LaminHub (:class:`~lamindb.Storage`).
+    For paths outside managed storage locations, local or environment credentials are
+    used using the standard `UPath` search strategy, from AWS environment variables or AWS configuration files.
+    Non-S3 paths are returned unchanged if they are already `UPath` objects.
+
+    Args:
+        path: A S3 URI.
+
+    Example:
+        Create a path object from a S3 URI with federated AWS credentials::
+
+            upath = ln.UPath.from_auth("s3://managed-bucket/my-folder/")
+    """
+    return create_path(path)
 
 
 # Why aren't we subclassing?
@@ -899,6 +927,7 @@ UPath.upload_from = upload_from
 UPath.to_url = to_url
 UPath.download_to = download_to
 UPath.view_tree = view_tree
+UPath.from_auth = classmethod(from_auth)
 # unfortunately, we also have to do this for the subclasses
 Path.view_tree = view_tree  # type: ignore
 
@@ -920,22 +949,44 @@ For example::
     upath.rename(UPath("s3://my-bucket/my-file-renamed"))
     upath.rename("my-file-renamed")
 """
-UPath.__doc__ = """Paths: low-level key-value access to files.
+UPath.__doc__ = """Path-like access to files.
 
-Offers the typical access patterns of file systems and object stores, for instance::
+Offers the typical access patterns of file systems and object stores, for example::
 
-    upath = UPath("s3://my-bucket/my-folder/my-file.txt")
+    upath = ln.UPath("s3://my-bucket/my-folder/my-file.txt")
     upath.exists()  # file exists in storage
 
-LaminDB exposes `universal_pathlib.UPath` and adds functionality related to authentication and the following methods::
-
-    upath.view_tree()  # view a file tree
-    upath.upload_from("local-file.txt") # upload a local file
-    upath.download_to("local-file.txt") # download a file
-    upath.synchronize_to("local-folder/") # synchronize a folder
+The class is an extension of `universal_pathlib.UPath`.
 
 Args:
-    pathlike: A string or `Path` to a local or cloud file/directory/folder.
+    pathlike: A string or `Path` to a local or cloud file or folder.
+
+See Also:
+    :meth:`~lamindb.UPath.from_auth`
+        If the S3 URI is in an S3 storage managed by LaminHub, use this method to request federated AWS credentials.
+
+Examples:
+
+    Create a path object from a local file::
+
+        upath = ln.UPath("./my-folder/my-file.txt")
+
+    Create a path from a S3 URI::
+
+        upath = ln.UPath("s3://my-bucket/my-folder/my-file.txt")      # create a path that detects local AWS credentials
+        upath = ln.UPath.from_auth("s3://managed-bucket/my-folder/")  # create a path that requests federated AWS credentials from LaminHub
+
+    Create a path object from a GS URI::
+
+        upath = ln.UPath("gs://my-bucket/my-folder/my-file.txt")
+
+    In addition to what `pathlib.Path` and `universal_pathlib.UPath` offer, `ln.UPath` offers the following methods::
+
+        upath.view_tree() # view a file tree
+        upath.upload_from("local-file.txt") # upload a local file
+        upath.download_to("local-file.txt") # download a file
+        upath.synchronize_to("local-folder/") # synchronize a folder
+
 """
 
 logger.debug("upath.UPath has been patched")
