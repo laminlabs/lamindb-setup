@@ -890,8 +890,8 @@ def from_auth(path: UPathStr) -> UPath:
     Note: This only works for paths inside storage locations whose access is
     managed by LaminHub (see the `Lamin docs <https://docs.lamin.ai/permissions#how-does-it-work>`__).
     For paths outside managed storage locations, local or environment credentials are
-    used (as with vanilla `UPath`, e.g. from AWS environment variables or AWS configuration files).
-    Non-S3 paths are returned unchanged.
+    used (according to the standard `UPath` search strategy, from AWS environment variables or AWS configuration files).
+    Non-S3 paths are returned unchanged if they are already `UPath` objects.
 
     Args:
         path: A path (typically S3; only S3 receives federated AWS credentials).
