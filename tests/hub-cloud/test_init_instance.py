@@ -15,6 +15,7 @@ from lamindb_setup.core._hub_crud import (
     select_default_storage_by_instance_id,
     select_instance_by_name,
 )
+from lamindb_setup.errors import NoAccessTokenError
 
 pgurl = "postgresql://postgres:pwd@0.0.0.0:5432/pgtest"
 
@@ -193,16 +194,12 @@ def test_init_instance_sqlite():
     ln_setup.settings._user_settings = ln_setup.core._settings_user.UserSettings(
         handle="my_special_test_user"
     )
-    with pytest.raises(ValueError) as error:
+    with pytest.raises(NoAccessTokenError):
         ln_setup.init(
             storage="./mydatasqlite",
             name="local-sqlite-instance",
             _test=True,
         )
-    assert (
-        "Neither bearer token or basic authentication scheme is provided"
-        in error.exconly()
-    )
     ln_setup.settings._user_settings = user_settings_original
     ln_setup.init(
         storage="./mydatasqlite",

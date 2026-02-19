@@ -9,6 +9,7 @@
 .. autoexception:: CannotSwitchDefaultInstance
 .. autoexception:: InstanceNotFoundError
 .. autoexception:: InstanceNotCreated
+.. autoexception:: NoAccessTokenError
 
 """
 
@@ -69,4 +70,8 @@ class SettingsEnvFileOutdated(Exception):
 
 
 class CannotSwitchDefaultInstance(Exception):
+    pass
+
+
+class NoAccessTokenError(RuntimeError):
     pass
