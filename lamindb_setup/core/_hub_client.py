@@ -12,6 +12,8 @@ from httpx_retries import Retry, RetryTransport
 from lamin_utils import logger
 from supabase import Client, ClientOptions, create_client
 
+from lamindb_setup.errors import NoAccessTokenError
+
 from ._settings_save import save_user_settings
 from ._settings_store import Connector
 
@@ -127,10 +129,16 @@ def connect_hub_with_auth(
         from lamindb_setup import settings
 
         if renew_token:
-            settings.user.access_token = get_access_token(
+            new_token = get_access_token(
                 settings.user.email, settings.user.password, settings.user.api_key
             )
+            if new_token is not None:
+                settings.user.access_token = new_token
         access_token = settings.user.access_token
+    if access_token is None:
+        raise NoAccessTokenError(
+            "No access token available. Please login: `lamin login`"
+        )
     hub.postgrest.auth(access_token)
     hub.functions.set_auth(access_token)
     return hub
@@ -139,7 +147,13 @@ def connect_hub_with_auth(
 # runs ~0.5s
 def get_access_token(
     email: str | None = None, password: str | None = None, api_key: str | None = None
-):
+) -> str | None:
+    if api_key is None and (email is None or password is None):
+        logger.warning(
+            "cannot get access token: no API key or email/password stored."
+            " Please login: `lamin login`"
+        )
+        return None
     hub = connect_hub()
     try:
         if api_key is not None:
@@ -196,6 +210,8 @@ def call_with_fallback_auth(
                 # here settings.user contains an updated access_token
                 save_user_settings(settings.user)
             break
+        except NoAccessTokenError:
+            raise
         # we use Exception here as the ways in which the client fails upon 401
         # are not consistent and keep changing
         # because we ultimately raise the error, it's OK I'd say
@@ -276,13 +292,13 @@ def request_with_auth(
 
             logger.debug(f"{method} {url} failed: {status_code} {response.text}")
 
-            access_token = get_access_token(
+            new_token = get_access_token(
                 settings.user.email, settings.user.password, settings.user.api_key
             )
+            if new_token is not None:
+                settings.user.access_token = new_token
+                save_user_settings(settings.user)
 
-            settings.user.access_token = access_token
-            save_user_settings(settings.user)
-
-            headers["Authorization"] = f"Bearer {access_token}"
-            response = make_request(url, headers=headers, timeout=timeout, **kwargs)
+                headers["Authorization"] = f"Bearer {new_token}"
+                response = make_request(url, headers=headers, timeout=timeout, **kwargs)
     return response
