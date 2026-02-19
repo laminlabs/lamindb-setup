@@ -210,7 +210,8 @@ def call_with_fallback_auth(
                 save_user_settings(settings.user)
             break
         except NoAccessTokenError:
-            raise
+            if renew_token:
+                raise
         # we use Exception here as the ways in which the client fails upon 401
         # are not consistent and keep changing
         # because we ultimately raise the error, it's OK I'd say
