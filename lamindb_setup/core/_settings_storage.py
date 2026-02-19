@@ -13,7 +13,7 @@ from lamindb_setup.errors import StorageAlreadyManaged
 
 from ._aws_options import (
     LAMIN_ENDPOINTS,
-    get_aws_options_manager,
+    get_user_aws_options_manager,
 )
 from ._deprecated import deprecated
 from .hashing import hash_and_encode_as_b62
@@ -338,7 +338,7 @@ class StorageSettings:
         elif getattr(self._root, "protocol", "") == "s3":
             # this is needed to be sure that the root always has nonexpired credentials
             # this just checks for time of the cached credentials in most cases
-            return get_aws_options_manager().enrich_path(
+            return get_user_aws_options_manager().enrich_path(
                 self._root, access_token=self.access_token
             )
         return self._root

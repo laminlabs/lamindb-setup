@@ -256,21 +256,26 @@ class AWSOptionsManager:
         return self._path_inject_options(path, credentials, extra_parameters)
 
 
-_aws_options_manager: AWSOptionsManager | None = None
+_aws_options_manager_dict: dict[str, AWSOptionsManager] = {}
 
 
-def get_aws_options_manager() -> AWSOptionsManager:
-    global _aws_options_manager
+def get_user_aws_options_manager() -> AWSOptionsManager:
+    from lamindb_setup import settings
 
-    if _aws_options_manager is None:
-        _aws_options_manager = AWSOptionsManager()
+    user_handle = settings.user.handle
 
-    return _aws_options_manager
+    global _aws_options_manager_dict
+    if user_handle not in _aws_options_manager_dict:
+        _aws_options_manager_dict[user_handle] = AWSOptionsManager()
+
+    return _aws_options_manager_dict[user_handle]
 
 
-def reset_aws_options_cache():
-    global _aws_options_manager
+def reset_user_aws_options_cache():
+    from lamindb_setup import settings
 
-    if _aws_options_manager is not None:
-        _aws_options_manager._credentials_cache = {}
-        _aws_options_manager._parameters_cache = {}
+    # to avoid triggering user reload
+    user_handle = getattr(settings._user_settings, "handle", None)
+
+    if user_handle is not None:
+        _aws_options_manager_dict.pop(user_handle, None)
