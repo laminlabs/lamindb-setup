@@ -137,7 +137,7 @@ def connect_hub_with_auth(
         access_token = settings.user.access_token
     if access_token is None:
         raise NoAccessTokenError(
-            "No access token available. Please login: `lamin login`"
+            "No lamindb access token available. Please login: `lamin login`"
         )
     hub.postgrest.auth(access_token)
     hub.functions.set_auth(access_token)
@@ -150,8 +150,7 @@ def get_access_token(
 ) -> str | None:
     if api_key is None and (email is None or password is None):
         logger.warning(
-            "cannot get access token: no API key or email/password stored."
-            " Please login: `lamin login`"
+            "cannot get lamindb access token: no API key or email/password stored"
         )
         return None
     hub = connect_hub()
@@ -172,7 +171,7 @@ def get_access_token(
     except Exception as e:
         # we need to log the problem here because the exception is usually caught outside
         # in call_with_fallback_auth
-        logger.warning(f"failed to update your lamindb access token: {e}")
+        logger.warning(f"failed to get lamindb access token: {e}")
         raise e
     finally:
         hub.auth.sign_out(options={"scope": "local"})
