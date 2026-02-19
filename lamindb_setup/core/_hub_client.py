@@ -150,7 +150,7 @@ def get_access_token(
 ) -> str | None:
     if api_key is None and (email is None or password is None):
         logger.warning(
-            "cannot get lamindb access token: no API key or email/password stored"
+            "can not get lamindb access token: no API key or email/password stored"
         )
         return None
     hub = connect_hub()
