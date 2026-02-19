@@ -756,7 +756,7 @@ def _access_aws_endpoint(
     access_token: str | None = None,
 ):
     # local is used in tests
-    url = "/storages/cloud-access-v1"
+    url = "/storages/credentials"
     if os.getenv("LAMIN_ENV") != "local":
         url = api_url + url
 
