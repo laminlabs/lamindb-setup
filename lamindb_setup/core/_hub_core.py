@@ -678,6 +678,7 @@ def _access_aws(*, storage_root: str, client: Client) -> dict[str, dict]:
         credentials["key"] = loaded_credentials["AccessKeyId"]
         credentials["secret"] = loaded_credentials["SecretAccessKey"]
         credentials["token"] = loaded_credentials["SessionToken"]
+        credentials["expiry_time"] = loaded_credentials.get("Expiration")
 
         accessibility = storage_root_info["accessibility"]
         accessibility["storage_root"] = loaded_accessibility["storageRoot"]

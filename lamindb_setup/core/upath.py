@@ -7,7 +7,7 @@ import math
 import os
 import warnings
 from collections import defaultdict
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 from functools import partial
 from itertools import islice
 from pathlib import Path, PosixPath, PurePosixPath, WindowsPath
@@ -123,15 +123,51 @@ def s3fs_to_boto3_client(fs: S3FileSystem) -> BaseClient:
     session.session_var_map._session = session
     fs_credentials = fs_session._credentials
     if fs_credentials is not None:
-        from botocore.credentials import Credentials
+        from aiobotocore.credentials import AioRefreshableCredentials
 
-        session._credentials = Credentials(
-            access_key=fs_credentials.access_key,
-            secret_key=fs_credentials.secret_key,
-            token=fs_credentials.token,
-            method=fs_credentials.method,
-            account_id=fs_credentials.account_id,
-        )
+        if isinstance(fs_credentials, AioRefreshableCredentials):
+            from botocore.credentials import RefreshableCredentials
+
+            frozen = fs_credentials._frozen_credentials
+            expiry_time = fs_credentials._expiry_time
+
+            if frozen is not None:
+                access_key = frozen.access_key
+                secret_key = frozen.secret_key
+                token = frozen.token
+            else:
+                access_key = fs_credentials._access_key
+                secret_key = fs_credentials._secret_key
+                token = fs_credentials._token
+
+            if expiry_time is not None:
+                expiry_str = expiry_time.isoformat()
+            else:
+                expiry_str = (
+                    datetime.now(timezone.utc) + timedelta(hours=12)
+                ).isoformat()
+
+            metadata = {
+                "access_key": access_key,
+                "secret_key": secret_key,
+                "token": token,
+                "expiry_time": expiry_str,
+            }
+            session._credentials = RefreshableCredentials.create_from_metadata(
+                metadata,
+                refresh_using=fs_credentials._refresh_using,
+                method=fs_credentials.method,
+            )
+        else:
+            from botocore.credentials import Credentials
+
+            session._credentials = Credentials(
+                access_key=fs_credentials.access_key,
+                secret_key=fs_credentials.secret_key,
+                token=fs_credentials.token,
+                method=fs_credentials.method,
+                account_id=fs_credentials.account_id,
+            )
     else:
         session._credentials = None
     boto3_session = Boto3Session(botocore_session=session)
