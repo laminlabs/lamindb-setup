@@ -1114,7 +1114,7 @@ def get_storage_region(path: UPathStr) -> str | None:
             if response.get("Error", {}).get("Code") == "404":
                 raise exc
     else:
-        upath = get_user_aws_options_manager()._path_inject_options(upath, {})
+        upath = get_user_aws_options_manager()._path_inject_options(upath)
         try:
             response = upath.fs.call_s3("head_bucket", Bucket=bucket)
         except Exception as exc:
