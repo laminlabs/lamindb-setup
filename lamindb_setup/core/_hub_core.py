@@ -740,6 +740,7 @@ def _access_aws_route(*, storage_root: str, client: Client) -> dict | None:
         client.rpc(
             "get_storage_api_info_from_path",
             {"_path": storage_root},
+            get=True,
         )
         .execute()
         .data
