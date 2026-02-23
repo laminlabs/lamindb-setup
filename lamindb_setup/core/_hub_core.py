@@ -197,7 +197,9 @@ def _select_storage_by_settings(
 def _select_storage_or_parent(path: str, client: Client) -> dict | None:
     # add get=True when we upgrade supabase
     # because otherwise it uses POST which is not retryable
-    result = client.rpc("existing_root_or_child", {"_path": path}).execute().data
+    result = (
+        client.rpc("existing_root_or_child", {"_path": path}, get=True).execute().data
+    )
     if result["root"] is None:
         return None
     result["uid"] = result.pop("lnid")
@@ -443,6 +445,7 @@ def _init_instance_hub(
                         "_account_id": created_by_id,
                         "_organization_id": owner_account_id,
                     },
+                    get=True,
                 )
                 .execute()
                 .data
@@ -451,7 +454,9 @@ def _init_instance_hub(
                     f"{created_by_id} does not have permissions to create instances for {owner_account_id}."
                 ) from e
             if (
-                not client.rpc("has_instance_quota", {"_account_id": owner_account_id})
+                not client.rpc(
+                    "has_instance_quota", {"_account_id": owner_account_id}, get=True
+                )
                 .execute()
                 .data
             ):
@@ -469,6 +474,7 @@ def _get_default_bucket_for_instance(
             client.rpc(
                 "get_api_server_default_bucket_by_instance_id",
                 {"p_instance_id": instance_id.hex},
+                get=True,
             )
             .execute()
             .data
