@@ -242,24 +242,21 @@ class AWSOptionsManager:
         root = self._find_root(path_str)
 
         need_fetch = root is None or access_token is not None
-
         if need_fetch:
             from ._hub_core import access_aws
 
             storage_root_info = access_aws(path_str, access_token=access_token)
-            accessibility = storage_root_info["accessibility"]
-            is_managed = accessibility.get("is_managed", False)
-            if is_managed:
-                credentials = storage_root_info["credentials"]
-                extra_parameters = accessibility["extra_parameters"]
-            else:
-                credentials = {}
-                extra_parameters = None
 
-            resolved_root = root
-            if access_token is None:
-                if "storage_root" in accessibility:
-                    resolved_root = accessibility["storage_root"]
+            accessibility = storage_root_info["accessibility"]
+            credentials = storage_root_info["credentials"]
+
+            is_managed = accessibility.get("is_managed", False)
+            extra_parameters = accessibility.get("extra_parameters")
+
+            set_cache = access_token is None
+            if set_cache:
+                assert root is None
+                resolved_root = accessibility.get("storage_root")
                 # just to be safe
                 resolved_root = None if resolved_root == "" else resolved_root
                 if resolved_root is None:
@@ -273,18 +270,21 @@ class AWSOptionsManager:
                     resolved_root = "s3://" + resolved_root
 
                 resolved_root = _keep_trailing_slash(resolved_root)
-                assert isinstance(resolved_root, str)
+            else:
+                # this is not cached, but used only for this specific path
+                resolved_root = path_str
 
             if is_managed:
+                assert isinstance(resolved_root, str)
                 managed_session = self._create_managed_session(
-                    resolved_root or path_str,
+                    resolved_root,
                     credentials,
                     access_token,
                 )
             else:
                 managed_session = None
 
-            if access_token is None:
+            if set_cache:
                 assert resolved_root is not None
                 self._sessions_cache[resolved_root] = managed_session
                 self._parameters_cache[resolved_root] = extra_parameters
