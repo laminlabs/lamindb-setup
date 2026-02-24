@@ -7,7 +7,7 @@ import math
 import os
 import warnings
 from collections import defaultdict
-from datetime import datetime, timedelta, timezone
+from datetime import datetime, timezone
 from functools import partial
 from itertools import islice
 from pathlib import Path, PosixPath, PurePosixPath, WindowsPath
@@ -140,7 +140,10 @@ def s3fs_to_boto3_client(fs: S3FileSystem) -> BaseClient:
     if fs_credentials is not None:
         from aiobotocore.credentials import AioRefreshableCredentials
 
-        if isinstance(fs_credentials, AioRefreshableCredentials):
+        if (
+            isinstance(fs_credentials, AioRefreshableCredentials)
+            and fs_credentials._expiry_time is not None
+        ):
             from botocore.credentials import RefreshableCredentials
 
             frozen = fs_credentials._frozen_credentials
@@ -155,19 +158,11 @@ def s3fs_to_boto3_client(fs: S3FileSystem) -> BaseClient:
                 secret_key = fs_credentials._secret_key
                 token = fs_credentials._token
 
-            if expiry_time is not None:
-                expiry_str = expiry_time.isoformat()
-            else:
-                # 1 hour is our standard expiry time from the endpoint
-                expiry_str = (
-                    datetime.now(timezone.utc) + timedelta(hours=1)
-                ).isoformat()
-
             metadata = {
                 "access_key": access_key,
                 "secret_key": secret_key,
                 "token": token,
-                "expiry_time": expiry_str,
+                "expiry_time": expiry_time.isoformat(),
             }
             refresh_using = _ensure_sync_with_fs(fs_credentials._refresh_using, fs)
             session._credentials = RefreshableCredentials.create_from_metadata(
