@@ -240,12 +240,14 @@ class AWSOptionsManager:
         if access_token is not None:
             root = None
             need_fetch = True
+            set_cache = False
         else:
             # trailing slash is needed to avoid returning incorrect results with .startswith
             # for example s3://lamindata-eu should not receive cache for s3://lamindata
             path_str = _keep_trailing_slash(path.as_posix())
             root = self._find_root(path_str)
             need_fetch = root is None
+            set_cache = need_fetch
 
         if need_fetch:
             from ._hub_core import access_aws
@@ -258,7 +260,6 @@ class AWSOptionsManager:
             is_managed = accessibility.get("is_managed", False)
             extra_parameters = accessibility.get("extra_parameters")
 
-            set_cache = access_token is None
             if set_cache:
                 resolved_root = accessibility.get("storage_root")
                 # just to be safe
