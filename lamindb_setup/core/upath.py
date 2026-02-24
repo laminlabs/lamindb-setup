@@ -142,13 +142,11 @@ def s3fs_to_boto3_client(fs: S3FileSystem) -> BaseClient:
 
         if (
             isinstance(fs_credentials, AioRefreshableCredentials)
-            and fs_credentials._expiry_time is not None
+            and (expiry_time := fs_credentials._expiry_time) is not None
         ):
             from botocore.credentials import RefreshableCredentials
 
             frozen = fs_credentials._frozen_credentials
-            expiry_time = fs_credentials._expiry_time
-
             if frozen is not None:
                 access_key = frozen.access_key
                 secret_key = frozen.secret_key
@@ -164,6 +162,7 @@ def s3fs_to_boto3_client(fs: S3FileSystem) -> BaseClient:
                 "token": token,
                 "expiry_time": expiry_time.isoformat(),
             }
+            # fs_credentials._refresh_using shouldn't be None because expiry_time isn't None
             refresh_using = _ensure_sync_with_fs(fs_credentials._refresh_using, fs)
             session._credentials = RefreshableCredentials.create_from_metadata(
                 metadata,
