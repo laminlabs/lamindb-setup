@@ -154,9 +154,23 @@ def s3fs_to_boto3_client(fs: S3FileSystem) -> BaseClient:
                 "token": token,
                 "expiry_time": expiry_str,
             }
+            refresh_using = fs_credentials._refresh_using
+            # in principle if a custom session was passed,
+            # then refresh_using could be an async function
+            # fix this if it really happens in the future, see below how
+
+            #           if asyncio.iscoroutinefunction(refresh_using):
+            #               _async_refresh = refresh_using
+            #               _loop = fs.loop
+
+            #               def refresh_using():
+            #                   from fsspec.asyn import sync as _fsspec_sync
+
+            #                   return _fsspec_sync(_loop, _async_refresh)
+
             session._credentials = RefreshableCredentials.create_from_metadata(
                 metadata,
-                refresh_using=fs_credentials._refresh_using,
+                refresh_using=refresh_using,
                 method=fs_credentials.method,
             )
         else:

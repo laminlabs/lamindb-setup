@@ -112,8 +112,7 @@ class AWSOptionsManager:
 
         empty_session = AioSession(profile="lamindb_empty_profile")
         empty_session.full_config["profiles"]["lamindb_empty_profile"] = {}
-        # this is set downstream to avoid using local configs when we provide credentials
-        # or when we set anon=True
+        # this is set downstream to avoid using local configs when we set anon=True
         self.empty_session = empty_session
 
     def _find_root(self, path_str: str) -> str | None:
