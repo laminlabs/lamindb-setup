@@ -128,11 +128,6 @@ class migrate:
     ) -> None:
         """Deploy a migration."""
         from lamindb_setup._connect_instance import connect
-        from lamindb_setup._schema_metadata import update_schema_in_hub
-        from lamindb_setup.core._hub_client import call_with_fallback_auth
-        from lamindb_setup.core._hub_crud import (
-            update_instance,
-        )
 
         isettings = settings.instance
         is_managed_by_hub = isettings.is_managed_by_hub
@@ -158,16 +153,6 @@ class migrate:
             )
         else:
             setup_django_disable_autoconnect(isettings, deploy_migrations=True)
-        # this populates the hub
-        if is_on_hub:
-            logger.important(f"updating lamindb version in hub: {lamindb.__version__}")
-            if isettings.dialect != "sqlite":
-                update_schema_in_hub()
-            call_with_fallback_auth(
-                update_instance,
-                instance_id=isettings._id.hex,
-                instance_fields={"lamindb_version": lamindb.__version__},
-            )
 
     @classmethod
     @disable_auto_connect

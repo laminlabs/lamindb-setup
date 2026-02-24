@@ -337,10 +337,6 @@ def init(
                 "locked instance (to unlock and push changes to the cloud SQLite file,"
                 " call: lamin disconnect)"
             )
-        if register_on_hub and isettings.dialect != "sqlite":
-            from ._schema_metadata import update_schema_in_hub
-
-            update_schema_in_hub(access_token=access_token)
         reset_django_module_variables()
         logger.important(f"initialized lamindb: {isettings.slug}")
     except Exception as e:
