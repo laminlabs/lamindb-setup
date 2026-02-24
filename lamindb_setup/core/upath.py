@@ -143,8 +143,9 @@ def s3fs_to_boto3_client(fs: S3FileSystem) -> BaseClient:
             if expiry_time is not None:
                 expiry_str = expiry_time.isoformat()
             else:
+                # 1 hour is our standard expiry time from the endpoint
                 expiry_str = (
-                    datetime.now(timezone.utc) + timedelta(hours=12)
+                    datetime.now(timezone.utc) + timedelta(hours=1)
                 ).isoformat()
 
             metadata = {
