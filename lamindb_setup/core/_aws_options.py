@@ -236,12 +236,17 @@ class AWSOptionsManager:
                 # TODO: maybe set max_pool_connections=64 here also
                 path = UPath(path, fixed_upload_size=True)
             return path
-        # trailing slash is needed to avoid returning incorrect results with .startswith
-        # for example s3://lamindata-eu should not receive cache for s3://lamindata
-        path_str = _keep_trailing_slash(path.as_posix())
-        root = self._find_root(path_str)
 
-        need_fetch = root is None or access_token is not None
+        if access_token is not None:
+            root = None
+            need_fetch = True
+        else:
+            # trailing slash is needed to avoid returning incorrect results with .startswith
+            # for example s3://lamindata-eu should not receive cache for s3://lamindata
+            path_str = _keep_trailing_slash(path.as_posix())
+            root = self._find_root(path_str)
+            need_fetch = root is None
+
         if need_fetch:
             from ._hub_core import access_aws
 
@@ -255,7 +260,6 @@ class AWSOptionsManager:
 
             set_cache = access_token is None
             if set_cache:
-                assert root is None
                 resolved_root = accessibility.get("storage_root")
                 # just to be safe
                 resolved_root = None if resolved_root == "" else resolved_root
