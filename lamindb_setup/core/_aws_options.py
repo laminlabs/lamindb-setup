@@ -31,9 +31,6 @@ def _keep_trailing_slash(path_str: str) -> str:
     return path_str if path_str[-1] == "/" else path_str + "/"
 
 
-FALLBACK_CREDENTIALS_LIFETIME = timedelta(hours=12)
-
-
 # set anon=True for these buckets if credentials fail for a public bucket to be expanded
 PUBLIC_BUCKETS: tuple[str, ...] = ("cellxgene-data-public", "bionty-assets")
 
@@ -135,19 +132,14 @@ class AWSOptionsManager:
             from ._hub_core import access_aws
 
             storage_root_info = access_aws(storage_root, access_token=access_token)
-            creds = storage_root_info["credentials"]
-            if not creds:
+            credentials = storage_root_info["credentials"]
+            if not credentials:
                 raise RuntimeError(f"Failed to refresh credentials for {storage_root}")
-            expiry_time = creds.get("expiry_time")
-            if expiry_time is None:
-                expiry_time = (
-                    datetime.now(timezone.utc) + FALLBACK_CREDENTIALS_LIFETIME
-                ).isoformat()
             return {
-                "access_key": creds["key"],
-                "secret_key": creds["secret"],
-                "token": creds["token"],
-                "expiry_time": expiry_time,
+                "access_key": credentials["key"],
+                "secret_key": credentials["secret"],
+                "token": credentials["token"],
+                "expiry_time": credentials["expiry_time"],
             }
 
         return _refresh
@@ -162,17 +154,11 @@ class AWSOptionsManager:
         from aiobotocore.credentials import AioRefreshableCredentials
         from aiobotocore.session import AioSession
 
-        expiry_time = credentials.get("expiry_time")
-        if expiry_time is None:
-            expiry_time = (
-                datetime.now(timezone.utc) + FALLBACK_CREDENTIALS_LIFETIME
-            ).isoformat()
-
         metadata = {
             "access_key": credentials["key"],
             "secret_key": credentials["secret"],
             "token": credentials["token"],
-            "expiry_time": expiry_time,
+            "expiry_time": credentials["expiry_time"],
         }
 
         refresh_callback = self._make_refresh_callback(storage_root, access_token)
