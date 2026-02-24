@@ -31,6 +31,7 @@ if TYPE_CHECKING:
     from collections.abc import Callable
 
     from botocore.client import BaseClient
+    from fsspec.asyn import AsyncFileSystem
     from s3fs import S3FileSystem
 
     from lamindb_setup.types import UPathStr
@@ -94,6 +95,20 @@ TRAILING_SEP = (os.sep, os.altsep) if os.altsep is not None else os.sep
 BOTO3_CLIENTS: dict[int, BaseClient] = {}
 
 
+def _ensure_sync_with_fs(
+    func: Callable[[], Any], fs: AsyncFileSystem
+) -> Callable[[], Any]:
+    from inspect import iscoroutinefunction
+
+    if iscoroutinefunction(func):
+        from fsspec.asyn import AsyncFileSystem, sync_wrapper
+
+        assert isinstance(fs, AsyncFileSystem)
+        return sync_wrapper(func, obj=fs)
+    else:
+        return func
+
+
 def s3fs_to_boto3_client(fs: S3FileSystem) -> BaseClient:
     fs_id = id(fs)
     if fs_id in BOTO3_CLIENTS:
@@ -154,20 +169,7 @@ def s3fs_to_boto3_client(fs: S3FileSystem) -> BaseClient:
                 "token": token,
                 "expiry_time": expiry_str,
             }
-            refresh_using = fs_credentials._refresh_using
-            # in principle if a custom session was passed,
-            # then refresh_using could be an async function
-            # fix this if it really happens in the future, see below how
-
-            #           if asyncio.iscoroutinefunction(refresh_using):
-            #               _async_refresh = refresh_using
-            #               _loop = fs.loop
-
-            #               def refresh_using():
-            #                   from fsspec.asyn import sync as _fsspec_sync
-
-            #                   return _fsspec_sync(_loop, _async_refresh)
-
+            refresh_using = _ensure_sync_with_fs(fs_credentials._refresh_using, fs)
             session._credentials = RefreshableCredentials.create_from_metadata(
                 metadata,
                 refresh_using=refresh_using,
