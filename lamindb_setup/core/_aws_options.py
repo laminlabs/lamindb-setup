@@ -237,6 +237,8 @@ class AWSOptionsManager:
                 path = UPath(path, fixed_upload_size=True)
             return path
 
+        path_str = _keep_trailing_slash(path.as_posix())
+
         if access_token is not None:
             root = None
             need_fetch = True
@@ -244,7 +246,6 @@ class AWSOptionsManager:
         else:
             # trailing slash is needed to avoid returning incorrect results with .startswith
             # for example s3://lamindata-eu should not receive cache for s3://lamindata
-            path_str = _keep_trailing_slash(path.as_posix())
             root = self._find_root(path_str)
             need_fetch = root is None
             set_cache = need_fetch
