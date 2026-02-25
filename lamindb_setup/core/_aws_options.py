@@ -2,11 +2,13 @@ from __future__ import annotations
 
 import logging
 import os
-import time
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 from lamin_utils import logger
 from upath import UPath
+
+if TYPE_CHECKING:
+    from aiobotocore.session import AioSession
 
 HOSTED_REGIONS = [
     "eu-central-1",
@@ -26,9 +28,6 @@ else:
 
 def _keep_trailing_slash(path_str: str) -> str:
     return path_str if path_str[-1] == "/" else path_str + "/"
-
-
-AWS_CREDENTIALS_EXPIRATION: int = 11 * 60 * 60  # refresh credentials after 11 hours
 
 
 # set anon=True for these buckets if credentials fail for a public bucket to be expanded
@@ -54,7 +53,7 @@ class AWSOptionsManager:
         logger.addFilter(NoTracebackFilter())
 
     def __init__(self):
-        self._credentials_cache = {}
+        self._sessions_cache: dict[str, AioSession | None] = {}
         self._parameters_cache = {}  # this is not refreshed
 
         from aiobotocore.session import AioSession
@@ -112,40 +111,76 @@ class AWSOptionsManager:
 
         empty_session = AioSession(profile="lamindb_empty_profile")
         empty_session.full_config["profiles"]["lamindb_empty_profile"] = {}
-        # this is set downstream to avoid using local configs when we provide credentials
-        # or when we set anon=True
+        # this is set downstream to avoid using local configs when we set anon=True
         self.empty_session = empty_session
 
     def _find_root(self, path_str: str) -> str | None:
-        roots = self._credentials_cache.keys()
-        if path_str in roots:
+        if path_str in self._sessions_cache:
             return path_str
-        roots = sorted(roots, key=len, reverse=True)
-        for root in roots:
+        for root in sorted(self._sessions_cache, key=len, reverse=True):
             if path_str.startswith(root):
                 return root
         return None
 
-    def _is_active(self, root: str) -> bool:
-        return (
-            time.time() - self._credentials_cache[root]["time"]
-        ) < AWS_CREDENTIALS_EXPIRATION
+    @staticmethod
+    def _make_refresh_callback(storage_root: str, access_token: str | None = None):
+        """Create a credential refresh callable for AioRefreshableCredentials."""
 
-    def _set_cached_credentials(self, root: str, credentials: dict):
-        if root not in self._credentials_cache:
-            self._credentials_cache[root] = {}
-        self._credentials_cache[root]["credentials"] = credentials
-        self._credentials_cache[root]["time"] = time.time()
+        def _refresh():
+            from ._hub_core import access_aws
 
-    def _get_cached_credentials(self, root: str) -> dict:
-        return self._credentials_cache[root]["credentials"]
+            storage_root_info = access_aws(storage_root, access_token=access_token)
+            credentials = storage_root_info["credentials"]
+            if not credentials:
+                raise RuntimeError(f"Failed to refresh credentials for {storage_root}")
+            return {
+                "access_key": credentials["key"],
+                "secret_key": credentials["secret"],
+                "token": credentials["token"],
+                "expiry_time": credentials["expiry_time"],
+            }
+
+        return _refresh
+
+    def _create_managed_session(
+        self,
+        storage_root: str,
+        credentials: dict,
+        access_token: str | None = None,
+    ) -> AioSession:
+        """Create an AioSession with AioRefreshableCredentials for a managed root."""
+        from aiobotocore.credentials import AioRefreshableCredentials
+        from aiobotocore.session import AioSession
+
+        metadata = {
+            "access_key": credentials["key"],
+            "secret_key": credentials["secret"],
+            "token": credentials["token"],
+            "expiry_time": credentials["expiry_time"],
+        }
+
+        refresh_callback = self._make_refresh_callback(storage_root, access_token)
+        refreshable_credentials = AioRefreshableCredentials.create_from_metadata(
+            metadata,
+            refresh_using=refresh_callback,
+            method="lamin-hub",
+        )
+
+        session = AioSession(profile="lamindb_empty_profile")
+        session.full_config["profiles"]["lamindb_empty_profile"] = {}
+        session._credentials = refreshable_credentials
+
+        return session
 
     def _path_inject_options(
-        self, path: UPath, credentials: dict, extra_parameters: dict | None = None
+        self,
+        path: UPath,
+        managed_session: AioSession | None = None,
+        extra_parameters: dict | None = None,
     ) -> UPath:
         connection_options: dict[str, Any] = {}
         storage_options = path.storage_options
-        if credentials == {}:
+        if managed_session is None:
             # otherwise credentials were specified manually for the path
             if "anon" not in storage_options and (
                 path.fs.key is None or path.fs.secret is None
@@ -157,8 +192,7 @@ class AWSOptionsManager:
                     connection_options["anon"] = anon
                     connection_options["session"] = self.empty_session
         else:
-            connection_options.update(credentials)
-            connection_options["session"] = self.empty_session
+            connection_options["session"] = managed_session
 
         if "cache_regions" in storage_options:
             connection_options["cache_regions"] = storage_options["cache_regions"]
@@ -201,59 +235,70 @@ class AWSOptionsManager:
                 # TODO: maybe set max_pool_connections=64 here also
                 path = UPath(path, fixed_upload_size=True)
             return path
-        # trailing slash is needed to avoid returning incorrect results with .startswith
-        # for example s3://lamindata-eu should not receive cache for s3://lamindata
+
         path_str = _keep_trailing_slash(path.as_posix())
-        root = self._find_root(path_str)
 
-        if root is not None:
+        if access_token is not None:
+            root = None
+            need_fetch = True
             set_cache = False
-            credentials = self._get_cached_credentials(root)
-            extra_parameters = self._parameters_cache.get(root)
-            if access_token is not None:
-                set_cache = True
-            elif credentials != {}:
-                # update credentials
-                if not self._is_active(root):
-                    set_cache = True
         else:
-            set_cache = True
+            # trailing slash is needed to avoid returning incorrect results with .startswith
+            # for example s3://lamindata-eu should not receive cache for s3://lamindata
+            root = self._find_root(path_str)
+            need_fetch = root is None
+            set_cache = need_fetch
 
-        if set_cache:
+        if need_fetch:
             from ._hub_core import access_aws
-            from ._settings import settings
 
             storage_root_info = access_aws(path_str, access_token=access_token)
-            accessibility = storage_root_info["accessibility"]
-            is_managed = accessibility.get("is_managed", False)
-            if is_managed:
-                credentials = storage_root_info["credentials"]
-                extra_parameters = accessibility["extra_parameters"]
-            else:
-                credentials = {}
-                extra_parameters = None
 
-            if access_token is None:
-                if "storage_root" in accessibility:
-                    root = accessibility["storage_root"]
+            accessibility = storage_root_info["accessibility"]
+            credentials = storage_root_info["credentials"]
+
+            is_managed = accessibility.get("is_managed", False)
+            extra_parameters = accessibility.get("extra_parameters")
+
+            if set_cache:
+                resolved_root = accessibility.get("storage_root")
                 # just to be safe
-                root = None if root == "" else root
-                if root is None:
+                resolved_root = None if resolved_root == "" else resolved_root
+                if resolved_root is None:
                     # heuristic
                     # do not write the first level for the known hosted buckets
                     if path_str.startswith(HOSTED_BUCKETS):
-                        root = "/".join(path.path.rstrip("/").split("/")[:2])
+                        resolved_root = "/".join(path.path.rstrip("/").split("/")[:2])
                     else:
                         # write the bucket for everything else
-                        root = path.drive
-                    root = "s3://" + root
+                        resolved_root = path.drive
+                    resolved_root = "s3://" + resolved_root
 
-                root = _keep_trailing_slash(root)
-                assert isinstance(root, str)
-                self._set_cached_credentials(root, credentials)
-                self._parameters_cache[root] = extra_parameters
+                resolved_root = _keep_trailing_slash(resolved_root)
+            else:
+                # this is not cached, but used only for this specific path
+                resolved_root = path_str
 
-        return self._path_inject_options(path, credentials, extra_parameters)
+            if is_managed:
+                assert isinstance(resolved_root, str)
+                managed_session = self._create_managed_session(
+                    resolved_root,
+                    credentials,
+                    access_token,
+                )
+            else:
+                managed_session = None
+
+            if set_cache:
+                assert resolved_root is not None
+                self._sessions_cache[resolved_root] = managed_session
+                self._parameters_cache[resolved_root] = extra_parameters
+        else:
+            assert root is not None
+            managed_session = self._sessions_cache[root]
+            extra_parameters = self._parameters_cache.get(root)
+
+        return self._path_inject_options(path, managed_session, extra_parameters)
 
 
 _aws_options_manager_dict: dict[str, AWSOptionsManager] = {}

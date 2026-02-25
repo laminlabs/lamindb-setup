@@ -31,6 +31,7 @@ if TYPE_CHECKING:
     from collections.abc import Callable
 
     from botocore.client import BaseClient
+    from fsspec.asyn import AsyncFileSystem
     from s3fs import S3FileSystem
 
     from lamindb_setup.types import UPathStr
@@ -94,6 +95,20 @@ TRAILING_SEP = (os.sep, os.altsep) if os.altsep is not None else os.sep
 BOTO3_CLIENTS: dict[int, BaseClient] = {}
 
 
+def _ensure_sync_with_fs(
+    func: Callable[[], Any], fs: AsyncFileSystem
+) -> Callable[[], Any]:
+    from inspect import iscoroutinefunction
+
+    if iscoroutinefunction(func):
+        from fsspec.asyn import AsyncFileSystem, sync_wrapper
+
+        assert isinstance(fs, AsyncFileSystem)
+        return sync_wrapper(func, obj=fs)
+    else:
+        return func
+
+
 def s3fs_to_boto3_client(fs: S3FileSystem) -> BaseClient:
     fs_id = id(fs)
     if fs_id in BOTO3_CLIENTS:
@@ -123,15 +138,38 @@ def s3fs_to_boto3_client(fs: S3FileSystem) -> BaseClient:
     session.session_var_map._session = session
     fs_credentials = fs_session._credentials
     if fs_credentials is not None:
-        from botocore.credentials import Credentials
+        from aiobotocore.credentials import AioRefreshableCredentials
 
-        session._credentials = Credentials(
-            access_key=fs_credentials.access_key,
-            secret_key=fs_credentials.secret_key,
-            token=fs_credentials.token,
-            method=fs_credentials.method,
-            account_id=fs_credentials.account_id,
-        )
+        is_refreshable = isinstance(fs_credentials, AioRefreshableCredentials)
+        if is_refreshable:
+            # refresh just in case it is deferrable
+            _ensure_sync_with_fs(fs_credentials._refresh, fs)()
+        if is_refreshable and (expiry_time := fs_credentials._expiry_time) is not None:
+            from botocore.credentials import RefreshableCredentials
+
+            metadata = {
+                "access_key": fs_credentials._access_key,
+                "secret_key": fs_credentials._secret_key,
+                "token": fs_credentials._token,
+                "expiry_time": expiry_time.isoformat(),
+            }
+            # fs_credentials._refresh_using shouldn't be None because expiry_time isn't None
+            refresh_using = _ensure_sync_with_fs(fs_credentials._refresh_using, fs)
+            session._credentials = RefreshableCredentials.create_from_metadata(
+                metadata,
+                refresh_using=refresh_using,
+                method=fs_credentials.method,
+            )
+        else:
+            from botocore.credentials import Credentials
+
+            session._credentials = Credentials(
+                access_key=fs_credentials.access_key,
+                secret_key=fs_credentials.secret_key,
+                token=fs_credentials.token,
+                method=fs_credentials.method,
+                account_id=fs_credentials.account_id,
+            )
     else:
         session._credentials = None
     boto3_session = Boto3Session(botocore_session=session)
@@ -1078,7 +1116,7 @@ def get_storage_region(path: UPathStr) -> str | None:
             if response.get("Error", {}).get("Code") == "404":
                 raise exc
     else:
-        upath = get_user_aws_options_manager()._path_inject_options(upath, {})
+        upath = get_user_aws_options_manager()._path_inject_options(upath)
         try:
             response = upath.fs.call_s3("head_bucket", Bucket=bucket)
         except Exception as exc:
