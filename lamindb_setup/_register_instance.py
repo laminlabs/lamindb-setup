@@ -31,7 +31,3 @@ def register(_test: bool = False, _resource_db_server_id: UUID | None = None):
     init_storage_hub(ssettings, is_default=True)
     isettings._is_on_hub = True
     isettings._persist()
-    if isettings.dialect != "sqlite" and not _test:
-        from ._schema_metadata import update_schema_in_hub
-
-        update_schema_in_hub()
