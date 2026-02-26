@@ -785,7 +785,7 @@ def _access_aws_endpoint(
     api_url: str,
     role_arn: str,
     path: str,
-    duration_seconds: int = 43200,
+    duration_seconds: int = 3600,  # max for role chaining
     access_token: str | None = None,
 ):
     # local is used in tests
