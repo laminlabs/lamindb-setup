@@ -131,17 +131,11 @@ class migrate:
 
         isettings = settings.instance
         is_managed_by_hub = isettings.is_managed_by_hub
-        is_on_hub = is_managed_by_hub or isettings.is_on_hub
 
         if is_managed_by_hub and "root" not in isettings.db:
             # ensure we connect with the root user
             connect(use_root_db_user=True)
             assert "root" in (instance_db := settings.instance.db), instance_db
-        if is_on_hub:
-            # we need lamindb to be installed, otherwise we can't populate the version
-            # information in the hub
-            # this also connects
-            import lamindb
         # this is needed to avoid connecting on importing apps inside setup_django process
         setup_django_disable_autoconnect = disable_auto_connect(setup_django)
         # this sets up django and deploys the migrations
