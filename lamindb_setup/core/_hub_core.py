@@ -314,9 +314,6 @@ def _delete_instance(
     This function deletes the relevant instance and storage records in the hub,
     conditional on the emptiness of the storage location.
     """
-    from ._settings_storage import mark_storage_root_file
-    from .upath import check_storage_is_empty, create_path
-
     if delete_mark_files:
         assert require_empty, "require_empty must be True when deleting mark files"
 
@@ -345,6 +342,9 @@ def _delete_instance(
         client,
     )
     if require_empty:
+        from ._settings_storage import mark_storage_root_file
+        from .upath import check_storage_is_empty, create_path
+
         for storage_record in storage_records:
             root_string: str = storage_record["root"]  # type: ignore
             account_for_sqlite_file = (
