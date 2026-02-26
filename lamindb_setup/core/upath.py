@@ -1229,18 +1229,17 @@ def get_stat_dir_cloud(path: UPath) -> tuple[int, str | None, str | None, int]:
 def check_storage_is_empty(
     root: UPathStr, *, raise_error: bool = True, account_for_sqlite_file: bool = False
 ) -> int:
-    from ._settings_storage import STORAGE_UID_FILE_KEY
+    from ._settings_storage import mark_storage_root_file
 
     root_upath = UPath(root)
     root_string = root_upath.as_posix()  # type: ignore
     n_offset_objects = 1  # because of storage_uid.txt file, see mark_storage_root()
     # if the storage_uid.txt was somehow deleted, we restore a dummy version of it
     # because we need it to count files in an empty directory on S3 (otherwise permission error)
-    if not (root_upath / STORAGE_UID_FILE_KEY).exists():
+    mark_upath = mark_storage_root_file(root_upath)
+    if not mark_upath.exists():
         try:
-            (root_upath / STORAGE_UID_FILE_KEY).write_text(
-                "was deleted, restored during delete"
-            )
+            mark_upath.write_text("was deleted, restored during delete")
         except FileNotFoundError:
             # this can happen if the root is a local non-existing path
             pass

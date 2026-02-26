@@ -295,23 +295,29 @@ def _init_storage_hub(
     return "hub-record-created"
 
 
-def delete_instance(identifier: UUID | str, require_empty: bool = True) -> str | None:
+def delete_instance(
+    identifier: UUID | str, require_empty: bool = True, delete_mark_files: bool = False
+) -> str | None:
     return call_with_fallback_auth(
-        _delete_instance, identifier=identifier, require_empty=require_empty
+        _delete_instance,
+        identifier=identifier,
+        require_empty=require_empty,
+        delete_mark_files=delete_mark_files,
     )
 
 
 def _delete_instance(
-    identifier: UUID | str, require_empty: bool, client: Client
+    identifier: UUID | str, require_empty: bool, delete_mark_files: bool, client: Client
 ) -> str | None:
     """Fully delete an instance in the hub.
 
     This function deletes the relevant instance and storage records in the hub,
     conditional on the emptiness of the storage location.
     """
-    from ._settings_storage import mark_storage_root
-    from .upath import check_storage_is_empty, create_path
+    if delete_mark_files:
+        assert require_empty, "require_empty must be True when deleting mark files"
 
+    logger.debug(f"deleting storage and instance records for instance {identifier}")
     # the "/" check is for backward compatibility with the old identifier format
     if isinstance(identifier, UUID) or "/" not in identifier:
         if isinstance(identifier, UUID):
@@ -336,25 +342,43 @@ def _delete_instance(
         client,
     )
     if require_empty:
+        from ._settings_storage import mark_storage_root_file
+        from .upath import check_storage_is_empty, create_path
+
         for storage_record in storage_records:
             root_string: str = storage_record["root"]  # type: ignore
             account_for_sqlite_file = (
                 instance_with_storage["db_scheme"] is None
                 and instance_with_storage["storage"]["root"] == root_string
             )
-            # gate storage and instance deletion on empty storage location for
-            # normally auth.get_session() doesn't have access_token
-            # so this block is useless I think (Sergei)
-            # the token is received from user settings inside create_path
-            # might be needed in the hub though
-            if client.auth.get_session() is not None:
-                access_token = client.auth.get_session().access_token
+
+            if type(client).__name__ == "SupabaseClientWrapper" and hasattr(
+                client, "access_token"
+            ):
+                # needed in the hub
+                logger.debug(
+                    "SupabaseClientWrapper is passed, using access_token from the client for create_path"
+                )
+                access_token = client.access_token
             else:
+                logger.debug("using access_token from settings for create_path")
                 access_token = None
             root_path = create_path(root_string, access_token)
+            logger.debug(f"checking whether {root_path} is empty")
+            if root_path.protocol == "s3":
+                logger.debug(
+                    f"session in storage options: {'session' in root_path.storage_options}"
+                )
             check_storage_is_empty(
                 root_path, account_for_sqlite_file=account_for_sqlite_file
             )
+            if delete_mark_files:
+                mark_path = mark_storage_root_file(root_path)
+                logger.debug(f"deleting mark file {mark_path}")
+                if mark_path.exists():
+                    mark_path.unlink(missing_ok=True)
+                else:
+                    logger.debug(f"mark file {mark_path} not found, skipping deletion")
     for storage_record in storage_records:
         _delete_storage_record(storage_record, client)  # type: ignore
     _delete_instance_record(UUID(instance_with_storage["id"]), client)
