@@ -160,7 +160,7 @@ def delete(slug: str, force: bool = False, require_empty: bool = True) -> int | 
         # dynamic import to avoid importing hub logic at root
         from .core._hub_core import delete_instance
 
-        delete_instance(isettings._id, require_empty=False)
+        delete_instance(isettings._id, require_empty=False, delete_mark_files=False)
     delete_by_isettings(isettings)
     # if lamin.db file was delete, then we might count -1
     if n_files <= 0 and isettings.storage.type == "local":

@@ -84,6 +84,17 @@ def convert_root_path_to_str(root: UPathStr) -> str:
     return convert_sanitized_root_path_to_str(sanitized_root_upath)
 
 
+def mark_storage_root_file(path: UPath) -> UPath:
+    marker_path = path / STORAGE_UID_FILE_KEY
+    legacy_filepath = path / LEGACY_STORAGE_UID_FILE_KEY
+    if legacy_filepath.exists():
+        logger.warning(
+            f"found legacy marker file, renaming it from {legacy_filepath} to {marker_path}"
+        )
+        legacy_filepath.rename(marker_path)
+    return marker_path
+
+
 def mark_storage_root(
     root: UPathStr, uid: str, instance_id: UUID, instance_slug: str
 ) -> Literal["__marked__"] | str:
@@ -101,10 +112,7 @@ def mark_storage_root(
         )
 
     existing_uid = ""
-    legacy_mark_upath = root_upath / LEGACY_STORAGE_UID_FILE_KEY
-    mark_upath = root_upath / STORAGE_UID_FILE_KEY
-    if legacy_mark_upath.exists():
-        legacy_mark_upath.rename(mark_upath)
+    mark_upath = mark_storage_root_file(root_upath)
     if mark_upath.exists():
         existing_uid = mark_upath.read_text().splitlines()[0]
     if existing_uid == "":
@@ -298,14 +306,7 @@ class StorageSettings:
 
     @property
     def _mark_storage_root(self) -> UPath:
-        marker_path = self.root / STORAGE_UID_FILE_KEY
-        legacy_filepath = self.root / LEGACY_STORAGE_UID_FILE_KEY
-        if legacy_filepath.exists():
-            logger.warning(
-                f"found legacy marker file, renaming it from {legacy_filepath} to {marker_path}"
-            )
-            legacy_filepath.rename(marker_path)
-        return marker_path
+        return mark_storage_root_file(self.root)
 
     @property
     def record(self) -> Any:
