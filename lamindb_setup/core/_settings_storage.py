@@ -96,10 +96,9 @@ def mark_storage_root(
 
     logger.debug(f"marking in the storage root {root_upath}")
     if root_upath.protocol == "s3":
-        storage_options = root_upath.storage_options
-        logger.debug(f"key in storage options: {'key' in storage_options}")
-        logger.debug(f"secret in storage options: {'secret' in storage_options}")
-        logger.debug(f"token in storage options: {'token' in storage_options}")
+        logger.debug(
+            f"session in storage options: {'session' in root_upath.storage_options}"
+        )
 
     existing_uid = ""
     legacy_mark_upath = root_upath / LEGACY_STORAGE_UID_FILE_KEY

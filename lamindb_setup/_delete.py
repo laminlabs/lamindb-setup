@@ -102,10 +102,7 @@ def delete(slug: str, force: bool = False, require_empty: bool = True) -> int | 
     root = isettings.storage.root
     logger.debug(f"default storage root: {root}")
     if root.protocol == "s3":
-        storage_options = root.storage_options
-        logger.debug(f"key in storage options: {'key' in storage_options}")
-        logger.debug(f"secret in storage options: {'secret' in storage_options}")
-        logger.debug(f"token in storage options: {'token' in storage_options}")
+        logger.debug(f"session in storage options: {'session' in root.storage_options}")
     # the actual deletion process begins here
     if isettings.dialect == "sqlite" and isettings.is_remote:
         # delete the exlusion dir first because it's hard to count its objects
@@ -143,15 +140,8 @@ def delete(slug: str, force: bool = False, require_empty: bool = True) -> int | 
             ssettings_root = ssettings.root
             logger.debug(f"checking whether {ssettings_root} is empty")
             if ssettings_root.protocol == "s3":
-                ssettings_storage_options = ssettings_root.storage_options
                 logger.debug(
-                    f"key in storage options: {'key' in ssettings_storage_options}"
-                )
-                logger.debug(
-                    f"secret in storage options: {'secret' in ssettings_storage_options}"
-                )
-                logger.debug(
-                    f"token in storage options: {'token' in ssettings_storage_options}"
+                    f"session in storage options: {'session' in ssettings_root.storage_options}"
                 )
             check_storage_is_empty(
                 ssettings_root,
