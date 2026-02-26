@@ -40,6 +40,7 @@ uv pip install --system git+https://github.com/laminlabs/bionty
             + "\nuv pip install --system ./laminhub/backend/services/central"
             + "\nuv pip install --system ./laminhub/backend/services/instancedb"
             + "\nuv pip install --system ./laminhub/backend/services/aws"
+            + "\nuv pip install --system ./laminhub/backend/services/aws/lambda_functions/lamindb/utils"
             + "\nuv pip install --system --no-deps ./laminhub/backend/services/instancedb/hubmodule"
         )
     elif group == "docs":
@@ -66,6 +67,7 @@ uv pip install --system git+https://github.com/laminlabs/bionty
         cmds += "\nuv pip install --system -e ./laminhub/backend/services/central"
         cmds += "\nuv pip install --system -e ./laminhub/backend/services/instancedb"
         cmds += "\nuv pip install --system -e ./laminhub/backend/services/aws"
+        cmds += "\nuv pip install --system -e ./laminhub/backend/services/aws/lambda_functions/lamindb/utils"
         cmds += "\nuv pip install --system --no-deps -e ./laminhub/backend/services/instancedb/hubmodule"
         # check that just installing psycopg (psycopg3) doesn't break fine-grained access
         cmds += "\nuv pip install --system psycopg[binary]"
