@@ -237,12 +237,29 @@ def _warn_module_mismatch(target_apps: set[str], current_apps: set[str]) -> None
         return
     missing_apps = sorted(current_apps - target_apps)
     additional_apps = sorted(target_apps - current_apps)
-    logger.warning(
-        "instance schema modules differ from local environment configuration; "
-        f"additional in target: {additional_apps or ['none']}; "
-        f"missing in target: {missing_apps or ['none']}. "
-        "Configure modules in your environment via `lamin settings modules set bionty`."
+    details: list[str] = []
+    if additional_apps:
+        details.append(f"has non-configured modules: {', '.join(additional_apps)}")
+    if missing_apps:
+        if additional_apps:
+            details.append("and")
+        details.append(
+            f"does not have some of your locally configured modules: {', '.join(missing_apps)}"
+        )
+    if missing_apps:
+        hint = f"you might run into an error during permanent delete"
+    if additional_apps:
+        hint = f"you can only query modules that are configured in your environment"
+    modules_for_hint = sorted(
+        "core" if app == "lamindb" else app for app in target_apps
     )
+    hint2 = (
+        "to configure your environment with the instance modules, call: lamin settings modules set "
+        f"{', '.join(modules_for_hint)}"
+    )
+    logger.warning(f"the instance {' '.join(details)}")
+    logger.warning(hint)
+    logger.important_hint(hint2)
 
 
 def _ensure_pgtrigger_meta_compat() -> None:

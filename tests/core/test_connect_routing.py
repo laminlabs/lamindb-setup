@@ -136,6 +136,7 @@ def test_module_mismatch_warning_includes_modules_command(monkeypatch):
     )
     assert len(warning_calls) == 1
     assert "instance schema modules differ" in warning_calls[0]
+    assert "target-only modules: ['bionty']" in warning_calls[0]
     assert "lamin settings modules set bionty" in warning_calls[0]
 
 
