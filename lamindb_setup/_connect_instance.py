@@ -161,6 +161,10 @@ def _connect_instance(
                 if not use_root_db_user
                 else "write",
             )
+            if isettings.dialect == "postgresql" and "public" in isettings.db:
+                logger.warning(
+                    f'connecting in read-only mode, please use ln.DB("{isettings.slug}") instead'
+                )
         else:
             if hub_result != "anonymous-user":
                 message = INSTANCE_NOT_FOUND_MESSAGE.format(
