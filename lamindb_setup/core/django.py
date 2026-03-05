@@ -271,7 +271,11 @@ def reconnect_django(isettings: InstanceSettings, init: bool = False) -> None:
 
     db_token_manager.reset("default")
 
-    settings.DATABASES["default"] = target_db
+    current_default_db = settings.DATABASES.get("default", {})
+    merged_default_db = {**current_default_db, **target_db}
+    # avoid leaking stale backend-specific options (e.g. postgres connect_timeout) across reconnects
+    merged_default_db["OPTIONS"] = target_db.get("OPTIONS", {})
+    settings.DATABASES["default"] = merged_default_db
     connections.close_all()
     if hasattr(connections._connections, "default"):
         delattr(connections._connections, "default")
