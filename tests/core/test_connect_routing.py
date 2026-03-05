@@ -6,16 +6,24 @@ from types import SimpleNamespace
 
 import lamindb_setup._connect_instance as connect_instance
 import lamindb_setup.core.django as django_core
+import pytest
+from lamindb_setup._check_setup import _check_instance_setup
+from lamindb_setup.errors import ModuleWasntConfigured
 
 
 class _DummyInstanceSettings:
-    def __init__(self, owner: str, name: str) -> None:
+    def __init__(self, owner: str, name: str, modules: set[str] | None = None) -> None:
         self.owner = owner
         self.name = name
+        self._modules = set() if modules is None else modules
 
     @property
     def slug(self) -> str:
         return f"{self.owner}/{self.name}"
+
+    @property
+    def modules(self) -> set[str]:
+        return self._modules
 
 
 class _FakeConnectedInstance:
@@ -33,8 +41,11 @@ class _FakeConnectedInstance:
 
 
 def test_validate_connection_state_none_none_skips_reset(monkeypatch):
-    connect_instance.settings._instance_settings = _DummyInstanceSettings(
-        "none", "none"
+    monkeypatch.setattr(
+        connect_instance.settings,
+        "_instance_settings",
+        _DummyInstanceSettings("none", "none"),
+        raising=False,
     )
     called = {"reset": 0}
     monkeypatch.setattr(
@@ -48,8 +59,11 @@ def test_validate_connection_state_none_none_skips_reset(monkeypatch):
 
 
 def test_validate_connection_state_connected_instance_resets(monkeypatch):
-    connect_instance.settings._instance_settings = _DummyInstanceSettings(
-        "owner", "old"
+    monkeypatch.setattr(
+        connect_instance.settings,
+        "_instance_settings",
+        _DummyInstanceSettings("owner", "old"),
+        raising=False,
     )
     monkeypatch.setitem(
         sys.modules, "lamindb", SimpleNamespace(context=SimpleNamespace(transform=None))
@@ -123,3 +137,17 @@ def test_module_mismatch_warning_includes_modules_command(monkeypatch):
     assert len(warning_calls) == 1
     assert "instance schema modules differ" in warning_calls[0]
     assert "lamin settings modules set bionty" in warning_calls[0]
+
+
+def test_check_setup_uses_instance_modules_when_django_is_setup(monkeypatch):
+    import lamindb_setup._check_setup as check_setup
+
+    monkeypatch.setattr(django_core, "IS_SETUP", True)
+    monkeypatch.setattr(
+        check_setup.settings,
+        "_instance_settings",
+        _DummyInstanceSettings("owner", "name", modules={"bionty"}),
+        raising=False,
+    )
+    with pytest.raises(ModuleWasntConfigured):
+        _check_instance_setup(from_module="pertdb")

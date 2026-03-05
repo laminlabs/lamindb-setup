@@ -271,7 +271,7 @@ def reconnect_django(isettings: InstanceSettings, init: bool = False) -> None:
 
     db_token_manager.reset("default")
 
-    settings.DATABASES["default"].update(target_db)
+    settings.DATABASES["default"] = target_db
     connections.close_all()
     if hasattr(connections._connections, "default"):
         delattr(connections._connections, "default")
@@ -301,7 +301,10 @@ def setup_django(
     from django.core.management import call_command
 
     # configuration
-    if not settings.configured:
+    is_django_configured = (
+        settings.configured and getattr(settings, "_wrapped", None) is not None
+    )
+    if not is_django_configured:
         default_db = get_django_default_db(isettings)
         DATABASES = {
             "default": default_db,
