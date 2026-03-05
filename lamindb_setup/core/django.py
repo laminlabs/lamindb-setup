@@ -232,9 +232,9 @@ def get_installed_apps(isettings: InstanceSettings, init: bool = False) -> list[
     return installed_apps
 
 
-def _warn_module_mismatch(target_apps: set[str], current_apps: set[str]) -> None:
+def _warn_module_mismatch(target_apps: set[str], current_apps: set[str]) -> str | None:
     if target_apps == current_apps:
-        return
+        return None
     missing_apps = sorted(current_apps - target_apps)
     additional_apps = sorted(target_apps - current_apps)
     details: list[str] = []
@@ -257,9 +257,7 @@ def _warn_module_mismatch(target_apps: set[str], current_apps: set[str]) -> None
         "to configure your environment with the instance modules, call: lamin settings modules set "
         f"{', '.join(modules_for_hint)}"
     )
-    logger.warning(f"the instance {' '.join(details)}")
-    logger.warning(hint)
-    logger.important_hint(hint2)
+    return f"the instance {' '.join(details)}\n{hint}\n{hint2}"
 
 
 def _ensure_pgtrigger_meta_compat() -> None:
@@ -273,13 +271,16 @@ def _ensure_pgtrigger_meta_compat() -> None:
 
 
 def reconnect_django(isettings: InstanceSettings, init: bool = False) -> None:
-    from django.conf import settings
+    from django.conf import settings as django_settings
     from django.db import connections
+    from lamindb_setup.core._settings import settings
 
     target_db = get_django_default_db(isettings)
     target_apps = set(get_installed_apps(isettings, init=init))
-    current_apps = set(getattr(settings, "INSTALLED_APPS", []))
-    _warn_module_mismatch(target_apps=target_apps, current_apps=current_apps)
+    current_apps = set(getattr(django_settings, "INSTALLED_APPS", []))
+    settings.modules_warning = _warn_module_mismatch(
+        target_apps=target_apps, current_apps=current_apps
+    )
 
     # In reconnect mode we avoid full app reloading; ensure compatibility for
     # postgres-specific model metadata used by pgtrigger migrations.
@@ -288,11 +289,11 @@ def reconnect_django(isettings: InstanceSettings, init: bool = False) -> None:
 
     db_token_manager.reset("default")
 
-    current_default_db = settings.DATABASES.get("default", {})
+    current_default_db = django_settings.DATABASES.get("default", {})
     merged_default_db = {**current_default_db, **target_db}
     # avoid leaking stale backend-specific options (e.g. postgres connect_timeout) across reconnects
     merged_default_db["OPTIONS"] = target_db.get("OPTIONS", {})
-    settings.DATABASES["default"] = merged_default_db
+    django_settings.DATABASES["default"] = merged_default_db
     connections.close_all()
     if hasattr(connections._connections, "default"):
         delattr(connections._connections, "default")

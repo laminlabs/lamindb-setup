@@ -66,6 +66,7 @@ class SetupSettings:
     _private_django_api_path: Path = settings_dir / "private_django_api"
 
     _cache_dir: Path | None = None
+    modules_warning: str | None = None
 
     _branch = None  # do not have types here
     _space = None  # do not have types here

@@ -123,21 +123,15 @@ def test_connect_rewrites_module_vars_only_after_reset(monkeypatch):
     assert rewrite_calls["n"] == 1
 
 
-def test_module_mismatch_warning_includes_modules_command(monkeypatch):
-    warning_calls: list[str] = []
-    monkeypatch.setattr(
-        django_core.logger,
-        "warning",
-        lambda message: warning_calls.append(message),
-    )
-    django_core._warn_module_mismatch(
+def test_module_mismatch_warning_includes_modules_command():
+    message = django_core._warn_module_mismatch(
         target_apps={"lamindb", "bionty"},
         current_apps={"lamindb"},
     )
-    assert len(warning_calls) == 1
-    assert "instance schema modules differ" in warning_calls[0]
-    assert "target-only modules: ['bionty']" in warning_calls[0]
-    assert "lamin settings modules set bionty" in warning_calls[0]
+    assert message is not None
+    assert "instance" in message
+    assert "has non-configured modules: bionty" in message
+    assert "lamin settings modules set bionty, core" in message
 
 
 def test_check_setup_uses_instance_modules_when_django_is_setup(monkeypatch):
