@@ -46,9 +46,9 @@ def load_cache_path_from_settings(storage_settings: Path | None = None) -> Path 
         return None
 
 
+# these are the default modules loaded if no local configuration is found
 def find_module_candidates():
-    """Find all local packages that depend on lamindb."""
-    candidates = ["bionty", "pertdb"]
+    candidates = ["bionty"]
     return [c for c in candidates if find_spec(c) is not None]
 
 
