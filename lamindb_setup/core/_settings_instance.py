@@ -144,7 +144,7 @@ class InstanceSettings:
                     db_print = value
                 representation += f"\n - {attr}: {db_print}"
             elif attr == "modules" and value:
-                representation += f"\n - {attr}: {', '.join(value)}"
+                representation += f"\n - {attr}: {','.join(value)}"
             else:
                 representation += f"\n - {attr}: {value}"
         return representation
