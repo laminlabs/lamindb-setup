@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import os
 import sys
+from importlib.util import find_spec
 from pathlib import Path
 from typing import TYPE_CHECKING
 
@@ -16,6 +17,7 @@ from ._settings_load import (
 )
 from ._settings_store import (
     current_instance_settings_file,
+    current_modules_file,
     settings_dir,
     system_settings_dir,
 )
@@ -74,6 +76,39 @@ class SetupSettings:
     @property
     def _instance_settings_path(self) -> Path:
         return current_instance_settings_file()
+
+    @property
+    def _modules_path(self) -> Path:
+        return current_modules_file()
+
+    @property
+    def modules(self) -> set[str]:
+        """The set of configured schema modules for this environment.
+
+        Stored as a `schema_str` representation in `current_modules.txt`.
+        """
+        # if a current instance is configured in the environment,
+        # return the instance modules directly
+        if self._instance_settings_path.exists():
+            return self.instance.modules
+        if not self._modules_path.exists():
+            candidates = {"bionty"}
+            return {c for c in candidates if find_spec(c) is not None}
+        schema_str = self._modules_path.read_text().strip()
+        if schema_str == "":
+            return set()
+        return {module for module in schema_str.split(",") if module != ""}
+
+    @modules.setter
+    def modules(self, value: set[str] | str | None) -> None:
+        if value is None:
+            self._modules_path.unlink(missing_ok=True)
+            return
+        if isinstance(value, str):
+            schema_str = value
+        else:
+            schema_str = ",".join(sorted(value))
+        self._modules_path.write_text(schema_str)
 
     @property
     def settings_dir(self) -> Path:
