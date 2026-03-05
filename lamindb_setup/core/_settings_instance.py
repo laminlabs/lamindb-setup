@@ -668,8 +668,11 @@ class InstanceSettings:
         # this should fail, e.g., if the db is not reachable
         from lamindb_setup._check_setup import disable_auto_connect
 
-        from .django import setup_django
+        from .django import IS_SETUP, reconnect_django, setup_django
 
-        disable_auto_connect(setup_django)(self)
+        if IS_SETUP:
+            reconnect_django(self)
+        else:
+            disable_auto_connect(setup_django)(self)
 
         return True, ""

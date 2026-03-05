@@ -258,6 +258,7 @@ def init(
 
     isettings = None
     ssettings = None
+    did_reset_django = False
 
     _write_settings: bool = kwargs.get("_write_settings", True)
     if modules is None:
@@ -285,7 +286,7 @@ def init(
         if instance_state == "connected":
             return None
         if _check_instance_setup() and not _test:
-            validate_connection_state(user_handle, name_str)
+            did_reset_django = validate_connection_state(user_handle, name_str)
         elif _write_settings:
             disconnect(mute=True)
         isettings = InstanceSettings(
@@ -337,7 +338,8 @@ def init(
                 "locked instance (to unlock and push changes to the cloud SQLite file,"
                 " call: lamin disconnect)"
             )
-        reset_django_module_variables()
+        if did_reset_django:
+            reset_django_module_variables()
         logger.important(f"initialized lamindb: {isettings.slug}")
     except Exception as e:
         from ._delete import delete_by_isettings

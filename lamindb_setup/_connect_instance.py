@@ -272,9 +272,7 @@ def _connect_cli(
 
 def validate_connection_state(
     owner: str, name: str, use_root_db_user: bool = False
-) -> None:
-    from django.db import connection
-
+) -> bool:
     if (
         settings._instance_exists  # exists only for real instances, not for none/none
         and f"{owner}/{name}" == settings.instance.slug
@@ -283,7 +281,7 @@ def validate_connection_state(
         logger.important(
             f"doing nothing, already connected lamindb: {settings.instance.slug}"
         )
-        return None
+        return False
     else:
         if settings._instance_exists:
             import lamindb as ln
@@ -292,7 +290,10 @@ def validate_connection_state(
                 raise CannotSwitchDefaultInstance(
                     "Cannot switch default instance while `ln.track()` is live: call `ln.finish()`"
                 )
-        reset_django()
+            logger.warning("re-setting django module variables, is experimental")
+            reset_django()
+            return True
+    return False
 
 
 @unlock_cloud_sqlite_upon_exception(ignore_prev_locker=True)
@@ -334,6 +335,7 @@ def connect(instance: str | None = None, **kwargs: Any) -> str | tuple | None:
     _test: bool = kwargs.get("_test", False)
 
     isettings: InstanceSettings = None  # type: ignore
+    did_reset_django = False
 
     access_token: str | None = None
     _user: UserSettings | None = kwargs.get("_user", None)
@@ -351,14 +353,16 @@ def connect(instance: str | None = None, **kwargs: Any) -> str | tuple | None:
                     "No instance was connected through the CLI, pass a value to `instance` or connect via the CLI."
                 )
             if use_root_db_user:
+                logger.warning("re-setting django module variables, is experimental")
                 reset_django()
+                did_reset_django = True
                 owner, name = isettings.owner, isettings.name
             if _db is not None and isettings.dialect == "postgresql":
                 isettings._db = _db
         else:
             owner, name = get_owner_name_from_identifier(instance)
             if _check_instance_setup() and not _test:
-                validate_connection_state(
+                did_reset_django = validate_connection_state(
                     owner, name, use_root_db_user=use_root_db_user
                 )
             elif (
@@ -417,7 +421,7 @@ def connect(instance: str | None = None, **kwargs: Any) -> str | tuple | None:
             raise RuntimeError("Technical testing error.")
 
         load_from_isettings(isettings, user=_user, write_settings=_write_settings)
-        if _reload_lamindb:
+        if _reload_lamindb and did_reset_django:
             reset_django_module_variables()
         if isettings.slug != "none/none":
             logger.important(f"connected lamindb: {isettings.slug}")
