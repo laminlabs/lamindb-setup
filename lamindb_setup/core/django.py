@@ -245,6 +245,16 @@ def _warn_module_mismatch(target_apps: set[str], current_apps: set[str]) -> None
     )
 
 
+def _ensure_pgtrigger_meta_compat() -> None:
+    # In reconnect mode, Django settings/apps stay configured from the initial session.
+    # For postgres migrations, pgtrigger models use `Meta.triggers`, which Django rejects
+    # unless "triggers" is included in DEFAULT_NAMES.
+    from django.db.models import options as model_options
+
+    if "triggers" not in model_options.DEFAULT_NAMES:
+        model_options.DEFAULT_NAMES = (*model_options.DEFAULT_NAMES, "triggers")
+
+
 def reconnect_django(isettings: InstanceSettings, init: bool = False) -> None:
     from django.conf import settings
     from django.db import connections
@@ -253,6 +263,11 @@ def reconnect_django(isettings: InstanceSettings, init: bool = False) -> None:
     target_apps = set(get_installed_apps(isettings, init=init))
     current_apps = set(getattr(settings, "INSTALLED_APPS", []))
     _warn_module_mismatch(target_apps=target_apps, current_apps=current_apps)
+
+    # In reconnect mode we avoid full app reloading; ensure compatibility for
+    # postgres-specific model metadata used by pgtrigger migrations.
+    if isettings.dialect == "postgresql":
+        _ensure_pgtrigger_meta_compat()
 
     db_token_manager.reset("default")
 
