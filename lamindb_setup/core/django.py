@@ -247,15 +247,14 @@ def _warn_module_mismatch(target_apps: set[str], current_apps: set[str]) -> str 
             f"does not have some of your locally configured modules: {', '.join(missing_apps)}"
         )
     if missing_apps:
-        hint = f"you might run into an error during permanent delete"
+        hint = "you will run into an error when trying to permanently delete objects that are related to objects in these modules"
     if additional_apps:
         hint = f"you can only query modules that are configured in your environment"
-    modules_for_hint = sorted(
-        "core" if app == "lamindb" else app for app in target_apps
-    )
+    modules_for_hint = sorted(app for app in target_apps if app != "lamindb")
+    modules_arg = ",".join(modules_for_hint) if modules_for_hint else '""'
     hint2 = (
         "to configure your environment with the instance modules, call: lamin settings modules set "
-        f"{', '.join(modules_for_hint)}"
+        f"{modules_arg}"
     )
     return f"the instance {' '.join(details)}\n{hint}\n{hint2}"
 

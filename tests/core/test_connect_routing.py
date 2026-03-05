@@ -131,7 +131,16 @@ def test_module_mismatch_warning_includes_modules_command():
     assert message is not None
     assert "instance" in message
     assert "has non-configured modules: bionty" in message
-    assert "lamin settings modules set bionty, core" in message
+    assert "lamin settings modules set bionty" in message
+
+
+def test_module_mismatch_warning_uses_empty_schema_str_for_core_only():
+    message = django_core._warn_module_mismatch(
+        target_apps={"lamindb"},
+        current_apps={"lamindb", "bionty"},
+    )
+    assert message is not None
+    assert 'lamin settings modules set ""' in message
 
 
 def test_check_setup_uses_instance_modules_when_django_is_setup(monkeypatch):

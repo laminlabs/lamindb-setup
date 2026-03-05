@@ -164,6 +164,9 @@ def test_setup_settings_modules_roundtrip(
     settings.modules = "bionty,pertdb"
     assert settings.modules == {"bionty", "pertdb"}
 
+    settings.modules = ""
+    assert settings.modules == set()
+
     settings.modules = None
     monkeypatch.setattr(settings_module, "find_spec", lambda _: None)
     assert settings.modules == set()

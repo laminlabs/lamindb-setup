@@ -34,8 +34,8 @@ No instance is connected! Call
 
 
 MODULE_WASNT_CONFIGURED_MESSAGE_TEMPLATE = (
-    "'{}' wasn't configured in this environment -- run: lamin settings modules add {}"
-    "if your database instance doesn't have it, go to your instance settings page and add it under 'schema modules' (or ask an admin to do so)"
+    "'{}' wasn't configured in this environment -- run: lamin settings modules set {}\n"
+    "If your database instance also doesn't have it, go to your instance settings page and add it under 'schema modules' (or ask an admin to do so)."
 )
 
 
