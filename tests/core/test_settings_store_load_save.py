@@ -156,7 +156,11 @@ def test_setup_settings_modules_roundtrip(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ):
     modules_file = tmp_path / "current_modules.txt"
+    instance_file = tmp_path / "current_instance.env"
     monkeypatch.setattr(settings_module, "current_modules_file", lambda: modules_file)
+    monkeypatch.setattr(
+        settings_module, "current_instance_settings_file", lambda: instance_file
+    )
 
     settings.modules = {"bionty", "pertdb"}
     assert settings.modules == {"bionty", "pertdb"}
@@ -202,11 +206,18 @@ def test_setup_settings_modules_uses_current_instance_modules(
         settings_module, "current_instance_settings_file", lambda: instance_file
     )
 
-    settings._instance_settings = SimpleNamespace(  # type: ignore[assignment]
-        modules={"bionty"},
-        slug="owner/name",
+    monkeypatch.setattr(
+        settings,
+        "_instance_settings",
+        SimpleNamespace(modules={"bionty"}, slug="owner/name", is_on_hub=False),
+        raising=False,
     )
-    settings._instance_settings_env = settings_module.get_env_name()
+    monkeypatch.setattr(
+        settings,
+        "_instance_settings_env",
+        settings_module.get_env_name(),
+        raising=False,
+    )
 
     modules_file.write_text("pertdb")
     assert settings.modules == {"bionty"}
