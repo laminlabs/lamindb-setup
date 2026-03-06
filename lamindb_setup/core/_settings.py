@@ -85,12 +85,21 @@ class SetupSettings:
     def modules(self) -> set[str]:
         """The set of configured schema modules for this environment.
 
-        Stored as a `schema_str` representation in `current_modules.txt`.
+        Instance modules take precedence if an instance is configured.
+        Otherwise, `LAMINDB_MODULES` overrides a global setting.
         """
         # if a current instance is configured in the environment,
         # return the instance modules directly
         if self._instance_settings_path.exists():
             return self.instance.modules
+        # Explicit env var override for ephemeral configuration.
+        env_modules = os.environ.get("LAMINDB_MODULES")
+        if env_modules is not None:
+            return {
+                module.strip()
+                for module in env_modules.split(",")
+                if module.strip() != ""
+            }
         if not self._modules_path.exists():
             candidates = {"bionty"}
             return {c for c in candidates if find_spec(c) is not None}
