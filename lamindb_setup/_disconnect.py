@@ -32,6 +32,12 @@ def disconnect(mute: bool = False) -> None:
         if load_instance_settings().slug == instance.slug:
             settings._instance_settings_path.unlink(missing_ok=True)
         settings._instance_settings = None
+        # if django is set up, reconnect to the in-memory none/none instance
+        # to avoid leaking the previous default DB connection after disconnect
+        from .core import django as django_lamin
+
+        if django_lamin.IS_SETUP:
+            django_lamin.reconnect_django(settings.instance)
         if not mute:
             logger.success(f"disconnected instance: {instance.slug}")
     elif not mute:

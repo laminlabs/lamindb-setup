@@ -41,6 +41,12 @@ def error_no_instance_wrapper(execute, sql, params, many, context):
     return execute(sql, params, many, context)
 
 
+def ensure_error_no_instance_wrapper(connection_name: str = "default") -> None:
+    connection = get_connection(connection_name)
+    if error_no_instance_wrapper not in connection.execute_wrappers:
+        connection.execute_wrappers.insert(0, error_no_instance_wrapper)
+
+
 # db token that refreshes on access if needed
 class DBToken:
     def __init__(
@@ -296,6 +302,7 @@ def reconnect_django(isettings: InstanceSettings, init: bool = False) -> None:
     connections.close_all()
     if hasattr(connections._connections, "default"):
         delattr(connections._connections, "default")
+    ensure_error_no_instance_wrapper("default")
 
     if isettings._fine_grained_access and isettings._db_permissions == "jwt":
         db_token = DBToken(isettings)
@@ -409,7 +416,7 @@ def setup_django(
             logger.debug("django.db.connections._connections has been patched")
 
         # error if trying to query with the default connection without setting up an instance
-        get_connection("default").execute_wrappers.insert(0, error_no_instance_wrapper)
+        ensure_error_no_instance_wrapper("default")
 
         if isettings._fine_grained_access and isettings._db_permissions == "jwt":
             db_token = DBToken(isettings)
