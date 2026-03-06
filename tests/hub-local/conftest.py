@@ -41,9 +41,9 @@ def pytest_configure():
 
     os.environ["LAMIN_ENV"] = "local"
     os.environ["LAMIN_CLOUD_VERSION"] = "0.1"
-    os.environ["LAMIN_TEST_INSTANCE_SCHEMA_STR"] = ""
+    os.environ["LAMINDB_MODULES"] = ""
     os.environ["LAMIN_TEST_INSTANCE_PUBLIC"] = "false"
-    os.environ["LAMIN_TEST_INSTANCE_SCHEMA_STR"] = "bionty"
+    os.environ["LAMINDB_MODULES"] = "bionty"
     # Disable redis, it is not deployed here
     os.environ["EXTERNAL_CACHE_DISABLED"] = "true"
     # _remove_lamin_local_settings()

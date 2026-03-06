@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import os
-from importlib.util import find_spec
 from pathlib import Path
 from typing import TYPE_CHECKING
 from uuid import UUID, uuid4
@@ -46,22 +45,18 @@ def load_cache_path_from_settings(storage_settings: Path | None = None) -> Path 
         return None
 
 
-def find_module_candidates():
-    """Find all local packages that depend on lamindb."""
-    candidates = ["bionty", "pertdb"]
-    return [c for c in candidates if find_spec(c) is not None]
-
-
 def load_instance_settings(instance_settings_file: Path | None = None):
     if instance_settings_file is None:
         isettings_file = current_instance_settings_file()
         if not isettings_file.exists():
+            from ._settings import settings
+
             isettings = InstanceSettings(
                 id=UUID("00000000-0000-0000-0000-000000000000"),
                 owner="none",
                 name="none",
                 storage=None,
-                modules=",".join(find_module_candidates()),
+                modules=",".join(sorted(settings.modules)),
             )
             return isettings
     else:

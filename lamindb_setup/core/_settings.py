@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import os
 import sys
+from importlib.util import find_spec
 from pathlib import Path
 from typing import TYPE_CHECKING
 
@@ -16,6 +17,7 @@ from ._settings_load import (
 )
 from ._settings_store import (
     current_instance_settings_file,
+    current_modules_file,
     settings_dir,
     system_settings_dir,
 )
@@ -66,6 +68,7 @@ class SetupSettings:
     _private_django_api_path: Path = settings_dir / "private_django_api"
 
     _cache_dir: Path | None = None
+    modules_warning: str | None = None
 
     _branch = None  # do not have types here
     _space = None  # do not have types here
@@ -73,6 +76,48 @@ class SetupSettings:
     @property
     def _instance_settings_path(self) -> Path:
         return current_instance_settings_file()
+
+    @property
+    def _modules_path(self) -> Path:
+        return current_modules_file()
+
+    @property
+    def modules(self) -> set[str]:
+        """The set of configured schema modules for this environment.
+
+        Instance modules take precedence if an instance is configured.
+        Otherwise, `LAMINDB_MODULES` overrides a global setting.
+        """
+        # if a current instance is configured in the environment,
+        # return the instance modules directly
+        if self._instance_settings_path.exists():
+            return self.instance.modules
+        # Explicit env var override for ephemeral configuration.
+        env_modules = os.environ.get("LAMINDB_MODULES")
+        if env_modules is not None:
+            return {
+                module.strip()
+                for module in env_modules.split(",")
+                if module.strip() != ""
+            }
+        if not self._modules_path.exists():
+            candidates = {"bionty"}
+            return {c for c in candidates if find_spec(c) is not None}
+        schema_str = self._modules_path.read_text().strip()
+        if schema_str == "":
+            return set()
+        return {module for module in schema_str.split(",") if module != ""}
+
+    @modules.setter
+    def modules(self, value: set[str] | str | None) -> None:
+        if value is None:
+            self._modules_path.unlink(missing_ok=True)
+            return
+        if isinstance(value, str):
+            schema_str = value
+        else:
+            schema_str = ",".join(sorted(value))
+        self._modules_path.write_text(schema_str)
 
     @property
     def settings_dir(self) -> Path:
@@ -382,8 +427,11 @@ class SetupSettings:
             repr += "\n".join(instance_rep[1:])
         else:
             repr += f"{colors.cyan('Instance:')} None"
+        modules_schema_str = ",".join(sorted(self.modules))
+        modules_display = modules_schema_str if modules_schema_str != "" else '""'
         repr += f"\n{colors.blue('Cache & settings:')}\n"
         repr += f" - cache: {self.cache_dir.as_posix()}\n"
+        repr += f" - modules: {modules_display}\n"
         repr += f" - user settings: {settings_dir.as_posix()}\n"
         repr += f" - system settings: {system_settings_dir.as_posix()}"
         repr += f"\n{colors.green('User:')} {self.user.handle}"

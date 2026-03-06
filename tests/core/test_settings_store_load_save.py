@@ -6,9 +6,12 @@ vs optional fields, and additional (unknown) fields in the .env.
 
 from __future__ import annotations
 
+from types import SimpleNamespace
 from typing import TYPE_CHECKING
 
 import pytest
+from lamindb_setup.core import _settings as settings_module
+from lamindb_setup.core._settings import settings
 from lamindb_setup.core._settings_load import (
     load_instance_settings,
     setup_instance_from_store,
@@ -147,3 +150,105 @@ def test_settings_env_load_via_load_instance_settings(tmp_path: Path) -> None:
     assert str(settings2.storage.root).rstrip("/") == str(settings.storage.root).rstrip(
         "/"
     )
+
+
+def test_setup_settings_modules_roundtrip(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+):
+    modules_file = tmp_path / "current_modules.txt"
+    instance_file = tmp_path / "current_instance.env"
+    monkeypatch.setattr(settings_module, "current_modules_file", lambda: modules_file)
+    monkeypatch.setattr(
+        settings_module, "current_instance_settings_file", lambda: instance_file
+    )
+
+    settings.modules = {"bionty", "pertdb"}
+    assert settings.modules == {"bionty", "pertdb"}
+
+    settings.modules = "bionty,pertdb"
+    assert settings.modules == {"bionty", "pertdb"}
+
+    settings.modules = ""
+    assert settings.modules == set()
+
+    settings.modules = None
+    monkeypatch.setattr(settings_module, "find_spec", lambda _: None)
+    assert settings.modules == set()
+
+
+def test_setup_settings_modules_falls_back_to_candidates(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+):
+    modules_file = tmp_path / "current_modules.txt"
+    instance_file = tmp_path / "current_instance.env"
+    monkeypatch.setattr(settings_module, "current_modules_file", lambda: modules_file)
+    monkeypatch.setattr(
+        settings_module, "current_instance_settings_file", lambda: instance_file
+    )
+    monkeypatch.setattr(
+        settings_module,
+        "find_spec",
+        lambda module: object() if module == "bionty" else None,
+    )
+
+    settings.modules = None
+    assert settings.modules == {"bionty"}
+
+
+def test_setup_settings_modules_uses_current_instance_modules(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+):
+    modules_file = tmp_path / "current_modules.txt"
+    instance_file = tmp_path / "current_instance.env"
+    instance_file.write_text("dummy=1\n")
+    monkeypatch.setattr(settings_module, "current_modules_file", lambda: modules_file)
+    monkeypatch.setattr(
+        settings_module, "current_instance_settings_file", lambda: instance_file
+    )
+
+    monkeypatch.setattr(
+        settings,
+        "_instance_settings",
+        SimpleNamespace(modules={"bionty"}, slug="owner/name", is_on_hub=False),
+        raising=False,
+    )
+    monkeypatch.setattr(
+        settings,
+        "_instance_settings_env",
+        settings_module.get_env_name(),
+        raising=False,
+    )
+
+    modules_file.write_text("pertdb")
+    assert settings.modules == {"bionty"}
+
+
+def test_setup_settings_modules_instance_modules_override_env_var(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+):
+    modules_file = tmp_path / "current_modules.txt"
+    instance_file = tmp_path / "current_instance.env"
+    instance_file.write_text("dummy=1\n")
+    monkeypatch.setattr(settings_module, "current_modules_file", lambda: modules_file)
+    monkeypatch.setattr(
+        settings_module, "current_instance_settings_file", lambda: instance_file
+    )
+    monkeypatch.setenv("LAMINDB_MODULES", "  custom_a,custom_b ,, custom_c ")
+
+    monkeypatch.setattr(
+        settings,
+        "_instance_settings",
+        SimpleNamespace(
+            modules={"bionty", "pertdb"}, slug="owner/name", is_on_hub=False
+        ),
+        raising=False,
+    )
+    monkeypatch.setattr(
+        settings,
+        "_instance_settings_env",
+        settings_module.get_env_name(),
+        raising=False,
+    )
+
+    modules_file.write_text("pertdb")
+    assert settings.modules == {"bionty", "pertdb"}

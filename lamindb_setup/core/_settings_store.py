@@ -34,6 +34,10 @@ def current_instance_settings_file():
     return settings_dir / f"{get_settings_file_name_prefix()}current_instance.env"
 
 
+def current_modules_file():
+    return settings_dir / f"{get_settings_file_name_prefix()}current_modules.txt"
+
+
 def current_user_settings_file():
     return settings_dir / f"{get_settings_file_name_prefix()}current_user.env"
 

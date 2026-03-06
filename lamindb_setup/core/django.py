@@ -41,6 +41,12 @@ def error_no_instance_wrapper(execute, sql, params, many, context):
     return execute(sql, params, many, context)
 
 
+def ensure_error_no_instance_wrapper(connection_name: str = "default") -> None:
+    connection = get_connection(connection_name)
+    if error_no_instance_wrapper not in connection.execute_wrappers:
+        connection.execute_wrappers.insert(0, error_no_instance_wrapper)
+
+
 # db token that refreshes on access if needed
 class DBToken:
     def __init__(
@@ -184,6 +190,125 @@ def close_if_health_check_failed(self) -> None:
         self.close_at = time.monotonic() + CONN_MAX_AGE
 
 
+def get_django_default_db(isettings: InstanceSettings) -> dict:
+    import dj_database_url
+
+    instance_db = isettings.db
+    if isettings.dialect == "postgresql":
+        if os.getenv("LAMIN_DB_SSL_REQUIRE") == "false":
+            ssl_require = False
+        else:
+            ssl_require = not is_local_db_url(instance_db)
+        options = {
+            "connect_timeout": os.getenv("PGCONNECT_TIMEOUT", 20),
+            "gssencmode": "disable",
+        }
+    else:
+        ssl_require = False
+        options = {}
+    default_db = dj_database_url.config(
+        env="LAMINDB_DJANGO_DATABASE_URL",
+        default=instance_db,
+        # see comment next to patching BaseDatabaseWrapper below
+        conn_max_age=CONN_MAX_AGE,
+        conn_health_checks=True,
+        ssl_require=ssl_require,
+    )
+    if options:
+        # do not overwrite keys in options if set
+        default_db["OPTIONS"] = {**options, **default_db.get("OPTIONS", {})}
+    return default_db
+
+
+def get_installed_apps(isettings: InstanceSettings, init: bool = False) -> list[str]:
+    from .._init_instance import get_schema_module_name
+
+    module_names = ["core"] + list(isettings.modules)
+    raise_import_error = True if init else False
+    installed_apps = [
+        package_name
+        for name in module_names
+        if (
+            package_name := get_schema_module_name(
+                name, raise_import_error=raise_import_error
+            )
+        )
+        is not None
+    ]
+    return installed_apps
+
+
+def _warn_module_mismatch(target_apps: set[str], current_apps: set[str]) -> str | None:
+    if target_apps == current_apps:
+        return None
+    missing_apps = sorted(current_apps - target_apps)
+    additional_apps = sorted(target_apps - current_apps)
+    details: list[str] = []
+    if additional_apps:
+        details.append(f"has non-configured modules: {', '.join(additional_apps)}")
+    if missing_apps:
+        if additional_apps:
+            details.append("and")
+        details.append(
+            f"does not have some of your locally configured modules: {', '.join(missing_apps)}"
+        )
+    if missing_apps:
+        hint = "you will run into an error when trying to permanently delete objects that are related to objects in these modules"
+    if additional_apps:
+        hint = f"you can only query modules that are configured in your environment"
+    modules_for_hint = sorted(app for app in target_apps if app != "lamindb")
+    modules_arg = ",".join(modules_for_hint) if modules_for_hint else '""'
+    hint2 = (
+        "to configure your environment with the instance modules, call: lamin settings modules set "
+        f"{modules_arg}"
+    )
+    return f"the instance {' '.join(details)}\n{hint}\n{hint2}"
+
+
+def _ensure_pgtrigger_meta_compat() -> None:
+    # In reconnect mode, Django settings/apps stay configured from the initial session.
+    # For postgres migrations, pgtrigger models use `Meta.triggers`, which Django rejects
+    # unless "triggers" is included in DEFAULT_NAMES.
+    from django.db.models import options as model_options
+
+    if "triggers" not in model_options.DEFAULT_NAMES:
+        model_options.DEFAULT_NAMES = (*model_options.DEFAULT_NAMES, "triggers")
+
+
+def reconnect_django(isettings: InstanceSettings, init: bool = False) -> None:
+    from django.conf import settings as django_settings
+    from django.db import connections
+    from lamindb_setup.core._settings import settings
+
+    target_db = get_django_default_db(isettings)
+    target_apps = set(get_installed_apps(isettings, init=init))
+    current_apps = set(getattr(django_settings, "INSTALLED_APPS", []))
+    settings.modules_warning = _warn_module_mismatch(
+        target_apps=target_apps, current_apps=current_apps
+    )
+
+    # In reconnect mode we avoid full app reloading; ensure compatibility for
+    # postgres-specific model metadata used by pgtrigger migrations.
+    if isettings.dialect == "postgresql":
+        _ensure_pgtrigger_meta_compat()
+
+    db_token_manager.reset("default")
+
+    current_default_db = django_settings.DATABASES.get("default", {})
+    merged_default_db = {**current_default_db, **target_db}
+    # avoid leaking stale backend-specific options (e.g. postgres connect_timeout) across reconnects
+    merged_default_db["OPTIONS"] = target_db.get("OPTIONS", {})
+    django_settings.DATABASES["default"] = merged_default_db
+    connections.close_all()
+    if hasattr(connections._connections, "default"):
+        delattr(connections._connections, "default")
+    ensure_error_no_instance_wrapper("default")
+
+    if isettings._fine_grained_access and isettings._db_permissions == "jwt":
+        db_token = DBToken(isettings)
+        db_token_manager.set(db_token)
+
+
 # this bundles set up and migration management
 def setup_django(
     isettings: InstanceSettings,
@@ -198,55 +323,21 @@ def setup_django(
         os.environ["DJANGO_ALLOW_ASYNC_UNSAFE"] = "true"
         logger.debug("DJANGO_ALLOW_ASYNC_UNSAFE env variable has been set to 'true'")
 
-    import dj_database_url
     import django
     from django.apps import apps
     from django.conf import settings
     from django.core.management import call_command
 
     # configuration
-    if not settings.configured:
-        instance_db = isettings.db
-        if isettings.dialect == "postgresql":
-            if os.getenv("LAMIN_DB_SSL_REQUIRE") == "false":
-                ssl_require = False
-            else:
-                ssl_require = not is_local_db_url(instance_db)
-            options = {
-                "connect_timeout": os.getenv("PGCONNECT_TIMEOUT", 20),
-                "gssencmode": "disable",
-            }
-        else:
-            ssl_require = False
-            options = {}
-        default_db = dj_database_url.config(
-            env="LAMINDB_DJANGO_DATABASE_URL",
-            default=instance_db,
-            # see comment next to patching BaseDatabaseWrapper below
-            conn_max_age=CONN_MAX_AGE,
-            conn_health_checks=True,
-            ssl_require=ssl_require,
-        )
-        if options:
-            # do not overwrite keys in options if set
-            default_db["OPTIONS"] = {**options, **default_db.get("OPTIONS", {})}
+    is_django_configured = (
+        settings.configured and getattr(settings, "_wrapped", None) is not None
+    )
+    if not is_django_configured:
+        default_db = get_django_default_db(isettings)
         DATABASES = {
             "default": default_db,
         }
-        from .._init_instance import get_schema_module_name
-
-        module_names = ["core"] + list(isettings.modules)
-        raise_import_error = True if init else False
-        installed_apps = [
-            package_name
-            for name in module_names
-            if (
-                package_name := get_schema_module_name(
-                    name, raise_import_error=raise_import_error
-                )
-            )
-            is not None
-        ]
+        installed_apps = get_installed_apps(isettings, init=init)
         if view_schema:
             installed_apps = installed_apps[::-1]  # to fix how apps appear
             installed_apps += ["schema_graph", "django.contrib.staticfiles"]
@@ -325,11 +416,16 @@ def setup_django(
             logger.debug("django.db.connections._connections has been patched")
 
         # error if trying to query with the default connection without setting up an instance
-        get_connection("default").execute_wrappers.insert(0, error_no_instance_wrapper)
+        ensure_error_no_instance_wrapper("default")
 
         if isettings._fine_grained_access and isettings._db_permissions == "jwt":
             db_token = DBToken(isettings)
             db_token_manager.set(db_token)  # sets for the default connection
+    elif init:
+        # in case init is called after Django was configured, we need to reconnect
+        # this path is currently not used because in lamindb_setup.init() we
+        # still default to reset_django()
+        reconnect_django(isettings, init=init)
 
     if configure_only:
         return None

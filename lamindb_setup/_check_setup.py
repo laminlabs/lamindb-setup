@@ -57,7 +57,7 @@ def _check_module_in_instance_modules(
         )
         if _normalize_module_name(module) not in modules and module not in modules:
             raise ModuleWasntConfigured(
-                MODULE_WASNT_CONFIGURED_MESSAGE_TEMPLATE.format(module)
+                MODULE_WASNT_CONFIGURED_MESSAGE_TEMPLATE.format(module, module)
             )
         else:
             return
@@ -68,7 +68,9 @@ def _check_module_in_instance_modules(
         # app.name is always unnormalized module (python package) name
         if module == app.name or module == _normalize_module_name(app.name):
             return
-    raise ModuleWasntConfigured(MODULE_WASNT_CONFIGURED_MESSAGE_TEMPLATE.format(module))
+    raise ModuleWasntConfigured(
+        MODULE_WASNT_CONFIGURED_MESSAGE_TEMPLATE.format(module, module)
+    )
 
 
 # infer the name of the module that calls this function
@@ -84,9 +86,10 @@ def _infer_callers_module_name() -> str | None:
 # users should not see it
 def _check_instance_setup(from_module: str | None = None) -> bool:
     if django_lamin.IS_SETUP:
+        isettings = settings.instance
         if from_module is not None:
             if from_module != "lamindb":
-                _check_module_in_instance_modules(from_module)
+                _check_module_in_instance_modules(from_module, isettings)
         else:
             infer_module = _infer_callers_module_name()
             if infer_module is not None and infer_module not in {
@@ -94,7 +97,7 @@ def _check_instance_setup(from_module: str | None = None) -> bool:
                 "lamindb_setup",
                 "lamin_cli",
             }:
-                _check_module_in_instance_modules(infer_module)
+                _check_module_in_instance_modules(infer_module, isettings)
         return True
     silence_loggers()
     if os.environ.get("LAMINDB_MULTI_INSTANCE") == "true":
