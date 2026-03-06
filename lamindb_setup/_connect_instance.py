@@ -271,7 +271,7 @@ def _connect_cli(
 
 
 def validate_connection_state(
-    owner: str, name: str, use_root_db_user: bool = False
+    owner: str, name: str, use_root_db_user: bool = False, init: bool = False
 ) -> bool:
     if (
         settings._instance_exists  # exists only for real instances, not for none/none
@@ -283,14 +283,18 @@ def validate_connection_state(
         )
         return False
     else:
-        if settings._instance_exists:
+        # settings._instance_exists: exists only for real instances, not for none/none
+        # in case of init, we'd like to reset django for now
+        if settings._instance_exists or init:
             import lamindb as ln
 
             if ln.context.transform is not None:
                 raise CannotSwitchDefaultInstance(
                     "Cannot switch default instance while `ln.track()` is live: call `ln.finish()`"
                 )
-            logger.warning("re-setting django module variables, is experimental")
+            logger.warning(
+                "re-setting django (experimental) until Django 6.2 is released"
+            )
             reset_django()
             return True
     return False
