@@ -84,7 +84,7 @@ def test_validate_connection_state_connected_instance_resets(monkeypatch):
     assert did_reset is True
     assert called["reset"] == 1
     assert warning_calls == [
-        "re-setting django (experimental) until Django 6.2 is released"
+        "re-setting django (experimental) until Django 6.1 is released"
     ]
 
 

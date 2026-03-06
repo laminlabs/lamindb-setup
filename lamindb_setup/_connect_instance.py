@@ -293,7 +293,10 @@ def validate_connection_state(
                     "Cannot switch default instance while `ln.track()` is live: call `ln.finish()`"
                 )
             logger.warning(
-                "re-setting django (experimental) until Django 6.2 is released"
+                "re-setting django (experimental) until Django 6.1 is released"
+            )
+            logger.important_hint(
+                "avoid this by clearing the default instance on the command line via: lamin disconnect"
             )
             reset_django()
             return True
@@ -358,7 +361,7 @@ def connect(instance: str | None = None, **kwargs: Any) -> str | tuple | None:
                 )
             if use_root_db_user:
                 logger.warning(
-                    "re-setting django (experimental) until Django 6.2 is released"
+                    "re-setting django (experimental) until Django 6.1 is released"
                 )
                 reset_django()
                 did_reset_django = True
