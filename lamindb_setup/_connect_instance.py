@@ -357,7 +357,9 @@ def connect(instance: str | None = None, **kwargs: Any) -> str | tuple | None:
                     "No instance was connected through the CLI, pass a value to `instance` or connect via the CLI."
                 )
             if use_root_db_user:
-                logger.warning("re-setting django module variables, is experimental")
+                logger.warning(
+                    "re-setting django (experimental) until Django 6.2 is released"
+                )
                 reset_django()
                 did_reset_django = True
                 owner, name = isettings.owner, isettings.name
