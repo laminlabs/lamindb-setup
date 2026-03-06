@@ -422,6 +422,9 @@ def setup_django(
             db_token = DBToken(isettings)
             db_token_manager.set(db_token)  # sets for the default connection
     elif init:
+        # in case init is called after Django was configured, we need to reconnect
+        # this path is currently not used because in lamindb_setup.init() we
+        # still default to reset_django()
         reconnect_django(isettings, init=init)
 
     if configure_only:
