@@ -423,7 +423,7 @@ def _init_instance_hub(
         f"creating instance {iname} for account {owner_account_id} by {created_by_id}"
     )
     try:
-        lamindb_version = metadata.version("lamindb")
+        lamindb_version = metadata.version("lamindb-core")
     except metadata.PackageNotFoundError:
         lamindb_version = None
     fields = {
