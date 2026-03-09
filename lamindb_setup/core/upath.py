@@ -234,6 +234,10 @@ def extract_suffix_from_path(path: Path, arg_name: str | None = None) -> str:
                 break
         return suffix
     else:
+        # zarr is a special case as the actual format is normally identified
+        # by the content of the zarr store, not by the composite suffix
+        if suffixes[-1] == ".zarr":
+            return ".zarr"
         print_hint = True
         arg_name = "file" if arg_name is None else arg_name  # for the warning
         msg = f"{arg_name} has more than one suffix (path.suffixes), "
