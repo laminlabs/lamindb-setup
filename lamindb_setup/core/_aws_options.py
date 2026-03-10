@@ -4,8 +4,11 @@ import logging
 import os
 from typing import TYPE_CHECKING, Any
 
+from dotenv import dotenv_values
 from lamin_utils import logger
 from upath import UPath
+
+from ._settings_store import system_settings_file
 
 if TYPE_CHECKING:
     from aiobotocore.session import AioSession
@@ -39,6 +42,15 @@ PUBLIC_BUCKETS: tuple[str, ...] = ("cellxgene-data-public", "bionty-assets")
 LAMIN_ENDPOINTS: tuple[str | None] = (None,)
 
 
+def _load_s3_anon_from_system_env() -> bool:
+    """Load lamindb_s3_anon from system.env if it exists (avoids circular import)."""
+    system_env = system_settings_file()
+    if not system_env.exists():
+        return False
+    val = dotenv_values(system_env).get("lamindb_s3_anon", None)
+    return val == "true" if val not in {None, "null", ""} else False
+
+
 class NoTracebackFilter(logging.Filter):
     def filter(self, record):
         record.exc_info = None  # Remove traceback info from the log record.
@@ -69,7 +81,8 @@ class AWSOptionsManager:
                 "with lamindb, please upgrade it: pip install s3fs>=2023.12.2"
             )
 
-        anon_env = os.getenv("LAMIN_S3_ANON") == "true"
+        anon_from_env = os.getenv("LAMIN_S3_ANON") == "true"
+        anon_env = anon_from_env or _load_s3_anon_from_system_env()
         # this is cached so will be resued with the connection initialized
         # these options are set for paths in _path_inject_options
         # here we set the same options to cache the filesystem
@@ -85,10 +98,16 @@ class AWSOptionsManager:
 
         if anon_env:
             self.anon: bool = True
-            logger.warning(
-                "`anon` mode will be used for all non-managed buckets "
-                "because the environment variable LAMIN_S3_ANON was set to 'true'"
-            )
+            if anon_from_env:
+                logger.warning(
+                    "`anon` mode will be used for all non-managed buckets "
+                    "because the environment variable LAMIN_S3_ANON was set to 'true'"
+                )
+            else:
+                logger.debug(
+                    "`anon` mode will be used for all non-managed buckets "
+                    "because lamindb_s3_anon was set to 'true' in system.env"
+                )
         else:
             try:
                 fs.connect()
