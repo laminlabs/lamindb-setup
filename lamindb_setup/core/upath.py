@@ -662,8 +662,12 @@ def synchronize_to(
                 # but not on the other
                 # so just normalize both to int
                 cloud_mts_max: int = max(cloud_stats.values())
+                # default=0 for cases where destination is empty
                 local_mts_max: int = int(
-                    max(stat.st_mtime for stat in local_paths_all.values())
+                    max(
+                        (stat.st_mtime for stat in local_paths_all.values()),
+                        default=0,
+                    )
                 )
                 if local_mts_max > cloud_mts_max:
                     return False
