@@ -34,7 +34,7 @@ if TYPE_CHECKING:
     from fsspec.asyn import AsyncFileSystem
     from s3fs import S3FileSystem
 
-    from lamindb_setup.types import AnyPathStr
+    from lamindb_setup.types import AnyPath, AnyPathStr
 
 LocalPathClasses = (PosixPath, WindowsPath, LocalPath)
 
@@ -212,7 +212,7 @@ def s3fs_to_boto3_client(fs: S3FileSystem) -> BaseClient:
     return client
 
 
-def extract_suffix_from_path(path: Path, arg_name: str | None = None) -> str:
+def extract_suffix_from_path(path: AnyPath, arg_name: str | None = None) -> str:
     def process_digits(suffix: str):
         if suffix[1:].isdigit():  # :1 to skip the dot
             return ""  # digits are no valid suffixes
@@ -786,7 +786,7 @@ def compute_file_tree(
     else:
         include_paths = set()
 
-    def inner(dir_path: Path, prefix: str = "", level: int = -1):
+    def inner(dir_path: UPath, prefix: str = "", level: int = -1):
         nonlocal n_files, n_directories, suffixes
         if level == 0:
             return
@@ -846,7 +846,7 @@ def compute_file_tree(
 
 # adapted from: https://stackoverflow.com/questions/9727673
 def view_tree(
-    path: Path,
+    path: UPath,
     *,
     level: int = 2,
     only_dirs: bool = False,

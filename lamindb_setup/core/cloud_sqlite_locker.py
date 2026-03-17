@@ -12,7 +12,6 @@ from .upath import UPath, create_mapper, infer_filesystem
 
 if TYPE_CHECKING:
     from collections.abc import Callable
-    from pathlib import Path
     from typing import ParamSpec, TypeVar
     from uuid import UUID
 
@@ -40,7 +39,7 @@ class empty_locker:
 
 
 class Locker:
-    def __init__(self, user_uid: str, storage_root: UPath | Path, instance_id: UUID):
+    def __init__(self, user_uid: str, storage_root: UPath, instance_id: UUID):
         logger.debug(
             f"init cloud sqlite locker: {user_uid}, {storage_root}, {instance_id}."
         )
@@ -51,7 +50,7 @@ class Locker:
         self.instance_id = instance_id
 
         self.root = storage_root
-        self.fs, root_str = infer_filesystem(storage_root)
+        self.fs, _ = infer_filesystem(storage_root)
 
         exclusion_path = storage_root / f".lamindb/_exclusion/{instance_id.hex}"
 
