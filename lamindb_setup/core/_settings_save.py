@@ -14,7 +14,7 @@ from ._settings_store import (
 )
 
 if TYPE_CHECKING:
-    from lamindb_setup.types import UPathStr
+    from lamindb_setup.types import AnyPathStr
 
     from ._settings_user import UserSettings
 
@@ -97,7 +97,7 @@ def save_instance_settings(settings: Any, settings_file: Path):
 
 
 def save_platform_user_storage_settings(
-    cache_path: UPathStr | None, settings_file: UPathStr | None = None
+    cache_path: AnyPathStr | None, settings_file: AnyPathStr | None = None
 ):
     cache_path = "null" if cache_path is None else cache_path
     if isinstance(cache_path, Path):  # also True for UPath
