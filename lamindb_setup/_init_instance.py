@@ -23,7 +23,7 @@ if TYPE_CHECKING:
     from pydantic import PostgresDsn
 
     from .core._settings_user import UserSettings
-    from .types import UPathStr
+    from .types import AnyPathStr
 
 
 def get_schema_module_name(module_name, raise_import_error: bool = True) -> str | None:
@@ -167,7 +167,7 @@ def process_modules_arg(modules: str | None = None) -> str:
 
 def validate_init_args(
     *,
-    storage: UPathStr,
+    storage: AnyPathStr,
     name: str | None = None,
     db: PostgresDsn | None = None,
     modules: str | None = None,
@@ -229,7 +229,7 @@ DOC_LOW_LEVEL_KWARGS = "Keyword arguments for low-level control."
 @doc_args(DOC_STORAGE_ARG, DOC_INSTANCE_NAME, DOC_DB, DOC_MODULES, DOC_LOW_LEVEL_KWARGS)
 def init(
     *,
-    storage: UPathStr = ".",
+    storage: AnyPathStr = ".",
     name: str | None = None,
     db: PostgresDsn | None = None,
     modules: str | None = None,
@@ -410,7 +410,7 @@ def validate_sqlite_state(isettings: InstanceSettings) -> None:
 
 def infer_instance_name(
     *,
-    storage: UPathStr,
+    storage: AnyPathStr,
     name: str | None = None,
     db: PostgresDsn | None = None,
 ) -> str:

@@ -9,17 +9,17 @@ from .core._settings import settings
 from .core._settings_storage import StorageSettings, init_storage
 
 if TYPE_CHECKING:
-    from lamindb_setup.types import UPathStr
+    from lamindb_setup.types import AnyPathStr
 
 
-def set_managed_storage(root: UPathStr, host: str | None = None, **fs_kwargs):
+def set_managed_storage(root: AnyPathStr, host: str | None = None, **fs_kwargs):
     """Add or switch to another managed storage location.
 
     Note: This function should be called `set_writeable_storage_location` instead. But likely it will disappear
     in refactoring that consolidates with the `ln.Storage()` path.
 
     Args:
-        root: `UPathStr` - The new storage root, e.g., an S3 bucket.
+        root: `AnyPathStr` - The new storage root, e.g., an S3 bucket.
         host: `str | None = None` For a shared local storage location, pass a globally unique host identifier, e.g. `"my-institute-cluster-1"`, `"my-server-abcd"`, ...
             Discuss the naming convention with an admin.
         **fs_kwargs: Additional fsspec arguments for cloud root, e.g., profile.

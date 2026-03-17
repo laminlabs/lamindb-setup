@@ -1,6 +1,6 @@
 """Types.
 
-.. autoclass:: UPathStr
+.. autoclass:: AnyPathStr
 .. autoclass:: StorageType
 """
 

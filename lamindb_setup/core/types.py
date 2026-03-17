@@ -1,1 +1,1 @@
-from lamindb_setup.types import UPathStr  # backward compatibility
+from lamindb_setup.types import AnyPathStr  # backward compatibility
