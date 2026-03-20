@@ -29,6 +29,8 @@ class _DummyInstanceSettings:
 class _FakeConnectedInstance:
     def __init__(self) -> None:
         self.slug = "owner/name"
+        self.dialect = "postgresql"
+        self.db = "private"
         self._is_cloud_sqlite = False
         self._sqlite_file_local = Path("unused")
         self._locker_user = None
