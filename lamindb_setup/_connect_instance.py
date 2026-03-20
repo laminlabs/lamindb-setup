@@ -161,10 +161,6 @@ def _connect_instance(
                 if not use_root_db_user
                 else "write",
             )
-            if isettings.dialect == "postgresql" and "public" in isettings.db:
-                logger.warning(
-                    f'connecting in read-only mode, please use ln.DB("{isettings.slug}") instead'
-                )
         else:
             if hub_result != "anonymous-user":
                 message = INSTANCE_NOT_FOUND_MESSAGE.format(
@@ -262,7 +258,12 @@ def _connect_cli(
         # (2) if the instance is cloud sqlite, we need to lock it
         connect(_write_settings=False, _reload_lamindb=False)
     else:
-        logger.important(f"connected lamindb: {isettings.slug}")
+        slug = isettings.slug
+        logger.important(f"connected lamindb: {slug}")
+        if isettings.dialect == "postgresql" and "public" in isettings.db:
+            logger.warning(
+                f'connected in read-only mode, please use ln.DB("{slug}") instead'
+            )
     if settings_.dev_dir is None:
         logger.important_hint(
             "to map a local dev directory, call: lamin settings set dev-dir ."
@@ -428,8 +429,14 @@ def connect(instance: str | None = None, **kwargs: Any) -> str | tuple | None:
         load_from_isettings(isettings, user=_user, write_settings=_write_settings)
         if _reload_lamindb and did_reset_django:
             reset_django_module_variables()
-        if isettings.slug != "none/none":
-            logger.important(f"connected lamindb: {isettings.slug}")
+
+        slug = isettings.slug
+        if slug != "none/none":
+            logger.important(f"connected lamindb: {slug}")
+            if isettings.dialect == "postgresql" and "public" in isettings.db:
+                logger.warning(
+                    f'connected in read-only mode, please use ln.DB("{slug}") instead'
+                )
     except Exception as e:
         if isettings is not None:
             if _write_settings:
