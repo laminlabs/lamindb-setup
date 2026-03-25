@@ -61,7 +61,6 @@ def test_connection_string_decomp(create_myinstance, create_testadmin1_session):
     db_collaborator = select_collaborator(
         instance_id=create_myinstance["id"],
         account_id=ln_setup.settings.user._uuid.hex,
-        fine_grained_access=True,
         client=client,
     )
     assert db_collaborator["role"] == "admin"
@@ -100,7 +99,6 @@ def test_db_user(
     db_collaborator = select_collaborator(
         instance_id=instance_id_hex,
         account_id=reader_settings._uuid.hex,
-        fine_grained_access=True,
         client=admin_client,
     )
     assert db_collaborator is None
@@ -130,7 +128,6 @@ def test_db_user(
     db_collaborator = select_collaborator(
         instance_id=instance_id_hex,
         account_id=reader_settings._uuid.hex,
-        fine_grained_access=True,
         client=reader_client,
     )
     assert db_collaborator["role"] == "read"
