@@ -137,12 +137,10 @@ def update_instance(instance_id: str, instance_fields: dict, client: Client):
 def select_collaborator(
     instance_id: str,
     account_id: str,
-    fine_grained_access: bool,
     client: Client,
 ):
-    table = "access_instance" if fine_grained_access else "account_instance"
     data = (
-        client.table(table)
+        client.table("access_instance")
         .select("*")
         .eq("instance_id", instance_id)
         .eq("account_id", account_id)

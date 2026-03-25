@@ -166,7 +166,6 @@ def create_myinstance(create_testadmin1_session):  # -> Dict
     db_collaborator = select_collaborator(
         instance_id=instance_id.hex,
         account_id=ln_setup.settings.user._uuid.hex,
-        fine_grained_access=True,
         client=admin_client,
     )
     assert db_collaborator["role"] == "admin"
