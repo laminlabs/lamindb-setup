@@ -35,8 +35,7 @@ uv pip install --system git+https://github.com/laminlabs/bionty
     if group == "hub-cloud":
         cmds = (
             modules_deps
-            + "uv pip install --system sentry_sdk line_profiler wheel==0.45.1 flit"
-            + "\nuv pip install --system ./laminhub/backend --no-build-isolation"
+            + "uv pip install --system ./laminhub/backend"
             + "\nuv pip install --system ./laminhub/backend/utils"
             + "\nuv pip install --system ./laminhub/backend/services/central"
             + "\nuv pip install --system ./laminhub/backend/services/instancedb"
@@ -62,8 +61,7 @@ uv pip install --system git+https://github.com/laminlabs/bionty
 
     # above downgrades django
     if group == "hub-local":
-        cmds += "\nuv pip install --system sentry_sdk line_profiler wheel==0.45.1 flit"
-        cmds += "\nuv pip install --system -e ./laminhub/backend --no-build-isolation"
+        cmds += "\nuv pip install --system -e ./laminhub/backend"
         cmds += "\nuv pip install --system -e ./laminhub/backend/utils"
         cmds += "\nuv pip install --system -e ./laminhub/backend/services/central"
         cmds += "\nuv pip install --system -e ./laminhub/backend/services/instancedb"
