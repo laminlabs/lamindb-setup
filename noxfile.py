@@ -61,7 +61,7 @@ uv pip install --system git+https://github.com/laminlabs/bionty
 
     # above downgrades django
     if group == "hub-local":
-        cmds += "uv pip install --system -e ./laminhub/backend"
+        cmds += "\nuv pip install --system -e ./laminhub/backend"
         cmds += "\nuv pip install --system -e ./laminhub/backend/utils"
         cmds += "\nuv pip install --system -e ./laminhub/backend/services/central"
         cmds += "\nuv pip install --system -e ./laminhub/backend/services/instancedb"
