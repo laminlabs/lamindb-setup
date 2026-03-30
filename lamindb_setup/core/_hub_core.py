@@ -200,8 +200,6 @@ def _select_storage_by_settings(
 
 
 def _select_storage_or_parent(path: str, client: Client) -> dict | None:
-    # add get=True when we upgrade supabase
-    # because otherwise it uses POST which is not retryable
     result = (
         client.rpc("existing_root_or_child", {"_path": path}, get=True).execute().data
     )
@@ -479,9 +477,8 @@ def _init_instance_hub(
                     f"{created_by_id} does not have permissions to create instances for {owner_account_id}."
                 ) from e
             if (
-                not client.rpc(
-                    "has_instance_quota", {"_account_id": owner_account_id}, get=True
-                )
+                # do not use get=True here because has_instance_quota is not read-only
+                not client.rpc("has_instance_quota", {"_account_id": owner_account_id})
                 .execute()
                 .data
             ):
