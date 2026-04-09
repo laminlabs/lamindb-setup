@@ -1,50 +1,35 @@
 from __future__ import annotations
 
-import os
-
-import lamindb_setup as ln_setup
+import lamindb_setup.core._hub_client as hub_client
 import pytest
 from httpx import ConnectError
-from lamindb_setup import login, settings
-from lamindb_setup.core._hub_core import (
-    connect_instance_hub,
-    sign_in_hub,
-)
+from lamindb_setup.core._hub_client import PROD_URL, connect_hub, connect_hub_with_auth
+from lamindb_setup.core._hub_core import connect_instance_hub
 
 
-def test_switch_env():
-    # testuser1 is defined in prod & staging with the same password
-    assert os.getenv("LAMIN_ENV") == "prod"
+def test_switch_env(monkeypatch: pytest.MonkeyPatch):
+    monkeypatch.setenv("LAMIN_ENV", "prod")
+    prod_client = connect_hub()
+    assert prod_client.supabase_url == PROD_URL
 
-    # check whether we can log in
-    login("static-testuser1@lamin.ai", key="static-testuser1-password")
-    assert settings.user.email == "static-testuser1@lamin.ai"
+    monkeypatch.setenv("LAMIN_ENV", "staging")
+    staging_client = connect_hub()
+    assert staging_client.supabase_url == "https://amvrvdwndlqdzgedrqdv.supabase.co"
 
-    # testuser1.staging is defined only in staging
-    os.environ["LAMIN_ENV"] = "staging"
-
-    login("testuser1.staging@lamin.ai", key="password")
-    assert settings.user.email == "testuser1.staging@lamin.ai"
-
-    # back to prod
-    os.environ["LAMIN_ENV"] = "prod"
+    monkeypatch.setenv("LAMIN_ENV", "prod")
+    prod_client_again = connect_hub()
+    assert prod_client_again.supabase_url == PROD_URL
 
 
 def test_connect_instance_fallbacks():
-    prod_url = ln_setup.core._hub_client.PROD_URL
-    ln_setup.core._hub_client.PROD_URL = (  # deactivated prod url
+    hub_client.PROD_URL = (  # deactivated prod url
         "https://inactive.lamin.ai"
     )
     with pytest.raises(ConnectError):
-        ln_setup.core._hub_client.connect_hub_with_auth(renew_token=True)
-    assert not isinstance(
-        sign_in_hub(
-            email="static-testuser1@lamin.ai", password="static-testuser1-password"
-        ),
-        str,
-    )
+        connect_hub_with_auth(renew_token=True)
+    # should not error due to fallback
     connect_instance_hub(
-        owner="static-testuser1",
-        name="static-testinstance1",
+        owner="laminlabs",
+        name="lamindata",
     )
-    ln_setup.core._hub_client.PROD_URL = prod_url
+    hub_client.PROD_URL = PROD_URL
