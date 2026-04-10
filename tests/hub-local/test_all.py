@@ -321,16 +321,12 @@ def test_select_storage_or_parent(create_myinstance, create_testadmin1_session):
     result = select_storage_or_parent(root)
     assert result["root"] == root
     # make the storage public, needed for anon access
-    admin_client.table("storage").update({"public": True}).eq(
-        "id", result["id"]
-    ).execute()
+    admin_client.table("storage").update({"public": True}).eq("root", root).execute()
     # check with a child path and anonymous user
     with patch.object(ln_setup.settings.user, "handle", new="anonymous"):
         result = select_storage_or_parent(root + "/subfolder")
     assert result["root"] == root
-    admin_client.table("storage").update({"public": False}).eq(
-        "id", result["id"]
-    ).execute()
+    admin_client.table("storage").update({"public": False}).eq("root", root).execute()
 
 
 def test_fine_grained_access(
