@@ -101,6 +101,8 @@ def test_connect_after_private_public_switch():
             instance_fields={"public": True},
             client=admin_hub,
         )
+        root = ln_setup.settings.instance.storage.root_as_str
+        admin_hub.table("storage").update({"public": True}).eq("root", root).execute()
         # load instance with non-collaborator user, should work now
         ln_setup.connect(
             "https://lamin.ai/testuser1/static-test-instance-private-sqlite", _test=True
@@ -111,6 +113,7 @@ def test_connect_after_private_public_switch():
             instance_fields={"public": False},
             client=admin_hub,
         )
+        admin_hub.table("storage").update({"public": False}).eq("root", root).execute()
 
         admin_hub.auth.sign_out(options={"scope": "local"})
 

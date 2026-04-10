@@ -218,6 +218,10 @@ def test_connect_instance_hub(create_myinstance, create_testadmin1_session):
         instance_fields={"public": True},
         client=admin_client,
     )
+    # make the default storage public, needed for anon access
+    admin_client.table("storage").update({"public": True}).eq(
+        "id", storage["id"]
+    ).execute()
 
     anon_client = connect_hub()
     instance, _ = _connect_instance_hub(
@@ -235,6 +239,9 @@ def test_connect_instance_hub(create_myinstance, create_testadmin1_session):
         instance_fields={"public": False},
         client=admin_client,
     )
+    admin_client.table("storage").update({"public": False}).eq(
+        "id", storage["id"]
+    ).execute()
     # test non-existent
     result = connect_instance_hub(owner="user-not-exists", name=name)
     assert result == "account-not-exists"
@@ -304,7 +311,8 @@ def test_init_storage_incorrect_protocol(create_myinstance):
     assert "Protocol incorrect-protocol is not supported" in error.exconly()
 
 
-def test_select_storage_or_parent(create_myinstance):
+def test_select_storage_or_parent(create_myinstance, create_testadmin1_session):
+    admin_client, _ = create_testadmin1_session
     # check not exisitng
     assert select_storage_or_parent("s3://does-not-exist") is None
 
@@ -312,10 +320,13 @@ def test_select_storage_or_parent(create_myinstance):
 
     result = select_storage_or_parent(root)
     assert result["root"] == root
+    # make the storage public, needed for anon access
+    admin_client.table("storage").update({"public": True}).eq("root", root).execute()
     # check with a child path and anonymous user
     with patch.object(ln_setup.settings.user, "handle", new="anonymous"):
         result = select_storage_or_parent(root + "/subfolder")
     assert result["root"] == root
+    admin_client.table("storage").update({"public": False}).eq("root", root).execute()
 
 
 def test_fine_grained_access(
