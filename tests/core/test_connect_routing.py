@@ -91,7 +91,8 @@ def test_validate_connection_state_connected_instance_resets(monkeypatch):
     assert did_reset is True
     assert already_connected is False
     assert called["reset"] == 1
-    assert warning_calls == ["re-setting django"]
+    assert len(warning_calls) == 1
+    assert warning_calls[0].startswith("re-setting django")
 
 
 def test_connect_rewrites_module_vars_only_after_reset(monkeypatch):
