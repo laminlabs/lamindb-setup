@@ -304,9 +304,8 @@ def validate_connection_state(
                 raise CannotSwitchDefaultInstance(
                     "Cannot switch default instance while `ln.track()` is live: call `ln.finish()`"
                 )
-            logger.warning("re-setting django")
-            logger.important_hint(
-                "avoid this by clearing the default instance on the command line via: lamin disconnect"
+            logger.warning(
+                "re-setting django: avoid this by clearing the default instance on the command line via: lamin disconnect"
             )
             reset_django()
             did_reset_django = True
