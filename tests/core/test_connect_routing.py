@@ -54,9 +54,12 @@ def test_validate_connection_state_none_none_skips_reset(monkeypatch):
         connect_instance, "reset_django", lambda: called.__setitem__("reset", 1)
     )
 
-    did_reset = connect_instance.validate_connection_state("owner", "name")
+    did_reset, already_connected = connect_instance.validate_connection_state(
+        "owner", "name"
+    )
 
     assert did_reset is False
+    assert already_connected is False
     assert called["reset"] == 0
 
 
@@ -81,11 +84,15 @@ def test_validate_connection_state_connected_instance_resets(monkeypatch):
         "warning",
         lambda message: warning_calls.append(message),
     )
-    did_reset = connect_instance.validate_connection_state("owner", "new")
+    did_reset, already_connected = connect_instance.validate_connection_state(
+        "owner", "new"
+    )
 
     assert did_reset is True
+    assert already_connected is False
     assert called["reset"] == 1
-    assert warning_calls == ["re-setting django"]
+    assert len(warning_calls) == 1
+    assert warning_calls[0].startswith("re-setting django")
 
 
 def test_connect_rewrites_module_vars_only_after_reset(monkeypatch):
@@ -111,7 +118,7 @@ def test_connect_rewrites_module_vars_only_after_reset(monkeypatch):
     monkeypatch.setattr(
         connect_instance,
         "validate_connection_state",
-        lambda owner, name, use_root_db_user=False: False,
+        lambda owner, name, use_root_db_user=False: (False, False),
     )
     connect_instance.connect("owner/name", _reload_lamindb=True)
     assert rewrite_calls["n"] == 0
@@ -119,7 +126,7 @@ def test_connect_rewrites_module_vars_only_after_reset(monkeypatch):
     monkeypatch.setattr(
         connect_instance,
         "validate_connection_state",
-        lambda owner, name, use_root_db_user=False: True,
+        lambda owner, name, use_root_db_user=False: (True, False),
     )
     connect_instance.connect("owner/name", _reload_lamindb=True)
     assert rewrite_calls["n"] == 1

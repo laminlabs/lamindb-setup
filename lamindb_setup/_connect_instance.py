@@ -273,16 +273,27 @@ def _connect_cli(
 
 def validate_connection_state(
     owner: str, name: str, use_root_db_user: bool = False, init: bool = False
-) -> bool:
+) -> tuple[bool, bool]:
+    """Inspect current setup state before connecting.
+
+    Returns:
+        A tuple `(did_reset_django, already_connected)`.
+
+        - `(False, True)`: already connected to the requested default instance;
+          caller can suppress duplicate "connected" logging while still running reconnect
+          side effects.
+        - `(True, False)`: Django was reset and caller should continue connect flow.
+        - `(False, False)`: no reset was needed and caller should continue connect flow.
+    """
+    did_reset_django = False
+    already_connected = False
+
     if (
         settings._instance_exists  # exists only for real instances, not for none/none
         and f"{owner}/{name}" == settings.instance.slug
         and not use_root_db_user  # always re-connect for root db user
     ):
-        logger.important(
-            f"doing nothing, already connected lamindb: {settings.instance.slug}"
-        )
-        return False
+        already_connected = True
     else:
         # settings._instance_exists: exists only for real instances, not for none/none
         # in case of init, we'd like to reset django for now
@@ -293,13 +304,12 @@ def validate_connection_state(
                 raise CannotSwitchDefaultInstance(
                     "Cannot switch default instance while `ln.track()` is live: call `ln.finish()`"
                 )
-            logger.warning("re-setting django")
-            logger.important_hint(
-                "avoid this by clearing the default instance on the command line via: lamin disconnect"
+            logger.warning(
+                "re-setting django: avoid this by clearing the default instance on the command line via: lamin disconnect"
             )
             reset_django()
-            return True
-    return False
+            did_reset_django = True
+    return did_reset_django, already_connected
 
 
 @unlock_cloud_sqlite_upon_exception(ignore_prev_locker=True)
@@ -342,6 +352,7 @@ def connect(instance: str | None = None, **kwargs: Any) -> str | tuple | None:
 
     isettings: InstanceSettings = None  # type: ignore
     did_reset_django = False
+    suppress_connected_log = False
 
     access_token: str | None = None
     _user: UserSettings | None = kwargs.get("_user", None)
@@ -368,7 +379,7 @@ def connect(instance: str | None = None, **kwargs: Any) -> str | tuple | None:
         else:
             owner, name = get_owner_name_from_identifier(instance)
             if _check_instance_setup() and not _test:
-                did_reset_django = validate_connection_state(
+                did_reset_django, suppress_connected_log = validate_connection_state(
                     owner, name, use_root_db_user=use_root_db_user
                 )
             elif (
@@ -431,7 +442,7 @@ def connect(instance: str | None = None, **kwargs: Any) -> str | tuple | None:
             reset_django_module_variables()
 
         slug = isettings.slug
-        if slug != "none/none":
+        if slug != "none/none" and not suppress_connected_log:
             logger.important(f"connected lamindb: {slug}")
             if isettings.dialect == "postgresql" and "public" in isettings.db:
                 logger.warning(

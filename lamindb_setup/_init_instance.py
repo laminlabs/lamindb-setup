@@ -286,7 +286,7 @@ def init(
         if instance_state == "connected":
             return None
         if _check_instance_setup() and not _test:
-            did_reset_django = validate_connection_state(
+            did_reset_django, _ = validate_connection_state(
                 user_handle, name_str, init=True
             )
         elif _write_settings:
