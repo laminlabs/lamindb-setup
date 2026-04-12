@@ -279,9 +279,6 @@ def validate_connection_state(
         and f"{owner}/{name}" == settings.instance.slug
         and not use_root_db_user  # always re-connect for root db user
     ):
-        logger.important(
-            f"doing nothing, already connected lamindb: {settings.instance.slug}"
-        )
         return False
     else:
         # settings._instance_exists: exists only for real instances, not for none/none
