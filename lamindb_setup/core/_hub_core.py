@@ -676,13 +676,13 @@ def connect_instance_hub(
         )
 
 
-def access_aws(storage_root: str, access_token: str | None = None) -> dict[str, dict]:
+def access_aws(path: str, access_token: str | None = None) -> dict[str, dict]:
     if settings.user.handle != "anonymous" or access_token is not None:
         route_info = call_with_fallback_auth(
-            _access_aws_route, storage_root=storage_root, access_token=access_token
+            _access_aws_route, path=path, access_token=access_token
         )
     else:
-        route_info = call_with_fallback(_access_aws_route, storage_root=storage_root)
+        route_info = call_with_fallback(_access_aws_route, path=path)
 
     storage_root_info: dict[str, dict] = {"credentials": {}, "accessibility": {}}
     if route_info is None:
@@ -698,16 +698,14 @@ def access_aws(storage_root: str, access_token: str | None = None) -> dict[str, 
             data = _access_aws_endpoint(
                 route_info["api_url"],
                 route_info["assume_role_arn"],
-                storage_root,
+                path,
                 access_token=access_token,
             )
         except Exception as e:
             # it might be that the user doesn't have access to the storage via hub
             # but has access via local credentials
             # so we don't throw an error here
-            logger.warning(
-                f"storage credentials for {storage_root} were not received: {e}"
-            )
+            logger.warning(f"storage credentials for {path} were not received: {e}")
         if not data:  # None or empty dict
             return storage_root_info
     else:
@@ -732,17 +730,17 @@ def access_aws(storage_root: str, access_token: str | None = None) -> dict[str, 
     return storage_root_info
 
 
-def _access_aws_route(*, storage_root: str, client: Client) -> dict | None:
+def _access_aws_route(*, path: str, client: Client) -> dict | None:
     result = (
         client.rpc(
             "get_storage_api_info_from_path",
-            {"_path": storage_root},
+            {"_path": path},
             get=True,
         )
         .execute()
         .data
     )
-    logger.debug(f"called get_storage_api_info_from_path for {storage_root}: {result}")
+    logger.debug(f"called get_storage_api_info_from_path for {path}: {result}")
     if not result:
         # [] means that the storage is not managed
         return None
@@ -755,13 +753,11 @@ def _access_aws_route(*, storage_root: str, client: Client) -> dict | None:
         or api_info["api_url"] is None
         or IS_LOCAL_LAMBDA
     ):
-        logger.debug(
-            f"calling the edge function get-cloud-access-v1 for {storage_root}"
-        )
+        logger.debug(f"calling the edge function get-cloud-access-v1 for {path}")
         try:
             response = client.functions.invoke(
                 "get-cloud-access-v1",
-                invoke_options={"body": {"storage_root": storage_root}},
+                invoke_options={"body": {"path": path}},
             )
             if response != b"{}":
                 return json.loads(response)
@@ -769,9 +765,7 @@ def _access_aws_route(*, storage_root: str, client: Client) -> dict | None:
             # it might be that the user doesn't have access to the storage via hub
             # but has access via local credentials
             # so we don't throw an error here
-            logger.warning(
-                f"storage credentials for {storage_root} were not received: {e}"
-            )
+            logger.warning(f"storage credentials for {path} were not received: {e}")
         return None
     else:
         # call the endpoint downstream
