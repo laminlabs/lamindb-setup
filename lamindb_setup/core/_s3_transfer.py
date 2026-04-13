@@ -19,6 +19,7 @@ def _canonical_transfer_pair(
 ) -> tuple[str, str]:
     source_path_str = _normalize_s3_transfer_path(source_path)
     target_path_str = _normalize_s3_transfer_path(target_path)
+    # the order is not important so we sort them to avoid duplicate cache entries
     if source_path_str <= target_path_str:
         return source_path_str, target_path_str
     return target_path_str, source_path_str
