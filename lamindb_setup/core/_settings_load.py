@@ -71,7 +71,7 @@ def load_instance_settings(instance_settings_file: Path | None = None):
         )
     except (ValueError, KeyError, TypeError) as error:
         raise SettingsEnvFileOutdated(
-            f"\n\n{error}\n\nYour instance settings file with\n\n{isettings_file.read_text()}\nis invalid"
+            f"\n\n{error}\n\nYour instance settings file {isettings_file} is invalid"
             f" (likely outdated), see validation error. Please delete {isettings_file} &"
             " reload (remote) or re-initialize (local) the instance with the same name & storage location."
         ) from error
@@ -112,7 +112,6 @@ def load_user_settings(user_settings_file: Path):
             "Your user settings file is invalid, please delete"
             f" {user_settings_file} and log in again."
         )
-        print(msg)
         raise SettingsEnvFileOutdated(msg) from error
     settings = setup_user_from_store(settings_store)
     return settings
