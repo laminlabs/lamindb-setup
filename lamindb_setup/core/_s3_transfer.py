@@ -1,9 +1,10 @@
 from typing import TYPE_CHECKING
 
-from s3fs import S3FileSystem
-
 from ._hub_core import access_aws_transfer
 from .types import UPathStr
+
+if TYPE_CHECKING:
+    from s3fs import S3FileSystem  # noqa
 
 
 def s3_transfer_fs(
