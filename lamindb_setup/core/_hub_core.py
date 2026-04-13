@@ -4,7 +4,7 @@ import json
 import os
 import uuid
 from importlib import metadata
-from typing import TYPE_CHECKING, Literal
+from typing import TYPE_CHECKING, Any, Literal
 from uuid import UUID
 
 import jwt
@@ -802,6 +802,70 @@ def _access_aws_endpoint(
     if not (200 <= status_code < 300):
         raise PermissionError(f"Access to {path} failed: {status_code} {response.text}")
     return response.json()
+
+
+def access_aws_transfer(
+    source_path: str, target_path: str, access_token: str | None = None
+) -> dict[str, dict | list[dict]]:
+    if settings.user.handle != "anonymous" or access_token is not None:
+        result = call_with_fallback_auth(
+            _access_aws_transfer,
+            source_path=source_path,
+            target_path=target_path,
+            access_token=access_token,
+        )
+    else:
+        result = call_with_fallback(
+            _access_aws_transfer, source_path=source_path, target_path=target_path
+        )
+
+    credentials: dict[str, Any] = {}
+    accessibilities: list[dict[str, Any]] = []
+    transfer_info: dict[str, dict | list[dict]] = {
+        "credentials": credentials,
+        "accessibilities": accessibilities,
+    }
+    if not result:
+        return transfer_info
+
+    loaded_credentials = result.get("Credentials")
+    if loaded_credentials:
+        credentials["key"] = loaded_credentials["AccessKeyId"]
+        credentials["secret"] = loaded_credentials["SecretAccessKey"]
+        credentials["token"] = loaded_credentials["SessionToken"]
+        credentials["expiry_time"] = loaded_credentials["Expiration"]
+
+    loaded_accessibilities = result.get("StorageAccessibilities")
+    if loaded_accessibilities is None:
+        loaded_accessibilities = []
+    for loaded_accessibility in loaded_accessibilities:
+        accessibilities.append(
+            {
+                "storage_root": loaded_accessibility["storageRoot"],
+                "is_managed": loaded_accessibility["isManaged"],
+                "extra_parameters": loaded_accessibility.get("extraParameters"),
+            }
+        )
+
+    return transfer_info
+
+
+def _access_aws_transfer(source_path: str, target_path: str, client: Client):
+    try:
+        response = client.functions.invoke(
+            "get-cloud-access-v1",
+            invoke_options={"body": {"path": source_path, "path_2": target_path}},
+        )
+        if response != b"{}":
+            return json.loads(response)
+    except Exception as e:
+        # it might be that the user doesn't have access to the storage via hub
+        # but has access via local credentials
+        # so we don't throw an error here
+        logger.warning(
+            f"storage credentials for {source_path} and {target_path} were not received: {e}"
+        )
+    return None
 
 
 def access_db(
