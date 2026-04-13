@@ -819,8 +819,8 @@ def access_aws_transfer(
             _access_aws_transfer, source_path=source_path, target_path=target_path
         )
 
-    credentials: dict[str, Any] = {}
-    accessibilities: list[dict[str, Any]] = []
+    credentials: dict = {}
+    accessibilities: list[dict] = []
     transfer_info: dict[str, dict | list[dict]] = {
         "credentials": credentials,
         "accessibilities": accessibilities,
