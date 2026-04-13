@@ -132,9 +132,6 @@ def get_user_s3_transfer_manager() -> S3TransferOptionsManager:
 def s3_transfer_fs(
     source_path: UPathStr, target_path: UPathStr, access_token: str | None = None
 ) -> S3FileSystem:
-    _normalize_s3_transfer_path(source_path)
-    _normalize_s3_transfer_path(target_path)
-
     from s3fs import S3FileSystem
 
     manager = get_user_s3_transfer_manager()
