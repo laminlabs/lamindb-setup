@@ -213,16 +213,26 @@ def s3fs_to_boto3_client(fs: S3FileSystem) -> BaseClient:
     return client
 
 
-def transfer_fs(source_path: UPath, target_path: UPath) -> AbstractFileSystem:
-    if source_path.protocol == "s3" and target_path.protocol == "s3":
+def transfer_fs(source_path: UPathStr, target_path: UPathStr) -> AbstractFileSystem:
+    source_upath = create_path(source_path)
+    target_upath = create_path(target_path)
+
+    if source_upath.protocol == "s3" and target_upath.protocol == "s3":
+        if (
+            "session" in source_upath.storage_options
+            and "session" in target_upath.storage_options
+            and (fs := source_upath.fs) is target_upath.fs
+        ):
+            return fs
+
         from ._s3_transfer import s3_transfer_fs
 
-        fs = s3_transfer_fs(source_path, target_path)
+        fs = s3_transfer_fs(source_upath, target_upath)
         if fs is not None:
             return fs
 
-    if source_path.fs is target_path.fs:
-        return source_path.fs
+    if (fs := source_upath.fs) is target_upath.fs:
+        return fs
 
     raise ValueError(
         "Cannot transfer between between different filesystems for non-managed storages."
