@@ -213,32 +213,6 @@ def s3fs_to_boto3_client(fs: S3FileSystem) -> BaseClient:
     return client
 
 
-def transfer_fs(source_path: UPathStr, target_path: UPathStr) -> AbstractFileSystem:
-    source_upath = create_path(source_path)
-    target_upath = create_path(target_path)
-
-    if source_upath.protocol == "s3" and target_upath.protocol == "s3":
-        if (
-            "session" in source_upath.storage_options
-            and "session" in target_upath.storage_options
-            and (fs := source_upath.fs) is target_upath.fs
-        ):
-            return fs
-
-        from ._s3_transfer import s3_transfer_fs
-
-        fs = s3_transfer_fs(source_upath, target_upath)
-        if fs is not None:
-            return fs
-
-    if (fs := source_upath.fs) is target_upath.fs:
-        return fs
-
-    raise ValueError(
-        "Cannot transfer between between different filesystems for non-managed storages."
-    )
-
-
 def extract_suffix_from_path(path: Path, arg_name: str | None = None) -> str:
     def process_digits(suffix: str):
         if suffix[1:].isdigit():  # :1 to skip the dot
@@ -1196,6 +1170,35 @@ def create_path(path: UPathStr, access_token: str | None = None) -> UPath:
         if len(storage_options) > 0:
             return UPath(upath, **storage_options)
     return upath
+
+
+def transfer_fs(
+    source_path: UPathStr, target_path: UPathStr, access_token: str | None = None
+) -> AbstractFileSystem:
+    source_upath = create_path(source_path, access_token=access_token)
+    target_upath = create_path(target_path, access_token=access_token)
+
+    if source_upath.protocol == "s3" and target_upath.protocol == "s3":
+        # if it is managed and has the same filesystem, avoid calling s3_transfer_fs
+        if (
+            "session" in source_upath.storage_options
+            and "session" in target_upath.storage_options
+            and (fs := source_upath.fs) is target_upath.fs
+        ):
+            return fs
+
+        from ._s3_transfer import s3_transfer_fs
+
+        fs = s3_transfer_fs(source_upath, target_upath, access_token=access_token)
+        if fs is not None:
+            return fs
+
+    if (fs := source_upath.fs) is target_upath.fs:
+        return fs
+
+    raise ValueError(
+        "Cannot transfer between between different filesystems for non-managed storages."
+    )
 
 
 def get_stat_file_cloud(stat: dict) -> tuple[int, str | None, str | None]:
