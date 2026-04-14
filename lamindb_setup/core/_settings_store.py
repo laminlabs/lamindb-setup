@@ -89,8 +89,10 @@ def find_local_current_instance_file(
     return None
 
 
-def remove_local_current_instance(start_directory: Path | None = None) -> Path | None:
-    marker = find_local_current_instance_file(start_directory=start_directory)
+def remove_local_current_instance(
+    start_directory: Path | None = None, marker: Path | None = None
+) -> Path | None:
+    marker = marker or find_local_current_instance_file(start_directory=start_directory)
     if marker is None:
         return None
     marker.unlink(missing_ok=True)
