@@ -25,7 +25,6 @@ from lamindb_setup.errors import StorageNotEmpty
 
 from ._aws_options import HOSTED_BUCKETS, get_user_aws_options_manager
 from ._deprecated import deprecated
-from ._s3_transfer import s3_transfer_fs
 from .hashing import HASH_LENGTH, b16_to_b64, hash_from_hashes_list, hash_string
 
 if TYPE_CHECKING:
@@ -216,6 +215,8 @@ def s3fs_to_boto3_client(fs: S3FileSystem) -> BaseClient:
 
 def transfer_fs(source_path: UPath, target_path: UPath) -> AbstractFileSystem:
     if source_path.protocol == "s3" and target_path.protocol == "s3":
+        from ._s3_transfer import s3_transfer_fs
+
         fs = s3_transfer_fs(source_path, target_path)
         if fs is not None:
             return fs
