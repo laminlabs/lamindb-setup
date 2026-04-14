@@ -132,10 +132,11 @@ def get_user_s3_transfer_manager() -> S3TransferOptionsManager:
 
 def s3_transfer_fs(
     source_path: UPathStr, target_path: UPathStr, access_token: str | None = None
-) -> S3FileSystem:
+) -> S3FileSystem | None:
     from s3fs import S3FileSystem
 
     manager = get_user_s3_transfer_manager()
     managed_session = manager.transfer_session(source_path, target_path, access_token)
-    s3fs_kwargs = {"session": managed_session} if managed_session is not None else {}
-    return S3FileSystem(**s3fs_kwargs)
+    if managed_session is None:
+        return None
+    return S3FileSystem(cache_regions=True, session=managed_session)
