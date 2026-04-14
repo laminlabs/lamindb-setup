@@ -25,6 +25,7 @@ from lamindb_setup.errors import StorageNotEmpty
 
 from ._aws_options import HOSTED_BUCKETS, get_user_aws_options_manager
 from ._deprecated import deprecated
+from ._s3_transfer import s3_transfer_fs
 from .hashing import HASH_LENGTH, b16_to_b64, hash_from_hashes_list, hash_string
 
 if TYPE_CHECKING:
@@ -32,6 +33,7 @@ if TYPE_CHECKING:
 
     from botocore.client import BaseClient
     from fsspec.asyn import AsyncFileSystem
+    from fsspec.spec import AbstractFileSystem
     from s3fs import S3FileSystem
 
     from lamindb_setup.types import UPathStr
@@ -210,6 +212,20 @@ def s3fs_to_boto3_client(fs: S3FileSystem) -> BaseClient:
     BOTO3_CLIENTS[fs_id] = client
 
     return client
+
+
+def transfer_fs(source_path: UPath, target_path: UPath) -> AbstractFileSystem:
+    if source_path.protocol == "s3" and target_path.protocol == "s3":
+        fs = s3_transfer_fs(source_path, target_path)
+        if fs is not None:
+            return fs
+
+    if source_path.fs is target_path.fs:
+        return source_path.fs
+
+    raise ValueError(
+        "Cannot transfer between between different filesystems for non-managed storages."
+    )
 
 
 def extract_suffix_from_path(path: Path, arg_name: str | None = None) -> str:
