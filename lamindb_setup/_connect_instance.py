@@ -328,7 +328,9 @@ def connect(instance: str | None = None, **kwargs: Any) -> str | tuple | None:
     Args:
         instance: Pass a slug (`account/name`) or URL (`https://lamin.ai/account/name`).
             If `None`, looks for an environment variable `LAMIN_CURRENT_INSTANCE` to get the database instance identifier.
-            If it doesn't find this variable, it connects to the database that was connected with `lamin connect` through the CLI.
+            If it doesn't find this variable, it checks for a local marker created
+            by `lamin connect --here` (nearest parent-first), and finally falls
+            back to the global instance connected via `lamin connect`.
 
     See Also:
         To set a default database for auto-connection in your environment via the CLI, see `here <https://docs.lamin.ai/cli#connect>`__.
