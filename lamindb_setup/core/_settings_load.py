@@ -17,6 +17,8 @@ from ._settings_store import (
     UserSettingsStore,
     current_instance_settings_file,
     current_user_settings_file,
+    find_local_current_instance_file,
+    instance_settings_file,
     platform_user_storage_settings_file,
     system_settings_file,
 )
@@ -45,10 +47,38 @@ def load_cache_path_from_settings(storage_settings: Path | None = None) -> Path 
         return None
 
 
+def _instance_settings_file_from_identifier(identifier: str) -> Path | None:
+    from lamindb_setup._connect_instance import get_owner_name_from_identifier
+
+    try:
+        owner, name = get_owner_name_from_identifier(identifier.strip())
+    except ValueError:
+        return None
+    settings_file = instance_settings_file(name, owner)
+    return settings_file if settings_file.exists() else None
+
+
+def _resolve_default_instance_file() -> Path | None:
+    env_identifier = os.environ.get("LAMIN_CURRENT_INSTANCE")
+    if env_identifier is not None:
+        env_file = _instance_settings_file_from_identifier(env_identifier)
+        if env_file is not None:
+            return env_file
+    marker_file = find_local_current_instance_file()
+    if marker_file is not None:
+        marker_settings = _instance_settings_file_from_identifier(
+            marker_file.read_text()
+        )
+        if marker_settings is not None:
+            return marker_settings
+    fallback = current_instance_settings_file()
+    return fallback if fallback.exists() else None
+
+
 def load_instance_settings(instance_settings_file: Path | None = None):
     if instance_settings_file is None:
-        isettings_file = current_instance_settings_file()
-        if not isettings_file.exists():
+        isettings_file = _resolve_default_instance_file()
+        if isettings_file is None:
             from ._settings import settings
 
             isettings = InstanceSettings(

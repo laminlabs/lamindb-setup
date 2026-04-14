@@ -16,6 +16,7 @@ from ._silence_loggers import silence_loggers
 from .core._settings import settings
 from .core._settings_instance import InstanceSettings
 from .core._settings_load import load_instance_settings
+from .core._settings_save import save_instance_settings
 from .core._settings_storage import StorageSettings
 from .core._settings_store import instance_settings_file
 from .core.cloud_sqlite_locker import unlock_cloud_sqlite_upon_exception
@@ -240,6 +241,8 @@ def reset_django_module_variables():
 def _connect_cli(
     instance: str,
     use_root_db_user: bool = False,
+    write_to_disk: bool = True,
+    show_dev_dir_hint: bool = True,
 ) -> None:
     from lamindb_setup import settings as settings_
 
@@ -250,13 +253,17 @@ def _connect_cli(
         use_root_db_user=use_root_db_user,
         raise_systemexit=True,
     )
-    isettings._persist(write_to_disk=True)
+    if write_to_disk:
+        isettings._persist(write_to_disk=True)
+    else:
+        save_instance_settings(isettings, isettings._get_settings_file())
+        isettings._persist(write_to_disk=False)
     if not isettings.is_on_hub or isettings._is_cloud_sqlite:
         # there are two reasons to call the full-blown connect
         # (1) if the instance is not on the hub, we need to register
         # potential users through register_user()
         # (2) if the instance is cloud sqlite, we need to lock it
-        connect(_write_settings=False, _reload_lamindb=False)
+        connect(instance=isettings.slug, _write_settings=False, _reload_lamindb=False)
     else:
         slug = isettings.slug
         logger.important(f"connected lamindb: {slug}")
@@ -264,7 +271,7 @@ def _connect_cli(
             logger.warning(
                 f'connected in read-only mode, please use ln.DB("{slug}") instead'
             )
-    if settings_.dev_dir is None:
+    if show_dev_dir_hint and settings_.dev_dir is None:
         logger.important_hint(
             "to map a local dev directory, call: lamin settings set dev-dir ."
         )

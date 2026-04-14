@@ -21,6 +21,8 @@ except Exception as e:
     logger.warning(f"Failed to create lamin settings directory at {settings_dir}: {e}")
 
 system_settings_dir = Path(site_config_dir(appname="lamindb", appauthor="laminlabs"))
+LOCAL_SETTINGS_DIRNAME = ".lamin"
+LOCAL_CURRENT_INSTANCE_FILENAME = "current_instance"
 
 
 def get_settings_file_name_prefix():
@@ -62,6 +64,42 @@ def platform_user_storage_settings_file():
 
 def system_settings_file():
     return system_settings_dir / "system.env"
+
+
+def local_current_instance_file(directory: Path) -> Path:
+    filename = f"{get_settings_file_name_prefix()}{LOCAL_CURRENT_INSTANCE_FILENAME}"
+    return directory / LOCAL_SETTINGS_DIRNAME / filename
+
+
+def write_local_current_instance(directory: Path, instance_slug: str) -> Path:
+    marker = local_current_instance_file(directory.resolve())
+    marker.parent.mkdir(parents=True, exist_ok=True)
+    marker.write_text(instance_slug.strip())
+    return marker
+
+
+def find_local_current_instance_file(
+    start_directory: Path | None = None,
+) -> Path | None:
+    search_dir = (start_directory or Path.cwd()).resolve()
+    for candidate in (search_dir, *search_dir.parents):
+        marker = local_current_instance_file(candidate)
+        if marker.exists():
+            return marker
+    return None
+
+
+def remove_local_current_instance(
+    start_directory: Path | None = None, marker: Path | None = None
+) -> Path | None:
+    marker = marker or find_local_current_instance_file(start_directory=start_directory)
+    if marker is None:
+        return None
+    marker.unlink(missing_ok=True)
+    marker_dir = marker.parent
+    if marker_dir.exists() and not any(marker_dir.iterdir()):
+        marker_dir.rmdir()
+    return marker
 
 
 def _load_env_to_kwargs(
