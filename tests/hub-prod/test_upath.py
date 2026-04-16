@@ -1,14 +1,18 @@
 from __future__ import annotations
 
+from datetime import datetime, timezone
 from pathlib import Path
 
 import botocore
 import pytest
+from fsspec.implementations.local import LocalFileSystem
+from lamindb_setup.core._s3_transfer import s3_transfer_fs
 from lamindb_setup.core.upath import (
     ProgressCallback,
     UPath,
     create_path,
     s3fs_to_boto3_client,
+    transfer_fs,
 )
 
 
@@ -123,3 +127,27 @@ def test_s3fs_to_boto3_client():
         "An error occurred (404) when calling the HeadObject operation: Not Found"
         in str(error)
     )
+
+
+def test_transfer_fs():
+    # not managed storages
+    assert s3_transfer_fs("s3://does-not-exist11", "s3://does-not-exist22") is None
+    # joint credentials for two different paths
+    fs = transfer_fs("s3://lamindata", "s3://lamin-site-assets")
+    assert fs is transfer_fs("s3://lamin-site-assets", "s3://lamindata")
+    credentials = fs.session._credentials
+    credentials._expiry_time = datetime(2000, 1, 1, tzinfo=timezone.utc)
+    assert credentials.refresh_needed()
+    # corrupt to check that refresh is applied before any access
+    credentials._access_key = "INVALID"
+    credentials._secret_key = "INVALID"
+    credentials._token = "INVALID"
+    credentials._frozen_credentials = None
+    assert len(fs.ls("s3://lamindata")) > 0
+    assert len(fs.ls("s3://lamin-site-assets")) > 0
+    # use the same filesystem for two different paths with the same root
+    fs = transfer_fs("s3://lamindata", "s3://lamindata/subfolder")
+    assert fs is create_path("s3://lamindata/subfolder").fs
+    # check non-s3 paths
+    fs = transfer_fs("./some-local-path", "./another-local-path")
+    assert isinstance(fs, LocalFileSystem)

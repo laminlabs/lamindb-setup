@@ -9,7 +9,7 @@ import warnings
 from collections import defaultdict
 from datetime import datetime, timezone
 from functools import partial
-from itertools import islice
+from itertools import chain, islice
 from pathlib import Path, PosixPath, PurePosixPath, WindowsPath
 from typing import TYPE_CHECKING, Any, Literal
 from urllib.parse import parse_qs, urlsplit
@@ -32,6 +32,7 @@ if TYPE_CHECKING:
 
     from botocore.client import BaseClient
     from fsspec.asyn import AsyncFileSystem
+    from fsspec.spec import AbstractFileSystem
     from s3fs import S3FileSystem
 
     from lamindb_setup.types import UPathStr
@@ -1169,6 +1170,48 @@ def create_path(path: UPathStr, access_token: str | None = None) -> UPath:
         if len(storage_options) > 0:
             return UPath(upath, **storage_options)
     return upath
+
+
+def transfer_fs(
+    source_path: UPathStr, target_path: UPathStr, access_token: str | None = None
+) -> AbstractFileSystem:
+    source_upath = UPath(source_path)
+    target_upath = UPath(target_path)
+
+    if source_upath.protocol == "s3" and target_upath.protocol == "s3":
+        # if the paths has the same root, check that they have the same managed credentials
+        if source_upath.as_posix().startswith(
+            tuple(
+                p_str
+                for p in chain(target_upath.parents, (target_upath,))
+                if (p_str := p.as_posix()) not in HOSTED_BUCKETS
+            )
+        ):
+            source_upath = create_path(source_path, access_token=access_token)
+            target_upath = create_path(target_path, access_token=access_token)
+            # if it is managed and has the same credentials / filesystem, avoid calling s3_transfer_fs
+            if (
+                "session" in source_upath.storage_options
+                and "session" in target_upath.storage_options
+                and (fs := source_upath.fs) is target_upath.fs
+            ):
+                return fs
+
+        from ._s3_transfer import s3_transfer_fs
+
+        fs = s3_transfer_fs(source_upath, target_upath, access_token=access_token)
+        if fs is not None:
+            return fs
+    # if create_path was called above, it is cached here
+    source_upath = create_path(source_path, access_token=access_token)
+    target_upath = create_path(target_path, access_token=access_token)
+
+    if (fs := source_upath.fs) is target_upath.fs:
+        return fs
+
+    raise ValueError(
+        "Cannot transfer between between different filesystems for non-managed storages."
+    )
 
 
 def get_stat_file_cloud(stat: dict) -> tuple[int, str | None, str | None]:
