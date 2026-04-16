@@ -100,7 +100,7 @@ Better error message | [780](https://github.com/laminlabs/lamindb-setup/pull/780
 ♻️ Replace `InstanceSettings.identifier` with `InstanceSettings.slug` | [662](https://github.com/laminlabs/lamindb-setup/pull/662) | [falexwolf](https://github.com/falexwolf) | 2024-03-06 |
 ♻️ Simplify path types & point to hub mono-repo | [660](https://github.com/laminlabs/lamindb-setup/pull/660) | [falexwolf](https://github.com/falexwolf) | 2024-03-05 |
 🚚 Rename `.dev` to `.core` | [659](https://github.com/laminlabs/lamindb-setup/pull/659) | [falexwolf](https://github.com/falexwolf) | 2024-03-05 |
-♻️ Add `AnyPathStr` type | [658](https://github.com/laminlabs/lamindb-setup/pull/658) | [falexwolf](https://github.com/falexwolf) | 2024-03-05 |
+♻️ Add `UPathStr` type | [658](https://github.com/laminlabs/lamindb-setup/pull/658) | [falexwolf](https://github.com/falexwolf) | 2024-03-05 |
 🩹 Resolve cache_dir in the setter | [657](https://github.com/laminlabs/lamindb-setup/pull/657) | [Koncopd](https://github.com/Koncopd) | 2024-03-04 |
 ♻️ Pass `storage_root` to `access_aws` | [656](https://github.com/laminlabs/lamindb-setup/pull/656) | [falexwolf](https://github.com/falexwolf) | 2024-02-29 | 0.65.3
 ♻️ Allow passing `access_token` directly | [655](https://github.com/laminlabs/lamindb-setup/pull/655) | [Koncopd](https://github.com/Koncopd) | 2024-02-29 |
