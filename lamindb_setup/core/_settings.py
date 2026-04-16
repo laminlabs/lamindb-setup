@@ -18,8 +18,11 @@ from ._settings_load import (
 from ._settings_store import (
     current_instance_settings_file,
     current_modules_file,
+    local_current_instance_file,
+    remove_local_current_instance,
     settings_dir,
     system_settings_dir,
+    write_local_current_instance,
 )
 from .upath import LocalPathClasses, UPath
 
@@ -153,6 +156,7 @@ class SetupSettings:
         """Get or set the local development directory for the current instance.
 
         If setting it to `None`, the working development directory is unset.
+        Setting a directory also marks that directory for local auto-connect.
         """
         if not self._dev_dir_path.exists():
             return None
@@ -160,12 +164,31 @@ class SetupSettings:
 
     @dev_dir.setter
     def dev_dir(self, value: str | Path | None) -> None:
+        previous_dev_dir = self.dev_dir
+        instance_slug = self.instance.slug
+
         if value is None:
             if self._dev_dir_path.exists():
                 self._dev_dir_path.unlink()
+            if previous_dev_dir is not None:
+                remove_local_current_instance(
+                    marker=local_current_instance_file(previous_dev_dir.resolve()),
+                    expected_instance_slug=instance_slug,
+                )
         else:
-            value_str = Path(value).expanduser().resolve().as_posix()
+            value_path = Path(value).expanduser().resolve()
+            value_str = value_path.as_posix()
             self._dev_dir_path.write_text(value_str)
+            if instance_slug != "none/none":
+                write_local_current_instance(value_path, instance_slug)
+            if (
+                previous_dev_dir is not None
+                and previous_dev_dir.resolve() != value_path
+            ):
+                remove_local_current_instance(
+                    marker=local_current_instance_file(previous_dev_dir.resolve()),
+                    expected_instance_slug=instance_slug,
+                )
 
     @property
     def _branch_path(self) -> Path:
