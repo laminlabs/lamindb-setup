@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from datetime import datetime, timezone
 from pathlib import Path
 
 import botocore
@@ -130,6 +131,14 @@ def test_transfer_fs():
     # joint credentials for two different paths
     fs = transfer_fs("s3://lamindata", "s3://lamin-site-assets")
     assert fs is transfer_fs("s3://lamin-site-assets", "s3://lamindata")
+    credentials = fs.session._credentials
+    credentials._expiry_time = datetime(2000, 1, 1, tzinfo=timezone.utc)
+    assert credentials.refresh_needed()
+    # corrupt to check that refresh is applied before any access
+    credentials._access_key = "INVALID"
+    credentials._secret_key = "INVALID"
+    credentials._token = "INVALID"
+    credentials._frozen_credentials = None
     assert len(fs.ls("s3://lamindata")) > 0
     assert len(fs.ls("s3://lamin-site-assets")) > 0
     # use the same filesystem for two different paths with the same root
