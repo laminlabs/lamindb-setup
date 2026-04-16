@@ -5,6 +5,8 @@ from pathlib import Path
 
 import botocore
 import pytest
+from fsspec.implementations.local import LocalFileSystem
+from lamindb_setup.core._s3_transfer import s3_transfer_fs
 from lamindb_setup.core.upath import (
     ProgressCallback,
     UPath,
@@ -128,6 +130,8 @@ def test_s3fs_to_boto3_client():
 
 
 def test_transfer_fs():
+    # not managed storages
+    assert s3_transfer_fs("s3://does-not-exist11", "s3://does-not-exist22") is None
     # joint credentials for two different paths
     fs = transfer_fs("s3://lamindata", "s3://lamin-site-assets")
     assert fs is transfer_fs("s3://lamin-site-assets", "s3://lamindata")
@@ -144,3 +148,6 @@ def test_transfer_fs():
     # use the same filesystem for two different paths with the same root
     fs = transfer_fs("s3://lamindata", "s3://lamindata/subfolder")
     assert fs is create_path("s3://lamindata/subfolder").fs
+    # check non-s3 paths
+    fs = transfer_fs("./some-local-path", "./another-local-path")
+    assert isinstance(fs, LocalFileSystem)
