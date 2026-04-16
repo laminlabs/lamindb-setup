@@ -1,11 +1,14 @@
+from __future__ import annotations
+
 from typing import TYPE_CHECKING
 
 from ._hub_core import access_aws_transfer
-from .types import UPathStr
 
 if TYPE_CHECKING:
-    from aiobotocore.session import AioSession  # noqa
-    from s3fs import S3FileSystem  # noqa
+    from aiobotocore.session import AioSession
+    from s3fs import S3FileSystem
+
+    from .types import UPathStr
 
 
 def _normalize_s3_transfer_path(path: UPathStr) -> str:
