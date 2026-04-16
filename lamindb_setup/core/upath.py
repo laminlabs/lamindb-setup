@@ -1179,6 +1179,7 @@ def transfer_fs(
     target_upath = UPath(target_path)
 
     if source_upath.protocol == "s3" and target_upath.protocol == "s3":
+        # if the paths has the same root, check that they have the same managed credentials
         if source_upath.as_posix().startswith(
             tuple(
                 p_str
@@ -1186,10 +1187,9 @@ def transfer_fs(
                 if (p_str := p.as_posix()) not in HOSTED_BUCKETS
             )
         ):
-            # if the paths has the same root, check that they have the same managed credentials
             source_upath = create_path(source_path, access_token=access_token)
             target_upath = create_path(target_path, access_token=access_token)
-            # if it is managed and has the same filesystem, avoid calling s3_transfer_fs
+            # if it is managed and has the same credentials / filesystem, avoid calling s3_transfer_fs
             if (
                 "session" in source_upath.storage_options
                 and "session" in target_upath.storage_options
