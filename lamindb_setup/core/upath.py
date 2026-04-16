@@ -9,7 +9,7 @@ import warnings
 from collections import defaultdict
 from datetime import datetime, timezone
 from functools import partial
-from itertools import islice
+from itertools import chain, islice
 from pathlib import Path, PosixPath, PurePosixPath, WindowsPath
 from typing import TYPE_CHECKING, Any, Literal
 from urllib.parse import parse_qs, urlsplit
@@ -1175,23 +1175,36 @@ def create_path(path: UPathStr, access_token: str | None = None) -> UPath:
 def transfer_fs(
     source_path: UPathStr, target_path: UPathStr, access_token: str | None = None
 ) -> AbstractFileSystem:
-    source_upath = create_path(source_path, access_token=access_token)
-    target_upath = create_path(target_path, access_token=access_token)
+    source_upath = UPath(source_path)
+    target_upath = UPath(target_path)
 
     if source_upath.protocol == "s3" and target_upath.protocol == "s3":
-        # if it is managed and has the same filesystem, avoid calling s3_transfer_fs
-        if (
-            "session" in source_upath.storage_options
-            and "session" in target_upath.storage_options
-            and (fs := source_upath.fs) is target_upath.fs
+        if source_upath.as_posix().startswith(
+            tuple(
+                p_str
+                for p in chain(target_upath.parents, (target_upath,))
+                if (p_str := p.as_posix()) not in HOSTED_BUCKETS
+            )
         ):
-            return fs
+            # if the paths has the same root, check that they have the same managed credentials
+            source_upath = create_path(source_path, access_token=access_token)
+            target_upath = create_path(target_path, access_token=access_token)
+            # if it is managed and has the same filesystem, avoid calling s3_transfer_fs
+            if (
+                "session" in source_upath.storage_options
+                and "session" in target_upath.storage_options
+                and (fs := source_upath.fs) is target_upath.fs
+            ):
+                return fs
 
         from ._s3_transfer import s3_transfer_fs
 
         fs = s3_transfer_fs(source_upath, target_upath, access_token=access_token)
         if fs is not None:
             return fs
+    # if create_path was called above, it is cached here
+    source_upath = create_path(source_path, access_token=access_token)
+    target_upath = create_path(target_path, access_token=access_token)
 
     if (fs := source_upath.fs) is target_upath.fs:
         return fs
