@@ -241,7 +241,7 @@ def reset_django_module_variables():
 def _connect_cli(
     instance: str,
     use_root_db_user: bool = False,
-    write_to_disk: bool = True,
+    persist_global_env: bool = True,
     show_dev_dir_hint: bool = True,
 ) -> None:
     from lamindb_setup import settings as settings_
@@ -253,7 +253,7 @@ def _connect_cli(
         use_root_db_user=use_root_db_user,
         raise_systemexit=True,
     )
-    if write_to_disk:
+    if persist_global_env:
         isettings._persist(write_to_disk=True)
     else:
         save_instance_settings(isettings, isettings._get_settings_file())
