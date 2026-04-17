@@ -544,9 +544,17 @@ def upload_from(
             source = [
                 path.as_posix() for path in local_path.rglob("*") if path.is_file()
             ]
-            destination = fsspec.utils.other_paths(
-                source, self.as_posix(), exists=False, flatten=False
-            )
+            if len(source) > 1:
+                destination = fsspec.utils.other_paths(
+                    source, self.as_posix(), exists=False, flatten=False
+                )
+            else:
+                # other_paths doesn't return the correct path if there is only one file
+                destination = [
+                    (
+                        self / Path(source[0]).relative_to(local_path).as_posix()
+                    ).as_posix()
+                ]
         elif protocol == "s3" and (bucket := self.drive) not in self.fs.dircache:
             # the below lines are to avoid s3fs triggering create_bucket in upload if
             # dirs are present, it allows to avoid the permission error
