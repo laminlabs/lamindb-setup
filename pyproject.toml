@@ -35,11 +35,11 @@ Home = "https://github.com/laminlabs/lamindb-setup"
 aws = [
     "aiobotocore[boto3]>=2.12.4,<4.0.0", # less problematic, supports urllib 2 via botocore bounds
     # exclude 2024.10.0 due to https://github.com/fsspec/s3fs/pull/910
-    "s3fs>=2023.12.2,<=2026.2.0,!=2024.10.0",
+    "s3fs>=2023.12.2,<=2026.1.0,!=2024.10.0", # bounded by 2026.1.0 due to https://github.com/fsspec/s3fs/issues/1019
     "boto3" # aiobotocore 3 doesn't have boto3 extra anymore
 ]
 gcp = [
-    "gcsfs>=2023.12.2,<=2026.2.0"
+    "gcsfs>=2023.12.2,<=2026.1.0"
 ]
 erdiagram = [
     "django-schema-graph",
