@@ -233,7 +233,7 @@ jobs:
                 }}
       - run: pip install git+https://github.com/laminlabs/laminci
       - run: uv pip install --system git+https://github.com/laminlabs/lamin-cli
-      - run: uv pip install --system git+https://github.com/laminlabs/lamindb numpy
+      - run: uv pip install --system git+https://github.com/laminlabs/lamindb pandas
       - run: uv pip install --system git+https://github.com/laminlabs/laminprofiler
       - run: uv pip install --system -e .
       - run: lamin login
