@@ -166,7 +166,9 @@ def init_storage(
             assert "--" in root_str, "example: `create-s3--eu-central-1`"
             region = root_str.replace("create-s3--", "")
         bucket = get_default_bucket_for_instance(
-            None if init_instance else instance_id, region
+            None if init_instance else instance_id,
+            region,
+            access_token=access_token,
         )
         root = f"{bucket}/{uid}"
     elif (input_protocol := fsspec.utils.get_protocol(root_str)) not in VALID_PROTOCOLS:
