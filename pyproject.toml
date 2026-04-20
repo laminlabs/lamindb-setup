@@ -39,7 +39,7 @@ aws = [
     "boto3" # aiobotocore 3 doesn't have boto3 extra anymore
 ]
 gcp = [
-    "gcsfs>=2023.12.2,<=2026.2.0"
+    "gcsfs>=2023.12.2,<=2026.1.0"
 ]
 erdiagram = [
     "django-schema-graph",
