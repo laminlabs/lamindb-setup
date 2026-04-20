@@ -15,9 +15,16 @@ if TYPE_CHECKING:
     from typing import Literal
 
 
+def _import_schema_module(module_name: str):
+    try:
+        return import_module(module_name)
+    except ImportError:
+        return import_module(f"lnschema_{module_name.replace('-', '_')}")
+
+
 def _get_registries(module_name: str) -> list[str]:
     """Get registry class names from a module."""
-    schema_module = import_module(module_name)
+    schema_module = _import_schema_module(module_name)
 
     # Ensure that models are loaded; we've observed empty exports otherwise
     from django.db import models
@@ -62,7 +69,7 @@ def _export_full_table(
     import lamindb_setup as ln_setup
 
     module_name, model_name, field_name = registry_info
-    schema_module = import_module(module_name)
+    schema_module = _import_schema_module(module_name)
     registry = getattr(schema_module.models, model_name)
 
     if field_name:
@@ -176,7 +183,7 @@ def export_db(
 
     tasks = []
     for module_name, model_names in modules.items():
-        schema_module = import_module(module_name)
+        schema_module = _import_schema_module(module_name)
         for model_name in model_names:
             registry = getattr(schema_module.models, model_name)
             tasks.append((module_name, model_name, None))
@@ -400,7 +407,7 @@ def import_db(
             with Progress() as progress:
                 task = progress.add_task("Importing", total=total_models)
                 for module_name, model_names in modules.items():
-                    schema_module = import_module(module_name)
+                    schema_module = _import_schema_module(module_name)
                     for model_name in model_names:
                         progress.update(
                             task, description=f"[cyan]{module_name}.{model_name}"
