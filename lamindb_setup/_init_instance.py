@@ -366,6 +366,7 @@ def init(
                 )
         is_authenticated = user_handle != "anonymous" or access_token is not None
         if ssettings is not None:
+            mark_file = "<unresolved mark file>"
             try:
                 # uses access_token in ssettings
                 mark_file = ssettings._mark_storage_root
