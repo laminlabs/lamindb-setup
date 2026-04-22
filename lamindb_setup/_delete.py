@@ -19,7 +19,7 @@ if TYPE_CHECKING:
     from .core._settings_instance import InstanceSettings
 
 
-def delete_cache(isettings: InstanceSettings):
+def _delete_cache(isettings: InstanceSettings):
     if isettings.storage is None:
         return
     # avoid init of root
@@ -30,10 +30,27 @@ def delete_cache(isettings: InstanceSettings):
             shutil.rmtree(cache_dir)
 
 
-def delete_exclusion_dir(isettings: InstanceSettings) -> None:
-    exclusion_dir = isettings.storage.root / f".lamindb/_exclusion/{isettings._id.hex}"
-    if exclusion_dir.exists():
-        exclusion_dir.rmdir()
+def _delete_exclusion_dir_if_exists(isettings: InstanceSettings) -> None:
+    if (
+        isettings.dialect == "sqlite"
+        and (storage := isettings.storage) is not None
+        and isettings.is_remote
+    ):
+        exclusion_dir = storage.root / f".lamindb/_exclusion/{isettings._id.hex}"
+        if exclusion_dir.exists():
+            exclusion_dir.rmdir()
+
+
+def _delete_sqlite_file_if_exists(isettings: InstanceSettings):
+    if isettings.dialect == "sqlite" and isettings.storage is not None:
+        sqlite_file = isettings._sqlite_file
+        try:
+            if sqlite_file.exists():
+                sqlite_file.unlink()
+        except PermissionError:
+            logger.warning(
+                f"Did not have permission to delete SQLite file: {sqlite_file}"
+            )
 
 
 def delete_by_isettings(isettings: InstanceSettings) -> None:
@@ -42,16 +59,8 @@ def delete_by_isettings(isettings: InstanceSettings) -> None:
     settings_file = isettings._get_settings_file()
     if settings_file.exists():
         settings_file.unlink()
-    delete_cache(isettings)
-    if isettings.dialect == "sqlite" and isettings.storage is not None:
-        try:
-            if isettings._sqlite_file.exists():
-                isettings._sqlite_file.unlink()
-        except PermissionError:
-            logger.warning(
-                "Did not have permission to delete SQLite file:"
-                f" {isettings._sqlite_file}"
-            )
+    _delete_cache(isettings)
+    _delete_sqlite_file_if_exists(isettings)
     # unset the global instance settings
     isettings_on_disk = load_instance_settings()
     if isettings_on_disk.slug == isettings.slug:
@@ -99,16 +108,18 @@ def delete(slug: str, force: bool = False, require_empty: bool = True) -> int | 
         if user_input not in valid_responses:
             return -1
 
-    root = isettings.storage.root
+    storage = isettings.storage
+    root = storage.root
     logger.debug(f"default storage root: {root}")
     if root.protocol == "s3":
         logger.debug(f"session in storage options: {'session' in root.storage_options}")
     # the actual deletion process begins here
-    if isettings.dialect == "sqlite" and isettings.is_remote:
-        # delete the exlusion dir first because it's hard to count its objects
-        delete_exclusion_dir(isettings)
-    if isettings.storage.type_is_cloud and isettings.storage.root_as_str.startswith(
-        HOSTED_BUCKETS
+    # delete the exlusion dir first because it's hard to count its objects
+    _delete_exclusion_dir_if_exists(isettings)
+    if (
+        storage is not None
+        and storage.type_is_cloud
+        and storage.root_as_str.startswith(HOSTED_BUCKETS)
     ):
         if not require_empty:
             logger.warning(
@@ -122,8 +133,8 @@ def delete(slug: str, force: bool = False, require_empty: bool = True) -> int | 
         raise_error=require_empty,
         account_for_sqlite_file=isettings.dialect == "sqlite",
     )
-    if isettings.storage._mark_storage_root.exists():
-        isettings.storage._mark_storage_root.unlink(
+    if storage is not None and storage._mark_storage_root.exists():
+        storage._mark_storage_root.unlink(
             missing_ok=True  # this is totally weird, but needed on Py3.11
         )
     # now everything that's on the hub
@@ -133,7 +144,7 @@ def delete(slug: str, force: bool = False, require_empty: bool = True) -> int | 
 
         storage_records = get_storage_records_for_instance(isettings._id)
         for storage_record in storage_records:
-            if storage_record["root"] == isettings.storage.root_as_str:
+            if storage_record["root"] == storage.root_as_str:
                 continue
             ssettings = StorageSettings(storage_record["root"])  # type: ignore
 
@@ -165,8 +176,8 @@ def delete(slug: str, force: bool = False, require_empty: bool = True) -> int | 
     # if lamin.db file was delete, then we might count -1
     if n_files <= 0 and isettings.storage.type == "local":
         # dir is only empty after sqlite file was delete via delete_by_isettings
-        if (isettings.storage.root / ".lamindb").exists():
-            (isettings.storage.root / ".lamindb").rmdir()
-        if isettings.storage.root.exists():
-            isettings.storage.root.rmdir()
+        if (storage.root / ".lamindb").exists():
+            (storage.root / ".lamindb").rmdir()
+        if storage.root.exists():
+            storage.root.rmdir()
     return None

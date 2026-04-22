@@ -16,7 +16,7 @@ from .core._settings import settings
 from .core._settings_instance import check_is_instance_remote
 from .core._settings_storage import StorageSettings, init_storage
 from .core.upath import UPath
-from .errors import CannotSwitchDefaultInstance, InstanceNotCreated
+from .errors import InstanceNotCreated
 
 if TYPE_CHECKING:
     from lamindb.models import Storage
@@ -344,19 +344,41 @@ def init(
             reset_django_module_variables()
         logger.important(f"initialized lamindb: {isettings.slug}")
     except Exception as e:
-        from ._delete import delete_by_isettings
+        from ._delete import (
+            _delete_exclusion_dir_if_exists,
+            _delete_sqlite_file_if_exists,
+            delete_by_isettings,
+        )
         from .core._hub_core import delete_instance_record, delete_storage_record
 
         if isettings is not None:
-            if _write_settings:
-                delete_by_isettings(isettings)
-            else:
-                settings._instance_settings = None
-        if user_handle != "anonymous" or access_token is not None:
-            if ssettings is not None and ssettings.is_on_hub:
+            try:
+                if _write_settings:
+                    # deletes also the sqlite file if it exists
+                    delete_by_isettings(isettings)
+                else:
+                    _delete_sqlite_file_if_exists(isettings)
+                    settings._instance_settings = None
+                _delete_exclusion_dir_if_exists(isettings)
+            except Exception as icleanup_err:
+                logger.warning(
+                    f"internal instance files deletion failed: {icleanup_err}"
+                )
+        is_authenticated = user_handle != "anonymous" or access_token is not None
+        if ssettings is not None:
+            try:
+                # uses access_token in ssettings
+                mark_file = ssettings._mark_storage_root
+                if mark_file.exists():
+                    mark_file.unlink(missing_ok=True)
+            except Exception as markcleanup_err:
+                logger.warning(
+                    f"failed to delete mark file {mark_file}: {markcleanup_err}"
+                )
+            if is_authenticated and ssettings.is_on_hub:
                 delete_storage_record(ssettings, access_token=access_token)
-            if isettings is not None and isettings.is_on_hub:
-                delete_instance_record(isettings._id, access_token=access_token)
+        if is_authenticated and isettings is not None and isettings.is_on_hub:
+            delete_instance_record(isettings._id, access_token=access_token)
         raise e
     return None
 
