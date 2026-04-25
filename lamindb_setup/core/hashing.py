@@ -23,7 +23,7 @@ HASH_LENGTH = 22
 if TYPE_CHECKING:
     from collections.abc import Iterable
 
-    from lamindb_setup.types import Path, UPathStr
+    from lamindb_setup.types import AnyPathStr, Path
 
 
 def hash_and_encode_as_b62(s: str) -> str:
@@ -65,7 +65,7 @@ def hash_from_hashes_list(hashes: Iterable[str]) -> str:
 
 # below is only used when comparing with git's sha1 hashes
 # we don't use it for our own hashes
-def hash_code(file_path: UPathStr) -> hashlib._Hash:
+def hash_code(file_path: AnyPathStr) -> hashlib._Hash:
     with open(file_path, "rb") as fp:
         data = fp.read()
     data_size = len(data)

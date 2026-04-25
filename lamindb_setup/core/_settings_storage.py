@@ -25,7 +25,7 @@ from .upath import (
 )
 
 if TYPE_CHECKING:
-    from lamindb_setup.types import StorageType, UPathStr
+    from lamindb_setup.types import AnyPathStr, StorageType
 
 STORAGE_UID_FILE_KEY = ".lamindb/storage_uid.txt"
 LEGACY_STORAGE_UID_FILE_KEY = ".lamindb/_is_initialized"
@@ -55,7 +55,7 @@ def get_storage_type(root_as_str: str) -> StorageType:
     return convert.get(protocol, protocol)  # type: ignore
 
 
-def sanitize_root_user_input(root: UPathStr) -> UPath:
+def sanitize_root_user_input(root: AnyPathStr) -> UPath:
     """Format a root path string."""
     root_upath = root if isinstance(root, UPath) else UPath(root)
     root_upath = root_upath.expanduser()
@@ -78,7 +78,7 @@ def convert_sanitized_root_path_to_str(root_upath: UPath) -> str:
     return root_upath.as_posix().rstrip("/")
 
 
-def convert_root_path_to_str(root: UPathStr) -> str:
+def convert_root_path_to_str(root: AnyPathStr) -> str:
     """Format a root path string."""
     sanitized_root_upath = sanitize_root_user_input(root)
     return convert_sanitized_root_path_to_str(sanitized_root_upath)
@@ -96,7 +96,7 @@ def mark_storage_root_file(path: UPath) -> UPath:
 
 
 def mark_storage_root(
-    root: UPathStr, uid: str, instance_id: UUID, instance_slug: str
+    root: AnyPathStr, uid: str, instance_id: UUID, instance_slug: str
 ) -> Literal["__marked__"] | str:
     # we need a file in folder-like storage locations on S3 to avoid
     # permission errors from leveraging s3fs on an empty hosted storage location (path.fs.find raises a PermissionError)
@@ -127,7 +127,7 @@ def mark_storage_root(
 
 
 def init_storage(
-    root: UPathStr,
+    root: AnyPathStr,
     instance_id: UUID,
     instance_slug: str,
     register_hub: bool | None = None,
@@ -247,7 +247,7 @@ class StorageSettings:
 
     def __init__(
         self,
-        root: UPathStr,
+        root: AnyPathStr,
         region: str | None = None,
         uid: str | None = None,
         uuid: UUID | None = None,
@@ -415,7 +415,7 @@ class StorageSettings:
             return True
 
     def cloud_to_local(
-        self, filepath: UPathStr, cache_key: str | None = None, **kwargs
+        self, filepath: AnyPathStr, cache_key: str | None = None, **kwargs
     ) -> UPath:
         """Local (or local cache) filepath from filepath."""
         from lamindb_setup import settings
@@ -425,7 +425,7 @@ class StorageSettings:
         )
 
     def cloud_to_local_no_update(
-        self, filepath: UPathStr, cache_key: str | None = None
+        self, filepath: AnyPathStr, cache_key: str | None = None
     ) -> UPath:
         from lamindb_setup import settings
 
@@ -433,10 +433,10 @@ class StorageSettings:
             filepath=filepath, cache_key=cache_key
         )
 
-    def key_to_filepath(self, filekey: UPathStr) -> UPath:
+    def key_to_filepath(self, filekey: AnyPathStr) -> UPath:
         """Cloud or local filepath from filekey."""
         return self.root / filekey
 
-    def local_filepath(self, filekey: UPathStr) -> UPath:
+    def local_filepath(self, filekey: AnyPathStr) -> UPath:
         """Local (cache) filepath from filekey."""
         return self.cloud_to_local(self.key_to_filepath(filekey))

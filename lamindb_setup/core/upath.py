@@ -35,7 +35,7 @@ if TYPE_CHECKING:
     from fsspec.spec import AbstractFileSystem
     from s3fs import S3FileSystem
 
-    from lamindb_setup.types import UPathStr
+    from lamindb_setup.types import AnyPath, AnyPathStr
 
 LocalPathClasses = (PosixPath, WindowsPath, LocalPath)
 
@@ -213,7 +213,7 @@ def s3fs_to_boto3_client(fs: S3FileSystem) -> BaseClient:
     return client
 
 
-def extract_suffix_from_path(path: Path, arg_name: str | None = None) -> str:
+def extract_suffix_from_path(path: AnyPath, arg_name: str | None = None) -> str:
     def process_digits(suffix: str):
         if suffix[1:].isdigit():  # :1 to skip the dot
             return ""  # digits are no valid suffixes
@@ -276,7 +276,7 @@ def extract_suffix_from_path(path: Path, arg_name: str | None = None) -> str:
         return process_digits(suffix)
 
 
-def infer_filesystem(path: UPathStr):
+def infer_filesystem(path: AnyPathStr):
     import fsspec  # improve cold start
 
     path_str = str(path)
@@ -424,7 +424,7 @@ class ChildProgressCallback(fsspec.callbacks.Callback):
 
 def download_to(
     self,
-    local_path: UPathStr,
+    local_path: AnyPathStr,
     print_progress: bool = True,
     use_boto3: bool = False,
     **kwargs,
@@ -504,7 +504,7 @@ def download_to(
 
 def upload_from(
     self,
-    local_path: UPathStr,
+    local_path: AnyPathStr,
     create_folder: bool | None = None,
     print_progress: bool = True,
     **kwargs,
@@ -795,7 +795,7 @@ def compute_file_tree(
     else:
         include_paths = set()
 
-    def inner(dir_path: Path, prefix: str = "", level: int = -1):
+    def inner(dir_path: UPath, prefix: str = "", level: int = -1):
         nonlocal n_files, n_directories, suffixes
         if level == 0:
             return
@@ -855,7 +855,7 @@ def compute_file_tree(
 
 # adapted from: https://stackoverflow.com/questions/9727673
 def view_tree(
-    path: Path,
+    path: UPath,
     *,
     level: int = 2,
     only_dirs: bool = False,
@@ -939,7 +939,7 @@ def to_url(upath) -> str:
         return f"https://{bucket}.s3-{region}.amazonaws.com/{key}"
 
 
-def from_auth(cls, path: UPathStr) -> UPath:
+def from_auth(cls, path: AnyPathStr) -> UPath:
     """Create an authenticated path object.
 
     This method makes a request to a LaminHub to obtain standard
@@ -1091,7 +1091,7 @@ class S3QueryPath(S3Path):
 register_implementation("s3", S3QueryPath, clobber=True)
 
 
-def get_storage_region(path: UPathStr) -> str | None:
+def get_storage_region(path: AnyPathStr) -> str | None:
     upath = UPath(path)
 
     if upath.protocol != "s3":
@@ -1152,7 +1152,7 @@ def get_storage_region(path: UPathStr) -> str | None:
     return region
 
 
-def create_path(path: UPathStr, access_token: str | None = None) -> UPath:
+def create_path(path: AnyPathStr, access_token: str | None = None) -> UPath:
     upath = UPath(path).expanduser()
 
     if upath.protocol == "s3":
@@ -1286,7 +1286,7 @@ def get_stat_dir_cloud(path: UPath) -> tuple[int, str | None, str | None, int]:
 
 # is as fast as boto3: https://lamin.ai/laminlabs/lamin-site-assets/transform/krGp3hT1f78N5zKv
 def check_storage_is_empty(
-    root: UPathStr, *, raise_error: bool = True, account_for_sqlite_file: bool = False
+    root: AnyPathStr, *, raise_error: bool = True, account_for_sqlite_file: bool = False
 ) -> int:
     from ._settings_storage import mark_storage_root_file
 
