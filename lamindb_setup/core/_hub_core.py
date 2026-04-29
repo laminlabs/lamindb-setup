@@ -804,29 +804,29 @@ def _access_aws_endpoint(
     return response.json()
 
 
-def access_aws_move(
+def access_aws_for_moving(
     source_path: str, target_path: str, access_token: str | None = None
 ) -> dict[str, dict | list[dict]]:
     if settings.user.handle != "anonymous" or access_token is not None:
         result = call_with_fallback_auth(
-            _access_aws_move,
+            _access_aws_for_moving,
             source_path=source_path,
             target_path=target_path,
             access_token=access_token,
         )
     else:
         result = call_with_fallback(
-            _access_aws_move, source_path=source_path, target_path=target_path
+            _access_aws_for_moving, source_path=source_path, target_path=target_path
         )
 
     credentials: dict = {}
     accessibilities: list[dict] = []
-    move_info: dict[str, dict | list[dict]] = {
+    info_for_moving: dict[str, dict | list[dict]] = {
         "credentials": credentials,
         "accessibilities": accessibilities,
     }
     if not result:
-        return move_info
+        return info_for_moving
 
     loaded_credentials = result.get("Credentials")
     if loaded_credentials:
@@ -847,10 +847,10 @@ def access_aws_move(
             }
         )
 
-    return move_info
+    return info_for_moving
 
 
-def _access_aws_move(source_path: str, target_path: str, client: Client):
+def _access_aws_for_moving(source_path: str, target_path: str, client: Client):
     try:
         response = client.functions.invoke(
             "get-cloud-access-v1",

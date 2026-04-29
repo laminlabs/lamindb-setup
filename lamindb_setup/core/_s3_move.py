@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
-from ._hub_core import access_aws_move
+from ._hub_core import access_aws_for_moving
 
 if TYPE_CHECKING:
     from aiobotocore.session import AioSession
@@ -11,24 +11,24 @@ if TYPE_CHECKING:
     from .types import UPathStr
 
 
-def _normalize_s3_move_path(path: UPathStr) -> str:
+def _normalize_s3_path_for_moving(path: UPathStr) -> str:
     path_str = str(path).rstrip("/")
     assert path_str.startswith("s3://")
     return path_str
 
 
-def _canonical_move_pair(
+def _canonical_pair_for_moving(
     source_path: UPathStr, target_path: UPathStr
 ) -> tuple[str, str]:
-    source_path_str = _normalize_s3_move_path(source_path)
-    target_path_str = _normalize_s3_move_path(target_path)
+    source_path_str = _normalize_s3_path_for_moving(source_path)
+    target_path_str = _normalize_s3_path_for_moving(target_path)
     # the order is not important so we sort them to avoid duplicated cache entries
     if source_path_str <= target_path_str:
         return source_path_str, target_path_str
     return target_path_str, source_path_str
 
 
-class S3MoveOptionsManager:
+class S3MovingOptionsManager:
     def __init__(self) -> None:
         self._sessions_cache: dict[tuple[str, str], AioSession | None] = {}
 
@@ -37,10 +37,10 @@ class S3MoveOptionsManager:
         source_path: str, target_path: str, access_token: str | None = None
     ):
         def _refresh():
-            move_info = access_aws_move(
+            info_for_moving = access_aws_for_moving(
                 source_path, target_path, access_token=access_token
             )
-            credentials = move_info["credentials"]
+            credentials = info_for_moving["credentials"]
             if not credentials:
                 raise RuntimeError(
                     f"Failed to refresh move credentials for {source_path} and {target_path}"
@@ -86,13 +86,13 @@ class S3MoveOptionsManager:
 
         return session
 
-    def move_session(
+    def session_for_moving(
         self,
         source_path: UPathStr,
         target_path: UPathStr,
         access_token: str | None = None,
     ) -> AioSession | None:
-        canonical_source, canonical_target = _canonical_move_pair(
+        canonical_source, canonical_target = _canonical_pair_for_moving(
             source_path, target_path
         )
         cache_key = (canonical_source, canonical_target)
@@ -100,7 +100,7 @@ class S3MoveOptionsManager:
         if access_token is None and cache_key in self._sessions_cache:
             return self._sessions_cache[cache_key]
 
-        move_info = access_aws_move(
+        move_info = access_aws_for_moving(
             canonical_source, canonical_target, access_token=access_token
         )
         credentials = move_info["credentials"]
@@ -119,27 +119,27 @@ class S3MoveOptionsManager:
         return managed_session
 
 
-_s3_move_manager_dict: dict[str, S3MoveOptionsManager] = {}
+_s3_moving_manager_dict: dict[str, S3MovingOptionsManager] = {}
 
 
-def get_user_s3_move_manager() -> S3MoveOptionsManager:
+def get_user_s3_moving_manager() -> S3MovingOptionsManager:
     from lamindb_setup import settings
 
     user_handle = settings.user.handle
 
-    global _s3_move_manager_dict
-    if user_handle not in _s3_move_manager_dict:
-        _s3_move_manager_dict[user_handle] = S3MoveOptionsManager()
-    return _s3_move_manager_dict[user_handle]
+    global _s3_moving_manager_dict
+    if user_handle not in _s3_moving_manager_dict:
+        _s3_moving_manager_dict[user_handle] = S3MovingOptionsManager()
+    return _s3_moving_manager_dict[user_handle]
 
 
-def s3_move_fs(
+def s3_fs_for_moving(
     source_path: UPathStr, target_path: UPathStr, access_token: str | None = None
 ) -> S3FileSystem | None:
     from s3fs import S3FileSystem
 
-    manager = get_user_s3_move_manager()
-    managed_session = manager.move_session(source_path, target_path, access_token)
+    manager = get_user_s3_moving_manager()
+    managed_session = manager.session_for_moving(source_path, target_path, access_token)
     if managed_session is None:
         return None
     return S3FileSystem(cache_regions=True, session=managed_session)

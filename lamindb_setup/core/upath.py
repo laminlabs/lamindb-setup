@@ -1180,7 +1180,7 @@ def create_path(path: UPathStr, access_token: str | None = None) -> UPath:
     return upath
 
 
-def move_fs(
+def fs_for_moving(
     source_path: UPathStr, target_path: UPathStr, access_token: str | None = None
 ) -> AbstractFileSystem:
     source_upath = UPath(source_path)
@@ -1197,7 +1197,7 @@ def move_fs(
         ):
             source_upath = create_path(source_path, access_token=access_token)
             target_upath = create_path(target_path, access_token=access_token)
-            # if it is managed and has the same credentials / filesystem, avoid calling s3_move_fs
+            # if it is managed and has the same credentials / filesystem, avoid calling s3_fs_for_moving
             if (
                 "session" in source_upath.storage_options
                 and "session" in target_upath.storage_options
@@ -1205,9 +1205,9 @@ def move_fs(
             ):
                 return fs
 
-        from ._s3_move import s3_move_fs
+        from ._s3_move import s3_fs_for_moving
 
-        fs = s3_move_fs(source_upath, target_upath, access_token=access_token)
+        fs = s3_fs_for_moving(source_upath, target_upath, access_token=access_token)
         if fs is not None:
             return fs
     # if create_path was called above, it is cached here
