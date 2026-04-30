@@ -1181,7 +1181,7 @@ def create_path(path: AnyPathStr, access_token: str | None = None) -> UPath:
 
 
 def fs_for_moving(
-    source_path: UPathStr, target_path: UPathStr, access_token: str | None = None
+    source_path: AnyPathStr, target_path: AnyPathStr, access_token: str | None = None
 ) -> AbstractFileSystem:
     source_upath = UPath(source_path)
     target_upath = UPath(target_path)
