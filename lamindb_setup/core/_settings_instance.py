@@ -27,7 +27,7 @@ if TYPE_CHECKING:
     from uuid import UUID
 
     from ._settings_user import UserSettings
-    from .types import UPathStr
+    from .types import AnyPathStr
 
 LOCAL_STORAGE_MESSAGE = "No local storage location found in current environment: defaulting to cloud storage"
 
@@ -47,7 +47,7 @@ def is_local_db_url(db_url: str) -> bool:
     return False
 
 
-def check_is_instance_remote(root: UPathStr, db: str | None) -> bool:
+def check_is_instance_remote(root: AnyPathStr, db: str | None) -> bool:
     root_str = str(root)
     is_local_storage = (
         not root_str.startswith("create-s3") and get_storage_type(root_str) == "local"
@@ -505,8 +505,6 @@ class InstanceSettings:
                 "It overwrites all db connections and is used instead of `instance.db`."
             )
         if self._db is None:
-            from .django import IS_SETUP
-
             if self._storage is None and self.slug == "none/none":
                 return "sqlite:///:memory:"
             # here, we want the updated sqlite file

@@ -14,8 +14,6 @@ from .core._settings_storage import StorageSettings
 from .core.upath import LocalPathClasses, check_storage_is_empty
 
 if TYPE_CHECKING:
-    from pathlib import Path
-
     from .core._settings_instance import InstanceSettings
 
 

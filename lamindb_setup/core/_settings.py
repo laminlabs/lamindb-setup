@@ -31,13 +31,13 @@ if TYPE_CHECKING:
 
     from lamindb_setup.core import InstanceSettings, StorageSettings, UserSettings
     from lamindb_setup.core.django import DBToken, DBTokenManager
-    from lamindb_setup.types import UPathStr
+    from lamindb_setup.types import AnyPathStr
 
 
 DEFAULT_CACHE_DIR = UPath(user_cache_dir(appname="lamindb", appauthor="laminlabs"))
 
 
-def _process_cache_path(cache_path: UPathStr | None) -> UPath | None:
+def _process_cache_path(cache_path: AnyPathStr | None) -> UPath | None:
     if cache_path is None or cache_path == "null":
         return None
     cache_dir = UPath(cache_path)
@@ -466,7 +466,7 @@ class SetupPaths:
 
     @staticmethod
     def cloud_to_local_no_update(
-        filepath: UPathStr, cache_key: str | None = None
+        filepath: AnyPathStr, cache_key: str | None = None
     ) -> UPath:
         """Local (or local cache) filepath from filepath without synchronization."""
         if not isinstance(filepath, UPath):
@@ -488,7 +488,7 @@ class SetupPaths:
 
     @staticmethod
     def cloud_to_local(
-        filepath: UPathStr, cache_key: str | None = None, **kwargs
+        filepath: AnyPathStr, cache_key: str | None = None, **kwargs
     ) -> UPath:
         """Local (or local cache) filepath from filepath."""
         if not isinstance(filepath, UPath):
