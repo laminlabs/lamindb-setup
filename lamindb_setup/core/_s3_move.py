@@ -9,8 +9,6 @@ if TYPE_CHECKING:
     from s3fs import S3FileSystem
     from upath.implementations.cloud import S3Path
 
-    from .types import AnyPathStr
-
 
 def _normalize_s3_path_for_moving(path: S3Path | str) -> str:
     path_str = str(path).rstrip("/")
