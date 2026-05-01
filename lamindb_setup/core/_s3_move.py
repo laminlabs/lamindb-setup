@@ -7,18 +7,19 @@ from ._hub_core import access_aws_for_moving
 if TYPE_CHECKING:
     from aiobotocore.session import AioSession
     from s3fs import S3FileSystem
+    from upath.implementations.cloud import S3Path
 
     from .types import AnyPathStr
 
 
-def _normalize_s3_path_for_moving(path: AnyPathStr) -> str:
+def _normalize_s3_path_for_moving(path: S3Path | str) -> str:
     path_str = str(path).rstrip("/")
     assert path_str.startswith("s3://")
     return path_str
 
 
 def _canonical_pair_for_moving(
-    source_path: AnyPathStr, target_path: AnyPathStr
+    source_path: S3Path | str, target_path: S3Path | str
 ) -> tuple[str, str]:
     source_path_str = _normalize_s3_path_for_moving(source_path)
     target_path_str = _normalize_s3_path_for_moving(target_path)
@@ -88,8 +89,8 @@ class S3MovingOptionsManager:
 
     def session_for_moving(
         self,
-        source_path: AnyPathStr,
-        target_path: AnyPathStr,
+        source_path: S3Path | str,
+        target_path: S3Path | str,
         access_token: str | None = None,
     ) -> AioSession | None:
         canonical_source, canonical_target = _canonical_pair_for_moving(
@@ -134,7 +135,9 @@ def get_user_s3_moving_manager() -> S3MovingOptionsManager:
 
 
 def s3_fs_for_moving(
-    source_path: AnyPathStr, target_path: AnyPathStr, access_token: str | None = None
+    source_path: S3Path | str,
+    target_path: S3Path | str,
+    access_token: str | None = None,
 ) -> S3FileSystem | None:
     from s3fs import S3FileSystem
 

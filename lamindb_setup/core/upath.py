@@ -916,7 +916,7 @@ def view_tree(
     logger.print(message)
 
 
-def to_url(upath) -> str:
+def to_url(upath: S3Path) -> str:
     """Public storage URL.
 
     Generates a public URL for an object in an S3 bucket using fsspec's UPath,
@@ -1091,7 +1091,7 @@ class S3QueryPath(S3Path):
 register_implementation("s3", S3QueryPath, clobber=True)
 
 
-def get_storage_region(path: AnyPathStr) -> str | None:
+def get_storage_region(path: S3Path | str) -> str | None:
     upath = UPath(path)
 
     if upath.protocol != "s3":
