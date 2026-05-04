@@ -149,9 +149,9 @@ def login(
         user_uuid, user_id, user_handle, user_name, access_token = response
 
     if api_key is not None:
-        logger.success(f"logged in {user_handle}")
+        logger.important(f"logged in {user_handle}")
     else:  # legacy flow
-        logger.success(f"logged in with email {user_settings.email}")
+        logger.important(f"logged in with email {user_settings.email}")
 
     user_settings.uid = user_id
     user_settings.handle = user_handle
@@ -188,7 +188,7 @@ def logout():
         current_user_settings_file().unlink()
         reset_user_aws_options_cache()  # reset aws options cache for the user
         settings._user_settings = None
-        logger.success("logged out")
+        logger.important("logged out")
     else:
         logger.important("already logged out")
     if os.environ.get("LAMIN_API_KEY") is not None:
