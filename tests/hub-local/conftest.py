@@ -106,8 +106,8 @@ def create_testadmin1_session():  # -> Tuple[Client, UserSettings]
     client.table("account").insert(account).execute()
 
     with connect_central(service_role=True) as service_client:
-        service_client.table("account_instance_limit").insert(
-            {"account_id": account_id}
+        service_client.table("account_instance_limit").upsert(
+            {"account_id": account_id, "max_instances": None}
         ).execute()
 
     yield SupabaseClientWrapper(client), ln_setup.settings.user
