@@ -26,9 +26,11 @@ CONN_MAX_AGE = 299
 def _is_running_in_marimo() -> bool:
     try:
         import marimo
+
         return bool(marimo.running_in_notebook())
     except Exception:
         return False
+
 
 def get_connection(connection_name: str):
     from django.db import connections
