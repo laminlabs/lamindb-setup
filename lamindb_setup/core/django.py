@@ -22,6 +22,7 @@ IS_SETUP = False
 IS_MIGRATING = False
 CONN_MAX_AGE = 299
 
+
 def _is_running_in_marimo() -> bool:
     try:
         import marimo
