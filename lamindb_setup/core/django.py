@@ -24,12 +24,10 @@ CONN_MAX_AGE = 299
 
 
 def _is_running_in_marimo() -> bool:
-    try:
-        import marimo
-
-        return bool(marimo.running_in_notebook())
-    except Exception:
+    mod = sys.modules.get("marimo")
+    if mod is None:
         return False
+    return mod.running_in_notebook()
 
 
 def get_connection(connection_name: str):
