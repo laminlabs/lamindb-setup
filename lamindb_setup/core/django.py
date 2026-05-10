@@ -29,9 +29,10 @@ import sys
 def _is_running_in_marimo() -> bool:
     """True if this process is running inside a marimo notebook.
 
-    Marimo imports ``marimo`` before user cells execute, so if the module is
-    not already loaded, we treat that as “not marimo” and return ``False``
-    without importing marimo (cheap and safe next to heavy imports like lamindb).
+    Marimo imports `marimo` before user cells execute, so if the module is
+    not already loaded, we treat that as “not marimo” and return `False`
+    without importing marimo. That's cheaper and safer than attempting the import
+    and excepting the ImportError.
     """
     mod = sys.modules.get("marimo")
     if mod is None:
