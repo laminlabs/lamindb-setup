@@ -23,6 +23,23 @@ IS_MIGRATING = False
 CONN_MAX_AGE = 299
 
 
+import sys
+
+
+def _is_running_in_marimo() -> bool:
+    """True if this process is running inside a marimo notebook.
+
+    Marimo imports `marimo` before user cells execute, so if the module is
+    not already loaded, we treat that as “not marimo” and return `False`
+    without importing marimo. That's cheaper and safer than attempting the import
+    and excepting the ImportError.
+    """
+    mod = sys.modules.get("marimo")
+    if mod is None:
+        return False
+    return mod.running_in_notebook()
+
+
 def get_connection(connection_name: str):
     from django.db import connections
 
@@ -319,7 +336,7 @@ def setup_django(
     view_schema: bool = False,
     appname_number: tuple[str, int] | None = None,
 ):
-    if IS_RUN_FROM_IPYTHON:
+    if IS_RUN_FROM_IPYTHON or _is_running_in_marimo():
         os.environ["DJANGO_ALLOW_ASYNC_UNSAFE"] = "true"
         logger.debug("DJANGO_ALLOW_ASYNC_UNSAFE env variable has been set to 'true'")
 
