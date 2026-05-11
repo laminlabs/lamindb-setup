@@ -25,6 +25,7 @@ def test_login():
     )
 
 
+@pytest.mark.skip(reason="Creating more than five API keys is not allowed")
 def test_login_api_key():
     ln_setup.login("testuser1")
     # obtain API key
