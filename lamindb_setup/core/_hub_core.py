@@ -167,6 +167,18 @@ def _select_storage(lnid: str, client: Client) -> dict | None:
     return response.data[0] if response.data else None
 
 
+def select_storage_by_root(root: str) -> dict | None:
+    return call_with_fallback_auth(
+        _select_storage_by_root,
+        root=root,
+    )
+
+
+def _select_storage_by_root(root: str, client: Client) -> dict | None:
+    response = client.table("storage").select("*").eq("root", root).execute()
+    return response.data[0] if response.data else None
+
+
 def _select_storage_by_settings(
     ssettings: StorageSettings, update_uid: bool, client: Client
 ) -> bool:

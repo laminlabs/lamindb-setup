@@ -15,7 +15,6 @@ from ._aws_options import (
     LAMIN_ENDPOINTS,
     get_user_aws_options_manager,
 )
-from ._deprecated import deprecated
 from .hashing import hash_and_encode_as_b62
 from .upath import (
     LocalPathClasses,
@@ -25,6 +24,8 @@ from .upath import (
 )
 
 if TYPE_CHECKING:
+    from lamindb import Storage
+
     from lamindb_setup.types import AnyPathStr, StorageType
 
 STORAGE_UID_FILE_KEY = ".lamindb/storage_uid.txt"
@@ -311,7 +312,7 @@ class StorageSettings:
         return mark_storage_root_file(self.root)
 
     @property
-    def record(self) -> Any:
+    def record(self) -> Storage:
         """Storage record in the current instance."""
         if self._record is None:
             # dynamic import because of import order
@@ -323,6 +324,12 @@ class StorageSettings:
                 root=self.root_as_str
             )
         return self._record
+
+    @property
+    def hub_record(self) -> dict | None:
+        from ._hub_core import select_storage_by_root
+
+        return select_storage_by_root(self.root_as_str)
 
     def __repr__(self):
         """String rep."""
