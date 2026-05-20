@@ -404,13 +404,13 @@ def delete_instance_record(instance_id: UUID, access_token: str | None = None) -
     )
 
 
-def _get_instance_slug_by_id(instance_id: UUID, client: Client) -> str | None:
+def _get_instance_slug_by_uid(instance_uid: str, client: Client) -> str | None:
     data = (
         client.table("instance")
         .select(
             "name, account!inner!instance_account_id_28936e8f_fk_account_id(handle)"
         )
-        .eq("id", instance_id.hex)
+        .eq("lnid", instance_uid)
         .execute()
         .data
     )
@@ -420,19 +420,19 @@ def _get_instance_slug_by_id(instance_id: UUID, client: Client) -> str | None:
     return f"{instance['account']['handle']}/{instance['name']}"
 
 
-def get_instance_slug_by_id(
-    instance_id: UUID, access_token: str | None = None
+def get_instance_slug_by_uid(
+    instance_uid: str, access_token: str | None = None
 ) -> str | None:
     if settings.user.handle != "anonymous" or access_token is not None:
         return call_with_fallback_auth(
-            _get_instance_slug_by_id,
-            instance_id=instance_id,
+            _get_instance_slug_by_uid,
+            instance_uid=instance_uid,
             access_token=access_token,
         )
     else:
         return call_with_fallback(
-            _get_instance_slug_by_id,
-            instance_id=instance_id,
+            _get_instance_slug_by_uid,
+            instance_uid=instance_uid,
         )
 
 
