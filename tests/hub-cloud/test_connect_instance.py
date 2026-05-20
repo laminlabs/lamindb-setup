@@ -6,7 +6,7 @@ import lamindb_setup as ln_setup
 import pytest
 from lamindb_setup._connect_instance import InstanceNotFoundError
 from lamindb_setup.core._hub_client import connect_hub_with_auth
-from lamindb_setup.core._hub_core import connect_instance_hub
+from lamindb_setup.core._hub_core import connect_instance_hub, get_instance_slug_by_id
 from lamindb_setup.core._hub_crud import select_instance_by_name, update_instance
 from lamindb_setup.core._settings import MainBranchMock
 from laminhub_rest.core.legacy._instance_collaborator import InstanceCollaboratorHandler
@@ -148,6 +148,9 @@ def test_connect_with_db_parameter():
         ln_setup.connect("laminlabs/lamindata", _test=True)
         assert "public" in ln_setup.settings.instance.db
         assert ln_setup.settings.instance.is_read_only_connection
+        assert ln_setup.settings.instance.slug == get_instance_slug_by_id(
+            ln_setup.settings.instance._id
+        )
         # it is an org member, receives jwt connection
         ln_setup.login("testuser2")
         ln_setup.connect("laminlabs/lamindata", _test=True)
