@@ -1233,8 +1233,8 @@ def get_stat_file_cloud(stat: dict, protocol: str, accessor: str | None = None):
         assert accessor in stat
         hash_candidate = stat[accessor].strip('"=')
         if accessor == "md5Hash":
-            # on gs md5 hash is already in base64
-            hash = hash_candidate
+            # on gs md5 hash is already in base64, convert to b64url
+            hash = hash_candidate.replace("+", "-").replace("/", "_")
             hash_type = "md5"
         else:
             # gs etag is an opaque string, better to hash it
