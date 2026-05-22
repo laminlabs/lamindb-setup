@@ -52,7 +52,7 @@ def test_get_stat_dir_cloud_aws():
     _, n_files_file_tree = compute_file_tree(path)
     size, hash, hash_type, n_files = get_stat_dir_cloud(path)
     assert n_files == n_files_file_tree
-    assert hash == "IVKGMfNwi8zKvnpaD_gG7w"
+    assert hash == "b4mOx8qRVGKmI2-4tw2WCw"
     assert hash_type == "md5-d"
     assert size == 658465
     assert n_files == 51
@@ -73,7 +73,7 @@ def test_get_stat_dir_cloud_hf():
     path = UPath(string_path)
     size, hash, hash_type, n_files = get_stat_dir_cloud(path)
     assert n_files == 11
-    assert hash == "oj6I3nNKj_eiX2I1q26qaw"
+    assert hash == "YgK4yrGwOzZgTejMxR7Gnw"
     assert hash_type == "md5-d"
     assert size == 42767
 
