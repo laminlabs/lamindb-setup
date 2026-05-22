@@ -1222,38 +1222,59 @@ def fs_for_moving(
     )
 
 
-def get_stat_file_cloud(stat: dict) -> tuple[int, str | None, str | None]:
+def get_stat_file_cloud(stat: dict, protocol: str, accessor: str | None = None):
     size = stat["size"]
     hash, hash_type = None, None
-    # gs, use md5Hash instead of etag for now
-    if "md5Hash" in stat:
-        # gs hash is already in base64
-        hash = stat["md5Hash"].strip('"=')
-        hash_type = "md5"
-    # hf
-    elif "blob_id" in stat:
-        hash = b16_to_b64(stat["blob_id"])
-        hash_type = "sha1"
-    elif "ETag" in stat:
-        etag = stat["ETag"]
-        if "mimetype" in stat or ("url" in stat and stat["url"].startswith("http")):
-            # http
-            hash = hash_string(etag.strip('"'))
-            hash_type = "md5-etag"
+    if protocol == "gs":
+        if accessor is None:
+            accessor = "md5Hash" if "md5Hash" in stat else "etag"
         else:
-            # s3
-            # small files
-            if "-" not in etag:
-                # only store hash for non-multipart uploads
-                # we can't rapidly validate multi-part uploaded files client-side
-                # we can add more logic later down-the-road
-                hash = b16_to_b64(etag)
-                hash_type = "md5"
-            else:
-                stripped_etag, suffix = etag.split("-")
-                suffix = suffix.strip('"')
-                hash = b16_to_b64(stripped_etag)
-                hash_type = f"md5-{suffix}"  # this is the S3 chunk-hashing strategy
+            assert accessor in {"md5Hash", "etag"}
+        assert accessor in stat
+        hash_candidate = stat[accessor].strip('"=')
+        if accessor == "md5Hash":
+            # on gs md5 hash is already in base64, convert to b64url
+            hash = hash_candidate.replace("+", "-").replace("/", "_")
+            hash_type = "md5"
+        else:
+            # gs etag is an opaque string, better to hash it
+            hash = hash_string(hash_candidate)
+            hash_type = "md5-etag"
+    elif protocol == "s3":
+        if accessor is None:
+            accessor = "ETag"
+        else:
+            assert accessor == "ETag"
+        assert accessor in stat
+        etag = stat[accessor].strip('"=')
+        if "-" not in etag:
+            # only store hash for non-multipart uploads
+            # we can't rapidly validate multi-part uploaded files client-side
+            # we can add more logic later down-the-road
+            hash = b16_to_b64(etag)
+            hash_type = "md5"
+        else:
+            stripped_etag, suffix = etag.split("-")
+            hash = b16_to_b64(stripped_etag)
+            hash_type = f"md5-{suffix}"  # this is the S3 chunk-hashing strategy
+    elif protocol == "hf":
+        if accessor is None:
+            accessor = "blob_id"
+        else:
+            assert accessor == "blob_id"
+        assert accessor in stat
+        hash = b16_to_b64(stat[accessor])
+        hash_type = "sha1"
+    elif protocol in {"http", "https"}:
+        if accessor is None:
+            accessor = "ETag"
+        else:
+            assert accessor == "ETag"
+        assert accessor in stat
+        etag = stat[accessor].strip('"=')
+        hash = hash_string(etag)
+        hash_type = "md5-etag"
+
     if hash is not None:
         hash = hash[:HASH_LENGTH]
     return size, hash, hash_type
@@ -1261,22 +1282,26 @@ def get_stat_file_cloud(stat: dict) -> tuple[int, str | None, str | None]:
 
 def get_stat_dir_cloud(path: UPath) -> tuple[int, str | None, str | None, int]:
     objects = path.fs.find(path.as_posix(), detail=True)
+    protocol = path.protocol
     hash, hash_type = None, None
     compute_list_hash = True
-    if path.protocol == "s3":
+    if protocol == "s3":
         accessor = "ETag"
-    elif path.protocol == "gs":
-        accessor = "md5Hash"
-    elif path.protocol == "hf":
+    elif protocol == "gs":
+        accessor = None  # use md5Hash or etag depending on what is available
+    elif protocol == "hf":
         accessor = "blob_id"
     else:
         compute_list_hash = False
     sizes = []
     hashes = []
     for object in objects.values():
-        sizes.append(object["size"])
         if compute_list_hash:
-            hashes.append(object[accessor].strip('"='))
+            size, hash, _ = get_stat_file_cloud(object, protocol, accessor)
+            sizes.append(size)
+            hashes.append(hash)
+        else:
+            sizes.append(object["size"])
     size = sum(sizes)
     n_files = len(sizes)
     if compute_list_hash:
