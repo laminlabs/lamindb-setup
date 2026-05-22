@@ -13,7 +13,7 @@ from lamindb_setup.core.upath import (
 def test_get_stat_file_cloud_aws():
     string_path = "s3://bionty-assets/df_all__ncbitaxon__2023-06-20__Organism.parquet"
     path = UPath(string_path, anon=True)
-    size, hash, hash_type = get_stat_file_cloud(path.stat().as_info())
+    size, hash, hash_type = get_stat_file_cloud(path.stat().as_info(), "s3")
     assert hash == "zQxieeCkNGNJWhPl3OfM8A"
     assert hash_type == "md5-5"
     assert size == 78148228
@@ -22,7 +22,7 @@ def test_get_stat_file_cloud_aws():
 def test_get_stat_file_cloud_gcp():
     string_path = "gs://rxrx1-europe-west4/images/test/HEPG2-08/Plate1/B02_s1_w1.png"
     path = UPath(string_path)
-    size, hash, hash_type = get_stat_file_cloud(path.stat().as_info())
+    size, hash, hash_type = get_stat_file_cloud(path.stat().as_info(), "gs")
     assert hash == "foEgLjmuUHO62CazxN97rA"
     assert hash_type == "md5"
     assert size == 65122
@@ -31,7 +31,7 @@ def test_get_stat_file_cloud_gcp():
 def test_get_stat_file_cloud_hf():
     string_path = "hf://datasets/Koncopd/lamindb-test/anndata/pbmc68k_test.h5ad"
     path = UPath(string_path)
-    size, hash, hash_type = get_stat_file_cloud(path.stat().as_info())
+    size, hash, hash_type = get_stat_file_cloud(path.stat().as_info(), "hf")
     assert hash == "zY4nvir5FtTHY2f0GKn9Ac"
     assert hash_type == "sha1"
     assert size == 267036
@@ -40,7 +40,7 @@ def test_get_stat_file_cloud_hf():
 def test_get_stat_file_cloud_http():
     string_path = "https://raw.githubusercontent.com/laminlabs/lamindb-setup/refs/heads/main/README.md"
     path = UPath(string_path)
-    size, hash, hash_type = get_stat_file_cloud(path.stat().as_info())
+    size, hash, hash_type = get_stat_file_cloud(path.stat().as_info(), "https")
     assert hash == "h3XDCTkMambmtSVpTQetLQ"
     assert hash_type == "md5-etag"
     assert size == 272
