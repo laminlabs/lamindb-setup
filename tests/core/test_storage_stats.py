@@ -22,9 +22,16 @@ def test_get_stat_file_cloud_aws():
 def test_get_stat_file_cloud_gcp():
     string_path = "gs://rxrx1-europe-west4/images/test/HEPG2-08/Plate1/B02_s1_w1.png"
     path = UPath(string_path)
-    size, hash, hash_type = get_stat_file_cloud(path.stat().as_info(), "gs")
+    stat = path.stat().as_info()
+
+    size, hash, hash_type = get_stat_file_cloud(stat, "gs")  # has md5 hash
     assert hash == "foEgLjmuUHO62CazxN97rA"
     assert hash_type == "md5"
+    assert size == 65122
+
+    size, hash, hash_type = get_stat_file_cloud(stat, "gs", accessor="etag")
+    assert hash == "U0nhcxsfh69UcNZ9ITiWhA"
+    assert hash_type == "md5-etag"
     assert size == 65122
 
 
@@ -58,7 +65,7 @@ def test_get_stat_dir_cloud_aws():
     assert n_files == 51
 
 
-def test_get_stat_dir_cloud_gcp():
+def test_get_stat_dir_cloud_md5_gcp():
     string_path = "gs://rxrx1-europe-west4/images/test/HEPG2-08"
     path = UPath(string_path)
     size, hash, hash_type, n_files = get_stat_dir_cloud(path)
@@ -66,6 +73,16 @@ def test_get_stat_dir_cloud_gcp():
     assert hash == "6r5Hkce0UTy7X6gLeaqzBA"
     assert hash_type == "md5-d"
     assert size == 994441606
+
+
+def test_get_stat_dir_cloud_md5_etag_mix_gcp():
+    string_path = "gs://arc-institute-virtual-cell-atlas/scbasecount/2026-01-12/star_references/Macaca_mulatta/MMUL-10"
+    path = UPath(string_path)
+    size, hash, hash_type, n_files = get_stat_dir_cloud(path)
+    assert n_files == 16
+    assert hash == "iyZBAWghUNhoWQGn_cZ3IQ"
+    assert hash_type == "md5-d"
+    assert size == 29900066409
 
 
 def test_get_stat_dir_cloud_hf():

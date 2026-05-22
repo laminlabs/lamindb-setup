@@ -1231,12 +1231,15 @@ def get_stat_file_cloud(stat: dict, protocol: str, accessor: str | None = None):
         else:
             assert accessor in {"md5Hash", "etag"}
         assert accessor in stat
-        # gs md5 hash and etag are already in base64
-        hash = stat[accessor].strip('"=')
+        hash_candidate = stat[accessor].strip('"=')
         if accessor == "md5Hash":
+            # on gs md5 hash is already in base64
+            hash = hash_candidate
             hash_type = "md5"
         else:
-            hash_type = "etag"
+            # gs etag is an opaque string, better to hash it
+            hash = hash_string(hash_candidate)
+            hash_type = "md5-etag"
     elif protocol == "s3":
         if accessor is None:
             accessor = "ETag"
