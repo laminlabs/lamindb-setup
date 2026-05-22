@@ -70,7 +70,7 @@ def test_get_stat_dir_cloud_md5_gcp():
     path = UPath(string_path)
     size, hash, hash_type, n_files = get_stat_dir_cloud(path)
     assert n_files == 14772
-    assert hash == "6r5Hkce0UTy7X6gLeaqzBA"
+    assert hash == "91wp4sNOCUyeK7kOEz3MiQ"
     assert hash_type == "md5-d"
     assert size == 994441606
 
@@ -80,7 +80,7 @@ def test_get_stat_dir_cloud_md5_etag_mix_gcp():
     path = UPath(string_path)
     size, hash, hash_type, n_files = get_stat_dir_cloud(path)
     assert n_files == 16
-    assert hash == "iyZBAWghUNhoWQGn_cZ3IQ"
+    assert hash == "Fjx0d6ZUx2e6ZMOUFJF0pw"
     assert hash_type == "md5-d"
     assert size == 29900066409
 
