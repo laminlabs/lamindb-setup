@@ -132,6 +132,37 @@ def test_connect_rewrites_module_vars_only_after_reset(monkeypatch):
     assert rewrite_calls["n"] == 1
 
 
+def test_connect_prints_modules_warning(monkeypatch):
+    fake_isettings = _FakeConnectedInstance()
+    monkeypatch.setattr(connect_instance, "_check_instance_setup", lambda: False)
+    monkeypatch.setattr(
+        connect_instance,
+        "_connect_instance",
+        lambda *args, **kwargs: fake_isettings,
+    )
+    monkeypatch.setattr(connect_instance, "silence_loggers", lambda: None)
+    monkeypatch.setattr(
+        connect_instance, "load_from_isettings", lambda *args, **kwargs: None
+    )
+
+    def _load_db_with_modules_warning() -> tuple[bool, str]:
+        connect_instance.settings.modules_warning = "module mismatch warning"
+        return True, ""
+
+    monkeypatch.setattr(fake_isettings, "_load_db", _load_db_with_modules_warning)
+
+    warning_calls: list[str] = []
+    monkeypatch.setattr(
+        connect_instance.logger,
+        "warning",
+        lambda message: warning_calls.append(message),
+    )
+
+    connect_instance.connect("owner/name", _reload_lamindb=False)
+
+    assert "module mismatch warning" in warning_calls
+
+
 def test_module_mismatch_warning_includes_modules_command():
     message = django_core._warn_module_mismatch(
         target_apps={"lamindb", "bionty"},
