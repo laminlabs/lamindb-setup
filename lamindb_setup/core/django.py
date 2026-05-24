@@ -262,17 +262,19 @@ def _warn_module_mismatch(target_apps: set[str], current_apps: set[str]) -> str 
     additional_apps = sorted(target_apps - current_apps)
     details: list[str] = []
     if additional_apps:
-        details.append(f"has non-configured modules: {', '.join(additional_apps)}")
+        details.append(
+            f"has non-configured modules: {','.join(additional_apps)}"
+        )  # no white space after comma for consistency
     if missing_apps:
         if additional_apps:
             details.append("and")
         details.append(
-            f"does not have some of your locally configured modules: {', '.join(missing_apps)}"
+            f"does not have some of your locally configured modules: {','.join(missing_apps)}"  # no white space after comma for consistency
         )
     if missing_apps:
         hint = "you will run into an error when trying to permanently delete objects that are related to objects in these modules"
     if additional_apps:
-        hint = f"you can only query modules that are configured in your environment"
+        hint = f"you can only query entities (registries, fields) from modules that are configured in your environment"
     modules_for_hint = sorted(app for app in target_apps if app != "lamindb")
     modules_arg = ",".join(modules_for_hint) if modules_for_hint else '""'
     hint2 = (
