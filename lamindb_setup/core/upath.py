@@ -5,6 +5,7 @@ from __future__ import annotations
 
 import math
 import os
+import re
 import warnings
 from collections import defaultdict
 from datetime import datetime, timezone
@@ -986,16 +987,65 @@ UPath.from_auth = classmethod(from_auth)
 # unfortunately, we also have to do this for the subclasses
 Path.view_tree = view_tree  # type: ignore
 
-UPath.glob.__doc__ = Path.glob.__doc__
-UPath.rglob.__doc__ = Path.rglob.__doc__
-UPath.stat.__doc__ = Path.stat.__doc__
-UPath.iterdir.__doc__ = Path.iterdir.__doc__
-UPath.resolve.__doc__ = Path.resolve.__doc__
-UPath.relative_to.__doc__ = Path.relative_to.__doc__
-UPath.exists.__doc__ = Path.exists.__doc__
-UPath.is_dir.__doc__ = Path.is_dir.__doc__
-UPath.is_file.__doc__ = Path.is_file.__doc__
-UPath.unlink.__doc__ = Path.unlink.__doc__
+
+def _standardize_docstring_paragraphs(doc: str | None) -> str | None:
+    """Convert markdown heading sections to paragraph-style labels."""
+    if doc is None:
+        return None
+    # Convert headings like `## Info` or `# Warning` into `Info:` / `Warning:`
+    doc = re.sub(r"(?m)^#{1,6}\s+([^\n]+?)\s*$", r"\1:", doc)
+    # Normalize markdown-like stylings occasionally used in upstream docs.
+    doc = re.sub(r"(?m)^-\[\s*([^\]]+?)\s*\]-\s*$", r"\1:", doc)
+    return doc
+
+
+def _set_doc_from_attr(target: Any, source: Any) -> None:
+    target.__doc__ = _standardize_docstring_paragraphs(source.__doc__)
+
+
+_DOC_COPY_PAIRS = (
+    (UPath.glob, Path.glob),
+    (UPath.rglob, Path.rglob),
+    (UPath.stat, Path.stat),
+    (UPath.iterdir, Path.iterdir),
+    (UPath.resolve, Path.resolve),
+    (UPath.relative_to, Path.relative_to),
+    (UPath.exists, Path.exists),
+    (UPath.is_dir, Path.is_dir),
+    (UPath.is_file, Path.is_file),
+    (UPath.unlink, Path.unlink),
+)
+for target, source in _DOC_COPY_PAIRS:
+    _set_doc_from_attr(target, source)
+
+# Keep upstream UPath docs but convert markdown heading sections into plain paragraphs.
+_DOC_STANDARDIZE_ATTRS = (
+    "parts",
+    "parent",
+    "parents",
+    "drive",
+    "cwd",
+    "home",
+    "joinpath",
+    "is_mount",
+    "is_junction",
+    "is_block_device",
+    "is_char_device",
+    "is_fifo",
+    "is_socket",
+    "is_reserved",
+    "expanduser",
+    "rmdir",
+    "replace",
+)
+for attr_name in _DOC_STANDARDIZE_ATTRS:
+    attr = getattr(UPath, attr_name, None)
+    if attr is not None and getattr(attr, "__doc__", None):
+        try:
+            attr.__doc__ = _standardize_docstring_paragraphs(attr.__doc__)
+        except (AttributeError, TypeError):
+            # Some descriptors can expose docs that are not writable.
+            pass
 UPath.rename.__doc__ = """Move file, see `fsspec.AbstractFileSystem.mv`.
 
 For example::
@@ -1042,6 +1092,9 @@ In addition to what `pathlib.Path` and `universal_pathlib.UPath` offer, `ln.UPat
     upath.upload_from("local-file.txt") # upload a local file
     upath.download_to("local-file.txt") # download a file
     upath.synchronize_to("local-folder/") # synchronize a folder
+
+Members
+-------
 
 """
 
