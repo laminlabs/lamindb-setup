@@ -1,6 +1,6 @@
 """Setup & configure LaminDB.
 
-Many functions in this "setup API" have a matching command in the :doc:`docs:cli`.
+Many functions in the `setup` module have a matching command in the :doc:`docs:cli`.
 
 Guide: :doc:`docs:setup`.
 
