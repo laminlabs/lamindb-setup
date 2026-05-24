@@ -422,6 +422,7 @@ def connect(instance: str | None = None, **kwargs: Any) -> str | tuple | None:
         if _test:
             return None
         silence_loggers()
+        settings.modules_warning = None
         check, msg = isettings._load_db()
         if not check:
             local_db = (
@@ -456,6 +457,8 @@ def connect(instance: str | None = None, **kwargs: Any) -> str | tuple | None:
                 logger.warning(
                     f'connected in read-only mode, please use ln.DB("{slug}") instead'
                 )
+            if settings.modules_warning is not None:
+                logger.warning(settings.modules_warning)
     except Exception as e:
         if isettings is not None:
             if _write_settings:

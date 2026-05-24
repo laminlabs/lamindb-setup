@@ -452,9 +452,9 @@ class SetupSettings:
             repr += f"{colors.cyan('Instance:')} None"
         modules_schema_str = ",".join(sorted(self.modules))
         modules_display = modules_schema_str if modules_schema_str != "" else '""'
-        repr += f"\n{colors.blue('Cache & settings:')}\n"
-        repr += f" - cache: {self.cache_dir.as_posix()}\n"
+        repr += f"\n{colors.blue('Settings:')}\n"
         repr += f" - modules: {modules_display}\n"
+        repr += f" - cache: {self.cache_dir.as_posix()}\n"
         repr += f" - user settings: {settings_dir.as_posix()}\n"
         repr += f" - system settings: {system_settings_dir.as_posix()}"
         repr += f"\n{colors.green('User:')} {self.user.handle}"
