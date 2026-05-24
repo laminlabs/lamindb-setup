@@ -12,6 +12,9 @@ def disconnect(mute: bool = False) -> None:
 
     Returns `None` if succeeds, otherwise an exception is raised.
 
+    Args:
+        mute: If `True`, mute logging output.
+
     See Also:
         Clear default instance configuration via the CLI, see `here <https://docs.lamin.ai/cli#disconnect>`__.
     """
