@@ -1020,27 +1020,28 @@ See Also:
     :meth:`~lamindb.UPath.from_auth`
         If the S3 URI is in an S3 storage managed by LaminHub, use this method to request federated AWS credentials.
 
-Examples:
+Examples
+--------
 
-    Create a path object from a local file::
+Create a path object from a local file::
 
-        upath = ln.UPath("./my-folder/my-file.txt")
+    upath = ln.UPath("./my-folder/my-file.txt")
 
-    Create a path from a S3 URI::
+Create a path from a S3 URI::
 
-        upath = ln.UPath("s3://my-bucket/my-folder/my-file.txt")      # create a path that detects local AWS credentials
-        upath = ln.UPath.from_auth("s3://managed-bucket/my-folder/")  # create a path that requests federated AWS credentials from LaminHub
+    upath = ln.UPath("s3://my-bucket/my-folder/my-file.txt")      # create a path that detects local AWS credentials
+    upath = ln.UPath.from_auth("s3://managed-bucket/my-folder/")  # create a path that requests federated AWS credentials from LaminHub
 
-    Create a path object from a GS URI::
+Create a path object from a GS URI::
 
-        upath = ln.UPath("gs://my-bucket/my-folder/my-file.txt")
+    upath = ln.UPath("gs://my-bucket/my-folder/my-file.txt")
 
-    In addition to what `pathlib.Path` and `universal_pathlib.UPath` offer, `ln.UPath` offers the following methods::
+In addition to what `pathlib.Path` and `universal_pathlib.UPath` offer, `ln.UPath` offers the following methods::
 
-        upath.view_tree() # view a file tree
-        upath.upload_from("local-file.txt") # upload a local file
-        upath.download_to("local-file.txt") # download a file
-        upath.synchronize_to("local-folder/") # synchronize a folder
+    upath.view_tree() # view a file tree
+    upath.upload_from("local-file.txt") # upload a local file
+    upath.download_to("local-file.txt") # download a file
+    upath.synchronize_to("local-folder/") # synchronize a folder
 
 """
 
