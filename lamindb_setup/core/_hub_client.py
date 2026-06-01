@@ -91,7 +91,7 @@ def connect_hub(
         transports.append(
             RetryTransport(
                 retry=LogRetry(total=2, backoff_factor=0.2),
-                transport=httpx.HTTPTransport(verify=True, http2=True, trust_env=True),
+                transport=httpx.HTTPTransport(verify=True, http2=False, trust_env=True),
             )
         )
     # this overwrites transports of existing httpx clients
@@ -114,7 +114,7 @@ def connect_hub(
                 "POST",
             ],
         ),
-        transport=httpx.HTTPTransport(verify=True, http2=True, trust_env=True),
+        transport=httpx.HTTPTransport(verify=True, http2=False, trust_env=True),
     )
     return client
 
@@ -261,7 +261,7 @@ def httpx_client():
         else:
             transport = RetryTransport(
                 retry=LogRetry(total=2, backoff_factor=0.2),
-                transport=httpx.HTTPTransport(verify=True, http2=True, trust_env=True),
+                transport=httpx.HTTPTransport(verify=True, http2=False, trust_env=True),
             )
             # first we create a client to build the proxy map from the env variables
             # if proxies are set, the default transports will be used
