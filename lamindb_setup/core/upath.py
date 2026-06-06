@@ -1154,7 +1154,15 @@ def get_storage_region(path: CloudPath | str) -> str | None:
     bucket = upath.drive
 
     if upath.protocol == "gs":
-        response = upath.fs.call("GET", f"b/{bucket}", json_out=True)
+        try:
+            response = upath.fs.call("GET", f"b/{bucket}", json_out=True)
+        except OSError as exc:
+            message = str(exc).lower()
+            # For private buckets, storage.buckets.get may be denied.
+            # Region inference should be best-effort and not fail downstream logic.
+            if "forbidden" in message or "permission" in message:
+                return None
+            raise
         location = response.get("location")
         if location is None:
             return None

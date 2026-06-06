@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+from unittest.mock import Mock, patch
+
 from lamindb_setup.core._aws_options import HOSTED_REGIONS
 from lamindb_setup.core._settings_storage import get_storage_region
 from lamindb_setup.core.upath import (
@@ -108,3 +110,16 @@ def test_get_storage_region():
         get_storage_region(UPath("s3://lamindb-setup-private-bucket/some-folder"))
         == "us-east-1"
     )
+
+
+def test_get_storage_region_gcs_permission_error():
+    mock_upath = Mock()
+    mock_upath.protocol = "gs"
+    mock_upath.drive = "arc-institute-virtual-cell-atlas"
+    mock_upath.fs = Mock()
+    mock_upath.fs.call.side_effect = OSError(
+        "Forbidden: b/arc-institute-virtual-cell-atlas\n"
+        "Permission 'storage.buckets.get' denied"
+    )
+    with patch("lamindb_setup.core.upath.UPath", return_value=mock_upath):
+        assert get_storage_region("gs://arc-institute-virtual-cell-atlas") is None
