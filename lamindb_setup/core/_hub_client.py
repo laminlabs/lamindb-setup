@@ -73,6 +73,17 @@ class LogRetry(Retry):
         return new
 
 
+# see the comment in connect_hub for why we ignore these deprecations
+# here this is needed to avoid warnings leaking in multi-threaded environments
+_FILTER_WARNINGS_MODULES = ("supabase", "supabase_functions", "postgrest")
+for module_pattern in _FILTER_WARNINGS_MODULES:
+    warnings.filterwarnings(
+        "ignore",
+        category=DeprecationWarning,
+        module=rf"^{module_pattern}(\.|$)",
+    )
+
+
 # runs ~0.5s
 def connect_hub(
     fallback_env: bool = False, client_options: ClientOptions | None = None
@@ -89,16 +100,15 @@ def connect_hub(
     # We don't want to create a separate httpx client ourselves because we'd then
     # need to replicate proxy handling and env-based proxy map creation.
     # Deprecations don't affect us vecause we upper bound the version of supabase to 2.24.0.
+    # here it is needed to avoid pytest tampering with the warnings filter
     with warnings.catch_warnings():
-        warnings.filterwarnings(
-            "ignore", category=DeprecationWarning, module="supabase"
-        )
-        warnings.filterwarnings(
-            "ignore", category=DeprecationWarning, module="supabase_functions"
-        )
-        warnings.filterwarnings(
-            "ignore", category=DeprecationWarning, module="postgrest"
-        )
+        for module_pattern in _FILTER_WARNINGS_MODULES:
+            warnings.filterwarnings(
+                "ignore",
+                category=DeprecationWarning,
+                module=rf"^{module_pattern}(\.|$)",
+            )
+
         client = create_client(
             env.supabase_api_url, env.supabase_anon_key, client_options
         )
