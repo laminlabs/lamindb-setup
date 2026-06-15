@@ -88,6 +88,7 @@ def connect_hub(
     # and currently configure timeout here for convenience.
     # We don't want to create a separate httpx client ourselves because we'd then
     # need to replicate proxy handling and env-based proxy map creation.
+    # Deprecations don't affect us vecause we upper bound the version of supabase to 2.24.0.
     with warnings.catch_warnings():
         warnings.filterwarnings(
             "ignore", category=DeprecationWarning, module="supabase"
