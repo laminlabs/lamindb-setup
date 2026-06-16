@@ -182,8 +182,8 @@ def test_connect_instance_hub(create_myinstance, create_testadmin1_session):
     assert instance["owner"] == owner
     assert instance["api_url"] == "http://localhost:8000"
     assert (
-        instance["db_permissions"] == "write"
-    )  # the instance has fine_grained_access=False
+        instance["db_permissions"] is None
+    )  # the instance has fine_grained_access=False, so db_permissions is None
     assert storage["root"] == "s3://lamindb-ci/myinstance"
     assert "schema_id" in instance
     assert "lnid" in instance
