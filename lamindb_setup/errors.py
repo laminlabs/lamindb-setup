@@ -10,6 +10,7 @@
 .. autoexception:: InstanceNotFoundError
 .. autoexception:: InstanceNotCreated
 .. autoexception:: NoAccessTokenError
+.. autoexception:: NoWriteAccess
 
 """
 
