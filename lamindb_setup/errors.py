@@ -10,6 +10,7 @@
 .. autoexception:: InstanceNotFoundError
 .. autoexception:: InstanceNotCreated
 .. autoexception:: NoAccessTokenError
+.. autoexception:: NoWriteAccess
 
 """
 
@@ -74,4 +75,10 @@ class CannotSwitchDefaultInstance(Exception):
 
 
 class NoAccessTokenError(RuntimeError):
+    pass
+
+
+class NoWriteAccess(Exception):
+    """No write access to a space."""
+
     pass
