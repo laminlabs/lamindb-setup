@@ -115,10 +115,6 @@ def update_db_using_local(
                         resolved_via_clone = True
                         db_updated = clone_db if return_sqlite_url else db_hub
                     elif raise_permission_error:
-                        if settings.user.handle == "anonymous":
-                            logger.warning(
-                                "using anonymous user (to identify, call: lamin login)"
-                            )
                         raise PermissionError(
                             "No database access, please ask your admin to provide you with"
                             " a DB URL and pass it via --db <db_url>"
