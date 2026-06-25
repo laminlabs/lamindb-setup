@@ -1,7 +1,9 @@
 from __future__ import annotations
 
+import gzip
 import importlib
 import os
+import shutil
 import sys
 import types
 from typing import TYPE_CHECKING, Any
@@ -47,10 +49,40 @@ def check_db_dsn_equal_up_to_credentials(db_dsn_hub, db_dsn_local):
     )
 
 
+def try_synchronize_sqlite_clone(storage_root: str | None) -> str | None:
+    """Synchronize a public SQLite clone and return local DB URL."""
+    if storage_root is None:
+        return None
+    from .core.upath import create_path
+
+    cloud_db_path_gz = create_path(
+        f"{str(storage_root).rstrip('/')}/.lamindb/lamin.db.gz"
+    )
+    local_sqlite_path_gz = settings.cache_dir / cloud_db_path_gz.path.lstrip("/")
+    local_sqlite_path_gz.parent.mkdir(parents=True, exist_ok=True)
+    local_sqlite_path = local_sqlite_path_gz.with_suffix("")
+    try:
+        if cloud_db_path_gz.synchronize_to(
+            local_sqlite_path_gz, error_no_origin=True, print_progress=True
+        ):
+            with (
+                gzip.open(local_sqlite_path_gz, "rb") as f_in,
+                open(local_sqlite_path, "wb") as f_out,
+            ):
+                shutil.copyfileobj(f_in, f_out)
+        return f"sqlite:///{local_sqlite_path}"
+    except (FileNotFoundError, PermissionError):
+        logger.debug("Clone not found. Falling back to normal access...")
+        return None
+
+
 def update_db_using_local(
     hub_instance_result: dict[str, str],
     settings_file: Path,
     db: str | None = None,
+    storage_root: str | None = None,
+    return_sqlite_url: bool = True,
+    allow_sqlite_clone_fallback: bool = False,
     raise_permission_error=True,
 ) -> str | None:
     db_updated = None
@@ -69,22 +101,29 @@ def update_db_using_local(
 
             db_hub = hub_instance_result["db"]
             db_dsn_hub = LaminDsnModel(db=db_hub)
+            resolved_via_clone = False
             # read from a cached settings file in case the hub result is inexistent
             if db_dsn_hub.db.user in {None, "none"} and settings_file.exists():
                 isettings = load_instance_settings(settings_file)
                 db_updated = isettings.db
             else:
                 # just take the default hub result and ensure there is actually a user
-                if (
-                    db_dsn_hub.db.user in {None, "none"}
-                    and db_dsn_hub.db.password in {None, "none"}
-                    and raise_permission_error
-                ):
-                    raise PermissionError(
-                        "No database access, please ask your admin to provide you with"
-                        " a DB URL and pass it via --db <db_url>"
-                    )
-                db_updated = db_hub
+                if db_dsn_hub.db.user in {None, "none"} and db_dsn_hub.db.password in {
+                    None,
+                    "none",
+                }:
+                    if allow_sqlite_clone_fallback:
+                        clone_db = try_synchronize_sqlite_clone(storage_root)
+                        if clone_db is not None:
+                            resolved_via_clone = True
+                            db_updated = clone_db if return_sqlite_url else db_hub
+                    if db_updated is None and raise_permission_error:
+                        raise PermissionError(
+                            "No database access, please ask your admin to provide you with"
+                            " a DB URL and pass it via --db <db_url>"
+                        )
+                if db_updated is None and not resolved_via_clone:
+                    db_updated = db_hub
     return db_updated
 
 
@@ -93,6 +132,7 @@ def _connect_instance(
     name: str,
     *,
     db: str | None = None,
+    allow_sqlite_clone_fallback: bool = False,
     raise_permission_error: bool = True,
     use_root_db_user: bool = False,
     use_proxy_db: bool = False,
@@ -133,6 +173,9 @@ def _connect_instance(
                 instance_result,
                 settings_file,
                 db=db,
+                storage_root=storage_result["root"],
+                return_sqlite_url=False,
+                allow_sqlite_clone_fallback=allow_sqlite_clone_fallback,
                 raise_permission_error=raise_permission_error,
             )
             ssettings = StorageSettings(
