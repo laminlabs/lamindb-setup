@@ -55,11 +55,12 @@ def try_synchronize_sqlite_clone(storage_root: str | None) -> str | None:
         return None
     from .core.upath import create_path
 
-    cloud_db_path = create_path(storage_root) / ".lamindb" / "lamin.db"
-    local_sqlite_path = settings.cache_dir / cloud_db_path.path.lstrip("/")
-    local_sqlite_path.parent.mkdir(parents=True, exist_ok=True)
-    local_sqlite_path_gz = local_sqlite_path.with_suffix(".db.gz")
-    cloud_db_path_gz = create_path(str(cloud_db_path) + ".gz")
+    cloud_db_path_gz = create_path(
+        f"{str(storage_root).rstrip('/')}/.lamindb/lamin.db.gz"
+    )
+    local_sqlite_path_gz = settings.cache_dir / cloud_db_path_gz.path.lstrip("/")
+    local_sqlite_path_gz.parent.mkdir(parents=True, exist_ok=True)
+    local_sqlite_path = local_sqlite_path_gz.with_suffix("")
     try:
         if cloud_db_path_gz.synchronize_to(
             local_sqlite_path_gz, error_no_origin=True, print_progress=True
