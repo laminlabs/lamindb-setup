@@ -81,6 +81,7 @@ def update_db_using_local(
     db: str | None = None,
     storage_root: str | None = None,
     return_sqlite_url: bool = True,
+    allow_sqlite_clone_fallback: bool = False,
     raise_permission_error=True,
 ) -> str | None:
     db_updated = None
@@ -110,11 +111,12 @@ def update_db_using_local(
                     None,
                     "none",
                 }:
-                    clone_db = try_synchronize_sqlite_clone(storage_root)
-                    if clone_db is not None:
-                        resolved_via_clone = True
-                        db_updated = clone_db if return_sqlite_url else db_hub
-                    elif raise_permission_error:
+                    if allow_sqlite_clone_fallback:
+                        clone_db = try_synchronize_sqlite_clone(storage_root)
+                        if clone_db is not None:
+                            resolved_via_clone = True
+                            db_updated = clone_db if return_sqlite_url else db_hub
+                    if db_updated is None and raise_permission_error:
                         raise PermissionError(
                             "No database access, please ask your admin to provide you with"
                             " a DB URL and pass it via --db <db_url>"
@@ -129,6 +131,7 @@ def _connect_instance(
     name: str,
     *,
     db: str | None = None,
+    allow_sqlite_clone_fallback: bool = False,
     raise_permission_error: bool = True,
     use_root_db_user: bool = False,
     use_proxy_db: bool = False,
@@ -171,6 +174,7 @@ def _connect_instance(
                 db=db,
                 storage_root=storage_result["root"],
                 return_sqlite_url=False,
+                allow_sqlite_clone_fallback=allow_sqlite_clone_fallback,
                 raise_permission_error=raise_permission_error,
             )
             ssettings = StorageSettings(

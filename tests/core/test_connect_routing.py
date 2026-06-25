@@ -214,6 +214,7 @@ def test_update_db_using_local_prefers_sqlite_clone(monkeypatch, tmp_path):
         hub_instance_result=hub_instance_result,
         settings_file=settings_file,
         storage_root="s3://bucket/instance",
+        allow_sqlite_clone_fallback=True,
     )
 
     assert db == sqlite_db_url
@@ -236,6 +237,7 @@ def test_update_db_using_local_raises_without_sqlite_clone(monkeypatch, tmp_path
             hub_instance_result=hub_instance_result,
             settings_file=settings_file,
             storage_root="s3://bucket/instance",
+            allow_sqlite_clone_fallback=True,
         )
 
 
@@ -293,6 +295,8 @@ def test_connect_instance_uses_sqlite_clone_before_permission_error(
         ),
     )
 
-    isettings = connect_instance._connect_instance("owner", "myinstance")
+    isettings = connect_instance._connect_instance(
+        "owner", "myinstance", allow_sqlite_clone_fallback=True
+    )
 
     assert isettings.db == "postgresql://none:none@fakeserver.xyz:5432/mydb"
