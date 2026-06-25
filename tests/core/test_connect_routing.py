@@ -195,3 +195,104 @@ def test_check_setup_uses_instance_modules_when_django_is_setup(monkeypatch):
     )
     with pytest.raises(ModuleWasntConfigured):
         _check_instance_setup(from_module="pertdb")
+
+
+def test_update_db_using_local_prefers_sqlite_clone(monkeypatch, tmp_path):
+    hub_instance_result = {
+        "db_scheme": "postgresql",
+        "db": "postgresql://none:none@fakeserver.xyz:5432/mydb",
+    }
+    settings_file = tmp_path / "instance.env"
+    sqlite_db_url = "sqlite:////tmp/clone.db"
+    monkeypatch.setattr(
+        connect_instance,
+        "try_synchronize_sqlite_clone",
+        lambda storage_root: sqlite_db_url,
+    )
+
+    db = connect_instance.update_db_using_local(
+        hub_instance_result=hub_instance_result,
+        settings_file=settings_file,
+        storage_root="s3://bucket/instance",
+    )
+
+    assert db == sqlite_db_url
+
+
+def test_update_db_using_local_raises_without_sqlite_clone(monkeypatch, tmp_path):
+    hub_instance_result = {
+        "db_scheme": "postgresql",
+        "db": "postgresql://none:none@fakeserver.xyz:5432/mydb",
+    }
+    settings_file = tmp_path / "instance.env"
+    monkeypatch.setattr(
+        connect_instance,
+        "try_synchronize_sqlite_clone",
+        lambda storage_root: None,
+    )
+
+    with pytest.raises(PermissionError, match="No database access"):
+        connect_instance.update_db_using_local(
+            hub_instance_result=hub_instance_result,
+            settings_file=settings_file,
+            storage_root="s3://bucket/instance",
+        )
+
+
+def test_connect_instance_uses_sqlite_clone_before_permission_error(
+    monkeypatch, tmp_path
+):
+    settings_file = tmp_path / "instance.env"
+    instance_result = {
+        "id": "11111111-1111-1111-1111-111111111111",
+        "name": "myinstance",
+        "schema_str": "lamindb",
+        "git_repo": None,
+        "keep_artifacts_local": False,
+        "api_url": None,
+        "schema_id": None,
+        "fine_grained_access": False,
+        "db_permissions": "read",
+        "db_scheme": "postgresql",
+        "db": "postgresql://none:none@fakeserver.xyz:5432/mydb",
+    }
+    storage_result = {
+        "root": "s3://bucket/myinstance",
+        "region": None,
+        "lnid": "abc123",
+        "id": "22222222-2222-2222-2222-222222222222",
+    }
+
+    monkeypatch.setattr(
+        connect_instance,
+        "instance_settings_file",
+        lambda name, owner: settings_file,
+    )
+    monkeypatch.setattr(
+        "lamindb_setup.core._hub_core.connect_instance_hub",
+        lambda **kwargs: (instance_result, storage_result),
+    )
+    monkeypatch.setattr(
+        connect_instance,
+        "try_synchronize_sqlite_clone",
+        lambda storage_root: "sqlite:////tmp/clone.db",
+    )
+    monkeypatch.setattr(
+        connect_instance,
+        "StorageSettings",
+        lambda **kwargs: SimpleNamespace(root=kwargs["root"]),
+    )
+    monkeypatch.setattr(
+        connect_instance,
+        "InstanceSettings",
+        lambda **kwargs: SimpleNamespace(
+            modules=set(kwargs["modules"].split(",")),
+            db=kwargs["db"],
+            is_remote=True,
+            dialect="sqlite",
+        ),
+    )
+
+    isettings = connect_instance._connect_instance("owner", "myinstance")
+
+    assert isettings.db == "postgresql://none:none@fakeserver.xyz:5432/mydb"
