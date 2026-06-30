@@ -1145,13 +1145,28 @@ class S3QueryPath(S3Path):
 register_implementation("s3", S3QueryPath, clobber=True)
 
 
-def get_storage_region(path: S3Path | str) -> str | None:
+def get_storage_region(path: CloudPath | str) -> str | None:
     upath = UPath(path)
 
-    if upath.protocol != "s3":
+    if upath.protocol not in {"s3", "gs"}:
         return None
 
     bucket = upath.drive
+
+    if upath.protocol == "gs":
+        try:
+            response = upath.fs.call("GET", f"b/{bucket}", json_out=True)
+        except OSError as exc:
+            message = str(exc).lower()
+            # For private buckets, storage.buckets.get may be denied.
+            # Region inference should be best-effort and not fail downstream logic.
+            if "forbidden" in message or "permission" in message:
+                return None
+            raise
+        location = response.get("location")
+        if location is None:
+            return None
+        return location.lower()
 
     if bucket == "scverse-spatial-eu-central-1":
         return "eu-central-1"
