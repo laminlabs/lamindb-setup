@@ -169,8 +169,7 @@ def test_module_mismatch_warning_includes_modules_command():
         current_apps={"lamindb"},
     )
     assert message is not None
-    assert "instance" in message
-    assert "has non-configured modules: bionty" in message
+    assert "database has module bionty" in message
     assert "lamin settings modules set bionty" in message
 
 
@@ -180,6 +179,7 @@ def test_module_mismatch_warning_uses_empty_schema_str_for_core_only():
         current_apps={"lamindb", "bionty"},
     )
     assert message is not None
+    assert "database does not have local module bionty" in message
     assert 'lamin settings modules set ""' in message
 
 

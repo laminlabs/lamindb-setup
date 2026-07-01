@@ -260,28 +260,20 @@ def _warn_module_mismatch(target_apps: set[str], current_apps: set[str]) -> str 
         return None
     missing_apps = sorted(current_apps - target_apps)
     additional_apps = sorted(target_apps - current_apps)
-    details: list[str] = []
-    if additional_apps:
-        details.append(
-            f"has non-configured modules: {','.join(additional_apps)}"
-        )  # no white space after comma for consistency
-    if missing_apps:
-        if additional_apps:
-            details.append("and")
-        details.append(
-            f"does not have some of your locally configured modules: {','.join(missing_apps)}"  # no white space after comma for consistency
-        )
-    if missing_apps:
-        hint = "you will run into an error when trying to permanently delete objects that are related to objects in these modules"
-    if additional_apps:
-        hint = f"you can only query entities (registries, fields) from modules that are configured in your environment"
     modules_for_hint = sorted(app for app in target_apps if app != "lamindb")
     modules_arg = ",".join(modules_for_hint) if modules_for_hint else '""'
-    hint2 = (
-        "to configure your environment with the instance modules, call: lamin settings modules set "
-        f"{modules_arg}"
+    details: list[str] = []
+    if additional_apps:
+        module_label = "module" if len(additional_apps) == 1 else "modules"
+        details.append(f"database has {module_label} {','.join(additional_apps)}")
+    if missing_apps:
+        module_label = "module" if len(missing_apps) == 1 else "modules"
+        prefix = "does not have" if additional_apps else "database does not have"
+        details.append(f"{prefix} local {module_label} {','.join(missing_apps)}")
+    return (
+        f"{' and '.join(details)}, configure it via: "
+        f"lamin settings modules set {modules_arg}"
     )
-    return f"the instance {' '.join(details)}\n{hint}\n{hint2}"
 
 
 def _ensure_pgtrigger_meta_compat() -> None:
