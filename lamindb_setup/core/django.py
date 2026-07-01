@@ -270,9 +270,9 @@ def _warn_module_mismatch(target_apps: set[str], current_apps: set[str]) -> str 
         module_label = "module" if len(missing_apps) == 1 else "modules"
         prefix = "does not have" if additional_apps else "database does not have"
         details.append(f"{prefix} local {module_label} {','.join(missing_apps)}")
+    action = "configure it" if additional_apps else "configure your local environment"
     return (
-        f"{' and '.join(details)}, configure it via: "
-        f"lamin settings modules set {modules_arg}"
+        f"{' and '.join(details)}, {action}: lamin settings modules set {modules_arg}"
     )
 
 

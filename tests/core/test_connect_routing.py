@@ -170,6 +170,7 @@ def test_module_mismatch_warning_includes_modules_command():
     )
     assert message is not None
     assert "database has module bionty" in message
+    assert "configure it:" in message
     assert "lamin settings modules set bionty" in message
 
 
@@ -180,6 +181,7 @@ def test_module_mismatch_warning_uses_empty_schema_str_for_core_only():
     )
     assert message is not None
     assert "database does not have local module bionty" in message
+    assert "configure your local environment:" in message
     assert 'lamin settings modules set ""' in message
 
 
