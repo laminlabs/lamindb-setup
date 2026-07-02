@@ -27,6 +27,7 @@ from lamindb_setup.errors import StorageNotEmpty
 from ._aws_options import HOSTED_BUCKETS, get_user_aws_options_manager
 from ._deprecated import deprecated
 from .hashing import HASH_LENGTH, b16_to_b64, hash_from_hashes_list, hash_string
+from .suffix import extract_suffix_from_path
 
 if TYPE_CHECKING:
     from collections.abc import Callable
@@ -40,56 +41,6 @@ if TYPE_CHECKING:
 
 LocalPathClasses = (PosixPath, WindowsPath, LocalPath)
 
-# also see https://gist.github.com/securifera/e7eed730cbe1ce43d0c29d7cd2d582f4
-#    ".gz" is not listed here as it typically occurs with another suffix
-# the complete list is at lamindb.core.storage._suffixes
-VALID_SIMPLE_SUFFIXES = {
-    #
-    # without readers
-    #
-    ".fasta",
-    ".fastq",
-    ".jpg",
-    ".mtx",
-    ".obo",
-    ".pdf",
-    ".png",
-    ".tar",
-    ".tiff",
-    ".txt",
-    ".tsv",
-    ".zip",
-    ".xml",
-    ".qs",  # https://cran.r-project.org/web/packages/qs/vignettes/vignette.html
-    ".rds",
-    ".pt",
-    ".pth",
-    ".ckpt",
-    ".state_dict",
-    ".keras",
-    ".pb",
-    ".pbtxt",
-    ".savedmodel",
-    ".pkl",
-    ".pickle",
-    ".bin",
-    ".safetensors",
-    ".model",
-    ".mlmodel",
-    ".mar",
-    #
-    # with readers (see below)
-    #
-    ".h5ad",
-    ".parquet",
-    ".csv",
-    ".fcs",
-    ".xslx",
-    ".zarr",
-    ".json",
-}
-# below gets updated within lamindb because it's frequently changing
-VALID_COMPOSITE_SUFFIXES = {".anndata.zarr"}
 
 TRAILING_SEP = (os.sep, os.altsep) if os.altsep is not None else os.sep
 
@@ -212,69 +163,6 @@ def s3fs_to_boto3_client(fs: S3FileSystem) -> BaseClient:
     BOTO3_CLIENTS[fs_id] = client
 
     return client
-
-
-def extract_suffix_from_path(path: AnyPath, arg_name: str | None = None) -> str:
-    def process_digits(suffix: str):
-        if suffix[1:].isdigit():  # :1 to skip the dot
-            return ""  # digits are no valid suffixes
-        else:
-            return suffix
-
-    suffixes = path.suffixes
-
-    if len(suffixes) <= 1:
-        return process_digits(path.suffix)
-
-    total_suffix = "".join(suffixes)
-    if total_suffix in VALID_SIMPLE_SUFFIXES:
-        return total_suffix
-    elif total_suffix.endswith(tuple(VALID_COMPOSITE_SUFFIXES)):
-        # below seems slow but OK for now
-        for suffix in VALID_COMPOSITE_SUFFIXES:
-            if total_suffix.endswith(suffix):
-                break
-        return suffix
-    else:
-        # zarr is a special case as the actual format is normally identified
-        # by the content of the zarr store, not by the composite suffix
-        if suffixes[-1] == ".zarr":
-            return ".zarr"
-        print_hint = True
-        arg_name = "file" if arg_name is None else arg_name  # for the warning
-        msg = f"{arg_name} has more than one suffix (path.suffixes), "
-        # first check the 2nd-to-last suffix because it might be followed by .gz
-        # or another compression-related suffix
-        # Alex thought about adding logic along the lines of path.suffixes[-1]
-        # in COMPRESSION_SUFFIXES to detect something like .random.gz and then
-        # add ".random.gz" but concluded it's too dangerous it's safer to just
-        # use ".gz" in such a case
-        if suffixes[-2] in VALID_SIMPLE_SUFFIXES:
-            suffix = "".join(suffixes[-2:])
-            # if the suffix preceding the compression suffixes is a valid suffix,
-            # we account for it; otherwise we don't.
-            # i.e. we should have .h5ad.tar.gz or .csv.tar.gz, not just .tar.gz
-            if (
-                suffix == ".tar.gz"
-                and len(suffixes) > 2
-                and (suffix_3 := suffixes[-3]) in VALID_SIMPLE_SUFFIXES
-            ):
-                suffix = suffix_3 + suffix
-            # do not print a warning for things like .tar.gz, .fastq.gz
-            if suffixes[-1] == ".gz":
-                print_hint = False
-            else:
-                msg += f"inferring: '{suffix}'"
-        else:
-            suffix = suffixes[-1]  # this is equivalent to path.suffix
-            msg += (
-                f"using only last suffix: '{suffix}' - if you want your composite"
-                " suffix to be recognized add it to"
-                " lamindb.core.storage.VALID_SIMPLE_SUFFIXES.add()"
-            )
-        if print_hint:
-            logger.hint(msg)
-        return process_digits(suffix)
 
 
 def infer_filesystem(path: AnyPathStr):
