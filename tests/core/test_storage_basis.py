@@ -10,13 +10,13 @@ def test_extract_suffix_from_path():
     collection = [
         ("a", ""),
         ("a.txt", ".txt"),
-        ("a.123", ""),  # digits are no valid suffixes
+        ("a.123", ""),
         ("archive.tar.gz", ".tar.gz"),
         ("directory/file", ""),
-        ("d.x.y.z/f.b.c", ".c"),
-        ("d.x.y.z/f.a.b.c", ".c"),
+        ("d.x.y.z/f.b.c", ""),
+        ("d.x.y.z/f.a.b.c", ""),
         ("logs/date.log.txt", ".txt"),
-        ("logs/date.log.123", ""),  # digits are no valid suffixes
+        ("logs/date.log.123", ""),
         ("salmon.merged.gene_counts.tsv", ".tsv"),
         ("salmon.merged.gene_counts.tsv.gz", ".tsv.gz"),
         ("filename.v1.1.0.anndata.zarr", ".anndata.zarr"),

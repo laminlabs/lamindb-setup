@@ -44,6 +44,7 @@ VALID_SIMPLE_SUFFIXES = {
     ".model",
     ".mlmodel",
     ".mar",
+    # .gz also but handled separately
     #
     # with readers (see below)
     #
@@ -78,8 +79,12 @@ def extract_suffix_from_path(path: AnyPath) -> str:
     suffixes = path.suffixes
     total_suffix = "".join(suffixes)
 
-    if total_suffix in VALID_SIMPLE_SUFFIXES:
-        return total_suffix
+    if len(suffixes) < 2:
+        if total_suffix in VALID_SIMPLE_SUFFIXES or total_suffix == ".gz":
+            return total_suffix
+        return ""
+
+    # further composite suffixes cases
 
     if total_suffix.endswith(tuple(VALID_COMPOSITE_SUFFIXES)):
         # below seems slow but OK for now
@@ -88,12 +93,13 @@ def extract_suffix_from_path(path: AnyPath) -> str:
                 break
         return suffix
 
-    # after composite suffixes are checked
+    # after listed composite suffixes are checked
     last_suffix = suffixes[-1]
     if last_suffix in VALID_SIMPLE_SUFFIXES:
         return last_suffix
 
     # compression suffixes
+
     # Alex thought about adding logic along the lines of path.suffixes[-1]
     # in COMPRESSION_SUFFIXES to detect something like .random.gz and then
     # add ".random.gz" but concluded it's too dangerous it's safer to just
@@ -110,6 +116,8 @@ def extract_suffix_from_path(path: AnyPath) -> str:
             ):
                 return suffix_3 + suffix
             return ".tar.gz"
+        elif suffixes[-2] in VALID_SIMPLE_SUFFIXES:
+            return suffix
         return ".gz"
 
     return ""
