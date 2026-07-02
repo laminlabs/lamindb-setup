@@ -41,6 +41,9 @@ VALID_SIMPLE_SUFFIXES = {
     ".model",
     ".mlmodel",
     ".mar",
+    ".tiledbsoma",
+    ".soma",
+    ".tiledb",
     # .gz also but handled separately
     #
     # with readers (see below)
