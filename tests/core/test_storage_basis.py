@@ -45,6 +45,13 @@ def test_extract_suffix_from_path():
         # unknown suffix preceding .gz falls back safely
         ("file.random.gz", ".gz"),
         ("foo.bar.tar.gz", ".tar.gz"),
+        # uppercase suffixes are normalized to canonical lowercase
+        ("scan.TIFF", ".tiff"),
+        ("image.PNG", ".png"),
+        ("photo.JPG", ".jpg"),
+        ("sample.OME.ZARR", ".ome.zarr"),
+        ("variants.VCF.GZ", ".vcf.gz"),
+        ("unknown.XYZ", ""),
     ]
     for path, suffix in collection:
         filepath = Path(path)

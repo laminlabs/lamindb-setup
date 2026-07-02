@@ -138,7 +138,9 @@ class VALID_SUFFIXES:
 
 # this extracts only valid suffixes from the lists above and handles compression suffixes
 def extract_suffix_from_path(path: AnyPath) -> str:
-    suffixes = path.suffixes
+    # normalize to lowercase so uppercase variants (e.g. instrument output like
+    # .TIFF, .CZI, .DCM) are recognized and returned in canonical lowercase form
+    suffixes = [suffix.lower() for suffix in path.suffixes]
     total_suffix = "".join(suffixes)
 
     if len(suffixes) < 2:
