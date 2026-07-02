@@ -118,6 +118,12 @@ VALID_COMPOSITE_SUFFIXES = {
     ".anndata.zarr",
     ".vitessce.json",
     ".ome.zarr",
+    # ".spatialdata.zarr" ?
+    #
+    # added by opus 4.8
+    #
+    ".ome.h5",
+    ".ome.hdf5",
 }
 
 
