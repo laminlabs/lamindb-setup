@@ -2,14 +2,11 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
-from lamin_utils import logger
-
 if TYPE_CHECKING:
     from lamindb_setup.types import AnyPath
 
 # also see https://gist.github.com/securifera/e7eed730cbe1ce43d0c29d7cd2d582f4
-#    ".gz" is not listed here as it typically occurs with another suffix
-# the complete list is at lamindb.core.storage._suffixes
+# .gz is handled separately
 VALID_SIMPLE_SUFFIXES = {
     #
     # without readers
