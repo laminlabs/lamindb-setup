@@ -44,6 +44,7 @@ VALID_SIMPLE_SUFFIXES = {
     ".tiledbsoma",
     ".soma",
     ".tiledb",
+    ".data",
     # .gz also but handled separately
     #
     # with readers (see below)
