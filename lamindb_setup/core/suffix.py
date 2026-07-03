@@ -140,8 +140,8 @@ class VALID_SUFFIXES:
     """Composite suffixes."""
 
 
-# this extracts only valid suffixes from the lists above and handles compression suffixes
-def extract_suffix_from_path(path: AnyPath) -> str:
+# this extracts valid suffix and raw suffix and handles compression suffixes
+def extract_suffixes_from_path(path: AnyPath) -> tuple[str, str]:
     # normalize to lowercase so uppercase variants (e.g. instrument output like
     # .TIFF, .CZI, .DCM) are recognized and returned in canonical lowercase form
     suffixes = [suffix.lower() for suffix in path.suffixes]
@@ -149,8 +149,8 @@ def extract_suffix_from_path(path: AnyPath) -> str:
 
     if len(suffixes) < 2:
         if total_suffix in VALID_SIMPLE_SUFFIXES or total_suffix == ".gz":
-            return total_suffix
-        return ""
+            return total_suffix, total_suffix
+        return "", suffixes[-1]
 
     # further composite suffixes cases
 
@@ -159,12 +159,12 @@ def extract_suffix_from_path(path: AnyPath) -> str:
         for suffix in VALID_COMPOSITE_SUFFIXES:
             if total_suffix.endswith(suffix):
                 break
-        return suffix
+        return suffix, suffix
 
     # after listed composite suffixes are checked
     last_suffix = suffixes[-1]
     if last_suffix in VALID_SIMPLE_SUFFIXES:
-        return last_suffix
+        return last_suffix, last_suffix
 
     # compression suffixes
 
@@ -182,10 +182,11 @@ def extract_suffix_from_path(path: AnyPath) -> str:
                 len(suffixes) > 2
                 and (suffix_3 := suffixes[-3]) in VALID_SIMPLE_SUFFIXES
             ):
-                return suffix_3 + suffix
-            return ".tar.gz"
+                compression_suffix = suffix_3 + suffix
+                return compression_suffix, compression_suffix
+            return ".tar.gz", ".tar.gz"
         elif suffixes[-2] in VALID_SIMPLE_SUFFIXES:
-            return suffix
-        return ".gz"
+            return suffix, suffix
+        return ".gz", ".gz"
 
-    return ""
+    return "", last_suffix

@@ -2,10 +2,10 @@ from __future__ import annotations
 
 from pathlib import Path
 
-from lamindb_setup.core.upath import extract_suffix_from_path
+from lamindb_setup.core.upath import extract_suffixes_from_path
 
 
-def test_extract_suffix_from_path():
+def test_extract_suffixes_from_path():
     # this is a collection of path, stem, suffix tuples
     collection = [
         # no / unknown suffix
@@ -55,4 +55,4 @@ def test_extract_suffix_from_path():
     ]
     for path, suffix in collection:
         filepath = Path(path)
-        assert suffix == extract_suffix_from_path(filepath)
+        assert suffix == extract_suffixes_from_path(filepath)[0]
