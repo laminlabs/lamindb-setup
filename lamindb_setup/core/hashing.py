@@ -1,5 +1,3 @@
-from __future__ import annotations
-
 """Hashing.
 
 .. autosummary::
@@ -9,6 +7,8 @@ from __future__ import annotations
    hash_file
 
 """
+
+from __future__ import annotations
 
 import base64
 import hashlib
