@@ -1,3 +1,17 @@
+"""File suffixes.
+
+Defines the sets of recognized artifact suffixes and the logic to extract a
+canonical suffix from a path, including composite (e.g. ``.anndata.zarr``) and
+stream-compression (e.g. ``.csv.gz``) suffixes.
+
+.. autosummary::
+   :toctree: .
+
+   VALID_SUFFIXES
+   extract_suffixes_from_path
+
+"""
+
 from __future__ import annotations
 
 from typing import TYPE_CHECKING
@@ -6,60 +20,14 @@ if TYPE_CHECKING:
     from lamindb_setup.types import AnyPath
 
 # also see https://gist.github.com/securifera/e7eed730cbe1ce43d0c29d7cd2d582f4
-# .gz is handled separately
+# compression suffixes (see COMPRESSION_SUFFIXES) are handled separately
+# suffixes marked "# loader" have an artifact loader in lamindb.core.loaders
 VALID_SIMPLE_SUFFIXES = {
     #
-    # without readers
-    #
-    ".fasta",
-    ".fastq",
-    ".jpg",
-    ".mtx",
-    ".obo",
-    ".pdf",
-    ".png",
-    ".tar",
-    ".tiff",
-    ".txt",
-    ".tsv",
-    ".zip",
-    ".xml",
-    ".qs",  # https://cran.r-project.org/web/packages/qs/vignettes/vignette.html
-    ".rds",
-    ".pt",
-    ".pth",
-    ".ckpt",
-    ".state_dict",
-    ".keras",
-    ".pb",
-    ".pbtxt",
-    ".savedmodel",
-    ".pkl",
-    ".pickle",
-    ".bin",
-    ".safetensors",
-    ".model",
-    ".mlmodel",
-    ".mar",
-    ".tiledbsoma",
-    ".soma",
-    ".tiledb",
-    ".data",
-    # .gz also but handled separately
-    #
-    # with readers (see below)
-    #
-    ".h5ad",
-    ".parquet",
-    ".csv",
-    ".fcs",
-    ".xlsx",
-    ".zarr",
-    ".json",
-    #
-    # added by opus 4.8
-    #
     # bioinformatics / genomics
+    #
+    ".fasta",  # loader
+    ".fastq",
     ".bam",
     ".sam",
     ".cram",
@@ -72,72 +40,168 @@ VALID_SIMPLE_SUFFIXES = {
     ".bigwig",
     ".bw",
     ".bedgraph",
-    ".h5",
-    ".hdf5",
-    ".loom",
     ".gb",
     ".genbank",
     ".embl",
     ".nwk",
     ".newick",
-    # tabular / data
+    ".obo",
+    ".fcs",  # loader
+    #
+    # single-cell / omics
+    #
+    ".h5ad",  # loader
+    ".h5mu",  # loader
+    ".loom",
+    #
+    # tabular / dataframes
+    #
+    ".csv",  # loader
+    ".tsv",  # loader
+    ".parquet",  # loader
+    ".xlsx",
     ".arrow",
     ".feather",
     ".orc",
     ".avro",
-    ".ndjson",
+    #
+    # arrays / matrices
+    #
+    ".mtx",
+    ".npy",
+    ".npz",
+    ".h5",
+    ".hdf5",
+    #
+    # array stores
+    #
+    ".zarr",  # loader
+    ".tiledb",
+    ".tiledbsoma",
+    ".soma",
+    #
+    # serialization / config
+    #
+    ".json",  # loader
     ".jsonl",
-    ".yaml",
+    ".ndjson",
+    ".yaml",  # loader
     ".yml",
-    ".duckdb",
-    ".db",
-    ".sqlite",
+    ".xml",
+    ".pkl",
+    ".pickle",
+    ".qs",  # https://cran.r-project.org/web/packages/qs/vignettes/vignette.html
+    ".rds",  # loader
+    #
+    # ml models & weights
+    #
+    ".pt",
+    ".pth",
+    ".ckpt",
+    ".state_dict",
+    ".keras",
+    ".pb",
+    ".pbtxt",
+    ".savedmodel",
+    ".bin",
+    ".safetensors",
+    ".model",
+    ".mlmodel",
+    ".mar",
+    ".onnx",
+    ".gguf",
+    ".tflite",
+    ".joblib",
+    #
     # images / microscopy
-    ".svg",
-    ".gif",
+    #
+    ".jpg",  # loader
+    ".jpeg",
+    ".png",  # loader
+    ".gif",  # loader
+    ".svg",  # loader
     ".bmp",
     ".webp",
+    ".tif",
+    ".tiff",
     ".dcm",
     ".nd2",
     ".czi",
     ".lif",
     ".svs",
-    ".tif",
-    ".jpeg",
-    # ml / arrays
-    ".npy",
-    ".npz",
-    ".onnx",
-    ".gguf",
-    ".tflite",
-    ".joblib",
-    # documents / misc
+    #
+    # documents / text
+    #
+    ".txt",  # loader
     ".md",
-    ".html",
+    ".html",  # loader
+    ".pdf",
     ".ipynb",
+    #
+    # archives
+    #
+    ".tar",  # compression suffixes are handled separately
+    ".zip",
+    ".rar",
+    ".7z",
+    #
+    # databases
+    #
+    ".db",
+    ".duckdb",
+    ".sqlite",
+    #
+    # misc
+    #
+    ".data",
 }
 
 
 VALID_COMPOSITE_SUFFIXES = {
-    ".anndata.zarr",
-    ".vitessce.json",
+    ".anndata.zarr",  # loader
+    ".vitessce.json",  # loader
     ".ome.zarr",
-    # ".spatialdata.zarr" ?
-    #
-    # added by opus 4.8
-    #
     ".ome.h5",
     ".ome.hdf5",
 }
 
 
+# stream-compression suffixes that are appended on top of another suffix
+# (e.g. .csv.gz, .tar.xz); handled specially rather than listed as simple suffixes
+COMPRESSION_SUFFIXES = {
+    ".gz",
+    ".bz2",
+    ".xz",
+    ".zst",
+}
+
+
 class VALID_SUFFIXES:
-    """Valid suffixes."""
+    """Valid artifact suffixes.
+
+    Groups the recognized suffixes by kind. Used to extract a canonical suffix
+    from a path via :func:`extract_suffixes_from_path`.
+    """
 
     SIMPLE: set[str] = VALID_SIMPLE_SUFFIXES
-    """Simple suffixes."""
+    """Single-part suffixes such as ``.csv``, ``.h5ad`` or ``.parquet``.
+
+    These correspond to the last component of a filename (``path.suffix``).
+    """
     COMPOSITE: set[str] = VALID_COMPOSITE_SUFFIXES
-    """Composite suffixes."""
+    """Multi-part suffixes such as ``.anndata.zarr`` or ``.ome.zarr``.
+
+    Their meaning is carried by the combination of parts, so they take
+    precedence over the trailing simple suffix (e.g. ``.anndata.zarr`` is
+    preferred over ``.zarr``).
+    """
+    COMPRESSION: set[str] = COMPRESSION_SUFFIXES
+    """Stream-compression suffixes such as ``.gz``, ``.bz2``, ``.xz`` or ``.zst``.
+
+    These are appended on top of another suffix (e.g. ``.csv.gz``,
+    ``.h5ad.tar.gz``) and are handled specially rather than listed as simple
+    suffixes.
+    """
 
 
 # this extracts valid suffix and raw suffix and handles compression suffixes
@@ -149,12 +213,14 @@ def extract_suffixes_from_path(path: AnyPath) -> tuple[str, str]:
     total_suffix = "".join(suffixes)
 
     if len(suffixes) < 2:
-        if total_suffix in VALID_SIMPLE_SUFFIXES or total_suffix == ".gz":
+        if (
+            total_suffix in VALID_SIMPLE_SUFFIXES
+            or total_suffix in COMPRESSION_SUFFIXES
+        ):
             return total_suffix, total_suffix
         return "", last_suffix
 
     # further composite suffixes cases
-
     if total_suffix.endswith(tuple(VALID_COMPOSITE_SUFFIXES)):
         # below seems slow but OK for now
         for suffix in VALID_COMPOSITE_SUFFIXES:
@@ -167,15 +233,10 @@ def extract_suffixes_from_path(path: AnyPath) -> tuple[str, str]:
         return last_suffix, last_suffix
 
     # compression suffixes
-
-    # Alex thought about adding logic along the lines of path.suffixes[-1]
-    # in COMPRESSION_SUFFIXES to detect something like .random.gz and then
-    # add ".random.gz" but concluded it's too dangerous it's safer to just
-    # use ".gz" in such a case
-    if last_suffix == ".gz":
-        suffix = "".join(suffixes[-2:])
-        if suffix == ".tar.gz":
-            # if the suffix preceding the compression suffixes is a valid suffix,
+    if last_suffix in COMPRESSION_SUFFIXES:
+        suffix = "".join(suffixes[-2:])  # e.g. ".tar.gz", ".csv.bz2"
+        if suffixes[-2] == ".tar":
+            # if the suffix preceding ".tar.<compression>" is a valid suffix,
             # we account for it; otherwise we don't.
             # i.e. we should have .h5ad.tar.gz or .csv.tar.gz, not just .tar.gz
             if (
@@ -184,9 +245,9 @@ def extract_suffixes_from_path(path: AnyPath) -> tuple[str, str]:
             ):
                 compression_suffix = suffix_3 + suffix
                 return compression_suffix, compression_suffix
-            return ".tar.gz", ".tar.gz"
+            return suffix, suffix
         elif suffixes[-2] in VALID_SIMPLE_SUFFIXES:
             return suffix, suffix
-        return ".gz", ".gz"
+        return last_suffix, last_suffix
 
     return "", last_suffix

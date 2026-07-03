@@ -45,6 +45,16 @@ def test_extract_suffixes_from_path():
         # unknown suffix preceding .gz falls back safely
         ("file.random.gz", ".gz"),
         ("foo.bar.tar.gz", ".tar.gz"),
+        # other compression suffixes handled like .gz
+        ("plain.bz2", ".bz2"),
+        ("plain.xz", ".xz"),
+        ("plain.zst", ".zst"),
+        ("data.csv.bz2", ".csv.bz2"),
+        ("data.tsv.xz", ".tsv.xz"),
+        ("archive.tar.bz2", ".tar.bz2"),
+        ("archive.tar.zst", ".tar.zst"),
+        ("filename.h5ad.tar.xz", ".h5ad.tar.xz"),
+        ("file.random.zst", ".zst"),
         # uppercase suffixes are normalized to canonical lowercase
         ("scan.TIFF", ".tiff"),
         ("image.PNG", ".png"),
