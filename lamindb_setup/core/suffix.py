@@ -145,12 +145,13 @@ def extract_suffixes_from_path(path: AnyPath) -> tuple[str, str]:
     # normalize to lowercase so uppercase variants (e.g. instrument output like
     # .TIFF, .CZI, .DCM) are recognized and returned in canonical lowercase form
     suffixes = [suffix.lower() for suffix in path.suffixes]
+    last_suffix = suffixes[-1] if suffixes else ""
     total_suffix = "".join(suffixes)
 
     if len(suffixes) < 2:
         if total_suffix in VALID_SIMPLE_SUFFIXES or total_suffix == ".gz":
             return total_suffix, total_suffix
-        return "", suffixes[-1]
+        return "", last_suffix
 
     # further composite suffixes cases
 
@@ -162,7 +163,6 @@ def extract_suffixes_from_path(path: AnyPath) -> tuple[str, str]:
         return suffix, suffix
 
     # after listed composite suffixes are checked
-    last_suffix = suffixes[-1]
     if last_suffix in VALID_SIMPLE_SUFFIXES:
         return last_suffix, last_suffix
 
