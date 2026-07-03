@@ -1,17 +1,3 @@
-"""File suffixes.
-
-Defines the sets of recognized artifact suffixes and the logic to extract a
-canonical suffix from a path, including composite (e.g. ``.anndata.zarr``) and
-stream-compression (e.g. ``.csv.gz``) suffixes.
-
-.. autosummary::
-   :toctree: .
-
-   VALID_SUFFIXES
-   extract_suffixes_from_path
-
-"""
-
 from __future__ import annotations
 
 from typing import TYPE_CHECKING
@@ -177,35 +163,42 @@ COMPRESSION_SUFFIXES = {
 
 
 class VALID_SUFFIXES:
-    """Valid artifact suffixes.
+    """Valid values for the `.suffix` field of the `Artifact` registry.
 
-    Groups the recognized suffixes by kind. Used to extract a canonical suffix
-    from a path via :func:`extract_suffixes_from_path`.
+    Defines sets of valid suffixes and the logic to extract a valid suffix from a path,
+    including composite (e.g. `.csv.gz`) suffixes.
+
+    Only valid suffixes can populate the `suffix` field of the `Artifact` registry.
     """
 
     SIMPLE: set[str] = VALID_SIMPLE_SUFFIXES
-    """Single-part suffixes such as ``.csv``, ``.h5ad`` or ``.parquet``.
+    """Single-part suffixes such as `.csv`, `.h5ad` or `.parquet`.
 
-    These correspond to the last component of a filename (``path.suffix``).
+    These correspond to the last component of a filename (`path.suffix`).
     """
     COMPOSITE: set[str] = VALID_COMPOSITE_SUFFIXES
-    """Multi-part suffixes such as ``.anndata.zarr`` or ``.ome.zarr``.
+    """Multi-part suffixes such as `.anndata.zarr` or `.ome.zarr`.
 
     Their meaning is carried by the combination of parts, so they take
-    precedence over the trailing simple suffix (e.g. ``.anndata.zarr`` is
-    preferred over ``.zarr``).
+    precedence over the trailing simple suffix (e.g. `.anndata.zarr` is
+    preferred over `.zarr`).
     """
     COMPRESSION: set[str] = COMPRESSION_SUFFIXES
-    """Stream-compression suffixes such as ``.gz``, ``.bz2``, ``.xz`` or ``.zst``.
+    """Stream-compression suffixes such as `.gz`, `.bz2`, `.xz` or `.zst`.
 
-    These are appended on top of another suffix (e.g. ``.csv.gz``,
-    ``.h5ad.tar.gz``) and are handled specially rather than listed as simple
-    suffixes.
+    These are appended to another suffix (e.g. `.csv.gz`, `.h5ad.tar.gz`).
     """
 
 
-# this extracts valid suffix and raw suffix and handles compression suffixes
 def extract_suffixes_from_path(path: AnyPath) -> tuple[str, str]:
+    """Extract valid suffix and raw suffix from a path, including composite (e.g. `.csv.gz`) suffixes.
+
+    Args:
+        path: The path to extract the suffix from.
+
+    Returns:
+        A tuple of the valid suffix and the raw suffix.
+    """
     # normalize to lowercase so uppercase variants (e.g. instrument output like
     # .TIFF, .CZI, .DCM) are recognized and returned in canonical lowercase form
     suffixes = [suffix.lower() for suffix in path.suffixes]
