@@ -27,7 +27,7 @@ from lamindb_setup.errors import StorageNotEmpty
 from ._aws_options import HOSTED_BUCKETS, get_user_aws_options_manager
 from ._deprecated import deprecated
 from .hashing import HASH_LENGTH, b16_to_b64, hash_from_hashes_list, hash_string
-from .suffix import extract_suffixes_from_path
+from .suffixes import extract_suffixes_from_path
 
 if TYPE_CHECKING:
     from collections.abc import Callable

@@ -1,5 +1,10 @@
 """Setup core library.
 
+Valid suffixes
+--------------
+
+.. autoclass:: VALID_SUFFIXES
+
 Settings
 --------
 
@@ -23,3 +28,4 @@ from ._settings import SetupSettings
 from ._settings_instance import InstanceSettings
 from ._settings_storage import StorageSettings
 from ._settings_user import UserSettings
+from .suffixes import VALID_SUFFIXES
