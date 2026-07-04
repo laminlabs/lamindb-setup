@@ -197,6 +197,21 @@ class CanonicalSuffix(str):
             CanonicalSuffix.extract_from_path("data/sample.anndata.zarr")
             #> CanonicalSuffix('.anndata.zarr'), ".anndata.zarr"
 
+            CanonicalSuffix.extract_from_path("archive.tar.gz")
+            #> CanonicalSuffix('.tar.gz'), ".tar.gz"
+
+            CanonicalSuffix.extract_from_path("filename.h5ad.tar.xz")
+            #> CanonicalSuffix('.h5ad.tar.xz'), ".h5ad.tar.xz"
+
+            CanonicalSuffix.extract_from_path("file.random.gz")
+            #> CanonicalSuffix('.gz'), ".gz"
+
+            CanonicalSuffix.extract_from_path("sample.OME.ZARR")
+            #> CanonicalSuffix('.ome.zarr'), ".ome.zarr"
+
+            CanonicalSuffix.extract_from_path("unknown.XYZ")
+            #> CanonicalSuffix(''), ".xyz"
+
     """
 
     SIMPLE: set[str] = SIMPLE_FORMATS
