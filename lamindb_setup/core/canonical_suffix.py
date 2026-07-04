@@ -25,7 +25,6 @@ SIMPLE_FORMATS = {
     ".bam",
     ".sam",
     ".cram",
-    ".vcf",
     ".bcf",
     ".bed",
     ".gff",
@@ -50,8 +49,6 @@ SIMPLE_FORMATS = {
     #
     # tabular / dataframes
     #
-    ".csv",  # loader
-    ".tsv",  # loader
     ".parquet",  # loader
     ".xlsx",
     ".arrow",
@@ -64,7 +61,6 @@ SIMPLE_FORMATS = {
     ".mtx",
     ".npy",
     ".npz",
-    ".h5",
     ".hdf5",
     #
     # array stores
@@ -76,12 +72,10 @@ SIMPLE_FORMATS = {
     #
     # serialization / config
     #
-    ".json",  # loader
     ".jsonl",
     ".ndjson",
     ".yaml",  # loader
     ".yml",
-    ".xml",
     ".pkl",
     ".pickle",
     ".qs",  # https://cran.r-project.org/web/packages/qs/vignettes/vignette.html
@@ -97,7 +91,6 @@ SIMPLE_FORMATS = {
     ".pb",
     ".pbtxt",
     ".savedmodel",
-    ".bin",
     ".safetensors",
     ".model",
     ".mlmodel",
@@ -109,15 +102,6 @@ SIMPLE_FORMATS = {
     #
     # images / microscopy
     #
-    ".jpg",  # loader
-    ".jpeg",
-    ".png",  # loader
-    ".gif",  # loader
-    ".svg",  # loader
-    ".bmp",
-    ".webp",
-    ".tif",
-    ".tiff",
     ".dcm",
     ".nd2",
     ".czi",
@@ -126,16 +110,10 @@ SIMPLE_FORMATS = {
     #
     # documents / text
     #
-    ".txt",  # loader
-    ".md",
-    ".html",  # loader
-    ".pdf",
     ".ipynb",
     #
     # archives
     #
-    ".tar",  # compression suffixes are handled separately
-    ".zip",
     ".rar",
     ".7z",
     #
