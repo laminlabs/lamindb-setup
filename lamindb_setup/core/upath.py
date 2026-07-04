@@ -1,5 +1,8 @@
-# we are not documenting UPath here because it's documented at lamindb.UPath
 """Paths & file systems."""
+# the main class of this module is re-exported and documented as lamindb.UPath
+# the location of upath.py in lamindb_setup is for internal use
+# or for developers who want to avoid importing lamindb
+# this is the same rationale as for the canonical_suffix.py module in lamindb_setup/core
 
 from __future__ import annotations
 

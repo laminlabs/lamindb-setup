@@ -1,4 +1,8 @@
-"""Canonical artifact suffix utilities."""
+"""The `CanonicalSuffix` class."""
+# the main class of this module is re-exported and documented in lamindb.base.types
+# the location of canonical_suffix.py in lamindb_setup is for internal use
+# or for developers who want to avoid importing lamindb
+# this is the same rationale as for the upath.py module in lamindb_setup/core
 
 from __future__ import annotations
 
