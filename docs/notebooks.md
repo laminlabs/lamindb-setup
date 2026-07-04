@@ -5,6 +5,7 @@
 
 hub-cloud/init-local-instance
 hub-cloud/connect-local-instance
+hub-cloud/test-init-cloud-with-db
 hub-cloud/add-managed-storage
 hub-cloud/test-bionty
 hub-cloud/init-hosted-instance
