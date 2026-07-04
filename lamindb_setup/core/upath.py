@@ -718,7 +718,7 @@ def compute_file_tree(
             elif not only_dirs:
                 if include_paths and child_path not in include_paths:
                     continue
-                suffix, _ = CanonicalSuffix.extract_from_path(child_path)
+                suffix = CanonicalSuffix.from_path(child_path)
                 suffixes.add(suffix)
                 n_files_per_dir_and_type[suffix] += 1
                 n_files += 1
