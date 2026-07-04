@@ -227,7 +227,7 @@ class InstanceSettings:
     def keep_artifacts_local(self) -> bool:
         """Default to keeping artifacts local.
 
-        Guide: :doc:`faq/keep-artifacts-local`
+        Guide: :doc:`docs:faq/keep-artifacts-local`
         """
         return self._keep_artifacts_local
 
@@ -252,7 +252,7 @@ class InstanceSettings:
 
         Serves as the default storage location if :attr:`keep_artifacts_local` is enabled.
 
-        Guide: :doc:`faq/keep-artifacts-local`
+        Guide: :doc:`docs:faq/keep-artifacts-local`
         """
         if not self.keep_artifacts_local:
             raise ValueError(

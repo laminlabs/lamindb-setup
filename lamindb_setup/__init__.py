@@ -13,12 +13,6 @@ Basic operations
 .. autofunction:: disconnect
 .. autofunction:: delete
 
-Change management
------------------
-
-.. autofunction:: switch
-.. autofunction:: merge
-
 Modules & settings
 ------------------
 

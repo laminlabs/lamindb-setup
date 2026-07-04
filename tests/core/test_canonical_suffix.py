@@ -1,11 +1,12 @@
 from __future__ import annotations
 
+import mimetypes
 from pathlib import Path
 
-from lamindb_setup.core.upath import extract_suffixes_from_path
+from lamindb_setup.core.canonical_suffix import SIMPLE_FORMATS, CanonicalSuffix
 
 
-def test_extract_suffixes_from_path():
+def test_extract_from_path():
     # this is a collection of path, stem, suffix tuples
     collection = [
         # no / unknown suffix
@@ -13,8 +14,8 @@ def test_extract_suffixes_from_path():
         ("a.txt", ".txt"),
         ("a.123", ""),
         ("directory/file", ""),
-        ("d.x.y.z/f.b.c", ""),
-        ("d.x.y.z/f.a.b.c", ""),
+        ("d.x.y.z/f.b.c", ".c"),
+        ("d.x.y.z/f.a.b.c", ".c"),
         ("logs/date.log.txt", ".txt"),
         ("logs/date.log.123", ""),
         ("some.unknown.suffix", ""),
@@ -63,6 +64,29 @@ def test_extract_suffixes_from_path():
         ("variants.VCF.GZ", ".vcf.gz"),
         ("unknown.XYZ", ""),
     ]
-    for path, suffix in collection:
+    for path, canonical_suffix in collection:
         filepath = Path(path)
-        assert suffix == extract_suffixes_from_path(filepath)[0]
+        # from_path calls extract_from_path
+        assert canonical_suffix == CanonicalSuffix.from_path(filepath)
+
+
+def test_mime_extensions_are_included():
+    mime_suffixes = {
+        suffix.lower()
+        for suffix in (
+            set(mimetypes.types_map.keys()) | set(mimetypes.common_types.keys())
+        )
+    }
+    # all MIME suffixes are explicitly listed in SIMPLE_FORMATS
+    assert mime_suffixes.issubset(SIMPLE_FORMATS)
+    mime_suffix = sorted(mime_suffixes)[0]
+    assert CanonicalSuffix.from_path(Path(f"file{mime_suffix}")) == mime_suffix
+
+
+def test_runtime_extension_simple_suffixes():
+    custom_suffix = ".myformat"
+    assert CanonicalSuffix.from_path(Path(f"file{custom_suffix}")) == ""
+    CanonicalSuffix.simple_formats.add(custom_suffix)
+    assert CanonicalSuffix.from_path(Path(f"file{custom_suffix}")) == custom_suffix
+    CanonicalSuffix.simple_formats.discard(custom_suffix)
+    assert CanonicalSuffix.from_path(Path(f"file{custom_suffix}")) == ""
