@@ -15,7 +15,6 @@ if TYPE_CHECKING:
 
 # these are simple formats that are not part of the MIME registry and should be
 # recognized during validation of CanonicalSuffix instances
-# suffixes marked "# loader" have an artifact loader in lamindb.core.loaders
 SIMPLE_FORMATS = {
     #
     # MIMETYPE suffixes
@@ -201,17 +200,17 @@ SIMPLE_FORMATS = {
     ".nwk",
     ".newick",
     ".obo",
-    ".fcs",  # loader
+    ".fcs",
     #
     # single-cell / omics
     #
-    ".h5ad",  # loader
-    ".h5mu",  # loader
+    ".h5ad",
+    ".h5mu",
     ".loom",
     #
     # tabular / dataframes
     #
-    ".parquet",  # loader
+    ".parquet",
     ".xlsx",
     ".arrow",
     ".feather",
@@ -227,7 +226,7 @@ SIMPLE_FORMATS = {
     #
     # array stores
     #
-    ".zarr",  # loader
+    ".zarr",
     ".tiledb",
     ".tiledbsoma",
     ".soma",
@@ -236,12 +235,12 @@ SIMPLE_FORMATS = {
     #
     ".jsonl",
     ".ndjson",
-    ".yaml",  # loader
+    ".yaml",
     ".yml",
     ".pkl",
     ".pickle",
     ".qs",  # https://cran.r-project.org/web/packages/qs/vignettes/vignette.html
-    ".rds",  # loader
+    ".rds",
     #
     # ml models & weights
     #
