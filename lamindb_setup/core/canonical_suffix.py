@@ -309,30 +309,7 @@ ENCODING_FORMATS = {
 }
 
 
-class CanonicalSuffixMeta(type):
-    @property
-    def simple_formats(cls) -> set[str]:
-        typed_cls = cast("type[CanonicalSuffix]", cls)
-        typed_cls._ensure_format_sets()
-        assert typed_cls._simple_formats is not None
-        return typed_cls._simple_formats
-
-    @property
-    def composite_formats(cls) -> set[str]:
-        typed_cls = cast("type[CanonicalSuffix]", cls)
-        typed_cls._ensure_format_sets()
-        assert typed_cls._composite_formats is not None
-        return typed_cls._composite_formats
-
-    @property
-    def encoding_formats(cls) -> set[str]:
-        typed_cls = cast("type[CanonicalSuffix]", cls)
-        typed_cls._ensure_format_sets()
-        assert typed_cls._encoding_formats is not None
-        return typed_cls._encoding_formats
-
-
-class CanonicalSuffix(str, metaclass=CanonicalSuffixMeta):
+class CanonicalSuffix(str):
     """Strings that inform a storage format.
 
     Canonical suffixes populate the `.suffix` field of the `Artifact` registry
@@ -393,23 +370,23 @@ class CanonicalSuffix(str, metaclass=CanonicalSuffixMeta):
 
     """
 
-    _simple_formats: set[str] | None = None
-    _composite_formats: set[str] | None = None
-    _encoding_formats: set[str] | None = None
+    simple_formats: set[str] = SIMPLE_FORMATS
+    """Simple formats such as `.csv`, `.h5ad` or `.parquet`.
 
-    @classmethod
-    def _ensure_format_sets(cls) -> None:
-        if cls._simple_formats is not None:
-            return
-        mime_simple_formats = {
-            suffix.lower()
-            for suffix in (
-                set(mimetypes.types_map.keys()) | set(mimetypes.common_types.keys())
-            )
-        }
-        cls._simple_formats = mime_simple_formats | SIMPLE_FORMATS
-        cls._composite_formats = set(COMPOSITE_FORMATS)
-        cls._encoding_formats = set(ENCODING_FORMATS)
+    These correspond to the last component of a filename (`path.suffix`).
+    """
+    composite_formats: set[str] = COMPOSITE_FORMATS
+    """Composite formats such as `.anndata.zarr` or `.ome.zarr`.
+
+    Their meaning is carried by the combination of parts, so they take
+    precedence over the trailing simple suffix (e.g. `.anndata.zarr` is
+    preferred over `.zarr`).
+    """
+    encoding_formats: set[str] = ENCODING_FORMATS
+    """Stream-encoding formats such as `.gz`, `.bz2`, `.xz` or `.zst`.
+
+    These are appended to another suffix (e.g. `.csv.gz`, `.h5ad.tar.gz`).
+    """
 
     @classmethod
     def from_path(cls, path: AnyPath) -> CanonicalSuffix:
