@@ -1,4 +1,4 @@
-"""Paths & file systems."""
+"""The `UPath` class."""
 # the main class of this module is re-exported and documented as lamindb.UPath
 # the location of upath.py in lamindb_setup is for internal use
 # or for developers who want to avoid importing lamindb
