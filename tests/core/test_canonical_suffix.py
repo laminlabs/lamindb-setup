@@ -4,7 +4,7 @@ import mimetypes
 from pathlib import Path
 
 import pytest
-from lamindb_setup.core.canonical_suffix import CanonicalSuffix
+from lamindb_setup.core.canonical_suffix import SIMPLE_FORMATS, CanonicalSuffix
 
 
 def test_constructor():
@@ -85,7 +85,7 @@ def test_mime_extensions_are_included():
         )
     }
     # ensure we test MIME-driven behavior and not only ADD_SIMPLE_FORMATS
-    mime_only = sorted(mime_suffixes - CanonicalSuffix.ADD_SIMPLE_FORMATS)
+    mime_only = sorted(mime_suffixes - SIMPLE_FORMATS)
     assert len(mime_only) > 0
     mime_suffix = mime_only[0]
     assert CanonicalSuffix.from_path(Path(f"file{mime_suffix}")) == mime_suffix
@@ -94,9 +94,7 @@ def test_mime_extensions_are_included():
 def test_runtime_extension_simple_suffixes():
     custom_suffix = ".myformat"
     assert CanonicalSuffix.from_path(Path(f"file{custom_suffix}")) == ""
-    CanonicalSuffix.simple_suffixes.add(custom_suffix)
-    try:
-        assert CanonicalSuffix.from_path(Path(f"file{custom_suffix}")) == custom_suffix
-    finally:
-        CanonicalSuffix.simple_suffixes.discard(custom_suffix)
+    CanonicalSuffix.simple_formats.add(custom_suffix)
+    assert CanonicalSuffix.from_path(Path(f"file{custom_suffix}")) == custom_suffix
+    CanonicalSuffix.simple_formats.discard(custom_suffix)
     assert CanonicalSuffix.from_path(Path(f"file{custom_suffix}")) == ""
