@@ -315,10 +315,12 @@ class CanonicalSuffix(str):
 
     The known formats in this class extend the file extensions underlying the international MIME types.
     The purpose of `CanonicalSuffix` is to avoid populating the `.suffix` field of `Artifact` with random strings like
-    `".abcdedf"` or `".2022_07_03_txt"`.
+    `".abcdef"` or `".2022_07_03_txt"`.
 
     You can extend the set of known formats dynamically to dictate which formats get recognized
     during the construction of an `Artifact`.
+    You can also make Pull Request to the set of canonical suffixes
+    on GitHub `here <https://github.com/laminlabs/lamindb-setup/blob/main/lamindb_setup/core/canonical_suffix.py>`__.
 
     Upon construction of an `Artifact`, `~lamindb.base.types.CanonicalSuffix.from_path()` determines
     whether the path contains a suffix that informs a known storage format or not.
