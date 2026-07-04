@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import mimetypes
 from pathlib import Path
 
 import pytest
@@ -20,8 +21,8 @@ def test_extract_from_path():
         ("a.txt", ".txt"),
         ("a.123", ""),
         ("directory/file", ""),
-        ("d.x.y.z/f.b.c", ""),
-        ("d.x.y.z/f.a.b.c", ""),
+        ("d.x.y.z/f.b.c", ".c"),
+        ("d.x.y.z/f.a.b.c", ".c"),
         ("logs/date.log.txt", ".txt"),
         ("logs/date.log.123", ""),
         ("some.unknown.suffix", ""),
@@ -74,3 +75,28 @@ def test_extract_from_path():
         filepath = Path(path)
         # from_path calls extract_from_path
         assert canonical_suffix == CanonicalSuffix.from_path(filepath)
+
+
+def test_mime_extensions_are_included():
+    mime_suffixes = {
+        suffix.lower()
+        for suffix in (
+            set(mimetypes.types_map.keys()) | set(mimetypes.common_types.keys())
+        )
+    }
+    # ensure we test MIME-driven behavior and not only ADD_SIMPLE_FORMATS
+    mime_only = sorted(mime_suffixes - CanonicalSuffix.ADD_SIMPLE_FORMATS)
+    assert len(mime_only) > 0
+    mime_suffix = mime_only[0]
+    assert CanonicalSuffix.from_path(Path(f"file{mime_suffix}")) == mime_suffix
+
+
+def test_runtime_extension_simple_suffixes():
+    custom_suffix = ".myformat"
+    assert CanonicalSuffix.from_path(Path(f"file{custom_suffix}")) == ""
+    CanonicalSuffix.simple_suffixes.add(custom_suffix)
+    try:
+        assert CanonicalSuffix.from_path(Path(f"file{custom_suffix}")) == custom_suffix
+    finally:
+        CanonicalSuffix.simple_suffixes.discard(custom_suffix)
+    assert CanonicalSuffix.from_path(Path(f"file{custom_suffix}")) == ""

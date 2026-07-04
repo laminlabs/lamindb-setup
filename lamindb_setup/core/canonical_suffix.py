@@ -6,14 +6,15 @@
 
 from __future__ import annotations
 
+import mimetypes
 from pathlib import PurePosixPath
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, cast
 
 if TYPE_CHECKING:
     from lamindb_setup.types import AnyPath
 
 # also see https://gist.github.com/securifera/e7eed730cbe1ce43d0c29d7cd2d582f4
-# compression suffixes (see COMPRESSION_FORMATS) are handled separately
+# stream-encoding suffixes are handled separately
 # suffixes marked "# loader" have an artifact loader in lamindb.core.loaders
 SIMPLE_FORMATS = {
     #
@@ -159,9 +160,9 @@ COMPOSITE_FORMATS = {
 }
 
 
-# stream-compression suffixes that are appended on top of another suffix
+# stream-encoding suffixes that are appended on top of another suffix
 # (e.g. .csv.gz, .tar.xz); handled specially rather than listed as simple suffixes
-COMPRESSION_FORMATS = {
+ENCODING_FORMATS = {
     ".gz",
     ".bz2",
     ".xz",
@@ -169,13 +170,41 @@ COMPRESSION_FORMATS = {
 }
 
 
-class CanonicalSuffix(str):
+class CanonicalSuffixMeta(type):
+    @property
+    def simple_formats(cls) -> set[str]:
+        typed_cls = cast("type[CanonicalSuffix]", cls)
+        typed_cls._ensure_format_sets()
+        assert typed_cls._simple_formats is not None
+        return typed_cls._simple_formats
+
+    @property
+    def composite_formats(cls) -> set[str]:
+        typed_cls = cast("type[CanonicalSuffix]", cls)
+        typed_cls._ensure_format_sets()
+        assert typed_cls._composite_formats is not None
+        return typed_cls._composite_formats
+
+    @property
+    def encoding_formats(cls) -> set[str]:
+        typed_cls = cast("type[CanonicalSuffix]", cls)
+        typed_cls._ensure_format_sets()
+        assert typed_cls._encoding_formats is not None
+        return typed_cls._encoding_formats
+
+
+class CanonicalSuffix(str, metaclass=CanonicalSuffixMeta):
     """Strings that inform a storage format.
 
-    Extends the international MIMETYPE registry based on Python's standard library's `mimetypes` module.
+    Extends the international MIMETYPE registry based on Python's standard
+    library `mimetypes` module.
 
     Canonical suffixes populate the `.suffix` field of the `Artifact` registry
-    based on the set of known storage formats in `SIMPLE`, `COMPOSITE`, and `COMPRESSION`.
+    based on known storage formats in:
+
+    - `simple_formats` (MIME simple suffixes + `SIMPLE_FORMATS`)
+    - `composite_formats`
+    - `encoding_formats`
 
     For unknown storage formats, the canonical suffix is the empty string.
 
@@ -221,26 +250,32 @@ class CanonicalSuffix(str):
             CanonicalSuffix.extract_from_path("unknown.XYZ")
             #> CanonicalSuffix(''), ".xyz"
 
+        Extend simple suffixes dynamically in a Python session::
+
+            CanonicalSuffix.simple_formats.add(".myformat")
+            CanonicalSuffix.from_path("data/sample.myformat")
+            #> CanonicalSuffix('.myformat')
+
     """
 
-    SIMPLE: set[str] = SIMPLE_FORMATS
-    """Formats such as `.csv`, `.h5ad` or `.parquet`.
-
-    These correspond to the last component of a filename (`path.suffix`).
-    """
-    COMPOSITE: set[str] = COMPOSITE_FORMATS
-    """Formats denoted by composite suffixes such as `.anndata.zarr` or `.ome.zarr`.
-
-    Their meaning is carried by the combination of parts, so they take
-    precedence over the trailing simple suffix (e.g. `.anndata.zarr` is
-    preferred over `.zarr`).
-    """
-    COMPRESSION: set[str] = COMPRESSION_FORMATS
-    """Stream-compression formats such as `.gz`, `.bz2`, `.xz` or `.zst`.
-
-    These are appended to another suffix (e.g. `.csv.gz`, `.h5ad.tar.gz`).
-    """
+    _simple_formats: set[str] | None = None
+    _composite_formats: set[str] | None = None
+    _encoding_formats: set[str] | None = None
     _skip_validation = False
+
+    @classmethod
+    def _ensure_format_sets(cls) -> None:
+        if cls._simple_formats is not None:
+            return
+        mime_simple_formats = {
+            suffix.lower()
+            for suffix in (
+                set(mimetypes.types_map.keys()) | set(mimetypes.common_types.keys())
+            )
+        }
+        cls._simple_formats = mime_simple_formats | SIMPLE_FORMATS
+        cls._composite_formats = set(COMPOSITE_FORMATS)
+        cls._encoding_formats = set(ENCODING_FORMATS)
 
     def __new__(cls, value: str) -> CanonicalSuffix:
         canonical_value = value.lower()
@@ -287,36 +322,39 @@ class CanonicalSuffix(str):
         suffixes = [suffix.lower() for suffix in path.suffixes]
         last_suffix = suffixes[-1] if suffixes else ""
         total_suffix = "".join(suffixes)
+        simple_formats = cls.simple_formats
+        composite_formats = cls.composite_formats
+        encoding_formats = cls.encoding_formats
 
         if len(suffixes) < 2:
-            if total_suffix in SIMPLE_FORMATS or total_suffix in COMPRESSION_FORMATS:
+            if total_suffix in simple_formats or total_suffix in encoding_formats:
                 return cls(total_suffix), total_suffix
             return cls(""), last_suffix
 
         # further composite suffixes cases
-        if total_suffix.endswith(tuple(COMPOSITE_FORMATS)):
+        if total_suffix.endswith(tuple(composite_formats)):
             # below seems slow but OK for now
-            for suffix in COMPOSITE_FORMATS:
+            for suffix in composite_formats:
                 if total_suffix.endswith(suffix):
                     break
             return cls(suffix), suffix
 
         # after listed composite suffixes are checked
-        if last_suffix in SIMPLE_FORMATS:
+        if last_suffix in simple_formats:
             return cls(last_suffix), last_suffix
 
-        # compression suffixes
-        if last_suffix in COMPRESSION_FORMATS:
+        # additional encoding
+        if last_suffix in encoding_formats:
             suffix = "".join(suffixes[-2:])  # e.g. ".tar.gz", ".csv.bz2"
             if suffixes[-2] == ".tar":
                 # if the suffix preceding ".tar.<compression>" is a valid suffix,
                 # we account for it; otherwise we don't.
                 # i.e. we should have .h5ad.tar.gz or .csv.tar.gz, not just .tar.gz
-                if len(suffixes) > 2 and (suffix_3 := suffixes[-3]) in SIMPLE_FORMATS:
+                if len(suffixes) > 2 and (suffix_3 := suffixes[-3]) in simple_formats:
                     compression_suffix = suffix_3 + suffix
                     return cls(compression_suffix), compression_suffix
                 return cls(suffix), suffix
-            elif suffixes[-2] in SIMPLE_FORMATS:
+            elif suffixes[-2] in simple_formats:
                 return cls(suffix), suffix
             return cls(last_suffix), last_suffix
 
