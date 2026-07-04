@@ -15,6 +15,7 @@ if TYPE_CHECKING:
 
 # these are simple formats that are not part of the MIME registry and should be
 # recognized during validation of CanonicalSuffix instances
+# constructing a set with a few hundred items at import time runs about 1 microsecond
 SIMPLE_FORMATS = {
     #
     # MIMETYPE suffixes
@@ -364,7 +365,9 @@ class CanonicalSuffix(str):
 
         Extend simple suffixes dynamically in a Python session::
 
-            CanonicalSuffix.simple_formats.add(".myformat")
+            CanonicalSuffix.from_path("data/sample.myformat")
+            #> CanonicalSuffix('')
+            CanonicalSuffix.simple_formats.add(".myformat")  # extend dynamically
             CanonicalSuffix.from_path("data/sample.myformat")
             #> CanonicalSuffix('.myformat')
 

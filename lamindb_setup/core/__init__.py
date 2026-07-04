@@ -3,8 +3,6 @@
 Settings
 --------
 
-.. autoclass:: CanonicalSuffix
-
 .. autoclass:: SetupSettings
 
 .. autoclass:: UserSettings
