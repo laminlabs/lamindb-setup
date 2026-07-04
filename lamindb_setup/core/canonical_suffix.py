@@ -172,6 +172,8 @@ COMPRESSION_FORMATS = {
 class CanonicalSuffix(str):
     """Strings that inform a storage format.
 
+    Extends the international MIMETYPE registry based on Python's standard library's `mimetypes` module.
+
     Canonical suffixes populate the `.suffix` field of the `Artifact` registry
     based on the set of known storage formats in `SIMPLE`, `COMPOSITE`, and `COMPRESSION`.
 
