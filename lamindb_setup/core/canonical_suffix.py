@@ -313,25 +313,35 @@ ENCODING_FORMATS = {
 class CanonicalSuffix(str):
     """Strings that inform a storage format.
 
-    Canonical suffixes populate the `.suffix` field of the `Artifact` registry
-    based on the known storage formats defined in this class.
+    The known formats in this class extend the file extensions underlying the international MIME types.
+    The purpose of `CanonicalSuffix` is to avoid populating the `.suffix` field of `Artifact` with random strings like
+    `".abcdedf"` or `".2022_07_03_txt"`.
 
-    For unknown storage formats, the canonical suffix is the empty string.
+    You can extend the set of known formats dynamically to dictate which formats get recognized
+    during the construction of an `Artifact`.
 
-    The known formats extend the international MIMETYPE registry based on
-    `mimetypes` in the Python standard library.
+    Upon construction of an `Artifact`, `~lamindb.base.types.CanonicalSuffix.from_path()` determines
+    whether the path contains a suffix that informs a known storage format or not.
+    If it does, the suffix is extracted and stored in the `.suffix` field.
+    If not, an empty string is stored in the `.suffix` field.
+
+    .. note::
+
+        Because users can define their own storage formats, the `.suffix` field of `Artifact`
+        may contain strings that are not part of the current set of known formats
+        in your compute session.
 
     Examples:
 
         Construct from a path::
 
-            CanonicalSuffix.from_path("data/sample.csv")
+            CanonicalSuffix.from_path("data/sample.csv")  # known storage format
             #> CanonicalSuffix('.csv')
 
-            CanonicalSuffix.extract_from_path("myfile.abcdedf")
+            CanonicalSuffix.extract_from_path("myfile.abcdedf")  # unknown storage format
             #> CanonicalSuffix('')
 
-        Typically, you're interested in the canonical suffix and the raw string suffix::
+        Often, you're interested in the canonical suffix and a raw suffix::
 
             CanonicalSuffix.extract_from_path("data/sample.csv")
             #> CanonicalSuffix('.csv'), ".csv"
