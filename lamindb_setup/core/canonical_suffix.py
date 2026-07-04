@@ -13,8 +13,8 @@ from typing import TYPE_CHECKING, cast
 if TYPE_CHECKING:
     from lamindb_setup.types import AnyPath
 
-# also see https://gist.github.com/securifera/e7eed730cbe1ce43d0c29d7cd2d582f4
-# stream-encoding suffixes are handled separately
+# these are simple formats that are not part of the MIME registry and should be
+# recognized during validation of CanonicalSuffix instances
 # suffixes marked "# loader" have an artifact loader in lamindb.core.loaders
 SIMPLE_FORMATS = {
     #
