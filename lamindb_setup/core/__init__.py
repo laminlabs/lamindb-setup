@@ -3,6 +3,8 @@
 Settings
 --------
 
+.. autoclass:: CanonicalSuffix
+
 .. autoclass:: SetupSettings
 
 .. autoclass:: UserSettings
@@ -23,3 +25,4 @@ from ._settings import SetupSettings
 from ._settings_instance import InstanceSettings
 from ._settings_storage import StorageSettings
 from ._settings_user import UserSettings
+from .canonical_suffix import CanonicalSuffix

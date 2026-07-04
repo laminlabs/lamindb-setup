@@ -77,10 +77,9 @@ def test_mime_extensions_are_included():
             set(mimetypes.types_map.keys()) | set(mimetypes.common_types.keys())
         )
     }
-    # ensure we test MIME-driven behavior and not only ADD_SIMPLE_FORMATS
-    mime_only = sorted(mime_suffixes - SIMPLE_FORMATS)
-    assert len(mime_only) > 0
-    mime_suffix = mime_only[0]
+    # all MIME suffixes are explicitly listed in SIMPLE_FORMATS
+    assert mime_suffixes.issubset(SIMPLE_FORMATS)
+    mime_suffix = sorted(mime_suffixes)[0]
     assert CanonicalSuffix.from_path(Path(f"file{mime_suffix}")) == mime_suffix
 
 
