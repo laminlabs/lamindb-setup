@@ -201,6 +201,9 @@ class CanonicalSuffix(str):
             CanonicalSuffix.extract_from_path("data/sample.anndata.zarr")
             #> CanonicalSuffix('.anndata.zarr'), ".anndata.zarr"
 
+            CanonicalSuffix.extract_from_path("image.PNG")
+            #> CanonicalSuffix('.png'), ".png"
+
             CanonicalSuffix.extract_from_path("archive.tar.gz")
             #> CanonicalSuffix('.tar.gz'), ".tar.gz"
 

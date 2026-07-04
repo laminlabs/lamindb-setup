@@ -2,10 +2,17 @@ from __future__ import annotations
 
 from pathlib import Path
 
+import pytest
 from lamindb_setup.core.canonical_suffix import CanonicalSuffix
 
 
-def test_extract_suffixes_from_path():
+def test_constructor():
+    assert CanonicalSuffix(".csv") == CanonicalSuffix(".csv")
+    with pytest.raises(ValueError):
+        CanonicalSuffix(".12345")
+
+
+def test_extract_from_path():
     # this is a collection of path, stem, suffix tuples
     collection = [
         # no / unknown suffix
@@ -63,6 +70,7 @@ def test_extract_suffixes_from_path():
         ("variants.VCF.GZ", ".vcf.gz"),
         ("unknown.XYZ", ""),
     ]
-    for path, suffix in collection:
+    for path, canonical_suffix in collection:
         filepath = Path(path)
-        assert suffix == CanonicalSuffix.extract_from_path(filepath)[0]
+        # from_path calls extract_from_path
+        assert canonical_suffix == CanonicalSuffix.from_path(filepath)
