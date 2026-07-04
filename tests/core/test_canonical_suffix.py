@@ -3,14 +3,7 @@ from __future__ import annotations
 import mimetypes
 from pathlib import Path
 
-import pytest
 from lamindb_setup.core.canonical_suffix import SIMPLE_FORMATS, CanonicalSuffix
-
-
-def test_constructor():
-    assert CanonicalSuffix(".csv") == CanonicalSuffix(".csv")
-    with pytest.raises(ValueError):
-        CanonicalSuffix(".12345")
 
 
 def test_extract_from_path():

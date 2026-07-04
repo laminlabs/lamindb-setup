@@ -196,17 +196,13 @@ class CanonicalSuffixMeta(type):
 class CanonicalSuffix(str, metaclass=CanonicalSuffixMeta):
     """Strings that inform a storage format.
 
-    Extends the international MIMETYPE registry based on Python's standard
-    library `mimetypes` module.
-
     Canonical suffixes populate the `.suffix` field of the `Artifact` registry
-    based on known storage formats in:
-
-    - `simple_formats` (MIME simple suffixes + `SIMPLE_FORMATS`)
-    - `composite_formats`
-    - `encoding_formats`
+    based on the known storage formats defined in this class.
 
     For unknown storage formats, the canonical suffix is the empty string.
+
+    The known formats extend the international MIMETYPE registry based on
+    `mimetypes` in the Python standard library.
 
     Examples:
 
@@ -261,7 +257,6 @@ class CanonicalSuffix(str, metaclass=CanonicalSuffixMeta):
     _simple_formats: set[str] | None = None
     _composite_formats: set[str] | None = None
     _encoding_formats: set[str] | None = None
-    _skip_validation = False
 
     @classmethod
     def _ensure_format_sets(cls) -> None:
@@ -276,22 +271,6 @@ class CanonicalSuffix(str, metaclass=CanonicalSuffixMeta):
         cls._simple_formats = mime_simple_formats | SIMPLE_FORMATS
         cls._composite_formats = set(COMPOSITE_FORMATS)
         cls._encoding_formats = set(ENCODING_FORMATS)
-
-    def __new__(cls, value: str) -> CanonicalSuffix:
-        canonical_value = value.lower()
-        if cls._skip_validation:
-            return super().__new__(cls, canonical_value)
-        if canonical_value != "":
-            cls._skip_validation = True
-            try:
-                extracted, _ = cls.extract_from_path(
-                    PurePosixPath(f"file{canonical_value}")
-                )
-            finally:
-                cls._skip_validation = False
-            if extracted != canonical_value:
-                raise ValueError(f"Invalid canonical suffix: {value!r}")
-        return super().__new__(cls, canonical_value)
 
     @classmethod
     def from_path(cls, path: AnyPath) -> CanonicalSuffix:
