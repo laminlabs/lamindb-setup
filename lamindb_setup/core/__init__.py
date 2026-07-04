@@ -1,10 +1,5 @@
 """Setup core library.
 
-Valid suffixes
---------------
-
-.. autoclass:: VALID_SUFFIXES
-
 Settings
 --------
 
@@ -18,7 +13,7 @@ Settings
 
 """
 
-from . import django, suffixes, upath
+from . import django, upath
 from ._clone import (
     upload_sqlite_clone,
 )

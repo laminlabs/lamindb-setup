@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from pathlib import Path
 
-from lamindb_setup.core.upath import extract_suffixes_from_path
+from lamindb_setup.core.canonical_suffix import CanonicalSuffix
 
 
 def test_extract_suffixes_from_path():
@@ -65,4 +65,4 @@ def test_extract_suffixes_from_path():
     ]
     for path, suffix in collection:
         filepath = Path(path)
-        assert suffix == extract_suffixes_from_path(filepath)[0]
+        assert suffix == CanonicalSuffix.extract_from_path(filepath)[0]

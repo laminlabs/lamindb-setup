@@ -26,8 +26,8 @@ from lamindb_setup.errors import StorageNotEmpty
 
 from ._aws_options import HOSTED_BUCKETS, get_user_aws_options_manager
 from ._deprecated import deprecated
+from .canonical_suffix import CanonicalSuffix
 from .hashing import HASH_LENGTH, b16_to_b64, hash_from_hashes_list, hash_string
-from .suffixes import extract_suffixes_from_path
 
 if TYPE_CHECKING:
     from collections.abc import Callable
@@ -715,7 +715,7 @@ def compute_file_tree(
             elif not only_dirs:
                 if include_paths and child_path not in include_paths:
                     continue
-                suffix, _ = extract_suffixes_from_path(child_path)
+                suffix, _ = CanonicalSuffix.extract_from_path(child_path)
                 suffixes.add(suffix)
                 n_files_per_dir_and_type[suffix] += 1
                 n_files += 1
