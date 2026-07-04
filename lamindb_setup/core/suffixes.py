@@ -191,7 +191,9 @@ class VALID_SUFFIXES:
 
 
 def extract_suffixes_from_path(path: AnyPath) -> tuple[str, str]:
-    """Extract valid suffix and raw suffix from a path, including composite (e.g. `.csv.gz`) suffixes.
+    """Extract a validated canonical suffix and a raw suffix from a path.
+
+    This also treats composite (e.g. `.csv.gz`) suffixes.
 
     Args:
         path: The path to extract the suffix from.

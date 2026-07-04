@@ -18,7 +18,7 @@ Settings
 
 """
 
-from . import django, upath
+from . import django, suffixes, upath
 from ._clone import (
     upload_sqlite_clone,
 )
@@ -28,4 +28,3 @@ from ._settings import SetupSettings
 from ._settings_instance import InstanceSettings
 from ._settings_storage import StorageSettings
 from ._settings_user import UserSettings
-from .suffixes import VALID_SUFFIXES
