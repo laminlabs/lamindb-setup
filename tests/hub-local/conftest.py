@@ -202,9 +202,14 @@ def create_myinstance(create_testadmin1_session):  # -> Dict
 
 @pytest.fixture(scope="function")
 def create_instance_fine_grained_access(create_testadmin1_session):
-    client, _ = create_testadmin1_session
+    admin_client, usettings = create_testadmin1_session
 
-    instance = create_instance("instance_test", client=client, connect=False)
+    instance = create_instance(
+        "instance_test",
+        client=admin_client,
+        connect=False,
+        organization_id=usettings._uuid,
+    )
 
     yield instance
 
