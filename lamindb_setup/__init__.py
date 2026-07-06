@@ -35,7 +35,7 @@ Migration management
 
 """
 
-__version__ = "1.25.3"  # denote a release candidate for 0.1.0 with 0.1rc1
+__version__ = "1.25.4"  # denote a release candidate for 0.1.0 with 0.1rc1
 
 import os
 
