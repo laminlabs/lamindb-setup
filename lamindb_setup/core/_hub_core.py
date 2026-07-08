@@ -741,7 +741,6 @@ def access_aws(path: str, access_token: str | None = None) -> dict[str, dict]:
         try:
             data = _access_aws_endpoint(
                 route_info["api_url"],
-                route_info["assume_role_arn"],
                 path,
                 access_token=access_token,
             )
@@ -818,7 +817,6 @@ def _access_aws_route(*, path: str, client: Client) -> dict | None:
 
 def _access_aws_endpoint(
     api_url: str,
-    role_arn: str,
     path: str,
     duration_seconds: int = 3600,  # max for role chaining
     access_token: str | None = None,
@@ -832,15 +830,13 @@ def _access_aws_endpoint(
     if access_token is None and settings.user.handle != "anonymous":
         access_token = settings.user.access_token
         renew_token = True
-    logger.debug(
-        f"calling {url} with role_arn {role_arn}, path {path}, duration_seconds {duration_seconds}"
-    )
+    logger.debug(f"calling {url}, path {path}, duration_seconds {duration_seconds}")
     response = request_with_auth(
         url,
         "post",
         access_token,
         renew_token,
-        json={"role_arn": role_arn, "path": path, "duration_seconds": duration_seconds},
+        json={"path": path, "duration_seconds": duration_seconds},
     )
     status_code = response.status_code
     if not (200 <= status_code < 300):
