@@ -338,15 +338,15 @@ def validate_connection_state(
     already_connected = False
 
     if (
-        settings._instance_exists  # exists only for real instances, not for none/none
+        settings.is_configured  # exists only for real instances, not for none/none
         and f"{owner}/{name}" == settings.instance.slug
         and not use_root_db_user  # always re-connect for root db user
     ):
         already_connected = True
     else:
-        # settings._instance_exists: exists only for real instances, not for none/none
+        # settings.is_configured: exists only for real instances, not for none/none
         # in case of init, we'd like to reset django for now
-        if settings._instance_exists or init:
+        if settings.is_configured or init:
             import lamindb as ln
 
             if ln.context.transform is not None:
@@ -414,7 +414,7 @@ def connect(instance: str | None = None, **kwargs: Any) -> str | tuple | None:
 
     try:
         if instance is None:
-            if settings._instance_exists:
+            if settings.is_configured:
                 isettings = settings.instance
             else:
                 raise ValueError(
@@ -435,7 +435,7 @@ def connect(instance: str | None = None, **kwargs: Any) -> str | tuple | None:
                 )
             elif (
                 _write_settings
-                and settings._instance_exists
+                and settings.is_configured
                 and f"{owner}/{name}" != settings.instance.slug
             ):
                 disconnect(mute=True)

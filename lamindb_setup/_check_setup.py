@@ -111,7 +111,7 @@ def _check_instance_setup(from_module: str | None = None) -> bool:
         return False
 
     if (
-        not settings._instance_exists
+        not settings.is_configured
         and os.environ.get("LAMIN_CURRENT_INSTANCE") is not None
     ):
         from ._connect_instance import connect

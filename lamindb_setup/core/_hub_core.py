@@ -284,7 +284,7 @@ def _init_storage_hub(
         id = uuid.uuid5(uuid.NAMESPACE_URL, hash_string)
     else:
         id = uuid.uuid4()
-    if ssettings._instance_id is None and settings._instance_exists:
+    if ssettings._instance_id is None and settings.is_configured:
         logger.warning(
             f"will manage storage location {ssettings.root_as_str} with instance {settings.instance.slug}"
         )

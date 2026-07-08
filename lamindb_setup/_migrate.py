@@ -98,7 +98,7 @@ class migrate:
 
     @classmethod
     def deploy(cls, package_name: str | None = None, number: int | None = None) -> None:
-        assert settings._instance_exists, (
+        assert settings.is_configured, (
             "Not connected to an instance, please connect to migrate."
         )
 
