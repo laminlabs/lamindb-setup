@@ -10,6 +10,7 @@ import jwt
 from lamin_utils import logger
 from platformdirs import user_cache_dir
 
+from ._deprecated import deprecated
 from ._settings_load import (
     load_cache_path_from_settings,
     load_instance_settings,
@@ -214,7 +215,7 @@ class SetupSettings:
     def branch(self) -> Branch:
         """Default branch."""
         # this is needed for .filter() with non-default connections
-        if not self._instance_exists:
+        if not self.is_configured:
             return MainBranchMock()
 
         if self._branch is None:
@@ -301,7 +302,15 @@ class SetupSettings:
         """
         from . import django
 
-        return self._instance_exists and django.IS_SETUP
+        return self.is_configured and django.IS_SETUP
+
+    @property
+    def is_configured(self) -> bool:
+        """Whether an instance is configured in this environment.
+
+        `True` means the current instance is a real instance (not `none/none`).
+        """
+        return self.instance.slug != "none/none"
 
     @property
     def private_django_api(self) -> bool:
@@ -359,8 +368,9 @@ class SetupSettings:
         return self.instance.storage
 
     @property
+    @deprecated("is_configured")
     def _instance_exists(self):
-        return self.instance.slug != "none/none"
+        return self.is_configured
 
     @property
     def cache_dir(self) -> UPath:
@@ -440,7 +450,7 @@ class SetupSettings:
             return object.__repr__(self)
 
         repr = ""
-        if self._instance_exists:
+        if self.is_configured:
             instance_rep = self.instance.__repr__().split("\n")
             repr += f"{colors.cyan('Instance:')} {instance_rep[0].replace('Instance: ', '')}\n"
             repr += f" - branch: {self._read_branch_idlike_name()[1]}\n"
