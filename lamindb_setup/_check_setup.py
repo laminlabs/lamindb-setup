@@ -10,7 +10,6 @@ from uuid import UUID
 from lamin_utils import logger
 
 from ._silence_loggers import silence_loggers
-from .core import django as django_lamin
 from .core._settings import settings
 from .core._settings_store import current_instance_settings_file
 from .errors import (
@@ -25,6 +24,12 @@ if TYPE_CHECKING:
 
 
 IS_LOADING: bool = False
+
+
+def _django_lamin():
+    from .core import django as django_lamin
+
+    return django_lamin
 
 
 # decorator to disable auto-connect when importing a module such as lamindb
@@ -85,6 +90,8 @@ def _infer_callers_module_name() -> str | None:
 # we make this a private function because in all the places it's used,
 # users should not see it
 def _check_instance_setup(from_module: str | None = None) -> bool:
+    django_lamin = _django_lamin()
+
     if django_lamin.IS_SETUP:
         isettings = settings.instance
         if from_module is not None:
@@ -117,7 +124,7 @@ def _check_instance_setup(from_module: str | None = None) -> bool:
         from ._connect_instance import connect
 
         connect(_write_settings=False, _reload_lamindb=False)
-        return django_lamin.IS_SETUP
+        return _django_lamin().IS_SETUP
     else:
         isettings = settings.instance
         if from_module != "lamindb":

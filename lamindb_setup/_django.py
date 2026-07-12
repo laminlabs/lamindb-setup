@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 from .core._settings import settings
-from .core.django import setup_django
 
 
 def django(command: str, package_name: str | None = None, **kwargs):
@@ -30,6 +29,8 @@ def django(command: str, package_name: str | None = None, **kwargs):
 
     """
     from django.core.management import call_command
+
+    from .core.django import setup_django
 
     setup_django(settings.instance)
     if package_name is not None:

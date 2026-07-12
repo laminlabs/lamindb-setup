@@ -25,24 +25,38 @@ from ._settings_store import (
     system_settings_dir,
     write_local_current_instance,
 )
-from .upath import LocalPathClasses, UPath
 
 if TYPE_CHECKING:
     from lamindb.models import Branch, Space
+    from upath import UPath
 
     from lamindb_setup.core import InstanceSettings, StorageSettings, UserSettings
     from lamindb_setup.core.django import DBToken, DBTokenManager
     from lamindb_setup.types import AnyPathStr
 
 
-DEFAULT_CACHE_DIR = UPath(user_cache_dir(appname="lamindb", appauthor="laminlabs"))
+DEFAULT_CACHE_DIR = user_cache_dir(appname="lamindb", appauthor="laminlabs")
+
+
+def _as_upath(pathlike) -> UPath:
+    from upath import UPath
+
+    return UPath(pathlike)
+
+
+def _is_local_upath(pathlike) -> bool:
+    from pathlib import PosixPath, WindowsPath
+
+    from upath.implementations.local import LocalPath
+
+    return isinstance(pathlike, (PosixPath, WindowsPath, LocalPath))
 
 
 def _process_cache_path(cache_path: AnyPathStr | None) -> UPath | None:
     if cache_path is None or cache_path == "null":
         return None
-    cache_dir = UPath(cache_path)
-    if not isinstance(cache_dir, LocalPathClasses):
+    cache_dir = _as_upath(cache_path)
+    if not _is_local_upath(cache_dir):
         raise ValueError("cache dir should be a local path.")
     if cache_dir.exists() and not cache_dir.is_dir():
         raise ValueError("cache dir should be a directory.")
@@ -376,12 +390,12 @@ class SetupSettings:
     def cache_dir(self) -> UPath:
         """Cache root, a local directory to cache cloud files."""
         if "LAMIN_CACHE_DIR" in os.environ:
-            cache_dir = UPath(os.environ["LAMIN_CACHE_DIR"])
+            cache_dir = _as_upath(os.environ["LAMIN_CACHE_DIR"])
         elif self._cache_dir is None:
             cache_path = load_cache_path_from_settings()
             cache_dir = _process_cache_path(cache_path)
             if cache_dir is None:
-                cache_dir = DEFAULT_CACHE_DIR
+                cache_dir = _as_upath(DEFAULT_CACHE_DIR)
             self._cache_dir = cache_dir
         else:
             cache_dir = self._cache_dir
@@ -479,10 +493,10 @@ class SetupPaths:
         filepath: AnyPathStr, cache_key: str | None = None
     ) -> UPath:
         """Local (or local cache) filepath from filepath without synchronization."""
-        if not isinstance(filepath, UPath):
-            filepath = UPath(filepath)
+        if not hasattr(filepath, "protocol"):
+            filepath = _as_upath(filepath)
         # cache_key is ignored if filepath is a local path
-        if not isinstance(filepath, LocalPathClasses):
+        if not _is_local_upath(filepath):
             # settings is defined further in this file
             if cache_key is None:
                 local_key = filepath.path  # type: ignore
@@ -501,11 +515,11 @@ class SetupPaths:
         filepath: AnyPathStr, cache_key: str | None = None, **kwargs
     ) -> UPath:
         """Local (or local cache) filepath from filepath."""
-        if not isinstance(filepath, UPath):
-            filepath = UPath(filepath)
+        if not hasattr(filepath, "protocol"):
+            filepath = _as_upath(filepath)
         # cache_key is ignored in cloud_to_local_no_update if filepath is local
         local_filepath = SetupPaths.cloud_to_local_no_update(filepath, cache_key)
-        if not isinstance(filepath, LocalPathClasses):
+        if not _is_local_upath(filepath):
             local_filepath.parent.mkdir(parents=True, exist_ok=True)
             filepath.synchronize_to(local_filepath, **kwargs)  # type: ignore
         return local_filepath

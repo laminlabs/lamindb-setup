@@ -6,25 +6,15 @@ import string
 from typing import TYPE_CHECKING, Any, Literal
 from uuid import UUID
 
-import fsspec
 from lamin_utils import logger
 
 from lamindb_setup.errors import StorageAlreadyManaged
 
-from ._aws_options import (
-    LAMIN_ENDPOINTS,
-    get_user_aws_options_manager,
-)
 from .hashing import hash_and_encode_as_b62
-from .upath import (
-    LocalPathClasses,
-    UPath,
-    create_path,
-    get_storage_region,
-)
 
 if TYPE_CHECKING:
     from lamindb import Storage
+    from upath import UPath
 
     from lamindb_setup.types import AnyPathStr, StorageType
 
@@ -34,6 +24,33 @@ LEGACY_STORAGE_UID_FILE_KEY = ".lamindb/_is_initialized"
 # a list of supported fsspec protocols
 # rename file to local before showing to a user
 VALID_PROTOCOLS = ("file", "gs", "s3", "hf", "http", "https")
+
+
+def _get_protocol(path: str) -> str:
+    from upath import UPath
+
+    protocol = UPath(path).protocol
+    return "file" if protocol == "" else protocol
+
+
+def _is_local_upath(path: Any) -> bool:
+    from pathlib import PosixPath, WindowsPath
+
+    from upath.implementations.local import LocalPath
+
+    return isinstance(path, (PosixPath, WindowsPath, LocalPath))
+
+
+def _get_lamin_endpoints() -> tuple[str | None, ...]:
+    from ._aws_options import LAMIN_ENDPOINTS
+
+    return LAMIN_ENDPOINTS
+
+
+def _get_aws_options_manager():
+    from ._aws_options import get_user_aws_options_manager
+
+    return get_user_aws_options_manager()
 
 
 def base62(n_char: int) -> str:
@@ -48,19 +65,19 @@ def instance_uid_from_uuid(instance_id: UUID) -> str:
 
 
 def get_storage_type(root_as_str: str) -> StorageType:
-    import fsspec
-
     convert = {"file": "local"}
     # init_storage checks that the root protocol belongs to VALID_PROTOCOLS
-    protocol = fsspec.utils.get_protocol(root_as_str)
+    protocol = _get_protocol(root_as_str)
     return convert.get(protocol, protocol)  # type: ignore
 
 
 def sanitize_root_user_input(root: AnyPathStr) -> UPath:
     """Format a root path string."""
+    from upath import UPath
+
     root_upath = root if isinstance(root, UPath) else UPath(root)
     root_upath = root_upath.expanduser()
-    if isinstance(root_upath, LocalPathClasses):  # local paths
+    if _is_local_upath(root_upath):  # local paths
         try:
             (root_upath / ".lamindb").mkdir(parents=True, exist_ok=True)
             root_upath = root_upath.resolve()
@@ -74,7 +91,7 @@ def convert_sanitized_root_path_to_str(root_upath: UPath) -> str:
     if root_upath.protocol == "s3":
         endpoint_url = root_upath.storage_options.get("endpoint_url", None)
         # LAMIN_ENDPOINTS include None
-        if endpoint_url not in LAMIN_ENDPOINTS:
+        if endpoint_url not in _get_lamin_endpoints():
             return f"s3://{root_upath.path.rstrip('/')}?endpoint_url={endpoint_url}"
     return root_upath.as_posix().rstrip("/")
 
@@ -99,6 +116,8 @@ def mark_storage_root_file(path: UPath) -> UPath:
 def mark_storage_root(
     root: AnyPathStr, uid: str, instance_id: UUID, instance_slug: str
 ) -> Literal["__marked__"] | str:
+    from upath import UPath
+
     # we need a file in folder-like storage locations on S3 to avoid
     # permission errors from leveraging s3fs on an empty hosted storage location (path.fs.find raises a PermissionError)
     # we also need it in case a storage location is ambiguous because a server / local environment
@@ -172,7 +191,7 @@ def init_storage(
             access_token=access_token,
         )
         root = f"{bucket}/{uid}"
-    elif (input_protocol := fsspec.utils.get_protocol(root_str)) not in VALID_PROTOCOLS:
+    elif (input_protocol := _get_protocol(root_str)) not in VALID_PROTOCOLS:
         valid_protocols = ("local",) + VALID_PROTOCOLS[1:]  # show local instead of file
         raise ValueError(
             f"Protocol {input_protocol} is not supported, valid protocols are {', '.join(valid_protocols)}"
@@ -342,12 +361,14 @@ class StorageSettings:
     def root(self) -> UPath:
         """Root storage location."""
         if self._root is None:
+            from .upath import create_path
+
             # below makes network requests to get credentials
             self._root = create_path(self._root_init, access_token=self.access_token)
         elif getattr(self._root, "protocol", "") == "s3":
             # this is needed to be sure that the root always has nonexpired credentials
             # this just checks for time of the cached credentials in most cases
-            return get_user_aws_options_manager().enrich_path(
+            return _get_aws_options_manager().enrich_path(
                 self._root, access_token=self.access_token
             )
         return self._root
@@ -361,7 +382,9 @@ class StorageSettings:
         >>>    profile="some_profile", cache_regions=True
         >>> )
         """
-        if not isinstance(self._root, LocalPathClasses) and kwargs != {}:
+        from upath import UPath
+
+        if not _is_local_upath(self._root) and kwargs != {}:
             self._root = UPath(self.root, **kwargs)
 
     @property
@@ -399,6 +422,8 @@ class StorageSettings:
     def region(self) -> str | None:
         """Storage region."""
         if self._region is None:
+            from .upath import get_storage_region
+
             self._region = get_storage_region(self.root_as_str)
         return self._region
 

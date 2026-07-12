@@ -38,21 +38,28 @@ Migration management
 __version__ = "1.25.5"  # denote a release candidate for 0.1.0 with 0.1rc1
 
 import os
+from importlib import import_module
 
 # do not import io by default to reduce import time
 # it's not immediately needed in the default user workflows
-from . import core, errors, types
-from ._check_setup import _check_instance_setup
-from ._connect_instance import connect
-from ._delete import delete
-from ._disconnect import disconnect
-from ._django import django
 from ._entry_points import call_registered_entry_points as _call_registered_entry_points
-from ._init_instance import init
-from ._migrate import migrate
-from ._register_instance import register
-from ._setup_user import login, logout
-from .core._settings import settings
+
+_LAZY_ATTRS: dict[str, tuple[str, str | None]] = {
+    "core": (".core", None),
+    "errors": (".errors", None),
+    "types": (".types", None),
+    "_check_instance_setup": ("._check_setup", "_check_instance_setup"),
+    "connect": ("._connect_instance", "connect"),
+    "delete": ("._delete", "delete"),
+    "disconnect": ("._disconnect", "disconnect"),
+    "django": ("._django", "django"),
+    "init": ("._init_instance", "init"),
+    "migrate": ("._migrate", "migrate"),
+    "register": ("._register_instance", "register"),
+    "login": ("._setup_user", "login"),
+    "logout": ("._setup_user", "logout"),
+    "settings": (".core._settings", "settings"),
+}
 
 
 def _is_CI_environment() -> bool:
@@ -87,6 +94,16 @@ _TESTING = _is_CI_environment()
 # provide a way for other packages to run custom code on import
 _call_registered_entry_points("lamindb_setup.on_import")
 
-settings.__doc__ = """Global :class:`~lamindb.setup.core.SetupSettings`."""
 
-close = disconnect  # backward compatibility
+def __getattr__(name: str):
+    if name == "close":
+        return import_module("._disconnect", __name__).disconnect
+    if name in _LAZY_ATTRS:
+        module_name, attr_name = _LAZY_ATTRS[name]
+        module = import_module(module_name, __name__)
+        value = module if attr_name is None else getattr(module, attr_name)
+        if name == "settings":
+            value.__doc__ = """Global :class:`~lamindb.setup.core.SetupSettings`."""
+        globals()[name] = value
+        return value
+    raise AttributeError(f"module {__name__!r} has no attribute {name!r}")
