@@ -161,7 +161,7 @@ def login(
     user_settings.api_key = api_key
     save_user_settings(user_settings)
 
-    if settings._instance_exists:
+    if settings.is_configured:
         if (
             isettings := settings.instance
         ).is_on_hub and previous_user_uid != user_settings.uid:

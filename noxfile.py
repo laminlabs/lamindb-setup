@@ -139,4 +139,4 @@ def docs(session: nox.Session):
 
     login_testuser1(session)
     ln_setup.init(storage="./docsbuild")
-    build_docs(session, strip_prefix=True)
+    build_docs(session, strip_prefix=True, strict=True)

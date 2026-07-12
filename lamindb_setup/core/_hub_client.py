@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import json
 import os
+import warnings
 from contextlib import contextmanager
 from datetime import datetime
 from typing import Literal
@@ -72,6 +73,17 @@ class LogRetry(Retry):
         return new
 
 
+# see the comment in connect_hub for why we ignore these deprecations
+# here this is needed to avoid warnings leaking in multi-threaded environments
+_FILTER_WARNINGS_MODULES = ("supabase", "supabase_functions", "postgrest")
+for module_pattern in _FILTER_WARNINGS_MODULES:
+    warnings.filterwarnings(
+        "ignore",
+        category=DeprecationWarning,
+        module=rf"^{module_pattern}(\.|$)",
+    )
+
+
 # runs ~0.5s
 def connect_hub(
     fallback_env: bool = False, client_options: ClientOptions | None = None
@@ -83,40 +95,58 @@ def connect_hub(
             function_client_timeout=DEFAULT_TIMEOUT,
             postgrest_client_timeout=DEFAULT_TIMEOUT,
         )
-    client = create_client(env.supabase_api_url, env.supabase_anon_key, client_options)
-    # needed to enable retries for http requests in supabase
-    # these are separate clients and need separate transports
-    transports = []
-    for _ in range(2):
-        transports.append(
-            RetryTransport(
-                retry=LogRetry(total=2, backoff_factor=0.2),
-                transport=httpx.HTTPTransport(verify=True, http2=False, trust_env=True),
+    # Ignore Supabase deprecations for now because we still rely on this setup path
+    # and currently configure timeout here for convenience.
+    # We don't want to create a separate httpx client ourselves because we'd then
+    # need to replicate proxy handling and env-based proxy map creation.
+    # Deprecations don't affect us vecause we upper bound the version of supabase to 2.24.0.
+    # here it is needed to avoid pytest tampering with the warnings filter
+    with warnings.catch_warnings():
+        for module_pattern in _FILTER_WARNINGS_MODULES:
+            warnings.filterwarnings(
+                "ignore",
+                category=DeprecationWarning,
+                module=rf"^{module_pattern}(\.|$)",
             )
+
+        client = create_client(
+            env.supabase_api_url, env.supabase_anon_key, client_options
         )
-    # this overwrites transports of existing httpx clients
-    # if proxies are set, the default transports that were created on clients init
-    # will be used, irrespective of these re-settings
-    client.auth._http_client._transport = transports[0]
-    client.postgrest.session._transport = transports[1]
-    # POST is not retryable by default, but for our functions it should be safe to retry
-    client.functions._client._transport = RetryTransport(
-        retry=LogRetry(
-            total=2,
-            backoff_factor=0.2,
-            allowed_methods=[
-                "HEAD",
-                "GET",
-                "PUT",
-                "DELETE",
-                "OPTIONS",
-                "TRACE",
-                "POST",
-            ],
-        ),
-        transport=httpx.HTTPTransport(verify=True, http2=False, trust_env=True),
-    )
-    return client
+        # needed to enable retries for http requests in supabase
+        # these are separate clients and need separate transports
+        transports = []
+        for _ in range(2):
+            transports.append(
+                RetryTransport(
+                    retry=LogRetry(total=2, backoff_factor=0.2),
+                    transport=httpx.HTTPTransport(
+                        verify=True, http2=False, trust_env=True
+                    ),
+                )
+            )
+        # this overwrites transports of existing httpx clients
+        # if proxies are set, the default transports that were created on clients init
+        # will be used, irrespective of these re-settings
+        client.auth._http_client._transport = transports[0]
+        client.postgrest.session._transport = transports[1]
+        # POST is not retryable by default, but for our functions it should be safe to retry
+        client.functions._client._transport = RetryTransport(
+            retry=LogRetry(
+                total=2,
+                backoff_factor=0.2,
+                allowed_methods=[
+                    "HEAD",
+                    "GET",
+                    "PUT",
+                    "DELETE",
+                    "OPTIONS",
+                    "TRACE",
+                    "POST",
+                ],
+            ),
+            transport=httpx.HTTPTransport(verify=True, http2=False, trust_env=True),
+        )
+        return client
 
 
 def connect_hub_with_auth(
