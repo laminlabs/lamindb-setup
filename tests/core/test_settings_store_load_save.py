@@ -17,7 +17,11 @@ from lamindb_setup.core._settings_load import (
     setup_instance_from_store,
 )
 from lamindb_setup.core._settings_save import save_instance_settings
-from lamindb_setup.core._settings_store import InstanceSettingsStore
+from lamindb_setup.core._settings_store import (
+    InstanceSettingsStore,
+    local_current_instance_file,
+    remove_local_current_instance,
+)
 
 if TYPE_CHECKING:
     from pathlib import Path
@@ -252,3 +256,13 @@ def test_setup_settings_modules_instance_modules_override_env_var(
 
     modules_file.write_text("pertdb")
     assert settings.modules == {"bionty", "pertdb"}
+
+
+def test_remove_local_current_instance_missing_marker_with_expected_slug(
+    tmp_path: Path,
+) -> None:
+    marker = local_current_instance_file(tmp_path)
+    removed = remove_local_current_instance(
+        marker=marker, expected_instance_slug="owner/name"
+    )
+    assert removed is None

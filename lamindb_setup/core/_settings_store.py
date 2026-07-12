@@ -98,6 +98,8 @@ def remove_local_current_instance(
     if marker is None:
         return None
     if expected_instance_slug is not None:
+        if not marker.exists():
+            return None
         marker_slug = marker.read_text().strip()
         if marker_slug != expected_instance_slug:
             return None
