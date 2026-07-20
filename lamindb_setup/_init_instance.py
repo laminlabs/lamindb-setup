@@ -4,6 +4,7 @@ import importlib
 import os
 import uuid
 from typing import TYPE_CHECKING, Literal
+from urllib.parse import unquote, urlparse
 from uuid import UUID
 
 from lamin_utils import logger
@@ -224,6 +225,81 @@ DOC_INSTANCE_NAME = (
 DOC_DB = "Database connection URL. Defaults to `None`, which implies an SQLite file in the storage location."
 DOC_MODULES = "Comma-separated string of schema modules."
 DOC_LOW_LEVEL_KWARGS = "Keyword arguments for low-level control."
+
+
+def _mark_db_as_template() -> None:
+    from django.db import connection
+
+    database_name = connection.settings_dict["NAME"]
+    quoted_database_name = connection.ops.quote_name(database_name)
+    with connection.cursor() as cursor:
+        template_ready = False
+        cursor.execute(
+            f"ALTER DATABASE {quoted_database_name} "
+            "WITH IS_TEMPLATE TRUE ALLOW_CONNECTIONS FALSE"
+        )
+        try:
+            cursor.execute(
+                "SELECT EXISTS ("
+                "SELECT 1 FROM pg_stat_activity "
+                "WHERE datname = current_database() AND pid <> pg_backend_pid()"
+                ")"
+            )
+            if cursor.fetchone()[0]:
+                raise RuntimeError(
+                    "The template database has other open connections; close them and retry."
+                )
+            template_ready = True
+        finally:
+            if not template_ready:
+                cursor.execute(
+                    f"ALTER DATABASE {quoted_database_name} "
+                    "WITH IS_TEMPLATE FALSE ALLOW_CONNECTIONS TRUE"
+                )
+
+
+def init_db_template(
+    *,
+    db: PostgresDsn,
+    modules: str | None = None,
+) -> None:
+    """Initialize an existing PostgreSQL database as a schema-only template.
+
+    Run this in a process without a connected LaminDB instance. On success, the
+    database is marked as a PostgreSQL template and further connections are
+    disabled.
+    """
+    from django.conf import settings as django_settings
+
+    from .core import django as django_lamin
+
+    if django_lamin.IS_SETUP or django_settings.configured:
+        raise RuntimeError(
+            "init_db_template() requires a process without configured Django settings."
+        )
+    if db is None or not str(db).lower().startswith("postgresql://"):
+        raise ValueError("`db` must be a PostgreSQL connection URL.")
+    database_name = unquote(urlparse(str(db)).path.lstrip("/"))
+    if not database_name or database_name in {"postgres", "template0", "template1"}:
+        raise ValueError("`db` must name a dedicated PostgreSQL database.")
+
+    isettings = InstanceSettings(
+        id=UUID(int=0),
+        owner="none",
+        name="none",
+        db=db,
+        modules=process_modules_arg(modules),
+    )
+
+    previous_isettings = settings._instance_settings
+    settings._instance_settings = isettings
+    try:
+        isettings._init_db()
+        _mark_db_as_template()
+    finally:
+        settings._instance_settings = previous_isettings
+        django_lamin.IS_MIGRATING = False
+        django_lamin.reset_django()
 
 
 @doc_args(DOC_STORAGE_ARG, DOC_INSTANCE_NAME, DOC_DB, DOC_MODULES, DOC_LOW_LEVEL_KWARGS)
