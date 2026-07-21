@@ -19,18 +19,20 @@ def unconfigured_django():
     object.__setattr__(django_settings, "_wrapped", previous_settings)
 
 
-def test_init_db_template(monkeypatch):
+def test_init_template_database(monkeypatch):
     previous_isettings = settings._instance_settings
     calls = []
 
     monkeypatch.setattr(django_lamin, "IS_SETUP", False)
     monkeypatch.setattr(
-        django_lamin, "reset_django", lambda: calls.append("reset_django")
+        django_lamin,
+        "reset_django",
+        lambda: pytest.fail("init_template_database() must not reset Django"),
     )
     monkeypatch.setattr(
         init_instance,
-        "_mark_db_as_template",
-        lambda: calls.append("mark_db_as_template"),
+        "_mark_postgres_db_as_template",
+        lambda: calls.append("mark_postgres_db_as_template"),
     )
 
     def init_db(isettings):
@@ -43,16 +45,18 @@ def test_init_db_template(monkeypatch):
 
     monkeypatch.setattr(InstanceSettings, "_init_db", init_db)
 
-    ln_setup.init_db_template(
-        db="postgresql://postgres:pwd@localhost:5432/template",
+    init_instance.init_template_database(
+        uri="postgresql://postgres:pwd@localhost:5432/template",
         modules="bionty, pertdb",
     )
 
-    assert calls == ["init_db", "mark_db_as_template", "reset_django"]
+    assert calls == ["init_db", "mark_postgres_db_as_template"]
     assert settings._instance_settings is previous_isettings
+    assert not hasattr(ln_setup, "init_template_database")
+    assert not hasattr(ln_setup, "init_db_template")
 
 
-def test_mark_db_as_template(monkeypatch):
+def test_mark_postgres_db_as_template(monkeypatch):
     connection = MagicMock()
     connection.settings_dict = {"NAME": "lamin_template"}
     connection.ops.quote_name.return_value = '"lamin_template"'
@@ -60,7 +64,7 @@ def test_mark_db_as_template(monkeypatch):
     cursor = connection.cursor.return_value.__enter__.return_value
     cursor.fetchone.return_value = (False,)
 
-    init_instance._mark_db_as_template()
+    init_instance._mark_postgres_db_as_template()
 
     assert cursor.execute.call_args_list == [
         call(
@@ -74,7 +78,7 @@ def test_mark_db_as_template(monkeypatch):
     ]
 
 
-def test_mark_db_as_template_rejects_other_connections(monkeypatch):
+def test_mark_postgres_db_as_template_rejects_other_connections(monkeypatch):
     connection = MagicMock()
     connection.settings_dict = {"NAME": "lamin_template"}
     connection.ops.quote_name.return_value = '"lamin_template"'
@@ -83,19 +87,22 @@ def test_mark_db_as_template_rejects_other_connections(monkeypatch):
     cursor.fetchone.return_value = (True,)
 
     with pytest.raises(RuntimeError, match="other open connections"):
-        init_instance._mark_db_as_template()
+        init_instance._mark_postgres_db_as_template()
 
     cursor.execute.assert_called_with(
         'ALTER DATABASE "lamin_template" WITH IS_TEMPLATE FALSE ALLOW_CONNECTIONS TRUE'
     )
 
 
-def test_init_db_template_resets_django_on_error(monkeypatch):
+def test_init_template_database_cleans_up_on_error(monkeypatch):
     previous_isettings = settings._instance_settings
-    resets = []
 
     monkeypatch.setattr(django_lamin, "IS_SETUP", False)
-    monkeypatch.setattr(django_lamin, "reset_django", lambda: resets.append(None))
+    monkeypatch.setattr(
+        django_lamin,
+        "reset_django",
+        lambda: pytest.fail("init_template_database() must not reset Django"),
+    )
 
     def raise_error(isettings):
         django_lamin.IS_MIGRATING = True
@@ -104,46 +111,45 @@ def test_init_db_template_resets_django_on_error(monkeypatch):
     monkeypatch.setattr(InstanceSettings, "_init_db", raise_error)
 
     with pytest.raises(RuntimeError, match="migration failed"):
-        ln_setup.init_db_template(
-            db="postgresql://postgres:pwd@localhost:5432/template"
+        init_instance.init_template_database(
+            uri="postgresql://postgres:pwd@localhost:5432/template"
         )
 
-    assert len(resets) == 1
     assert django_lamin.IS_MIGRATING is False
     assert settings._instance_settings is previous_isettings
 
 
-def test_init_db_template_rejects_connected_instance(monkeypatch):
+def test_init_template_database_rejects_connected_instance(monkeypatch):
     monkeypatch.setattr(django_lamin, "IS_SETUP", True)
 
     with pytest.raises(RuntimeError, match="without configured Django settings"):
-        ln_setup.init_db_template(
-            db="postgresql://postgres:pwd@localhost:5432/template"
+        init_instance.init_template_database(
+            uri="postgresql://postgres:pwd@localhost:5432/template"
         )
 
 
-def test_init_db_template_rejects_configured_django(monkeypatch):
+def test_init_template_database_rejects_configured_django(monkeypatch):
     monkeypatch.setattr(django_lamin, "IS_SETUP", False)
     object.__setattr__(django_settings, "_wrapped", object())
 
     with pytest.raises(RuntimeError, match="without configured Django settings"):
-        ln_setup.init_db_template(
-            db="postgresql://postgres:pwd@localhost:5432/template"
+        init_instance.init_template_database(
+            uri="postgresql://postgres:pwd@localhost:5432/template"
         )
 
 
-def test_init_db_template_rejects_non_postgres_url(monkeypatch):
+def test_init_template_database_rejects_non_postgres_uri(monkeypatch):
     monkeypatch.setattr(django_lamin, "IS_SETUP", False)
 
-    with pytest.raises(ValueError, match="must be a PostgreSQL connection URL"):
-        ln_setup.init_db_template(db="sqlite:///template.db")
+    with pytest.raises(ValueError, match="must be a PostgreSQL connection URI"):
+        init_instance.init_template_database(uri="sqlite:///template.db")
 
 
 @pytest.mark.parametrize("database", ["postgres", "template0", "template1"])
-def test_init_db_template_rejects_system_database(monkeypatch, database):
+def test_init_template_database_rejects_system_database(monkeypatch, database):
     monkeypatch.setattr(django_lamin, "IS_SETUP", False)
 
     with pytest.raises(ValueError, match="must name a dedicated PostgreSQL database"):
-        ln_setup.init_db_template(
-            db=f"postgresql://postgres:pwd@localhost:5432/{database}"
+        init_instance.init_template_database(
+            uri=f"postgresql://postgres:pwd@localhost:5432/{database}"
         )

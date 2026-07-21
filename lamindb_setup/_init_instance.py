@@ -227,7 +227,7 @@ DOC_MODULES = "Comma-separated string of schema modules."
 DOC_LOW_LEVEL_KWARGS = "Keyword arguments for low-level control."
 
 
-def _mark_db_as_template() -> None:
+def _mark_postgres_db_as_template() -> None:
     from django.db import connection
 
     database_name = connection.settings_dict["NAME"]
@@ -258,9 +258,9 @@ def _mark_db_as_template() -> None:
                 )
 
 
-def init_db_template(
+def init_template_database(
     *,
-    db: PostgresDsn,
+    uri: PostgresDsn,
     modules: str | None = None,
 ) -> None:
     """Initialize an existing PostgreSQL database as a schema-only template.
@@ -275,19 +275,19 @@ def init_db_template(
 
     if django_lamin.IS_SETUP or django_settings.configured:
         raise RuntimeError(
-            "init_db_template() requires a process without configured Django settings."
+            "init_template_database() requires a process without configured Django settings."
         )
-    if db is None or not str(db).lower().startswith("postgresql://"):
-        raise ValueError("`db` must be a PostgreSQL connection URL.")
-    database_name = unquote(urlparse(str(db)).path.lstrip("/"))
+    if uri is None or not str(uri).lower().startswith("postgresql://"):
+        raise ValueError("`uri` must be a PostgreSQL connection URI.")
+    database_name = unquote(urlparse(str(uri)).path.lstrip("/"))
     if not database_name or database_name in {"postgres", "template0", "template1"}:
-        raise ValueError("`db` must name a dedicated PostgreSQL database.")
+        raise ValueError("`uri` must name a dedicated PostgreSQL database.")
 
     isettings = InstanceSettings(
         id=UUID(int=0),
         owner="none",
         name="none",
-        db=db,
+        db=uri,
         modules=process_modules_arg(modules),
     )
 
@@ -295,11 +295,10 @@ def init_db_template(
     settings._instance_settings = isettings
     try:
         isettings._init_db()
-        _mark_db_as_template()
+        _mark_postgres_db_as_template()
     finally:
         settings._instance_settings = previous_isettings
         django_lamin.IS_MIGRATING = False
-        django_lamin.reset_django()
 
 
 @doc_args(DOC_STORAGE_ARG, DOC_INSTANCE_NAME, DOC_DB, DOC_MODULES, DOC_LOW_LEVEL_KWARGS)

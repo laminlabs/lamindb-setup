@@ -10,7 +10,6 @@ Basic operations
 .. autofunction:: login
 .. autofunction:: logout
 .. autofunction:: init
-.. autofunction:: init_db_template
 .. autofunction:: disconnect
 .. autofunction:: delete
 
@@ -49,7 +48,7 @@ from ._delete import delete
 from ._disconnect import disconnect
 from ._django import django
 from ._entry_points import call_registered_entry_points as _call_registered_entry_points
-from ._init_instance import init, init_db_template
+from ._init_instance import init
 from ._migrate import migrate
 from ._register_instance import register
 from ._setup_user import login, logout
