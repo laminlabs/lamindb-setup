@@ -304,6 +304,9 @@ def reconnect_django(isettings: InstanceSettings, init: bool = False) -> None:
         _ensure_pgtrigger_meta_compat()
 
     db_token_manager.reset("default")
+    # clear branch, space etc from settings cache
+    # otherwise can store context (space, branch) from previous instance
+    settings._clear_instance_context_cache()
 
     current_default_db = django_settings.DATABASES.get("default", {})
     merged_default_db = {**current_default_db, **target_db}
