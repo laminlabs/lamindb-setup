@@ -358,6 +358,10 @@ def validate_connection_state(
             )
             reset_django()
             did_reset_django = True
+            # clear branch, space etc from settings cache
+            # otherwise can store context (space, branch) from previous instance
+            # or with stale class references after reset_django()
+            settings._clear_instance_context_cache()
     return did_reset_django, already_connected
 
 
@@ -424,6 +428,10 @@ def connect(instance: str | None = None, **kwargs: Any) -> str | tuple | None:
                 logger.warning("re-setting django")
                 reset_django()
                 did_reset_django = True
+                # clear branch, space etc from settings cache
+                # otherwise can store context (space, branch) from previous instance
+                # or with stale class references after reset_django()
+                settings._clear_instance_context_cache()
                 owner, name = isettings.owner, isettings.name
             if _db is not None and isettings.dialect == "postgresql":
                 isettings._db = _db

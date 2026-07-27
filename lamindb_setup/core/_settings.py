@@ -77,6 +77,11 @@ class SetupSettings:
     _branch = None  # do not have types here
     _space = None  # do not have types here
 
+    def _clear_instance_context_cache(self) -> None:
+        """Clear cached instance context."""
+        self._branch = None
+        self._space = None
+
     @property
     def _instance_settings_path(self) -> Path:
         return current_instance_settings_file()
