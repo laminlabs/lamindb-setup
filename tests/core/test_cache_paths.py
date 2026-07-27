@@ -3,6 +3,13 @@ from lamindb_setup import settings
 from lamindb_setup.core._settings import SetupPaths
 
 
+def test_lamin_cache_dir_must_be_absolute(monkeypatch):
+    monkeypatch.setenv("LAMIN_CACHE_DIR", "relative/cache")
+    with pytest.raises(ValueError) as error:
+        _ = settings.cache_dir
+    assert "LAMIN_CACHE_DIR must be a valid absolute path" in str(error.value)
+
+
 def test_cloud_to_local_no_update():
     cache_dir = settings.cache_dir
     assert (
