@@ -483,11 +483,17 @@ def setup_django(
 # setup_django()
 # reset_django_module_variables()
 def reset_django():
-    from django.conf import settings
+    from django.conf import settings as django_settings
     from django.apps import apps
     from django.db import connections
+    from lamindb_setup.core._settings import settings
 
-    if not settings.configured:
+    # clear branch, space etc from settings cache
+    # otherwise can store context (space, branch) from previous instance
+    # or can have stale class references if not cleared
+    settings._clear_instance_context_cache()
+
+    if not django_settings.configured:
         return
 
     connections.close_all()
@@ -496,8 +502,8 @@ def reset_django():
 
     db_token_manager.reset()
 
-    if getattr(settings, "_wrapped", None) is not None:
-        settings._wrapped = None
+    if getattr(django_settings, "_wrapped", None) is not None:
+        django_settings._wrapped = None
 
     app_names = {"django"} | {app.name for app in apps.get_app_configs()}
 
