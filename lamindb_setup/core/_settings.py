@@ -382,6 +382,8 @@ class SetupSettings:
         """Cache root, a local directory to cache cloud files."""
         if "LAMIN_CACHE_DIR" in os.environ:
             cache_dir = UPath(os.environ["LAMIN_CACHE_DIR"])
+            if not cache_dir.is_absolute():
+                raise ValueError("LAMIN_CACHE_DIR must be a valid absolute path.")
         elif self._cache_dir is None:
             cache_path = load_cache_path_from_settings()
             cache_dir = _process_cache_path(cache_path)
@@ -497,12 +499,12 @@ class SetupPaths:
             else:
                 local_key = cache_key
             cache_dir = settings.cache_dir
-            local_filepath = cache_dir / local_key
+            local_filepath = (cache_dir / local_key).resolve()
             # a key containing ".." or an absolute key would otherwise
             # resolve to a path outside the cache directory
-            if not local_filepath.resolve().is_relative_to(cache_dir.resolve()):
+            if not local_filepath.is_relative_to(cache_dir):
                 raise ValueError(
-                    f"cache key {local_key} resolves outside the cache directory"
+                    f"cache key {local_key} resolves outside the cache directory."
                 )
         else:
             local_filepath = filepath
