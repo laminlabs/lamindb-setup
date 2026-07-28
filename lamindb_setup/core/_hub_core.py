@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import json
 import os
+import time
 import uuid
 from importlib import metadata
 from typing import TYPE_CHECKING, Any, Literal
@@ -918,7 +919,16 @@ def access_db(
         "LAMIN_DB_TOKEN" in os.environ
         and (env_db_token := os.environ["LAMIN_DB_TOKEN"]) != ""
     ):
-        return env_db_token
+        try:
+            exp = jwt.decode(env_db_token, options={"verify_signature": False})["exp"]
+        except Exception as e:
+            logger.warning(
+                f"ignoring LAMIN_DB_TOKEN from environment, could not decode: {e}"
+            )
+        else:
+            if time.time() < exp:
+                return env_db_token
+            logger.warning("ignoring LAMIN_DB_TOKEN from environment: expired")
 
     if isinstance(instance, InstanceSettings):
         instance_id = instance._id

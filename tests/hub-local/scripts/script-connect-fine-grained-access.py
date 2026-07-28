@@ -1,5 +1,7 @@
 import os
+import time
 
+import jwt
 import lamindb_setup as ln_setup
 import pytest
 from django.db import connection, transaction
@@ -74,5 +76,15 @@ with pytest.raises(RuntimeError):
 # check with providing access_token explicitly
 access_db(isettings, ln_setup.settings.user.access_token)
 # check specifying an env token via an env variable
-os.environ["LAMIN_DB_TOKEN"] = "test_db_token"
+os.environ["LAMIN_DB_TOKEN"] = jwt.encode(
+    {"exp": time.time() + 3600}, "secret", algorithm="HS256"
+)
 assert access_db(isettings) == os.environ["LAMIN_DB_TOKEN"]
+# expired env token is ignored
+os.environ["LAMIN_DB_TOKEN"] = jwt.encode(
+    {"exp": time.time() - 1}, "secret", algorithm="HS256"
+)
+assert (
+    access_db(isettings, ln_setup.settings.user.access_token)
+    != os.environ["LAMIN_DB_TOKEN"]
+)
