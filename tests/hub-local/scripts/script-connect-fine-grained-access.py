@@ -88,3 +88,9 @@ assert (
     access_db(isettings, ln_setup.settings.user.access_token)
     != os.environ["LAMIN_DB_TOKEN"]
 )
+# undecodable env token is ignored
+os.environ["LAMIN_DB_TOKEN"] = "not-a-jwt"
+assert (
+    access_db(isettings, ln_setup.settings.user.access_token)
+    != os.environ["LAMIN_DB_TOKEN"]
+)
