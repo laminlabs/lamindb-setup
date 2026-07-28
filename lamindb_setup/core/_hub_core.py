@@ -921,13 +921,11 @@ def access_db(
     ):
         try:
             exp = jwt.decode(env_db_token, options={"verify_signature": False})["exp"]
-        except Exception as e:
-            logger.warning(
-                f"ignoring LAMIN_DB_TOKEN from environment, could not decode: {e}"
-            )
-        else:
             if time.time() < exp:
                 return env_db_token
+        except Exception as e:
+            logger.warning(f"ignoring LAMIN_DB_TOKEN from environment: {e}")
+        else:
             logger.warning("ignoring LAMIN_DB_TOKEN from environment: expired")
 
     if isinstance(instance, InstanceSettings):
