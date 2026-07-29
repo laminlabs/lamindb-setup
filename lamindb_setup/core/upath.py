@@ -1232,7 +1232,9 @@ def get_stat_dir_cloud(path: UPath) -> tuple[int, str | None, str | None, int]:
         # Apache-style directory indexes expose sort links (e.g. ?C=M;O=A)
         # as pseudo-files in find(). Skip these non-file entries.
         objects = (
-            path.fs.info(o) for o in path.fs.find(path.as_posix()) if "?" not in o
+            path.fs.info(o)
+            for o in path.fs.find(path.as_posix())
+            if not re.search(r"\?C=[NMSD];O=[AD]", o)
         )
     else:
         objects = path.fs.find(path.as_posix(), detail=True).values()
@@ -1252,12 +1254,13 @@ def get_stat_dir_cloud(path: UPath) -> tuple[int, str | None, str | None, int]:
     hashes = []
     for object in objects:
         if compute_list_hash:
-            size, hash, _ = get_stat_file_cloud(object, protocol, accessor)
+            size, fhash, _ = get_stat_file_cloud(object, protocol, accessor)
             sizes.append(size)
-            if hash is None:
+            # this check is effectively only for http/https directories
+            if fhash is None:
                 compute_list_hash = False
                 continue
-            hashes.append(hash)
+            hashes.append(fhash)
         else:
             sizes.append(object["size"])
     size = sum(sizes)

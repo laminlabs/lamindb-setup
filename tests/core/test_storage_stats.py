@@ -110,7 +110,7 @@ def test_get_stat_dir_cloud_http_resolves_missing_sizes_without_etag_coupling():
             return [
                 "https://example.org/release/?C=M;O=A",
                 "https://example.org/release/a.txt",
-                "https://example.org/release/b.txt",
+                "https://example.org/release/b.txt?download=1",
             ]
 
         def info(self, path: str):
@@ -122,8 +122,8 @@ def test_get_stat_dir_cloud_http_resolves_missing_sizes_without_etag_coupling():
                     "type": "file",
                     "ETag": '"abc123"',
                 },
-                "https://example.org/release/b.txt": {
-                    "name": "https://example.org/release/b.txt",
+                "https://example.org/release/b.txt?download=1": {
+                    "name": "https://example.org/release/b.txt?download=1",
                     "size": 5,
                     "type": "file",
                 },
