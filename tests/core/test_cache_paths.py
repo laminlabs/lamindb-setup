@@ -1,6 +1,7 @@
 import pytest
 from lamindb_setup import settings
 from lamindb_setup.core._settings import SetupPaths
+from lamindb_setup.core.upath import UPath
 
 
 def test_lamin_cache_dir_must_be_absolute(monkeypatch):
@@ -41,3 +42,32 @@ def test_cloud_to_local_no_update_local_filepath(tmp_path):
         SetupPaths.cloud_to_local_no_update(filepath, "../escape.txt").as_posix()
         == filepath.as_posix()
     )
+
+
+def test_upath_cache_cloud_path(monkeypatch):
+    cached_paths: list[tuple[str, str]] = []
+
+    def fake_sync(self, destination, **kwargs):
+        cached_paths.append((self.as_posix(), destination.as_posix()))
+        return True
+
+    monkeypatch.setattr(UPath, "synchronize_to", fake_sync, raising=False)
+    filepath = UPath("s3://bucket/uid/file.txt")
+
+    local_path = filepath.cache()
+
+    assert local_path == settings.cache_dir / "bucket/uid/file.txt"
+    assert cached_paths == [
+        (
+            "s3://bucket/uid/file.txt",
+            (settings.cache_dir / "bucket/uid/file.txt").as_posix(),
+        )
+    ]
+
+
+def test_upath_cache_local_path(tmp_path):
+    filepath = UPath(tmp_path / "file.txt")
+
+    local_path = filepath.cache(cache_key="../escape.txt")
+
+    assert local_path == filepath
