@@ -1240,12 +1240,21 @@ def get_stat_dir_cloud(path: UPath) -> tuple[int, str | None, str | None, int]:
         compute_list_hash = False
     sizes = []
     hashes = []
-    for object in objects.values():
+    for object_path, object in objects.items():
         if compute_list_hash:
             size, hash, _ = get_stat_file_cloud(object, protocol, accessor)
             sizes.append(size)
             hashes.append(hash)
         else:
+            if protocol in {"http", "https"} and "?" in object_path:
+                # Apache-style directory indexes expose sort links (e.g. ?C=M;O=A)
+                # as pseudo-files in find(). Skip these non-file entries.
+                continue
+            if protocol in {"http", "https"} and object["size"] is None:
+                # Avoid coupling this non-hash path to get_stat_file_cloud(), which
+                # expects HTTP ETag metadata that is not guaranteed by all servers.
+                # We only need byte size here, so resolve it directly per object.
+                object = path.fs.info(object_path)
             sizes.append(object["size"])
     size = sum(sizes)
     n_files = len(sizes)
