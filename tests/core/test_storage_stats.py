@@ -105,30 +105,31 @@ def test_get_stat_dir_cloud_hf():
 
 def test_get_stat_dir_cloud_http_resolves_missing_sizes_without_etag_coupling():
     class DummyFS:
-        def find(self, _path: str, detail: bool = True):
-            assert detail
-            return {
-                "https://example.org/release/?C=M;O=A": {
-                    "name": "https://example.org/release/?C=M;O=A",
-                    "size": None,
-                    "type": "file",
-                },
+        def find(self, _path: str):
+            # find() without detail=True returns path strings
+            return [
+                "https://example.org/release/?C=M;O=A",
+                "https://example.org/release/a.txt",
+                "https://example.org/release/b.txt?download=1",
+            ]
+
+        def info(self, path: str):
+            # One object has ETag; another has size only (no ETag).
+            stats = {
                 "https://example.org/release/a.txt": {
                     "name": "https://example.org/release/a.txt",
-                    "size": None,
+                    "size": 10,
                     "type": "file",
+                    "ETag": '"abc123"',
                 },
-                "https://example.org/release/b.txt": {
-                    "name": "https://example.org/release/b.txt",
+                "https://example.org/release/b.txt?download=1": {
+                    "name": "https://example.org/release/b.txt?download=1",
                     "size": 5,
                     "type": "file",
                 },
             }
-
-        def info(self, path: str):
-            assert path == "https://example.org/release/a.txt"
-            # Mimic servers that return size but no ETag.
-            return {"name": path, "size": 10, "type": "file"}
+            assert path in stats
+            return stats[path]
 
     class DummyPath:
         protocol = "https"
