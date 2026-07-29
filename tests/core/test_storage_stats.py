@@ -52,6 +52,14 @@ def test_get_stat_file_cloud_http():
     assert hash_type == "md5-etag"
     assert size == 272
 
+    # no ETag
+    path = UPath("https://zenodo.org/records/16375073/files/spindr_full.zip")
+    assert get_stat_file_cloud(path.stat().as_info(), "https") == (
+        3827866663,
+        None,
+        None,
+    )
+
 
 def test_get_stat_dir_cloud_aws():
     string_path = "s3://lamindata/iris_studies/study0_raw_images"

@@ -1215,10 +1215,10 @@ def get_stat_file_cloud(stat: dict, protocol: str, accessor: str | None = None):
             accessor = "ETag"
         else:
             assert accessor == "ETag"
-        assert accessor in stat
-        etag = stat[accessor].strip('"=')
-        hash = hash_string(etag)
-        hash_type = "md5-etag"
+        if accessor in stat:  # not all urls have ETag
+            etag = stat[accessor].strip('"=')
+            hash = hash_string(etag)
+            hash_type = "md5-etag"
 
     if hash is not None:
         hash = hash[:HASH_LENGTH]
