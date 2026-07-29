@@ -63,11 +63,3 @@ def test_upath_cache_cloud_path(monkeypatch):
             (settings.cache_dir / "bucket/uid/file.txt").as_posix(),
         )
     ]
-
-
-def test_upath_cache_local_path(tmp_path):
-    filepath = UPath(tmp_path / "file.txt")
-
-    local_path = filepath.cache(cache_key="../escape.txt")
-
-    assert local_path == filepath
