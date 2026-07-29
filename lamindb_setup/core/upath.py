@@ -857,9 +857,9 @@ def from_auth(cls, path: AnyPathStr) -> UPath:
 
 def cache(self: UPath, cache_key: str | None = None, **kwargs) -> UPath:
     """Return a local cache path and synchronize for cloud paths."""
-    from ._settings import SetupPaths
+    from ._settings import settings
 
-    return SetupPaths.cloud_to_local(self, cache_key=cache_key, **kwargs)
+    return settings.paths.cloud_to_local(self, cache_key=cache_key, **kwargs)
 
 
 # Why aren't we subclassing?
@@ -885,7 +885,6 @@ UPath.from_auth = classmethod(from_auth)
 UPath.cache = cache
 # unfortunately, we also have to do this for the subclasses
 Path.view_tree = view_tree  # type: ignore
-Path.cache = cache  # type: ignore
 
 
 def _standardize_docstring_paragraphs(doc: str | None) -> str | None:
