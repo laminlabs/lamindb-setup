@@ -95,6 +95,47 @@ def test_get_stat_dir_cloud_hf():
     assert size == 42767
 
 
+def test_get_stat_dir_cloud_http_resolves_missing_sizes_without_etag_coupling():
+    class DummyFS:
+        def find(self, _path: str, detail: bool = True):
+            assert detail
+            return {
+                "https://example.org/release/?C=M;O=A": {
+                    "name": "https://example.org/release/?C=M;O=A",
+                    "size": None,
+                    "type": "file",
+                },
+                "https://example.org/release/a.txt": {
+                    "name": "https://example.org/release/a.txt",
+                    "size": None,
+                    "type": "file",
+                },
+                "https://example.org/release/b.txt": {
+                    "name": "https://example.org/release/b.txt",
+                    "size": 5,
+                    "type": "file",
+                },
+            }
+
+        def info(self, path: str):
+            assert path == "https://example.org/release/a.txt"
+            # Mimic servers that return size but no ETag.
+            return {"name": path, "size": 10, "type": "file"}
+
+    class DummyPath:
+        protocol = "https"
+        fs = DummyFS()
+
+        def as_posix(self):
+            return "https://example.org/release/"
+
+    size, hash, hash_type, n_files = get_stat_dir_cloud(DummyPath())  # type: ignore[arg-type]
+    assert size == 15
+    assert hash is None
+    assert hash_type is None
+    assert n_files == 2
+
+
 def test_get_storage_region():
     for region in HOSTED_REGIONS:
         assert get_storage_region(f"s3://lamin-{region}") == region
