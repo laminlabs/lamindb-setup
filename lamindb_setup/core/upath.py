@@ -1226,8 +1226,16 @@ def get_stat_file_cloud(stat: dict, protocol: str, accessor: str | None = None):
 
 
 def get_stat_dir_cloud(path: UPath) -> tuple[int, str | None, str | None, int]:
-    objects = path.fs.find(path.as_posix(), detail=True)
     protocol = path.protocol
+    if protocol in {"http", "https"}:
+        # detail=True doesn't return proper stats for http/https directories
+        # Apache-style directory indexes expose sort links (e.g. ?C=M;O=A)
+        # as pseudo-files in find(). Skip these non-file entries.
+        objects = (
+            path.fs.info(o) for o in path.fs.find(path.as_posix()) if "?" not in o
+        )
+    else:
+        objects = path.fs.find(path.as_posix(), detail=True).values()
     hash, hash_type = None, None
     compute_list_hash = True
     if protocol == "s3":
@@ -1236,25 +1244,21 @@ def get_stat_dir_cloud(path: UPath) -> tuple[int, str | None, str | None, int]:
         accessor = None  # use md5Hash or etag depending on what is available
     elif protocol == "hf":
         accessor = "blob_id"
+    elif protocol in {"http", "https"}:
+        accessor = "ETag"
     else:
         compute_list_hash = False
     sizes = []
     hashes = []
-    for object_path, object in objects.items():
+    for object in objects:
         if compute_list_hash:
             size, hash, _ = get_stat_file_cloud(object, protocol, accessor)
             sizes.append(size)
+            if hash is None:
+                compute_list_hash = False
+                continue
             hashes.append(hash)
         else:
-            if protocol in {"http", "https"} and "?" in object_path:
-                # Apache-style directory indexes expose sort links (e.g. ?C=M;O=A)
-                # as pseudo-files in find(). Skip these non-file entries.
-                continue
-            if protocol in {"http", "https"} and object["size"] is None:
-                # Avoid coupling this non-hash path to get_stat_file_cloud(), which
-                # expects HTTP ETag metadata that is not guaranteed by all servers.
-                # We only need byte size here, so resolve it directly per object.
-                object = path.fs.info(object_path)
             sizes.append(object["size"])
     size = sum(sizes)
     n_files = len(sizes)
