@@ -250,7 +250,12 @@ class PrintHook:
         self._print_last = now
         out = f"... {self.action} {self.objectname}: {min(progress_in_percent, 100):4.1f}%"
         end = "\n" if is_done else ""
-        print("\r" + out, end=end, flush=self._flush)
+        try:
+            print("\r" + out, end=end, flush=self._flush)
+        except Exception:
+            # this runs inside the transfer coroutine, so a broken stdout would abort
+            # the request mid-body instead of just losing a progress line
+            self._skip_print = True
 
 
 class ProgressCallback(fsspec.callbacks.Callback):
@@ -369,7 +374,7 @@ def silence_spurious_write_errors(fs: AbstractFileSystem) -> None:
     def handler(loop, context):
         exc = context.get("exception")
         if isinstance(exc, AssertionError) and "Data should not be empty" in str(exc):
-            logger.debug(f"silenced asyncio error: {context.get('message', '')}")
+            logger.warning(f"silenced asyncio error: {context.get('message', '')}")
             return
         loop.default_exception_handler(context)
 
