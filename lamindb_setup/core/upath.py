@@ -6,13 +6,15 @@
 
 from __future__ import annotations
 
+import builtins
 import math
 import os
 import re
+import sys
+import time
 import warnings
 from collections import defaultdict
 from datetime import datetime, timezone
-from functools import partial
 from itertools import chain, islice
 from pathlib import Path, PosixPath, PurePosixPath, WindowsPath
 from typing import TYPE_CHECKING, Any, Literal
@@ -43,6 +45,9 @@ if TYPE_CHECKING:
     from lamindb_setup.types import AnyPath, AnyPathStr
 
 LocalPathClasses = (PosixPath, WindowsPath, LocalPath)
+
+
+IS_RUN_FROM_IPYTHON = getattr(builtins, "__IPYTHON__", False)
 
 
 TRAILING_SEP = (os.sep, os.altsep) if os.altsep is not None else os.sep
@@ -211,16 +216,41 @@ def create_mapper(
         )
 
 
-def print_hook(size: int, value: int, objectname: str, action: str):
-    if size == 0:
-        progress_in_percent = 100.0
-    else:
-        progress_in_percent = (value / size) * 100
-    out = f"... {action} {objectname}: {min(progress_in_percent, 100):4.1f}%"
-    if "NBPRJ_TEST_NBPATH" not in os.environ:
+class PrintHook:
+    # gcsfs/s3fs may call the callback on every chunk, from inside the fsspec IO
+    # loop thread; printing there blocks the in-flight requests of the transfer and
+    # in Jupyter hits IOPub rate limits, which can destabilize the kernel.
+    _print_interval = 0.25  # seconds
+
+    def __init__(
+        self,
+        objectname: str,
+        action: Literal["uploading", "downloading", "synchronizing"],
+    ):
+        self.objectname = objectname
+        self.action = action
+        self._print_last = 0.0
+
+        self._flush = not IS_RUN_FROM_IPYTHON
+
+        self._skip_print = "NBPRJ_TEST_NBPATH" in os.environ
+
+    def __call__(self, size: int, value: int, **kwargs):
+        if self._skip_print:
+            return
+        if size == 0:
+            progress_in_percent = 100.0
+        else:
+            progress_in_percent = (value / size) * 100
         # sometimes it doesn't reach 100%, probably due to precision issues
-        end = "\n" if progress_in_percent >= 99.9999999999 else ""
-        print("\r" + out, end=end, flush=True)
+        is_done = progress_in_percent >= 99.9999999999
+        now = time.monotonic()
+        if not is_done and now - self._print_last < self._print_interval:
+            return
+        self._print_last = now
+        out = f"... {self.action} {self.objectname}: {min(progress_in_percent, 100):4.1f}%"
+        end = "\n" if is_done else ""
+        print("\r" + out, end=end, flush=self._flush)
 
 
 class ProgressCallback(fsspec.callbacks.Callback):
@@ -235,9 +265,7 @@ class ProgressCallback(fsspec.callbacks.Callback):
         super().__init__()
 
         self.action = action
-        print_progress = partial(print_hook, objectname=objectname, action=action)
-        self.hooks = {"print_progress": print_progress}
-
+        self.hooks = {"print_progress": PrintHook(objectname, action)}
         self.adjust_size = adjust_size
 
     def absolute_update(self, value):
@@ -308,10 +336,39 @@ class ChildProgressCallback(fsspec.callbacks.Callback):
         self.parent.update_relative_value(inc)
 
     def relative_update(self, inc=1):
+        self.value += inc
         if self.size != 0:
             self.parent_update(inc / self.size)
         else:
             self.parent_update(1)
+
+    def absolute_update(self, value):
+        self.relative_update(value - self.value)
+
+
+def silence_spurious_write_errors(fs: AbstractFileSystem) -> None:
+    """Stop asyncio from logging a known spurious write error of the fsspec IO loop.
+
+    On Windows, aiohttp requests made from the fsspec IO loop can hit a
+    write-after-close race in `_SelectorSocketTransport._write_send`
+    (https://github.com/python/cpython/issues/115514). The transfer still succeeds,
+    but the loop logs a flood of assertion errors that the caller cannot catch.
+    """
+    if sys.platform != "win32":
+        return
+
+    loop = getattr(fs, "loop", None)
+    if loop is None or loop.get_exception_handler() is not None:
+        return
+
+    def handler(loop, context):
+        exc = context.get("exception")
+        if isinstance(exc, AssertionError) and "Data should not be empty" in str(exc):
+            logger.debug(f"silenced asyncio error: {context.get('message', '')}")
+            return
+        loop.default_exception_handler(context)
+
+    loop.set_exception_handler(handler)
 
 
 def download_to(
@@ -331,6 +388,7 @@ def download_to(
         **kwargs: Additional arguments for the download.
     """
     fs = self.fs
+    silence_spurious_write_errors(fs)
 
     if print_progress and "callback" not in kwargs:
         callback = ProgressCallback(
@@ -416,6 +474,8 @@ def upload_from(
     Returns:
         The destination path.
     """
+    silence_spurious_write_errors(self.fs)
+
     local_path = Path(local_path)
     local_path_is_dir = local_path.is_dir()
     if create_folder is None:
@@ -488,6 +548,8 @@ def synchronize_to(
     **kwargs,
 ) -> bool:
     """Sync to a local destination path."""
+    silence_spurious_write_errors(origin.fs)
+
     destination = destination.resolve()
     protocol = origin.protocol
     stat_kwargs = {"expand_info": True} if protocol == "hf" else {}
