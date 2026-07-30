@@ -6,7 +6,6 @@
 
 from __future__ import annotations
 
-import asyncio
 import builtins
 import math
 import os
@@ -29,6 +28,7 @@ from upath.registry import register_implementation
 
 from lamindb_setup.errors import StorageNotEmpty
 
+from ._asyncio_write_spin import repair_spurious_write_errors
 from ._aws_options import HOSTED_BUCKETS, get_user_aws_options_manager
 from ._deprecated import deprecated
 from .canonical_suffix import CanonicalSuffix
@@ -217,9 +217,7 @@ def create_mapper(
 
 
 class PrintHook:
-    # gcsfs/s3fs may call the callback on every chunk, from inside the fsspec IO
-    # loop thread; printing there blocks the in-flight requests of the transfer and
-    # in Jupyter hits IOPub rate limits, which can destabilize the kernel.
+    # avoid hitting Jupyter IOPub rate limits.
     _print_interval = 0.25  # seconds
 
     def __init__(
@@ -351,36 +349,6 @@ class ChildProgressCallback(fsspec.callbacks.Callback):
         self.relative_update(value - self.value)
 
 
-def silence_spurious_write_errors(fs: AbstractFileSystem) -> None:
-    """Stop asyncio from logging a known spurious write error of the fsspec IO loop.
-
-    When a cloud backend closes a connection while a request body is still in flight,
-    asyncio hits a write-after-close race in `_SelectorSocketTransport`
-    (https://github.com/python/cpython/issues/115514) and logs one assertion error per
-    pending write, which the caller cannot catch. The backend retries the request, so
-    the transfer still goes through, just after a backoff.
-
-    Both write paths of the transport carry the race, `_write_sendmsg` and, where
-    `sendmsg` is unavailable, `_write_send`. Only selector loops are affected, which
-    fsspec gets by default everywhere except on Windows, where it takes ipykernel
-    switching the policy away from the proactor loop.
-    """
-    loop = getattr(fs, "loop", None)
-    if not isinstance(loop, asyncio.SelectorEventLoop):
-        return
-    if loop.get_exception_handler() is not None:
-        return
-
-    def handler(loop, context):
-        exc = context.get("exception")
-        if isinstance(exc, AssertionError) and "Data should not be empty" in str(exc):
-            logger.warning(f"silenced asyncio error: {context.get('message', '')}")
-            return
-        loop.default_exception_handler(context)
-
-    loop.set_exception_handler(handler)
-
-
 def download_to(
     self,
     local_path: AnyPathStr,
@@ -398,7 +366,7 @@ def download_to(
         **kwargs: Additional arguments for the download.
     """
     fs = self.fs
-    silence_spurious_write_errors(fs)
+    repair_spurious_write_errors(fs)
 
     if print_progress and "callback" not in kwargs:
         callback = ProgressCallback(
@@ -484,7 +452,7 @@ def upload_from(
     Returns:
         The destination path.
     """
-    silence_spurious_write_errors(self.fs)
+    repair_spurious_write_errors(self.fs)
 
     local_path = Path(local_path)
     local_path_is_dir = local_path.is_dir()
@@ -558,7 +526,7 @@ def synchronize_to(
     **kwargs,
 ) -> bool:
     """Sync to a local destination path."""
-    silence_spurious_write_errors(origin.fs)
+    repair_spurious_write_errors(origin.fs)
 
     destination = destination.resolve()
     protocol = origin.protocol
