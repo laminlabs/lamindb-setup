@@ -6,6 +6,7 @@
 
 from __future__ import annotations
 
+import asyncio
 import builtins
 import math
 import os
@@ -349,16 +350,23 @@ class ChildProgressCallback(fsspec.callbacks.Callback):
 def silence_spurious_write_errors(fs: AbstractFileSystem) -> None:
     """Stop asyncio from logging a known spurious write error of the fsspec IO loop.
 
-    On Windows, aiohttp requests made from the fsspec IO loop can hit a
-    write-after-close race in `_SelectorSocketTransport._write_send`
-    (https://github.com/python/cpython/issues/115514). The transfer still succeeds,
-    but the loop logs a flood of assertion errors that the caller cannot catch.
+    When a cloud backend closes a connection while a request body is still in flight,
+    asyncio hits a write-after-close race in `_SelectorSocketTransport._write_send`
+    (https://github.com/python/cpython/issues/115514) and logs one assertion error per
+    pending write, which the caller cannot catch. The backend retries the request, so
+    the transfer still goes through, just after a backoff.
+
+    `_write_send` is the no-`sendmsg` write path, so this only applies to Windows, and
+    only to a selector loop, which fsspec gets solely because ipykernel switches the
+    policy away from the proactor loop.
     """
     if sys.platform != "win32":
         return
 
     loop = getattr(fs, "loop", None)
-    if loop is None or loop.get_exception_handler() is not None:
+    if not isinstance(loop, asyncio.SelectorEventLoop):
+        return
+    if loop.get_exception_handler() is not None:
         return
 
     def handler(loop, context):
