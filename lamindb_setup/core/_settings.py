@@ -77,6 +77,11 @@ class SetupSettings:
     _branch = None  # do not have types here
     _space = None  # do not have types here
 
+    def _clear_instance_context_cache(self) -> None:
+        """Clear cached instance context."""
+        self._branch = None
+        self._space = None
+
     @property
     def _instance_settings_path(self) -> Path:
         return current_instance_settings_file()
@@ -377,6 +382,8 @@ class SetupSettings:
         """Cache root, a local directory to cache cloud files."""
         if "LAMIN_CACHE_DIR" in os.environ:
             cache_dir = UPath(os.environ["LAMIN_CACHE_DIR"])
+            if not cache_dir.is_absolute():
+                raise ValueError("LAMIN_CACHE_DIR must be a valid absolute path.")
         elif self._cache_dir is None:
             cache_path = load_cache_path_from_settings()
             cache_dir = _process_cache_path(cache_path)
@@ -491,7 +498,14 @@ class SetupPaths:
                     local_key = local_key.removeprefix(protocol + "://")
             else:
                 local_key = cache_key
-            local_filepath = settings.cache_dir / local_key
+            cache_dir = settings.cache_dir
+            local_filepath = (cache_dir / local_key).resolve()
+            # a key containing ".." or an absolute key would otherwise
+            # resolve to a path outside the cache directory
+            if not local_filepath.is_relative_to(cache_dir):
+                raise ValueError(
+                    f"cache key {local_key} resolves outside the cache directory."
+                )
         else:
             local_filepath = filepath
         return local_filepath

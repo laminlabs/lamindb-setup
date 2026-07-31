@@ -322,7 +322,7 @@ class CanonicalSuffix(str):
     You can also make Pull Request to the set of canonical suffixes
     on GitHub `here <https://github.com/laminlabs/lamindb-setup/blob/main/lamindb_setup/core/canonical_suffix.py>`__.
 
-    Upon construction of an `Artifact`, `~lamindb.base.types.CanonicalSuffix.from_path()` determines
+    Upon construction of an `Artifact`, `CanonicalSuffix.from_path()` determines
     whether the path contains a suffix that informs a known storage format or not.
     If it does, the suffix is extracted and stored in the `.suffix` field.
     If not, an empty string is stored in the `.suffix` field.

@@ -54,6 +54,14 @@ def test_get_stat_file_cloud_http():
     assert hash_type == "md5-etag"
     assert size == 272
 
+    # no ETag
+    path = UPath("https://zenodo.org/records/16375073/files/spindr_full.zip")
+    assert get_stat_file_cloud(path.stat().as_info(), "https") == (
+        3827866663,
+        None,
+        None,
+    )
+
 
 def test_get_stat_dir_cloud_aws():
     string_path = "s3://lamindata/iris_studies/study0_raw_images"
@@ -95,6 +103,48 @@ def test_get_stat_dir_cloud_hf():
     assert hash == "YgK4yrGwOzZgTejMxR7Gnw"
     assert hash_type == "md5-d"
     assert size == 42767
+
+
+def test_get_stat_dir_cloud_http_resolves_missing_sizes_without_etag_coupling():
+    class DummyFS:
+        def find(self, _path: str):
+            # find() without detail=True returns path strings
+            return [
+                "https://example.org/release/?C=M;O=A",
+                "https://example.org/release/a.txt",
+                "https://example.org/release/b.txt?download=1",
+            ]
+
+        def info(self, path: str):
+            # One object has ETag; another has size only (no ETag).
+            stats = {
+                "https://example.org/release/a.txt": {
+                    "name": "https://example.org/release/a.txt",
+                    "size": 10,
+                    "type": "file",
+                    "ETag": '"abc123"',
+                },
+                "https://example.org/release/b.txt?download=1": {
+                    "name": "https://example.org/release/b.txt?download=1",
+                    "size": 5,
+                    "type": "file",
+                },
+            }
+            assert path in stats
+            return stats[path]
+
+    class DummyPath:
+        protocol = "https"
+        fs = DummyFS()
+
+        def as_posix(self):
+            return "https://example.org/release/"
+
+    size, hash, hash_type, n_files = get_stat_dir_cloud(DummyPath())  # type: ignore[arg-type]
+    assert size == 15
+    assert hash is None
+    assert hash_type is None
+    assert n_files == 2
 
 
 def test_get_storage_region():

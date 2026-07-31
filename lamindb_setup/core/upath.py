@@ -6,13 +6,14 @@
 
 from __future__ import annotations
 
+import builtins
 import math
 import os
 import re
+import time
 import warnings
 from collections import defaultdict
 from datetime import datetime, timezone
-from functools import partial
 from itertools import chain, islice
 from pathlib import Path, PosixPath, PurePosixPath, WindowsPath
 from typing import TYPE_CHECKING, Any, Literal
@@ -27,6 +28,7 @@ from upath.registry import register_implementation
 
 from lamindb_setup.errors import StorageNotEmpty
 
+from ._asyncio_write_spin import repair_spurious_write_errors
 from ._aws_options import HOSTED_BUCKETS, get_user_aws_options_manager
 from ._deprecated import deprecated
 from .canonical_suffix import CanonicalSuffix
@@ -43,6 +45,9 @@ if TYPE_CHECKING:
     from lamindb_setup.types import AnyPath, AnyPathStr
 
 LocalPathClasses = (PosixPath, WindowsPath, LocalPath)
+
+
+IS_RUN_FROM_IPYTHON = getattr(builtins, "__IPYTHON__", False)
 
 
 TRAILING_SEP = (os.sep, os.altsep) if os.altsep is not None else os.sep
@@ -211,16 +216,44 @@ def create_mapper(
         )
 
 
-def print_hook(size: int, value: int, objectname: str, action: str):
-    if size == 0:
-        progress_in_percent = 100.0
-    else:
-        progress_in_percent = (value / size) * 100
-    out = f"... {action} {objectname}: {min(progress_in_percent, 100):4.1f}%"
-    if "NBPRJ_TEST_NBPATH" not in os.environ:
+class PrintHook:
+    # avoid hitting Jupyter IOPub rate limits.
+    _print_interval = 0.25  # seconds
+
+    def __init__(
+        self,
+        objectname: str,
+        action: Literal["uploading", "downloading", "synchronizing"],
+    ):
+        self.objectname = objectname
+        self.action = action
+        self._print_last = 0.0
+
+        self._flush = not IS_RUN_FROM_IPYTHON
+
+        self._skip_print = "NBPRJ_TEST_NBPATH" in os.environ
+
+    def __call__(self, size: int, value: int, **kwargs):
+        if self._skip_print:
+            return
+        if size == 0:
+            progress_in_percent = 100.0
+        else:
+            progress_in_percent = (value / size) * 100
         # sometimes it doesn't reach 100%, probably due to precision issues
-        end = "\n" if progress_in_percent >= 99.9999999999 else ""
-        print("\r" + out, end=end, flush=True)
+        is_done = progress_in_percent >= 99.9999999999
+        now = time.monotonic()
+        if not is_done and now - self._print_last < self._print_interval:
+            return
+        self._print_last = now
+        out = f"... {self.action} {self.objectname}: {min(progress_in_percent, 100):4.1f}%"
+        end = "\n" if is_done else ""
+        try:
+            print("\r" + out, end=end, flush=self._flush)
+        except Exception:
+            # this runs inside the transfer coroutine, so a broken stdout would abort
+            # the request mid-body instead of just losing a progress line
+            self._skip_print = True
 
 
 class ProgressCallback(fsspec.callbacks.Callback):
@@ -235,9 +268,7 @@ class ProgressCallback(fsspec.callbacks.Callback):
         super().__init__()
 
         self.action = action
-        print_progress = partial(print_hook, objectname=objectname, action=action)
-        self.hooks = {"print_progress": print_progress}
-
+        self.hooks = {"print_progress": PrintHook(objectname, action)}
         self.adjust_size = adjust_size
 
     def absolute_update(self, value):
@@ -308,10 +339,14 @@ class ChildProgressCallback(fsspec.callbacks.Callback):
         self.parent.update_relative_value(inc)
 
     def relative_update(self, inc=1):
+        self.value += inc
         if self.size != 0:
             self.parent_update(inc / self.size)
         else:
             self.parent_update(1)
+
+    def absolute_update(self, value):
+        self.relative_update(value - self.value)
 
 
 def download_to(
@@ -331,6 +366,7 @@ def download_to(
         **kwargs: Additional arguments for the download.
     """
     fs = self.fs
+    repair_spurious_write_errors(fs)
 
     if print_progress and "callback" not in kwargs:
         callback = ProgressCallback(
@@ -416,6 +452,8 @@ def upload_from(
     Returns:
         The destination path.
     """
+    repair_spurious_write_errors(self.fs)
+
     local_path = Path(local_path)
     local_path_is_dir = local_path.is_dir()
     if create_folder is None:
@@ -488,6 +526,8 @@ def synchronize_to(
     **kwargs,
 ) -> bool:
     """Sync to a local destination path."""
+    repair_spurious_write_errors(origin.fs)
+
     destination = destination.resolve()
     protocol = origin.protocol
     stat_kwargs = {"expand_info": True} if protocol == "hf" else {}
@@ -855,6 +895,13 @@ def from_auth(cls, path: AnyPathStr) -> UPath:
     return create_path(path)
 
 
+def cache(self: UPath, cache_key: str | None = None, **kwargs) -> UPath:
+    """Return a local cache path and synchronize for cloud paths."""
+    from ._settings import settings
+
+    return settings.paths.cloud_to_local(self, cache_key=cache_key, **kwargs)
+
+
 # Why aren't we subclassing?
 #
 # The problem is that UPath defines a type system of paths
@@ -875,6 +922,7 @@ UPath.to_url = to_url
 UPath.download_to = download_to
 UPath.view_tree = view_tree
 UPath.from_auth = classmethod(from_auth)
+UPath.cache = cache
 # unfortunately, we also have to do this for the subclasses
 Path.view_tree = view_tree  # type: ignore
 
@@ -1230,10 +1278,10 @@ def get_stat_file_cloud(stat: dict, protocol: str, accessor: str | None = None):
             accessor = "ETag"
         else:
             assert accessor == "ETag"
-        assert accessor in stat
-        etag = stat[accessor].strip('"=')
-        hash = hash_string(etag)
-        hash_type = "md5-etag"
+        if accessor in stat:  # not all urls have ETag
+            etag = stat[accessor].strip('"=')
+            hash = hash_string(etag)
+            hash_type = "md5-etag"
 
     if hash is not None:
         hash = hash[:HASH_LENGTH]
@@ -1241,8 +1289,18 @@ def get_stat_file_cloud(stat: dict, protocol: str, accessor: str | None = None):
 
 
 def get_stat_dir_cloud(path: UPath) -> tuple[int, str | None, str | None, int]:
-    objects = path.fs.find(path.as_posix(), detail=True)
     protocol = path.protocol
+    if protocol in {"http", "https"}:
+        # detail=True doesn't return proper stats for http/https directories
+        # Apache-style directory indexes expose sort links (e.g. ?C=M;O=A)
+        # as pseudo-files in find(). Skip these non-file entries.
+        objects = (
+            path.fs.info(o)
+            for o in path.fs.find(path.as_posix())
+            if not re.search(r"\?C=[NMSD];O=[AD]", o)
+        )
+    else:
+        objects = path.fs.find(path.as_posix(), detail=True).values()
     hash, hash_type = None, None
     compute_list_hash = True
     if protocol == "s3":
@@ -1251,15 +1309,21 @@ def get_stat_dir_cloud(path: UPath) -> tuple[int, str | None, str | None, int]:
         accessor = None  # use md5Hash or etag depending on what is available
     elif protocol == "hf":
         accessor = "blob_id"
+    elif protocol in {"http", "https"}:
+        accessor = "ETag"
     else:
         compute_list_hash = False
     sizes = []
     hashes = []
-    for object in objects.values():
+    for object in objects:
         if compute_list_hash:
-            size, hash, _ = get_stat_file_cloud(object, protocol, accessor)
+            size, fhash, _ = get_stat_file_cloud(object, protocol, accessor)
             sizes.append(size)
-            hashes.append(hash)
+            # this check is effectively only for http/https directories
+            if fhash is None:
+                compute_list_hash = False
+                continue
+            hashes.append(fhash)
         else:
             sizes.append(object["size"])
     size = sum(sizes)
