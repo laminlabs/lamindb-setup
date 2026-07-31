@@ -285,6 +285,7 @@ def _connect_cli(
     use_root_db_user: bool = False,
     persist_global_env: bool = True,
     show_dev_dir_hint: bool = True,
+    show_connected_log: bool = True,
 ) -> None:
     from lamindb_setup import settings as settings_
 
@@ -305,14 +306,20 @@ def _connect_cli(
         # (1) if the instance is not on the hub, we need to register
         # potential users through register_user()
         # (2) if the instance is cloud sqlite, we need to lock it
-        connect(instance=isettings.slug, _write_settings=False, _reload_lamindb=False)
+        connect(
+            instance=isettings.slug,
+            _write_settings=False,
+            _reload_lamindb=False,
+            _suppress_connected_log=not show_connected_log,
+        )
     else:
         slug = isettings.slug
-        logger.important(f"connected lamindb: {slug}")
-        if isettings.dialect == "postgresql" and "public" in isettings.db:
-            logger.warning(
-                f'connected in read-only mode, please use ln.DB("{slug}") instead'
-            )
+        if show_connected_log:
+            logger.important(f"connected lamindb: {slug}")
+            if isettings.dialect == "postgresql" and "public" in isettings.db:
+                logger.warning(
+                    f'connected in read-only mode, please use ln.DB("{slug}") instead'
+                )
     if show_dev_dir_hint and settings_.dev_dir is None:
         logger.important_hint(
             "to map a local dev directory, call: lamin settings set dev-dir ."
@@ -385,6 +392,7 @@ def connect(instance: str | None = None, **kwargs: Any) -> str | tuple | None:
         "_write_settings",
         "_raise_not_found_error",
         "_reload_lamindb",
+        "_suppress_connected_log",
         "_test",
         "_user",
     }
@@ -399,6 +407,7 @@ def connect(instance: str | None = None, **kwargs: Any) -> str | tuple | None:
     _write_settings: bool = kwargs.get("_write_settings", False)
     _raise_not_found_error: bool = kwargs.get("_raise_not_found_error", True)
     _reload_lamindb: bool = kwargs.get("_reload_lamindb", True)
+    _suppress_connected_log: bool = kwargs.get("_suppress_connected_log", False)
     _test: bool = kwargs.get("_test", False)
 
     isettings: InstanceSettings = None  # type: ignore
@@ -494,7 +503,9 @@ def connect(instance: str | None = None, **kwargs: Any) -> str | tuple | None:
             reset_django_module_variables()
 
         slug = isettings.slug
-        if slug != "none/none" and not suppress_connected_log:
+        if slug != "none/none" and not (
+            suppress_connected_log or _suppress_connected_log
+        ):
             logger.important(f"connected lamindb: {slug}")
             if isettings.dialect == "postgresql" and "public" in isettings.db:
                 logger.warning(
