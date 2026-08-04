@@ -912,11 +912,25 @@ def _access_aws_for_moving(source_path: str, target_path: str, client: Client):
 def access_db(
     instance: InstanceSettings | dict, access_token: str | None = None
 ) -> str:
-    instance_id: UUID
-    instance_slug: str
-    instance_api_url: str | None
+    if isinstance(instance, InstanceSettings):
+        instance_id = instance._id
+        instance_slug = instance.slug
+        instance_api_url = instance.api_url
+    else:
+        instance_id = UUID(instance["id"])
+        instance_slug = instance["owner"] + "/" + instance["name"]
+        instance_api_url = instance["api_url"]
+    # use the environment db token if the input instance is the default instance
+    # or the default instance is not configured (i.e. "none/none")
+    # needed to avoid enforcing the same db token for cross instance connections (i.e. .connect("other-instance"))
+    is_default_instance_or_not_configured = (
+        current_instance_slug == instance_slug
+        if (current_instance_slug := settings.instance.slug) != "none/none"
+        else True
+    )
     if (
-        "LAMIN_DB_TOKEN" in os.environ
+        is_default_instance_or_not_configured
+        and "LAMIN_DB_TOKEN" in os.environ
         and (env_db_token := os.environ["LAMIN_DB_TOKEN"]) != ""
     ):
         try:
@@ -927,15 +941,6 @@ def access_db(
             logger.warning(f"ignoring LAMIN_DB_TOKEN from environment: {e}")
         else:
             logger.warning("ignoring LAMIN_DB_TOKEN from environment: expired")
-
-    if isinstance(instance, InstanceSettings):
-        instance_id = instance._id
-        instance_slug = instance.slug
-        instance_api_url = instance.api_url
-    else:
-        instance_id = UUID(instance["id"])
-        instance_slug = instance["owner"] + "/" + instance["name"]
-        instance_api_url = instance["api_url"]
 
     if access_token is None:
         if settings.user.handle == "anonymous":
