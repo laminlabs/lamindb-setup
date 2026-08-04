@@ -920,7 +920,9 @@ def access_db(
         instance_id = UUID(instance["id"])
         instance_slug = instance["owner"] + "/" + instance["name"]
         instance_api_url = instance["api_url"]
-
+    # use the environment db token if the input instance is the default instance
+    # or the default instance is not configured (i.e. "none/none")
+    # needed to avoid enforcing the same db token for cross instance connections (i.e. .connect("other-instance"))
     is_default_instance_or_not_configured = (
         current_instance_slug == instance_slug
         if (current_instance_slug := settings.instance.slug) != "none/none"
