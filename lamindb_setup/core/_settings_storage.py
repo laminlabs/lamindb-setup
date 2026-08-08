@@ -6,22 +6,12 @@ import string
 from typing import TYPE_CHECKING, Any, Literal
 from uuid import UUID
 
-import fsspec
 from lamin_utils import logger
 
 from lamindb_setup.errors import StorageAlreadyManaged
 
-from ._aws_options import (
-    LAMIN_ENDPOINTS,
-    get_user_aws_options_manager,
-)
 from .hashing import hash_and_encode_as_b62
-from .upath import (
-    LocalPathClasses,
-    UPath,
-    create_path,
-    get_storage_region,
-)
+from .upath import UPath
 
 if TYPE_CHECKING:
     from lamindb import Storage
@@ -56,8 +46,16 @@ def get_storage_type(root_as_str: str) -> StorageType:
     return convert.get(protocol, protocol)  # type: ignore
 
 
+def get_storage_region(root: AnyPathStr) -> str | None:
+    from .upath import get_storage_region as _get_storage_region
+
+    return _get_storage_region(root)
+
+
 def sanitize_root_user_input(root: AnyPathStr) -> UPath:
     """Format a root path string."""
+    from .upath import LocalPathClasses, UPath
+
     root_upath = root if isinstance(root, UPath) else UPath(root)
     root_upath = root_upath.expanduser()
     if isinstance(root_upath, LocalPathClasses):  # local paths
@@ -70,6 +68,8 @@ def sanitize_root_user_input(root: AnyPathStr) -> UPath:
 
 
 def convert_sanitized_root_path_to_str(root_upath: UPath) -> str:
+    from ._aws_options import LAMIN_ENDPOINTS
+
     # embed endpoint_url into path string for storing and displaying
     if root_upath.protocol == "s3":
         endpoint_url = root_upath.storage_options.get("endpoint_url", None)
@@ -142,6 +142,8 @@ def init_storage(
     StorageSettings,
     Literal["hub-record-not-created", "hub-record-retrieved", "hub-record-created"],
 ]:
+    import fsspec
+
     from ._hub_core import (
         delete_storage_record,
         get_default_bucket_for_instance,
@@ -341,6 +343,9 @@ class StorageSettings:
     @property
     def root(self) -> UPath:
         """Root storage location."""
+        from ._aws_options import get_user_aws_options_manager
+        from .upath import create_path
+
         if self._root is None:
             # below makes network requests to get credentials
             self._root = create_path(self._root_init, access_token=self.access_token)
@@ -361,6 +366,8 @@ class StorageSettings:
         >>>    profile="some_profile", cache_regions=True
         >>> )
         """
+        from .upath import LocalPathClasses, UPath
+
         if not isinstance(self._root, LocalPathClasses) and kwargs != {}:
             self._root = UPath(self.root, **kwargs)
 
@@ -398,6 +405,8 @@ class StorageSettings:
     @property
     def region(self) -> str | None:
         """Storage region."""
+        from .upath import get_storage_region
+
         if self._region is None:
             self._region = get_storage_region(self.root_as_str)
         return self._region

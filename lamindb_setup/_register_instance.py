@@ -1,15 +1,21 @@
 from __future__ import annotations
 
+import secrets
+import string
 from typing import TYPE_CHECKING
 
 from lamin_utils import logger
 
 from .core._settings import settings
-from .core._settings_storage import base62
 from .core.django import setup_django
 
 if TYPE_CHECKING:
     from uuid import UUID
+
+
+def _base62(n_char: int) -> str:
+    alphabet = string.digits + string.ascii_letters.swapcase()
+    return "".join(secrets.choice(alphabet) for _ in range(n_char))
 
 
 def register(_test: bool = False, _resource_db_server_id: UUID | None = None):
@@ -26,7 +32,7 @@ def register(_test: bool = False, _resource_db_server_id: UUID | None = None):
     ssettings = settings.instance.storage
     if ssettings._uid is None and _test:
         # because django isn't up, we can't get it from the database
-        ssettings._uid = base62(12)
+        ssettings._uid = _base62(12)
     init_instance_hub(isettings, resource_db_server_id=_resource_db_server_id)
     init_storage_hub(ssettings, is_default=True)
     isettings._is_on_hub = True

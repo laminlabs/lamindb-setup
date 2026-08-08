@@ -8,8 +8,6 @@ from lamin_utils import logger
 
 from lamindb_setup.errors import InstanceLockedException
 
-from .upath import UPath, create_mapper, infer_filesystem
-
 if TYPE_CHECKING:
     from collections.abc import Callable
     from typing import ParamSpec, TypeVar
@@ -17,6 +15,7 @@ if TYPE_CHECKING:
 
     from ._settings_instance import InstanceSettings
     from ._settings_user import UserSettings
+    from .upath import UPath
 
     P = ParamSpec("P")
     R = TypeVar("R")
@@ -40,6 +39,8 @@ class empty_locker:
 
 class Locker:
     def __init__(self, user_uid: str, storage_root: UPath, instance_id: UUID):
+        from .upath import create_mapper, infer_filesystem
+
         logger.debug(
             f"init cloud sqlite locker: {user_uid}, {storage_root}, {instance_id}."
         )

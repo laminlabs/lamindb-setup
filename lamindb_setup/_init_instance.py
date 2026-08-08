@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import importlib
 import os
+import sys
 import uuid
 from typing import TYPE_CHECKING, Literal
 from urllib.parse import unquote, urlparse
@@ -11,20 +12,24 @@ from lamin_utils import logger
 
 from ._disconnect import disconnect
 from ._silence_loggers import silence_loggers
-from .core import InstanceSettings
 from .core._docs import doc_args
 from .core._settings import settings
-from .core._settings_instance import check_is_instance_remote
-from .core._settings_storage import StorageSettings, init_storage
-from .core.upath import UPath
 from .errors import InstanceNotCreated
 
 if TYPE_CHECKING:
     from lamindb.models import Storage
     from pydantic import PostgresDsn
 
+    from .core._settings_instance import InstanceSettings
+    from .core._settings_storage import StorageSettings
     from .core._settings_user import UserSettings
     from .types import AnyPathStr
+elif "sphinx" in sys.modules:
+    # keep docs signature fidelity when Sphinx evaluates type hints
+    PostgresDsn = importlib.import_module("pydantic").PostgresDsn
+    AnyPathStr = importlib.import_module("lamindb_setup.types").AnyPathStr
+    # Resolve nested forward refs inside AnyPathStr aliases.
+    UPath = importlib.import_module("upath").UPath
 
 
 def get_schema_module_name(module_name, raise_import_error: bool = True) -> str | None:
@@ -272,6 +277,7 @@ def init_template_database(
     from django.conf import settings as django_settings
 
     from .core import django as django_lamin
+    from .core._settings_instance import InstanceSettings
 
     if django_lamin.IS_SETUP or django_settings.configured:
         raise RuntimeError(
@@ -328,6 +334,8 @@ def init(
         validate_connection_state,
     )
     from .core._hub_core import init_instance_hub
+    from .core._settings_instance import InstanceSettings, check_is_instance_remote
+    from .core._settings_storage import init_storage
 
     silence_loggers()
 
@@ -512,6 +520,8 @@ def infer_instance_name(
     name: str | None = None,
     db: PostgresDsn | None = None,
 ) -> str:
+    from .core.upath import UPath
+
     if name is not None:
         if "/" in name:
             raise ValueError("Invalid instance name: '/' delimiter not allowed.")

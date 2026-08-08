@@ -10,8 +10,6 @@ from lamin_utils import logger
 
 from lamindb_setup.errors import CurrentInstanceNotConfigured, SettingsEnvFileOutdated
 
-from ._settings_instance import InstanceSettings
-from ._settings_storage import StorageSettings
 from ._settings_store import (
     InstanceSettingsStore,
     UserSettingsStore,
@@ -23,6 +21,9 @@ from ._settings_store import (
     system_settings_file,
 )
 from ._settings_user import UserSettings
+
+if TYPE_CHECKING:
+    from ._settings_instance import InstanceSettings
 
 
 def load_cache_path_from_settings(storage_settings: Path | None = None) -> Path | None:
@@ -76,6 +77,8 @@ def _resolve_default_instance_file() -> Path | None:
 
 
 def load_instance_settings(instance_settings_file: Path | None = None):
+    from ._settings_instance import InstanceSettings
+
     if instance_settings_file is None:
         isettings_file = _resolve_default_instance_file()
         if isettings_file is None:
@@ -152,6 +155,9 @@ def _null_to_value(field, value=None):
 
 
 def setup_instance_from_store(store: InstanceSettingsStore) -> InstanceSettings:
+    from ._settings_instance import InstanceSettings
+    from ._settings_storage import StorageSettings
+
     ssettings = StorageSettings(
         root=store.storage_root,
         region=_null_to_value(store.storage_region),

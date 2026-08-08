@@ -10,8 +10,6 @@ import gzip
 import shutil
 from pathlib import Path
 
-from lamindb_setup.core.upath import create_path
-
 
 def upload_sqlite_clone(
     local_sqlite_path: Path | str | None = None, compress: bool = True
@@ -24,21 +22,23 @@ def upload_sqlite_clone(
         compress: Whether to compress the database with gzip before uploading.
     """
     import lamindb_setup as ln_setup
+    from lamindb_setup.core.upath import create_path
 
+    sqlite_path: Path
     if local_sqlite_path is None:
-        local_sqlite_path = ln_setup.settings.instance._sqlite_file_local
+        sqlite_path = Path(ln_setup.settings.instance._sqlite_file_local)
     else:
-        local_sqlite_path = Path(local_sqlite_path)
+        sqlite_path = Path(local_sqlite_path)
 
-    if not local_sqlite_path.exists():
-        raise FileNotFoundError(f"Database not found at {local_sqlite_path}")
+    if not sqlite_path.exists():
+        raise FileNotFoundError(f"Database not found at {sqlite_path}")
 
     cloud_db_path = ln_setup.settings.instance._sqlite_file
 
     if compress:
-        temp_gz_path = local_sqlite_path.with_suffix(".db.gz")
+        temp_gz_path = sqlite_path.with_suffix(".db.gz")
         with (
-            open(local_sqlite_path, "rb") as f_in,
+            open(sqlite_path, "rb") as f_in,
             gzip.open(temp_gz_path, "wb") as f_out,
         ):
             shutil.copyfileobj(f_in, f_out)
@@ -47,4 +47,4 @@ def upload_sqlite_clone(
         temp_gz_path.unlink()
     else:
         cloud_destination = create_path(cloud_db_path)
-        cloud_destination.upload_from(local_sqlite_path, print_progress=True)
+        cloud_destination.upload_from(sqlite_path, print_progress=True)
