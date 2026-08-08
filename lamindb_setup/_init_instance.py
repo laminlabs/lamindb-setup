@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import importlib
 import os
+import sys
 import uuid
 from typing import TYPE_CHECKING, Literal
 from urllib.parse import unquote, urlparse
@@ -23,6 +24,12 @@ if TYPE_CHECKING:
     from .core._settings_storage import StorageSettings
     from .core._settings_user import UserSettings
     from .types import AnyPathStr
+elif "sphinx" in sys.modules:
+    # keep docs signature fidelity when Sphinx evaluates type hints
+    PostgresDsn = importlib.import_module("pydantic").PostgresDsn
+    AnyPathStr = importlib.import_module("lamindb_setup.types").AnyPathStr
+    # Resolve nested forward refs inside AnyPathStr aliases.
+    UPath = importlib.import_module("upath").UPath
 
 
 def get_schema_module_name(module_name, raise_import_error: bool = True) -> str | None:
