@@ -18,7 +18,6 @@ from ._silence_loggers import silence_loggers
 from .core._settings import settings
 from .core._settings_load import load_instance_settings
 from .core._settings_save import save_instance_settings
-from .core._settings_storage import StorageSettings
 from .core._settings_store import instance_settings_file
 from .core.cloud_sqlite_locker import unlock_cloud_sqlite_upon_exception
 from .core.django import reset_django
@@ -140,6 +139,7 @@ def _connect_instance(
     raise_systemexit: bool = False,
 ) -> InstanceSettings:
     from .core._settings_instance import InstanceSettings
+    from .core._settings_storage import StorageSettings
 
     settings_file = instance_settings_file(name, owner)
     make_hub_request = True

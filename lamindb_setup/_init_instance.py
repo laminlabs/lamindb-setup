@@ -13,7 +13,6 @@ from ._disconnect import disconnect
 from ._silence_loggers import silence_loggers
 from .core._docs import doc_args
 from .core._settings import settings
-from .core._settings_storage import StorageSettings, init_storage
 from .errors import InstanceNotCreated
 
 if TYPE_CHECKING:
@@ -21,6 +20,7 @@ if TYPE_CHECKING:
     from pydantic import PostgresDsn
 
     from .core._settings_instance import InstanceSettings
+    from .core._settings_storage import StorageSettings
     from .core._settings_user import UserSettings
     from .types import AnyPathStr
 
@@ -328,6 +328,7 @@ def init(
     )
     from .core._hub_core import init_instance_hub
     from .core._settings_instance import InstanceSettings, check_is_instance_remote
+    from .core._settings_storage import init_storage
 
     silence_loggers()
 
