@@ -8,26 +8,19 @@ from typing import TYPE_CHECKING, Literal
 from lamin_utils import logger
 
 from ._settings_save import save_instance_settings
-from ._settings_storage import (
-    LEGACY_STORAGE_UID_FILE_KEY,
-    STORAGE_UID_FILE_KEY,
-    StorageSettings,
-    get_storage_type,
-    init_storage,
-    instance_uid_from_uuid,
-)
 from ._settings_store import current_instance_settings_file, instance_settings_file
 from .cloud_sqlite_locker import (
     EXPIRATION_TIME,
     InstanceLockedException,
 )
-from .upath import LocalPathClasses, UPath
 
 if TYPE_CHECKING:
     from uuid import UUID
 
+    from ._settings_storage import StorageSettings
     from ._settings_user import UserSettings
     from .types import AnyPathStr
+    from .upath import UPath
 
 LOCAL_STORAGE_MESSAGE = "No local storage location found in current environment: defaulting to cloud storage"
 
@@ -48,6 +41,8 @@ def is_local_db_url(db_url: str) -> bool:
 
 
 def check_is_instance_remote(root: AnyPathStr, db: str | None) -> bool:
+    from ._settings_storage import get_storage_type
+
     root_str = str(root)
     is_local_storage = (
         not root_str.startswith("create-s3") and get_storage_type(root_str) == "local"
@@ -165,6 +160,12 @@ class InstanceSettings:
         from django.db.utils import ProgrammingError
         from lamindb.models import Storage
 
+        from ._settings_storage import (
+            LEGACY_STORAGE_UID_FILE_KEY,
+            STORAGE_UID_FILE_KEY,
+            StorageSettings,
+        )
+
         if local_root is not None:
             local_records = Storage.objects.filter(root=local_root)
         else:
@@ -267,6 +268,9 @@ class InstanceSettings:
     @local_storage.setter
     def local_storage(self, local_root_host: tuple[Path | str, str]):
         from lamindb_setup._init_instance import register_storage_in_instance
+
+        from ._settings_storage import StorageSettings, init_storage
+        from .upath import LocalPathClasses, UPath
 
         if not isinstance(local_root_host, tuple):
             local_root = local_root_host
@@ -415,6 +419,8 @@ class InstanceSettings:
     @property
     def uid(self) -> str:
         """The user-facing instance id."""
+        from ._settings_storage import instance_uid_from_uuid
+
         return instance_uid_from_uuid(self._id)
 
     @property

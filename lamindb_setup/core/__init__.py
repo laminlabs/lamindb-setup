@@ -17,6 +17,7 @@ from . import django
 from ._deprecated import deprecated  # documented in lamindb.base
 from ._docs import doc_args  # documented in lamindb.base
 from ._settings import SetupSettings
+from ._settings_instance import InstanceSettings
 from ._settings_user import UserSettings
 from .canonical_suffix import CanonicalSuffix
 
@@ -26,10 +27,6 @@ def __getattr__(name: str):
         from . import upath
 
         return upath
-    if name == "InstanceSettings":
-        from ._settings_instance import InstanceSettings
-
-        return InstanceSettings
     if name == "StorageSettings":
         from ._settings_storage import StorageSettings
 

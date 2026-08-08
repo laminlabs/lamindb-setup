@@ -282,13 +282,11 @@ def test_connect_instance_uses_sqlite_clone_before_permission_error(
         lambda storage_root: "sqlite:////tmp/clone.db",
     )
     monkeypatch.setattr(
-        connect_instance,
-        "StorageSettings",
+        "lamindb_setup.core._settings_storage.StorageSettings",
         lambda **kwargs: SimpleNamespace(root=kwargs["root"]),
     )
     monkeypatch.setattr(
-        connect_instance,
-        "InstanceSettings",
+        "lamindb_setup.core._settings_instance.InstanceSettings",
         lambda **kwargs: SimpleNamespace(
             modules=set(kwargs["modules"].split(",")),
             db=kwargs["db"],
