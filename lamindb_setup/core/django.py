@@ -12,9 +12,12 @@ import threading
 from pathlib import Path
 import shutil
 from packaging import version
-from ._settings_instance import InstanceSettings, is_local_db_url
 from ..errors import CurrentInstanceNotConfigured
 from lamin_utils import logger
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from ._settings_instance import InstanceSettings
 
 
 IS_RUN_FROM_IPYTHON = getattr(builtins, "__IPYTHON__", False)
@@ -209,6 +212,7 @@ def close_if_health_check_failed(self) -> None:
 
 def get_django_default_db(isettings: InstanceSettings) -> dict:
     import dj_database_url
+    from ._settings_instance import is_local_db_url
 
     instance_db = isettings.db
     if isettings.dialect == "postgresql":

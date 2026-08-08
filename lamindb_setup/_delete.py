@@ -11,13 +11,14 @@ from .core._aws_options import HOSTED_BUCKETS
 from .core._settings import settings
 from .core._settings_load import load_instance_settings
 from .core._settings_storage import StorageSettings
-from .core.upath import LocalPathClasses, check_storage_is_empty
 
 if TYPE_CHECKING:
     from .core._settings_instance import InstanceSettings
 
 
 def _delete_cache(isettings: InstanceSettings):
+    from .core.upath import LocalPathClasses
+
     if isettings.storage is None:
         return
     # avoid init of root
@@ -82,6 +83,7 @@ def delete(slug: str, force: bool = False, require_empty: bool = True) -> int | 
         Delete an instance via the CLI, see `here <https://docs.lamin.ai/cli#delete>`__.
     """
     logger.debug(f"deleting instance: {slug}")
+    from .core.upath import check_storage_is_empty
 
     user_handle = settings.user.handle
     logger.debug(f"current user: {user_handle}")

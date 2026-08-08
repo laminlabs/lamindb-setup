@@ -16,7 +16,6 @@ from ._disconnect import disconnect
 from ._init_instance import load_from_isettings
 from ._silence_loggers import silence_loggers
 from .core._settings import settings
-from .core._settings_instance import InstanceSettings
 from .core._settings_load import load_instance_settings
 from .core._settings_save import save_instance_settings
 from .core._settings_storage import StorageSettings
@@ -28,6 +27,7 @@ from .errors import CannotSwitchDefaultInstance, InstanceNotFoundError
 if TYPE_CHECKING:
     from pathlib import Path
 
+    from .core._settings_instance import InstanceSettings
     from .core._settings_user import UserSettings
 
 # this is for testing purposes only
@@ -139,6 +139,8 @@ def _connect_instance(
     access_token: str | None = None,
     raise_systemexit: bool = False,
 ) -> InstanceSettings:
+    from .core._settings_instance import InstanceSettings
+
     settings_file = instance_settings_file(name, owner)
     make_hub_request = True
     if settings_file.exists():

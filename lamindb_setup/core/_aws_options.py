@@ -6,12 +6,12 @@ from typing import TYPE_CHECKING, Any
 
 from dotenv import dotenv_values
 from lamin_utils import logger
-from upath import UPath
 
 from ._settings_store import system_settings_file
 
 if TYPE_CHECKING:
     from aiobotocore.session import AioSession
+    from upath import UPath
 
 HOSTED_REGIONS = [
     "eu-central-1",
@@ -197,6 +197,8 @@ class AWSOptionsManager:
         managed_session: AioSession | None = None,
         extra_parameters: dict | None = None,
     ) -> UPath:
+        from upath import UPath
+
         connection_options: dict[str, Any] = {}
         storage_options = path.storage_options
         if managed_session is None:
@@ -244,6 +246,8 @@ class AWSOptionsManager:
         return UPath(path, **connection_options)
 
     def enrich_path(self, path: UPath, access_token: str | None = None) -> UPath:
+        from upath import UPath
+
         # ignore paths with non-lamin-managed endpoints
         if (
             endpoint_url := path.storage_options.get("endpoint_url", None)

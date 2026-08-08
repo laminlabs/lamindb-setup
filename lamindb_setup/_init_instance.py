@@ -11,18 +11,16 @@ from lamin_utils import logger
 
 from ._disconnect import disconnect
 from ._silence_loggers import silence_loggers
-from .core import InstanceSettings
 from .core._docs import doc_args
 from .core._settings import settings
-from .core._settings_instance import check_is_instance_remote
 from .core._settings_storage import StorageSettings, init_storage
-from .core.upath import UPath
 from .errors import InstanceNotCreated
 
 if TYPE_CHECKING:
     from lamindb.models import Storage
     from pydantic import PostgresDsn
 
+    from .core._settings_instance import InstanceSettings
     from .core._settings_user import UserSettings
     from .types import AnyPathStr
 
@@ -272,6 +270,7 @@ def init_template_database(
     from django.conf import settings as django_settings
 
     from .core import django as django_lamin
+    from .core._settings_instance import InstanceSettings
 
     if django_lamin.IS_SETUP or django_settings.configured:
         raise RuntimeError(
@@ -328,6 +327,7 @@ def init(
         validate_connection_state,
     )
     from .core._hub_core import init_instance_hub
+    from .core._settings_instance import InstanceSettings, check_is_instance_remote
 
     silence_loggers()
 
@@ -512,6 +512,8 @@ def infer_instance_name(
     name: str | None = None,
     db: PostgresDsn | None = None,
 ) -> str:
+    from .core.upath import UPath
+
     if name is not None:
         if "/" in name:
             raise ValueError("Invalid instance name: '/' delimiter not allowed.")
