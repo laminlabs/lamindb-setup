@@ -848,27 +848,54 @@ def view_tree(
     logger.print(message)
 
 
-def to_url(upath: S3Path) -> str:
-    """Public storage URL.
+def to_url(upath: UPath) -> str:
+    """
 
-    Generates a public URL for an object in an S3 bucket using fsspec's UPath,
-    considering the bucket's region.
+    Generates a URL for an object represented by `UPath`.
+    For S3 paths, this returns a public AWS URL considering the bucket region.
+    If the S3 path is not publicly hosted, it returns a LaminHub URL if the path is hosted on LaminHub.
 
     Args:
-        upath: A `UPath` object representing an S3 path.
+        upath: A `UPath` object.
 
     Returns:
-        A string containing the public URL to the S3 object.
+        A string containing the URL to the object.
     """
-    if upath.protocol != "s3":
-        raise ValueError("The provided UPath must be an S3 path.")
-    key = "/".join(upath.parts[1:])
-    bucket = upath.drive
-    region = get_storage_region(upath)
-    if region == "us-east-1":
-        return f"https://{bucket}.s3.amazonaws.com/{key}"
-    else:
-        return f"https://{bucket}.s3-{region}.amazonaws.com/{key}"
+    from ._settings import settings
+
+    if upath.protocol == "s3":
+        key = "/".join(upath.parts[1:])
+        bucket = upath.drive
+        if _is_public_s3_path(upath):
+            region = get_storage_region(upath)
+            if region == "us-east-1":
+                return f"https://{bucket}.s3.amazonaws.com/{key}"
+            return f"https://{bucket}.s3-{region}.amazonaws.com/{key}"
+        elif settings.instance.is_on_hub:
+            origin = settings.instance.ui_url
+            if origin is not None:
+                common = f"{origin}/storage/s3/{bucket}%2F/{key}"
+                return common
+        else:
+            raise ValueError(
+                "The provided S3 UPath must be publicly hosted or accessible via LaminHub."
+            )
+    if upath.protocol == "gs":
+        return f"https://storage.googleapis.com/{str(upath).removeprefix('gs://')}"
+    if upath.protocol in {"http", "https"}:
+        return str(upath)
+    raise ValueError(
+        "The provided UPath must be an S3, GCS, HTTP, or HTTPS path."
+    )
+
+
+def _is_public_s3_path(upath: UPath) -> bool:
+    """Check whether an S3 path is anonymously readable."""
+    anon_path = UPath(upath, anon=True)
+    try:
+        return anon_path.exists()
+    except Exception:
+        return False
 
 
 def from_auth(cls, path: AnyPathStr) -> UPath:
