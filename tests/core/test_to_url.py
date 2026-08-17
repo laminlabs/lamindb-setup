@@ -67,7 +67,9 @@ def test_to_url_s3_hub_private_route(monkeypatch):
 
 def test_to_url_s3_public_stays_native(monkeypatch):
     monkeypatch.setattr(ln_setup.core.upath, "_is_public_s3_path", lambda _: True)
-    monkeypatch.setattr(ln_setup.core.upath, "get_storage_region", lambda _: "us-east-1")
+    monkeypatch.setattr(
+        ln_setup.core.upath, "get_storage_region", lambda _: "us-east-1"
+    )
     monkeypatch.setattr(
         settings,
         "_instance_settings",
@@ -75,4 +77,6 @@ def test_to_url_s3_public_stays_native(monkeypatch):
         raising=False,
     )
     upath = ln_setup.core.upath.UPath("s3://lamindb-ci/test-data/test.parquet")
-    assert upath.to_url() == "https://lamindb-ci.s3.amazonaws.com/test-data/test.parquet"
+    assert (
+        upath.to_url() == "https://lamindb-ci.s3.amazonaws.com/test-data/test.parquet"
+    )

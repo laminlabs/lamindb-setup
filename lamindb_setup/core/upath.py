@@ -571,8 +571,8 @@ def synchronize_to(
         # no need to cast local_stat.st_mtime to int
         # because if it has the fractional part and cloud_mtime doesn't
         # and they have the same integer part then cloud_mtime can't be bigger
-        is_sync_needed = (
-            lambda cloud_mtime, local_stat: cloud_mtime > local_stat.st_mtime
+        is_sync_needed = lambda cloud_mtime, local_stat: (
+            cloud_mtime > local_stat.st_mtime
         )
 
     local_paths: list[Path] = []
@@ -853,7 +853,7 @@ def to_url(upath: UPath) -> str:
 
     For S3/GCS paths, this returns a public URL considering the bucket region.
     If the S3 path is not publicly hosted, it returns a LaminHub URL if the artifact is hosted on LaminHub.
-    
+
     Args:
         upath: A `UPath` object.
 
@@ -888,9 +888,7 @@ def to_url(upath: UPath) -> str:
             )
     if upath.protocol in {"http", "https"}:
         return str(upath)
-    raise ValueError(
-        "The provided UPath must be an S3, GCS, HTTP, or HTTPS path."
-    )
+    raise ValueError("The provided UPath must be an S3, GCS, HTTP, or HTTPS path.")
 
 
 def _is_publicly_accessible_path(upath: UPath) -> bool:
