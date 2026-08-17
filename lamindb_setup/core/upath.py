@@ -849,12 +849,11 @@ def view_tree(
 
 
 def to_url(upath: UPath) -> str:
-    """
+    """Generates a URL for an object represented by `UPath`.
 
-    Generates a URL for an object represented by `UPath`.
-    For S3 paths, this returns a public AWS URL considering the bucket region.
-    If the S3 path is not publicly hosted, it returns a LaminHub URL if the path is hosted on LaminHub.
-
+    For S3/GCS paths, this returns a public URL considering the bucket region.
+    If the S3 path is not publicly hosted, it returns a LaminHub URL if the artifact is hosted on LaminHub.
+    
     Args:
         upath: A `UPath` object.
 
@@ -866,7 +865,7 @@ def to_url(upath: UPath) -> str:
     if upath.protocol == "s3":
         key = "/".join(upath.parts[1:])
         bucket = upath.drive
-        if _is_public_s3_path(upath):
+        if _is_publicly_accessible_path(upath):
             region = get_storage_region(upath)
             if region == "us-east-1":
                 return f"https://{bucket}.s3.amazonaws.com/{key}"
@@ -878,10 +877,15 @@ def to_url(upath: UPath) -> str:
                 return common
         else:
             raise ValueError(
-                "The provided S3 UPath must be publicly hosted or accessible via LaminHub."
+                "The provided S3 UPath must be publicly accessible or the artifact must be hosted on LaminHub."
             )
     if upath.protocol == "gs":
-        return f"https://storage.googleapis.com/{str(upath).removeprefix('gs://')}"
+        if _is_publicly_accessible_path(upath):
+            return f"https://storage.googleapis.com/{str(upath).removeprefix('gs://')}"
+        else:
+            raise ValueError(
+                "This function only supports publicly accessible GCS paths."
+            )
     if upath.protocol in {"http", "https"}:
         return str(upath)
     raise ValueError(
@@ -889,8 +893,8 @@ def to_url(upath: UPath) -> str:
     )
 
 
-def _is_public_s3_path(upath: UPath) -> bool:
-    """Check whether an S3 path is anonymously readable."""
+def _is_publicly_accessible_path(upath: UPath) -> bool:
+    """Check whether an S3/GCS path is anonymously readable."""
     anon_path = UPath(upath, anon=True)
     try:
         return anon_path.exists()
