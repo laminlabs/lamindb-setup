@@ -69,8 +69,6 @@ class MainBranchMock:
 class SetupSettings:
     """Setup settings."""
 
-    _using_key: str | None = None  # set through lamindb.settings
-
     _user_settings: UserSettings | None = None
     _instance_settings: InstanceSettings | None = None
 
