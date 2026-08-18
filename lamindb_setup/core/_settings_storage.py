@@ -320,11 +320,7 @@ class StorageSettings:
             # dynamic import because of import order
             from lamindb.models import Storage
 
-            from ._settings import settings
-
-            self._record = Storage.objects.using(settings._using_key).get(
-                root=self.root_as_str
-            )
+            self._record = Storage.objects.get(root=self.root_as_str)
         return self._record
 
     @property
