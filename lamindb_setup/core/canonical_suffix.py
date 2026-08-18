@@ -11,6 +11,9 @@ from pathlib import PurePosixPath
 from typing import TYPE_CHECKING, cast
 
 if TYPE_CHECKING:
+    # Sphinx resolves AnyPath = Path | "UPath" in this module's globals.
+    from upath import UPath
+
     from lamindb_setup.types import AnyPath
 
 # these are simple formats that are not part of the MIME registry and should be
