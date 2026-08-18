@@ -41,6 +41,9 @@ def silence_loggers():
             set_stream_logger(
                 name="google.auth.compute_engine._metadata", level=logging.ERROR
             )
+            # gcsfs logs a full traceback via logger.exception for 401/403
+            # (anonymous / no credentials) before re-raising
+            set_stream_logger(name="gcsfs", level=logging.CRITICAL)
         except Exception:
             pass
     silenced = True
