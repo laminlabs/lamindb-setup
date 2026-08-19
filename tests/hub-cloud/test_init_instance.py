@@ -134,6 +134,21 @@ def test_init_instance_cwd():
     ln_setup.delete("mystorage_cwd", force=True)
 
 
+def test_init_sets_dev_dir_to_cwd(tmp_path: Path):
+    prev_wd = Path.cwd()
+    project_dir = tmp_path / "project-dev-dir"
+    project_dir.mkdir()
+    os.chdir(project_dir)
+    instance_name = f"{project_dir.name}-instance"
+    try:
+        ln_setup.init(storage="./storage", name=instance_name, _test=True)
+        assert ln_setup.settings.dev_dir == project_dir.resolve()
+        ln_setup.settings.dev_dir = None
+        ln_setup.delete(instance_name, force=True)
+    finally:
+        os.chdir(prev_wd)
+
+
 def test_init_instance_user():
     ln_setup.init(storage="~/mydata", _test=True)
     assert not ln_setup.settings.instance.storage.type_is_cloud

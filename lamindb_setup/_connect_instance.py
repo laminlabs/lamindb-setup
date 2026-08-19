@@ -285,11 +285,19 @@ def reset_django_module_variables():
 def _connect_cli(
     instance: str,
     use_root_db_user: bool = False,
+    here: bool = False,
     persist_global_env: bool = True,
     show_dev_dir_hint: bool = True,
     show_connected_log: bool = True,
 ) -> None:
+    from pathlib import Path
+
     from lamindb_setup import settings as settings_
+
+    if here:
+        persist_global_env = False
+        show_dev_dir_hint = False
+        show_connected_log = False
 
     owner, name = get_owner_name_from_identifier(instance)
     isettings = _connect_instance(
@@ -326,6 +334,11 @@ def _connect_cli(
         logger.important_hint(
             "to map a local dev directory, call: lamin settings set dev-dir ."
         )
+    if here:
+        cwd = Path.cwd().resolve()
+        settings_.dev_dir = cwd
+        logger.important(f"set dev-dir: {cwd}")
+        logger.important(f"connected lamindb: {isettings.slug}")
     return None
 
 

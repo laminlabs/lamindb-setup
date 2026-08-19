@@ -412,6 +412,10 @@ def init(
         validate_sqlite_state(isettings)
         # why call it here if it is also called in load_from_isettings?
         isettings._persist(write_to_disk=_write_settings)
+        if _write_settings:
+            dev_dir = Path.cwd().resolve()
+            settings.dev_dir = dev_dir
+            logger.important(f"set dev-dir: {dev_dir}")
         if _test:
             return None
         isettings._init_db()
