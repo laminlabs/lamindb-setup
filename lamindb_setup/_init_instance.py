@@ -223,7 +223,9 @@ def validate_init_args(
     return name_str, instance_id, instance_state, instance_slug
 
 
-DOC_STORAGE_ARG = "A local or remote folder (`'s3://...'` or `'gs://...'`). Defaults to current working directory."
+DOC_STORAGE_ARG = (
+    "A local or remote folder (`'s3://...'` or `'gs://...'`). Defaults to `./storage`."
+)
 DOC_INSTANCE_NAME = (
     "Instance name. If not passed, it will equal the folder name passed to `storage`."
 )
@@ -310,7 +312,7 @@ def init_template_database(
 @doc_args(DOC_STORAGE_ARG, DOC_INSTANCE_NAME, DOC_DB, DOC_MODULES, DOC_LOW_LEVEL_KWARGS)
 def init(
     *,
-    storage: AnyPathStr = ".",
+    storage: AnyPathStr = "./storage",
     name: str | None = None,
     db: PostgresDsn | None = None,
     modules: str | None = None,
