@@ -329,7 +329,7 @@ def init(
         **kwargs: {}
 
     See Also:
-        Init an instance for via the CLI, see `here <https://docs.lamin.ai/cli#init>`__.
+        Init an instance via the CLI, see `here <https://docs.lamin.ai/cli#init>`__.
     """
     from ._check_setup import _check_instance_setup
     from ._connect_instance import (
