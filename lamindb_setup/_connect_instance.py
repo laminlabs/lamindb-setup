@@ -286,14 +286,14 @@ def _connect_cli(
     instance: str,
     use_root_db_user: bool = False,
     here: bool = False,
-    persist_global_env: bool = True,
-    show_dev_dir_hint: bool = True,
-    show_connected_log: bool = True,
 ) -> None:
     from pathlib import Path
 
     from lamindb_setup import settings as settings_
 
+    persist_global_env: bool = True
+    show_dev_dir_hint: bool = True
+    show_connected_log: bool = True
     if here:
         persist_global_env = False
         show_dev_dir_hint = False
