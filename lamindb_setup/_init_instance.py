@@ -224,8 +224,10 @@ def validate_init_args(
     return name_str, instance_id, instance_state, instance_slug
 
 
+DEFAULT_STORAGE_PATH = "./storage"
 DOC_STORAGE_ARG = (
-    "A local or remote folder (`'s3://...'` or `'gs://...'`). Defaults to `./storage`."
+    "A local or remote folder (`'s3://...'` or `'gs://...'`). "
+    f"Defaults to `{DEFAULT_STORAGE_PATH}`."
 )
 DOC_INSTANCE_NAME = "Instance name. If no storage location is passed, uses the current working directory name (like git). Otherwise uses the name of the storage location."
 DOC_DB = "PostgreSQL connection URI. Defaults to `None`, which implies an SQLite file in the storage location."
@@ -311,7 +313,7 @@ def init_template_database(
 @doc_args(DOC_STORAGE_ARG, DOC_INSTANCE_NAME, DOC_DB, DOC_MODULES, DOC_LOW_LEVEL_KWARGS)
 def init(
     *,
-    storage: AnyPathStr = "./storage",
+    storage: AnyPathStr = DEFAULT_STORAGE_PATH,
     name: str | None = None,
     db: PostgresDsn | None = None,
     modules: str | None = None,
@@ -538,7 +540,7 @@ def infer_instance_name(
         return str(db).split("/")[-1]
     if storage == "create-s3":
         raise ValueError("pass name to init if storage = 'create-s3'")
-    if str(storage).rstrip("/") in {"./storage", "storage"}:
+    if str(storage) == DEFAULT_STORAGE_PATH:
         return Path.cwd().resolve().name.lower()
     storage_path = UPath(storage).resolve()
     name = storage_path.path.rstrip("/").split("/")[-1]

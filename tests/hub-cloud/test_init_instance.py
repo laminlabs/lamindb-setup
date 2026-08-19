@@ -48,7 +48,7 @@ def test_infer_instance_name():
     assert infer_instance_name(storage="./storage", name="name") == "name"
     assert infer_instance_name(storage="some/localpath") == "localpath"
     assert infer_instance_name(storage="./storage") == Path.cwd().name.lower()
-    assert infer_instance_name(storage="storage/") == Path.cwd().name.lower()
+    assert infer_instance_name(storage="storage/") == "storage"
     with pytest.raises(ValueError):
         infer_instance_name(storage="create-s3")
 
