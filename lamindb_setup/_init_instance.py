@@ -4,6 +4,7 @@ import importlib
 import os
 import sys
 import uuid
+from pathlib import Path
 from typing import TYPE_CHECKING, Literal
 from urllib.parse import unquote, urlparse
 from uuid import UUID
@@ -226,10 +227,8 @@ def validate_init_args(
 DOC_STORAGE_ARG = (
     "A local or remote folder (`'s3://...'` or `'gs://...'`). Defaults to `./storage`."
 )
-DOC_INSTANCE_NAME = (
-    "Instance name. If not passed, it will equal the folder name passed to `storage`."
-)
-DOC_DB = "Database connection URL. Defaults to `None`, which implies an SQLite file in the storage location."
+DOC_INSTANCE_NAME = "Instance name. If no storage location is passed, uses the current working directory name (like git). Otherwise uses the name of the storage location."
+DOC_DB = "PostgreSQL connection URI. Defaults to `None`, which implies an SQLite file in the storage location."
 DOC_MODULES = "Comma-separated string of schema modules."
 DOC_LOW_LEVEL_KWARGS = "Keyword arguments for low-level control."
 
@@ -535,6 +534,8 @@ def infer_instance_name(
         return str(db).split("/")[-1]
     if storage == "create-s3":
         raise ValueError("pass name to init if storage = 'create-s3'")
+    if str(storage).rstrip("/") in {"./storage", "storage"}:
+        return Path.cwd().resolve().name.lower()
     storage_path = UPath(storage).resolve()
     name = storage_path.path.rstrip("/").split("/")[-1]
     return name.lower()
