@@ -124,13 +124,18 @@ def test_init_instance_cwd():
     storage = Path("./mystorage_cwd")
     storage.mkdir()
     storage = storage.resolve()
-    os.chdir(storage)
-    assert Path.cwd() == storage
-    ln_setup.init(storage=".", _test=True)
-    assert ln_setup.settings.instance.name == "mystorage_cwd"
-    assert not ln_setup.settings.instance.storage.type_is_cloud
-    assert ln_setup.settings.instance.storage.root.as_posix() == Path.cwd().as_posix()
-    os.chdir(prev_wd)
+    try:
+        os.chdir(storage)
+        assert Path.cwd() == storage
+        ln_setup.init(storage=".", _test=True)
+        assert ln_setup.settings.instance.name == "mystorage_cwd"
+        assert not ln_setup.settings.instance.storage.type_is_cloud
+        assert (
+            ln_setup.settings.instance.storage.root.as_posix() == Path.cwd().as_posix()
+        )
+        ln_setup.settings.dev_dir = None
+    finally:
+        os.chdir(prev_wd)
     ln_setup.delete("mystorage_cwd", force=True)
 
 
