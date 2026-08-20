@@ -106,21 +106,27 @@ class InstanceSettings:
         for attr in attrs:
             value = getattr(self, attr)
             if attr == "storage":
+
+                def _format_storage(root: str, region: str | None) -> str:
+                    return f"{root} ({region})" if region is not None else root
+
                 if self.keep_artifacts_local:
                     import lamindb as ln
 
                     self._local_storage = ln.setup.settings.instance._local_storage
                 if self._local_storage is not None:
                     value_local = self.local_storage
-                    representation += f"\n - local storage: {value_local.root_as_str} ({value_local.region})"
+                    representation += (
+                        f"\n - local storage: "
+                        f"{_format_storage(value_local.root_as_str, value_local.region)}"
+                    )
                     if value is not None:
                         representation += (
-                            f"\n - cloud storage: {value.root_as_str} ({value.region})"
+                            f"\n - cloud storage: "
+                            f"{_format_storage(value.root_as_str, value.region)}"
                         )
                 elif value is not None:
-                    representation += (
-                        f"\n - storage: {value.root_as_str} ({value.region})"
-                    )
+                    representation += f"\n - storage: {_format_storage(value.root_as_str, value.region)}"
             elif attr == "db":
                 if self.dialect != "sqlite":
                     # dynamic import to avoid importing pydantic at root

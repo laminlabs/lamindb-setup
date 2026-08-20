@@ -228,6 +228,13 @@ def test_init_instance_sqlite():
     assert not ln_setup.settings.instance.storage.type_is_cloud
     assert ln_setup.settings.instance.owner == user_settings_original.handle
     assert ln_setup.settings.instance.dialect == "sqlite"
+    storage_lines = [
+        line
+        for line in ln_setup.settings.instance.__repr__().splitlines()
+        if "storage:" in line
+    ]
+    assert storage_lines
+    assert all("(None)" not in line for line in storage_lines)
     ln_setup.delete("local-sqlite-instance", force=True)
 
 
