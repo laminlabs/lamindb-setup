@@ -624,12 +624,16 @@ class InstanceSettings:
     def _get_settings_file(self) -> Path:
         return instance_settings_file(self.name, self.owner)
 
-    def _persist(self, write_to_disk: bool = True) -> None:
+    def _persist(
+        self, write_to_disk: bool = True, write_current_instance_file: bool = True
+    ) -> None:
         """Set these instance settings as the current instance.
 
         Args:
             write_to_disk: Save these instance settings to disk and
                 overwrite the current instance settings file.
+            write_current_instance_file: Whether to update the global
+                current instance settings file in `~/.lamin`.
         """
         if write_to_disk and self.slug != "none/none":
             assert self.name is not None
@@ -637,7 +641,8 @@ class InstanceSettings:
             # persist under filepath for later reference
             save_instance_settings(self, filepath)
             # persist under current file for auto load
-            shutil.copy2(filepath, current_instance_settings_file())
+            if write_current_instance_file:
+                shutil.copy2(filepath, current_instance_settings_file())
             # persist under settings class for same session reference
             # need to import here to avoid circular import
         from ._settings import settings

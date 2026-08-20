@@ -413,7 +413,9 @@ def init(
             )
         validate_sqlite_state(isettings)
         # why call it here if it is also called in load_from_isettings?
-        isettings._persist(write_to_disk=_write_settings)
+        isettings._persist(
+            write_to_disk=_write_settings, write_current_instance_file=False
+        )
         if _write_settings:
             dev_dir = Path.cwd().resolve()
             settings.dev_dir = dev_dir
@@ -499,7 +501,9 @@ def load_from_isettings(
             # do not try to update the user on fine grained access instances
             # this is blocked anyways, only select and insert are allowed
             register_user(user, update_user=not isettings._fine_grained_access)
-    isettings._persist(write_to_disk=write_settings)
+    isettings._persist(
+        write_to_disk=write_settings, write_current_instance_file=not init
+    )
     # clear branch & space cache after reconnecting
     settings._branch = None
     settings._space = None

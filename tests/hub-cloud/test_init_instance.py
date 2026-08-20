@@ -8,6 +8,7 @@ import lamindb_setup as ln_setup
 import pytest
 from lamindb_setup._connect_instance import InstanceNotFoundError
 from lamindb_setup._init_instance import infer_instance_name
+from lamindb_setup.core import _settings_instance as settings_instance_module
 from lamindb_setup.core._hub_client import connect_hub_with_auth
 from lamindb_setup.core._hub_core import _connect_instance_hub
 from lamindb_setup.core._hub_crud import (
@@ -139,15 +140,22 @@ def test_init_instance_cwd():
     ln_setup.delete("mystorage_cwd", force=True)
 
 
-def test_init_sets_dev_dir_to_cwd(tmp_path: Path):
+def test_init_sets_dev_dir_to_cwd(tmp_path: Path, monkeypatch: pytest.MonkeyPatch):
     prev_wd = Path.cwd()
     project_dir = tmp_path / "project-dev-dir"
     project_dir.mkdir()
+    global_current_instance_file = tmp_path / "current_instance.env"
+    monkeypatch.setattr(
+        settings_instance_module,
+        "current_instance_settings_file",
+        lambda: global_current_instance_file,
+    )
     os.chdir(project_dir)
     instance_name = f"{project_dir.name}-instance"
     try:
         ln_setup.init(storage="./storage", name=instance_name, _test=True)
         assert ln_setup.settings.dev_dir == project_dir.resolve()
+        assert not global_current_instance_file.exists()
         ln_setup.settings.dev_dir = None
         ln_setup.delete(instance_name, force=True)
     finally:
