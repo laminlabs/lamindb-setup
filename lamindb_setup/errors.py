@@ -11,6 +11,7 @@
 .. autoexception:: InstanceNotCreated
 .. autoexception:: NoAccessTokenError
 .. autoexception:: NoWriteAccess
+.. autoexception:: ConnectWithinDevDirError
 
 """
 
@@ -81,4 +82,8 @@ class NoAccessTokenError(RuntimeError):
 class NoWriteAccess(Exception):
     """No write access to a space."""
 
+    pass
+
+
+class ConnectWithinDevDirError(Exception):
     pass
