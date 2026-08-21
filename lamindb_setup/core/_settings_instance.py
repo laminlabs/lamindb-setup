@@ -106,21 +106,27 @@ class InstanceSettings:
         for attr in attrs:
             value = getattr(self, attr)
             if attr == "storage":
+
+                def _format_storage(root: str, region: str | None) -> str:
+                    return f"{root} ({region})" if region is not None else root
+
                 if self.keep_artifacts_local:
                     import lamindb as ln
 
                     self._local_storage = ln.setup.settings.instance._local_storage
                 if self._local_storage is not None:
                     value_local = self.local_storage
-                    representation += f"\n - local storage: {value_local.root_as_str} ({value_local.region})"
+                    representation += (
+                        f"\n - local storage: "
+                        f"{_format_storage(value_local.root_as_str, value_local.region)}"
+                    )
                     if value is not None:
                         representation += (
-                            f"\n - cloud storage: {value.root_as_str} ({value.region})"
+                            f"\n - cloud storage: "
+                            f"{_format_storage(value.root_as_str, value.region)}"
                         )
                 elif value is not None:
-                    representation += (
-                        f"\n - storage: {value.root_as_str} ({value.region})"
-                    )
+                    representation += f"\n - storage: {_format_storage(value.root_as_str, value.region)}"
             elif attr == "db":
                 if self.dialect != "sqlite":
                     # dynamic import to avoid importing pydantic at root
@@ -618,12 +624,16 @@ class InstanceSettings:
     def _get_settings_file(self) -> Path:
         return instance_settings_file(self.name, self.owner)
 
-    def _persist(self, write_to_disk: bool = True) -> None:
+    def _persist(
+        self, write_to_disk: bool = True, write_current_instance_file: bool = True
+    ) -> None:
         """Set these instance settings as the current instance.
 
         Args:
             write_to_disk: Save these instance settings to disk and
                 overwrite the current instance settings file.
+            write_current_instance_file: Whether to update the global
+                current instance settings file in `~/.lamin`.
         """
         if write_to_disk and self.slug != "none/none":
             assert self.name is not None
@@ -631,7 +641,8 @@ class InstanceSettings:
             # persist under filepath for later reference
             save_instance_settings(self, filepath)
             # persist under current file for auto load
-            shutil.copy2(filepath, current_instance_settings_file())
+            if write_current_instance_file:
+                shutil.copy2(filepath, current_instance_settings_file())
             # persist under settings class for same session reference
             # need to import here to avoid circular import
         from ._settings import settings

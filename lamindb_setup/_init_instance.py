@@ -4,6 +4,7 @@ import importlib
 import os
 import sys
 import uuid
+from pathlib import Path
 from typing import TYPE_CHECKING, Literal
 from urllib.parse import unquote, urlparse
 from uuid import UUID
@@ -223,11 +224,13 @@ def validate_init_args(
     return name_str, instance_id, instance_state, instance_slug
 
 
-DOC_STORAGE_ARG = "A local or remote folder (`'s3://...'` or `'gs://...'`). Defaults to current working directory."
-DOC_INSTANCE_NAME = (
-    "Instance name. If not passed, it will equal the folder name passed to `storage`."
+DEFAULT_STORAGE_PATH = "./storage"
+DOC_STORAGE_ARG = (
+    "A local or remote folder (`'s3://...'` or `'gs://...'`). "
+    f"Defaults to `{DEFAULT_STORAGE_PATH}`."
 )
-DOC_DB = "Database connection URL. Defaults to `None`, which implies an SQLite file in the storage location."
+DOC_INSTANCE_NAME = "Instance name. If no storage location is passed, uses the current working directory name (like git). Otherwise uses the name of the storage location."
+DOC_DB = "PostgreSQL connection URI. Defaults to `None`, which implies an SQLite file in the storage location."
 DOC_MODULES = "Comma-separated string of schema modules."
 DOC_LOW_LEVEL_KWARGS = "Keyword arguments for low-level control."
 
@@ -310,7 +313,7 @@ def init_template_database(
 @doc_args(DOC_STORAGE_ARG, DOC_INSTANCE_NAME, DOC_DB, DOC_MODULES, DOC_LOW_LEVEL_KWARGS)
 def init(
     *,
-    storage: AnyPathStr = ".",
+    storage: AnyPathStr = DEFAULT_STORAGE_PATH,
     name: str | None = None,
     db: PostgresDsn | None = None,
     modules: str | None = None,
@@ -326,7 +329,7 @@ def init(
         **kwargs: {}
 
     See Also:
-        Init an instance for via the CLI, see `here <https://docs.lamin.ai/cli#init>`__.
+        Init an instance via the CLI, see `here <https://docs.lamin.ai/cli#init>`__.
     """
     from ._check_setup import _check_instance_setup
     from ._connect_instance import (
@@ -410,7 +413,13 @@ def init(
             )
         validate_sqlite_state(isettings)
         # why call it here if it is also called in load_from_isettings?
-        isettings._persist(write_to_disk=_write_settings)
+        isettings._persist(
+            write_to_disk=_write_settings, write_current_instance_file=False
+        )
+        if _write_settings:
+            dev_dir = Path.cwd().resolve()
+            settings.dev_dir = dev_dir
+            logger.important(f"set dev-dir: {dev_dir}")
         if _test:
             return None
         isettings._init_db()
@@ -492,7 +501,9 @@ def load_from_isettings(
             # do not try to update the user on fine grained access instances
             # this is blocked anyways, only select and insert are allowed
             register_user(user, update_user=not isettings._fine_grained_access)
-    isettings._persist(write_to_disk=write_settings)
+    isettings._persist(
+        write_to_disk=write_settings, write_current_instance_file=not init
+    )
     # clear branch & space cache after reconnecting
     settings._branch = None
     settings._space = None
@@ -533,6 +544,8 @@ def infer_instance_name(
         return str(db).split("/")[-1]
     if storage == "create-s3":
         raise ValueError("pass name to init if storage = 'create-s3'")
+    if str(storage) == DEFAULT_STORAGE_PATH:
+        return Path.cwd().resolve().name.lower()
     storage_path = UPath(storage).resolve()
     name = storage_path.path.rstrip("/").split("/")[-1]
     return name.lower()

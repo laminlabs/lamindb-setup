@@ -8,7 +8,7 @@ import lamindb_setup._connect_instance as connect_instance
 import lamindb_setup.core.django as django_core
 import pytest
 from lamindb_setup._check_setup import _check_instance_setup
-from lamindb_setup.errors import ModuleWasntConfigured
+from lamindb_setup.errors import ConnectWithinDevDirError, ModuleWasntConfigured
 
 
 class _DummyInstanceSettings:
@@ -40,6 +40,68 @@ class _FakeConnectedInstance:
 
     def _load_db(self) -> tuple[bool, str]:
         return True, ""
+
+
+class _FakeCliConnectedInstance:
+    def __init__(self, slug: str = "owner/name") -> None:
+        self.slug = slug
+        self.dialect = "postgresql"
+        self.db = "private"
+        self._is_cloud_sqlite = False
+        self.is_on_hub = True
+
+    def _persist(self, write_to_disk: bool = False) -> None:
+        return None
+
+    def _get_settings_file(self) -> Path:
+        return Path("unused")
+
+
+def test_connect_cli_raises_if_connecting_in_other_instance_dev_dir(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+):
+    marker_file = tmp_path / ".lamin" / "current_instance"
+    marker_file.parent.mkdir(parents=True, exist_ok=True)
+    marker_file.write_text("owner/current-instance")
+    monkeypatch.setattr(
+        connect_instance,
+        "find_local_current_instance_file",
+        lambda start_directory=None: marker_file,
+    )
+
+    def _should_not_connect(*args, **kwargs):
+        raise AssertionError("should not run")
+
+    monkeypatch.setattr(connect_instance, "_connect_instance", _should_not_connect)
+
+    with pytest.raises(ConnectWithinDevDirError) as exc:
+        connect_instance._connect_cli("owner/other-instance")
+
+    assert str(exc.value) == (
+        "You're trying to connect within the dev-dir of instance owner/current-instance. "
+        "Either cd into another directory or unset the dev-dir: lamin settings dev-dir unset"
+    )
+
+
+def test_connect_cli_allows_connecting_same_instance_in_dev_dir(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+):
+    marker_file = tmp_path / ".lamin" / "current_instance"
+    marker_file.parent.mkdir(parents=True, exist_ok=True)
+    marker_file.write_text("owner/current-instance")
+    monkeypatch.setattr(
+        connect_instance,
+        "find_local_current_instance_file",
+        lambda start_directory=None: marker_file,
+    )
+    monkeypatch.setattr(
+        connect_instance,
+        "_connect_instance",
+        lambda *args, **kwargs: _FakeCliConnectedInstance("owner/current-instance"),
+    )
+    monkeypatch.setattr(connect_instance, "connect", lambda *args, **kwargs: None)
+
+    connect_instance._connect_cli("owner/current-instance")
 
 
 def test_validate_connection_state_none_none_skips_reset(monkeypatch):
