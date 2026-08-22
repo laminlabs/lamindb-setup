@@ -3,11 +3,14 @@ from __future__ import annotations
 import sys
 from pathlib import Path
 from types import SimpleNamespace
+from uuid import UUID
 
 import lamindb_setup._connect_instance as connect_instance
+import lamindb_setup._init_instance as init_instance
 import lamindb_setup.core.django as django_core
 import pytest
 from lamindb_setup._check_setup import _check_instance_setup
+from lamindb_setup.core._settings_storage import init_storage
 from lamindb_setup.errors import ConnectWithinDevDirError, ModuleWasntConfigured
 
 
@@ -362,3 +365,111 @@ def test_connect_instance_uses_sqlite_clone_before_permission_error(
     )
 
     assert isettings.db == "postgresql://none:none@fakeserver.xyz:5432/mydb"
+
+
+def test_connect_instance_raises_for_hub_managed_cached_instance(monkeypatch, tmp_path):
+    settings_file = tmp_path / "instance.env"
+    settings_file.write_text("cached settings")
+    cached_settings = SimpleNamespace(
+        is_remote=False,
+        is_managed_by_hub=True,
+        dialect="sqlite",
+    )
+
+    monkeypatch.setattr(
+        connect_instance,
+        "instance_settings_file",
+        lambda name, owner: settings_file,
+    )
+    monkeypatch.setattr(
+        connect_instance, "load_instance_settings", lambda _: cached_settings
+    )
+    monkeypatch.setattr(
+        "lamindb_setup.core._hub_core.connect_instance_hub",
+        lambda **kwargs: "instance-not-found",
+    )
+
+    with pytest.raises(connect_instance.InstanceNotFoundError):
+        connect_instance._connect_instance("owner", "name")
+
+
+def test_validate_init_args_skips_connect_for_fresh_local_instance(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+):
+    called = {"connect": 0}
+    settings_file = tmp_path / "instance.env"
+
+    monkeypatch.setattr(
+        "lamindb_setup.core._settings_store.instance_settings_file",
+        lambda name, owner: settings_file,
+    )
+    monkeypatch.setattr(
+        "lamindb_setup.core._settings_instance.should_contact_hub_during_init",
+        lambda root, db: False,
+    )
+    monkeypatch.setattr(
+        init_instance.settings.user, "handle", "test-local-user", raising=False
+    )
+    monkeypatch.setattr(
+        "lamindb_setup._connect_instance.connect",
+        lambda *args, **kwargs: called.__setitem__("connect", called["connect"] + 1),
+    )
+
+    _, _, instance_state, _ = init_instance.validate_init_args(
+        storage="./storage",
+        name="local-only",
+        db=None,
+        _test=True,
+    )
+
+    assert instance_state == "instance-not-found"
+    assert called["connect"] == 0
+
+
+def test_validate_init_args_uses_connect_when_settings_exist(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+):
+    called = {"connect": 0}
+    settings_file = tmp_path / "instance.env"
+    settings_file.write_text("existing settings")
+
+    monkeypatch.setattr(
+        "lamindb_setup.core._settings_store.instance_settings_file",
+        lambda name, owner: settings_file,
+    )
+    monkeypatch.setattr(
+        "lamindb_setup.core._settings_instance.should_contact_hub_during_init",
+        lambda root, db: False,
+    )
+    monkeypatch.setattr(
+        init_instance.settings.user, "handle", "test-local-user", raising=False
+    )
+
+    def _connect_stub(*args, **kwargs):
+        called["connect"] += 1
+        return "instance-not-found"
+
+    monkeypatch.setattr("lamindb_setup._connect_instance.connect", _connect_stub)
+
+    _, _, instance_state, _ = init_instance.validate_init_args(
+        storage="./storage",
+        name="local-with-settings",
+        db=None,
+        _test=True,
+    )
+
+    assert instance_state == "instance-not-found"
+    assert called["connect"] == 1
+
+
+def test_init_storage_skips_hub_record_when_register_hub_false(tmp_path: Path):
+    ssettings, hub_record_status = init_storage(
+        root=tmp_path / "local-storage",
+        instance_id=UUID(int=1),
+        instance_slug="owner/local",
+        register_hub=False,
+        skip_mark_storage_root=True,
+    )
+
+    assert hub_record_status == "hub-record-not-created"
+    assert ssettings._uuid is None
