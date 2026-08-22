@@ -359,6 +359,7 @@ def init(
     isettings = None
     ssettings = None
     did_reset_django = False
+    created_instance_hub_record = False
 
     _write_settings: bool = kwargs.get("_write_settings", True)
     if modules is None:
@@ -414,6 +415,7 @@ def init(
                 resource_db_server_id=_resource_db_server_id,
                 access_token=access_token,
             )
+            created_instance_hub_record = True
         ssettings, _ = init_storage(
             storage,
             instance_id=instance_id,
@@ -487,7 +489,7 @@ def init(
                 )
             if is_authenticated and ssettings.is_on_hub:
                 delete_storage_record(ssettings, access_token=access_token)
-        if is_authenticated and isettings is not None and isettings._is_on_hub is True:
+        if is_authenticated and isettings is not None and created_instance_hub_record:
             delete_instance_record(isettings._id, access_token=access_token)
         raise e
     return None
