@@ -131,7 +131,7 @@ def init_storage(
     root: AnyPathStr,
     instance_id: UUID,
     instance_slug: str,
-    register_hub: bool | None = None,
+    register_hub: bool = False,
     init_instance: bool = False,
     created_by: UUID | None = None,
     access_token: str | None = None,
@@ -184,12 +184,11 @@ def init_storage(
     )
     # this retrieves the storage record if it exists already in the hub
     # and updates uid and instance_id in ssettings
-    should_register_hub = bool(register_hub)
-    if should_register_hub and not ssettings.type_is_cloud and ssettings.host is None:
+    if register_hub and not ssettings.type_is_cloud and ssettings.host is None:
         raise ValueError(
             "`host` must be set for local storage locations that are registered on the hub"
         )
-    if should_register_hub:
+    if register_hub:
         from ._hub_core import init_storage_hub
 
         hub_record_status = init_storage_hub(
