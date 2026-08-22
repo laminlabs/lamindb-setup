@@ -367,6 +367,32 @@ def test_connect_instance_uses_sqlite_clone_before_permission_error(
     assert isettings.db == "postgresql://none:none@fakeserver.xyz:5432/mydb"
 
 
+def test_connect_instance_raises_for_hub_managed_cached_instance(monkeypatch, tmp_path):
+    settings_file = tmp_path / "instance.env"
+    settings_file.write_text("cached settings")
+    cached_settings = SimpleNamespace(
+        is_remote=False,
+        is_managed_by_hub=True,
+        dialect="sqlite",
+    )
+
+    monkeypatch.setattr(
+        connect_instance,
+        "instance_settings_file",
+        lambda name, owner: settings_file,
+    )
+    monkeypatch.setattr(
+        connect_instance, "load_instance_settings", lambda _: cached_settings
+    )
+    monkeypatch.setattr(
+        "lamindb_setup.core._hub_core.connect_instance_hub",
+        lambda **kwargs: "instance-not-found",
+    )
+
+    with pytest.raises(connect_instance.InstanceNotFoundError):
+        connect_instance._connect_instance("owner", "name")
+
+
 def test_validate_init_args_skips_connect_for_fresh_local_instance(
     monkeypatch: pytest.MonkeyPatch, tmp_path: Path
 ):

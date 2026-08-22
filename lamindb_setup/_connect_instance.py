@@ -152,8 +152,8 @@ def _connect_instance(
     make_hub_request = True
     if settings_file.exists():
         isettings = load_instance_settings(settings_file)
-        # skip hub request for a purely local instance
-        if isettings.is_remote:
+        # skip hub request only for purely local, non-hub-managed instances
+        if isettings.is_remote or isettings.is_managed_by_hub:
             make_hub_request = True
         else:
             make_hub_request = False
@@ -227,7 +227,7 @@ def _connect_instance(
             )
             if settings_file.exists():
                 isettings = load_instance_settings(settings_file)
-                if isettings.is_remote:
+                if isettings.is_remote or isettings.is_managed_by_hub:
                     raise exception
             else:
                 raise exception
