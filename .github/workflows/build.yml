@@ -241,7 +241,7 @@ jobs:
       - run: laminprofiler check tests/profiling/import_lamindb_setup.py --threshold 0.17
       - run: laminprofiler check tests/profiling/print_lamindb_setup_settings.py --threshold 0.4
       - run: laminprofiler check tests/profiling/connect_cli.py --threshold 2.0
-      - run: laminprofiler check tests/profiling/init.py --threshold 10.0
+      - run: laminprofiler check tests/profiling/init.py --threshold 2.3
 
   coverage:
     needs: [hub-prod, hub-cloud, core, hub-local]
