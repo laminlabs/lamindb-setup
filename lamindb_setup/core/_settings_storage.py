@@ -144,12 +144,6 @@ def init_storage(
 ]:
     import fsspec
 
-    from ._hub_core import (
-        delete_storage_record,
-        get_default_bucket_for_instance,
-        init_storage_hub,
-    )
-
     assert root is not None, "`root` argument can't be `None`"
 
     root_str = str(root)  # ensure we have a string
@@ -165,6 +159,8 @@ def init_storage(
         # within LaminHub
         assert root_str.endswith(uid)
     if root_str.startswith("create-s3"):
+        from ._hub_core import get_default_bucket_for_instance
+
         if root_str != "create-s3":
             assert "--" in root_str, "example: `create-s3--eu-central-1`"
             region = root_str.replace("create-s3--", "")
@@ -188,18 +184,24 @@ def init_storage(
     )
     # this retrieves the storage record if it exists already in the hub
     # and updates uid and instance_id in ssettings
-    if register_hub and not ssettings.type_is_cloud and ssettings.host is None:
+    should_register_hub = bool(register_hub)
+    if should_register_hub and not ssettings.type_is_cloud and ssettings.host is None:
         raise ValueError(
             "`host` must be set for local storage locations that are registered on the hub"
         )
-    hub_record_status = init_storage_hub(
-        ssettings,
-        created_by=created_by,
-        access_token=access_token,
-        prevent_creation=not register_hub,
-        is_default=init_instance,
-        space_id=space_uuid,
-    )
+    if should_register_hub:
+        from ._hub_core import init_storage_hub
+
+        hub_record_status = init_storage_hub(
+            ssettings,
+            created_by=created_by,
+            access_token=access_token,
+            prevent_creation=False,
+            is_default=init_instance,
+            space_id=space_uuid,
+        )
+    else:
+        hub_record_status = "hub-record-not-created"
     # we check the write access here if the storage record has not been retrieved from the hub
     # Sergei: should it in fact still go through if hub_record_status == "hub-record-not-created"?
     if hub_record_status != "hub-record-retrieved" and not skip_mark_storage_root:
@@ -236,6 +238,8 @@ def init_storage(
                 ssettings._uid = marking_result
             # this condition means that the hub record was created
             if ssettings._uuid is not None:
+                from ._hub_core import delete_storage_record
+
                 delete_storage_record(ssettings, access_token=access_token)  # type: ignore
                 ssettings._uuid_ = None
                 hub_record_status = "hub-record-not-created"

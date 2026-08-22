@@ -51,6 +51,23 @@ def check_is_instance_remote(root: AnyPathStr, db: str | None) -> bool:
     return not (is_local_storage and is_local_db)
 
 
+def should_contact_hub_during_init(root: AnyPathStr, db: str | None) -> bool:
+    """Whether init needs hub access for this storage/database combination."""
+    return check_is_instance_remote(root=root, db=db)
+
+
+def should_register_instance_on_hub(
+    root: AnyPathStr,
+    db: str | None,
+    instance_state: str,
+) -> bool:
+    """Whether init should auto-register the instance on LaminHub."""
+    return (
+        should_contact_hub_during_init(root=root, db=db)
+        and instance_state != "instance-corrupted-or-deleted"
+    )
+
+
 class InstanceSettings:
     """Instance settings."""
 

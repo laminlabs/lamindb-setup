@@ -192,7 +192,8 @@ def validate_init_args(
     ],
     str,
 ]:
-    from ._connect_instance import connect
+    from .core._settings_instance import should_contact_hub_during_init
+    from .core._settings_store import instance_settings_file
 
     if storage is None:
         raise SystemExit("✗ `storage` argument can't be `None`")
@@ -201,14 +202,25 @@ def validate_init_args(
     owner_str = settings.user.handle if _user is None else _user.handle
     # test whether instance exists by trying to load it
     instance_slug = f"{owner_str}/{name_str}"
-    response = connect(
-        instance_slug,
-        _db=db,
-        _raise_not_found_error=False,
-        _test=_test,
-        _write_settings=_write_settings,
-        _user=_user,
+    settings_file = instance_settings_file(name_str, owner_str)
+    should_skip_hub_contact = (
+        not settings_file.exists()
+        and not should_contact_hub_during_init(root=storage, db=db)
     )
+    response: str | tuple | None
+    if should_skip_hub_contact:
+        response = "instance-not-found"
+    else:
+        from ._connect_instance import connect
+
+        response = connect(
+            instance_slug,
+            _db=db,
+            _raise_not_found_error=False,
+            _test=_test,
+            _write_settings=_write_settings,
+            _user=_user,
+        )
     instance_id: UUID
     instance_state: Literal[
         "connected",
@@ -336,8 +348,10 @@ def init(
         reset_django_module_variables,
         validate_connection_state,
     )
-    from .core._hub_core import init_instance_hub
-    from .core._settings_instance import InstanceSettings, check_is_instance_remote
+    from .core._settings_instance import (
+        InstanceSettings,
+        should_register_instance_on_hub,
+    )
     from .core._settings_storage import init_storage
 
     silence_loggers()
@@ -386,11 +400,14 @@ def init(
             # to lock passed user in isettings._cloud_sqlite_locker.lock()
             _locker_user=_user,  # only has effect if cloud sqlite
         )
-        register_on_hub = (
-            check_is_instance_remote(root=storage, db=db)
-            and instance_state != "instance-corrupted-or-deleted"
+        register_on_hub = should_register_instance_on_hub(
+            root=storage,
+            db=db,
+            instance_state=instance_state,
         )
         if register_on_hub:
+            from .core._hub_core import init_instance_hub
+
             init_instance_hub(
                 isettings,
                 account_id=user__uuid,
@@ -470,7 +487,7 @@ def init(
                 )
             if is_authenticated and ssettings.is_on_hub:
                 delete_storage_record(ssettings, access_token=access_token)
-        if is_authenticated and isettings is not None and isettings.is_on_hub:
+        if is_authenticated and isettings is not None and isettings._is_on_hub is True:
             delete_instance_record(isettings._id, access_token=access_token)
         raise e
     return None
