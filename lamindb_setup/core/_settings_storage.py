@@ -96,9 +96,26 @@ def mark_storage_root_file(path: UPath) -> UPath:
     return marker_path
 
 
+def parse_storage_mark(text: str) -> tuple[str, UUID | None]:
+    """Return `(uid, instance_id)` from a storage mark file."""
+    lines = text.splitlines()
+    existing_uid = lines[0] if lines else ""
+    marked_instance_id = None
+    for line in lines[1:]:
+        if line.startswith("instance_id="):
+            value = line.split("=", 1)[1].strip()
+            if value:
+                try:
+                    marked_instance_id = UUID(value)
+                except ValueError:
+                    pass
+            break
+    return existing_uid, marked_instance_id
+
+
 def mark_storage_root(
     root: AnyPathStr, uid: str, instance_id: UUID, instance_slug: str
-) -> Literal["__marked__"] | str:
+) -> Literal["__is_marked__"] | str:
     # we need a file in folder-like storage locations on S3 to avoid
     # permission errors from leveraging s3fs on an empty hosted storage location (path.fs.find raises a PermissionError)
     # we also need it in case a storage location is ambiguous because a server / local environment
@@ -112,16 +129,17 @@ def mark_storage_root(
             f"session in storage options: {'session' in root_upath.storage_options}"
         )
 
-    existing_uid = ""
+    existing_text = ""
     mark_upath = mark_storage_root_file(root_upath)
     if mark_upath.exists():
-        existing_uid = mark_upath.read_text().splitlines()[0]
+        existing_text = mark_upath.read_text()
+    existing_uid = existing_text.splitlines()[0] if existing_text else ""
     if existing_uid == "":
         instance_uid = instance_uid_from_uuid(instance_id)
         text = f"{uid}\ncreation info:\ninstance_slug={instance_slug}\ninstance_id={instance_id.hex}\ninstance_uid={instance_uid}"
         mark_upath.write_text(text)
     elif existing_uid != uid:
-        return uid
+        return existing_text
     # covers the case in which existing uid is the same as uid
     # and the case in which there was no existing uid
     return "__is_marked__"
@@ -223,18 +241,22 @@ def init_storage(
                 )
                 ssettings._instance_id = None  # indicate that this storage location is not managed by the instance
             else:
+                existing_uid, marked_instance_id = parse_storage_mark(marking_result)
                 s = "S" if init_instance else "s"  # upper case for error message
                 message = (
-                    f"{s}torage location {ssettings.root_as_str} is already marked with uid {marking_result}, meaning that it is managed by another LaminDB instance -- "
+                    f"{s}torage location {ssettings.root_as_str} is already marked with uid {existing_uid}, meaning that it is managed by another LaminDB instance -- "
                     "if you manage your instance with LaminHub you get an overview of all your storage locations"
                 )
                 if init_instance:
                     raise StorageAlreadyManaged(message)
                 logger.warning(message)
-                ssettings._instance_id = UUID(
-                    "00000000000000000000000000000000"
-                )  # indicate not known
-                ssettings._uid = marking_result
+                if marked_instance_id is not None:
+                    ssettings._instance_id = marked_instance_id
+                else:
+                    ssettings._instance_id = UUID(
+                        "00000000000000000000000000000000"
+                    )  # indicate not known
+                ssettings._uid = existing_uid
             # this condition means that the hub record was created
             if ssettings._uuid is not None:
                 from ._hub_core import delete_storage_record
