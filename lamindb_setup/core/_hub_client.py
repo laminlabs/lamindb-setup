@@ -4,7 +4,7 @@ import json
 import os
 import warnings
 from contextlib import contextmanager
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import Literal
 from urllib.request import urlretrieve
 
@@ -174,6 +174,35 @@ def connect_hub_with_auth(
     return hub
 
 
+_API_KEY_EXPIRY_WARNING_DAYS = 7
+
+
+def _parse_api_key_expires_at(api_key_expires_at: str) -> datetime:
+    # Supabase/Postgres timestamptz, e.g. "2026-08-11 17:23:14.401936+00"
+    value = api_key_expires_at.strip()
+    if len(value) > 10 and value[10] == " ":
+        value = value[:10] + "T" + value[11:]
+    if value.endswith("Z"):
+        value = value[:-1] + "+00:00"
+    elif len(value) >= 3 and value[-3] in "+-" and value[-2:].isdigit():
+        value += ":00"
+    expires_at = datetime.fromisoformat(value)
+    if expires_at.tzinfo is None:
+        expires_at = expires_at.replace(tzinfo=timezone.utc)
+    return expires_at
+
+
+def _warn_if_api_key_expiring(api_key_expires_at: str) -> None:
+    try:
+        expires_at = _parse_api_key_expires_at(api_key_expires_at)
+    except ValueError:
+        return
+    days_left = (expires_at - datetime.now(timezone.utc)).days
+    if 0 <= days_left <= _API_KEY_EXPIRY_WARNING_DAYS:
+        day_word = "day" if days_left == 1 else "days"
+        logger.warning(f"API key expires in {days_left} {day_word}")
+
+
 # runs ~0.5s
 def get_access_token(
     email: str | None = None, password: str | None = None, api_key: str | None = None
@@ -190,7 +219,10 @@ def get_access_token(
                 "get-jwt-v1",
                 invoke_options={"body": {"api_key": api_key}},
             )
-            return json.loads(auth_response)["accessToken"]
+            payload = json.loads(auth_response)
+            if api_key_expires_at := payload.get("apiKeyExpiresAt"):
+                _warn_if_api_key_expiring(api_key_expires_at)
+            return payload["accessToken"]
         auth_response = hub.auth.sign_in_with_password(
             {
                 "email": email,
