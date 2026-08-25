@@ -4,11 +4,12 @@ import json
 import os
 import warnings
 from contextlib import contextmanager
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import Literal
 from urllib.request import urlretrieve
 
 import httpx
+from django.utils.dateparse import parse_datetime
 from httpx_retries import Retry, RetryTransport
 from lamin_utils import logger
 from supabase import Client, ClientOptions, create_client
@@ -174,6 +175,21 @@ def connect_hub_with_auth(
     return hub
 
 
+_API_KEY_EXPIRY_WARNING_DAYS = 7
+
+
+def _warn_if_api_key_expiring(api_key_expires_at: str) -> None:
+    expires_at = parse_datetime(api_key_expires_at)
+    if expires_at is None:
+        return
+    if expires_at.tzinfo is None:
+        expires_at = expires_at.replace(tzinfo=timezone.utc)
+    days_left = (expires_at - datetime.now(timezone.utc)).days
+    if 0 <= days_left <= _API_KEY_EXPIRY_WARNING_DAYS:
+        day_word = "day" if days_left == 1 else "days"
+        logger.warning(f"API key expires in {days_left} {day_word}")
+
+
 # runs ~0.5s
 def get_access_token(
     email: str | None = None, password: str | None = None, api_key: str | None = None
@@ -190,7 +206,10 @@ def get_access_token(
                 "get-jwt-v1",
                 invoke_options={"body": {"api_key": api_key}},
             )
-            return json.loads(auth_response)["accessToken"]
+            payload = json.loads(auth_response)
+            if api_key_expires_at := payload.get("apiKeyExpiresAt"):
+                _warn_if_api_key_expiring(api_key_expires_at)
+            return payload["accessToken"]
         auth_response = hub.auth.sign_in_with_password(
             {
                 "email": email,
