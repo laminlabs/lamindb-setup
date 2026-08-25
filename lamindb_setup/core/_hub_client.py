@@ -9,6 +9,7 @@ from typing import Literal
 from urllib.request import urlretrieve
 
 import httpx
+from django.utils.dateparse import parse_datetime
 from httpx_retries import Retry, RetryTransport
 from lamin_utils import logger
 from supabase import Client, ClientOptions, create_client
@@ -177,26 +178,12 @@ def connect_hub_with_auth(
 _API_KEY_EXPIRY_WARNING_DAYS = 7
 
 
-def _parse_api_key_expires_at(api_key_expires_at: str) -> datetime:
-    # Supabase/Postgres timestamptz, e.g. "2026-08-11 17:23:14.401936+00"
-    value = api_key_expires_at.strip()
-    if len(value) > 10 and value[10] == " ":
-        value = value[:10] + "T" + value[11:]
-    if value.endswith("Z"):
-        value = value[:-1] + "+00:00"
-    elif len(value) >= 3 and value[-3] in "+-" and value[-2:].isdigit():
-        value += ":00"
-    expires_at = datetime.fromisoformat(value)
+def _warn_if_api_key_expiring(api_key_expires_at: str) -> None:
+    expires_at = parse_datetime(api_key_expires_at)
+    if expires_at is None:
+        return
     if expires_at.tzinfo is None:
         expires_at = expires_at.replace(tzinfo=timezone.utc)
-    return expires_at
-
-
-def _warn_if_api_key_expiring(api_key_expires_at: str) -> None:
-    try:
-        expires_at = _parse_api_key_expires_at(api_key_expires_at)
-    except ValueError:
-        return
     days_left = (expires_at - datetime.now(timezone.utc)).days
     if 0 <= days_left <= _API_KEY_EXPIRY_WARNING_DAYS:
         day_word = "day" if days_left == 1 else "days"
