@@ -60,7 +60,9 @@ def test_to_url_s3_hub_private_route(monkeypatch):
         SimpleNamespace(is_managed_by_hub=True, ui_url="https://app.lamin.ai"),
         raising=False,
     )
-    monkeypatch.setattr(ln_setup.core.upath, "_is_laminhub_url_accessible", lambda _: True)
+    monkeypatch.setattr(
+        ln_setup.core.upath, "_is_laminhub_url_accessible", lambda _: True
+    )
     upath = ln_setup.core.upath.UPath("s3://lamindb-ci/test-data/test.parquet")
     assert (
         upath.to_url()
@@ -135,8 +137,11 @@ def test_is_publicly_accessible_path_s3_public():
 
 
 def test_is_publicly_accessible_path_gcs_public():
-    path = ln_setup.core.upath.UPath("gs://rxrx1-europe-west4/images/test/HEPG2-08/Plate1/B02_s1_w1.png")
+    path = ln_setup.core.upath.UPath(
+        "gs://rxrx1-europe-west4/images/test/HEPG2-08/Plate1/B02_s1_w1.png"
+    )
     assert ln_setup.core.upath._is_publicly_accessible_path(path) is True
+
 
 def test_is_publicly_accessible_path_s3_private():
     path = ln_setup.core.upath.UPath(

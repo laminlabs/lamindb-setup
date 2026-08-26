@@ -943,6 +943,7 @@ def _is_laminhub_url_accessible(url: str) -> bool:
         return False
     return 200 <= response.status_code < 300
 
+
 def from_auth(cls, path: AnyPathStr) -> UPath:
     """Create an authenticated path object.
 
