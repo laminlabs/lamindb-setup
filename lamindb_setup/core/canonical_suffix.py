@@ -187,6 +187,7 @@ SIMPLE_FORMATS = {
     #
     ".fasta",  # loader
     ".fastq",
+    ".fa",
     ".bam",
     ".sam",
     ".cram",
