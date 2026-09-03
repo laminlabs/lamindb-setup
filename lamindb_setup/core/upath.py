@@ -1094,6 +1094,8 @@ def get_storage_region(path: S3Path | str) -> str | None:
 
     if bucket == "scverse-spatial-eu-central-1":
         return "eu-central-1"
+    elif bucket == "lamin-hosted-test":
+        return "us-east-1"
     elif f"s3://{bucket}" in HOSTED_BUCKETS:
         return bucket.replace("lamin-", "")
 
