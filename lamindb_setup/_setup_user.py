@@ -142,6 +142,8 @@ def login(
         user_settings.password = None
 
     if isinstance(response, Exception):
+        if "expired" in str(response).lower():
+            raise response from None
         raise response
     elif isinstance(response, str):
         raise SystemExit(f"✗ Unsuccessful login: {response}.")

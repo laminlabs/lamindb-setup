@@ -1080,8 +1080,11 @@ def sign_in_hub_api_key(
     try:
         result = call_with_fallback(_sign_in_hub_api_key, api_key=api_key)
     except Exception as exception:
-        logger.error(exception)
-        logger.error("Could not login. Probably your API key is wrong.")
+        logger.error("Could not login.")
+        if "expired" in str(exception).lower():
+            logger.error("Your API key is expired.")
+        else:
+            logger.error("Probably your API key is wrong.")
         return exception
     return result
 
