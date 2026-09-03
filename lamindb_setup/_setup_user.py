@@ -130,6 +130,7 @@ def login(
         user_settings = UserSettings(handle="temporary", uid="null")
 
     from .core._hub_core import sign_in_hub, sign_in_hub_api_key
+    from .errors import ApiKeyExpired
 
     if api_key is None:
         response = sign_in_hub(
@@ -142,6 +143,8 @@ def login(
         user_settings.password = None
 
     if isinstance(response, Exception):
+        if isinstance(response, ApiKeyExpired):
+            raise response from None
         raise response
     elif isinstance(response, str):
         raise SystemExit(f"✗ Unsuccessful login: {response}.")

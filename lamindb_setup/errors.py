@@ -12,6 +12,7 @@
 .. autoexception:: NoAccessTokenError
 .. autoexception:: NoWriteAccess
 .. autoexception:: ConnectWithinDevDirError
+.. autoexception:: ApiKeyExpired
 
 """
 
@@ -87,3 +88,7 @@ class NoWriteAccess(Exception):
 
 class ConnectWithinDevDirError(Exception):
     pass
+
+
+class ApiKeyExpired(DefaultMessageException):
+    default_message = "Your API key is expired."

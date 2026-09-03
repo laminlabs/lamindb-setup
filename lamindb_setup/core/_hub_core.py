@@ -11,8 +11,10 @@ from uuid import UUID
 import jwt
 from lamin_utils import logger
 from postgrest.exceptions import APIError
+from supabase_functions.errors import FunctionsHttpError
 
 from lamindb_setup._migrate import check_whether_migrations_in_sync
+from lamindb_setup.errors import ApiKeyExpired
 
 from ._aws_options import HOSTED_REGIONS
 from ._aws_storage import find_closest_aws_region
@@ -1079,9 +1081,16 @@ def sign_in_hub_api_key(
 ) -> Exception | str | tuple[UUID, str, str, str, str]:
     try:
         result = call_with_fallback(_sign_in_hub_api_key, api_key=api_key)
+    except FunctionsHttpError as exception:
+        logger.error("Could not login.")
+        if "expired" in exception.message.lower():
+            logger.error("Your API key is expired.")
+            return ApiKeyExpired()
+        logger.error("Probably your API key is wrong.")
+        return exception
     except Exception as exception:
-        logger.error(exception)
-        logger.error("Could not login. Probably your API key is wrong.")
+        logger.error("Could not login.")
+        logger.error("Probably your API key is wrong.")
         return exception
     return result
 
