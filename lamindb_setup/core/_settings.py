@@ -563,10 +563,7 @@ class SetupSettings:
         repr = ""
         if self.is_configured:
             instance_rep = self.instance.__repr__().split("\n")
-            try:
-                _, branch_name = self._read_branch_idlike_name()
-            except Exception:
-                branch_name = "<unresolved>"
+            _, branch_name = self._read_branch_idlike_name()
             repr += f"{colors.cyan('Instance:')} {instance_rep[0].replace('Instance: ', '')}\n"
             repr += f" - branch: {branch_name}\n"
             repr += f" - space: {self._read_space_idlike_name()[1]}\n"
