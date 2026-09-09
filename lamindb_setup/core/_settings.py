@@ -19,6 +19,8 @@ from ._settings_load import (
 from ._settings_store import (
     current_instance_settings_file,
     current_modules_file,
+    get_settings_file_name_prefix,
+    local_current_branch_file,
     local_current_instance_file,
     remove_local_current_instance,
     settings_dir,
@@ -165,6 +167,12 @@ class SetupSettings:
         )
 
     @property
+    def _worktree_path(self) -> Path:
+        return (
+            settings_dir / f"worktree--{self.instance.owner}--{self.instance.name}.txt"
+        )
+
+    @property
     def dev_dir(self) -> Path | None:
         """Get or set the local development directory for the current instance.
 
@@ -179,10 +187,17 @@ class SetupSettings:
     def dev_dir(self, value: str | Path | None) -> None:
         previous_dev_dir = self.dev_dir
         instance_slug = self.instance.slug
+        previous_branch_marker = (
+            local_current_branch_file(previous_dev_dir.resolve())
+            if previous_dev_dir is not None
+            else None
+        )
 
         if value is None:
             if self._dev_dir_path.exists():
                 self._dev_dir_path.unlink()
+            if previous_branch_marker is not None:
+                previous_branch_marker.unlink(missing_ok=True)
             if previous_dev_dir is not None:
                 remove_local_current_instance(
                     marker=local_current_instance_file(previous_dev_dir.resolve()),
@@ -198,16 +213,95 @@ class SetupSettings:
                 previous_dev_dir is not None
                 and previous_dev_dir.resolve() != value_path
             ):
+                if previous_branch_marker is not None:
+                    previous_branch_marker.unlink(missing_ok=True)
                 remove_local_current_instance(
                     marker=local_current_instance_file(previous_dev_dir.resolve()),
                     expected_instance_slug=instance_slug,
                 )
 
     @property
+    def worktree(self) -> bool:
+        """Whether `dev_dir` is treated like a Git-worktree parent.
+
+        When enabled, `dev_dir` is a parent directory and each child directory is a
+        branch-specific workspace (analogous to a Git worktree checkout). LaminDB then
+        resolves branch context from the child's `.lamin/current_branch` and derives
+        keys relative to that child root. When disabled, `dev_dir` itself is the active
+        root for branch lookup and key derivation.
+        """
+        if not self._worktree_path.exists():
+            return False
+        value = self._worktree_path.read_text().strip().lower()
+        return value in {"1", "true", "yes"}
+
+    @worktree.setter
+    def worktree(self, value: bool) -> None:
+        if value:
+            self._worktree_path.write_text("true")
+        else:
+            self._worktree_path.unlink(missing_ok=True)
+
+    def _resolve_active_worktree_root(
+        self, *, cwd: Path | None = None, raise_on_error: bool = False
+    ) -> Path | None:
+        if not self.worktree:
+            return self.dev_dir.resolve() if self.dev_dir is not None else None
+
+        from lamindb_setup.errors import WorktreePathError
+
+        dev_dir = self.dev_dir
+        if dev_dir is None:
+            if raise_on_error:
+                raise WorktreePathError(
+                    "worktree mode requires a configured dev-dir. "
+                    "Run: lamin settings dev-dir set <path>"
+                )
+            return None
+
+        root = dev_dir.resolve()
+        location = (cwd or Path.cwd()).resolve()
+        if not location.is_relative_to(root) or location == root:
+            if raise_on_error:
+                raise WorktreePathError(
+                    "worktree mode is enabled: run this command inside a child "
+                    "directory under the configured dev-dir."
+                )
+            return None
+
+        rel = location.relative_to(root)
+        return root / rel.parts[0]
+
+    @property
+    def effective_dev_dir(self) -> Path | None:
+        """Root directory used for relative transform/script key derivation.
+
+        This is needed because in worktree mode `dev_dir` is only a parent container.
+        The effective key root must be the active child workspace so branch-local runs
+        produce stable, isolated keys. Returns `dev_dir` in normal mode; in worktree
+        mode returns the active child root and raises `WorktreePathError` if the current
+        directory is not inside a valid child workspace.
+        """
+        return self._resolve_active_worktree_root(raise_on_error=True)
+
+    @property
     def _branch_path(self) -> Path:
+        if self.worktree:
+            worktree_root = self._resolve_active_worktree_root(raise_on_error=False)
+            if worktree_root is not None:
+                return local_current_branch_file(worktree_root)
+        if self.dev_dir is not None:
+            return local_current_branch_file(self.dev_dir.resolve())
         return (
             settings_dir
             / f"current-branch--{self.instance.owner}--{self.instance.name}.txt"
+        )
+
+    @property
+    def _legacy_branch_path(self) -> Path:
+        return (
+            settings_dir
+            / f"{get_settings_file_name_prefix()}current-branch--{self.instance.owner}--{self.instance.name}.txt"
         )
 
     def _read_branch_idlike_name(self) -> tuple[int | str, str]:
@@ -219,6 +313,9 @@ class SetupSettings:
             return idlike, name
         if branch_path.exists():
             idlike, name = branch_path.read_text().split("\n")
+        elif self.dev_dir is not None and self._legacy_branch_path.exists():
+            # Backward compat for sessions that only wrote branch state globally.
+            idlike, name = self._legacy_branch_path.read_text().split("\n")
         return idlike, name
 
     @property
@@ -232,9 +329,20 @@ class SetupSettings:
 
         if self._branch is None:
             from lamindb import Branch
+            from lamindb.errors import DoesNotExist
 
             idlike, _ = self._read_branch_idlike_name()
-            self._branch = Branch.get(idlike)
+            try:
+                self._branch = Branch.get(idlike)
+            except DoesNotExist:
+                # The local branch marker can become stale if the referenced
+                # branch was deleted. Fall back to `main` and refresh marker.
+                branch_record = Branch.filter(name="main").one()
+                self._branch_path.parent.mkdir(parents=True, exist_ok=True)
+                self._branch_path.write_text(
+                    f"{branch_record.uid}\n{branch_record.name}"
+                )
+                self._branch = branch_record
         return self._branch
 
     @branch.setter
@@ -253,6 +361,7 @@ class SetupSettings:
                 )
         # we are sure that the current instance is setup because
         # it will error on lamindb import otherwise
+        self._branch_path.parent.mkdir(parents=True, exist_ok=True)
         self._branch_path.write_text(f"{branch_record.uid}\n{branch_record.name}")
         self._branch = branch_record
 
@@ -468,10 +577,12 @@ class SetupSettings:
         repr = ""
         if self.is_configured:
             instance_rep = self.instance.__repr__().split("\n")
+            _, branch_name = self._read_branch_idlike_name()
             repr += f"{colors.cyan('Instance:')} {instance_rep[0].replace('Instance: ', '')}\n"
-            repr += f" - branch: {self._read_branch_idlike_name()[1]}\n"
+            repr += f" - branch: {branch_name}\n"
             repr += f" - space: {self._read_space_idlike_name()[1]}\n"
             repr += f" - dev-dir: {self.dev_dir}"
+            repr += f"\n - worktree: {self.worktree}"
             repr += f"\n{colors.yellow('Details:')}\n"
             repr += "\n".join(instance_rep[1:])
         else:

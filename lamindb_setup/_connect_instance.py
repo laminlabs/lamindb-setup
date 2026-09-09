@@ -148,6 +148,9 @@ def _connect_instance(
     from .core._settings_instance import InstanceSettings
     from .core._settings_storage import StorageSettings
 
+    if access_token is None and settings.user.handle != "anonymous":
+        access_token = settings.user.access_token
+
     settings_file = instance_settings_file(name, owner)
     make_hub_request = True
     if settings_file.exists():
@@ -355,7 +358,7 @@ def _connect_cli(
     if here:
         cwd = Path.cwd().resolve()
         settings_.dev_dir = cwd
-        logger.important(f"set dev-dir: {cwd}")
+        logger.important(f"dev-dir is: {cwd}")
         logger.important(f"connected lamindb: {isettings.slug}")
     return None
 
