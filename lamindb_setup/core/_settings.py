@@ -19,6 +19,8 @@ from ._settings_load import (
 from ._settings_store import (
     current_instance_settings_file,
     current_modules_file,
+    get_settings_file_name_prefix,
+    local_current_branch_file,
     local_current_instance_file,
     remove_local_current_instance,
     settings_dir,
@@ -205,9 +207,18 @@ class SetupSettings:
 
     @property
     def _branch_path(self) -> Path:
+        if self.dev_dir is not None:
+            return local_current_branch_file(self.dev_dir.resolve())
         return (
             settings_dir
             / f"current-branch--{self.instance.owner}--{self.instance.name}.txt"
+        )
+
+    @property
+    def _legacy_branch_path(self) -> Path:
+        return (
+            settings_dir
+            / f"{get_settings_file_name_prefix()}current-branch--{self.instance.owner}--{self.instance.name}.txt"
         )
 
     def _read_branch_idlike_name(self) -> tuple[int | str, str]:
@@ -219,6 +230,9 @@ class SetupSettings:
             return idlike, name
         if branch_path.exists():
             idlike, name = branch_path.read_text().split("\n")
+        elif self.dev_dir is not None and self._legacy_branch_path.exists():
+            # Backward compat for sessions that only wrote branch state globally.
+            idlike, name = self._legacy_branch_path.read_text().split("\n")
         return idlike, name
 
     @property
@@ -253,6 +267,7 @@ class SetupSettings:
                 )
         # we are sure that the current instance is setup because
         # it will error on lamindb import otherwise
+        self._branch_path.parent.mkdir(parents=True, exist_ok=True)
         self._branch_path.write_text(f"{branch_record.uid}\n{branch_record.name}")
         self._branch = branch_record
 
