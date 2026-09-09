@@ -5,6 +5,7 @@ from pathlib import Path
 
 import lamindb_setup as ln_setup
 import pytest
+from lamindb_setup.core._settings_store import local_current_branch_file
 from lamindb_setup.core.hashing import hash_dir
 
 
@@ -39,6 +40,44 @@ def test_space():
     assert ln_setup.settings._space_path.read_text() == f"{12 * 'a'}\nall"
     with pytest.raises(ln.errors.DoesNotExist):
         ln_setup.settings.space = "not_exists"
+
+
+def test_dev_dir_unset_removes_local_branch_marker(tmp_path: Path):
+    previous_dev_dir = ln_setup.settings.dev_dir
+    previous_worktree = ln_setup.settings.worktree
+    try:
+        ln_setup.settings.worktree = False
+        ln_setup.settings.dev_dir = tmp_path
+        ln_setup.settings.branch = "archive"
+        local_branch_marker = local_current_branch_file(tmp_path.resolve())
+        assert local_branch_marker.exists()
+        ln_setup.settings.dev_dir = None
+        assert not local_branch_marker.exists()
+    finally:
+        ln_setup.settings.worktree = previous_worktree
+        ln_setup.settings.dev_dir = previous_dev_dir
+        ln_setup.settings._branch = None
+        ln_setup.settings.branch = "main"
+
+
+def test_branch_falls_back_to_main_for_stale_local_marker(tmp_path: Path):
+    previous_dev_dir = ln_setup.settings.dev_dir
+    previous_worktree = ln_setup.settings.worktree
+    try:
+        ln_setup.settings.worktree = False
+        ln_setup.settings.dev_dir = tmp_path
+        local_branch_marker = local_current_branch_file(tmp_path.resolve())
+        local_branch_marker.parent.mkdir(parents=True, exist_ok=True)
+        local_branch_marker.write_text("nonexistentuid123\nstale-branch")
+        ln_setup.settings._branch = None
+        branch = ln_setup.settings.branch
+        assert branch.name == "main"
+        assert local_branch_marker.read_text() == f"{branch.uid}\nmain"
+    finally:
+        ln_setup.settings.worktree = previous_worktree
+        ln_setup.settings.dev_dir = previous_dev_dir
+        ln_setup.settings._branch = None
+        ln_setup.settings.branch = "main"
 
 
 def test_private_django_api():
