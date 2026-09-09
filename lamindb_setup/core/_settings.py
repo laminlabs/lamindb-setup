@@ -222,7 +222,14 @@ class SetupSettings:
 
     @property
     def worktree(self) -> bool:
-        """Whether to resolve branch/key context from a nested worktree structure."""
+        """Whether `dev_dir` is treated like a Git-worktree parent.
+
+        When enabled, `dev_dir` is a parent directory and each child directory is a
+        branch-specific workspace (analogous to a Git worktree checkout). LaminDB then
+        resolves branch context from the child's `.lamin/current_branch` and derives
+        keys relative to that child root. When disabled, `dev_dir` itself is the active
+        root for branch lookup and key derivation.
+        """
         if not self._worktree_path.exists():
             return False
         value = self._worktree_path.read_text().strip().lower()
@@ -267,7 +274,14 @@ class SetupSettings:
 
     @property
     def effective_dev_dir(self) -> Path | None:
-        """Directory root used for relative key derivation."""
+        """Root directory used for relative transform/script key derivation.
+
+        This is needed because in worktree mode `dev_dir` is only a parent container.
+        The effective key root must be the active child workspace so branch-local runs
+        produce stable, isolated keys. Returns `dev_dir` in normal mode; in worktree
+        mode returns the active child root and raises `WorktreePathError` if the current
+        directory is not inside a valid child workspace.
+        """
         return self._resolve_active_worktree_root(raise_on_error=True)
 
     @property
