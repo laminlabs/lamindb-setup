@@ -355,7 +355,7 @@ def _connect_cli(
     if here:
         cwd = Path.cwd().resolve()
         settings_.dev_dir = cwd
-        logger.important(f"set dev-dir: {cwd}")
+        logger.important(f"dev-dir is: {cwd}")
         logger.important(f"connected lamindb: {isettings.slug}")
     return None
 
