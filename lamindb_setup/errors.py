@@ -12,6 +12,7 @@
 .. autoexception:: NoAccessTokenError
 .. autoexception:: NoWriteAccess
 .. autoexception:: ConnectWithinDevDirError
+.. autoexception:: WorktreePathError
 .. autoexception:: ApiKeyExpired
 
 """
@@ -87,6 +88,10 @@ class NoWriteAccess(Exception):
 
 
 class ConnectWithinDevDirError(Exception):
+    pass
+
+
+class WorktreePathError(Exception):
     pass
 
 

@@ -167,6 +167,12 @@ class SetupSettings:
         )
 
     @property
+    def _worktree_path(self) -> Path:
+        return (
+            settings_dir / f"worktree--{self.instance.owner}--{self.instance.name}.txt"
+        )
+
+    @property
     def dev_dir(self) -> Path | None:
         """Get or set the local development directory for the current instance.
 
@@ -206,7 +212,61 @@ class SetupSettings:
                 )
 
     @property
+    def worktree(self) -> bool:
+        """Whether to resolve branch/key context from a nested worktree structure."""
+        if not self._worktree_path.exists():
+            return False
+        value = self._worktree_path.read_text().strip().lower()
+        return value in {"1", "true", "yes"}
+
+    @worktree.setter
+    def worktree(self, value: bool) -> None:
+        if value:
+            self._worktree_path.write_text("true")
+        else:
+            self._worktree_path.unlink(missing_ok=True)
+
+    def _resolve_active_worktree_root(
+        self, *, cwd: Path | None = None, raise_on_error: bool = False
+    ) -> Path | None:
+        if not self.worktree:
+            return self.dev_dir.resolve() if self.dev_dir is not None else None
+
+        from lamindb_setup.errors import WorktreePathError
+
+        dev_dir = self.dev_dir
+        if dev_dir is None:
+            if raise_on_error:
+                raise WorktreePathError(
+                    "worktree mode requires a configured dev-dir. "
+                    "Run: lamin settings dev-dir set <path>"
+                )
+            return None
+
+        root = dev_dir.resolve()
+        location = (cwd or Path.cwd()).resolve()
+        if not location.is_relative_to(root) or location == root:
+            if raise_on_error:
+                raise WorktreePathError(
+                    "worktree mode is enabled: run this command inside a child "
+                    "directory under the configured dev-dir."
+                )
+            return None
+
+        rel = location.relative_to(root)
+        return root / rel.parts[0]
+
+    @property
+    def effective_dev_dir(self) -> Path | None:
+        """Directory root used for relative key derivation."""
+        return self._resolve_active_worktree_root(raise_on_error=True)
+
+    @property
     def _branch_path(self) -> Path:
+        if self.worktree:
+            worktree_root = self._resolve_active_worktree_root(raise_on_error=False)
+            if worktree_root is not None:
+                return local_current_branch_file(worktree_root)
         if self.dev_dir is not None:
             return local_current_branch_file(self.dev_dir.resolve())
         return (
@@ -483,10 +543,15 @@ class SetupSettings:
         repr = ""
         if self.is_configured:
             instance_rep = self.instance.__repr__().split("\n")
+            try:
+                _, branch_name = self._read_branch_idlike_name()
+            except Exception:
+                branch_name = "<unresolved>"
             repr += f"{colors.cyan('Instance:')} {instance_rep[0].replace('Instance: ', '')}\n"
-            repr += f" - branch: {self._read_branch_idlike_name()[1]}\n"
+            repr += f" - branch: {branch_name}\n"
             repr += f" - space: {self._read_space_idlike_name()[1]}\n"
             repr += f" - dev-dir: {self.dev_dir}"
+            repr += f"\n - worktree: {self.worktree}"
             repr += f"\n{colors.yellow('Details:')}\n"
             repr += "\n".join(instance_rep[1:])
         else:
