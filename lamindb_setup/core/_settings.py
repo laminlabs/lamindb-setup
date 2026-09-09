@@ -187,10 +187,17 @@ class SetupSettings:
     def dev_dir(self, value: str | Path | None) -> None:
         previous_dev_dir = self.dev_dir
         instance_slug = self.instance.slug
+        previous_branch_marker = (
+            local_current_branch_file(previous_dev_dir.resolve())
+            if previous_dev_dir is not None
+            else None
+        )
 
         if value is None:
             if self._dev_dir_path.exists():
                 self._dev_dir_path.unlink()
+            if previous_branch_marker is not None:
+                previous_branch_marker.unlink(missing_ok=True)
             if previous_dev_dir is not None:
                 remove_local_current_instance(
                     marker=local_current_instance_file(previous_dev_dir.resolve()),
@@ -206,6 +213,8 @@ class SetupSettings:
                 previous_dev_dir is not None
                 and previous_dev_dir.resolve() != value_path
             ):
+                if previous_branch_marker is not None:
+                    previous_branch_marker.unlink(missing_ok=True)
                 remove_local_current_instance(
                     marker=local_current_instance_file(previous_dev_dir.resolve()),
                     expected_instance_slug=instance_slug,
@@ -306,9 +315,20 @@ class SetupSettings:
 
         if self._branch is None:
             from lamindb import Branch
+            from lamindb.errors import DoesNotExist
 
             idlike, _ = self._read_branch_idlike_name()
-            self._branch = Branch.get(idlike)
+            try:
+                self._branch = Branch.get(idlike)
+            except DoesNotExist:
+                # The local branch marker can become stale if the referenced
+                # branch was deleted. Fall back to `main` and refresh marker.
+                branch_record = Branch.filter(name="main").one()
+                self._branch_path.parent.mkdir(parents=True, exist_ok=True)
+                self._branch_path.write_text(
+                    f"{branch_record.uid}\n{branch_record.name}"
+                )
+                self._branch = branch_record
         return self._branch
 
     @branch.setter
