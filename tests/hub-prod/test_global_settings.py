@@ -94,6 +94,64 @@ def test_resolve_active_worktree_root_errors_at_dev_dir_root(tmp_path: Path):
         ln_setup.settings.dev_dir = previous_dev_dir
 
 
+def test_resolve_active_worktree_root_non_worktree_mode(tmp_path: Path):
+    previous_dev_dir = ln_setup.settings.dev_dir
+    previous_worktree = ln_setup.settings.worktree
+    try:
+        ln_setup.settings.worktree = False
+        ln_setup.settings.dev_dir = tmp_path
+        assert (
+            ln_setup.settings._resolve_active_worktree_root(raise_on_error=True)
+            == tmp_path.resolve()
+        )
+        ln_setup.settings.dev_dir = None
+        assert ln_setup.settings._resolve_active_worktree_root() is None
+    finally:
+        ln_setup.settings.worktree = previous_worktree
+        ln_setup.settings.dev_dir = previous_dev_dir
+
+
+def test_resolve_active_worktree_root_without_dev_dir(tmp_path: Path):
+    previous_dev_dir = ln_setup.settings.dev_dir
+    previous_worktree = ln_setup.settings.worktree
+    try:
+        ln_setup.settings.worktree = True
+        ln_setup.settings.dev_dir = None
+        assert ln_setup.settings._resolve_active_worktree_root() is None
+        with pytest.raises(WorktreePathError, match="requires a configured dev-dir"):
+            ln_setup.settings._resolve_active_worktree_root(raise_on_error=True)
+    finally:
+        ln_setup.settings.worktree = previous_worktree
+        ln_setup.settings.dev_dir = previous_dev_dir
+
+
+def test_resolve_active_worktree_root_invalid_location_returns_none(tmp_path: Path):
+    previous_dev_dir = ln_setup.settings.dev_dir
+    previous_worktree = ln_setup.settings.worktree
+    root = tmp_path / "worktrees"
+    outside = tmp_path / "outside"
+    root.mkdir(parents=True, exist_ok=True)
+    outside.mkdir(parents=True, exist_ok=True)
+    try:
+        ln_setup.settings.dev_dir = root
+        ln_setup.settings.worktree = True
+        assert (
+            ln_setup.settings._resolve_active_worktree_root(
+                cwd=root, raise_on_error=False
+            )
+            is None
+        )
+        assert (
+            ln_setup.settings._resolve_active_worktree_root(
+                cwd=outside, raise_on_error=False
+            )
+            is None
+        )
+    finally:
+        ln_setup.settings.worktree = previous_worktree
+        ln_setup.settings.dev_dir = previous_dev_dir
+
+
 def test_dev_dir_unset_removes_local_branch_marker(tmp_path: Path):
     previous_dev_dir = ln_setup.settings.dev_dir
     previous_worktree = ln_setup.settings.worktree
