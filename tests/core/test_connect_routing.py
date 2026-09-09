@@ -393,6 +393,78 @@ def test_connect_instance_raises_for_hub_managed_cached_instance(monkeypatch, tm
         connect_instance._connect_instance("owner", "name")
 
 
+def test_connect_instance_passes_current_user_access_token(monkeypatch, tmp_path):
+    settings_file = tmp_path / "instance.env"
+    settings_file.write_text("cached settings")
+    captured: dict[str, str | None] = {"access_token": None}
+    cached_settings = SimpleNamespace(
+        is_remote=True,
+        is_managed_by_hub=True,
+        dialect="sqlite",
+    )
+    instance_result = {
+        "id": "11111111-1111-1111-1111-111111111111",
+        "name": "myinstance",
+        "lnid": "abc123",
+        "schema_str": "core",
+        "git_repo": None,
+        "keep_artifacts_local": False,
+        "api_url": None,
+        "schema_id": None,
+        "fine_grained_access": False,
+        "db_permissions": "read",
+        "db_scheme": "sqlite",
+        "db": "sqlite:///tmp/lamin.db",
+    }
+    storage_result = {
+        "root": "s3://bucket/myinstance",
+        "region": None,
+        "lnid": "abc123",
+        "id": "22222222-2222-2222-2222-222222222222",
+    }
+
+    monkeypatch.setattr(
+        connect_instance,
+        "instance_settings_file",
+        lambda name, owner: settings_file,
+    )
+    monkeypatch.setattr(
+        connect_instance, "load_instance_settings", lambda _: cached_settings
+    )
+
+    def _mock_connect_instance_hub(**kwargs):
+        captured["access_token"] = kwargs.get("access_token")
+        return instance_result, storage_result
+
+    monkeypatch.setattr(
+        "lamindb_setup.core._hub_core.connect_instance_hub",
+        _mock_connect_instance_hub,
+    )
+    monkeypatch.setattr(
+        connect_instance.settings.user, "handle", "token-user", raising=False
+    )
+    monkeypatch.setattr(
+        connect_instance.settings.user, "access_token", "token-123", raising=False
+    )
+    monkeypatch.setattr(
+        "lamindb_setup.core._settings_storage.StorageSettings",
+        lambda **kwargs: SimpleNamespace(root=kwargs["root"]),
+    )
+    monkeypatch.setattr(
+        "lamindb_setup.core._settings_instance.InstanceSettings",
+        lambda **kwargs: SimpleNamespace(
+            modules=set(kwargs["modules"].split(",")),
+            db=kwargs["db"],
+            is_remote=True,
+            dialect="sqlite",
+        ),
+    )
+
+    connect_instance._connect_instance("owner", "myinstance")
+
+    assert captured["access_token"] == "token-123"
+
+
 def test_validate_init_args_skips_connect_for_fresh_local_instance(
     monkeypatch: pytest.MonkeyPatch, tmp_path: Path
 ):
