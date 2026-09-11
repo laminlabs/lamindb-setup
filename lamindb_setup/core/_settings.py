@@ -57,6 +57,17 @@ def _contains_lamindb_storage(path: Path) -> bool:
     return any(path.glob("**/.lamindb/storage_uid.txt"))
 
 
+def _path_exists(path: Path) -> bool:
+    """Return whether a path exists, including a broken symlink."""
+    return path.exists() or path.is_symlink()
+
+
+def _rollback_moved_entries(moved_entries: list[tuple[Path, Path]]) -> None:
+    for source, destination in reversed(moved_entries):
+        if _path_exists(destination) and not _path_exists(source):
+            destination.replace(source)
+
+
 def _default_cache_dir():
     from .upath import UPath
 
@@ -320,11 +331,10 @@ class SetupSettings:
             branch_marker.parent.mkdir(parents=True, exist_ok=True)
             branch_marker.write_text(f"{branch_idlike}\n{branch_name}")
             self._worktree_path.write_text("true")
+            self._clear_instance_context_cache()
         except Exception:
             self._worktree_path.unlink(missing_ok=True)
-            for source, destination in reversed(moved_entries):
-                if destination.exists() and not source.exists():
-                    destination.replace(source)
+            _rollback_moved_entries(moved_entries)
             branch_marker = local_current_branch_file(branch_dir)
             branch_marker.unlink(missing_ok=True)
             if branch_marker.parent.exists() and not any(
@@ -432,6 +442,23 @@ class SetupSettings:
         if not _confirm_worktree_migration():
             raise RuntimeError("Aborted.")
 
+        # The confirmation prompt can remain open while another process changes the
+        # workspace. Re-read and revalidate its contents before moving anything.
+        entries = [entry for entry in branch_dir.iterdir() if entry.name != ".lamin"]
+        if _contains_lamindb_storage(branch_dir):
+            raise RuntimeError(
+                "Cannot disable worktree mode because the branch directory contains "
+                "a LaminDB storage location."
+            )
+        collisions = [
+            entry.name for entry in entries if _path_exists(dev_dir / entry.name)
+        ]
+        if collisions:
+            raise RuntimeError(
+                "Cannot disable worktree mode because these paths already exist in "
+                f"the dev-dir: {', '.join(sorted(collisions))}."
+            )
+
         moved_entries: list[tuple[Path, Path]] = []
         branch_marker = local_current_branch_file(branch_dir)
         branch_marker_content = branch_marker.read_text()
@@ -447,15 +474,14 @@ class SetupSettings:
             root_branch_marker.parent.mkdir(parents=True, exist_ok=True)
             root_branch_marker.write_text(branch_marker_content)
             self._worktree_path.unlink(missing_ok=True)
+            self._clear_instance_context_cache()
         except Exception:
             self._worktree_path.write_text("true")
             if previous_root_marker is None:
                 root_branch_marker.unlink(missing_ok=True)
             else:
                 root_branch_marker.write_text(previous_root_marker)
-            for source, destination in reversed(moved_entries):
-                if destination.exists() and not source.exists():
-                    destination.replace(source)
+            _rollback_moved_entries(moved_entries)
             raise
 
         branch_marker.unlink(missing_ok=True)

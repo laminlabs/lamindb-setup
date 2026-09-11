@@ -5,6 +5,8 @@ import subprocess
 import sys
 from typing import TYPE_CHECKING
 
+from lamindb_setup.core._settings import _rollback_moved_entries
+
 if TYPE_CHECKING:
     from pathlib import Path
 
@@ -338,9 +340,11 @@ try:
     branch_marker = local_current_branch_file(dev_dir / "feature")
     assert branch_marker.read_text() == "uid-feature\\nfeature"
     root_marker.write_text("uid-main\\nmain")
+    settings._branch = object()
 
     settings.worktree = False
     assert settings.worktree is False
+    assert settings._branch is None
     assert root_marker.read_text() == "uid-feature\\nfeature"
     assert (dev_dir / "analysis.py").read_text() == "feature data"
 finally:
@@ -360,6 +364,57 @@ finally:
     )
 
     assert result.returncode == 0, f"stdout: {result.stdout}\nstderr: {result.stderr}"
+
+
+def test_disable_rechecks_workspace_after_confirmation(tmp_path: Path):
+    settings_dir = tmp_path / "settings"
+    dev_dir = tmp_path / "dev"
+    dev_dir.mkdir()
+    script = """
+import sys
+from pathlib import Path
+
+from lamindb_setup import settings
+from lamindb_setup.core import _settings
+
+dev_dir = Path(sys.argv[1])
+settings.dev_dir = dev_dir
+(dev_dir / "analysis.py").write_text("data")
+settings.worktree = True
+
+def confirm_and_add_file():
+    (dev_dir / "main" / "created-during-confirmation.txt").write_text("new")
+    return True
+
+_settings._confirm_worktree_migration = confirm_and_add_file
+settings.worktree = False
+assert (dev_dir / "analysis.py").read_text() == "data"
+assert (dev_dir / "created-during-confirmation.txt").read_text() == "new"
+settings.dev_dir = None
+"""
+    env = os.environ.copy()
+    env["LAMIN_SETTINGS_DIR"] = str(settings_dir)
+
+    result = subprocess.run(
+        [sys.executable, "-c", script, str(dev_dir)],
+        input="y\n",
+        capture_output=True,
+        text=True,
+        env=env,
+    )
+
+    assert result.returncode == 0, f"stdout: {result.stdout}\nstderr: {result.stderr}"
+
+
+def test_rollback_restores_broken_symlink(tmp_path: Path):
+    source = tmp_path / "source-link"
+    destination = tmp_path / "destination-link"
+    destination.symlink_to(tmp_path / "missing-target")
+
+    _rollback_moved_entries([(source, destination)])
+
+    assert source.is_symlink()
+    assert not destination.is_symlink()
 
 
 def test_disable_refuses_active_workspace_and_recovers_missing_dev_dir(
