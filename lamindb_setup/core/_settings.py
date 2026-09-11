@@ -39,6 +39,12 @@ if TYPE_CHECKING:
 
 
 DEFAULT_CACHE_DIR = Path(user_cache_dir(appname="lamindb", appauthor="laminlabs"))
+_WORKTREE_ROOT_ENTRIES = {".agents", ".claude", ".lamin", ".vscode"}
+
+
+def _confirm_worktree_migration() -> bool:
+    response = input("Continue? [Y/n]: ").strip().lower()
+    return response in {"", "y", "yes"}
 
 
 def _default_cache_dir():
@@ -238,9 +244,141 @@ class SetupSettings:
     @worktree.setter
     def worktree(self, value: bool) -> None:
         if value:
-            self._worktree_path.write_text("true")
+            self._enable_worktree()
         else:
+            self._disable_worktree()
+
+    def _enable_worktree(self) -> None:
+        if self.worktree:
+            return
+
+        dev_dir = self.dev_dir
+        if dev_dir is None:
+            raise RuntimeError("worktree mode requires a configured dev-dir")
+
+        dev_dir = dev_dir.resolve()
+        dev_dir.mkdir(parents=True, exist_ok=True)
+        # Agent/editor configuration applies to every branch and stays at the root.
+        entries = [
+            entry
+            for entry in dev_dir.iterdir()
+            if entry.name not in _WORKTREE_ROOT_ENTRIES
+        ]
+        if not entries:
+            self._worktree_path.write_text("true")
+            return
+
+        branch_idlike, branch_name = self._read_branch_idlike_name()
+        branch_dir = dev_dir / branch_name
+        if branch_dir.exists():
+            raise RuntimeError(
+                f"Cannot enable worktree mode because '{branch_dir}' already exists."
+            )
+
+        print(
+            f"Existing files in '{dev_dir}' will be moved to branch directory "
+            f"'{branch_dir}'."
+        )
+        if not _confirm_worktree_migration():
+            raise RuntimeError("Aborted.")
+
+        branch_dir.mkdir()
+        moved_entries: list[tuple[Path, Path]] = []
+        try:
+            for source in entries:
+                destination = branch_dir / source.name
+                source.replace(destination)
+                moved_entries.append((source, destination))
+
+            branch_marker = local_current_branch_file(branch_dir)
+            branch_marker.parent.mkdir(parents=True, exist_ok=True)
+            branch_marker.write_text(f"{branch_idlike}\n{branch_name}")
+            self._worktree_path.write_text("true")
+        except Exception:
             self._worktree_path.unlink(missing_ok=True)
+            for source, destination in reversed(moved_entries):
+                if destination.exists() and not source.exists():
+                    destination.replace(source)
+            branch_marker = local_current_branch_file(branch_dir)
+            branch_marker.unlink(missing_ok=True)
+            if branch_marker.parent.exists() and not any(
+                branch_marker.parent.iterdir()
+            ):
+                branch_marker.parent.rmdir()
+            if branch_dir.exists() and not any(branch_dir.iterdir()):
+                branch_dir.rmdir()
+            raise
+
+        print(f"Moved existing files to '{branch_dir}'.")
+
+    def _disable_worktree(self) -> None:
+        if not self.worktree:
+            return
+
+        dev_dir = self.dev_dir
+        if dev_dir is None:
+            self._worktree_path.unlink(missing_ok=True)
+            return
+
+        dev_dir = dev_dir.resolve()
+        branch_dirs = [
+            path
+            for path in dev_dir.iterdir()
+            if path.is_dir() and local_current_branch_file(path).exists()
+        ]
+        if not branch_dirs:
+            self._worktree_path.unlink(missing_ok=True)
+            return
+        # Never guess which branch should become the manual dev-dir or merge branches.
+        if len(branch_dirs) > 1:
+            names = ", ".join(sorted(path.name for path in branch_dirs))
+            raise RuntimeError(
+                "Cannot disable worktree mode while multiple branch directories "
+                f"exist: {names}. Merge or remove the other branch directories first."
+            )
+
+        branch_dir = branch_dirs[0]
+        # The branch marker is metadata; only user files return to the dev-dir root.
+        entries = [entry for entry in branch_dir.iterdir() if entry.name != ".lamin"]
+        collisions = [
+            entry.name for entry in entries if (dev_dir / entry.name).exists()
+        ]
+        if collisions:
+            raise RuntimeError(
+                "Cannot disable worktree mode because these paths already exist in "
+                f"the dev-dir: {', '.join(sorted(collisions))}."
+            )
+
+        print(
+            f"Files in branch directory '{branch_dir}' will be moved back to "
+            f"'{dev_dir}'."
+        )
+        if not _confirm_worktree_migration():
+            raise RuntimeError("Aborted.")
+
+        moved_entries: list[tuple[Path, Path]] = []
+        try:
+            for source in entries:
+                destination = dev_dir / source.name
+                source.replace(destination)
+                moved_entries.append((source, destination))
+            self._worktree_path.unlink(missing_ok=True)
+        except Exception:
+            self._worktree_path.write_text("true")
+            for source, destination in reversed(moved_entries):
+                if destination.exists() and not source.exists():
+                    destination.replace(source)
+            raise
+
+        branch_marker = local_current_branch_file(branch_dir)
+        branch_marker.unlink(missing_ok=True)
+        branch_lamin_dir = branch_marker.parent
+        # Remove only empty metadata/wrapper directories, never user data.
+        if branch_lamin_dir.exists() and not any(branch_lamin_dir.iterdir()):
+            branch_lamin_dir.rmdir()
+        if branch_dir.exists() and not any(branch_dir.iterdir()):
+            branch_dir.rmdir()
+        print(f"Restored files from '{branch_dir}' to '{dev_dir}'.")
 
     def _resolve_active_worktree_root(
         self, *, cwd: Path | None = None, raise_on_error: bool = False
