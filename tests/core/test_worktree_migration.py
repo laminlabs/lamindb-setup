@@ -108,3 +108,71 @@ finally:
     assert result.returncode == 0, f"stdout: {result.stdout}\nstderr: {result.stderr}"
     assert (dev_dir / "storage" / ".lamindb" / "storage_uid.txt").exists()
     assert (dev_dir / "storage" / "artifact.txt").read_text() == "data"
+
+
+def test_disable_refuses_ambiguous_or_colliding_dev_dir(tmp_path: Path):
+    settings_dir = tmp_path / "settings"
+    dev_dir = tmp_path / "dev"
+    dev_dir.mkdir()
+    script = """
+import shutil
+import sys
+from pathlib import Path
+
+from lamindb_setup import settings
+from lamindb_setup.core._settings_store import local_current_branch_file
+
+dev_dir = Path(sys.argv[1])
+settings.dev_dir = dev_dir
+settings.worktree = True
+
+main = dev_dir / "main"
+feature = dev_dir / "feature"
+for branch_dir, uid in ((main, "uid-main"), (feature, "uid-feature")):
+    marker = local_current_branch_file(branch_dir)
+    marker.parent.mkdir(parents=True)
+    marker.write_text(f"{uid}\\n{branch_dir.name}")
+(main / "analysis.py").write_text("new")
+(feature / "feature.py").write_text("feature")
+
+try:
+    try:
+        settings.worktree = False
+    except RuntimeError as error:
+        assert "multiple branch directories" in str(error)
+    else:
+        raise AssertionError("disabling multiple branches should fail")
+    assert settings.worktree is True
+    assert (feature / "feature.py").read_text() == "feature"
+
+    shutil.rmtree(feature)
+    (dev_dir / "analysis.py").write_text("old")
+    try:
+        settings.worktree = False
+    except RuntimeError as error:
+        assert "already exist" in str(error)
+    else:
+        raise AssertionError("disabling with a collision should fail")
+    assert settings.worktree is True
+    assert (main / "analysis.py").read_text() == "new"
+    assert (dev_dir / "analysis.py").read_text() == "old"
+finally:
+    (dev_dir / "analysis.py").unlink(missing_ok=True)
+    if settings.worktree:
+        settings.worktree = False
+    settings.dev_dir = None
+"""
+    env = os.environ.copy()
+    env["LAMIN_SETTINGS_DIR"] = str(settings_dir)
+
+    result = subprocess.run(
+        [sys.executable, "-c", script, str(dev_dir)],
+        input="y\n",
+        capture_output=True,
+        text=True,
+        env=env,
+    )
+
+    assert result.returncode == 0, f"stdout: {result.stdout}\nstderr: {result.stderr}"
+    assert (dev_dir / "analysis.py").read_text() == "new"
+    assert not (dev_dir / "main").exists()
