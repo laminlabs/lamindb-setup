@@ -96,7 +96,7 @@ class WorktreePathError(Exception):
     pass
 
 
-class NoDevDirConfigured(Exception):
+class NoDevDirConfigured(RuntimeError):
     pass
 
 
