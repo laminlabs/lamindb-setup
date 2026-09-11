@@ -176,6 +176,74 @@ def rechecks_dev_dir_after_confirmation(dev_dir: Path) -> None:
     assert (dev_dir / "main/created-during-confirmation.txt").read_text() == "new"
 
 
+def refuses_unsafe_branch_name(dev_dir: Path) -> None:
+    dev_dir.mkdir()
+    settings.dev_dir = dev_dir
+    marker = local_current_branch_file(dev_dir)
+    marker.parent.mkdir()
+    marker.write_text("uid-unsafe\n../outside")
+    (dev_dir / "analysis.py").write_text("data")
+    try:
+        settings.worktree = True
+    except RuntimeError as error:
+        assert "not a safe branch directory name" in str(error)
+    else:
+        raise AssertionError("an unsafe branch name should be rejected")
+    assert (dev_dir / "analysis.py").read_text() == "data"
+    assert not (dev_dir.parent / "outside").exists()
+
+
+def refuses_relative_symlinks(dev_dir: Path) -> None:
+    dev_dir.mkdir()
+    settings.dev_dir = dev_dir
+    relative_link = dev_dir / "relative-link"
+    relative_link.symlink_to("../shared")
+    try:
+        settings.worktree = True
+    except RuntimeError as error:
+        assert "Cannot migrate relative symlinks" in str(error)
+    else:
+        raise AssertionError("a relative symlink should be rejected")
+    relative_link.unlink()
+
+    settings.worktree = True
+    branch = dev_dir / "main"
+    marker = local_current_branch_file(branch)
+    marker.parent.mkdir(parents=True)
+    marker.write_text("1\nmain")
+    (branch / "relative-link").symlink_to("../shared")
+    try:
+        settings.worktree = False
+    except RuntimeError as error:
+        assert "Cannot migrate relative symlinks" in str(error)
+    else:
+        raise AssertionError("a relative symlink should be rejected")
+
+
+def rolls_back_cleanup_failure(dev_dir: Path) -> None:
+    dev_dir.mkdir()
+    settings.dev_dir = dev_dir
+    settings.worktree = True
+    branch = dev_dir / "main"
+    marker = local_current_branch_file(branch)
+    marker.parent.mkdir(parents=True)
+    marker.write_text("1\nmain")
+    (branch / "analysis.py").write_text("data")
+    marker.parent.chmod(0o500)
+    try:
+        try:
+            settings.worktree = False
+        except PermissionError:
+            pass
+        else:
+            raise AssertionError("cleanup should fail for read-only metadata")
+    finally:
+        marker.parent.chmod(0o700)
+    assert settings.worktree
+    assert (branch / "analysis.py").read_text() == "data"
+    assert marker.read_text() == "1\nmain"
+
+
 def restores_broken_symlink(dev_dir: Path) -> None:
     dev_dir.mkdir()
     source = dev_dir / "source-link"

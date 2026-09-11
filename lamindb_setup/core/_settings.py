@@ -68,6 +68,19 @@ def _rollback_moved_entries(moved_entries: list[tuple[Path, Path]]) -> None:
             destination.replace(source)
 
 
+def _reject_relative_symlinks(entries: list[Path]) -> None:
+    relative_symlinks = [
+        entry.name
+        for entry in entries
+        if entry.is_symlink() and not entry.readlink().is_absolute()
+    ]
+    if relative_symlinks:
+        raise RuntimeError(
+            "Cannot migrate relative symlinks because moving them can change their "
+            f"targets: {', '.join(sorted(relative_symlinks))}."
+        )
+
+
 def _worktree_entries_to_move(dev_dir: Path) -> list[Path]:
     entries = [
         entry
@@ -81,6 +94,7 @@ def _worktree_entries_to_move(dev_dir: Path) -> list[Path]:
             "Cannot enable worktree mode because moving these dev-dir paths "
             f"would relocate LaminDB storage: {names}."
         )
+    _reject_relative_symlinks(entries)
     return entries
 
 
@@ -308,6 +322,16 @@ class SetupSettings:
             return
 
         branch_idlike, branch_name = self._read_branch_idlike_name()
+        branch_name_path = Path(branch_name)
+        if (
+            branch_name in {"", ".", ".."}
+            or branch_name_path.is_absolute()
+            or len(branch_name_path.parts) != 1
+        ):
+            raise RuntimeError(
+                f"Cannot enable worktree mode because '{branch_name}' is not a safe "
+                "branch directory name."
+            )
         branch_dir = dev_dir / branch_name
         if _path_exists(branch_dir):
             raise RuntimeError(
@@ -435,6 +459,7 @@ class SetupSettings:
             )
         # The branch marker is metadata; only user files return to the dev-dir root.
         entries = [entry for entry in branch_dir.iterdir() if entry.name != ".lamin"]
+        _reject_relative_symlinks(entries)
         collisions = [
             entry.name for entry in entries if _path_exists(dev_dir / entry.name)
         ]
@@ -454,6 +479,7 @@ class SetupSettings:
         # The confirmation prompt can remain open while another process changes the
         # workspace. Re-read and revalidate its contents before moving anything.
         entries = [entry for entry in branch_dir.iterdir() if entry.name != ".lamin"]
+        _reject_relative_symlinks(entries)
         if _contains_lamindb_storage(branch_dir):
             raise RuntimeError(
                 "Cannot disable worktree mode because the branch directory contains "
@@ -482,6 +508,12 @@ class SetupSettings:
                 moved_entries.append((source, destination))
             root_branch_marker.parent.mkdir(parents=True, exist_ok=True)
             root_branch_marker.write_text(branch_marker_content)
+            branch_marker.unlink()
+            branch_lamin_dir = branch_marker.parent
+            if not any(branch_lamin_dir.iterdir()):
+                branch_lamin_dir.rmdir()
+            if not any(branch_dir.iterdir()):
+                branch_dir.rmdir()
             self._worktree_path.unlink(missing_ok=True)
             self._clear_instance_context_cache()
         except Exception:
@@ -490,16 +522,10 @@ class SetupSettings:
                 root_branch_marker.unlink(missing_ok=True)
             else:
                 root_branch_marker.write_text(previous_root_marker)
+            branch_marker.parent.mkdir(parents=True, exist_ok=True)
+            branch_marker.write_text(branch_marker_content)
             _rollback_moved_entries(moved_entries)
             raise
-
-        branch_marker.unlink(missing_ok=True)
-        branch_lamin_dir = branch_marker.parent
-        # Remove only empty metadata/wrapper directories, never user data.
-        if branch_lamin_dir.exists() and not any(branch_lamin_dir.iterdir()):
-            branch_lamin_dir.rmdir()
-        if branch_dir.exists() and not any(branch_dir.iterdir()):
-            branch_dir.rmdir()
         print(f"Restored files from '{branch_dir}' to '{dev_dir}'.")
 
     def _resolve_active_worktree_root(

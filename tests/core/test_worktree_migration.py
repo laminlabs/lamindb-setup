@@ -16,6 +16,9 @@ CASES = (
     "restores_surviving_branch_marker",
     "rechecks_workspace_after_confirmation",
     "rechecks_dev_dir_after_confirmation",
+    "refuses_unsafe_branch_name",
+    "refuses_relative_symlinks",
+    "rolls_back_cleanup_failure",
     "restores_broken_symlink",
     "refuses_active_workspace_and_recovers_missing_dev_dir",
 )
