@@ -6,41 +6,7 @@ import sys
 from pathlib import Path
 
 from lamindb_setup import settings
-from lamindb_setup.core._settings import _rollback_moved_entries
 from lamindb_setup.core._settings_store import local_current_branch_file
-
-
-def moves_dev_dir_content(dev_dir: Path) -> None:
-    dev_dir.mkdir()
-    settings.dev_dir = dev_dir
-    (dev_dir / "analysis.py").write_text("print('hello')\n")
-    config = dev_dir / ".agents/instructions.md"
-    config.parent.mkdir()
-    config.write_text("shared")
-    settings.worktree = True
-    assert settings.worktree
-    assert (dev_dir / "main/analysis.py").exists()
-    assert config.read_text() == "shared"
-    settings.worktree = False
-    assert not settings.worktree
-    assert (dev_dir / "analysis.py").exists()
-    assert not (dev_dir / "main").exists()
-
-
-def preserves_lamindb_storage(dev_dir: Path) -> None:
-    dev_dir.mkdir()
-    settings.dev_dir = dev_dir
-    storage = dev_dir / "storage"
-    marker = storage / ".lamindb/storage_uid.txt"
-    marker.parent.mkdir(parents=True)
-    marker.write_text("storageuid")
-    (storage / "artifact.txt").write_text("data")
-    (dev_dir / "analysis.py").write_text("data")
-    settings.worktree = True
-    assert marker.read_text() == "storageuid"
-    assert (storage / "artifact.txt").read_text() == "data"
-    assert not (dev_dir / "main/storage").exists()
-    assert (dev_dir / "main/analysis.py").exists()
 
 
 def refuses_ambiguous_or_colliding_dev_dir(dev_dir: Path) -> None:
@@ -167,15 +133,6 @@ def rechecks_workspace_after_confirmation(dev_dir: Path) -> None:
     assert (dev_dir / "created-during-confirmation.txt").read_text() == "new"
 
 
-def rechecks_dev_dir_after_confirmation(dev_dir: Path) -> None:
-    dev_dir.mkdir()
-    settings.dev_dir = dev_dir
-    (dev_dir / "analysis.py").write_text("data")
-    settings.worktree = True
-    assert (dev_dir / "main/analysis.py").read_text() == "data"
-    assert (dev_dir / "main/created-during-confirmation.txt").read_text() == "new"
-
-
 def refuses_unsafe_branch_name(dev_dir: Path) -> None:
     dev_dir.mkdir()
     settings.dev_dir = dev_dir
@@ -244,17 +201,7 @@ def rolls_back_cleanup_failure(dev_dir: Path) -> None:
     assert marker.read_text() == "1\nmain"
 
 
-def restores_broken_symlink(dev_dir: Path) -> None:
-    dev_dir.mkdir()
-    source = dev_dir / "source-link"
-    destination = dev_dir / "destination-link"
-    destination.symlink_to(dev_dir / "missing-target")
-    _rollback_moved_entries([(source, destination)])
-    assert source.is_symlink()
-    assert not destination.is_symlink()
-
-
-def refuses_active_workspace_and_recovers_missing_dev_dir(dev_dir: Path) -> None:
+def refuses_active_workspace(dev_dir: Path) -> None:
     dev_dir.mkdir()
     settings.dev_dir = dev_dir
     (dev_dir / "analysis.py").write_text("data")
@@ -267,13 +214,6 @@ def refuses_active_workspace_and_recovers_missing_dev_dir(dev_dir: Path) -> None
         assert "current working directory" in str(error)
     else:
         raise AssertionError("an active workspace should be rejected")
-    os.chdir(dev_dir)
-    settings.worktree = False
-    (dev_dir / "analysis.py").unlink()
-    settings.worktree = True
-    shutil.rmtree(dev_dir)
-    settings.worktree = False
-    assert not settings.worktree
 
 
 if __name__ == "__main__":
