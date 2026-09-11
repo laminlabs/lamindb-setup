@@ -47,6 +47,10 @@ def _confirm_worktree_migration() -> bool:
     return response in {"", "y", "yes"}
 
 
+def _is_lamindb_storage(path: Path) -> bool:
+    return path.is_dir() and (path / ".lamindb" / "storage_uid.txt").is_file()
+
+
 def _default_cache_dir():
     from .upath import UPath
 
@@ -263,6 +267,8 @@ class SetupSettings:
             entry
             for entry in dev_dir.iterdir()
             if entry.name not in _WORKTREE_ROOT_ENTRIES
+            # Storage roots are registered by path and must not move with branch files.
+            and not _is_lamindb_storage(entry)
         ]
         if not entries:
             self._worktree_path.write_text("true")
