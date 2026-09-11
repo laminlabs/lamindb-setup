@@ -35,6 +35,7 @@ def test_worktree_migration(case: str, tmp_path: Path) -> None:
         text=True,
         env=env,
     )
+    assert process.stdout is not None
     stdout_prefix = ""
     if case in {
         "rechecks_workspace_after_confirmation",
