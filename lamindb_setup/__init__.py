@@ -54,6 +54,24 @@ from ._register_instance import register
 from ._setup_user import login, logout
 from .core._settings import settings
 
+__all__ = [
+    "__version__",
+    "login",
+    "logout",
+    "init",
+    "connect",
+    "disconnect",
+    "close",
+    "delete",
+    "register",
+    "settings",
+    "core",
+    "django",
+    "errors",
+    "types",
+    "migrate",
+]
+
 
 def _is_CI_environment() -> bool:
     ci_env_vars = [

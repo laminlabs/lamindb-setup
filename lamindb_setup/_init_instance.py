@@ -438,7 +438,7 @@ def init(
         if _write_settings:
             dev_dir = Path.cwd().resolve()
             settings.dev_dir = dev_dir
-            logger.important(f"set dev-dir: {dev_dir}")
+            logger.important(f"dev-dir is: {dev_dir}")
         if _test:
             return None
         isettings._init_db()
