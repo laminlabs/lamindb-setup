@@ -51,6 +51,12 @@ def _is_lamindb_storage(path: Path) -> bool:
     return path.is_dir() and (path / ".lamindb" / "storage_uid.txt").is_file()
 
 
+def _contains_lamindb_storage(path: Path) -> bool:
+    if not path.is_dir() or path.is_symlink():
+        return False
+    return any(path.glob("**/.lamindb/storage_uid.txt"))
+
+
 def _default_cache_dir():
     from .upath import UPath
 
@@ -262,6 +268,11 @@ class SetupSettings:
 
         dev_dir = dev_dir.resolve()
         dev_dir.mkdir(parents=True, exist_ok=True)
+        if _is_lamindb_storage(dev_dir):
+            raise RuntimeError(
+                "Cannot enable worktree mode because dev-dir is a LaminDB storage "
+                "location. Configure a separate dev-dir first."
+            )
         # Agent/editor configuration applies to every branch and stays at the root.
         entries = [
             entry
@@ -270,6 +281,15 @@ class SetupSettings:
             # Storage roots are registered by path and must not move with branch files.
             and not _is_lamindb_storage(entry)
         ]
+        storage_parents = [
+            entry for entry in entries if _contains_lamindb_storage(entry)
+        ]
+        if storage_parents:
+            names = ", ".join(sorted(entry.name for entry in storage_parents))
+            raise RuntimeError(
+                "Cannot enable worktree mode because moving these dev-dir paths "
+                f"would relocate LaminDB storage: {names}."
+            )
         if not entries:
             self._worktree_path.write_text("true")
             return
@@ -327,12 +347,35 @@ class SetupSettings:
             return
 
         dev_dir = dev_dir.resolve()
-        branch_dirs = [
-            path
-            for path in dev_dir.iterdir()
-            if path.is_dir() and local_current_branch_file(path).exists()
-        ]
+        if not dev_dir.exists():
+            self._worktree_path.unlink(missing_ok=True)
+            return
+
+        branch_dirs: list[Path] = []
+        symlink_entries: list[Path] = []
+        unknown_entries: list[Path] = []
+        for path in dev_dir.iterdir():
+            if path.name in _WORKTREE_ROOT_ENTRIES or _is_lamindb_storage(path):
+                continue
+            if path.is_symlink():
+                symlink_entries.append(path)
+            elif path.is_dir() and local_current_branch_file(path).exists():
+                branch_dirs.append(path)
+            else:
+                unknown_entries.append(path)
+        if symlink_entries:
+            names = ", ".join(sorted(path.name for path in symlink_entries))
+            raise RuntimeError(
+                "Cannot disable worktree mode while the dev-dir contains symlinked "
+                f"paths: {names}. Move or remove them first."
+            )
         if not branch_dirs:
+            if unknown_entries:
+                names = ", ".join(sorted(path.name for path in unknown_entries))
+                raise RuntimeError(
+                    "Cannot disable worktree mode because the dev-dir contains "
+                    f"unrecognized paths: {names}. Move or remove them first."
+                )
             self._worktree_path.unlink(missing_ok=True)
             return
         # Never guess which branch should become the manual dev-dir or merge branches.
@@ -344,6 +387,33 @@ class SetupSettings:
             )
 
         branch_dir = branch_dirs[0]
+        branch_entry_names = {
+            entry.name for entry in branch_dir.iterdir() if entry.name != ".lamin"
+        }
+        unrecognized_entries = [
+            path for path in unknown_entries if path.name not in branch_entry_names
+        ]
+        if unrecognized_entries:
+            names = ", ".join(sorted(path.name for path in unrecognized_entries))
+            raise RuntimeError(
+                "Cannot disable worktree mode because the dev-dir contains "
+                f"unrecognized paths: {names}. Move or remove them first."
+            )
+        if branch_dir.is_symlink() or not branch_dir.resolve().is_relative_to(dev_dir):
+            raise RuntimeError(
+                "Cannot disable worktree mode from a symlinked branch directory."
+            )
+        if _contains_lamindb_storage(branch_dir):
+            raise RuntimeError(
+                "Cannot disable worktree mode because the branch directory contains "
+                "a LaminDB storage location."
+            )
+        cwd = Path.cwd().resolve()
+        if cwd.is_relative_to(branch_dir.resolve()):
+            raise RuntimeError(
+                "Cannot disable worktree mode while the current working directory is "
+                f"inside '{branch_dir}'. Change to '{dev_dir}' first."
+            )
         # The branch marker is metadata; only user files return to the dev-dir root.
         entries = [entry for entry in branch_dir.iterdir() if entry.name != ".lamin"]
         collisions = [
@@ -363,20 +433,31 @@ class SetupSettings:
             raise RuntimeError("Aborted.")
 
         moved_entries: list[tuple[Path, Path]] = []
+        branch_marker = local_current_branch_file(branch_dir)
+        branch_marker_content = branch_marker.read_text()
+        root_branch_marker = local_current_branch_file(dev_dir)
+        previous_root_marker = (
+            root_branch_marker.read_text() if root_branch_marker.exists() else None
+        )
         try:
             for source in entries:
                 destination = dev_dir / source.name
                 source.replace(destination)
                 moved_entries.append((source, destination))
+            root_branch_marker.parent.mkdir(parents=True, exist_ok=True)
+            root_branch_marker.write_text(branch_marker_content)
             self._worktree_path.unlink(missing_ok=True)
         except Exception:
             self._worktree_path.write_text("true")
+            if previous_root_marker is None:
+                root_branch_marker.unlink(missing_ok=True)
+            else:
+                root_branch_marker.write_text(previous_root_marker)
             for source, destination in reversed(moved_entries):
                 if destination.exists() and not source.exists():
                     destination.replace(source)
             raise
 
-        branch_marker = local_current_branch_file(branch_dir)
         branch_marker.unlink(missing_ok=True)
         branch_lamin_dir = branch_marker.parent
         # Remove only empty metadata/wrapper directories, never user data.
