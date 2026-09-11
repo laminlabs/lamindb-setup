@@ -48,13 +48,20 @@ def _confirm_worktree_migration() -> bool:
 
 
 def _is_lamindb_storage(path: Path) -> bool:
-    return path.is_dir() and (path / ".lamindb" / "storage_uid.txt").is_file()
+    return path.is_dir() and any(
+        (path / ".lamindb" / marker).is_file()
+        for marker in ("storage_uid.txt", "_is_initialized")
+    )
 
 
 def _contains_lamindb_storage(path: Path) -> bool:
     if not path.is_dir() or path.is_symlink():
         return False
-    return any(path.glob("**/.lamindb/storage_uid.txt"))
+    return any(
+        candidate
+        for marker in ("storage_uid.txt", "_is_initialized")
+        for candidate in path.glob(f"**/.lamindb/{marker}")
+    )
 
 
 def _path_exists(path: Path) -> bool:
@@ -319,12 +326,14 @@ class SetupSettings:
         entries = _worktree_entries_to_move(dev_dir)
         if not entries:
             self._worktree_path.write_text("true")
+            self._clear_instance_context_cache()
             return
 
         branch_idlike, branch_name = self._read_branch_idlike_name()
         branch_name_path = Path(branch_name)
         if (
             branch_name in {"", ".", ".."}
+            or branch_name in _WORKTREE_ROOT_ENTRIES
             or branch_name_path.is_absolute()
             or len(branch_name_path.parts) != 1
         ):
@@ -365,7 +374,7 @@ class SetupSettings:
             branch_marker.write_text(f"{branch_idlike}\n{branch_name}")
             self._worktree_path.write_text("true")
             self._clear_instance_context_cache()
-        except Exception:
+        except BaseException:
             self._worktree_path.unlink(missing_ok=True)
             _rollback_moved_entries(moved_entries)
             branch_marker = local_current_branch_file(branch_dir)
@@ -387,11 +396,13 @@ class SetupSettings:
         dev_dir = self.dev_dir
         if dev_dir is None:
             self._worktree_path.unlink(missing_ok=True)
+            self._clear_instance_context_cache()
             return
 
         dev_dir = dev_dir.resolve()
         if not dev_dir.exists():
             self._worktree_path.unlink(missing_ok=True)
+            self._clear_instance_context_cache()
             return
 
         branch_dirs: list[Path] = []
@@ -420,6 +431,7 @@ class SetupSettings:
                     f"unrecognized paths: {names}. Move or remove them first."
                 )
             self._worktree_path.unlink(missing_ok=True)
+            self._clear_instance_context_cache()
             return
         # Never guess which branch should become the manual dev-dir or merge branches.
         if len(branch_dirs) > 1:
@@ -478,6 +490,20 @@ class SetupSettings:
 
         # The confirmation prompt can remain open while another process changes the
         # workspace. Re-read and revalidate its contents before moving anything.
+        current_branch_dirs = [
+            path
+            for path in dev_dir.iterdir()
+            if path.name not in _WORKTREE_ROOT_ENTRIES
+            and not path.is_symlink()
+            and path.is_dir()
+            and local_current_branch_file(path).exists()
+        ]
+        if len(current_branch_dirs) != 1 or current_branch_dirs[0] != branch_dir:
+            names = ", ".join(sorted(path.name for path in current_branch_dirs))
+            raise RuntimeError(
+                "Cannot disable worktree mode because the branch workspaces changed "
+                f"during confirmation: {names or 'none'}."
+            )
         entries = [entry for entry in branch_dir.iterdir() if entry.name != ".lamin"]
         _reject_relative_symlinks(entries)
         if _contains_lamindb_storage(branch_dir):
@@ -516,7 +542,7 @@ class SetupSettings:
                 branch_dir.rmdir()
             self._worktree_path.unlink(missing_ok=True)
             self._clear_instance_context_cache()
-        except Exception:
+        except BaseException:
             self._worktree_path.write_text("true")
             if previous_root_marker is None:
                 root_branch_marker.unlink(missing_ok=True)

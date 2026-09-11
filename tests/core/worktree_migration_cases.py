@@ -40,7 +40,7 @@ def refuses_ambiguous_or_colliding_dev_dir(dev_dir: Path) -> None:
 def refuses_storage_dev_dir_and_nested_storage(dev_dir: Path) -> None:
     dev_dir.mkdir()
     settings.dev_dir = dev_dir
-    root_marker = dev_dir / ".lamindb/storage_uid.txt"
+    root_marker = dev_dir / ".lamindb/_is_initialized"
     root_marker.parent.mkdir()
     root_marker.write_text("root-storage")
     try:
@@ -128,9 +128,15 @@ def rechecks_workspace_after_confirmation(dev_dir: Path) -> None:
     branch_marker.parent.mkdir(parents=True)
     branch_marker.write_text("1\nmain")
     (branch / "analysis.py").write_text("data")
-    settings.worktree = False
-    assert (dev_dir / "analysis.py").read_text() == "data"
-    assert (dev_dir / "created-during-confirmation.txt").read_text() == "new"
+    try:
+        settings.worktree = False
+    except RuntimeError as error:
+        assert "branch workspaces changed during confirmation" in str(error)
+    else:
+        raise AssertionError("a new sibling workspace should be rejected")
+    assert settings.worktree
+    assert (branch / "analysis.py").read_text() == "data"
+    assert local_current_branch_file(dev_dir / "feature").exists()
 
 
 def refuses_unsafe_branch_name(dev_dir: Path) -> None:
@@ -149,6 +155,14 @@ def refuses_unsafe_branch_name(dev_dir: Path) -> None:
     assert (dev_dir / "analysis.py").read_text() == "data"
     assert not (dev_dir.parent / "outside").exists()
 
+    marker.write_text("uid-reserved\n.agents")
+    try:
+        settings.worktree = True
+    except RuntimeError as error:
+        assert "not a safe branch directory name" in str(error)
+    else:
+        raise AssertionError("a reserved branch name should be rejected")
+
 
 def refuses_relative_symlinks(dev_dir: Path) -> None:
     dev_dir.mkdir()
@@ -163,7 +177,9 @@ def refuses_relative_symlinks(dev_dir: Path) -> None:
         raise AssertionError("a relative symlink should be rejected")
     relative_link.unlink()
 
+    settings._branch = object()
     settings.worktree = True
+    assert settings._branch is None
     branch = dev_dir / "main"
     marker = local_current_branch_file(branch)
     marker.parent.mkdir(parents=True)

@@ -42,7 +42,9 @@ def test_worktree_migration(case: str, tmp_path: Path) -> None:
             character = process.stdout.read(1)
             assert character, "migration process exited before requesting confirmation"
             stdout_prefix += character
-        (tmp_path / "dev/main/created-during-confirmation.txt").write_text("new")
+        marker = tmp_path / "dev/feature/.lamin/current_branch"
+        marker.parent.mkdir(parents=True)
+        marker.write_text("uid-feature\nfeature")
     stdout, stderr = process.communicate(input="y\n" * 5)
     stdout = stdout_prefix + stdout
 
