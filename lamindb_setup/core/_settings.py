@@ -68,6 +68,22 @@ def _rollback_moved_entries(moved_entries: list[tuple[Path, Path]]) -> None:
             destination.replace(source)
 
 
+def _worktree_entries_to_move(dev_dir: Path) -> list[Path]:
+    entries = [
+        entry
+        for entry in dev_dir.iterdir()
+        if entry.name not in _WORKTREE_ROOT_ENTRIES and not _is_lamindb_storage(entry)
+    ]
+    storage_parents = [entry for entry in entries if _contains_lamindb_storage(entry)]
+    if storage_parents:
+        names = ", ".join(sorted(entry.name for entry in storage_parents))
+        raise RuntimeError(
+            "Cannot enable worktree mode because moving these dev-dir paths "
+            f"would relocate LaminDB storage: {names}."
+        )
+    return entries
+
+
 def _default_cache_dir():
     from .upath import UPath
 
@@ -285,29 +301,15 @@ class SetupSettings:
                 "location. Configure a separate dev-dir first."
             )
         # Agent/editor configuration applies to every branch and stays at the root.
-        entries = [
-            entry
-            for entry in dev_dir.iterdir()
-            if entry.name not in _WORKTREE_ROOT_ENTRIES
-            # Storage roots are registered by path and must not move with branch files.
-            and not _is_lamindb_storage(entry)
-        ]
-        storage_parents = [
-            entry for entry in entries if _contains_lamindb_storage(entry)
-        ]
-        if storage_parents:
-            names = ", ".join(sorted(entry.name for entry in storage_parents))
-            raise RuntimeError(
-                "Cannot enable worktree mode because moving these dev-dir paths "
-                f"would relocate LaminDB storage: {names}."
-            )
+        # Storage roots are registered by path and must not move with branch files.
+        entries = _worktree_entries_to_move(dev_dir)
         if not entries:
             self._worktree_path.write_text("true")
             return
 
         branch_idlike, branch_name = self._read_branch_idlike_name()
         branch_dir = dev_dir / branch_name
-        if branch_dir.exists():
+        if _path_exists(branch_dir):
             raise RuntimeError(
                 f"Cannot enable worktree mode because '{branch_dir}' already exists."
             )
@@ -318,6 +320,13 @@ class SetupSettings:
         )
         if not _confirm_worktree_migration():
             raise RuntimeError("Aborted.")
+
+        # Recheck after confirmation in case another process changed the dev-dir.
+        if _path_exists(branch_dir):
+            raise RuntimeError(
+                f"Cannot enable worktree mode because '{branch_dir}' already exists."
+            )
+        entries = _worktree_entries_to_move(dev_dir)
 
         branch_dir.mkdir()
         moved_entries: list[tuple[Path, Path]] = []
@@ -427,7 +436,7 @@ class SetupSettings:
         # The branch marker is metadata; only user files return to the dev-dir root.
         entries = [entry for entry in branch_dir.iterdir() if entry.name != ".lamin"]
         collisions = [
-            entry.name for entry in entries if (dev_dir / entry.name).exists()
+            entry.name for entry in entries if _path_exists(dev_dir / entry.name)
         ]
         if collisions:
             raise RuntimeError(
