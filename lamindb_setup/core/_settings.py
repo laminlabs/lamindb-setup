@@ -29,6 +29,7 @@ from ._settings_store import (
     get_settings_file_name_prefix,
     local_current_branch_file,
     local_current_instance_file,
+    local_worktree_file,
     remove_local_current_instance,
     settings_dir,
     system_settings_dir,
@@ -179,12 +180,6 @@ class SetupSettings:
         )
 
     @property
-    def _worktree_path(self) -> Path:
-        return (
-            settings_dir / f"worktree--{self.instance.owner}--{self.instance.name}.txt"
-        )
-
-    @property
     def dev_dir(self) -> Path | None:
         """Get or set the local development directory for the current instance.
 
@@ -242,13 +237,17 @@ class SetupSettings:
         keys relative to that child root. When disabled, `dev_dir` itself is the active
         root for branch lookup and key derivation.
         """
-        return self._worktree_path.exists()
+        dev_dir = self.dev_dir
+        if dev_dir is None:
+            return False
+        return local_worktree_file(dev_dir.resolve()).exists()
 
     @worktree.setter
     def worktree(self, value: bool) -> None:
         if value == self.worktree:
             return
         dev_dir = self._get_dev_dir_path()
+        worktree_path = local_worktree_file(dev_dir.resolve())
         unexpected_paths = [
             path
             for path in dev_dir.iterdir()
@@ -264,9 +263,10 @@ class SetupSettings:
                 "remove them first."
             )
         if value:
-            self._worktree_path.touch()
+            worktree_path.parent.mkdir(parents=True, exist_ok=True)
+            worktree_path.touch()
         else:
-            self._worktree_path.unlink(missing_ok=True)
+            worktree_path.unlink(missing_ok=True)
         self._clear_instance_context_cache()
 
     def _get_dev_dir_path(self) -> Path:

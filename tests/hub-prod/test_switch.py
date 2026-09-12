@@ -8,7 +8,10 @@ from pathlib import Path
 import lamindb as ln
 import lamindb_setup as ln_setup
 import pytest
-from lamindb_setup.core._settings_store import local_current_branch_file
+from lamindb_setup.core._settings_store import (
+    local_current_branch_file,
+    local_worktree_file,
+)
 
 
 def test_switch_create_existing_branch_raises():
@@ -58,8 +61,10 @@ def test_switch_create_worktree_from_dev_dir_root(tmp_path: Path):
             shutil.rmtree(child)
         ln_setup.settings.worktree = False
         ln_setup.settings.dev_dir = previous_dev_dir
-        if previous_worktree:
-            ln_setup.settings._worktree_path.write_text("true")
+        if previous_worktree and previous_dev_dir is not None:
+            worktree_marker = local_worktree_file(previous_dev_dir.resolve())
+            worktree_marker.parent.mkdir(parents=True, exist_ok=True)
+            worktree_marker.write_text("true")
 
 
 def test_switch_worktree_from_root_requires_cd_instruction(tmp_path: Path):

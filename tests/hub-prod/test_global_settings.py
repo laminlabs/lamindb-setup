@@ -6,7 +6,10 @@ from pathlib import Path
 
 import lamindb_setup as ln_setup
 import pytest
-from lamindb_setup.core._settings_store import local_current_branch_file
+from lamindb_setup.core._settings_store import (
+    local_current_branch_file,
+    local_worktree_file,
+)
 from lamindb_setup.core.hashing import hash_dir
 from lamindb_setup.errors import (
     DevDirNonEmpty,
@@ -52,10 +55,14 @@ def test_space():
 def _restore_worktree_settings(
     previous_dev_dir: Path | None, previous_worktree: bool
 ) -> None:
-    ln_setup.settings._worktree_path.unlink(missing_ok=True)
+    current_dev_dir = ln_setup.settings.dev_dir
+    if current_dev_dir is not None:
+        local_worktree_file(current_dev_dir.resolve()).unlink(missing_ok=True)
     ln_setup.settings.dev_dir = previous_dev_dir
-    if previous_worktree:
-        ln_setup.settings._worktree_path.write_text("true")
+    if previous_worktree and previous_dev_dir is not None:
+        worktree_marker = local_worktree_file(previous_dev_dir.resolve())
+        worktree_marker.parent.mkdir(parents=True, exist_ok=True)
+        worktree_marker.write_text("true")
 
 
 def test_worktree_setting_roundtrip(tmp_path: Path):
@@ -88,7 +95,7 @@ def test_worktree_toggle_rejects_non_empty_dev_dir(tmp_path: Path):
         (dev_dir / "analysis.py").write_text("data")
         with pytest.raises(DevDirNonEmpty, match="analysis.py"):
             ln_setup.settings.worktree = True
-        ln_setup.settings._worktree_path.touch()
+        local_worktree_file(dev_dir.resolve()).touch()
         with pytest.raises(DevDirNonEmpty, match="analysis.py"):
             ln_setup.settings.worktree = False
     finally:
@@ -136,7 +143,10 @@ def test_resolve_active_worktree_root_non_worktree_mode(tmp_path: Path):
     previous_dev_dir = ln_setup.settings.dev_dir
     previous_worktree = ln_setup.settings.worktree
     try:
-        ln_setup.settings._worktree_path.unlink(missing_ok=True)
+        if ln_setup.settings.dev_dir is not None:
+            local_worktree_file(ln_setup.settings.dev_dir.resolve()).unlink(
+                missing_ok=True
+            )
         ln_setup.settings.dev_dir = tmp_path
         assert (
             ln_setup.settings._resolve_active_worktree_root(raise_on_error=True)
@@ -153,19 +163,16 @@ def test_resolve_active_worktree_root_without_dev_dir():
     previous_worktree = ln_setup.settings.worktree
     try:
         ln_setup.settings.dev_dir = None
-        ln_setup.settings._worktree_path.unlink(missing_ok=True)
         with pytest.raises(
             NoDevDirConfigured,
             match="Please set it using: lamin settings dev-dir set path/to/directory",
         ):
             ln_setup.settings.worktree = True
-        ln_setup.settings._worktree_path.write_text("true")
+        assert ln_setup.settings.worktree is False
         assert ln_setup.settings._resolve_active_worktree_root() is None
-        with pytest.raises(
-            NoDevDirConfigured,
-            match="Please set it using: lamin settings dev-dir set path/to/directory",
-        ):
-            ln_setup.settings._resolve_active_worktree_root(raise_on_error=True)
+        assert (
+            ln_setup.settings._resolve_active_worktree_root(raise_on_error=True) is None
+        )
     finally:
         _restore_worktree_settings(previous_dev_dir, previous_worktree)
 
