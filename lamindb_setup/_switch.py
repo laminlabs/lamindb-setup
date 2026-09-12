@@ -12,6 +12,24 @@ if TYPE_CHECKING:
     from lamindb.models import Branch
 
 
+def _navigation_command(instruction: str) -> str:
+    prefix = "To switch, run: "
+    return instruction[len(prefix) :] if instruction.startswith(prefix) else instruction
+
+
+def missing_branch_create_and_navigate_message(
+    target_name: str, instruction: str
+) -> str:
+    navigation_command = _navigation_command(instruction)
+    return (
+        f"Branch '{target_name}' does not exist.\n"
+        "To create it and switch in worktree mode, run:\n"
+        f"lamin create branch {target_name} && "
+        f"{navigation_command} && "
+        f"lamin switch {target_name}"
+    )
+
+
 def worktree_switch_instruction(
     target_name: str, *, create: bool = False
 ) -> str | None:
@@ -68,6 +86,19 @@ def switch(target: str | Branch, *, space: bool = False, create: bool = False):
         settings.space = target
     else:
         target_name = target if isinstance(target, str) else target.name
+        resolved_target: str | Branch = target
+        if not create and isinstance(target, str):
+            from lamindb import Branch, Q
+            from lamindb.errors import DoesNotExist
+
+            existing = Branch.filter(Q(name=target) | Q(uid=target)).one_or_none()
+            if existing is None:
+                raise DoesNotExist(
+                    f"Branch '{target}' does not exist. "
+                    f"To create and switch, run: lamin switch -c {target}"
+                )
+            resolved_target = existing
+            target_name = existing.name
         if settings.worktree:
             dev_dir = settings.dev_dir
             if dev_dir is not None:
@@ -93,6 +124,18 @@ def switch(target: str | Branch, *, space: bool = False, create: bool = False):
                     return
             instruction = worktree_switch_instruction(target_name, create=create)
             if instruction is not None:
+                if create:
+                    from lamindb import Branch, Q
+
+                    existing = Branch.filter(
+                        Q(name=target_name) | Q(uid=target_name)
+                    ).one_or_none()
+                    if existing is None:
+                        raise ValueError(
+                            missing_branch_create_and_navigate_message(
+                                target_name, instruction
+                            )
+                        )
                 raise ValueError(instruction)
 
         is_worktree_bootstrap = (
@@ -108,15 +151,17 @@ def switch(target: str | Branch, *, space: bool = False, create: bool = False):
             from lamindb.errors import BranchAlreadyExists
 
             # Consistent with git switch -c: error if branch already exists.
-            existing = Branch.filter(Q(name=target) | Q(uid=target)).one_or_none()
+            existing = Branch.filter(
+                Q(name=target_name) | Q(uid=target_name)
+            ).one_or_none()
             if existing is not None:
                 raise BranchAlreadyExists(
-                    f"Branch '{target}' already exists. Omit -c/--create to switch to it."
+                    f"Branch '{target_name}' already exists. Omit -c/--create to switch to it."
                 )
-            Branch(name=target).save()
-            logger.important(f"created branch: {target}")
-        settings.branch = target
+            Branch(name=target_name).save()
+            logger.important(f"created branch: {target_name}")
+        settings.branch = resolved_target
     if is_worktree_bootstrap:
-        logger.important_hint(f"to switch, cd into {target}")
+        logger.important_hint(f"to switch, cd into {target_name}")
     else:
-        logger.important(f"switched to {target}")
+        logger.important(f"switched to {target_name}")
