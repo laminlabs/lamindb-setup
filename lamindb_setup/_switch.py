@@ -13,8 +13,16 @@ if TYPE_CHECKING:
 
 
 def _navigation_command(instruction: str) -> str:
-    prefix = "To switch, run: "
-    return instruction[len(prefix) :] if instruction.startswith(prefix) else instruction
+    prefixes = (
+        "To switch in worktree mode, run: ",
+        "To switch, run: ",  # backward compatible parsing
+    )
+    for line in instruction.splitlines():
+        line = line.strip()
+        for prefix in prefixes:
+            if line.startswith(prefix):
+                return line[len(prefix) :]
+    return instruction
 
 
 def missing_branch_create_and_navigate_message(
@@ -34,6 +42,10 @@ def worktree_switch_instruction(
     target_name: str, *, create: bool = False
 ) -> str | None:
     """Return a navigation hint when switching from wrong worktree directory."""
+
+    def _format_instruction(command: str) -> str:
+        return f"To switch in worktree mode, run: {command}"
+
     if "/" in target_name:
         raise ValueError(
             "Branch names containing '/' are not supported in worktree mode."
@@ -58,15 +70,15 @@ def worktree_switch_instruction(
     if cwd == dev_dir:
         branch_dir = dev_dir / target_name
         if branch_dir.is_dir():
-            return f"To switch, run: cd {target_name}"
-        return f"To switch, run: mkdir {target_name} && cd {target_name}"
+            return _format_instruction(f"cd {target_name}")
+        return _format_instruction(f"mkdir {target_name} && cd {target_name}")
 
     if worktree_root is not None and target_name != worktree_root.name:
         target_dir = dev_dir / target_name
         rel_target = os.path.relpath(target_dir, start=cwd)
         if target_dir.is_dir():
-            return f"To switch, run: cd {rel_target}"
-        return f"To switch, run: mkdir {rel_target} && cd {rel_target}"
+            return _format_instruction(f"cd {rel_target}")
+        return _format_instruction(f"mkdir {rel_target} && cd {rel_target}")
 
     settings._resolve_active_worktree_root(raise_on_error=True)
     return None

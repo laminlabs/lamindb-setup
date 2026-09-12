@@ -77,7 +77,9 @@ def test_switch_worktree_from_root_requires_cd_instruction(tmp_path: Path):
         ln_setup.settings.dev_dir = worktree_parent
         ln_setup.settings.worktree = True
         os.chdir(worktree_parent)
-        with pytest.raises(ValueError, match=r"To switch, run: mkdir main && cd main"):
+        with pytest.raises(
+            ValueError, match=r"To switch in worktree mode, run: mkdir main && cd main"
+        ):
             ln_setup.switch("main")
     finally:
         os.chdir(previous_cwd)
@@ -103,7 +105,9 @@ def test_switch_worktree_from_child_requires_cd_sibling_instruction(tmp_path: Pa
             ln.Branch(name="testcontrib").save()
             branch_created = True
         os.chdir(child_main)
-        with pytest.raises(ValueError, match=r"To switch, run: cd \.\./testcontrib"):
+        with pytest.raises(
+            ValueError, match=r"To switch in worktree mode, run: cd \.\./testcontrib"
+        ):
             ln_setup.switch("testcontrib")
     finally:
         os.chdir(previous_cwd)
@@ -157,7 +161,7 @@ def test_switch_worktree_sequence_missing_then_create_requires_navigation(
         branch_registered = True
         with pytest.raises(
             ValueError,
-            match=rf"To switch, run: cd \.\./{branch_name}",
+            match=rf"To switch in worktree mode, run: cd \.\./{branch_name}",
         ):
             ln_setup.switch(branch_name, create=True)
         assert ln_setup.settings.branch.name == "main"
