@@ -8,7 +8,7 @@ import lamindb_setup as ln_setup
 import pytest
 from lamindb_setup.core._settings_store import local_current_branch_file
 from lamindb_setup.core.hashing import hash_dir
-from lamindb_setup.errors import NoDevDirConfigured, WorktreePathError
+from lamindb_setup.errors import DevDirNonEmpty, NoDevDirConfigured, WorktreePathError
 
 
 def test_auto_connect():
@@ -62,6 +62,30 @@ def test_worktree_setting_roundtrip(tmp_path: Path):
         assert ln_setup.settings.worktree is True
         ln_setup.settings.worktree = False
         assert ln_setup.settings.worktree is False
+    finally:
+        _restore_worktree_settings(previous_dev_dir, previous_worktree)
+
+
+def test_worktree_toggle_rejects_non_empty_dev_dir(tmp_path: Path):
+    previous_dev_dir = ln_setup.settings.dev_dir
+    previous_worktree = ln_setup.settings.worktree
+    try:
+        dev_dir = tmp_path / "worktrees"
+        dev_dir.mkdir()
+        ln_setup.settings.dev_dir = dev_dir
+        storage_marker = dev_dir / "storage/.lamindb/storage_uid.txt"
+        storage_marker.parent.mkdir(parents=True)
+        storage_marker.write_text("uid")
+        ln_setup.settings.worktree = True
+        assert ln_setup.settings.worktree is True
+        ln_setup.settings.worktree = False
+        assert ln_setup.settings.worktree is False
+        (dev_dir / "analysis.py").write_text("data")
+        with pytest.raises(DevDirNonEmpty, match="analysis.py"):
+            ln_setup.settings.worktree = True
+        ln_setup.settings._worktree_path.touch()
+        with pytest.raises(DevDirNonEmpty, match="analysis.py"):
+            ln_setup.settings.worktree = False
     finally:
         _restore_worktree_settings(previous_dev_dir, previous_worktree)
 
