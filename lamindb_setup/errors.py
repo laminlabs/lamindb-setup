@@ -13,6 +13,8 @@
 .. autoexception:: NoWriteAccess
 .. autoexception:: ConnectWithinDevDirError
 .. autoexception:: WorktreePathError
+.. autoexception:: NoDevDirConfigured
+.. autoexception:: DevDirNonEmpty
 .. autoexception:: ApiKeyExpired
 
 """
@@ -92,6 +94,14 @@ class ConnectWithinDevDirError(Exception):
 
 
 class WorktreePathError(Exception):
+    pass
+
+
+class NoDevDirConfigured(RuntimeError):
+    pass
+
+
+class DevDirNonEmpty(RuntimeError):
     pass
 
 
