@@ -25,9 +25,10 @@ from lamindb_setup.core._hub_crud import (
 from lamindb_setup.core._hub_utils import LaminDsnModel
 from lamindb_setup.core._settings_instance import InstanceSettings
 from lamindb_setup.core._settings_save import save_user_settings
-from lamindb_setup.core._settings_storage import base62
+from lamindb_setup.core._settings_storage import base62, mark_storage_root_file
 from lamindb_setup.core._settings_storage import init_storage as init_storage_base
 from lamindb_setup.core._settings_user import UserSettings
+from lamindb_setup.core.upath import UPath
 from laminhub_rest.dev._seed import LocalSeed
 from laminhub_rest.test.instance import create_instance
 from supabase_auth.errors import AuthApiError
@@ -79,6 +80,12 @@ def sign_up_user(email: str, handle: str, save_as_settings: bool = False):
     if save_as_settings:
         save_user_settings(user_settings)
     return user_settings
+
+
+def _cleanup_storage_marker(root: str) -> None:
+    mark_file = mark_storage_root_file(UPath(root))
+    if mark_file.exists():
+        mark_file.unlink(missing_ok=True)
 
 
 @pytest.fixture(scope="session")
@@ -149,6 +156,7 @@ def create_myinstance(create_testadmin1_session):  # -> Dict
     init_instance_hub(
         isettings, resource_db_server_id=UUID("e36c7069-2129-4c78-b2c6-323e2354b741")
     )
+    _cleanup_storage_marker("s3://lamindb-ci/myinstance")
     storage = init_storage_base(
         "s3://lamindb-ci/myinstance",
         instance_id=instance_id,
