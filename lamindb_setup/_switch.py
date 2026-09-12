@@ -32,9 +32,7 @@ def missing_branch_create_and_navigate_message(
     return (
         f"Branch '{target_name}' does not exist.\n"
         "To create it and switch in worktree mode, run:\n"
-        f"lamin create branch {target_name} && "
-        f"{navigation_command} && "
-        f"lamin switch {target_name}"
+        f"lamin create branch {target_name} && {navigation_command}"
     )
 
 

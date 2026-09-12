@@ -153,7 +153,6 @@ def test_switch_worktree_sequence_missing_then_create_requires_navigation(
         msg = str(exc_info.value)
         assert f"lamin create branch {branch_name}" in msg
         assert f"mkdir ../{branch_name} && cd ../{branch_name}" in msg
-        assert f"lamin switch {branch_name}" in msg
         assert ln_setup.settings.branch.name == "main"
 
         child_target.mkdir(parents=True, exist_ok=True)
