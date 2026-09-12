@@ -249,7 +249,7 @@ class SetupSettings:
             and not (path.is_dir() and (path / ".lamindb" / "storage_uid.txt").exists())
         ]
         if unexpected_paths:
-            names = ", ".join(sorted(entry.name for entry in unexpected_paths))
+            names = ", ".join(sorted(path.name for path in unexpected_paths))
             action = "enable" if value else "disable"
             raise RuntimeError(
                 f"Cannot {action} worktree mode because the dev-dir contains paths "
