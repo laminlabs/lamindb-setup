@@ -10,7 +10,7 @@ import jwt
 from lamin_utils import logger
 from platformdirs import user_cache_dir
 
-from lamindb_setup.errors import NoDevDirConfigured
+from lamindb_setup.errors import NoDevDirConfigured, WorktreePathError
 
 from ._deprecated import deprecated
 from ._settings_load import (
@@ -278,9 +278,6 @@ class SetupSettings:
     ) -> Path | None:
         if not self.worktree:
             return self.dev_dir
-
-        from lamindb_setup.errors import WorktreePathError
-
         if raise_on_error or self.dev_dir is not None:
             dev_dir = self._get_dev_dir_path()
         else:
