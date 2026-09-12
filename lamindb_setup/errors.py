@@ -97,6 +97,10 @@ class WorktreePathError(Exception):
     pass
 
 
+class NotInBranchDir(RuntimeError):
+    pass
+
+
 class NoDevDirConfigured(RuntimeError):
     pass
 

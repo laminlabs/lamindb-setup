@@ -13,6 +13,12 @@ Basic operations
 .. autofunction:: disconnect
 .. autofunction:: delete
 
+Change management
+-----------------
+
+.. autofunction:: switch
+.. autofunction:: merge
+
 Modules & settings
 ------------------
 
@@ -49,9 +55,11 @@ from ._disconnect import disconnect
 from ._django import django
 from ._entry_points import call_registered_entry_points as _call_registered_entry_points
 from ._init_instance import init
+from ._merge import merge
 from ._migrate import migrate
 from ._register_instance import register
 from ._setup_user import login, logout
+from ._switch import switch
 from .core._settings import settings
 
 __all__ = [
@@ -64,6 +72,8 @@ __all__ = [
     "close",
     "delete",
     "register",
+    "switch",
+    "merge",
     "settings",
     "core",
     "django",

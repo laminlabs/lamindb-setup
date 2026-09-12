@@ -24,6 +24,7 @@ system_settings_dir = Path(site_config_dir(appname="lamindb", appauthor="laminla
 LOCAL_SETTINGS_DIRNAME = ".lamin"
 LOCAL_CURRENT_INSTANCE_FILENAME = "current_instance"
 LOCAL_CURRENT_BRANCH_FILENAME = "current_branch"
+LOCAL_WORKTREE_FILENAME = "worktree"
 
 
 def get_settings_file_name_prefix():
@@ -74,6 +75,11 @@ def local_current_instance_file(directory: Path) -> Path:
 
 def local_current_branch_file(directory: Path) -> Path:
     filename = f"{get_settings_file_name_prefix()}{LOCAL_CURRENT_BRANCH_FILENAME}"
+    return directory / LOCAL_SETTINGS_DIRNAME / filename
+
+
+def local_worktree_file(directory: Path) -> Path:
+    filename = f"{get_settings_file_name_prefix()}{LOCAL_WORKTREE_FILENAME}"
     return directory / LOCAL_SETTINGS_DIRNAME / filename
 
 
