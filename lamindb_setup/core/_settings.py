@@ -232,10 +232,7 @@ class SetupSettings:
         keys relative to that child root. When disabled, `dev_dir` itself is the active
         root for branch lookup and key derivation.
         """
-        if not self._worktree_path.exists():
-            return False
-        value = self._worktree_path.read_text().strip().lower()
-        return value in {"1", "true", "yes"}
+        return self._worktree_path.exists()
 
     @worktree.setter
     def worktree(self, value: bool) -> None:
@@ -257,7 +254,7 @@ class SetupSettings:
                 "remove them first."
             )
         if value:
-            self._worktree_path.write_text("true")
+            self._worktree_path.touch()
         else:
             self._worktree_path.unlink(missing_ok=True)
         self._clear_instance_context_cache()
