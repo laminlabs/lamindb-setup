@@ -206,7 +206,6 @@ class SetupSettings:
                 )
         else:
             value_path = Path(value).expanduser().resolve()
-            value_path.mkdir(parents=True, exist_ok=True)
             value_str = value_path.as_posix()
             self._dev_dir_path.write_text(value_str)
             if instance_slug != "none/none":
