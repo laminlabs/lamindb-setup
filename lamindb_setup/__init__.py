@@ -52,6 +52,7 @@ from ._init_instance import init
 from ._migrate import migrate
 from ._register_instance import register
 from ._setup_user import login, logout
+from ._switch import switch
 from .core._settings import settings
 
 __all__ = [
@@ -64,6 +65,7 @@ __all__ = [
     "close",
     "delete",
     "register",
+    "switch",
     "settings",
     "core",
     "django",
