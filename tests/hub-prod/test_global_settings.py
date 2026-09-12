@@ -8,7 +8,7 @@ import lamindb_setup as ln_setup
 import pytest
 from lamindb_setup.core._settings_store import local_current_branch_file
 from lamindb_setup.core.hashing import hash_dir
-from lamindb_setup.errors import WorktreePathError
+from lamindb_setup.errors import NoDevDirConfigured, WorktreePathError
 
 
 def test_auto_connect():
@@ -124,9 +124,18 @@ def test_resolve_active_worktree_root_without_dev_dir():
     previous_worktree = ln_setup.settings.worktree
     try:
         ln_setup.settings.dev_dir = None
+        ln_setup.settings._worktree_path.unlink(missing_ok=True)
+        with pytest.raises(
+            NoDevDirConfigured,
+            match="Please set it using: lamin settings dev-dir set path/to/directory",
+        ):
+            ln_setup.settings.worktree = True
         ln_setup.settings._worktree_path.write_text("true")
         assert ln_setup.settings._resolve_active_worktree_root() is None
-        with pytest.raises(WorktreePathError, match="requires a configured dev-dir"):
+        with pytest.raises(
+            NoDevDirConfigured,
+            match="Please set it using: lamin settings dev-dir set path/to/directory",
+        ):
             ln_setup.settings._resolve_active_worktree_root(raise_on_error=True)
     finally:
         _restore_worktree_settings(previous_dev_dir, previous_worktree)

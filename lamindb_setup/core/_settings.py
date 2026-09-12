@@ -10,6 +10,8 @@ import jwt
 from lamin_utils import logger
 from platformdirs import user_cache_dir
 
+from lamindb_setup.errors import NoDevDirConfigured
+
 from ._deprecated import deprecated
 from ._settings_load import (
     load_cache_path_from_settings,
@@ -240,15 +242,11 @@ class SetupSettings:
     def worktree(self, value: bool) -> None:
         if value == self.worktree:
             return
-        dev_dir = self.dev_dir
-        if dev_dir is None:
-            from lamindb_setup.errors import NoDevDirConfigured
-
-            raise NoDevDirConfigured("worktree mode requires a configured dev-dir")
-        dev_dir = dev_dir.resolve()
+        self._raise_no_dev_dir_configured()
+        assert self.dev_dir is not None
         unexpected_entries = [
             entry
-            for entry in dev_dir.iterdir()
+            for entry in self.dev_dir.iterdir()
             if entry.name not in _WORKTREE_ROOT_ENTRIES
             and not (
                 entry.is_dir() and (entry / ".lamindb" / "storage_uid.txt").is_file()
@@ -268,26 +266,29 @@ class SetupSettings:
             self._worktree_path.unlink(missing_ok=True)
         self._clear_instance_context_cache()
 
+    def _raise_no_dev_dir_configured(self) -> None:
+        if self.dev_dir is None:
+            raise NoDevDirConfigured(
+                "The worktree mode requires a configured dev-dir. "
+                "Please set it using: lamin settings dev-dir set path/to/directory"
+            )
+
     def _resolve_active_worktree_root(
         self, *, cwd: Path | None = None, raise_on_error: bool = False
     ) -> Path | None:
         if not self.worktree:
-            return self.dev_dir.resolve() if self.dev_dir is not None else None
+            return self.dev_dir
 
         from lamindb_setup.errors import WorktreePathError
 
-        dev_dir = self.dev_dir
-        if dev_dir is None:
-            if raise_on_error:
-                raise WorktreePathError(
-                    "worktree mode requires a configured dev-dir. "
-                    "Run: lamin settings dev-dir set <path>"
-                )
-            return None
-
-        root = dev_dir.resolve()
+        if raise_on_error:
+            self._raise_no_dev_dir_configured()
+        else:
+            if self.dev_dir is None:
+                return None
+        assert self.dev_dir is not None
         location = (cwd or Path.cwd()).resolve()
-        if not location.is_relative_to(root) or location == root:
+        if not location.is_relative_to(self.dev_dir) or location == self.dev_dir:
             if raise_on_error:
                 raise WorktreePathError(
                     "worktree mode is enabled: run this command inside a child "
@@ -295,8 +296,8 @@ class SetupSettings:
                 )
             return None
 
-        rel = location.relative_to(root)
-        return root / rel.parts[0]
+        rel = location.relative_to(self.dev_dir)
+        return self.dev_dir / rel.parts[0]
 
     @property
     def effective_dev_dir(self) -> Path | None:
@@ -305,8 +306,9 @@ class SetupSettings:
         This is needed because in worktree mode `dev_dir` is only a parent container.
         The effective key root must be the active child workspace so branch-local runs
         produce stable, isolated keys. Returns `dev_dir` in normal mode; in worktree
-        mode returns the active child root and raises `WorktreePathError` if the current
-        directory is not inside a valid child workspace.
+        mode returns the active child root, raises `NoDevDirConfigured` when `dev_dir`
+        is unset, and raises `WorktreePathError` if the current directory is not inside
+        a valid child workspace.
         """
         return self._resolve_active_worktree_root(raise_on_error=True)
 
