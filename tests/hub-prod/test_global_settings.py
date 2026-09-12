@@ -8,7 +8,12 @@ import lamindb_setup as ln_setup
 import pytest
 from lamindb_setup.core._settings_store import local_current_branch_file
 from lamindb_setup.core.hashing import hash_dir
-from lamindb_setup.errors import DevDirNonEmpty, NoDevDirConfigured, WorktreePathError
+from lamindb_setup.errors import (
+    DevDirNonEmpty,
+    NoDevDirConfigured,
+    NotInBranchDir,
+    WorktreePathError,
+)
 
 
 def test_auto_connect():
@@ -178,6 +183,60 @@ def test_resolve_active_worktree_root_invalid_location_returns_none(tmp_path: Pa
         assert ln_setup.settings._resolve_active_worktree_root(cwd=root) is None
         assert ln_setup.settings._resolve_active_worktree_root(cwd=outside) is None
     finally:
+        _restore_worktree_settings(previous_dev_dir, previous_worktree)
+
+
+def test_worktree_branch_undefined_at_dev_dir_root(tmp_path: Path):
+    previous_dev_dir = ln_setup.settings.dev_dir
+    previous_worktree = ln_setup.settings.worktree
+    worktree_parent = tmp_path / "worktrees"
+    worktree_parent.mkdir(parents=True, exist_ok=True)
+    previous_cwd = Path.cwd()
+    try:
+        ln_setup.settings.dev_dir = worktree_parent
+        ln_setup.settings.worktree = True
+        os.chdir(worktree_parent)
+        with pytest.raises(
+            NotInBranchDir,
+            match="worktree mode is enabled: branch is only defined inside a child branch directory",
+        ):
+            _ = ln_setup.settings.branch
+        assert (
+            " - branch: -- (undefined, cd into a branch directory in the worktree)\n"
+            in repr(ln_setup.settings)
+        )
+    finally:
+        os.chdir(previous_cwd)
+        _restore_worktree_settings(previous_dev_dir, previous_worktree)
+
+
+def test_worktree_branch_infers_child_directory_without_marker(tmp_path: Path):
+    previous_dev_dir = ln_setup.settings.dev_dir
+    previous_worktree = ln_setup.settings.worktree
+    previous_cwd = Path.cwd()
+    worktree_parent = tmp_path / "worktrees"
+    main_child = worktree_parent / "main"
+    main_child.mkdir(parents=True, exist_ok=True)
+    try:
+        ln_setup.settings.dev_dir = worktree_parent
+        ln_setup.settings.worktree = True
+        os.chdir(main_child)
+        # Simulate a freshly created child without branch marker.
+        ln_setup.settings._branch_path.unlink(missing_ok=True)
+        legacy_branch = ln_setup.settings._legacy_branch_path
+        previous_legacy = legacy_branch.read_text() if legacy_branch.exists() else None
+        legacy_branch.write_text("archivexxxxx\narchive")
+        ln_setup.settings._branch = None
+        ln_setup.settings._branch_context_path = None
+        assert ln_setup.settings._read_branch_idlike_name()[1] == "main"
+        assert ln_setup.settings.branch.name == "main"
+    finally:
+        if "legacy_branch" in locals():
+            if previous_legacy is None:
+                legacy_branch.unlink(missing_ok=True)
+            else:
+                legacy_branch.write_text(previous_legacy)
+        os.chdir(previous_cwd)
         _restore_worktree_settings(previous_dev_dir, previous_worktree)
 
 

@@ -10,7 +10,12 @@ import jwt
 from lamin_utils import logger
 from platformdirs import user_cache_dir
 
-from lamindb_setup.errors import DevDirNonEmpty, NoDevDirConfigured, WorktreePathError
+from lamindb_setup.errors import (
+    DevDirNonEmpty,
+    NoDevDirConfigured,
+    NotInBranchDir,
+    WorktreePathError,
+)
 
 from ._deprecated import deprecated
 from ._settings_load import (
@@ -41,6 +46,9 @@ if TYPE_CHECKING:
 
 
 DEFAULT_CACHE_DIR = Path(user_cache_dir(appname="lamindb", appauthor="laminlabs"))
+UNDEFINED_BRANCH_IN_WORKTREE = (
+    "-- (undefined, cd into a branch directory in the worktree)"
+)
 
 
 def _default_cache_dir():
@@ -87,11 +95,13 @@ class SetupSettings:
 
     _branch = None  # do not have types here
     _space = None  # do not have types here
+    _branch_context_path: Path | None = None
 
     def _clear_instance_context_cache(self) -> None:
         """Clear cached instance context."""
         self._branch = None
         self._space = None
+        self._branch_context_path = None
 
     @property
     def _instance_settings_path(self) -> Path:
@@ -307,6 +317,11 @@ class SetupSettings:
             worktree_root = self._resolve_active_worktree_root(raise_on_error=False)
             if worktree_root is not None:
                 return local_current_branch_file(worktree_root)
+            raise NotInBranchDir(
+                "worktree mode is enabled: branch is only defined inside a child "
+                "branch directory in the configured dev-dir. "
+                "cd into a branch directory in the worktree."
+            )
         if self.dev_dir is not None:
             return local_current_branch_file(self.dev_dir.resolve())
         return (
@@ -328,8 +343,15 @@ class SetupSettings:
             branch_path = self._branch_path
         except SystemExit:  # in case no instance setup
             return idlike, name
+        except NotInBranchDir:
+            return "--", UNDEFINED_BRANCH_IN_WORKTREE
         if branch_path.exists():
             idlike, name = branch_path.read_text().split("\n")
+        elif self.worktree:
+            # In worktree mode, each child directory maps to a branch context.
+            # Do not fall back to global legacy state from another directory.
+            idlike = branch_path.parent.parent.name
+            name = str(idlike)
         elif self.dev_dir is not None and self._legacy_branch_path.exists():
             # Backward compat for sessions that only wrote branch state globally.
             idlike, name = self._legacy_branch_path.read_text().split("\n")
@@ -343,6 +365,12 @@ class SetupSettings:
         # this is needed for .filter() with non-default connections
         if not self.is_configured:
             return MainBranchMock()
+        if self.worktree:
+            # Raises NotInBranchDir when called from worktree root/outside branch dir.
+            branch_path = self._branch_path
+            if self._branch_context_path != branch_path:
+                self._branch = None
+                self._branch_context_path = branch_path
 
         if self._branch is None:
             from lamindb import Branch
@@ -352,6 +380,15 @@ class SetupSettings:
             try:
                 self._branch = Branch.get(idlike)
             except DoesNotExist:
+                if self.worktree and isinstance(idlike, str):
+                    branch_record = Branch.filter(name=idlike).one_or_none()
+                    if branch_record is not None:
+                        self._branch_path.parent.mkdir(parents=True, exist_ok=True)
+                        self._branch_path.write_text(
+                            f"{branch_record.uid}\n{branch_record.name}"
+                        )
+                        self._branch = branch_record
+                        return self._branch
                 # The local branch marker can become stale if the referenced
                 # branch was deleted. Fall back to `main` and refresh marker.
                 branch_record = Branch.filter(name="main").one()
@@ -381,6 +418,7 @@ class SetupSettings:
         self._branch_path.parent.mkdir(parents=True, exist_ok=True)
         self._branch_path.write_text(f"{branch_record.uid}\n{branch_record.name}")
         self._branch = branch_record
+        self._branch_context_path = self._branch_path
 
     @property
     def _space_path(self) -> Path:
