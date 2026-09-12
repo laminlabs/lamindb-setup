@@ -242,11 +242,10 @@ class SetupSettings:
     def worktree(self, value: bool) -> None:
         if value == self.worktree:
             return
-        self._raise_no_dev_dir_configured()
-        assert self.dev_dir is not None
+        dev_dir = self._get_dev_dir_path()
         unexpected_entries = [
             entry
-            for entry in self.dev_dir.iterdir()
+            for entry in dev_dir.iterdir()
             if entry.name not in _WORKTREE_ROOT_ENTRIES
             and not (
                 entry.is_dir() and (entry / ".lamindb" / "storage_uid.txt").is_file()
@@ -266,12 +265,13 @@ class SetupSettings:
             self._worktree_path.unlink(missing_ok=True)
         self._clear_instance_context_cache()
 
-    def _raise_no_dev_dir_configured(self) -> None:
+    def _get_dev_dir_path(self) -> Path:
         if self.dev_dir is None:
             raise NoDevDirConfigured(
                 "The worktree mode requires a configured dev-dir. "
                 "Please set it using: lamin settings dev-dir set path/to/directory"
             )
+        return self.dev_dir
 
     def _resolve_active_worktree_root(
         self, *, cwd: Path | None = None, raise_on_error: bool = False
@@ -281,14 +281,12 @@ class SetupSettings:
 
         from lamindb_setup.errors import WorktreePathError
 
-        if raise_on_error:
-            self._raise_no_dev_dir_configured()
+        if raise_on_error or self.dev_dir is not None:
+            dev_dir = self._get_dev_dir_path()
         else:
-            if self.dev_dir is None:
-                return None
-        assert self.dev_dir is not None
+            return None
         location = (cwd or Path.cwd()).resolve()
-        if not location.is_relative_to(self.dev_dir) or location == self.dev_dir:
+        if not location.is_relative_to(dev_dir) or location == dev_dir:
             if raise_on_error:
                 raise WorktreePathError(
                     "worktree mode is enabled: run this command inside a child "
@@ -296,8 +294,8 @@ class SetupSettings:
                 )
             return None
 
-        rel = location.relative_to(self.dev_dir)
-        return self.dev_dir / rel.parts[0]
+        rel = location.relative_to(dev_dir)
+        return dev_dir / rel.parts[0]
 
     @property
     def effective_dev_dir(self) -> Path | None:
