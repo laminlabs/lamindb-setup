@@ -216,10 +216,10 @@ def test_worktree_branch_infers_child_directory_without_marker(tmp_path: Path):
     previous_cwd = Path.cwd()
     worktree_parent = tmp_path / "worktrees"
     main_child = worktree_parent / "main"
-    main_child.mkdir(parents=True, exist_ok=True)
     try:
         ln_setup.settings.dev_dir = worktree_parent
         ln_setup.settings.worktree = True
+        main_child.mkdir(parents=True, exist_ok=True)
         os.chdir(main_child)
         # Simulate a freshly created child without branch marker.
         ln_setup.settings._branch_path.unlink(missing_ok=True)

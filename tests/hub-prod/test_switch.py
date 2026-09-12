@@ -88,16 +88,26 @@ def test_switch_worktree_from_child_requires_cd_sibling_instruction(tmp_path: Pa
     child_main = worktree_parent / "main"
     child_target = worktree_parent / "testcontrib"
     worktree_parent.mkdir(parents=True, exist_ok=True)
-    child_main.mkdir(parents=True, exist_ok=True)
-    child_target.mkdir(parents=True, exist_ok=True)
+    branch_created = False
     try:
         ln_setup.settings.dev_dir = worktree_parent
         ln_setup.settings.worktree = True
+        child_main.mkdir(parents=True, exist_ok=True)
+        child_target.mkdir(parents=True, exist_ok=True)
+        if ln.Branch.filter(name="testcontrib").one_or_none() is None:
+            ln.Branch(name="testcontrib").save()
+            branch_created = True
         os.chdir(child_main)
         with pytest.raises(ValueError, match=r"To switch, run: cd \.\./testcontrib"):
             ln_setup.switch("testcontrib")
     finally:
         os.chdir(previous_cwd)
+        if branch_created:
+            ln.Branch.filter(name="testcontrib").delete(permanent=True)
+        if child_target.exists():
+            shutil.rmtree(child_target)
+        if child_main.exists():
+            shutil.rmtree(child_main)
         ln_setup.settings.worktree = previous_worktree
         ln_setup.settings.dev_dir = previous_dev_dir
 
@@ -114,11 +124,12 @@ def test_switch_worktree_sequence_missing_then_create_requires_navigation(
     branch_name = f"seq-{time.time_ns()}"
     child_target = worktree_parent / branch_name
     worktree_parent.mkdir(parents=True, exist_ok=True)
-    child_main.mkdir(parents=True, exist_ok=True)
     branch_created = False
+    branch_registered = False
     try:
         ln_setup.settings.dev_dir = worktree_parent
         ln_setup.settings.worktree = True
+        child_main.mkdir(parents=True, exist_ok=True)
         os.chdir(child_main)
 
         with pytest.raises(ln.errors.DoesNotExist) as exc_info:
@@ -137,6 +148,8 @@ def test_switch_worktree_sequence_missing_then_create_requires_navigation(
         assert ln_setup.settings.branch.name == "main"
 
         child_target.mkdir(parents=True, exist_ok=True)
+        ln.Branch(name=branch_name).save()
+        branch_registered = True
         with pytest.raises(
             ValueError,
             match=rf"To switch, run: cd \.\./{branch_name}",
@@ -145,12 +158,11 @@ def test_switch_worktree_sequence_missing_then_create_requires_navigation(
         assert ln_setup.settings.branch.name == "main"
 
         os.chdir(child_target)
-        ln_setup.switch(branch_name, create=True)
-        branch_created = True
+        ln_setup.switch(branch_name)
         assert ln_setup.settings.branch.name == branch_name
     finally:
         os.chdir(previous_cwd)
-        if branch_created:
+        if branch_created or branch_registered:
             ln.Branch.filter(name=branch_name).delete(permanent=True)
         if child_target.exists():
             shutil.rmtree(child_target)

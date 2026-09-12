@@ -81,11 +81,11 @@ def switch(target: str | Branch, *, space: bool = False, create: bool = False):
         create: If True and switching branch, create the branch if it does not exist.
     """
     is_worktree_bootstrap = False
+    target_name = target if isinstance(target, str) else target.name
 
     if space:
         settings.space = target
     else:
-        target_name = target if isinstance(target, str) else target.name
         resolved_target: str | Branch = target
         if not create and isinstance(target, str):
             from lamindb import Branch, Q
