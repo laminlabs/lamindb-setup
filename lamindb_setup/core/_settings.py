@@ -41,7 +41,6 @@ if TYPE_CHECKING:
 
 
 DEFAULT_CACHE_DIR = Path(user_cache_dir(appname="lamindb", appauthor="laminlabs"))
-_WORKTREE_ROOT_ENTRIES = {".agents", ".claude", ".lamin", ".vscode"}
 
 
 def _default_cache_dir():
@@ -243,16 +242,14 @@ class SetupSettings:
         if value == self.worktree:
             return
         dev_dir = self._get_dev_dir_path()
-        unexpected_entries = [
-            entry
-            for entry in dev_dir.iterdir()
-            if entry.name not in _WORKTREE_ROOT_ENTRIES
-            and not (
-                entry.is_dir() and (entry / ".lamindb" / "storage_uid.txt").is_file()
-            )
+        unexpected_paths = [
+            path
+            for path in dev_dir.iterdir()
+            if not path.name.startswith(".")
+            and not (path.is_dir() and (path / ".lamindb" / "storage_uid.txt").exists())
         ]
-        if unexpected_entries:
-            names = ", ".join(sorted(entry.name for entry in unexpected_entries))
+        if unexpected_paths:
+            names = ", ".join(sorted(entry.name for entry in unexpected_paths))
             action = "enable" if value else "disable"
             raise RuntimeError(
                 f"Cannot {action} worktree mode because the dev-dir contains paths "
