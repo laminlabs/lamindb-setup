@@ -10,7 +10,7 @@ import jwt
 from lamin_utils import logger
 from platformdirs import user_cache_dir
 
-from lamindb_setup.errors import NoDevDirConfigured, WorktreePathError
+from lamindb_setup.errors import DevDirNonEmpty, NoDevDirConfigured, WorktreePathError
 
 from ._deprecated import deprecated
 from ._settings_load import (
@@ -251,7 +251,7 @@ class SetupSettings:
         if unexpected_paths:
             names = ", ".join(sorted(path.name for path in unexpected_paths))
             action = "enable" if value else "disable"
-            raise RuntimeError(
+            raise DevDirNonEmpty(
                 f"Cannot {action} worktree mode because the dev-dir contains paths "
                 f"other than configuration or storage locations: {names}. Move or "
                 "remove them first."
