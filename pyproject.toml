@@ -18,7 +18,6 @@ dependencies = [
     "pydantic-settings",
     "platformdirs<5.0.0",
     "httpx_retries<1.0.0",
-    "requests", # keep for now for other packages (bionty etc)
     "universal_pathlib==0.3.10",  # is still experimental, need pinning
     "botocore<2.0.0",
     "supabase>=2.20.0,<=2.24.0", # from 2.20.0 migrated to monorepo
