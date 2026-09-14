@@ -20,6 +20,7 @@ from typing import TYPE_CHECKING, Any, Literal
 from urllib.parse import parse_qs, urlsplit
 
 import fsspec
+import httpx
 from lamin_utils import logger
 from upath import UPath
 from upath.implementations.cloud import CloudPath, S3Path  # keep CloudPath!
@@ -31,6 +32,7 @@ from lamindb_setup.errors import StorageNotEmpty
 from ._asyncio_write_spin import repair_spurious_write_errors
 from ._aws_options import HOSTED_BUCKETS, get_user_aws_options_manager
 from ._deprecated import deprecated
+from ._hub_client import request_with_auth
 from .canonical_suffix import CanonicalSuffix
 from .hashing import HASH_LENGTH, b16_to_b64, hash_from_hashes_list, hash_string
 
@@ -571,8 +573,8 @@ def synchronize_to(
         # no need to cast local_stat.st_mtime to int
         # because if it has the fractional part and cloud_mtime doesn't
         # and they have the same integer part then cloud_mtime can't be bigger
-        is_sync_needed = (
-            lambda cloud_mtime, local_stat: cloud_mtime > local_stat.st_mtime
+        is_sync_needed = lambda cloud_mtime, local_stat: (
+            cloud_mtime > local_stat.st_mtime
         )
 
     local_paths: list[Path] = []
@@ -848,27 +850,98 @@ def view_tree(
     logger.print(message)
 
 
-def to_url(upath: S3Path) -> str:
-    """Public storage URL.
+def to_url(upath: UPath) -> str:
+    """Generates a URL for an object represented by `UPath`.
 
-    Generates a public URL for an object in an S3 bucket using fsspec's UPath,
-    considering the bucket's region.
+    For S3/GCS paths, this returns a public URL considering the bucket region.
+    If the S3 path is not publicly hosted, it returns a LaminHub URL if the artifact is hosted on LaminHub.
 
     Args:
-        upath: A `UPath` object representing an S3 path.
+        upath: A `UPath` object.
 
     Returns:
-        A string containing the public URL to the S3 object.
+        A string containing the URL to the object.
     """
-    if upath.protocol != "s3":
-        raise ValueError("The provided UPath must be an S3 path.")
-    key = "/".join(upath.parts[1:])
-    bucket = upath.drive
-    region = get_storage_region(upath)
-    if region == "us-east-1":
-        return f"https://{bucket}.s3.amazonaws.com/{key}"
+    from ._settings import settings
+
+    if upath.protocol == "s3":
+        key = "/".join(upath.parts[1:])
+        bucket = upath.drive
+        if _is_publicly_accessible_path(upath):
+            region = get_storage_region(upath)
+            if region == "us-east-1":
+                return f"https://{bucket}.s3.amazonaws.com/{key}"
+            return f"https://{bucket}.s3-{region}.amazonaws.com/{key}"
+        elif settings.instance.is_managed_by_hub:
+            origin = settings.instance.ui_url
+            if origin is not None:
+                common = f"{origin}/storage/s3/{bucket}%2F/{key}"
+                if _is_laminhub_url_accessible(common):
+                    return common
+                else:
+                    raise ValueError(
+                        "The provided S3 UPath must be publicly accessible or the artifact must be hosted on LaminHub and accessible to the current user."
+                    )
+        else:
+            raise ValueError(
+                "The provided S3 UPath must be publicly accessible or the artifact must be hosted on LaminHub and accessible to the current user."
+            )
+    if upath.protocol == "gs":
+        if _is_publicly_accessible_path(upath):
+            return f"https://storage.googleapis.com/{str(upath).removeprefix('gs://')}"
+        else:
+            raise ValueError(
+                "This function only supports publicly accessible GCS paths."
+            )
+    if upath.protocol in {"http", "https"}:
+        return str(upath)
+    raise ValueError("The provided UPath must be an S3, GCS, HTTP, or HTTPS path.")
+
+
+def _is_publicly_accessible_path(upath: UPath) -> bool:
+    """Check whether an S3/GCS path is anonymously readable."""
+    if upath.protocol == "s3":
+        anon_path = UPath(upath, anon=True)
+    elif upath.protocol in {"gs", "gcs"}:
+        anon_path = UPath(upath, token="anon")
     else:
-        return f"https://{bucket}.s3-{region}.amazonaws.com/{key}"
+        raise ValueError("Only S3 and GCS paths are supported.")
+    try:
+        return anon_path.exists()
+    except Exception:
+        return False
+
+
+def _is_laminhub_url_accessible(url: str) -> bool:
+    """Check whether a LaminHub storage URL is accessible.
+
+    - Covers cases where the UPath does not correspond to an artifact hosted on LaminHub.
+    - Covers cases where the artifact is hosted on LaminHub but not accessible to the current user(e.g. not a space member).
+
+    Args:
+        url: A LaminHub storage URL.
+
+    Returns:
+        True if the URL is accessible, False otherwise.
+    """
+    from ._settings import settings
+
+    access_token = None
+    renew_token = False
+    if settings.user.handle != "anonymous":
+        access_token = settings.user.access_token
+        renew_token = access_token is not None
+    try:
+        response = request_with_auth(
+            url,
+            "head",
+            access_token=access_token,
+            renew_token=renew_token,
+            timeout=5,
+        )
+    except httpx.HTTPError:
+        return False
+    return 200 <= response.status_code < 300
 
 
 def from_auth(cls, path: AnyPathStr) -> UPath:
