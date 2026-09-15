@@ -35,7 +35,7 @@ def disconnect(mute: bool = False, here: bool = False) -> None:
         from ._connect_instance import _connect_cli
 
         try:
-            _connect_cli(instance_slug, here=True)
+            _connect_cli(instance_slug, here=True, mute_here=True)
             settings.dev_dir = None
             if not mute:
                 logger.success(

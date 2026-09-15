@@ -293,6 +293,7 @@ def _connect_cli(
     instance: str,
     use_root_db_user: bool = False,
     here: bool = False,
+    mute_here: bool = False,
 ) -> None:
     from pathlib import Path
 
@@ -355,8 +356,9 @@ def _connect_cli(
     if here:
         cwd = Path.cwd().resolve()
         settings_.dev_dir = cwd
-        logger.important(f"dev-dir is: {cwd}")
-        logger.important(f"connected lamindb: {isettings.slug}")
+        if not mute_here:
+            logger.important(f"dev-dir is: {cwd}")
+            logger.important(f"connected lamindb: {isettings.slug}")
     return None
 
 
