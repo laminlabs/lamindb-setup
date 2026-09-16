@@ -16,19 +16,19 @@ def test_migrate_check():
     assert ln_setup.migrate.check()
 
 
-def test_migrate_on_lambda_default_infers_from_managed_instance(monkeypatch):
-    monkeypatch.delenv("LAMIN_MIGRATE_ON_LAMBDA", raising=False)
+def test_migrate_on_hub_default_infers_from_managed_instance(monkeypatch):
+    monkeypatch.delenv("LAMIN_MIGRATE_ON_HUB", raising=False)
 
-    assert _migrate._infer_migrate_on_lambda_default(is_managed_by_hub=True) is True
-    assert _migrate._infer_migrate_on_lambda_default(is_managed_by_hub=False) is False
+    assert _migrate._infer_migrate_on_hub_default(is_managed_by_hub=True) is True
+    assert _migrate._infer_migrate_on_hub_default(is_managed_by_hub=False) is False
 
 
-def test_migrate_on_lambda_env_var_overrides_inferred_default(monkeypatch):
-    monkeypatch.setenv("LAMIN_MIGRATE_ON_LAMBDA", "false")
-    assert _migrate._infer_migrate_on_lambda_default(is_managed_by_hub=True) is False
+def test_migrate_on_hub_env_var_overrides_inferred_default(monkeypatch):
+    monkeypatch.setenv("LAMIN_MIGRATE_ON_HUB", "false")
+    assert _migrate._infer_migrate_on_hub_default(is_managed_by_hub=True) is False
 
-    monkeypatch.setenv("LAMIN_MIGRATE_ON_LAMBDA", "true")
-    assert _migrate._infer_migrate_on_lambda_default(is_managed_by_hub=False) is True
+    monkeypatch.setenv("LAMIN_MIGRATE_ON_HUB", "true")
+    assert _migrate._infer_migrate_on_hub_default(is_managed_by_hub=False) is True
 
 
 def test_migrate_deploy_uses_local_path_when_env_var_overrides(monkeypatch):
@@ -45,7 +45,7 @@ def test_migrate_deploy_uses_local_path_when_env_var_overrides(monkeypatch):
         raising=False,
     )
     monkeypatch.setattr(_migrate.settings, "_user_settings", fake_user, raising=False)
-    monkeypatch.setenv("LAMIN_MIGRATE_ON_LAMBDA", "false")
+    monkeypatch.setenv("LAMIN_MIGRATE_ON_HUB", "false")
 
     called = {"deploy": 0}
     monkeypatch.setattr(

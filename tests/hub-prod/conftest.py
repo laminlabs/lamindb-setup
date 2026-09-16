@@ -18,10 +18,10 @@ def pytest_sessionstart(session: pytest.Session):
     assert lamindb_setup.settings.instance._id == lamindb_instance_id
     assert lamindb_setup.settings.instance.uid == "7cIQBFhUg8ok"
     if lamindb_setup.settings.instance.is_managed_by_hub:
-        os.environ["LAMIN_MIGRATE_ON_LAMBDA"] = "false"
+        os.environ["LAMIN_MIGRATE_ON_HUB"] = "false"
 
 
 def pytest_sessionfinish(session: pytest.Session):
     logger.set_verbosity(1)
-    os.environ.pop("LAMIN_MIGRATE_ON_LAMBDA", None)
+    os.environ.pop("LAMIN_MIGRATE_ON_HUB", None)
     lamindb_setup.delete("testuser2/lamindb-setup-unit-tests", force=True)

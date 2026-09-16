@@ -11,8 +11,8 @@ from .core._settings import settings
 from .core.django import setup_django
 
 
-def _infer_migrate_on_lambda_default(*, is_managed_by_hub: bool) -> bool:
-    env_value = os.getenv("LAMIN_MIGRATE_ON_LAMBDA")
+def _infer_migrate_on_hub_default(*, is_managed_by_hub: bool) -> bool:
+    env_value = os.getenv("LAMIN_MIGRATE_ON_HUB")
     if env_value is None:
         return is_managed_by_hub
     return env_value == "true"
@@ -110,11 +110,11 @@ class migrate:
         )
 
         isettings = settings.instance
-        LAMIN_MIGRATE_ON_LAMBDA = _infer_migrate_on_lambda_default(
+        LAMIN_MIGRATE_ON_HUB = _infer_migrate_on_hub_default(
             is_managed_by_hub=isettings.is_managed_by_hub
         )
 
-        if isettings.is_on_hub and LAMIN_MIGRATE_ON_LAMBDA:
+        if isettings.is_on_hub and LAMIN_MIGRATE_ON_HUB:
             # dynamic import to avoid importing the heavy httpx at root
             import httpx
 
