@@ -338,7 +338,7 @@ class SetupSettings:
             if raise_on_error:
                 raise WorktreePathError(
                     "Worktree mode is enabled, so this command needs to run inside "
-                    "a child directory of the configured worktree. "
+                    "a child directory of the configured dev-dir. "
                     + _worktree_branch_dir_hint(self.dev_dir)
                 )
             return None
@@ -367,7 +367,7 @@ class SetupSettings:
                 return local_current_branch_file(worktree_root)
             raise NotInBranchDir(
                 "Worktree mode is enabled, so a branch is only defined inside a "
-                "child directory of the configured worktree. "
+                "child directory of the configured dev-dir. "
                 + _worktree_branch_dir_hint(self.dev_dir)
             )
         if self.dev_dir is not None:
