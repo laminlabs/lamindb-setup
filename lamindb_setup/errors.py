@@ -15,7 +15,9 @@
 .. autoexception:: WorktreePathError
 .. autoexception:: NoDevDirConfigured
 .. autoexception:: DevDirNonEmpty
+.. autoexception:: ApiKeyError
 .. autoexception:: ApiKeyExpired
+.. autoexception:: ApiKeyNotFound
 
 """
 
@@ -109,5 +111,13 @@ class DevDirNonEmpty(RuntimeError):
     pass
 
 
-class ApiKeyExpired(DefaultMessageException):
+class ApiKeyError(DefaultMessageException):
+    """Invalid, expired, or missing API key."""
+
+
+class ApiKeyExpired(ApiKeyError):
     default_message = "Your API key is expired."
+
+
+class ApiKeyNotFound(ApiKeyError):
+    default_message = "Your API key was not found."

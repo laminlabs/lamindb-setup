@@ -14,7 +14,12 @@ from httpx_retries import Retry, RetryTransport
 from lamin_utils import logger
 from supabase import Client, ClientOptions, create_client
 
-from lamindb_setup.errors import NoAccessTokenError
+from lamindb_setup.errors import (
+    ApiKeyError,
+    ApiKeyExpired,
+    ApiKeyNotFound,
+    NoAccessTokenError,
+)
 
 from ._settings_save import save_user_settings
 from ._settings_store import Connector
@@ -190,6 +195,22 @@ def _warn_if_api_key_expiring(api_key_expires_at: str) -> None:
         logger.warning(f"API key expires in {days_left} {day_word}")
 
 
+def _api_key_error_from_hub(exception: BaseException) -> ApiKeyError | None:
+    from supabase_functions.errors import FunctionsHttpError
+
+    # "JWT expired" is a different failure (stale access token) and must not match
+    if not isinstance(exception, FunctionsHttpError):
+        return None
+    message = exception.message.lower()
+    if "api key" not in message:
+        return None
+    if "expired" in message:
+        return ApiKeyExpired()
+    if "not found" in message:
+        return ApiKeyNotFound()
+    return None
+
+
 # runs ~0.5s
 def get_access_token(
     email: str | None = None, password: str | None = None, api_key: str | None = None
@@ -221,6 +242,8 @@ def get_access_token(
         # we need to log the problem here because the exception is usually caught outside
         # in call_with_fallback_auth
         logger.warning(f"failed to get lamindb access token: {e}")
+        if api_key_error := _api_key_error_from_hub(e):
+            raise api_key_error from None
         raise e
     finally:
         hub.auth.sign_out(options={"scope": "local"})
@@ -258,6 +281,9 @@ def call_with_fallback_auth(
                 # here settings.user contains an updated access_token
                 save_user_settings(settings.user)
             break
+        except ApiKeyError as error:
+            # refreshing with an unusable API key cannot succeed; do not retry
+            raise error from None
         except NoAccessTokenError:
             # only re-raise after a refresh attempt; if renew_token is False,
             # the next iteration will try to refresh the token
