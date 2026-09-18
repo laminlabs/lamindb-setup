@@ -205,13 +205,39 @@ def test_worktree_branch_undefined_at_dev_dir_root(tmp_path: Path):
         os.chdir(worktree_parent)
         with pytest.raises(
             NotInBranchDir,
-            match="worktree mode is enabled: branch is only defined inside a child branch directory",
+            match="No branch directory exists yet",
         ):
             _ = ln_setup.settings.branch
         assert (
             " - branch: -- (undefined, cd into a branch directory in the worktree)\n"
             in repr(ln_setup.settings)
         )
+    finally:
+        os.chdir(previous_cwd)
+        _restore_worktree_settings(previous_dev_dir, previous_worktree)
+
+
+def test_worktree_branch_hint_lists_directories_and_branches(tmp_path: Path):
+    previous_dev_dir = ln_setup.settings.dev_dir
+    previous_worktree = ln_setup.settings.worktree
+    worktree_parent = tmp_path / "worktrees"
+    main_child = worktree_parent / "main"
+    other_child = worktree_parent / "experiments"
+    previous_cwd = Path.cwd()
+    try:
+        ln_setup.settings.dev_dir = worktree_parent
+        ln_setup.settings.worktree = True
+        main_child.mkdir(parents=True, exist_ok=True)
+        other_child.mkdir(parents=True, exist_ok=True)
+        marker = local_current_branch_file(other_child)
+        marker.parent.mkdir(parents=True, exist_ok=True)
+        marker.write_text("someuid\nanalysis")
+        os.chdir(worktree_parent)
+        with pytest.raises(NotInBranchDir) as exc_info:
+            _ = ln_setup.settings.branch
+        msg = str(exc_info.value)
+        assert "main -> main" not in msg
+        assert "experiments -> analysis" in msg
     finally:
         os.chdir(previous_cwd)
         _restore_worktree_settings(previous_dev_dir, previous_worktree)

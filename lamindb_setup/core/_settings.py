@@ -52,6 +52,53 @@ UNDEFINED_BRANCH_IN_WORKTREE = (
 )
 
 
+def _read_worktree_child_branch_name(child: Path) -> str | None:
+    branch_path = local_current_branch_file(child)
+    if not branch_path.exists():
+        return None
+    parts = branch_path.read_text().split("\n")
+    if len(parts) >= 2 and parts[1].strip():
+        return parts[1].strip()
+    return None
+
+
+def _worktree_branch_dir_hint(dev_dir: Path | None) -> str:
+    """Hint when cwd is not inside a worktree branch directory.
+
+    A child directory is not guaranteed to exist; create one if needed.
+    """
+    try:
+        entries: list[str] = []
+        if dev_dir is not None and dev_dir.exists():
+            children = sorted(
+                path
+                for path in dev_dir.iterdir()
+                if path.is_dir() and not path.name.startswith(".")
+            )
+            for child in children:
+                branch = _read_worktree_child_branch_name(child)
+                if branch is not None:
+                    entries.append(f"{child.name} -> {branch}")
+        if entries:
+            listing = "\n".join(f"  {entry}" for entry in entries)
+            return (
+                "These directories already exist under the dev-dir, "
+                "with the branch each one maps to:\n"
+                f"{listing}\n"
+                "cd into one of them. If you need another branch, create a "
+                "directory for it and switch to the branch there."
+            )
+        return (
+            "No branch directory exists yet under the dev-dir. "
+            "Create one and switch to the branch there."
+        )
+    except Exception:
+        return (
+            "cd into an existing branch directory under the dev-dir, or create one "
+            "and switch to the branch there."
+        )
+
+
 def _default_cache_dir():
     from .upath import UPath
 
@@ -290,8 +337,9 @@ class SetupSettings:
         if not location.is_relative_to(dev_dir) or location == dev_dir:
             if raise_on_error:
                 raise WorktreePathError(
-                    "worktree mode is enabled: run this command inside a child "
-                    "directory under the configured dev-dir."
+                    "Worktree mode is enabled, so this command needs to run inside "
+                    "a child directory of the configured dev-dir. "
+                    + _worktree_branch_dir_hint(self.dev_dir)
                 )
             return None
 
@@ -318,9 +366,9 @@ class SetupSettings:
             if worktree_root is not None:
                 return local_current_branch_file(worktree_root)
             raise NotInBranchDir(
-                "worktree mode is enabled: branch is only defined inside a child "
-                "branch directory in the configured dev-dir. "
-                "cd into a branch directory in the worktree."
+                "Worktree mode is enabled, so a branch is only defined inside a "
+                "child directory of the configured dev-dir. "
+                + _worktree_branch_dir_hint(self.dev_dir)
             )
         if self.dev_dir is not None:
             return local_current_branch_file(self.dev_dir.resolve())
