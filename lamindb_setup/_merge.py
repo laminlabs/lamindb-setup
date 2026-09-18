@@ -2,12 +2,9 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
-from django.apps import apps
-from django.db import connection
-from django.db.utils import DatabaseError
 from lamin_utils import logger
 
-import lamindb_setup as ln_setup
+from .core._settings import settings
 
 if TYPE_CHECKING:
     from lamindb.models import Branch
@@ -32,6 +29,8 @@ def _resolve_branch(branch: str | Branch) -> Branch:
 
 def merge(branch: str | Branch, *, target: str | Branch | None = None) -> None:
     """Merge a source branch into a target branch."""
+    from django.apps import apps
+    from django.db import DatabaseError, connection
     from lamindb.models import SQLRecord
     from lamindb.models._is_versioned import (
         IsVersioned,
@@ -41,7 +40,7 @@ def merge(branch: str | Branch, *, target: str | Branch | None = None) -> None:
 
     source = _resolve_branch(branch)
     target_branch: Branch = (
-        ln_setup.settings.branch if target is None else _resolve_branch(target)
+        settings.branch if target is None else _resolve_branch(target)
     )
     if target_branch.id == source.id:
         logger.important("source and target branch are identical, nothing to merge")
