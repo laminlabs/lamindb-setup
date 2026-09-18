@@ -2,7 +2,6 @@ from __future__ import annotations
 
 import os
 
-from django.db import connection
 from lamin_utils import logger
 from packaging import version
 
@@ -264,6 +263,8 @@ class migrate:
     @classmethod
     def deployed_migrations(cls, latest: bool = False):
         """Get the list of deployed migrations from Migration table in DB."""
+        from django.db import connection
+
         if latest:
             latest_migrations = {}
             with connection.cursor() as cursor:
