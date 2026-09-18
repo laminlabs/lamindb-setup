@@ -11,6 +11,13 @@ from .core._settings import settings
 from .core.django import setup_django
 
 
+def _infer_migrate_on_hub_default(*, is_managed_by_hub: bool) -> bool:
+    env_value = os.getenv("LAMIN_MIGRATE_ON_HUB")
+    if env_value is None:
+        return is_managed_by_hub
+    return env_value == "true"
+
+
 # for the django-based synching code, see laminhub_rest
 def check_whether_migrations_in_sync(db_version_str: str):
     from importlib import metadata
@@ -102,13 +109,12 @@ class migrate:
             "Not connected to an instance, please connect to migrate."
         )
 
-        # NOTE: this is a temporary solution to avoid breaking tests
-        LAMIN_MIGRATE_ON_LAMBDA = (
-            os.getenv("LAMIN_MIGRATE_ON_LAMBDA", "false") == "true"
-        )
         isettings = settings.instance
+        LAMIN_MIGRATE_ON_HUB = _infer_migrate_on_hub_default(
+            is_managed_by_hub=isettings.is_managed_by_hub
+        )
 
-        if isettings.is_on_hub and LAMIN_MIGRATE_ON_LAMBDA:
+        if isettings.is_on_hub and LAMIN_MIGRATE_ON_HUB:
             # dynamic import to avoid importing the heavy httpx at root
             import httpx
 
