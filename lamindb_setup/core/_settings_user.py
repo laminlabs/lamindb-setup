@@ -23,13 +23,13 @@ class AccessToken:
     def _get_expiration(access_token: str) -> float | None:
         from jwt import decode
 
-        # buffer time of 1 hour
+        # refresh 15 minutes early
         # an unreadable token is left for call_with_fallback_auth
         try:
             exp = decode(
                 access_token, options={"verify_signature": False, "verify_exp": False}
             )["exp"]
-            return exp - 3600
+            return exp - 900
         except Exception:
             return None
 
