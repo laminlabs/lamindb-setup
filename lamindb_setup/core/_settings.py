@@ -309,12 +309,18 @@ class SetupSettings:
             for path in dev_dir.iterdir()
             if not path.name.startswith(".")
             and not (path.is_dir() and (path / ".lamindb" / "storage_uid.txt").exists())
+            and not (value and path.is_dir() and path.name == "main")
         ]
         if unexpected_paths:
             names = ", ".join(sorted(path.name for path in unexpected_paths))
-            action = "enable" if value else "disable"
+            if value:
+                raise DevDirNonEmpty(
+                    f"Cannot enable worktree mode because the dev-dir contains paths "
+                    f"other than configuration, storage, or main/: {names}. "
+                    "Move them into main/, or use a new empty dev-dir."
+                )
             raise DevDirNonEmpty(
-                f"Cannot {action} worktree mode because the dev-dir contains paths "
+                f"Cannot disable worktree mode because the dev-dir contains paths "
                 f"other than configuration or storage locations: {names}. Move or "
                 "remove them first."
             )
