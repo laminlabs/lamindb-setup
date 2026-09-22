@@ -97,7 +97,7 @@ def test_worktree_toggle_rejects_non_empty_dev_dir(tmp_path: Path):
         assert ln_setup.settings.worktree is True
         ln_setup.settings.worktree = False
         assert ln_setup.settings.worktree is False
-        main_dir = dest_dir / "main"
+        main_dir = dev_dir / "main"
         main_dir.mkdir()
         (main_dir / "analysis.py").write_text("data")
         ln_setup.settings.worktree = True
@@ -108,10 +108,10 @@ def test_worktree_toggle_rejects_non_empty_dev_dir(tmp_path: Path):
         (main_dir / "analysis.py").unlink()
         main_dir.rmdir()
         assert ln_setup.settings.worktree is False
-        (dest_dir / "analysis.py").write_text("data")
+        (dev_dir / "analysis.py").write_text("data")
         with pytest.raises(DevDirNonEmpty, match="analysis.py"):
             ln_setup.settings.worktree = True
-        local_worktree_file(dest_dir.resolve()).touch()
+        local_worktree_file(dev_dir.resolve()).touch()
         with pytest.raises(DevDirNonEmpty, match="analysis.py"):
             ln_setup.settings.worktree = False
     finally:
