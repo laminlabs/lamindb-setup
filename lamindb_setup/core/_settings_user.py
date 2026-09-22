@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import threading
 import time
 from typing import TYPE_CHECKING
 
@@ -8,21 +9,34 @@ if TYPE_CHECKING:
 
 
 class AccessToken:
+    """JWT access token that refreshes itself before expiration."""
+
     def __init__(self, access_token: str, user_settings: UserSettings):
         self._access_token: str = access_token
-        self._expiration: float = self._get_expiration(access_token)
+        # None if the token is undecodable
+        self._expiration: float | None = self._get_expiration(access_token)
         # needed to refresh access token when it expires
         self._user_settings: UserSettings = user_settings
+        self._lock = threading.Lock()
 
     @staticmethod
-    def _get_expiration(access_token: str) -> float:
+    def _get_expiration(access_token: str) -> float | None:
         from jwt import decode
 
         # buffer time of 1 hour
-        return decode(access_token, options={"verify_signature": False})["exp"] - 3600
+        # an unreadable token is left for call_with_fallback_auth
+        try:
+            exp = decode(
+                access_token, options={"verify_signature": False, "verify_exp": False}
+            )["exp"]
+            return exp - 3600
+        except Exception:
+            return None
 
     def _refresh_token(self):
-        if time.time() >= self._expiration:
+        with self._lock:
+            if self._expiration is None or time.time() < self._expiration:
+                return
             from ._hub_client import get_access_token
 
             new_access_token = get_access_token(
@@ -30,9 +44,14 @@ class AccessToken:
                 self._user_settings.password,
                 self._user_settings.api_key,
             )
-            if new_access_token is not None:
-                self._access_token = new_access_token
-                self._expiration = self._get_expiration(new_access_token)
+            if new_access_token is None:
+                return
+            self._access_token = new_access_token
+            self._expiration = self._get_expiration(new_access_token)
+
+            from ._settings_save import save_user_settings
+
+            save_user_settings(self._user_settings)
 
     @property
     def access_token(self) -> str:
@@ -81,6 +100,8 @@ class UserSettings:
         # passes through the setter
         self.access_token = access_token
 
+        self._refreshable_access_token: AccessToken | None = None
+
     @property  # type: ignore[no-redef]
     def access_token(self) -> str | None:
         """User access token."""
@@ -95,6 +116,14 @@ class UserSettings:
             AccessToken(value, self) if value is not None else None
         )
         self._refreshable_access_token = token
+
+    @property
+    def _access_token(self) -> str | None:
+        """Stored access token, without refreshing."""
+        refreshable_access_token = self._refreshable_access_token
+        if refreshable_access_token is not None:
+            return refreshable_access_token._access_token
+        return None
 
     def __repr__(self) -> str:
         """Rich string representation."""
