@@ -327,6 +327,10 @@ class SetupSettings:
         if value:
             worktree_path.parent.mkdir(parents=True, exist_ok=True)
             worktree_path.touch()
+            remove_local_current_instance(
+                marker=local_current_instance_file(dev_dir.resolve() / "main"),
+                expected_instance_slug=self.instance.slug,
+            )
         else:
             worktree_path.unlink(missing_ok=True)
         self._clear_instance_context_cache()
