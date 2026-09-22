@@ -291,6 +291,16 @@ def test_dev_dir_get_prefers_local_marker_over_home(tmp_path: Path):
         assert ln_setup.settings.dev_dir == local_dev_dir.resolve()
         os.chdir(unmarked)
         assert ln_setup.settings.dev_dir == home_dev_dir.resolve()
+        other_dev_dir = tmp_path / "other-dev-dir"
+        other_dev_dir.mkdir()
+        os.chdir(local_dev_dir)
+        ln_setup.settings.dev_dir = other_dev_dir
+        assert ln_setup.settings.dev_dir == other_dev_dir.resolve()
+        os.chdir(unmarked)
+        assert ln_setup.settings.dev_dir == other_dev_dir.resolve()
+        os.chdir(local_dev_dir)
+        ln_setup.settings.dev_dir = None
+        assert ln_setup.settings.dev_dir is None
     finally:
         os.chdir(previous_cwd)
         _restore_worktree_settings(previous_dev_dir, previous_worktree)
