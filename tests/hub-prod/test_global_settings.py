@@ -285,10 +285,17 @@ def test_dev_dir_get_prefers_local_marker_over_home(tmp_path: Path):
     local_dev_dir.mkdir()
     unmarked.mkdir()
     try:
+        ln_setup.settings.worktree = False
         ln_setup.settings.dev_dir = home_dev_dir
+        ln_setup.settings.branch = "archive"
+        assert ln_setup.settings.branch.name == "archive"
         write_local_current_instance(local_dev_dir, ln_setup.settings.instance.slug)
+        local_branch = local_current_branch_file(local_dev_dir.resolve())
+        local_branch.parent.mkdir(parents=True, exist_ok=True)
+        local_branch.write_text(f"{12 * 'm'}\nmain")
         os.chdir(local_dev_dir)
         assert ln_setup.settings.dev_dir == local_dev_dir.resolve()
+        assert ln_setup.settings.branch.name == "main"
         os.chdir(unmarked)
         assert ln_setup.settings.dev_dir == home_dev_dir.resolve()
         other_dev_dir = tmp_path / "other-dev-dir"
@@ -304,6 +311,8 @@ def test_dev_dir_get_prefers_local_marker_over_home(tmp_path: Path):
     finally:
         os.chdir(previous_cwd)
         _restore_worktree_settings(previous_dev_dir, previous_worktree)
+        ln_setup.settings._branch = None
+        ln_setup.settings.branch = "main"
 
 
 def test_dev_dir_unset_removes_local_branch_marker(tmp_path: Path):

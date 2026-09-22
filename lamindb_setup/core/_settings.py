@@ -422,12 +422,11 @@ class SetupSettings:
         # this is needed for .filter() with non-default connections
         if not self.is_configured:
             return MainBranchMock()
-        if self.worktree:
-            # Raises NotInBranchDir when called from worktree root/outside branch dir.
-            branch_path = self._branch_path
-            if self._branch_context_path != branch_path:
-                self._branch = None
-                self._branch_context_path = branch_path
+        # Raises NotInBranchDir when called from worktree root/outside branch dir.
+        branch_path = self._branch_path
+        if self._branch_context_path != branch_path:
+            self._branch = None
+            self._branch_context_path = branch_path
 
         if self._branch is None:
             from lamindb import Branch
