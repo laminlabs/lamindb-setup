@@ -239,7 +239,7 @@ class SetupSettings:
         return marker.parent.parent
 
     @property
-    def dest_dir(self) -> Path | None:
+    def dev_dir(self) -> Path | None:
         """Get or set the local development directory for the current instance.
 
         If setting it to `None`, the working development directory is unset.
@@ -251,7 +251,7 @@ class SetupSettings:
         return self._home_dev_dir()
 
     @dev_dir.setter
-    def dest_dir(self, value: str | Path | None) -> None:
+    def dev_dir(self, value: str | Path | None) -> None:
         instance_slug = self.instance.slug
         previous_dirs: list[Path] = []
         for path in (self._home_dev_dir(), self._local_dev_dir()):
