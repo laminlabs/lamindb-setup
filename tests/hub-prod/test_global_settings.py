@@ -9,6 +9,7 @@ import pytest
 from lamindb_setup.core._settings_store import (
     local_current_branch_file,
     local_worktree_file,
+    write_local_current_instance,
 )
 from lamindb_setup.core.hashing import hash_dir
 from lamindb_setup.errors import (
@@ -269,6 +270,28 @@ def test_worktree_branch_infers_child_directory_without_marker(tmp_path: Path):
                 legacy_branch.unlink(missing_ok=True)
             else:
                 legacy_branch.write_text(previous_legacy)
+        os.chdir(previous_cwd)
+        _restore_worktree_settings(previous_dev_dir, previous_worktree)
+
+
+def test_dev_dir_get_prefers_local_marker_over_home(tmp_path: Path):
+    previous_dev_dir = ln_setup.settings.dev_dir
+    previous_worktree = ln_setup.settings.worktree
+    previous_cwd = Path.cwd()
+    home_dev_dir = tmp_path / "home-dev-dir"
+    local_dev_dir = tmp_path / "local-dev-dir"
+    unmarked = tmp_path / "unmarked"
+    home_dev_dir.mkdir()
+    local_dev_dir.mkdir()
+    unmarked.mkdir()
+    try:
+        ln_setup.settings.dev_dir = home_dev_dir
+        write_local_current_instance(local_dev_dir, ln_setup.settings.instance.slug)
+        os.chdir(local_dev_dir)
+        assert ln_setup.settings.dev_dir == local_dev_dir.resolve()
+        os.chdir(unmarked)
+        assert ln_setup.settings.dev_dir == home_dev_dir.resolve()
+    finally:
         os.chdir(previous_cwd)
         _restore_worktree_settings(previous_dev_dir, previous_worktree)
 

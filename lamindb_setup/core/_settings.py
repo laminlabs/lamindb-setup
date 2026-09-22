@@ -26,6 +26,7 @@ from ._settings_load import (
 from ._settings_store import (
     current_instance_settings_file,
     current_modules_file,
+    find_local_current_instance_file,
     get_settings_file_name_prefix,
     local_current_branch_file,
     local_current_instance_file,
@@ -233,13 +234,20 @@ class SetupSettings:
         If setting it to `None`, the working development directory is unset.
         Setting a directory also marks that directory for local auto-connect.
         """
+        marker = find_local_current_instance_file()
+        if marker is not None and marker.read_text().strip() == self.instance.slug:
+            return marker.parent.parent
         if not self._dev_dir_path.exists():
             return None
         return Path(self._dev_dir_path.read_text())
 
     @dev_dir.setter
     def dev_dir(self, value: str | Path | None) -> None:
-        previous_dev_dir = self.dev_dir
+        previous_dev_dir = (
+            Path(self._dev_dir_path.read_text())
+            if self._dev_dir_path.exists()
+            else None
+        )
         instance_slug = self.instance.slug
         previous_branch_marker = (
             local_current_branch_file(previous_dev_dir.resolve())
