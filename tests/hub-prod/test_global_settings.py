@@ -100,6 +100,10 @@ def test_worktree_toggle_rejects_non_empty_dev_dir(tmp_path: Path):
         main_dir = dev_dir / "main"
         main_dir.mkdir()
         (main_dir / "analysis.py").write_text("data")
+        write_local_current_instance(main_dir, "other/instance")
+        with pytest.raises(DevDirNonEmpty, match="other/instance"):
+            ln_setup.settings.worktree = True
+        assert ln_setup.settings.worktree is False
         write_local_current_instance(main_dir, ln_setup.settings.instance.slug)
         ln_setup.settings.worktree = True
         assert ln_setup.settings.worktree is True

@@ -325,10 +325,19 @@ class SetupSettings:
                 "remove them first."
             )
         if value:
+            main_dir = dev_dir.resolve() / "main"
+            main_marker = local_current_instance_file(main_dir)
+            if main_marker.exists():
+                main_slug = main_marker.read_text().strip()
+                if main_slug and main_slug != self.instance.slug:
+                    raise DevDirNonEmpty(
+                        "Cannot enable worktree mode because main/ is the dev-dir of "
+                        f"instance {main_slug}."
+                    )
             worktree_path.parent.mkdir(parents=True, exist_ok=True)
             worktree_path.touch()
             remove_local_current_instance(
-                marker=local_current_instance_file(dev_dir.resolve() / "main"),
+                marker=main_marker,
                 expected_instance_slug=self.instance.slug,
             )
         else:
