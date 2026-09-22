@@ -98,9 +98,8 @@ class UserSettings:
         self._uuid = _uuid
         self.name = name
         # passes through the setter
+        # also sets self._refreshable_access_token
         self.access_token = access_token
-
-        self._refreshable_access_token: AccessToken | None = None
 
     @property  # type: ignore[no-redef]
     def access_token(self) -> str | None:
