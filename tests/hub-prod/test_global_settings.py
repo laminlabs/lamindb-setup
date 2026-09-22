@@ -53,6 +53,10 @@ def test_space():
         ln_setup.settings.space = "not_exists"
 
 
+def _branch_name() -> str:
+    return ln_setup.settings.branch.name
+
+
 def _restore_worktree_settings(
     previous_dev_dir: Path | None, previous_worktree: bool
 ) -> None:
@@ -295,7 +299,7 @@ def test_dev_dir_get_prefers_local_marker_over_home(tmp_path: Path):
         local_branch.write_text(f"{12 * 'm'}\nmain")
         os.chdir(local_dev_dir)
         assert ln_setup.settings.dev_dir == local_dev_dir.resolve()
-        assert getattr(ln_setup.settings.branch, "name") == "main"
+        assert _branch_name() == "main"
         os.chdir(unmarked)
         assert ln_setup.settings.dev_dir == home_dev_dir.resolve()
         other_dev_dir = tmp_path / "other-dev-dir"
