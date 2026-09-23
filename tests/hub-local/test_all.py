@@ -279,7 +279,7 @@ def test_connect_instance_hub_corrupted_or_expired_credentials(
     # check that the access_token was written to the settings
     ln_setup.settings._user_settings = None
     assert ln_setup.settings.user.access_token == access_token
-    assert ln_setup.settings.user.to_dict()["access_token"] == access_token
+    assert ln_setup.settings.user.asdict()["access_token"] == access_token
 
 
 def test_init_storage_with_non_existing_bucket(

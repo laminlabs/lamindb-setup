@@ -105,7 +105,7 @@ class UserSettings:
         # has its own cache
         return current_user_id()
 
-    def to_dict(self) -> dict:
+    def asdict(self) -> dict:
         """Convert to dictionary.
 
         This does not refresh the access token.
