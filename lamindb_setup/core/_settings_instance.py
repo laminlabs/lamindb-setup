@@ -622,8 +622,11 @@ class InstanceSettings:
                 response = call_with_fallback(
                     select_instance_by_id, instance_id=self._id.hex
                 )
-                logger.warning("calling anonymously, will miss private instances")
             if response is None:
+                if settings.user.handle == "anonymous":
+                    logger.warning(
+                        "did not find database on hub, but you're not logged in, so will miss private databases"
+                    )
                 self._is_on_hub = False
             else:
                 self._is_on_hub = True
