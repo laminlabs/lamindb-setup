@@ -124,15 +124,6 @@ class UserSettings:
             return refreshable_access_token._access_token
         return None
 
-    def __repr__(self) -> str:
-        """Rich string representation."""
-        representation = "Current user:"
-        attrs = ["handle", "uid"]
-        for attr in attrs:
-            value = getattr(self, attr)
-            representation += f"\n - {attr}: {value}"
-        return representation
-
     @property
     def id(self):
         """Integer id valid in current instance."""
@@ -141,3 +132,28 @@ class UserSettings:
         # there is no cache needed here because current_user_id()
         # has its own cache
         return current_user_id()
+
+    def to_dict(self) -> dict:
+        """Convert to dictionary.
+
+        This does not refresh the access token.
+        """
+        return {
+            "handle": self.handle,
+            "email": self.email,
+            "api_key": self.api_key,
+            "password": self.password,
+            "access_token": self._access_token,
+            "uid": self.uid,
+            "_uuid": self._uuid,
+            "name": self.name,
+        }
+
+    def __repr__(self) -> str:
+        """Rich string representation."""
+        representation = "Current user:"
+        attrs = ["handle", "uid"]
+        for attr in attrs:
+            value = getattr(self, attr)
+            representation += f"\n - {attr}: {value}"
+        return representation
