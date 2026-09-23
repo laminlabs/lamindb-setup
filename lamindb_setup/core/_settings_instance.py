@@ -606,8 +606,17 @@ class InstanceSettings:
     def is_on_hub(self) -> bool:
         """Is this instance registered on the hub?
 
-        Can only establish if user has access to the instance.
-        Will return `False` in case the user token can't find the instance.
+        Most likely you're looking for :attr:`is_managed_by_hub`.
+        The instance being registered on LaminHub doesn't imply that
+        LaminHub has access to the instance.
+        If you want to know whether there is a LaminHub UI, use :attr:`is_managed_by_hub`.
+        If you merely want to know whether the instance is registered, independent
+        of whether LaminHub has access to the instance, use `is_on_hub`.
+
+        The `is_on_hub` property makes a network request to the hub and
+        can only establish if an instance is registered if the calling
+        user has access to the instance.
+        Will return `False` in case the user has no access.
         """
         if self._is_on_hub is None:
             from ._hub_client import call_with_fallback, call_with_fallback_auth
@@ -622,8 +631,11 @@ class InstanceSettings:
                 response = call_with_fallback(
                     select_instance_by_id, instance_id=self._id.hex
                 )
-                logger.warning("calling anonymously, will miss private instances")
             if response is None:
+                if settings.user.handle == "anonymous":
+                    logger.warning(
+                        "did not find database on hub, but you're not logged in, so will miss private databases"
+                    )
                 self._is_on_hub = False
             else:
                 self._is_on_hub = True
@@ -633,8 +645,9 @@ class InstanceSettings:
     def is_managed_by_hub(self) -> bool:
         """Is this instance managed by the hub?
 
-        Returns `True` if the instance is _managed_ by LaminHub, i.e.,
-        it was connected to LaminHub to manage access, migrations, a REST API, a UI, etc.
+        Returns `True` if the instance is managed by LaminHub, i.e.,
+        the instance was connected to LaminHub to manage permissions and migrations
+        and provide access to the instance through a UI and a REST API.
         """
         return self.api_url is not None
 
