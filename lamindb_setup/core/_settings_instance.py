@@ -606,7 +606,12 @@ class InstanceSettings:
     def is_on_hub(self) -> bool:
         """Is this instance registered on the hub?
 
-        Most likely you're looking for `is_managed_by_hub`.
+        Most likely you're looking for :attr:`is_managed_by_hub`.
+        The instance being registered on LaminHub doesn't imply that
+        LaminHub has access to the instance.
+        If you want to know whether there is a LaminHub UI, use :attr:`is_managed_by_hub`.
+        If you merely want to know whether the instance is registered, independent
+        of whether LaminHub has access to the instance, use `is_on_hub`.
 
         The `is_on_hub` property makes a network request to the hub and
         can only establish if an instance is registered if the calling
@@ -640,8 +645,9 @@ class InstanceSettings:
     def is_managed_by_hub(self) -> bool:
         """Is this instance managed by the hub?
 
-        Returns `True` if the instance is _managed_ by LaminHub, i.e.,
-        it was connected to LaminHub to manage access, migrations, a REST API, a UI, etc.
+        Returns `True` if the instance is managed by LaminHub, i.e.,
+        the instance was connected to LaminHub to manage permissions and migrations
+        and provide access to the instance through a UI and a REST API.
         """
         return self.api_url is not None
 
