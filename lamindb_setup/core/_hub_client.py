@@ -284,12 +284,12 @@ def call_with_fallback_auth(
             client = connect_hub_with_auth(
                 renew_token=renew_token, fallback_env=fallback_env
             )
-            result = callable(**kwargs, client=client)
             # we update access_token here
-            # because at this point the call has been successfully resolved
+            # because at this point the refresh has been successfully resolved
             if renew_token:
                 # here settings.user contains an updated access_token
                 save_user_settings(settings.user)
+            result = callable(**kwargs, client=client)
             break
         except ApiKeyError as error:
             # refreshing with an unusable API key cannot succeed; do not retry
