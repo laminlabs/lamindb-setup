@@ -606,8 +606,12 @@ class InstanceSettings:
     def is_on_hub(self) -> bool:
         """Is this instance registered on the hub?
 
-        Can only establish if user has access to the instance.
-        Will return `False` in case the user token can't find the instance.
+        Most likely you're looking for `is_managed_by_hub`.
+
+        The `is_on_hub` property makes a network request to the hub and
+        can only establish if an instance is registered if the calling
+        user has access to the instance.
+        Will return `False` in case the user has no access.
         """
         if self._is_on_hub is None:
             from ._hub_client import call_with_fallback, call_with_fallback_auth
