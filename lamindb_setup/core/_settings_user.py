@@ -91,6 +91,11 @@ class UserSettings:
         token: AccessToken | None = AccessToken(value) if value is not None else None
         self._access_token = token
 
+    def access_token_needs_refresh(self) -> bool:
+        return (
+            _access_token := self._access_token
+        ) is not None and _access_token.needs_refresh()
+
     @property
     def id(self):
         """Integer id valid in current instance."""

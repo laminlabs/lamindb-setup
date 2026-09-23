@@ -280,7 +280,7 @@ def call_with_fallback_auth(
             from lamindb_setup import settings
 
             # renew token immediately if needed
-            renew_token = renew_token or settings.user._access_token.needs_refresh()
+            renew_token = renew_token or settings.user.access_token_needs_refresh()
             client = connect_hub_with_auth(
                 renew_token=renew_token, fallback_env=fallback_env
             )
