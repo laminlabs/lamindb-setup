@@ -78,11 +78,7 @@ def save_settings(
                         settings_key = f"_{store_key.rstrip('_')}"
                     else:
                         settings_key = store_key
-                    # UserSettings.access_token refreshes; _access_token is the stored value
-                    if settings_key == "access_token":
-                        value = settings._access_token
-                    else:
-                        value = getattr(settings, settings_key, None)
+                    value = getattr(settings, settings_key, None)
                 if value is None:
                     value = "null"
                 elif isinstance(value, UUID):

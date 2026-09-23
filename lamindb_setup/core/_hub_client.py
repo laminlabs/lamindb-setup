@@ -164,13 +164,18 @@ def connect_hub_with_auth(
     if access_token is None:
         from lamindb_setup import settings
 
+        user_settings = settings.user
+
         if renew_token:
             new_token = get_access_token(
-                settings.user.email, settings.user.password, settings.user.api_key
+                user_settings.email,
+                user_settings.password,
+                user_settings.api_key,
+                fallback_env=fallback_env,
             )
             if new_token is not None:
-                settings.user.access_token = new_token
-        access_token = settings.user.access_token
+                user_settings.access_token = new_token
+        access_token = user_settings.access_token
     if access_token is None:
         raise NoAccessTokenError(
             "No lamindb access token available. Please login: `lamin login`"
@@ -213,14 +218,17 @@ def _api_key_error_from_hub(exception: BaseException) -> ApiKeyError | None:
 
 # runs ~0.5s
 def get_access_token(
-    email: str | None = None, password: str | None = None, api_key: str | None = None
+    email: str | None = None,
+    password: str | None = None,
+    api_key: str | None = None,
+    fallback_env: bool = False,
 ) -> str | None:
     if api_key is None and (email is None or password is None):
         logger.warning(
             "can not get lamindb access token: no API key or email/password stored"
         )
         return None
-    hub = connect_hub()
+    hub = connect_hub(fallback_env=fallback_env)
     try:
         if api_key is not None:
             auth_response = hub.functions.invoke(
@@ -269,6 +277,10 @@ def call_with_fallback_auth(
     for renew_token, fallback_env in [(False, False), (True, False), (False, True)]:
         client = None
         try:
+            from lamindb_setup import settings
+
+            # renew token immediately if needed
+            renew_token = renew_token or settings.user._access_token.needs_refresh()
             client = connect_hub_with_auth(
                 renew_token=renew_token, fallback_env=fallback_env
             )
@@ -276,8 +288,6 @@ def call_with_fallback_auth(
             # we update access_token here
             # because at this point the call has been successfully resolved
             if renew_token:
-                from lamindb_setup import settings
-
                 # here settings.user contains an updated access_token
                 save_user_settings(settings.user)
             break

@@ -1,23 +1,25 @@
 from __future__ import annotations
 
-import threading
 import time
+from dataclasses import dataclass
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
     from uuid import UUID
 
 
+@dataclass
 class AccessToken:
-    """JWT access token that refreshes itself before expiration."""
+    """JWT access token."""
 
-    def __init__(self, access_token: str, user_settings: UserSettings):
-        self._access_token: str = access_token
-        # None if the token is undecodable
-        self._expiration: float | None = self._get_expiration(access_token)
-        # needed to refresh access token when it expires
-        self._user_settings: UserSettings = user_settings
-        self._lock = threading.Lock()
+    access_token: str
+    """JWT access token."""
+
+    def __post_init__(self):
+        self.expiration: float | None = self._get_expiration(self.access_token)
+
+    def needs_refresh(self) -> bool:
+        return self.expiration is not None and time.time() >= self.expiration
 
     @staticmethod
     def _get_expiration(access_token: str) -> float | None:
@@ -32,31 +34,6 @@ class AccessToken:
             return exp - 900
         except Exception:
             return None
-
-    def _refresh_token(self):
-        with self._lock:
-            if self._expiration is None or time.time() < self._expiration:
-                return
-            from ._hub_client import get_access_token
-
-            new_access_token = get_access_token(
-                self._user_settings.email,
-                self._user_settings.password,
-                self._user_settings.api_key,
-            )
-            if new_access_token is None:
-                return
-            self._access_token = new_access_token
-            self._expiration = self._get_expiration(new_access_token)
-
-            from ._settings_save import save_user_settings
-
-            save_user_settings(self._user_settings)
-
-    @property
-    def access_token(self) -> str:
-        self._refresh_token()
-        return self._access_token
 
 
 class UserSettings:
@@ -97,32 +74,22 @@ class UserSettings:
         self.uid = uid
         self._uuid = _uuid
         self.name = name
+
+        self._access_token: AccessToken | None = None
         # passes through the setter
-        # also sets self._refreshable_access_token
         self.access_token = access_token
 
     @property  # type: ignore[no-redef]
     def access_token(self) -> str | None:
         """User access token."""
-        refreshable_access_token = self._refreshable_access_token
-        if refreshable_access_token is not None:
-            return refreshable_access_token.access_token
+        if (_access_token := self._access_token) is not None:
+            return _access_token.access_token
         return None
 
     @access_token.setter
     def access_token(self, value: str | None):
-        token: AccessToken | None = (
-            AccessToken(value, self) if value is not None else None
-        )
-        self._refreshable_access_token = token
-
-    @property
-    def _access_token(self) -> str | None:
-        """Stored access token, without refreshing."""
-        refreshable_access_token = self._refreshable_access_token
-        if refreshable_access_token is not None:
-            return refreshable_access_token._access_token
-        return None
+        token: AccessToken | None = AccessToken(value) if value is not None else None
+        self._access_token = token
 
     @property
     def id(self):
@@ -143,7 +110,7 @@ class UserSettings:
             "email": self.email,
             "api_key": self.api_key,
             "password": self.password,
-            "access_token": self._access_token,
+            "access_token": self.access_token,
             "uid": self.uid,
             "_uuid": self._uuid,
             "name": self.name,
