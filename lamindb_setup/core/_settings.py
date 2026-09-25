@@ -309,18 +309,37 @@ class SetupSettings:
             for path in dev_dir.iterdir()
             if not path.name.startswith(".")
             and not (path.is_dir() and (path / ".lamindb" / "storage_uid.txt").exists())
+            and not (value and path.is_dir() and path.name == "main")
         ]
         if unexpected_paths:
             names = ", ".join(sorted(path.name for path in unexpected_paths))
-            action = "enable" if value else "disable"
+            if value:
+                raise DevDirNonEmpty(
+                    f"Cannot enable worktree mode because the dev-dir contains paths "
+                    f"other than configuration, storage, or main/: {names}. "
+                    "Move them into main/, or use a new empty dev-dir."
+                )
             raise DevDirNonEmpty(
-                f"Cannot {action} worktree mode because the dev-dir contains paths "
+                f"Cannot disable worktree mode because the dev-dir contains paths "
                 f"other than configuration or storage locations: {names}. Move or "
                 "remove them first."
             )
         if value:
+            main_dir = dev_dir.resolve() / "main"
+            main_marker = local_current_instance_file(main_dir)
+            if main_marker.exists():
+                main_slug = main_marker.read_text().strip()
+                if main_slug and main_slug != self.instance.slug:
+                    raise DevDirNonEmpty(
+                        "Cannot enable worktree mode because main/ is the dev-dir of "
+                        f"instance {main_slug}."
+                    )
             worktree_path.parent.mkdir(parents=True, exist_ok=True)
             worktree_path.touch()
+            remove_local_current_instance(
+                marker=main_marker,
+                expected_instance_slug=self.instance.slug,
+            )
         else:
             worktree_path.unlink(missing_ok=True)
         self._clear_instance_context_cache()
