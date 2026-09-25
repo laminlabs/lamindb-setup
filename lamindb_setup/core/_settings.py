@@ -26,6 +26,7 @@ from ._settings_load import (
 from ._settings_store import (
     current_instance_settings_file,
     current_modules_file,
+    find_local_current_instance_file,
     get_settings_file_name_prefix,
     local_current_branch_file,
     local_current_instance_file,
@@ -226,6 +227,17 @@ class SetupSettings:
             settings_dir / f"dev-dir--{self.instance.owner}--{self.instance.name}.txt"
         )
 
+    def _home_dev_dir(self) -> Path | None:
+        if not self._dev_dir_path.exists():
+            return None
+        return Path(self._dev_dir_path.read_text())
+
+    def _local_dev_dir(self) -> Path | None:
+        marker = find_local_current_instance_file()
+        if marker is None or marker.read_text().strip() != self.instance.slug:
+            return None
+        return marker.parent.parent
+
     @property
     def dev_dir(self) -> Path | None:
         """Get or set the local development directory for the current instance.
@@ -233,46 +245,43 @@ class SetupSettings:
         If setting it to `None`, the working development directory is unset.
         Setting a directory also marks that directory for local auto-connect.
         """
-        if not self._dev_dir_path.exists():
-            return None
-        return Path(self._dev_dir_path.read_text())
+        local = self._local_dev_dir()
+        if local is not None:
+            return local
+        return self._home_dev_dir()
 
     @dev_dir.setter
     def dev_dir(self, value: str | Path | None) -> None:
-        previous_dev_dir = self.dev_dir
         instance_slug = self.instance.slug
-        previous_branch_marker = (
-            local_current_branch_file(previous_dev_dir.resolve())
-            if previous_dev_dir is not None
-            else None
-        )
+        previous_dirs: list[Path] = []
+        for path in (self._home_dev_dir(), self._local_dev_dir()):
+            if path is None:
+                continue
+            resolved = path.resolve()
+            if resolved not in previous_dirs:
+                previous_dirs.append(resolved)
 
         if value is None:
             if self._dev_dir_path.exists():
                 self._dev_dir_path.unlink()
-            if previous_branch_marker is not None:
-                previous_branch_marker.unlink(missing_ok=True)
-            if previous_dev_dir is not None:
+            for directory in previous_dirs:
+                local_current_branch_file(directory).unlink(missing_ok=True)
                 remove_local_current_instance(
-                    marker=local_current_instance_file(previous_dev_dir.resolve()),
+                    marker=local_current_instance_file(directory),
                     expected_instance_slug=instance_slug,
                 )
         else:
             value_path = Path(value).expanduser().resolve()
-            value_str = value_path.as_posix()
-            self._dev_dir_path.write_text(value_str)
+            self._dev_dir_path.write_text(value_path.as_posix())
             if instance_slug != "none/none":
                 write_local_current_instance(value_path, instance_slug)
-            if (
-                previous_dev_dir is not None
-                and previous_dev_dir.resolve() != value_path
-            ):
-                if previous_branch_marker is not None:
-                    previous_branch_marker.unlink(missing_ok=True)
-                remove_local_current_instance(
-                    marker=local_current_instance_file(previous_dev_dir.resolve()),
-                    expected_instance_slug=instance_slug,
-                )
+            for directory in previous_dirs:
+                if directory != value_path:
+                    local_current_branch_file(directory).unlink(missing_ok=True)
+                    remove_local_current_instance(
+                        marker=local_current_instance_file(directory),
+                        expected_instance_slug=instance_slug,
+                    )
 
     @property
     def worktree(self) -> bool:
@@ -413,12 +422,11 @@ class SetupSettings:
         # this is needed for .filter() with non-default connections
         if not self.is_configured:
             return MainBranchMock()
-        if self.worktree:
-            # Raises NotInBranchDir when called from worktree root/outside branch dir.
-            branch_path = self._branch_path
-            if self._branch_context_path != branch_path:
-                self._branch = None
-                self._branch_context_path = branch_path
+        # Raises NotInBranchDir when called from worktree root/outside branch dir.
+        branch_path = self._branch_path
+        if self._branch_context_path != branch_path:
+            self._branch = None
+            self._branch_context_path = branch_path
 
         if self._branch is None:
             from lamindb import Branch
