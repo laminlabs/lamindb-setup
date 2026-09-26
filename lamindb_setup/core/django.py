@@ -259,24 +259,32 @@ def get_installed_apps(isettings: InstanceSettings, init: bool = False) -> list[
     return installed_apps
 
 
-def _warn_module_mismatch(target_apps: set[str], current_apps: set[str]) -> str | None:
+def _module_list_phrase(apps: list[str]) -> str:
+    label = "module" if len(apps) == 1 else "modules"
+    return f"{label} ({','.join(apps)})"
+
+
+def _warn_module_mismatch(
+    target_apps: set[str], current_apps: set[str], *, instance_slug: str
+) -> str | None:
     if target_apps == current_apps:
         return None
     missing_apps = sorted(current_apps - target_apps)
     additional_apps = sorted(target_apps - current_apps)
     modules_for_hint = sorted(app for app in target_apps if app != "lamindb")
     modules_arg = ",".join(modules_for_hint) if modules_for_hint else '""'
-    details: list[str] = []
-    if additional_apps:
-        module_label = "module" if len(additional_apps) == 1 else "modules"
-        details.append(f"database has {module_label} {','.join(additional_apps)}")
-    if missing_apps:
-        module_label = "module" if len(missing_apps) == 1 else "modules"
-        prefix = "does not have" if additional_apps else "database does not have"
-        details.append(f"{prefix} local {module_label} {','.join(missing_apps)}")
-    action = "configure it" if additional_apps else "configure your local environment"
+    if additional_apps and missing_apps:
+        purpose = (
+            f"to work with the additional {_module_list_phrase(additional_apps)} "
+            f"and without the local {_module_list_phrase(missing_apps)}"
+        )
+    elif additional_apps:
+        purpose = f"to work with the additional {_module_list_phrase(additional_apps)}"
+    else:
+        purpose = f"to work without the local {_module_list_phrase(missing_apps)}"
     return (
-        f"{' and '.join(details)}, {action}: lamin settings modules set {modules_arg}"
+        f"tip: {purpose} of database {instance_slug}, configure your environment for it: "
+        f"lamin settings modules set {modules_arg}"
     )
 
 
@@ -299,7 +307,9 @@ def reconnect_django(isettings: InstanceSettings, init: bool = False) -> None:
     target_apps = set(get_installed_apps(isettings, init=init))
     current_apps = set(getattr(django_settings, "INSTALLED_APPS", []))
     settings.modules_warning = _warn_module_mismatch(
-        target_apps=target_apps, current_apps=current_apps
+        target_apps=target_apps,
+        current_apps=current_apps,
+        instance_slug=isettings.slug,
     )
 
     # In reconnect mode we avoid full app reloading; ensure compatibility for
