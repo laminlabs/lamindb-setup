@@ -216,38 +216,40 @@ def test_connect_prints_modules_warning(monkeypatch):
 
     monkeypatch.setattr(fake_isettings, "_load_db", _load_db_with_modules_warning)
 
-    warning_calls: list[str] = []
+    hint_calls: list[str] = []
     monkeypatch.setattr(
         connect_instance.logger,
-        "warning",
-        lambda message: warning_calls.append(message),
+        "important_hint",
+        lambda message: hint_calls.append(message),
     )
 
     connect_instance.connect("owner/name", _reload_lamindb=False)
 
-    assert "module mismatch warning" in warning_calls
+    assert "module mismatch warning" in hint_calls
 
 
 def test_module_mismatch_warning_includes_modules_command():
     message = django_core._warn_module_mismatch(
-        target_apps={"lamindb", "bionty"},
-        current_apps={"lamindb"},
+        target_apps={"lamindb", "bionty", "pertdb"},
+        current_apps={"lamindb", "bionty"},
+        instance_slug="owner/name",
     )
-    assert message is not None
-    assert "database has module bionty" in message
-    assert "configure it:" in message
-    assert "lamin settings modules set bionty" in message
+    assert message == (
+        "tip: to work with the additional module (pertdb) of database owner/name, "
+        "configure your environment for it: lamin settings modules set bionty,pertdb"
+    )
 
 
 def test_module_mismatch_warning_uses_empty_schema_str_for_core_only():
     message = django_core._warn_module_mismatch(
         target_apps={"lamindb"},
         current_apps={"lamindb", "bionty"},
+        instance_slug="owner/name",
     )
-    assert message is not None
-    assert "database does not have local module bionty" in message
-    assert "configure your local environment:" in message
-    assert 'lamin settings modules set ""' in message
+    assert message == (
+        "tip: to work without the local module (bionty) of database owner/name, "
+        'configure your environment for it: lamin settings modules set ""'
+    )
 
 
 def test_check_setup_uses_instance_modules_when_django_is_setup(monkeypatch):

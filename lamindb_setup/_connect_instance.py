@@ -547,7 +547,7 @@ def connect(instance: str | None = None, **kwargs: Any) -> str | tuple | None:
                     f'connected in read-only mode, please use ln.DB("{slug}") instead'
                 )
             if settings.modules_warning is not None:
-                logger.warning(settings.modules_warning)
+                logger.important_hint(settings.modules_warning)
     except Exception as e:
         if isettings is not None:
             if _write_settings:
