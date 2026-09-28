@@ -7,7 +7,7 @@ vs optional fields, and additional (unknown) fields in the .env.
 from __future__ import annotations
 
 from types import SimpleNamespace
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, cast
 
 import pytest
 from lamindb_setup.core import _settings as settings_module
@@ -20,11 +20,16 @@ from lamindb_setup.core._settings_save import save_instance_settings
 from lamindb_setup.core._settings_store import (
     InstanceSettingsStore,
     local_current_instance_file,
+    local_current_modules_file,
     remove_local_current_instance,
+    write_local_current_instance,
 )
+from lamindb_setup.errors import DevDirModulesNotConfigured
 
 if TYPE_CHECKING:
     from pathlib import Path
+
+    from lamindb_setup.core._settings_instance import InstanceSettings
 
 PREFIX = "lamindb_instance_"
 
@@ -256,6 +261,124 @@ def test_setup_settings_modules_instance_modules_override_env_var(
 
     modules_file.write_text("pertdb")
     assert settings.modules == {"bionty", "pertdb"}
+
+
+def _isolate_home_modules(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> Path:
+    home_modules = tmp_path / "home_current_modules.txt"
+    home_modules.write_text("pertdb")
+    missing_current_instance = tmp_path / "missing_current_instance.env"
+    monkeypatch.setattr(settings_module, "current_modules_file", lambda: home_modules)
+    monkeypatch.setattr(
+        settings_module,
+        "current_instance_settings_file",
+        lambda: missing_current_instance,
+    )
+    monkeypatch.delenv("LAMIN_CURRENT_INSTANCE", raising=False)
+    monkeypatch.delenv("LAMINDB_MODULES", raising=False)
+    return home_modules
+
+
+def _patch_dev_dir_instance_resolution(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    instance_file = tmp_path / "instance.env"
+    instance_file.write_text("placeholder")
+    monkeypatch.setattr(
+        "lamindb_setup.core._settings_load._instance_settings_file_from_identifier",
+        lambda identifier: instance_file,
+    )
+
+
+def test_dev_dir_modules_are_read_from_the_dev_dir(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+):
+    home_modules = _isolate_home_modules(tmp_path, monkeypatch)
+    monkeypatch.chdir(tmp_path)
+    write_local_current_instance(tmp_path, "owner/name")
+    _patch_dev_dir_instance_resolution(tmp_path, monkeypatch)
+    dev_dir_modules = local_current_modules_file(tmp_path)
+
+    with pytest.raises(DevDirModulesNotConfigured, match="not from the home directory"):
+        _ = settings.modules
+
+    dev_dir_modules.write_text("bionty")
+    assert settings.modules == {"bionty"}
+    assert home_modules.read_text() == "pertdb"
+
+    settings.modules = {"bionty", "pertdb"}
+    assert dev_dir_modules.read_text().strip() == "bionty,pertdb"
+    assert home_modules.read_text() == "pertdb"
+
+    dev_dir_modules.write_text("")
+    assert settings.modules == set()
+
+
+def test_dev_dir_modules_do_not_apply_when_instance_comes_from_the_environment(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+):
+    home_modules = _isolate_home_modules(tmp_path, monkeypatch)
+    monkeypatch.chdir(tmp_path)
+    write_local_current_instance(tmp_path, "owner/name")
+    _patch_dev_dir_instance_resolution(tmp_path, monkeypatch)
+    local_current_modules_file(tmp_path).write_text("bionty")
+    monkeypatch.setenv("LAMIN_CURRENT_INSTANCE", "other/instance")
+
+    assert settings.modules == {"pertdb"}
+    assert home_modules.read_text() == "pertdb"
+
+
+def test_explicit_modules_env_var_overrides_the_dev_dir_file(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+):
+    _isolate_home_modules(tmp_path, monkeypatch)
+    monkeypatch.chdir(tmp_path)
+    write_local_current_instance(tmp_path, "owner/name")
+    _patch_dev_dir_instance_resolution(tmp_path, monkeypatch)
+    local_current_modules_file(tmp_path).write_text("bionty")
+    monkeypatch.setenv("LAMINDB_MODULES", "custom")
+
+    assert settings.modules == {"custom"}
+
+
+def test_installed_apps_use_dev_dir_modules(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+):
+    from lamindb_setup.core.django import get_installed_apps
+
+    _isolate_home_modules(tmp_path, monkeypatch)
+    monkeypatch.chdir(tmp_path)
+    write_local_current_instance(tmp_path, "owner/name")
+    _patch_dev_dir_instance_resolution(tmp_path, monkeypatch)
+    local_current_modules_file(tmp_path).write_text("bionty")
+    monkeypatch.setattr(
+        "lamindb_setup._init_instance.get_schema_module_name",
+        lambda name, raise_import_error=False: {
+            "core": "lamindb",
+            "bionty": "bionty",
+        }.get(name),
+    )
+    isettings = cast("InstanceSettings", SimpleNamespace(modules=set()))
+
+    assert get_installed_apps(isettings) == ["lamindb", "bionty"]
+    assert get_installed_apps(isettings, init=True) == ["lamindb"]
+
+
+def test_module_check_uses_dev_dir_modules(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+):
+    from lamindb_setup._check_setup import _check_module_in_instance_modules
+    from lamindb_setup.errors import ModuleWasntConfigured
+
+    _isolate_home_modules(tmp_path, monkeypatch)
+    monkeypatch.chdir(tmp_path)
+    write_local_current_instance(tmp_path, "owner/name")
+    _patch_dev_dir_instance_resolution(tmp_path, monkeypatch)
+    local_current_modules_file(tmp_path).write_text("bionty")
+    isettings = cast("InstanceSettings", SimpleNamespace(modules=set()))
+
+    _check_module_in_instance_modules("bionty", isettings)
+    with pytest.raises(ModuleWasntConfigured):
+        _check_module_in_instance_modules("pertdb", isettings)
 
 
 def test_remove_local_current_instance_missing_marker_with_expected_slug(

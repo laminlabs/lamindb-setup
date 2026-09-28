@@ -2,6 +2,7 @@
 
 .. autoexception:: CurrentInstanceNotConfigured
 .. autoexception:: ModuleWasntConfigured
+.. autoexception:: DevDirModulesNotConfigured
 .. autoexception:: StorageAlreadyManaged
 .. autoexception:: StorageNotEmpty
 .. autoexception:: InstanceLockedException
@@ -49,6 +50,10 @@ MODULE_WASNT_CONFIGURED_MESSAGE_TEMPLATE = (
 
 class ModuleWasntConfigured(Exception):
     pass
+
+
+class DevDirModulesNotConfigured(Exception):
+    """Schema modules were not configured for the dev-dir that resolved the instance."""
 
 
 class StorageAlreadyManaged(Exception):
