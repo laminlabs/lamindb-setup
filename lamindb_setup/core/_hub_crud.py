@@ -219,6 +219,7 @@ def select_db_user_by_instance(
         client.rpc(
             "get_instance_db_user",
             {"_instance_id": instance_id, "_type": db_types},
+            get=True,
         )
         .execute()
         .data
