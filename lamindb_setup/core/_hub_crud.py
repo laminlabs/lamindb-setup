@@ -215,10 +215,13 @@ def select_db_user_by_instance(
     # jwt and public come from access_db_user; write and read come from db_user.
     # Prefer jwt over public, and the root (write) user over read.
     db_types = ["jwt", "public"] if fine_grained_access else ["write", "read"]
+    # get=True puts arguments in the query string. PostgREST casts that string to
+    # text[], so a JSON list is read as one element ("read") and rejected.
+    db_type_param = "{" + ",".join(db_types) + "}"
     rows = (
         client.rpc(
             "get_instance_db_user",
-            {"_instance_id": instance_id, "_type": db_types},
+            {"_instance_id": instance_id, "_type": db_type_param},
             get=True,
         )
         .execute()
