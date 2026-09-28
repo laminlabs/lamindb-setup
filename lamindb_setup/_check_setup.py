@@ -51,12 +51,7 @@ def _check_module_in_instance_modules(
     module: str, isettings: InstanceSettings | None = None
 ) -> None:
     if isettings is not None:
-        # Dev-dir sessions configure modules in that directory, not via the
-        # instance schema cached from the last hub connect.
-        if settings._dev_dir_modules_file() is not None:
-            modules_raw = settings.modules
-        else:
-            modules_raw = isettings.modules
+        modules_raw = isettings.modules
         modules = set(modules_raw).union(
             _normalize_module_name(module) for module in modules_raw
         )

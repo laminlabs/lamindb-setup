@@ -244,14 +244,7 @@ def get_django_default_db(isettings: InstanceSettings) -> dict:
 def get_installed_apps(isettings: InstanceSettings, init: bool = False) -> list[str]:
     from .._init_instance import get_schema_module_name
 
-    # A dev-dir that resolved the instance has its own environment modules.
-    # Those are what this process loads. The cached instance schema is not a fallback.
     module_names = ["core"] + list(isettings.modules)
-    if not init:
-        from ._settings import settings
-
-        if settings._dev_dir_modules_file() is not None:
-            module_names = ["core"] + list(settings.modules)
     raise_import_error = True if init else False
     installed_apps = [
         package_name

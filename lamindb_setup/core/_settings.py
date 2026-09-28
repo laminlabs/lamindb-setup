@@ -11,7 +11,6 @@ from lamin_utils import logger
 from platformdirs import user_cache_dir
 
 from lamindb_setup.errors import (
-    DevDirModulesNotConfigured,
     DevDirNonEmpty,
     NoDevDirConfigured,
     NotInBranchDir,
@@ -31,7 +30,6 @@ from ._settings_store import (
     get_settings_file_name_prefix,
     local_current_branch_file,
     local_current_instance_file,
-    local_current_modules_file,
     local_worktree_file,
     remove_local_current_instance,
     settings_dir,
@@ -158,95 +156,47 @@ class SetupSettings:
     def _instance_settings_path(self) -> Path:
         return current_instance_settings_file()
 
-    def _resolved_dev_dir_marker(self) -> Path | None:
-        """Marker that resolved the current instance, if it came from a dev-dir."""
-        if os.environ.get("LAMIN_CURRENT_INSTANCE"):
-            return None
-        marker = find_local_current_instance_file()
-        if marker is None:
-            return None
-        from ._settings_load import _instance_settings_file_from_identifier
-
-        if _instance_settings_file_from_identifier(marker.read_text()) is None:
-            return None
-        return marker
-
-    def _dev_dir_modules_file(self) -> Path | None:
-        """Modules file for a dev-dir that resolved the current instance.
-
-        Returns None when the instance comes from ``LAMIN_CURRENT_INSTANCE`` or from
-        the home directory, rather than from a ``.lamin/current_instance`` marker.
-        """
-        marker = self._resolved_dev_dir_marker()
-        if marker is None:
-            return None
-        return local_current_modules_file(marker.parent.parent)
-
     @property
     def _modules_path(self) -> Path:
-        return self._dev_dir_modules_file() or current_modules_file()
-
-    @staticmethod
-    def _modules_from_comma_separated(schema_str: str) -> set[str]:
-        return {
-            module.strip() for module in schema_str.split(",") if module.strip() != ""
-        }
-
-    def _environment_modules(
-        self, path: Path, *, required: bool, instance_slug: str | None = None
-    ) -> set[str]:
-        env_modules = os.environ.get("LAMINDB_MODULES")
-        if env_modules is not None:
-            return self._modules_from_comma_separated(env_modules)
-        if not path.exists():
-            if required:
-                raise DevDirModulesNotConfigured(
-                    f"Schema modules file is missing: {path}\n"
-                    f"Instance {instance_slug} is resolved from this dev-dir, so modules "
-                    f"are read from {path.parent} and not from the home directory.\n"
-                    "Set them with: lamin settings modules set bionty\n"
-                    'Use lamin settings modules set "" for no extra modules.'
-                )
-            candidates = {"bionty"}
-            return {c for c in candidates if find_spec(c) is not None}
-        return self._modules_from_comma_separated(path.read_text())
+        return current_modules_file()
 
     @property
     def modules(self) -> set[str]:
         """The set of configured schema modules for this environment.
 
-        When the current instance is resolved from a dev-dir ``.lamin/current_instance``
-        marker, modules are read from that dev-dir's ``.lamin/current_modules.txt``.
-        A missing file is an error. The home directory is not a fallback.
-
-        Otherwise, instance modules take precedence if ``~/.lamin/current_instance.env``
-        exists. ``LAMINDB_MODULES`` overrides the modules file in either case.
+        Instance modules take precedence if an instance is configured.
+        Otherwise, `LAMINDB_MODULES` overrides a global setting.
         """
-        marker = self._resolved_dev_dir_marker()
-        if marker is not None:
-            return self._environment_modules(
-                local_current_modules_file(marker.parent.parent),
-                required=True,
-                instance_slug=marker.read_text().strip(),
-            )
-        # if a current instance is configured in the home directory,
+        # if a current instance is configured in the environment,
         # return the instance modules directly
         if self._instance_settings_path.exists():
             return self.instance.modules
-        return self._environment_modules(current_modules_file(), required=False)
+        # Explicit env var override for ephemeral configuration.
+        env_modules = os.environ.get("LAMINDB_MODULES")
+        if env_modules is not None:
+            return {
+                module.strip()
+                for module in env_modules.split(",")
+                if module.strip() != ""
+            }
+        if not self._modules_path.exists():
+            candidates = {"bionty"}
+            return {c for c in candidates if find_spec(c) is not None}
+        schema_str = self._modules_path.read_text().strip()
+        if schema_str == "":
+            return set()
+        return {module for module in schema_str.split(",") if module != ""}
 
     @modules.setter
     def modules(self, value: set[str] | str | None) -> None:
-        path = self._modules_path
         if value is None:
-            path.unlink(missing_ok=True)
+            self._modules_path.unlink(missing_ok=True)
             return
         if isinstance(value, str):
             schema_str = value
         else:
             schema_str = ",".join(sorted(value))
-        path.parent.mkdir(parents=True, exist_ok=True)
-        path.write_text(schema_str)
+        self._modules_path.write_text(schema_str)
 
     @property
     def settings_dir(self) -> Path:
