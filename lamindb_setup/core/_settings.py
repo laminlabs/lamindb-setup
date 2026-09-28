@@ -19,6 +19,7 @@ from lamindb_setup.errors import (
 
 from ._deprecated import deprecated
 from ._settings_load import (
+    _resolve_default_instance_file,
     load_cache_path_from_settings,
     load_instance_settings,
     load_or_create_user_settings,
@@ -164,12 +165,14 @@ class SetupSettings:
     def modules(self) -> set[str]:
         """The set of configured schema modules for this environment.
 
-        Instance modules take precedence if an instance is configured.
+        Instance modules take precedence if an instance is configured, including
+        when it is resolved from a dev-dir marker or `LAMIN_CURRENT_INSTANCE`.
         Otherwise, `LAMINDB_MODULES` overrides a global setting.
         """
-        # if a current instance is configured in the environment,
-        # return the instance modules directly
-        if self._instance_settings_path.exists():
+        # Same resolution as load_instance_settings: env var, dev-dir marker,
+        # then the home current-instance file. Do not call self.instance here
+        # when nothing resolves; the unconfigured placeholder reads this property.
+        if _resolve_default_instance_file() is not None:
             return self.instance.modules
         # Explicit env var override for ephemeral configuration.
         env_modules = os.environ.get("LAMINDB_MODULES")
