@@ -237,7 +237,7 @@ def test_worktree_branch_undefined_at_dev_dir_root(tmp_path: Path):
         ):
             _ = ln_setup.settings.branch
         assert (
-            " - branch: -- (undefined, cd into a branch directory in the worktree)\n"
+            " - branch: -- (undefined, cd into a branch directory in the dev-dir)\n"
             in repr(ln_setup.settings)
         )
     finally:

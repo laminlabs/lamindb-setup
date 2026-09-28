@@ -49,7 +49,7 @@ if TYPE_CHECKING:
 
 DEFAULT_CACHE_DIR = Path(user_cache_dir(appname="lamindb", appauthor="laminlabs"))
 UNDEFINED_BRANCH_IN_WORKTREE = (
-    "-- (undefined, cd into a branch directory in the worktree)"
+    "-- (undefined, cd into a branch directory in the dev-dir)"
 )
 
 
