@@ -212,24 +212,23 @@ def select_db_user_by_instance(
     instance_id: str, fine_grained_access: bool, client: Client
 ):
     """Get db_user for which client has permission."""
-    if fine_grained_access:
-        table = "access_db_user"
-        type_name = "type"
-        type_priority = "jwt"
-    else:
-        table = "db_user"
-        type_name = "name"
-        type_priority = "write"
-
-    data = client.table(table).select("*").eq("instance_id", instance_id).execute().data
-    if len(data) == 0:
-        return None
-    elif len(data) > 1:
-        for item in data:
-            if item[type_name] == type_priority:
-                return item
-        logger.warning("found multiple db credentials, using the first one")
-    return data[0]
+    # jwt and public come from access_db_user; write and read come from db_user.
+    # Prefer jwt over public, and the root (write) user over read.
+    db_types = ["jwt", "public"] if fine_grained_access else ["write", "read"]
+    rows = (
+        client.rpc(
+            "get_instance_db_user",
+            {"_instance_id": instance_id, "_type": db_types},
+        )
+        .execute()
+        .data
+    )
+    by_type = {row["type"]: row for row in rows}
+    for db_type in db_types:
+        row = by_type.get(db_type)
+        if row is not None:
+            return row
+    return None
 
 
 def _delete_instance_record(instance_id: UUID | str, client: Client) -> None:

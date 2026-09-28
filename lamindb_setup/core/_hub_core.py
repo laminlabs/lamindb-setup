@@ -660,10 +660,7 @@ def _connect_instance_hub(
                 instance["id"], fine_grained_access, client
             )
             if db_user is not None:
-                db_user_name, db_user_password = (
-                    db_user["name" if fine_grained_access else "db_user_name"],
-                    db_user["password" if fine_grained_access else "db_user_password"],
-                )
+                db_user_name, db_user_password = db_user["name"], db_user["password"]
 
         db_user_name = "none" if db_user_name is None else db_user_name
         db_user_password = "none" if db_user_password is None else db_user_password
