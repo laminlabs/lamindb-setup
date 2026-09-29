@@ -82,7 +82,7 @@ def test_connect_cli_raises_if_connecting_in_other_instance_dev_dir(
 
     assert str(exc.value) == (
         "You're trying to connect within the dev-dir of instance owner/current-instance. "
-        "Either cd into another directory or unset the dev-dir: lamin settings dev-dir unset"
+        "Either cd into another directory or run: lamin disconnect --here"
     )
 
 
