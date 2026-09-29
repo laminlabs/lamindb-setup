@@ -24,7 +24,7 @@ system_settings_dir = Path(site_config_dir(appname="lamindb", appauthor="laminla
 LOCAL_SETTINGS_DIRNAME = ".lamin"
 LOCAL_CURRENT_INSTANCE_FILENAME = "current_instance"
 LOCAL_CURRENT_BRANCH_FILENAME = "current_branch"
-LOCAL_WORKTREE_FILENAME = "worktree"
+LOCAL_CURRENT_SPACE_FILENAME = "current_space"
 
 
 def get_settings_file_name_prefix():
@@ -78,9 +78,69 @@ def local_current_branch_file(directory: Path) -> Path:
     return directory / LOCAL_SETTINGS_DIRNAME / filename
 
 
-def local_worktree_file(directory: Path) -> Path:
-    filename = f"{get_settings_file_name_prefix()}{LOCAL_WORKTREE_FILENAME}"
+def local_current_space_file(directory: Path) -> Path:
+    filename = f"{get_settings_file_name_prefix()}{LOCAL_CURRENT_SPACE_FILENAME}"
     return directory / LOCAL_SETTINGS_DIRNAME / filename
+
+
+def is_home_directory(path: Path) -> bool:
+    return path.expanduser().resolve() == Path.home().resolve()
+
+
+def _branch_name_from_file(branch_file: Path) -> str:
+    if not branch_file.is_file():
+        return "main"
+    parts = branch_file.read_text().split("\n")
+    if len(parts) >= 2 and parts[1].strip():
+        return parts[1].strip()
+    return "main"
+
+
+def dev_dir_containing(path: Path, *, instance_slug: str | None = None) -> Path | None:
+    """Return the dev-dir whose marker contains `path`.
+
+    `$HOME` is never a dev-dir. A marker for another instance is skipped.
+    """
+    start = path if path.is_dir() else path.parent
+    start = start.expanduser().resolve()
+    home = Path.home().resolve()
+    for candidate in (start, *start.parents):
+        if candidate == home:
+            return None
+        marker = local_current_instance_file(candidate)
+        if not marker.is_file():
+            continue
+        slug = marker.read_text().strip()
+        if instance_slug is not None and slug != instance_slug:
+            continue
+        return candidate
+    return None
+
+
+def find_dev_dirs(root: Path | None = None) -> list[tuple[Path, str, str]]:
+    """List dev-dirs under `root` as `(directory, instance slug, branch name)`.
+
+    Does not scan `$HOME`. A marker at `$HOME` is the legacy global instance.
+    Hidden directories are not descended into.
+    """
+    start = (root or Path.cwd()).expanduser().resolve()
+    home = Path.home().resolve()
+    if start == home or not start.is_dir():
+        return []
+    found: list[tuple[Path, str, str]] = []
+    for dirpath, dirnames, _filenames in os.walk(start):
+        current = Path(dirpath).resolve()
+        dirnames[:] = sorted(name for name in dirnames if not name.startswith("."))
+        if current == home:
+            dirnames.clear()
+            continue
+        marker = local_current_instance_file(current)
+        if not marker.is_file():
+            continue
+        slug = marker.read_text().strip()
+        branch = _branch_name_from_file(local_current_branch_file(current))
+        found.append((current, slug, branch))
+    return found
 
 
 def write_local_current_instance(directory: Path, instance_slug: str) -> Path:

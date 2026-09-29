@@ -82,7 +82,7 @@ def test_connect_cli_raises_if_connecting_in_other_instance_dev_dir(
 
     assert str(exc.value) == (
         "You're trying to connect within the dev-dir of instance owner/current-instance. "
-        "Either cd into another directory or unset the dev-dir: lamin settings dev-dir unset"
+        "Either cd into another directory or run: lamin disconnect --here"
     )
 
 
@@ -105,6 +105,45 @@ def test_connect_cli_allows_connecting_same_instance_in_dev_dir(
     monkeypatch.setattr(connect_instance, "connect", lambda *args, **kwargs: None)
 
     connect_instance._connect_cli("owner/current-instance")
+
+
+def test_connect_cli_here_logs_connected_directory(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+):
+    monkeypatch.chdir(tmp_path)
+    monkeypatch.setattr(
+        connect_instance,
+        "find_local_current_instance_file",
+        lambda start_directory=None: None,
+    )
+    monkeypatch.setattr(
+        connect_instance,
+        "_connect_instance",
+        lambda *args, **kwargs: _FakeCliConnectedInstance("owner/current-instance"),
+    )
+    monkeypatch.setattr(
+        connect_instance, "save_instance_settings", lambda *a, **k: None
+    )
+    assigned: dict[str, Path] = {}
+
+    def _set_dev_dir(self, value):
+        assigned["value"] = value
+
+    monkeypatch.setattr(
+        type(connect_instance.settings),
+        "dev_dir",
+        property(lambda self: None, _set_dev_dir),
+    )
+    messages: list[str] = []
+    monkeypatch.setattr(
+        connect_instance.logger, "important", lambda message: messages.append(message)
+    )
+
+    connect_instance._connect_cli("owner/current-instance", here=True)
+
+    cwd = tmp_path.resolve()
+    assert assigned["value"] == cwd
+    assert messages == [f"connected lamindb owner/current-instance to {cwd}"]
 
 
 def test_validate_connection_state_none_none_skips_reset(monkeypatch):

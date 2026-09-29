@@ -13,9 +13,6 @@
 .. autoexception:: NoWriteAccess
 .. autoexception:: NoReadAccess
 .. autoexception:: ConnectWithinDevDirError
-.. autoexception:: WorktreePathError
-.. autoexception:: NoDevDirConfigured
-.. autoexception:: DevDirNonEmpty
 .. autoexception:: ApiKeyError
 .. autoexception:: ApiKeyExpired
 .. autoexception:: ApiKeyNotFound
@@ -99,22 +96,6 @@ class NoReadAccess(Exception):
 
 
 class ConnectWithinDevDirError(Exception):
-    pass
-
-
-class WorktreePathError(Exception):
-    pass
-
-
-class NotInBranchDir(RuntimeError):
-    pass
-
-
-class NoDevDirConfigured(RuntimeError):
-    pass
-
-
-class DevDirNonEmpty(RuntimeError):
     pass
 
 

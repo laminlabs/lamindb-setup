@@ -10,13 +10,6 @@ import jwt
 from lamin_utils import logger
 from platformdirs import user_cache_dir
 
-from lamindb_setup.errors import (
-    DevDirNonEmpty,
-    NoDevDirConfigured,
-    NotInBranchDir,
-    WorktreePathError,
-)
-
 from ._deprecated import deprecated
 from ._settings_load import (
     _resolve_default_instance_file,
@@ -29,9 +22,10 @@ from ._settings_store import (
     current_modules_file,
     find_local_current_instance_file,
     get_settings_file_name_prefix,
+    is_home_directory,
     local_current_branch_file,
     local_current_instance_file,
-    local_worktree_file,
+    local_current_space_file,
     remove_local_current_instance,
     settings_dir,
     system_settings_dir,
@@ -49,56 +43,6 @@ if TYPE_CHECKING:
 
 
 DEFAULT_CACHE_DIR = Path(user_cache_dir(appname="lamindb", appauthor="laminlabs"))
-UNDEFINED_BRANCH_IN_WORKTREE = (
-    "-- (undefined, cd into a branch directory in the dev-dir)"
-)
-
-
-def _read_worktree_child_branch_name(child: Path) -> str | None:
-    branch_path = local_current_branch_file(child)
-    if not branch_path.exists():
-        return None
-    parts = branch_path.read_text().split("\n")
-    if len(parts) >= 2 and parts[1].strip():
-        return parts[1].strip()
-    return None
-
-
-def _worktree_branch_dir_hint(dev_dir: Path | None) -> str:
-    """Hint when cwd is not inside a worktree branch directory.
-
-    A child directory is not guaranteed to exist; create one if needed.
-    """
-    try:
-        entries: list[str] = []
-        if dev_dir is not None and dev_dir.exists():
-            children = sorted(
-                path
-                for path in dev_dir.iterdir()
-                if path.is_dir() and not path.name.startswith(".")
-            )
-            for child in children:
-                branch = _read_worktree_child_branch_name(child)
-                if branch is not None:
-                    entries.append(f"{child.name} -> {branch}")
-        if entries:
-            listing = "\n".join(f"  {entry}" for entry in entries)
-            return (
-                "These directories already exist under the dev-dir, "
-                "with the branch each one maps to:\n"
-                f"{listing}\n"
-                "cd into one of them. If you need another branch, create a "
-                "directory for it and switch to the branch there."
-            )
-        return (
-            "No branch directory exists yet under the dev-dir. "
-            "Create one and switch to the branch there."
-        )
-    except Exception:
-        return (
-            "cd into an existing branch directory under the dev-dir, or create one "
-            "and switch to the branch there."
-        )
 
 
 def _default_cache_dir():
@@ -146,12 +90,14 @@ class SetupSettings:
     _branch = None  # do not have types here
     _space = None  # do not have types here
     _branch_context_path: Path | None = None
+    _space_context_path: Path | None = None
 
     def _clear_instance_context_cache(self) -> None:
         """Clear cached instance context."""
         self._branch = None
         self._space = None
         self._branch_context_path = None
+        self._space_context_path = None
 
     @property
     def _instance_settings_path(self) -> Path:
@@ -224,183 +170,60 @@ class SetupSettings:
         else:
             self._auto_connect_path.unlink(missing_ok=True)
 
-    @property
-    def _dev_dir_path(self) -> Path:
-        return (
-            settings_dir / f"dev-dir--{self.instance.owner}--{self.instance.name}.txt"
-        )
-
-    def _home_dev_dir(self) -> Path | None:
-        if not self._dev_dir_path.exists():
-            return None
-        return Path(self._dev_dir_path.read_text())
-
     def _local_dev_dir(self) -> Path | None:
         marker = find_local_current_instance_file()
         if marker is None or marker.read_text().strip() != self.instance.slug:
             return None
-        return marker.parent.parent
+        directory = marker.parent.parent
+        if is_home_directory(directory):
+            return None
+        return directory
+
+    def _clear_dev_dir_context(self, directory: Path, instance_slug: str) -> None:
+        local_current_branch_file(directory).unlink(missing_ok=True)
+        local_current_space_file(directory).unlink(missing_ok=True)
+        remove_local_current_instance(
+            marker=local_current_instance_file(directory),
+            expected_instance_slug=instance_slug,
+        )
 
     @property
     def dev_dir(self) -> Path | None:
-        """Get or set the local development directory for the current instance.
+        """Development directory containing the working directory.
 
-        If setting it to `None`, the working development directory is unset.
-        Setting a directory also marks that directory for local auto-connect.
+        This is the nearest parent, including the working directory, with a
+        `.lamin/current_instance` marker for the current instance. `$HOME` is
+        never a development directory. Outside every such directory the value
+        is `None`.
+
+        Setting a path writes that marker and leaves every other development
+        directory in place. Setting `None` removes the marker of the directory
+        that contains the working directory.
         """
-        local = self._local_dev_dir()
-        if local is not None:
-            return local
-        return self._home_dev_dir()
+        return self._local_dev_dir()
 
     @dev_dir.setter
     def dev_dir(self, value: str | Path | None) -> None:
         instance_slug = self.instance.slug
-        previous_dirs: list[Path] = []
-        for path in (self._home_dev_dir(), self._local_dev_dir()):
-            if path is None:
-                continue
-            resolved = path.resolve()
-            if resolved not in previous_dirs:
-                previous_dirs.append(resolved)
-
         if value is None:
-            if self._dev_dir_path.exists():
-                self._dev_dir_path.unlink()
-            for directory in previous_dirs:
-                local_current_branch_file(directory).unlink(missing_ok=True)
-                remove_local_current_instance(
-                    marker=local_current_instance_file(directory),
-                    expected_instance_slug=instance_slug,
-                )
-        else:
-            value_path = Path(value).expanduser().resolve()
-            self._dev_dir_path.write_text(value_path.as_posix())
-            if instance_slug != "none/none":
-                write_local_current_instance(value_path, instance_slug)
-            for directory in previous_dirs:
-                if directory != value_path:
-                    local_current_branch_file(directory).unlink(missing_ok=True)
-                    remove_local_current_instance(
-                        marker=local_current_instance_file(directory),
-                        expected_instance_slug=instance_slug,
-                    )
-
-    @property
-    def worktree(self) -> bool:
-        """Whether `dev_dir` is treated like a Git-worktree parent.
-
-        When enabled, `dev_dir` is a parent directory and each child directory is a
-        branch-specific workspace (analogous to a Git worktree checkout). LaminDB then
-        resolves branch context from the child's `.lamin/current_branch` and derives
-        keys relative to that child root. When disabled, `dev_dir` itself is the active
-        root for branch lookup and key derivation.
-        """
-        dev_dir = self.dev_dir
-        if dev_dir is None:
-            return False
-        return local_worktree_file(dev_dir.resolve()).exists()
-
-    @worktree.setter
-    def worktree(self, value: bool) -> None:
-        if value == self.worktree:
+            current = self.dev_dir
+            if current is None:
+                return
+            self._clear_dev_dir_context(current, instance_slug)
+            self._clear_instance_context_cache()
             return
-        dev_dir = self._get_dev_dir_path()
-        worktree_path = local_worktree_file(dev_dir.resolve())
-        unexpected_paths = [
-            path
-            for path in dev_dir.iterdir()
-            if not path.name.startswith(".")
-            and not (path.is_dir() and (path / ".lamindb" / "storage_uid.txt").exists())
-            and not (value and path.is_dir() and path.name == "main")
-        ]
-        if unexpected_paths:
-            names = ", ".join(sorted(path.name for path in unexpected_paths))
-            if value:
-                raise DevDirNonEmpty(
-                    f"Cannot enable worktree mode because the dev-dir contains paths "
-                    f"other than configuration, storage, or main/: {names}. "
-                    "Move them into main/, or use a new empty dev-dir."
-                )
-            raise DevDirNonEmpty(
-                f"Cannot disable worktree mode because the dev-dir contains paths "
-                f"other than configuration or storage locations: {names}. Move or "
-                "remove them first."
+        value_path = Path(value).expanduser().resolve()
+        if is_home_directory(value_path):
+            raise ValueError(
+                "The home directory cannot be a development directory. "
+                "$HOME/.lamin/current_instance is the legacy global instance."
             )
-        if value:
-            main_dir = dev_dir.resolve() / "main"
-            main_marker = local_current_instance_file(main_dir)
-            if main_marker.exists():
-                main_slug = main_marker.read_text().strip()
-                if main_slug and main_slug != self.instance.slug:
-                    raise DevDirNonEmpty(
-                        "Cannot enable worktree mode because main/ is the dev-dir of "
-                        f"instance {main_slug}."
-                    )
-            worktree_path.parent.mkdir(parents=True, exist_ok=True)
-            worktree_path.touch()
-            remove_local_current_instance(
-                marker=main_marker,
-                expected_instance_slug=self.instance.slug,
-            )
-        else:
-            worktree_path.unlink(missing_ok=True)
+        if instance_slug != "none/none":
+            write_local_current_instance(value_path, instance_slug)
         self._clear_instance_context_cache()
-
-    def _get_dev_dir_path(self) -> Path:
-        if self.dev_dir is None:
-            raise NoDevDirConfigured(
-                "The worktree mode requires a configured dev-dir. "
-                "Please set it using: lamin settings dev-dir set path/to/directory"
-            )
-        return self.dev_dir
-
-    def _resolve_active_worktree_root(
-        self, *, cwd: Path | None = None, raise_on_error: bool = False
-    ) -> Path | None:
-        if not self.worktree:
-            return self.dev_dir
-        if raise_on_error or self.dev_dir is not None:
-            dev_dir = self._get_dev_dir_path()
-        else:
-            return None
-        location = (cwd or Path.cwd()).resolve()
-        if not location.is_relative_to(dev_dir) or location == dev_dir:
-            if raise_on_error:
-                raise WorktreePathError(
-                    "Worktree mode is enabled, so this command needs to run inside "
-                    "a child directory of the configured dev-dir. "
-                    + _worktree_branch_dir_hint(self.dev_dir)
-                )
-            return None
-
-        rel = location.relative_to(dev_dir)
-        return dev_dir / rel.parts[0]
-
-    @property
-    def effective_dev_dir(self) -> Path | None:
-        """Root directory used for relative transform/script key derivation.
-
-        This is needed because in worktree mode `dev_dir` is only a parent container.
-        The effective key root must be the active child workspace so branch-local runs
-        produce stable, isolated keys. Returns `dev_dir` in normal mode; in worktree
-        mode returns the active child root, raises `NoDevDirConfigured` when `dev_dir`
-        is unset, and raises `WorktreePathError` if the current directory is not inside
-        a valid child workspace.
-        """
-        return self._resolve_active_worktree_root(raise_on_error=True)
 
     @property
     def _branch_path(self) -> Path:
-        if self.worktree:
-            worktree_root = self._resolve_active_worktree_root(raise_on_error=False)
-            if worktree_root is not None:
-                return local_current_branch_file(worktree_root)
-            raise NotInBranchDir(
-                "Worktree mode is enabled, so a branch is only defined inside a "
-                "child directory of the configured dev-dir. "
-                + _worktree_branch_dir_hint(self.dev_dir)
-            )
         if self.dev_dir is not None:
             return local_current_branch_file(self.dev_dir.resolve())
         return (
@@ -422,15 +245,8 @@ class SetupSettings:
             branch_path = self._branch_path
         except SystemExit:  # in case no instance setup
             return idlike, name
-        except NotInBranchDir:
-            return "--", UNDEFINED_BRANCH_IN_WORKTREE
         if branch_path.exists():
             idlike, name = branch_path.read_text().split("\n")
-        elif self.worktree:
-            # In worktree mode, each child directory maps to a branch context.
-            # Do not fall back to global legacy state from another directory.
-            idlike = branch_path.parent.parent.name
-            name = str(idlike)
         elif self.dev_dir is not None and self._legacy_branch_path.exists():
             # Backward compat for sessions that only wrote branch state globally.
             idlike, name = self._legacy_branch_path.read_text().split("\n")
@@ -444,7 +260,6 @@ class SetupSettings:
         # this is needed for .filter() with non-default connections
         if not self.is_configured:
             return MainBranchMock()
-        # Raises NotInBranchDir when called from worktree root/outside branch dir.
         branch_path = self._branch_path
         if self._branch_context_path != branch_path:
             self._branch = None
@@ -458,15 +273,6 @@ class SetupSettings:
             try:
                 self._branch = Branch.get(idlike)
             except DoesNotExist:
-                if self.worktree and isinstance(idlike, str):
-                    branch_record = Branch.filter(name=idlike).one_or_none()
-                    if branch_record is not None:
-                        self._branch_path.parent.mkdir(parents=True, exist_ok=True)
-                        self._branch_path.write_text(
-                            f"{branch_record.uid}\n{branch_record.name}"
-                        )
-                        self._branch = branch_record
-                        return self._branch
                 # The local branch marker can become stale if the referenced
                 # branch was deleted. Fall back to `main` and refresh marker.
                 branch_record = Branch.filter(name="main").one()
@@ -499,11 +305,17 @@ class SetupSettings:
         self._branch_context_path = self._branch_path
 
     @property
-    def _space_path(self) -> Path:
+    def _home_space_path(self) -> Path:
         return (
             settings_dir
             / f"current-space--{self.instance.owner}--{self.instance.name}.txt"
         )
+
+    @property
+    def _space_path(self) -> Path:
+        if self.dev_dir is not None:
+            return local_current_space_file(self.dev_dir.resolve())
+        return self._home_space_path
 
     def _read_space_idlike_name(self) -> tuple[int | str, str]:
         idlike: str | int = 1
@@ -514,6 +326,8 @@ class SetupSettings:
             return idlike, name
         if space_path.exists():
             idlike, name = space_path.read_text().split("\n")
+        elif self.dev_dir is not None and self._home_space_path.exists():
+            idlike, name = self._home_space_path.read_text().split("\n")
         return idlike, name
 
     @property
@@ -521,6 +335,10 @@ class SetupSettings:
     # and we never need a DB request
     def space(self) -> Space:
         """Default space."""
+        space_path = self._space_path
+        if self._space_context_path != space_path:
+            self._space = None
+            self._space_context_path = space_path
         if self._space is None:
             from lamindb import Space
 
@@ -544,8 +362,10 @@ class SetupSettings:
                 )
         # we are sure that the current instance is setup because
         # it will error on lamindb import otherwise
+        self._space_path.parent.mkdir(parents=True, exist_ok=True)
         self._space_path.write_text(f"{space_record.uid}\n{space_record.name}")
         self._space = space_record
+        self._space_context_path = self._space_path
 
     @property
     def is_connected(self) -> bool:
@@ -715,7 +535,6 @@ class SetupSettings:
             repr += f" - branch: {branch_name}\n"
             repr += f" - space: {self._read_space_idlike_name()[1]}\n"
             repr += f" - dev-dir: {self.dev_dir}"
-            repr += f"\n - worktree: {self.worktree}"
             repr += f"\n{colors.yellow('Details:')}\n"
             repr += "\n".join(instance_rep[1:])
         else:

@@ -315,8 +315,8 @@ def _connect_cli(
         if current_instance != target_instance:
             raise ConnectWithinDevDirError(
                 "You're trying to connect within the dev-dir of instance "
-                f"{current_instance}. Either cd into another directory or unset the"
-                " dev-dir: lamin settings dev-dir unset"
+                f"{current_instance}. Either cd into another directory or run: "
+                "lamin disconnect --here"
             )
 
     isettings = _connect_instance(
@@ -351,14 +351,12 @@ def _connect_cli(
                 )
     if show_dev_dir_hint and settings_.dev_dir is None:
         logger.important_hint(
-            "to map a local dev directory, call: lamin settings set dev-dir ."
+            f"tip: connect the database to the current directory to keep your files in one place: lamin connect {isettings.slug} --here"
         )
-    if here:
+    if here and not mute_here:
         cwd = Path.cwd().resolve()
         settings_.dev_dir = cwd
-        if not mute_here:
-            logger.important(f"dev-dir is: {cwd}")
-            logger.important(f"connected lamindb: {isettings.slug}")
+        logger.important(f"connected lamindb {isettings.slug} to {cwd}")
     return None
 
 
