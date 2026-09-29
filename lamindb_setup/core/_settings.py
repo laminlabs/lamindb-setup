@@ -335,10 +335,7 @@ class SetupSettings:
     # and we never need a DB request
     def space(self) -> Space:
         """Default space."""
-        try:
-            space_path = self._space_path
-        except SystemExit:
-            space_path = None
+        space_path = self._space_path
         if self._space_context_path != space_path:
             self._space = None
             self._space_context_path = space_path
