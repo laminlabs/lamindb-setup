@@ -1,23 +1,15 @@
 from __future__ import annotations
 
 import os
-import subprocess
 from pathlib import Path
 
 import lamindb_setup as ln_setup
 import pytest
 from lamindb_setup.core._settings_store import (
     local_current_branch_file,
-    local_worktree_file,
     write_local_current_instance,
 )
 from lamindb_setup.core.hashing import hash_dir
-from lamindb_setup.errors import (
-    DevDirNonEmpty,
-    NoDevDirConfigured,
-    NotInBranchDir,
-    WorktreePathError,
-)
 
 
 def test_auto_connect():
@@ -57,314 +49,140 @@ def _branch_name() -> str:
     return ln_setup.settings.branch.name
 
 
-def _restore_worktree_settings(
-    previous_dev_dir: Path | None, previous_worktree: bool
-) -> None:
-    current_dev_dir = ln_setup.settings.dev_dir
-    if current_dev_dir is not None:
-        local_worktree_file(current_dev_dir.resolve()).unlink(missing_ok=True)
-    ln_setup.settings.dev_dir = previous_dev_dir
-    if previous_worktree and previous_dev_dir is not None:
-        worktree_marker = local_worktree_file(previous_dev_dir.resolve())
-        worktree_marker.parent.mkdir(parents=True, exist_ok=True)
-        worktree_marker.write_text("true")
-
-
-def test_worktree_setting_roundtrip(tmp_path: Path):
-    previous_dev_dir = ln_setup.settings.dev_dir
-    previous_worktree = ln_setup.settings.worktree
-    try:
-        ln_setup.settings.dev_dir = tmp_path
-        ln_setup.settings.worktree = True
-        assert ln_setup.settings.worktree is True
-        ln_setup.settings.worktree = False
-        assert ln_setup.settings.worktree is False
-    finally:
-        _restore_worktree_settings(previous_dev_dir, previous_worktree)
-
-
-def test_worktree_toggle_rejects_non_empty_dev_dir(tmp_path: Path):
-    previous_dev_dir = ln_setup.settings.dev_dir
-    previous_worktree = ln_setup.settings.worktree
-    try:
-        dev_dir = tmp_path / "worktrees"
-        dev_dir.mkdir()
-        ln_setup.settings.dev_dir = dev_dir
-        storage_marker = dev_dir / "storage/.lamindb/storage_uid.txt"
-        storage_marker.parent.mkdir(parents=True)
-        storage_marker.write_text("uid")
-        ln_setup.settings.worktree = True
-        assert ln_setup.settings.worktree is True
-        ln_setup.settings.worktree = False
-        assert ln_setup.settings.worktree is False
-        main_dir = dev_dir / "main"
-        main_dir.mkdir()
-        (main_dir / "analysis.py").write_text("data")
-        write_local_current_instance(main_dir, "other/instance")
-        with pytest.raises(DevDirNonEmpty, match="other/instance"):
-            ln_setup.settings.worktree = True
-        assert ln_setup.settings.worktree is False
-        write_local_current_instance(main_dir, ln_setup.settings.instance.slug)
-        ln_setup.settings.worktree = True
-        assert ln_setup.settings.worktree is True
-        previous_cwd = Path.cwd()
-        os.chdir(main_dir)
-        try:
-            assert ln_setup.settings.dev_dir == dev_dir.resolve()
-            assert ln_setup.settings.worktree is True
-        finally:
-            os.chdir(previous_cwd)
-        with pytest.raises(DevDirNonEmpty, match="main"):
-            ln_setup.settings.worktree = False
-        local_worktree_file(dev_dir.resolve()).unlink()
-        (main_dir / "analysis.py").unlink()
-        main_dir.rmdir()
-        assert ln_setup.settings.worktree is False
-        (dev_dir / "analysis.py").write_text("data")
-        with pytest.raises(DevDirNonEmpty, match="analysis.py"):
-            ln_setup.settings.worktree = True
-        local_worktree_file(dev_dir.resolve()).touch()
-        with pytest.raises(DevDirNonEmpty, match="analysis.py"):
-            ln_setup.settings.worktree = False
-    finally:
-        _restore_worktree_settings(previous_dev_dir, previous_worktree)
-
-
-def test_resolve_active_worktree_root_and_branch_path(tmp_path: Path):
-    previous_dev_dir = ln_setup.settings.dev_dir
-    previous_worktree = ln_setup.settings.worktree
+def test_two_dev_dirs_are_independent(tmp_path: Path):
     previous_cwd = Path.cwd()
-    root = tmp_path / "worktrees"
-    root.mkdir()
-    child = root / "feature-a"
-    try:
-        ln_setup.settings.dev_dir = root
-        ln_setup.settings.worktree = True
-        child.mkdir()
-        os.chdir(child)
-        assert ln_setup.settings.effective_dev_dir == child.resolve()
-        assert ln_setup.settings._branch_path == local_current_branch_file(
-            child.resolve()
-        )
-    finally:
-        os.chdir(previous_cwd)
-        _restore_worktree_settings(previous_dev_dir, previous_worktree)
-
-
-def test_resolve_active_worktree_root_errors_at_dev_dir_root(tmp_path: Path):
-    previous_dev_dir = ln_setup.settings.dev_dir
-    previous_worktree = ln_setup.settings.worktree
-    root = tmp_path / "worktrees"
-    root.mkdir()
-    try:
-        ln_setup.settings.dev_dir = root
-        ln_setup.settings.worktree = True
-        with pytest.raises(WorktreePathError, match="inside a child directory"):
-            ln_setup.settings._resolve_active_worktree_root(
-                cwd=root, raise_on_error=True
-            )
-    finally:
-        _restore_worktree_settings(previous_dev_dir, previous_worktree)
-
-
-def test_resolve_active_worktree_root_non_worktree_mode(tmp_path: Path):
-    previous_dev_dir = ln_setup.settings.dev_dir
-    previous_worktree = ln_setup.settings.worktree
-    try:
-        if ln_setup.settings.dev_dir is not None:
-            local_worktree_file(ln_setup.settings.dev_dir.resolve()).unlink(
-                missing_ok=True
-            )
-        ln_setup.settings.dev_dir = tmp_path
-        assert (
-            ln_setup.settings._resolve_active_worktree_root(raise_on_error=True)
-            == tmp_path.resolve()
-        )
-        ln_setup.settings.dev_dir = None
-        assert ln_setup.settings._resolve_active_worktree_root() is None
-    finally:
-        _restore_worktree_settings(previous_dev_dir, previous_worktree)
-
-
-def test_resolve_active_worktree_root_without_dev_dir():
-    previous_dev_dir = ln_setup.settings.dev_dir
-    previous_worktree = ln_setup.settings.worktree
-    try:
-        ln_setup.settings.dev_dir = None
-        with pytest.raises(
-            NoDevDirConfigured,
-            match="Please set it using: lamin settings dev-dir set path/to/directory",
-        ):
-            ln_setup.settings.worktree = True
-        assert ln_setup.settings.worktree is False
-        assert ln_setup.settings._resolve_active_worktree_root() is None
-        assert (
-            ln_setup.settings._resolve_active_worktree_root(raise_on_error=True) is None
-        )
-    finally:
-        _restore_worktree_settings(previous_dev_dir, previous_worktree)
-
-
-def test_resolve_active_worktree_root_invalid_location_returns_none(tmp_path: Path):
-    previous_dev_dir = ln_setup.settings.dev_dir
-    previous_worktree = ln_setup.settings.worktree
-    root = tmp_path / "worktrees"
+    first = tmp_path / "first"
+    second = tmp_path / "second"
     outside = tmp_path / "outside"
-    root.mkdir()
+    first.mkdir()
+    second.mkdir()
     outside.mkdir()
     try:
-        ln_setup.settings.dev_dir = root
-        ln_setup.settings.worktree = True
-        assert ln_setup.settings._resolve_active_worktree_root(cwd=root) is None
-        assert ln_setup.settings._resolve_active_worktree_root(cwd=outside) is None
-    finally:
-        _restore_worktree_settings(previous_dev_dir, previous_worktree)
-
-
-def test_worktree_branch_undefined_at_dev_dir_root(tmp_path: Path):
-    previous_dev_dir = ln_setup.settings.dev_dir
-    previous_worktree = ln_setup.settings.worktree
-    worktree_parent = tmp_path / "worktrees"
-    worktree_parent.mkdir(parents=True, exist_ok=True)
-    previous_cwd = Path.cwd()
-    try:
-        ln_setup.settings.dev_dir = worktree_parent
-        ln_setup.settings.worktree = True
-        os.chdir(worktree_parent)
-        with pytest.raises(
-            NotInBranchDir,
-            match="No branch directory exists yet",
-        ):
-            _ = ln_setup.settings.branch
-        assert (
-            " - branch: -- (undefined, cd into a branch directory in the dev-dir)\n"
-            in repr(ln_setup.settings)
-        )
-    finally:
-        os.chdir(previous_cwd)
-        _restore_worktree_settings(previous_dev_dir, previous_worktree)
-
-
-def test_worktree_branch_hint_lists_directories_and_branches(tmp_path: Path):
-    previous_dev_dir = ln_setup.settings.dev_dir
-    previous_worktree = ln_setup.settings.worktree
-    worktree_parent = tmp_path / "worktrees"
-    main_child = worktree_parent / "main"
-    other_child = worktree_parent / "experiments"
-    previous_cwd = Path.cwd()
-    try:
-        ln_setup.settings.dev_dir = worktree_parent
-        ln_setup.settings.worktree = True
-        main_child.mkdir(parents=True, exist_ok=True)
-        other_child.mkdir(parents=True, exist_ok=True)
-        marker = local_current_branch_file(other_child)
-        marker.parent.mkdir(parents=True, exist_ok=True)
-        marker.write_text("someuid\nanalysis")
-        os.chdir(worktree_parent)
-        with pytest.raises(NotInBranchDir) as exc_info:
-            _ = ln_setup.settings.branch
-        msg = str(exc_info.value)
-        assert "main -> main" not in msg
-        assert "experiments -> analysis" in msg
-    finally:
-        os.chdir(previous_cwd)
-        _restore_worktree_settings(previous_dev_dir, previous_worktree)
-
-
-def test_worktree_branch_infers_child_directory_without_marker(tmp_path: Path):
-    previous_dev_dir = ln_setup.settings.dev_dir
-    previous_worktree = ln_setup.settings.worktree
-    previous_cwd = Path.cwd()
-    worktree_parent = tmp_path / "worktrees"
-    main_child = worktree_parent / "main"
-    try:
-        ln_setup.settings.dev_dir = worktree_parent
-        ln_setup.settings.worktree = True
-        main_child.mkdir(parents=True, exist_ok=True)
-        os.chdir(main_child)
-        # Simulate a freshly created child without branch marker.
-        ln_setup.settings._branch_path.unlink(missing_ok=True)
-        legacy_branch = ln_setup.settings._legacy_branch_path
-        previous_legacy = legacy_branch.read_text() if legacy_branch.exists() else None
-        legacy_branch.write_text("archivexxxxx\narchive")
-        ln_setup.settings._branch = None
-        ln_setup.settings._branch_context_path = None
-        assert ln_setup.settings._read_branch_idlike_name()[1] == "main"
-        assert ln_setup.settings.branch.name == "main"
-    finally:
-        if "legacy_branch" in locals():
-            if previous_legacy is None:
-                legacy_branch.unlink(missing_ok=True)
-            else:
-                legacy_branch.write_text(previous_legacy)
-        os.chdir(previous_cwd)
-        _restore_worktree_settings(previous_dev_dir, previous_worktree)
-
-
-def test_dev_dir_get_prefers_local_marker_over_home(tmp_path: Path):
-    previous_dev_dir = ln_setup.settings.dev_dir
-    previous_worktree = ln_setup.settings.worktree
-    previous_cwd = Path.cwd()
-    home_dev_dir = tmp_path / "home-dev-dir"
-    local_dev_dir = tmp_path / "local-dev-dir"
-    unmarked = tmp_path / "unmarked"
-    home_dev_dir.mkdir()
-    local_dev_dir.mkdir()
-    unmarked.mkdir()
-    try:
-        ln_setup.settings.worktree = False
-        ln_setup.settings.dev_dir = home_dev_dir
+        os.chdir(first)
+        ln_setup.settings.dev_dir = first
         ln_setup.settings.branch = "archive"
-        assert ln_setup.settings._branch_path.read_text() == f"{12 * 'a'}\narchive"
-        write_local_current_instance(local_dev_dir, ln_setup.settings.instance.slug)
-        local_branch = local_current_branch_file(local_dev_dir.resolve())
-        local_branch.parent.mkdir(parents=True, exist_ok=True)
-        local_branch.write_text(f"{12 * 'm'}\nmain")
-        os.chdir(local_dev_dir)
-        assert ln_setup.settings.dev_dir == local_dev_dir.resolve()
+        ln_setup.settings.space = "all"
+        os.chdir(second)
+        ln_setup.settings._branch = None
+        ln_setup.settings._space = None
+        ln_setup.settings.dev_dir = second
+        ln_setup.settings.branch = "main"
+        ln_setup.settings.space = "all"
+        from lamindb_setup.core._settings_store import local_current_space_file
+
+        assert local_current_branch_file(first.resolve()).exists()
+        assert local_current_branch_file(second.resolve()).exists()
+        assert local_current_space_file(first.resolve()).exists()
+        assert local_current_space_file(second.resolve()).exists()
+        os.chdir(first)
+        ln_setup.settings._branch = None
+        ln_setup.settings._space = None
+        assert ln_setup.settings.dev_dir == first.resolve()
+        assert _branch_name() == "archive"
+        os.chdir(second)
+        ln_setup.settings._branch = None
+        ln_setup.settings._space = None
+        assert ln_setup.settings.dev_dir == second.resolve()
         assert _branch_name() == "main"
-        os.chdir(unmarked)
-        assert ln_setup.settings.dev_dir == home_dev_dir.resolve()
-        other_dev_dir = tmp_path / "other-dev-dir"
-        other_dev_dir.mkdir()
-        os.chdir(local_dev_dir)
-        ln_setup.settings.dev_dir = other_dev_dir
-        assert ln_setup.settings.dev_dir == other_dev_dir.resolve()
-        os.chdir(unmarked)
-        assert ln_setup.settings.dev_dir == other_dev_dir.resolve()
-        os.chdir(local_dev_dir)
+        os.chdir(outside)
+        assert ln_setup.settings.dev_dir is None
+        os.chdir(first)
         ln_setup.settings.dev_dir = None
+        assert ln_setup.settings.dev_dir is None
+        assert not local_current_branch_file(first.resolve()).exists()
+        os.chdir(second)
+        assert ln_setup.settings.dev_dir == second.resolve()
+    finally:
+        os.chdir(second)
+        ln_setup.settings.dev_dir = None
+        os.chdir(first)
+        ln_setup.settings.dev_dir = None
+        os.chdir(previous_cwd)
+        ln_setup.settings._branch = None
+        ln_setup.settings._space = None
+        ln_setup.settings.branch = "main"
+        ln_setup.settings.space = "all"
+
+
+def test_home_marker_is_not_a_dev_dir(tmp_path: Path, monkeypatch):
+    home = tmp_path / "home"
+    child = home / "project"
+    home.mkdir()
+    child.mkdir()
+    write_local_current_instance(home, ln_setup.settings.instance.slug)
+    monkeypatch.setattr(
+        "lamindb_setup.core._settings.is_home_directory",
+        lambda path: Path(path).resolve() == home.resolve(),
+    )
+    previous_cwd = Path.cwd()
+    try:
+        os.chdir(child)
+        assert ln_setup.settings.dev_dir is None
+        with pytest.raises(ValueError, match="home directory"):
+            ln_setup.settings.dev_dir = home
+    finally:
+        os.chdir(previous_cwd)
+
+
+def test_dev_dir_unset_removes_local_branch_and_space(tmp_path: Path):
+    previous_cwd = Path.cwd()
+    try:
+        os.chdir(tmp_path)
+        ln_setup.settings.dev_dir = tmp_path
+        ln_setup.settings.branch = "archive"
+        ln_setup.settings.space = "all"
+        local_branch_marker = local_current_branch_file(tmp_path.resolve())
+        from lamindb_setup.core._settings_store import local_current_space_file
+
+        local_space_marker = local_current_space_file(tmp_path.resolve())
+        assert local_branch_marker.exists()
+        assert local_space_marker.exists()
+        ln_setup.settings.dev_dir = None
+        assert not local_branch_marker.exists()
+        assert not local_space_marker.exists()
         assert ln_setup.settings.dev_dir is None
     finally:
         os.chdir(previous_cwd)
-        _restore_worktree_settings(previous_dev_dir, previous_worktree)
         ln_setup.settings._branch = None
+        ln_setup.settings._space = None
         ln_setup.settings.branch = "main"
+        ln_setup.settings.space = "all"
 
 
-def test_dev_dir_unset_removes_local_branch_marker(tmp_path: Path):
-    previous_dev_dir = ln_setup.settings.dev_dir
-    previous_worktree = ln_setup.settings.worktree
+def test_space_reads_home_file_when_local_file_is_missing(tmp_path: Path):
+    from lamindb_setup.core._settings_store import local_current_space_file
+
+    previous_cwd = Path.cwd()
+    home_space = ln_setup.settings._home_space_path
+    original = home_space.read_text() if home_space.exists() else None
     try:
-        ln_setup.settings.worktree = False
+        os.chdir(tmp_path)
         ln_setup.settings.dev_dir = tmp_path
-        ln_setup.settings.branch = "archive"
-        local_branch_marker = local_current_branch_file(tmp_path.resolve())
-        assert local_branch_marker.exists()
-        ln_setup.settings.dev_dir = None
-        assert not local_branch_marker.exists()
+        home_space.parent.mkdir(parents=True, exist_ok=True)
+        home_space.write_text(f"{12 * 'a'}\nall")
+        local_space = local_current_space_file(tmp_path.resolve())
+        local_space.unlink(missing_ok=True)
+        ln_setup.settings._space = None
+        assert ln_setup.settings.space.name == "all"
+        ln_setup.settings.space = "all"
+        assert local_space.read_text() == f"{12 * 'a'}\nall"
+        assert home_space.read_text() == f"{12 * 'a'}\nall"
     finally:
-        ln_setup.settings.worktree = previous_worktree
-        ln_setup.settings.dev_dir = previous_dev_dir
-        ln_setup.settings._branch = None
-        ln_setup.settings.branch = "main"
+        os.chdir(tmp_path)
+        ln_setup.settings.dev_dir = None
+        os.chdir(previous_cwd)
+        if original is None:
+            home_space.unlink(missing_ok=True)
+        else:
+            home_space.write_text(original)
+        ln_setup.settings._space = None
+        ln_setup.settings.space = "all"
 
 
 def test_branch_falls_back_to_main_for_stale_local_marker(tmp_path: Path):
-    previous_dev_dir = ln_setup.settings.dev_dir
-    previous_worktree = ln_setup.settings.worktree
+    previous_cwd = Path.cwd()
     try:
-        ln_setup.settings.worktree = False
+        os.chdir(tmp_path)
         ln_setup.settings.dev_dir = tmp_path
         local_branch_marker = local_current_branch_file(tmp_path.resolve())
         local_branch_marker.parent.mkdir(parents=True, exist_ok=True)
@@ -374,8 +192,9 @@ def test_branch_falls_back_to_main_for_stale_local_marker(tmp_path: Path):
         assert branch.name == "main"
         assert local_branch_marker.read_text() == f"{branch.uid}\nmain"
     finally:
-        ln_setup.settings.worktree = previous_worktree
-        ln_setup.settings.dev_dir = previous_dev_dir
+        os.chdir(tmp_path)
+        ln_setup.settings.dev_dir = None
+        os.chdir(previous_cwd)
         ln_setup.settings._branch = None
         ln_setup.settings.branch = "main"
 

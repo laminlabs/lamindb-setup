@@ -353,12 +353,11 @@ def _connect_cli(
         logger.important_hint(
             "to map a local dev directory, call: lamin settings set dev-dir ."
         )
-    if here:
+    if here and not mute_here:
         cwd = Path.cwd().resolve()
         settings_.dev_dir = cwd
-        if not mute_here:
-            logger.important(f"dev-dir is: {cwd}")
-            logger.important(f"connected lamindb: {isettings.slug}")
+        logger.important(f"dev-dir is: {cwd}")
+        logger.important(f"connected lamindb: {isettings.slug}")
     return None
 
 
