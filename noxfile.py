@@ -27,7 +27,7 @@ def lint(session: nox.Session) -> None:
     ["hub-local", "hub-prod", "hub-cloud", "core", "connectivity", "docs"],
 )
 def install(session: nox.Session, group: str) -> None:
-    no_deps_packages = "git+https://github.com/laminlabs/pertdb git+https://github.com/laminlabs/lamin-cli@rmworktree"
+    no_deps_packages = "git+https://github.com/laminlabs/pertdb git+https://github.com/laminlabs/lamin-cli@main"
     modules_deps = f"""uv pip install --system "git+https://github.com/laminlabs/lamindb.git@rmworktree[full]"
 uv pip install --system --no-deps {no_deps_packages}
 uv pip install --system git+https://github.com/laminlabs/bionty
