@@ -435,10 +435,10 @@ def init(
         isettings._persist(
             write_to_disk=_write_settings, write_current_instance_file=False
         )
+        dev_dir = None
         if _write_settings:
             dev_dir = Path.cwd().resolve()
             settings.dev_dir = dev_dir
-            logger.important(f"dev-dir is: {dev_dir}")
         if _test:
             return None
         isettings._init_db()
@@ -453,7 +453,10 @@ def init(
             )
         if did_reset_django:
             reset_django_module_variables()
-        logger.important(f"initialized lamindb: {isettings.slug}")
+        if dev_dir is not None:
+            logger.important(f"initialized lamindb {isettings.slug} in {dev_dir}")
+        else:
+            logger.important(f"initialized lamindb: {isettings.slug}")
     except Exception as e:
         from ._delete import (
             _delete_exclusion_dir_if_exists,

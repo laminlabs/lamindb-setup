@@ -351,12 +351,12 @@ def _connect_cli(
                 )
     if show_dev_dir_hint and settings_.dev_dir is None:
         logger.important_hint(
-            f"tip: map the database to the current directory to keep your files in one place: lamin connect {isettings.slug} --here"
+            f"tip: connect the database to the current directory to keep your files in one place: lamin connect {isettings.slug} --here"
         )
     if here and not mute_here:
         cwd = Path.cwd().resolve()
         settings_.dev_dir = cwd
-        logger.important(f"connected lamindb {isettings.slug} in {cwd}")
+        logger.important(f"connected lamindb {isettings.slug} to {cwd}")
     return None
 
 
