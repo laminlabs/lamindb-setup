@@ -356,7 +356,7 @@ def _connect_cli(
     if here and not mute_here:
         cwd = Path.cwd().resolve()
         settings_.dev_dir = cwd
-        logger.important(f"connected lamindb {isettings.slug} to {cwd}")
+        logger.important(f"connected database {isettings.slug} to {cwd}")
     return None
 
 

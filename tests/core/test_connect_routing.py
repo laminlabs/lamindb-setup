@@ -143,7 +143,7 @@ def test_connect_cli_here_logs_connected_directory(
 
     cwd = tmp_path.resolve()
     assert assigned["value"] == cwd
-    assert messages == [f"connected lamindb owner/current-instance to {cwd}"]
+    assert messages == [f"connected database owner/current-instance to {cwd}"]
 
 
 def test_validate_connection_state_none_none_skips_reset(monkeypatch):
