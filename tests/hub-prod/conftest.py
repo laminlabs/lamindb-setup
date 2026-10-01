@@ -19,9 +19,12 @@ def pytest_sessionstart(session: pytest.Session):
     assert lamindb_setup.settings.instance.uid == "7cIQBFhUg8ok"
     if lamindb_setup.settings.instance.is_managed_by_hub:
         os.environ["LAMIN_MIGRATE_ON_HUB"] = "false"
+    # init registers the pytest cwd as a dev-dir; drop that marker so the checkout stays unmarked
+    lamindb_setup.settings.dev_dir = None
 
 
 def pytest_sessionfinish(session: pytest.Session):
     logger.set_verbosity(1)
+    lamindb_setup.settings.dev_dir = None
     os.environ.pop("LAMIN_MIGRATE_ON_HUB", None)
     lamindb_setup.delete("testuser2/lamindb-setup-unit-tests", force=True)
