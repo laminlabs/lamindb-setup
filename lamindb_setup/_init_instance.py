@@ -454,7 +454,7 @@ def init(
         if did_reset_django:
             reset_django_module_variables()
         if dev_dir is not None:
-            logger.important(f"initialized lamindb {isettings.slug} in {dev_dir}")
+            logger.important(f"initialized database {isettings.slug} in {dev_dir}")
         else:
             logger.important(f"initialized lamindb: {isettings.slug}")
     except Exception as e:
