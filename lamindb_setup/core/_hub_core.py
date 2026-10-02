@@ -9,10 +9,10 @@ from typing import TYPE_CHECKING, Any, Literal
 from uuid import UUID
 
 import jwt
-from lamin_utils import logger
 from postgrest.exceptions import APIError
 from supabase_functions.errors import FunctionsHttpError
 
+from lamindb_setup._logger import logger
 from lamindb_setup._migrate import check_whether_migrations_in_sync
 
 from ._aws_options import HOSTED_REGIONS

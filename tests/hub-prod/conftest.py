@@ -3,7 +3,7 @@ from uuid import UUID
 
 import lamindb_setup
 import pytest
-from lamin_utils import logger
+from lamindb_setup import logger
 
 
 def pytest_sessionstart(session: pytest.Session):

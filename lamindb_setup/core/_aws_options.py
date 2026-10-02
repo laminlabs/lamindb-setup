@@ -5,7 +5,8 @@ import os
 from typing import TYPE_CHECKING, Any
 
 from dotenv import dotenv_values
-from lamin_utils import logger
+
+from lamindb_setup._logger import logger
 
 from ._settings_store import system_settings_file
 

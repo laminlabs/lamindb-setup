@@ -20,12 +20,12 @@ from typing import TYPE_CHECKING, Any, Literal
 from urllib.parse import parse_qs, urlsplit
 
 import fsspec
-from lamin_utils import logger
 from upath import UPath
 from upath.implementations.cloud import CloudPath, S3Path  # keep CloudPath!
 from upath.implementations.local import LocalPath
 from upath.registry import register_implementation
 
+from lamindb_setup._logger import logger
 from lamindb_setup.errors import StorageNotEmpty
 
 from ._asyncio_write_spin import repair_spurious_write_errors

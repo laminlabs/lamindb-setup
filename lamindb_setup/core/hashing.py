@@ -27,7 +27,7 @@ if TYPE_CHECKING:
 
 
 def hash_and_encode_as_b62(s: str) -> str:
-    from lamin_utils._base62 import encodebytes
+    from .base62 import encodebytes
 
     return encodebytes(hashlib.md5(s.encode()).digest())
 

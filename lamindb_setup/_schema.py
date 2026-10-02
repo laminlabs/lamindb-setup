@@ -1,7 +1,8 @@
 from __future__ import annotations
 
 from django.urls import path
-from lamin_utils import logger
+
+from ._logger import logger
 
 try:
     from schema_graph.views import Schema

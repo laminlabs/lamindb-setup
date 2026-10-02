@@ -7,8 +7,7 @@ import os
 from typing import TYPE_CHECKING
 from uuid import UUID
 
-from lamin_utils import logger
-
+from ._logger import logger
 from ._silence_loggers import silence_loggers
 from .core import django as django_lamin
 from .core._settings import settings

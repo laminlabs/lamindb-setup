@@ -55,6 +55,7 @@ from ._disconnect import disconnect
 from ._django import django
 from ._entry_points import call_registered_entry_points as _call_registered_entry_points
 from ._init_instance import init
+from ._logger import logger
 from ._merge import merge
 from ._migrate import migrate
 from ._register_instance import register
@@ -64,6 +65,7 @@ from .core._settings import settings
 
 __all__ = [
     "__version__",
+    "logger",
     "login",
     "logout",
     "init",

@@ -2,10 +2,10 @@ from __future__ import annotations
 
 import os
 
-from lamin_utils import logger
 from packaging import version
 
 from ._check_setup import _check_instance_setup, disable_auto_connect
+from ._logger import logger
 from .core._settings import settings
 from .core.django import setup_django
 

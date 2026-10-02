@@ -7,8 +7,9 @@ from pathlib import Path
 from typing import TYPE_CHECKING
 
 import jwt
-from lamin_utils import logger
 from platformdirs import user_cache_dir
+
+from lamindb_setup._logger import logger
 
 from ._deprecated import deprecated
 from ._settings_load import (
@@ -521,7 +522,7 @@ class SetupSettings:
 
     def __repr__(self) -> str:
         """Rich string representation."""
-        from lamin_utils import colors
+        from ._colors import colors
 
         # do not show current setting representation when building docs
         if "sphinx" in sys.modules:

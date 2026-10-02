@@ -2,9 +2,9 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
-from lamin_utils import logger
-
 from lamindb_setup.core._settings import settings
+
+from ._logger import logger
 
 if TYPE_CHECKING:
     from lamindb.models import Branch

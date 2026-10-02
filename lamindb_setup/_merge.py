@@ -2,8 +2,7 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
-from lamin_utils import logger
-
+from ._logger import logger
 from .core._settings import settings
 
 if TYPE_CHECKING:

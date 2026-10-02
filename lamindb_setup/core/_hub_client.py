@@ -11,9 +11,9 @@ from urllib.request import urlretrieve
 import httpx
 from django.utils.dateparse import parse_datetime
 from httpx_retries import Retry, RetryTransport
-from lamin_utils import logger
 from supabase import Client, ClientOptions, create_client
 
+from lamindb_setup._logger import logger
 from lamindb_setup.errors import (
     ApiKeyError,
     ApiKeyExpired,

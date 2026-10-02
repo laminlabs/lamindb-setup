@@ -9,9 +9,8 @@ from typing import TYPE_CHECKING, Literal
 from urllib.parse import unquote, urlparse
 from uuid import UUID
 
-from lamin_utils import logger
-
 from ._disconnect import disconnect
+from ._logger import logger
 from ._silence_loggers import silence_loggers
 from .core._docs import doc_args
 from .core._settings import settings
