@@ -8,8 +8,8 @@ Also see the corresponding FAQ notebook in lamindb: `import-modules`.
 
 You'll load the instance in the same way as calling `import lamindb` when you import a schema module.
 
-```python
-!lamin init --storage test-implicit-load --modules pertdb,bionty
+```bash
+lamin init --storage test-implicit-load --modules pertdb,bionty
 ```
 
 ```python
@@ -34,6 +34,6 @@ pertdb.Compound
 assert lamindb_setup.core.django.IS_SETUP
 ```
 
-```python
-!lamin delete --force test-implicit-load
+```bash
+lamin delete --force test-implicit-load
 ```

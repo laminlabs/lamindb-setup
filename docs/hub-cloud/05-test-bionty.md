@@ -53,6 +53,6 @@ sources_df = pd.DataFrame(Source.objects.all().values())
 sources_df.head()
 ```
 
-```python
-!lamin delete --force mydata2
+```bash
+lamin delete --force mydata2
 ```

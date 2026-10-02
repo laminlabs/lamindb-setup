@@ -4,12 +4,12 @@ execute_via: python
 
 # Connect to local instance
 
-```python
-!lamin disconnect --here
-!lamin delete --force mydata
+```bash
+lamin disconnect --here
+lamin delete --force mydata
 # make a fresh mydata instance without any modules
-!lamin init --storage mydata
-!lamin disconnect --here
+lamin init --storage mydata
+lamin disconnect --here
 ```
 
 ```python

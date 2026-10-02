@@ -18,10 +18,11 @@ name = f"keep-artifacts-local-setup-{os.environ['LAMIN_ENV']}"
 storage = UPath(f"s3://lamindb-ci/{name}").as_posix()
 
 ln_setup.login("testuser1")
+os.environ["name"] = name
 ```
 
-```python
-!lamin delete --force {name}
+```bash
+lamin delete --force "$name" || true
 ```
 
 ```python

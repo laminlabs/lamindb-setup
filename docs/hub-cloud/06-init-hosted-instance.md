@@ -4,12 +4,12 @@ execute_via: python
 
 # Init hosted instance
 
-```python
-!lamin login testuser1
+```bash
+lamin login testuser1
 ```
 
-```python
-!lamin delete --force testuser1/my-hosted
+```bash
+lamin delete --force testuser1/my-hosted
 ```
 
 ```python

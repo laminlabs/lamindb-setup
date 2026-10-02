@@ -4,11 +4,11 @@ execute_via: python
 
 # Test init cloud with db
 
-```python
-!lamin disconnect --here
-!lamin login testuser1
-!lamin delete --force test-init-cloud-with-db
-!docker stop pgtest && docker rm pgtest
+```bash
+lamin disconnect --here
+lamin login testuser1
+lamin delete --force test-init-cloud-with-db
+docker stop pgtest && docker rm pgtest || true
 ```
 
 ```python
@@ -80,6 +80,6 @@ assert not mark_file.exists()
 assert not root.exists()
 ```
 
-```python
-!docker stop pgtest && docker rm pgtest
+```bash
+docker stop pgtest && docker rm pgtest || true
 ```

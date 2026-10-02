@@ -24,9 +24,9 @@ assert ln_setup.settings.user.handle == "anonymous"
 
 Init a local instance anonymously.
 
-```python
-!lamin disconnect --here
-!lamin init --storage ./test-anonymous-init --modules bionty
+```bash
+lamin disconnect --here
+lamin init --storage ./test-anonymous-init --modules bionty
 ```
 
 Load the instance and check.

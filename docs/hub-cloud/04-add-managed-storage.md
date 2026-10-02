@@ -4,17 +4,17 @@ execute_via: python
 
 # Add writeable and read-only storage locations to an instance
 
-```python tags=["hide-cell"]
-!lamin disconnect --here
-!lamin login testuser1
-!lamin delete --force test-add-managed-storage
-!docker stop pgtest && docker rm pgtest
+```bash tags=["hide-cell"]
+lamin disconnect --here
+lamin login testuser1
+lamin delete --force test-add-managed-storage
+docker stop pgtest && docker rm pgtest || true
 ```
 
 Create a local instance that's not registered on the hub, so that we can test interplay.
 
-```python
-!lamin init --storage "./storage-of-another-instance"
+```bash
+lamin init --storage "./storage-of-another-instance"
 ```
 
 ```python
@@ -254,7 +254,10 @@ Delete test instance through testuser1:
 ```python
 ln_setup.login("testuser1")
 ln_setup.delete("test-add-managed-storage", force=True)
-!docker stop pgtest && docker rm pgtest
+```
+
+```bash
+docker stop pgtest && docker rm pgtest || true
 ```
 
 Assert everything is deleted:

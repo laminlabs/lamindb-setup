@@ -4,8 +4,8 @@ execute_via: python
 
 # Init a local instance
 
-```python
-!lamin login testuser1
+```bash
+lamin login testuser1
 ```
 
 ```python

@@ -8,8 +8,12 @@ execute_via: python
 import os
 
 instance_name = "test-sqlite-sync"
-!lamin connect {instance_name}
-!yes | lamin delete {instance_name}
+os.environ["instance_name"] = instance_name
+```
+
+```bash
+lamin connect "$instance_name"
+yes | lamin delete "$instance_name" || true
 ```
 
 ```python
@@ -436,6 +440,6 @@ with pytest.raises(FileNotFoundError):
     hf_path.synchronize_to(UPath("./does_not_exist.file"), error_no_origin=True)
 ```
 
-```python tags=["hide-cell"]
-!yes | lamin delete {instance_name}
+```bash tags=["hide-cell"]
+yes | lamin delete "$instance_name"
 ```

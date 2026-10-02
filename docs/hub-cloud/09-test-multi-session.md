@@ -4,10 +4,10 @@ execute_via: python
 
 # Test multi instance and multi user session
 
-```python
-!lamin login testuser1
-!lamin init --storage "./testsetup-prepare"
-!lamin disconnect --here
+```bash
+lamin login testuser1
+lamin init --storage "./testsetup-prepare"
+lamin disconnect --here
 ```
 
 ```python
@@ -98,8 +98,8 @@ ln_setup.connect("testuser1/testsetup-prepare")
 assert ln_setup.settings.instance.slug == "testuser1/testsetup-prepare"
 ```
 
-```python
-!lamin login testuser1
-!lamin delete --force testsetup-prepare
-!lamin delete --force testsetup
+```bash
+lamin login testuser1
+lamin delete --force testsetup-prepare
+lamin delete --force testsetup
 ```
