@@ -52,6 +52,7 @@ dev = [
     "pytest-cov<7.0.0",
     "pytest-xdist",
     "nbproject-test>=0.4.3",
+    "jupytext",
     "pandas",
 ]
 
