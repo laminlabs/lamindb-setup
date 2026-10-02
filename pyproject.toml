@@ -161,3 +161,9 @@ filterwarnings = [
     "ignore:DateTimeField.*received a naive datetime.*while time zone support is active:RuntimeWarning",
     "ignore::sqlalchemy.exc.SAWarning"
 ]
+
+[tool.coverage.run]
+omit = [
+    "**/core/_logger.py",
+    "**/core/_colors.py",
+]
