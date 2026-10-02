@@ -3,4 +3,4 @@
 # lamindb-setup: Setting up `lamindb`
 
 - User [docs](https://lamin.ai/docs)
-- Developer [docs](https://lamindb-setup-htry.netlify.app/)
+- Developer [docs](https://lamindb-setup.pages.dev)
