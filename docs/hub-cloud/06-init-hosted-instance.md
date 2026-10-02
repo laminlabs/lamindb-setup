@@ -8,10 +8,6 @@ execute_via: python
 lamin login testuser1
 ```
 
-```bash
-lamin delete --force testuser1/my-hosted
-```
-
 ```python
 import os
 
