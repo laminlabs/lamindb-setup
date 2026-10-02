@@ -52,7 +52,3 @@ Check that everything is still in place:
 sources_df = pd.DataFrame(Source.objects.all().values())
 sources_df.head()
 ```
-
-```bash
-lamin delete --force mydata2
-```
