@@ -5,7 +5,7 @@ from uuid import UUID, uuid4
 
 from supabase.client import Client  # noqa
 
-from lamindb_setup._logger import logger
+from ._logger import logger
 
 
 def select_instance_by_owner_name(

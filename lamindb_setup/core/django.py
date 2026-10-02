@@ -13,7 +13,7 @@ from pathlib import Path
 import shutil
 from packaging import version
 from ..errors import CurrentInstanceNotConfigured
-from lamindb_setup._logger import logger
+from ._logger import logger
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:

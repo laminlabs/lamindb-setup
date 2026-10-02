@@ -5,8 +5,8 @@ from typing import TYPE_CHECKING
 from uuid import UUID
 
 from ._connect_instance import _connect_instance, get_owner_name_from_identifier
-from ._logger import logger
 from .core._aws_options import HOSTED_BUCKETS
+from .core._logger import logger
 from .core._settings import settings
 from .core._settings_load import load_instance_settings
 

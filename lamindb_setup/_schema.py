@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from django.urls import path
 
-from ._logger import logger
+from .core._logger import logger
 
 try:
     from schema_graph.views import Schema

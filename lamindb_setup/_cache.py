@@ -5,7 +5,7 @@ from pathlib import Path
 
 from dotenv import dotenv_values
 
-from ._logger import logger
+from .core._logger import logger
 from .core._settings_save import save_platform_user_storage_settings
 from .core._settings_store import system_settings_file
 from .errors import CurrentInstanceNotConfigured

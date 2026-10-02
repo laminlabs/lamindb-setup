@@ -3,7 +3,7 @@ from __future__ import annotations
 from typing import TYPE_CHECKING
 
 from ._init_instance import register_storage_in_instance
-from ._logger import logger
+from .core._logger import logger
 from .core._settings import settings
 from .core._settings_storage import StorageSettings, init_storage
 

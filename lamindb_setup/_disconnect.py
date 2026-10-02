@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from ._logger import logger
+from .core._logger import logger
 from .core._settings import settings
 from .core._settings_load import load_instance_settings
 from .core._settings_store import (

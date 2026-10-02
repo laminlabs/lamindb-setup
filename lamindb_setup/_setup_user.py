@@ -6,8 +6,8 @@ from typing import TYPE_CHECKING
 
 from ._check_setup import _check_instance_setup
 from ._init_instance import register_user
-from ._logger import logger
 from .core._aws_options import reset_user_aws_options_cache
+from .core._logger import logger
 from .core._settings import settings
 from .core._settings_load import load_user_settings
 from .core._settings_save import save_user_settings

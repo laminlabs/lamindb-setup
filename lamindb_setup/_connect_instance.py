@@ -12,8 +12,8 @@ from uuid import UUID
 from ._check_setup import _check_instance_setup
 from ._disconnect import disconnect
 from ._init_instance import load_from_isettings
-from ._logger import logger
 from ._silence_loggers import silence_loggers
+from .core._logger import logger
 from .core._settings import settings
 from .core._settings_load import load_instance_settings
 from .core._settings_save import save_instance_settings

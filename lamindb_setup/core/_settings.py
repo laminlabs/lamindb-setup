@@ -9,9 +9,8 @@ from typing import TYPE_CHECKING
 import jwt
 from platformdirs import user_cache_dir
 
-from lamindb_setup._logger import logger
-
 from ._deprecated import deprecated
+from ._logger import logger
 from ._settings_load import (
     _resolve_default_instance_file,
     load_cache_path_from_settings,

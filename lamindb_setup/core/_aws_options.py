@@ -6,8 +6,7 @@ from typing import TYPE_CHECKING, Any
 
 from dotenv import dotenv_values
 
-from lamindb_setup._logger import logger
-
+from ._logger import logger
 from ._settings_store import system_settings_file
 
 if TYPE_CHECKING:

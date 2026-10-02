@@ -4,7 +4,7 @@ import secrets
 import string
 from typing import TYPE_CHECKING
 
-from ._logger import logger
+from .core._logger import logger
 from .core._settings import settings
 from .core.django import setup_django
 

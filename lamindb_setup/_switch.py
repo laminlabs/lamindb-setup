@@ -4,7 +4,7 @@ from typing import TYPE_CHECKING
 
 from lamindb_setup.core._settings import settings
 
-from ._logger import logger
+from .core._logger import logger
 
 if TYPE_CHECKING:
     from lamindb.models import Branch

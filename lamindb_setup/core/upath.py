@@ -25,12 +25,12 @@ from upath.implementations.cloud import CloudPath, S3Path  # keep CloudPath!
 from upath.implementations.local import LocalPath
 from upath.registry import register_implementation
 
-from lamindb_setup._logger import logger
 from lamindb_setup.errors import StorageNotEmpty
 
 from ._asyncio_write_spin import repair_spurious_write_errors
 from ._aws_options import HOSTED_BUCKETS, get_user_aws_options_manager
 from ._deprecated import deprecated
+from ._logger import logger
 from .canonical_suffix import CanonicalSuffix
 from .hashing import HASH_LENGTH, b16_to_b64, hash_from_hashes_list, hash_string
 

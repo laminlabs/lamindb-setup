@@ -8,7 +8,7 @@ from typing import Any, get_args, get_type_hints
 from dotenv import dotenv_values
 from platformdirs import site_config_dir
 
-from lamindb_setup._logger import logger
+from ._logger import logger
 
 if "LAMIN_SETTINGS_DIR" in os.environ:
     # Needed for AWS Lambda, as only tmp/ has write access

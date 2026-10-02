@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from lamindb_setup._logger import logger
+from ._logger import logger
 
 
 def get_location(ip="ipinfo.io"):

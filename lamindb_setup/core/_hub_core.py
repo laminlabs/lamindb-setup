@@ -12,7 +12,6 @@ import jwt
 from postgrest.exceptions import APIError
 from supabase_functions.errors import FunctionsHttpError
 
-from lamindb_setup._logger import logger
 from lamindb_setup._migrate import check_whether_migrations_in_sync
 
 from ._aws_options import HOSTED_REGIONS
@@ -38,6 +37,7 @@ from ._hub_utils import (
     LaminDsn,
     LaminDsnModel,
 )
+from ._logger import logger
 from ._settings import settings
 from ._settings_instance import InstanceSettings
 from ._settings_storage import StorageSettings, base62, instance_uid_from_uuid
