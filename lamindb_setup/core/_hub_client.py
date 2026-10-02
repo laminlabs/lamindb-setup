@@ -11,7 +11,6 @@ from urllib.request import urlretrieve
 import httpx
 from django.utils.dateparse import parse_datetime
 from httpx_retries import Retry, RetryTransport
-from lamin_utils import logger
 from supabase import Client, ClientOptions, create_client
 
 from lamindb_setup.errors import (
@@ -21,6 +20,7 @@ from lamindb_setup.errors import (
     NoAccessTokenError,
 )
 
+from ._logger import logger
 from ._settings_save import save_user_settings
 from ._settings_store import Connector
 

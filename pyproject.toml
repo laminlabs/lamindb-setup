@@ -9,7 +9,6 @@ authors = [{name = "Lamin Labs", email = "open-source@lamin.ai"}]
 readme = "README.md"
 dynamic = ["version", "description"]
 dependencies = [
-    "lamin_utils>=0.3.3",
     # External dependencies
     "python-dotenv",
     "django>=5.2,<5.3",
@@ -161,4 +160,10 @@ filterwarnings = [
     "ignore:There is no current event loop:DeprecationWarning",
     "ignore:DateTimeField.*received a naive datetime.*while time zone support is active:RuntimeWarning",
     "ignore::sqlalchemy.exc.SAWarning"
+]
+
+[tool.coverage.run]
+omit = [
+    "**/core/_logger.py",
+    "**/core/_colors.py",
 ]

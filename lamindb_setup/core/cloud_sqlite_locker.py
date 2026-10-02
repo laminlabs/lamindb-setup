@@ -4,9 +4,9 @@ from datetime import datetime, timezone
 from functools import wraps
 from typing import TYPE_CHECKING
 
-from lamin_utils import logger
-
 from lamindb_setup.errors import InstanceLockedException
+
+from ._logger import logger
 
 if TYPE_CHECKING:
     from collections.abc import Callable

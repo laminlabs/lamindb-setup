@@ -60,10 +60,12 @@ from ._migrate import migrate
 from ._register_instance import register
 from ._setup_user import login, logout
 from ._switch import switch
+from .core._logger import logger
 from .core._settings import settings
 
 __all__ = [
     "__version__",
+    "logger",
     "login",
     "logout",
     "init",

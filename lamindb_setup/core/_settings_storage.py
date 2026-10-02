@@ -6,10 +6,9 @@ import string
 from typing import TYPE_CHECKING, Any, Literal
 from uuid import UUID
 
-from lamin_utils import logger
-
 from lamindb_setup.errors import StorageAlreadyManaged
 
+from ._logger import logger
 from .hashing import hash_and_encode_as_b62
 from .upath import UPath
 

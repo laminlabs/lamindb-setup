@@ -9,7 +9,6 @@ from typing import TYPE_CHECKING, Any, Literal
 from uuid import UUID
 
 import jwt
-from lamin_utils import logger
 from postgrest.exceptions import APIError
 from supabase_functions.errors import FunctionsHttpError
 
@@ -38,6 +37,7 @@ from ._hub_utils import (
     LaminDsn,
     LaminDsnModel,
 )
+from ._logger import logger
 from ._settings import settings
 from ._settings_instance import InstanceSettings
 from ._settings_storage import StorageSettings, base62, instance_uid_from_uuid
