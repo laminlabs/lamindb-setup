@@ -27,6 +27,7 @@ if TYPE_CHECKING:
 
 
 def hash_and_encode_as_b62(s: str) -> str:
+    # bionty.uids.encode_base62 uses the same hash for entity uids.
     from .base62 import encodebytes
 
     return encodebytes(hashlib.md5(s.encode()).digest())
