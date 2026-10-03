@@ -20,6 +20,7 @@ from .core._settings_save import save_instance_settings
 from .core._settings_store import (
     find_local_current_instance_file,
     instance_settings_file,
+    is_home_directory,
 )
 from .core.cloud_sqlite_locker import unlock_cloud_sqlite_upon_exception
 from .core.django import reset_django
@@ -288,6 +289,25 @@ def reset_django_module_variables():
                 continue
 
 
+def _configured_dev_dir_instance(marker_file: Path) -> str | None:
+    """Instance slug of a dev-dir marker that would auto-connect.
+
+    ``$HOME`` is never a dev-dir. A marker whose instance settings file is
+    missing does not auto-connect, so it must not block ``lamin connect``.
+    """
+    directory = marker_file.parent.parent
+    if is_home_directory(directory):
+        return None
+    current_instance = marker_file.read_text().strip()
+    try:
+        owner, name = get_owner_name_from_identifier(current_instance)
+    except ValueError:
+        return None
+    if not instance_settings_file(name, owner).exists():
+        return None
+    return current_instance
+
+
 def _connect_cli(
     instance: str,
     use_root_db_user: bool = False,
@@ -309,13 +329,14 @@ def _connect_cli(
     owner, name = get_owner_name_from_identifier(instance)
     marker_file = find_local_current_instance_file()
     if marker_file is not None:
-        current_instance = marker_file.read_text().strip()
+        current_instance = _configured_dev_dir_instance(marker_file)
         target_instance = f"{owner}/{name}"
-        if current_instance != target_instance:
+        if current_instance is not None and current_instance != target_instance:
+            dev_dir = marker_file.parent.parent.resolve()
             raise ConnectWithinDevDirError(
                 "You're trying to connect within the dev-dir of instance "
-                f"{current_instance}. Either cd into another directory or run: "
-                "lamin disconnect --here"
+                f"{current_instance} ({dev_dir}). Either cd into another directory "
+                "or run: lamin disconnect --here"
             )
 
     isettings = _connect_instance(
