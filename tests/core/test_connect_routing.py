@@ -66,10 +66,17 @@ def test_connect_cli_raises_if_connecting_in_other_instance_dev_dir(
     marker_file = tmp_path / ".lamin" / "current_instance"
     marker_file.parent.mkdir(parents=True, exist_ok=True)
     marker_file.write_text("owner/current-instance")
+    settings_file = tmp_path / "instance.env"
+    settings_file.write_text("cached")
     monkeypatch.setattr(
         connect_instance,
         "find_local_current_instance_file",
         lambda start_directory=None: marker_file,
+    )
+    monkeypatch.setattr(
+        connect_instance,
+        "instance_settings_file",
+        lambda name, owner: settings_file,
     )
 
     def _should_not_connect(*args, **kwargs):
@@ -81,9 +88,65 @@ def test_connect_cli_raises_if_connecting_in_other_instance_dev_dir(
         connect_instance._connect_cli("owner/other-instance")
 
     assert str(exc.value) == (
-        "You're trying to connect within the dev-dir of instance owner/current-instance. "
-        "Either cd into another directory or run: lamin disconnect --here"
+        "You're trying to connect within the dev-dir of instance owner/current-instance "
+        f"({tmp_path.resolve()}). Either cd into another directory or run: "
+        "lamin disconnect --here"
     )
+
+
+def test_connect_cli_ignores_dev_dir_marker_without_instance_settings(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+):
+    marker_file = tmp_path / ".lamin" / "current_instance"
+    marker_file.parent.mkdir(parents=True, exist_ok=True)
+    marker_file.write_text("owner/deleted-instance")
+    monkeypatch.setattr(
+        connect_instance,
+        "find_local_current_instance_file",
+        lambda start_directory=None: marker_file,
+    )
+    monkeypatch.setattr(
+        connect_instance,
+        "instance_settings_file",
+        lambda name, owner: tmp_path / "missing.env",
+    )
+    monkeypatch.setattr(
+        connect_instance,
+        "_connect_instance",
+        lambda *args, **kwargs: _FakeCliConnectedInstance("owner/other-instance"),
+    )
+    monkeypatch.setattr(connect_instance, "connect", lambda *args, **kwargs: None)
+
+    connect_instance._connect_cli("owner/other-instance")
+
+
+def test_connect_cli_ignores_home_directory_marker(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+):
+    marker_file = tmp_path / ".lamin" / "current_instance"
+    marker_file.parent.mkdir(parents=True, exist_ok=True)
+    marker_file.write_text("owner/current-instance")
+    settings_file = tmp_path / "instance.env"
+    settings_file.write_text("cached")
+    monkeypatch.setattr(
+        connect_instance,
+        "find_local_current_instance_file",
+        lambda start_directory=None: marker_file,
+    )
+    monkeypatch.setattr(
+        connect_instance,
+        "instance_settings_file",
+        lambda name, owner: settings_file,
+    )
+    monkeypatch.setattr(connect_instance, "is_home_directory", lambda path: True)
+    monkeypatch.setattr(
+        connect_instance,
+        "_connect_instance",
+        lambda *args, **kwargs: _FakeCliConnectedInstance("owner/other-instance"),
+    )
+    monkeypatch.setattr(connect_instance, "connect", lambda *args, **kwargs: None)
+
+    connect_instance._connect_cli("owner/other-instance")
 
 
 def test_connect_cli_allows_connecting_same_instance_in_dev_dir(
