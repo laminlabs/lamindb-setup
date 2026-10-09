@@ -1,6 +1,6 @@
 """Setup & configure LaminDB.
 
-The `lamindb_setup` library can be used standalone or as `lamindb.setup`.
+The `lamindb_setup` library can be used standalone or through `lamindb.setup`.
 Several functions in the `setup` API have a matching command in the :doc:`docs:cli`.
 
 Guide: :doc:`docs:setup`.

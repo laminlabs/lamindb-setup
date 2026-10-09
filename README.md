@@ -2,8 +2,8 @@
 
 # `lamindb_setup`: Setup & configure LaminDB
 
-The `lamindb` library offers joint database and storage access through an ORM that's based on the Django ORM and `universal_pathlib`. Django requires an environment with settings to be inplace to import models.
+The `lamindb` library offers joint database and storage access through registries that are based on the Django ORM and `universal_pathlib`. Django requires an environment with settings to be in place at import time. `lamindb_setup` takes care of setting up an environment so that a user importing `lamindb` can focus on high-level data workloads.
 
-`lamindb_setup` takes care of setting up this environment so that a user importing `lamindb` can focus on high-level data workloads.
+The `lamindb_setup` API can be used standalone or through `lamindb.setup`.
 
-The `lamindb_setup` API can be used standalone but is also re-exported as [`lamindb.setup`](https://docs.lamin.ai/lamindb.setup).
+Read the [docs](https://docs.lamin.ai/lamindb.setup).
