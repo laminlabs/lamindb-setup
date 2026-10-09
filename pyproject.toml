@@ -45,7 +45,6 @@ erdiagram = [
 dev = [
     "line_profiler",
     "psycopg2-binary",
-    "python-dotenv",
     "nox",
     "pytest>=6.0",
     "pytest-cov<7.0.0",
