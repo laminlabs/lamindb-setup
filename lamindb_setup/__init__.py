@@ -1,6 +1,7 @@
 """Setup & configure LaminDB.
 
-Many functions in the `setup` module have a matching command in the :doc:`docs:cli`.
+The `lamindb_setup` library can be used standalone or through `lamindb.setup`.
+Several functions in the `setup` API have a matching command in the :doc:`docs:cli`.
 
 Guide: :doc:`docs:setup`.
 
