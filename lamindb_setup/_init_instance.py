@@ -365,6 +365,8 @@ def init(
         modules = kwargs.get("schema", None)
     _test: bool = kwargs.get("_test", False)
     _resource_db_server_id: UUID | None = kwargs.get("_resource_db_server_id", None)
+    # Create the hub instance as public before storage is registered.
+    _public: bool = kwargs.get("_public", False)
 
     # use this user instead of settings.user
     # contains access_token
@@ -413,6 +415,7 @@ def init(
                 account_id=user__uuid,
                 resource_db_server_id=_resource_db_server_id,
                 access_token=access_token,
+                public=_public,
             )
             created_instance_hub_record = True
         ssettings, _ = init_storage(
