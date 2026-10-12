@@ -444,6 +444,8 @@ def init_instance_hub(
     account_id: UUID | None = None,
     resource_db_server_id: UUID | None = None,
     access_token: str | None = None,
+    *,
+    public: bool = False,
 ) -> None:
     return call_with_fallback_auth(
         _init_instance_hub,
@@ -451,6 +453,7 @@ def init_instance_hub(
         account_id=account_id,
         resource_db_server_id=resource_db_server_id,
         access_token=access_token,
+        public=public,
     )
 
 
@@ -459,6 +462,8 @@ def _init_instance_hub(
     isettings: InstanceSettings,
     account_id: UUID | None = None,
     resource_db_server_id: UUID | None = None,
+    *,
+    public: bool = False,
 ) -> None:
     created_by_id = settings.user._uuid.hex if account_id is None else account_id.hex  # type: ignore
     owner_account_id = os.getenv("LAMINDB_ACCOUNT_ID_INIT", created_by_id)
@@ -478,7 +483,7 @@ def _init_instance_hub(
         "lnid": isettings.uid,
         "schema_str": isettings._schema_str,
         "lamindb_version": lamindb_version,
-        "public": False,
+        "public": public,
         "created_by_id": created_by_id,
     }
     if resource_db_server_id is not None:
@@ -503,6 +508,15 @@ def _init_instance_hub(
         e_str = str(e)
         if "duplicate key value violates unique constraint" in e_str:
             logger.warning(f"instance already existed at: https://lamin.ai/{slug}")
+            # Storage registration follows this call and rejects a public
+            # default storage on a private instance.
+            if public:
+                (
+                    client.table("instance")
+                    .update({"public": True})
+                    .eq("id", isettings._id.hex)
+                    .execute()
+                )
             return None
         if "new row violates row-level security policy" in e_str:
             is_same_account = created_by_id == owner_account_id
