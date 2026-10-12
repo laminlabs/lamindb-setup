@@ -508,15 +508,6 @@ def _init_instance_hub(
         e_str = str(e)
         if "duplicate key value violates unique constraint" in e_str:
             logger.warning(f"instance already existed at: https://lamin.ai/{slug}")
-            # Storage registration follows this call and rejects a public
-            # default storage on a private instance.
-            if public:
-                (
-                    client.table("instance")
-                    .update({"public": True})
-                    .eq("id", isettings._id.hex)
-                    .execute()
-                )
             return None
         if "new row violates row-level security policy" in e_str:
             is_same_account = created_by_id == owner_account_id
