@@ -9,11 +9,10 @@ from typing import TYPE_CHECKING, Literal
 from urllib.parse import unquote, urlparse
 from uuid import UUID
 
-from lamin_utils import logger
-
 from ._disconnect import disconnect
 from ._silence_loggers import silence_loggers
 from .core._docs import doc_args
+from .core._logger import logger
 from .core._settings import settings
 from .errors import InstanceNotCreated
 
@@ -366,6 +365,8 @@ def init(
         modules = kwargs.get("schema", None)
     _test: bool = kwargs.get("_test", False)
     _resource_db_server_id: UUID | None = kwargs.get("_resource_db_server_id", None)
+    # Create the hub instance as public before storage is registered.
+    _public: bool = kwargs.get("_public", False)
 
     # use this user instead of settings.user
     # contains access_token
@@ -414,6 +415,7 @@ def init(
                 account_id=user__uuid,
                 resource_db_server_id=_resource_db_server_id,
                 access_token=access_token,
+                public=_public,
             )
             created_instance_hub_record = True
         ssettings, _ = init_storage(
@@ -435,10 +437,10 @@ def init(
         isettings._persist(
             write_to_disk=_write_settings, write_current_instance_file=False
         )
+        dev_dir = None
         if _write_settings:
             dev_dir = Path.cwd().resolve()
             settings.dev_dir = dev_dir
-            logger.important(f"dev-dir is: {dev_dir}")
         if _test:
             return None
         isettings._init_db()
@@ -453,7 +455,10 @@ def init(
             )
         if did_reset_django:
             reset_django_module_variables()
-        logger.important(f"initialized lamindb: {isettings.slug}")
+        if dev_dir is not None:
+            logger.important(f"initialized database {isettings.slug} in {dev_dir}")
+        else:
+            logger.important(f"initialized lamindb: {isettings.slug}")
     except Exception as e:
         from ._delete import (
             _delete_exclusion_dir_if_exists,

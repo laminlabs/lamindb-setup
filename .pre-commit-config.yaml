@@ -42,6 +42,7 @@ repos:
       - id: mypy
         exclude: |
           (?x)(
+              tests/hub-cloud/conftest.py|
               tests/hub-local/conftest.py|
               tests/hub-prod/conftest.py|
               tests/storage/conftest.py

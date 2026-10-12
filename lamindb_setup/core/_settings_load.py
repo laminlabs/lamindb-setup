@@ -6,10 +6,10 @@ from typing import TYPE_CHECKING
 from uuid import UUID
 
 from dotenv import dotenv_values
-from lamin_utils import logger
 
 from lamindb_setup.errors import CurrentInstanceNotConfigured, SettingsEnvFileOutdated
 
+from ._logger import logger
 from ._settings_store import (
     InstanceSettingsStore,
     UserSettingsStore,

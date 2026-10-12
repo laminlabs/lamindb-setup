@@ -7,10 +7,9 @@ import os
 from typing import TYPE_CHECKING
 from uuid import UUID
 
-from lamin_utils import logger
-
 from ._silence_loggers import silence_loggers
 from .core import django as django_lamin
+from .core._logger import logger
 from .core._settings import settings
 from .core._settings_store import current_instance_settings_file
 from .errors import (

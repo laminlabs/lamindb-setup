@@ -1,56 +1,84 @@
 from __future__ import annotations
 
-from types import SimpleNamespace
-from typing import TYPE_CHECKING, cast
+from typing import TYPE_CHECKING
 
-from lamindb_setup._delete import _delete_dev_dir_and_local_marker_if_exists
+from lamindb_setup.core._settings_store import (
+    dev_dir_containing,
+    find_dev_dirs,
+    local_current_branch_file,
+    write_local_current_instance,
+)
 
 if TYPE_CHECKING:
-    from lamindb_setup.core._settings_instance import InstanceSettings
+    from pathlib import Path
 
 
-def test_delete_removes_dev_dir_mapping_and_local_marker(tmp_path, monkeypatch) -> None:
-    from lamindb_setup.core import _settings_store as settings_store
-
-    monkeypatch.setattr(settings_store, "settings_dir", tmp_path)
-
-    dev_dir = tmp_path / "project"
-    marker = dev_dir / ".lamin" / "current_instance"
-    marker.parent.mkdir(parents=True)
-    marker.write_text("owner/name")
-
-    dev_dir_settings_file = tmp_path / "dev-dir--owner--name.txt"
-    dev_dir_settings_file.write_text(dev_dir.as_posix())
-
-    isettings = cast(
-        "InstanceSettings",
-        SimpleNamespace(owner="owner", name="name", slug="owner/name"),
+def test_find_dev_dirs_lists_nested_and_skips_home(tmp_path: Path, monkeypatch):
+    home = tmp_path / "home"
+    workspace = home / "work"
+    first = workspace / "one"
+    second = workspace / "two"
+    hidden = workspace / ".hidden" / "skip"
+    for path in (home, first, second, hidden):
+        path.mkdir(parents=True)
+    write_local_current_instance(home, "owner/global")
+    write_local_current_instance(first, "owner/one")
+    write_local_current_instance(second, "owner/two")
+    write_local_current_instance(hidden, "owner/hidden")
+    branch_file = local_current_branch_file(first.resolve())
+    branch_file.write_text("uid\narchive")
+    monkeypatch.setattr(
+        "lamindb_setup.core._settings_store.Path.home",
+        classmethod(lambda cls: home),
     )
-    _delete_dev_dir_and_local_marker_if_exists(isettings)
 
-    assert not dev_dir_settings_file.exists()
-    assert not marker.exists()
-    assert not marker.parent.exists()
+    assert find_dev_dirs(home) == []
+    found = {
+        directory: (slug, branch)
+        for directory, slug, branch in find_dev_dirs(workspace)
+    }
+    assert found[first.resolve()] == ("owner/one", "archive")
+    assert found[second.resolve()] == ("owner/two", "main")
+    assert home.resolve() not in found
+    assert hidden.resolve() not in found
 
+    script = first / "analysis" / "script.py"
+    script.parent.mkdir()
+    script.write_text("print('hello')\n")
+    assert dev_dir_containing(script, instance_slug="owner/one") == first.resolve()
+    assert dev_dir_containing(script, instance_slug="other/missing") is None
 
-def test_delete_keeps_marker_for_other_instance_slug(tmp_path, monkeypatch) -> None:
-    from lamindb_setup.core import _settings_store as settings_store
+    blank_branch = local_current_branch_file(second.resolve())
+    blank_branch.write_text("uid\n")
+    found = {
+        directory: (slug, branch)
+        for directory, slug, branch in find_dev_dirs(workspace)
+    }
+    assert found[second.resolve()] == ("owner/two", "main")
 
-    monkeypatch.setattr(settings_store, "settings_dir", tmp_path)
-
-    dev_dir = tmp_path / "project"
-    marker = dev_dir / ".lamin" / "current_instance"
-    marker.parent.mkdir(parents=True)
-    marker.write_text("owner/other-instance")
-
-    dev_dir_settings_file = tmp_path / "dev-dir--owner--name.txt"
-    dev_dir_settings_file.write_text(dev_dir.as_posix())
-
-    isettings = cast(
-        "InstanceSettings",
-        SimpleNamespace(owner="owner", name="name", slug="owner/name"),
+    monkeypatch.setattr(
+        "lamindb_setup.core._settings_store.Path.home",
+        classmethod(lambda cls: tmp_path / "not-a-parent"),
     )
-    _delete_dev_dir_and_local_marker_if_exists(isettings)
+    unmarked = tmp_path / "unmarked" / "script.py"
+    unmarked.parent.mkdir()
+    unmarked.write_text("print('x')\n")
+    assert dev_dir_containing(unmarked) is None
 
-    assert not dev_dir_settings_file.exists()
-    assert marker.exists()
+    root = tmp_path / "scan-root"
+    scanned_home = root / "home"
+    inside_home = scanned_home / "inside"
+    outside = root / "outside"
+    for path in (inside_home, outside):
+        path.mkdir(parents=True)
+    write_local_current_instance(scanned_home, "owner/home")
+    write_local_current_instance(inside_home, "owner/inside")
+    write_local_current_instance(outside, "owner/outside")
+    monkeypatch.setattr(
+        "lamindb_setup.core._settings_store.Path.home",
+        classmethod(lambda cls: scanned_home),
+    )
+    scanned = {directory: slug for directory, slug, _branch in find_dev_dirs(root)}
+    assert scanned[outside.resolve()] == "owner/outside"
+    assert scanned_home.resolve() not in scanned
+    assert inside_home.resolve() not in scanned

@@ -1,14 +1,12 @@
 from __future__ import annotations
 
 import shutil
-from pathlib import Path
 from typing import TYPE_CHECKING
 from uuid import UUID
 
-from lamin_utils import logger
-
 from ._connect_instance import _connect_instance, get_owner_name_from_identifier
 from .core._aws_options import HOSTED_BUCKETS
+from .core._logger import logger
 from .core._settings import settings
 from .core._settings_load import load_instance_settings
 
@@ -52,29 +50,6 @@ def _delete_sqlite_file_if_exists(isettings: InstanceSettings):
             )
 
 
-def _delete_dev_dir_and_local_marker_if_exists(isettings: InstanceSettings) -> None:
-    from .core._settings_store import (
-        local_current_instance_file,
-        remove_local_current_instance,
-        settings_dir,
-    )
-
-    dev_dir_settings_file = (
-        settings_dir / f"dev-dir--{isettings.owner}--{isettings.name}.txt"
-    )
-    if not dev_dir_settings_file.exists():
-        return
-
-    dev_dir_str = dev_dir_settings_file.read_text().strip()
-    if dev_dir_str:
-        dev_dir = Path(dev_dir_str).expanduser().resolve()
-        remove_local_current_instance(
-            marker=local_current_instance_file(dev_dir),
-            expected_instance_slug=isettings.slug,
-        )
-    dev_dir_settings_file.unlink(missing_ok=True)
-
-
 def delete_by_isettings(isettings: InstanceSettings) -> None:
     assert isettings.slug != "none/none"
 
@@ -83,7 +58,6 @@ def delete_by_isettings(isettings: InstanceSettings) -> None:
         settings_file.unlink()
     _delete_cache(isettings)
     _delete_sqlite_file_if_exists(isettings)
-    _delete_dev_dir_and_local_marker_if_exists(isettings)
     # unset the global instance settings
     isettings_on_disk = load_instance_settings()
     if isettings_on_disk.slug == isettings.slug:

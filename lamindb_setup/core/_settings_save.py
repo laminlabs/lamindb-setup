@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from pathlib import Path
-from typing import TYPE_CHECKING, Any, Optional, get_args, get_type_hints
+from typing import TYPE_CHECKING, Any, get_args, get_type_hints
 from uuid import UUID
 
 from ._settings_store import (
@@ -35,9 +35,9 @@ def _coerce_type_for_write(type_: Any) -> Any:
     """Resolve union types to the non-None part for coercion when value is not None."""
     if type_ in (str, bool):
         return type_
-    if type_ == Optional[str]:  # noqa: UP045
+    if type_ == (str | None):
         return str
-    if type_ == Optional[bool]:  # noqa: UP045
+    if type_ == (bool | None):
         return bool
     args = get_args(type_) or ()
     if type(None) in args:

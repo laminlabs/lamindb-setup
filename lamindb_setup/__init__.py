@@ -1,6 +1,7 @@
 """Setup & configure LaminDB.
 
-Many functions in the `setup` module have a matching command in the :doc:`docs:cli`.
+The `lamindb_setup` library can be used standalone or through `lamindb.setup`.
+Several functions in the `setup` API have a matching command in the :doc:`docs:cli`.
 
 Guide: :doc:`docs:setup`.
 
@@ -41,7 +42,7 @@ Migration management
 
 """
 
-__version__ = "1.26a1"  # denote a release candidate for 0.1.0 with 0.1rc1
+__version__ = "1.26.1"  # denote a release candidate for 0.1.0 with 0.1rc1
 
 import os
 
@@ -60,10 +61,12 @@ from ._migrate import migrate
 from ._register_instance import register
 from ._setup_user import login, logout
 from ._switch import switch
+from .core._logger import logger
 from .core._settings import settings
 
 __all__ = [
     "__version__",
+    "logger",
     "login",
     "logout",
     "init",

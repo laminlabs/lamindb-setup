@@ -11,10 +11,8 @@
 .. autoexception:: InstanceNotCreated
 .. autoexception:: NoAccessTokenError
 .. autoexception:: NoWriteAccess
+.. autoexception:: NoReadAccess
 .. autoexception:: ConnectWithinDevDirError
-.. autoexception:: WorktreePathError
-.. autoexception:: NoDevDirConfigured
-.. autoexception:: DevDirNonEmpty
 .. autoexception:: ApiKeyError
 .. autoexception:: ApiKeyExpired
 .. autoexception:: ApiKeyNotFound
@@ -86,28 +84,18 @@ class NoAccessTokenError(RuntimeError):
 
 
 class NoWriteAccess(Exception):
-    """No write access to a space."""
+    """This account does not have write access to the object."""
+
+    pass
+
+
+class NoReadAccess(Exception):
+    """An object exists, but this account has no read access to it."""
 
     pass
 
 
 class ConnectWithinDevDirError(Exception):
-    pass
-
-
-class WorktreePathError(Exception):
-    pass
-
-
-class NotInBranchDir(RuntimeError):
-    pass
-
-
-class NoDevDirConfigured(RuntimeError):
-    pass
-
-
-class DevDirNonEmpty(RuntimeError):
     pass
 
 

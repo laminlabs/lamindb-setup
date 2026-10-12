@@ -66,10 +66,17 @@ def test_connect_cli_raises_if_connecting_in_other_instance_dev_dir(
     marker_file = tmp_path / ".lamin" / "current_instance"
     marker_file.parent.mkdir(parents=True, exist_ok=True)
     marker_file.write_text("owner/current-instance")
+    settings_file = tmp_path / "instance.env"
+    settings_file.write_text("cached")
     monkeypatch.setattr(
         connect_instance,
         "find_local_current_instance_file",
         lambda start_directory=None: marker_file,
+    )
+    monkeypatch.setattr(
+        connect_instance,
+        "instance_settings_file",
+        lambda name, owner: settings_file,
     )
 
     def _should_not_connect(*args, **kwargs):
@@ -81,9 +88,65 @@ def test_connect_cli_raises_if_connecting_in_other_instance_dev_dir(
         connect_instance._connect_cli("owner/other-instance")
 
     assert str(exc.value) == (
-        "You're trying to connect within the dev-dir of instance owner/current-instance. "
-        "Either cd into another directory or unset the dev-dir: lamin settings dev-dir unset"
+        "You're trying to connect within the dev-dir of instance owner/current-instance "
+        f"({tmp_path.resolve()}). Either cd into another directory or run: "
+        "lamin disconnect --here"
     )
+
+
+def test_connect_cli_ignores_dev_dir_marker_without_instance_settings(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+):
+    marker_file = tmp_path / ".lamin" / "current_instance"
+    marker_file.parent.mkdir(parents=True, exist_ok=True)
+    marker_file.write_text("owner/deleted-instance")
+    monkeypatch.setattr(
+        connect_instance,
+        "find_local_current_instance_file",
+        lambda start_directory=None: marker_file,
+    )
+    monkeypatch.setattr(
+        connect_instance,
+        "instance_settings_file",
+        lambda name, owner: tmp_path / "missing.env",
+    )
+    monkeypatch.setattr(
+        connect_instance,
+        "_connect_instance",
+        lambda *args, **kwargs: _FakeCliConnectedInstance("owner/other-instance"),
+    )
+    monkeypatch.setattr(connect_instance, "connect", lambda *args, **kwargs: None)
+
+    connect_instance._connect_cli("owner/other-instance")
+
+
+def test_connect_cli_ignores_home_directory_marker(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+):
+    marker_file = tmp_path / ".lamin" / "current_instance"
+    marker_file.parent.mkdir(parents=True, exist_ok=True)
+    marker_file.write_text("owner/current-instance")
+    settings_file = tmp_path / "instance.env"
+    settings_file.write_text("cached")
+    monkeypatch.setattr(
+        connect_instance,
+        "find_local_current_instance_file",
+        lambda start_directory=None: marker_file,
+    )
+    monkeypatch.setattr(
+        connect_instance,
+        "instance_settings_file",
+        lambda name, owner: settings_file,
+    )
+    monkeypatch.setattr(connect_instance, "is_home_directory", lambda path: True)
+    monkeypatch.setattr(
+        connect_instance,
+        "_connect_instance",
+        lambda *args, **kwargs: _FakeCliConnectedInstance("owner/other-instance"),
+    )
+    monkeypatch.setattr(connect_instance, "connect", lambda *args, **kwargs: None)
+
+    connect_instance._connect_cli("owner/other-instance")
 
 
 def test_connect_cli_allows_connecting_same_instance_in_dev_dir(
@@ -105,6 +168,45 @@ def test_connect_cli_allows_connecting_same_instance_in_dev_dir(
     monkeypatch.setattr(connect_instance, "connect", lambda *args, **kwargs: None)
 
     connect_instance._connect_cli("owner/current-instance")
+
+
+def test_connect_cli_here_logs_connected_directory(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+):
+    monkeypatch.chdir(tmp_path)
+    monkeypatch.setattr(
+        connect_instance,
+        "find_local_current_instance_file",
+        lambda start_directory=None: None,
+    )
+    monkeypatch.setattr(
+        connect_instance,
+        "_connect_instance",
+        lambda *args, **kwargs: _FakeCliConnectedInstance("owner/current-instance"),
+    )
+    monkeypatch.setattr(
+        connect_instance, "save_instance_settings", lambda *a, **k: None
+    )
+    assigned: dict[str, Path] = {}
+
+    def _set_dev_dir(self, value):
+        assigned["value"] = value
+
+    monkeypatch.setattr(
+        type(connect_instance.settings),
+        "dev_dir",
+        property(lambda self: None, _set_dev_dir),
+    )
+    messages: list[str] = []
+    monkeypatch.setattr(
+        connect_instance.logger, "important", lambda message: messages.append(message)
+    )
+
+    connect_instance._connect_cli("owner/current-instance", here=True)
+
+    cwd = tmp_path.resolve()
+    assert assigned["value"] == cwd
+    assert messages == [f"connected database owner/current-instance to {cwd}"]
 
 
 def test_validate_connection_state_none_none_skips_reset(monkeypatch):
@@ -216,38 +318,40 @@ def test_connect_prints_modules_warning(monkeypatch):
 
     monkeypatch.setattr(fake_isettings, "_load_db", _load_db_with_modules_warning)
 
-    warning_calls: list[str] = []
+    hint_calls: list[str] = []
     monkeypatch.setattr(
         connect_instance.logger,
-        "warning",
-        lambda message: warning_calls.append(message),
+        "important_hint",
+        lambda message: hint_calls.append(message),
     )
 
     connect_instance.connect("owner/name", _reload_lamindb=False)
 
-    assert "module mismatch warning" in warning_calls
+    assert "module mismatch warning" in hint_calls
 
 
 def test_module_mismatch_warning_includes_modules_command():
     message = django_core._warn_module_mismatch(
-        target_apps={"lamindb", "bionty"},
-        current_apps={"lamindb"},
+        target_apps={"lamindb", "bionty", "pertdb"},
+        current_apps={"lamindb", "bionty"},
+        instance_slug="owner/name",
     )
-    assert message is not None
-    assert "database has module bionty" in message
-    assert "configure it:" in message
-    assert "lamin settings modules set bionty" in message
+    assert message == (
+        "tip: to work with the additional module (pertdb) of database owner/name, "
+        "configure your environment for it: lamin settings modules set bionty,pertdb"
+    )
 
 
 def test_module_mismatch_warning_uses_empty_schema_str_for_core_only():
     message = django_core._warn_module_mismatch(
         target_apps={"lamindb"},
         current_apps={"lamindb", "bionty"},
+        instance_slug="owner/name",
     )
-    assert message is not None
-    assert "database does not have local module bionty" in message
-    assert "configure your local environment:" in message
-    assert 'lamin settings modules set ""' in message
+    assert message == (
+        "tip: to work without the local module (bionty) of database owner/name, "
+        'configure your environment for it: lamin settings modules set ""'
+    )
 
 
 def test_check_setup_uses_instance_modules_when_django_is_setup(monkeypatch):

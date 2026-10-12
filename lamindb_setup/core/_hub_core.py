@@ -9,7 +9,6 @@ from typing import TYPE_CHECKING, Any, Literal
 from uuid import UUID
 
 import jwt
-from lamin_utils import logger
 from postgrest.exceptions import APIError
 from supabase_functions.errors import FunctionsHttpError
 
@@ -38,6 +37,7 @@ from ._hub_utils import (
     LaminDsn,
     LaminDsnModel,
 )
+from ._logger import logger
 from ._settings import settings
 from ._settings_instance import InstanceSettings
 from ._settings_storage import StorageSettings, base62, instance_uid_from_uuid
@@ -444,6 +444,8 @@ def init_instance_hub(
     account_id: UUID | None = None,
     resource_db_server_id: UUID | None = None,
     access_token: str | None = None,
+    *,
+    public: bool = False,
 ) -> None:
     return call_with_fallback_auth(
         _init_instance_hub,
@@ -451,6 +453,7 @@ def init_instance_hub(
         account_id=account_id,
         resource_db_server_id=resource_db_server_id,
         access_token=access_token,
+        public=public,
     )
 
 
@@ -459,6 +462,8 @@ def _init_instance_hub(
     isettings: InstanceSettings,
     account_id: UUID | None = None,
     resource_db_server_id: UUID | None = None,
+    *,
+    public: bool = False,
 ) -> None:
     created_by_id = settings.user._uuid.hex if account_id is None else account_id.hex  # type: ignore
     owner_account_id = os.getenv("LAMINDB_ACCOUNT_ID_INIT", created_by_id)
@@ -478,7 +483,7 @@ def _init_instance_hub(
         "lnid": isettings.uid,
         "schema_str": isettings._schema_str,
         "lamindb_version": lamindb_version,
-        "public": False,
+        "public": public,
         "created_by_id": created_by_id,
     }
     if resource_db_server_id is not None:
@@ -660,10 +665,7 @@ def _connect_instance_hub(
                 instance["id"], fine_grained_access, client
             )
             if db_user is not None:
-                db_user_name, db_user_password = (
-                    db_user["name" if fine_grained_access else "db_user_name"],
-                    db_user["password" if fine_grained_access else "db_user_password"],
-                )
+                db_user_name, db_user_password = db_user["name"], db_user["password"]
 
         db_user_name = "none" if db_user_name is None else db_user_name
         db_user_password = "none" if db_user_password is None else db_user_password

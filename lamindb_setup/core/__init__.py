@@ -14,6 +14,7 @@ Settings
 """
 
 from . import django
+from ._colors import colors
 from ._deprecated import deprecated  # documented in lamindb.base
 from ._docs import doc_args  # documented in lamindb.base
 from ._settings import SetupSettings

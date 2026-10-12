@@ -3,6 +3,7 @@ from __future__ import annotations
 import os
 
 import nox
+from laminci import convert_executable_md_files
 from laminci.nox import (
     build_docs,
     login_testuser1,
@@ -89,6 +90,8 @@ def build(session: nox.Session, group: str, lamin_env: str):
     env = {"LAMIN_ENV": lamin_env, "LAMIN_TESTING": "true"}
     login_testuser1(session, env=env)
     login_testuser2(session, env=env)
+    # Docs notebooks are stored as markdown; convert them back to ipynb to run.
+    convert_executable_md_files(f"./docs/{group}")
     if group == "hub-prod":
         run(session, f"pytest {COVERAGE_ARGS} ./tests/hub-prod", env=env)
         run(session, f"pytest -s {COVERAGE_ARGS} ./docs/hub-prod", env=env)
@@ -139,4 +142,6 @@ def docs(session: nox.Session):
 
     login_testuser1(session)
     ln_setup.init(storage="./docsbuild")
+    # lndocs strips numeric prefixes only from ipynb files.
+    convert_executable_md_files()
     build_docs(session, strip_prefix=True, strict=True)

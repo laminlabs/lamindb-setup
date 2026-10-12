@@ -78,9 +78,9 @@ def test_db_user(
     db_user = select_db_user_by_instance(
         instance_id=instance_id_hex, client=admin_client, fine_grained_access=False
     )
-    assert db_user["db_user_name"] == "postgres"
-    assert db_user["db_user_password"] == "pwd"
-    assert db_user["name"] == "write"
+    assert db_user["name"] == "postgres"
+    assert db_user["password"] == "pwd"
+    assert db_user["type"] == "write"
     # check fine-grained access db user
     db_user = select_db_user_by_instance(
         instance_id=instance_id_hex, client=admin_client, fine_grained_access=True

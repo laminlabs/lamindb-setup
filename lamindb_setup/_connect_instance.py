@@ -9,18 +9,18 @@ import types
 from typing import TYPE_CHECKING, Any
 from uuid import UUID
 
-from lamin_utils import logger
-
 from ._check_setup import _check_instance_setup
 from ._disconnect import disconnect
 from ._init_instance import load_from_isettings
 from ._silence_loggers import silence_loggers
+from .core._logger import logger
 from .core._settings import settings
 from .core._settings_load import load_instance_settings
 from .core._settings_save import save_instance_settings
 from .core._settings_store import (
     find_local_current_instance_file,
     instance_settings_file,
+    is_home_directory,
 )
 from .core.cloud_sqlite_locker import unlock_cloud_sqlite_upon_exception
 from .core.django import reset_django
@@ -289,6 +289,25 @@ def reset_django_module_variables():
                 continue
 
 
+def _configured_dev_dir_instance(marker_file: Path) -> str | None:
+    """Instance slug of a dev-dir marker that would auto-connect.
+
+    ``$HOME`` is never a dev-dir. A marker whose instance settings file is
+    missing does not auto-connect, so it must not block ``lamin connect``.
+    """
+    directory = marker_file.parent.parent
+    if is_home_directory(directory):
+        return None
+    current_instance = marker_file.read_text().strip()
+    try:
+        owner, name = get_owner_name_from_identifier(current_instance)
+    except ValueError:
+        return None
+    if not instance_settings_file(name, owner).exists():
+        return None
+    return current_instance
+
+
 def _connect_cli(
     instance: str,
     use_root_db_user: bool = False,
@@ -310,13 +329,14 @@ def _connect_cli(
     owner, name = get_owner_name_from_identifier(instance)
     marker_file = find_local_current_instance_file()
     if marker_file is not None:
-        current_instance = marker_file.read_text().strip()
+        current_instance = _configured_dev_dir_instance(marker_file)
         target_instance = f"{owner}/{name}"
-        if current_instance != target_instance:
+        if current_instance is not None and current_instance != target_instance:
+            dev_dir = marker_file.parent.parent.resolve()
             raise ConnectWithinDevDirError(
                 "You're trying to connect within the dev-dir of instance "
-                f"{current_instance}. Either cd into another directory or unset the"
-                " dev-dir: lamin settings dev-dir unset"
+                f"{current_instance} ({dev_dir}). Either cd into another directory "
+                "or run: lamin disconnect --here"
             )
 
     isettings = _connect_instance(
@@ -351,14 +371,12 @@ def _connect_cli(
                 )
     if show_dev_dir_hint and settings_.dev_dir is None:
         logger.important_hint(
-            "to map a local dev directory, call: lamin settings set dev-dir ."
+            f"tip: connect the database to the current directory to keep your files in one place: lamin connect {isettings.slug} --here"
         )
-    if here:
+    if here and not mute_here:
         cwd = Path.cwd().resolve()
         settings_.dev_dir = cwd
-        if not mute_here:
-            logger.important(f"dev-dir is: {cwd}")
-            logger.important(f"connected lamindb: {isettings.slug}")
+        logger.important(f"connected database {isettings.slug} to {cwd}")
     return None
 
 
@@ -547,7 +565,7 @@ def connect(instance: str | None = None, **kwargs: Any) -> str | tuple | None:
                     f'connected in read-only mode, please use ln.DB("{slug}") instead'
                 )
             if settings.modules_warning is not None:
-                logger.warning(settings.modules_warning)
+                logger.important_hint(settings.modules_warning)
     except Exception as e:
         if isettings is not None:
             if _write_settings:

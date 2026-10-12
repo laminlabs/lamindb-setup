@@ -57,10 +57,11 @@ assert ln_setup.settings._get_db_token("default") is not None
 db_token_manager.reset()
 assert not db_token_manager.tokens
 
-# check after reset
+# check after reset: set_token already created pg_temp.access on this connection,
+# and ON COMMIT DELETE ROWS leaves it empty, so check_access denies with "no access"
 with pytest.raises(ProgrammingError) as error, connection.cursor() as cur:
     cur.execute("SELECT * FROM check_access();")
-assert "JWT is not set" in error.exconly()
+assert "no access: this account has no permissions on this instance" in error.exconly()
 # check calling access_db with a dict
 instance_dict = {
     "owner": isettings.owner,

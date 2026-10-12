@@ -156,6 +156,10 @@ def test_settings_env_load_via_load_instance_settings(tmp_path: Path) -> None:
     )
 
 
+def _no_resolved_instance(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setattr(settings_module, "_resolve_default_instance_file", lambda: None)
+
+
 def test_setup_settings_modules_roundtrip(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ):
@@ -165,6 +169,7 @@ def test_setup_settings_modules_roundtrip(
     monkeypatch.setattr(
         settings_module, "current_instance_settings_file", lambda: instance_file
     )
+    _no_resolved_instance(monkeypatch)
 
     settings.modules = {"bionty", "pertdb"}
     assert settings.modules == {"bionty", "pertdb"}
@@ -189,6 +194,7 @@ def test_setup_settings_modules_falls_back_to_candidates(
     monkeypatch.setattr(
         settings_module, "current_instance_settings_file", lambda: instance_file
     )
+    _no_resolved_instance(monkeypatch)
     monkeypatch.setattr(
         settings_module,
         "find_spec",
@@ -203,11 +209,11 @@ def test_setup_settings_modules_uses_current_instance_modules(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ):
     modules_file = tmp_path / "current_modules.txt"
-    instance_file = tmp_path / "current_instance.env"
-    instance_file.write_text("dummy=1\n")
     monkeypatch.setattr(settings_module, "current_modules_file", lambda: modules_file)
     monkeypatch.setattr(
-        settings_module, "current_instance_settings_file", lambda: instance_file
+        settings_module,
+        "_resolve_default_instance_file",
+        lambda: tmp_path / "resolved-instance.env",
     )
 
     monkeypatch.setattr(
@@ -227,15 +233,47 @@ def test_setup_settings_modules_uses_current_instance_modules(
     assert settings.modules == {"bionty"}
 
 
+def test_setup_settings_modules_follow_instance_without_home_current_instance(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+):
+    modules_file = tmp_path / "current_modules.txt"
+    modules_file.write_text("pertdb")
+    home_instance = tmp_path / "current_instance.env"
+    monkeypatch.setattr(settings_module, "current_modules_file", lambda: modules_file)
+    monkeypatch.setattr(
+        settings_module, "current_instance_settings_file", lambda: home_instance
+    )
+    monkeypatch.setattr(
+        settings_module,
+        "_resolve_default_instance_file",
+        lambda: tmp_path / "from-dev-dir.env",
+    )
+    monkeypatch.setattr(
+        settings,
+        "_instance_settings",
+        SimpleNamespace(modules={"bionty"}, slug="owner/name", is_on_hub=False),
+        raising=False,
+    )
+    monkeypatch.setattr(
+        settings,
+        "_instance_settings_env",
+        settings_module.get_env_name(),
+        raising=False,
+    )
+
+    assert not home_instance.exists()
+    assert settings.modules == {"bionty"}
+
+
 def test_setup_settings_modules_instance_modules_override_env_var(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ):
     modules_file = tmp_path / "current_modules.txt"
-    instance_file = tmp_path / "current_instance.env"
-    instance_file.write_text("dummy=1\n")
     monkeypatch.setattr(settings_module, "current_modules_file", lambda: modules_file)
     monkeypatch.setattr(
-        settings_module, "current_instance_settings_file", lambda: instance_file
+        settings_module,
+        "_resolve_default_instance_file",
+        lambda: tmp_path / "resolved-instance.env",
     )
     monkeypatch.setenv("LAMINDB_MODULES", "  custom_a,custom_b ,, custom_c ")
 

@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from lamin_utils import logger
+from ._logger import logger
 
 
 def get_location(ip="ipinfo.io"):
