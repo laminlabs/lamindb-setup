@@ -312,6 +312,7 @@ def test_init_storage_incorrect_protocol(create_myinstance):
 
 
 def test_select_storage_or_parent(create_myinstance, create_testadmin1_session):
+    instance_id = create_myinstance["id"]
     admin_client, _ = create_testadmin1_session
     # check not exisitng
     assert select_storage_or_parent("s3://does-not-exist") is None
@@ -320,6 +321,12 @@ def test_select_storage_or_parent(create_myinstance, create_testadmin1_session):
 
     result = select_storage_or_parent(root)
     assert result["root"] == root
+    # make the instance public, needed to make the storage public
+    update_instance(
+        instance_id=instance_id,
+        instance_fields={"public": True},
+        client=admin_client,
+    )
     # make the storage public, needed for anon access
     admin_client.table("storage").update({"public": True}).eq("root", root).execute()
     # check with a child path and anonymous user
@@ -327,6 +334,11 @@ def test_select_storage_or_parent(create_myinstance, create_testadmin1_session):
         result = select_storage_or_parent(root + "/subfolder")
     assert result["root"] == root
     admin_client.table("storage").update({"public": False}).eq("root", root).execute()
+    update_instance(
+        instance_id=instance_id,
+        instance_fields={"public": False},
+        client=admin_client,
+    )
 
 
 def test_fine_grained_access(
