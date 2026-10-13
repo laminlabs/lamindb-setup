@@ -19,14 +19,14 @@ class AccessToken:
         self.expiration: float | None = self._get_expiration(self.access_token)
 
     def needs_refresh(self) -> bool:
-        return self.expiration is not None and time.time() >= self.expiration
+        # an unreadable token has no expiration and is refreshed too
+        return self.expiration is None or time.time() >= self.expiration
 
     @staticmethod
     def _get_expiration(access_token: str) -> float | None:
         from jwt import decode
 
         # refresh 15 minutes early
-        # an unreadable token is left for call_with_fallback_auth
         try:
             exp = decode(
                 access_token, options={"verify_signature": False, "verify_exp": False}

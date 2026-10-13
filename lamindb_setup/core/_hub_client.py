@@ -359,6 +359,22 @@ def httpx_client():
             client.close()
 
 
+def _renew_save_token(fallback_env: bool = False) -> str | None:
+    from lamindb_setup import settings
+
+    new_token = get_access_token(
+        settings.user.email,
+        settings.user.password,
+        settings.user.api_key,
+        fallback_env=fallback_env,
+    )
+    if new_token is not None:
+        settings.user.access_token = new_token
+        save_user_settings(settings.user)
+
+    return new_token
+
+
 def request_with_auth(
     url: str,
     method: Literal["get", "post", "put", "delete", "head", "options"],
@@ -367,29 +383,29 @@ def request_with_auth(
     **kwargs,
 ):
     headers = kwargs.pop("headers", {})
+    timeout = kwargs.pop("timeout", DEFAULT_TIMEOUT)
+
+    if renew_token:
+        from lamindb_setup import settings
+
+        if settings.user.access_token_needs_refresh():
+            for fallback_env in (False, True):
+                try:
+                    new_token = _renew_save_token(fallback_env=fallback_env)
+                except ApiKeyError as error:
+                    # refreshing with an unusable API key cannot succeed; do not retry
+                    raise error from None
+                except Exception as e:
+                    logger.warning(f"failed to renew token: {e}")
+                    continue
+                if new_token is not None:
+                    access_token = new_token
+                break
+
     if access_token is not None:
         headers["Authorization"] = f"Bearer {access_token}"
-    else:
-        assert not renew_token, "Cannot renew token if access_token is None"
-    timeout = kwargs.pop("timeout", DEFAULT_TIMEOUT)
 
     with httpx_client() as client:
         make_request = getattr(client, method)
         response = make_request(url, headers=headers, timeout=timeout, **kwargs)
-        status_code = response.status_code
-        # update access_token and try again if failed
-        if not (200 <= status_code < 300) and renew_token:
-            from lamindb_setup import settings
-
-            logger.debug(f"{method} {url} failed: {status_code} {response.text}")
-
-            new_token = get_access_token(
-                settings.user.email, settings.user.password, settings.user.api_key
-            )
-            if new_token is not None:
-                settings.user.access_token = new_token
-                save_user_settings(settings.user)
-
-                headers["Authorization"] = f"Bearer {new_token}"
-                response = make_request(url, headers=headers, timeout=timeout, **kwargs)
     return response
