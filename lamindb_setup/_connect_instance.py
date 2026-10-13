@@ -311,6 +311,7 @@ def _configured_dev_dir_instance(marker_file: Path) -> str | None:
 def _connect_cli(
     instance: str,
     use_root_db_user: bool = False,
+    use_proxy_db: bool = False,
     here: bool = False,
     mute_here: bool = False,
 ) -> None:
@@ -343,6 +344,7 @@ def _connect_cli(
         owner,
         name,
         use_root_db_user=use_root_db_user,
+        use_proxy_db=use_proxy_db,
         raise_systemexit=True,
     )
     if persist_global_env:
