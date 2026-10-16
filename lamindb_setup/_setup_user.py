@@ -55,11 +55,11 @@ def login(
     user: str | None = None, *, api_key: str | None = None, **kwargs
 ) -> UserSettings:
     # note that the docstring needs to be synced with lamin login
-    """Log into LaminHub.
+    """Log into the hub.
 
     `login()` prompts for your API key unless you set it via the `LAMIN_API_KEY` environment variable or pass it as an argument.
 
-    You can create your API key in your account settings on LaminHub at `lamin.ai/settings <https://lamin.ai/settings>`__.
+    You can create your API key in your hub account settings at `lamin.ai/settings <https://lamin.ai/settings>`__.
 
     Note that the preferred method is to use the CLI command `lamin login`: `docs.lamin.ai/cli#login <https://docs.lamin.ai/cli#login>`__.
 
