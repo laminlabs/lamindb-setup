@@ -36,7 +36,7 @@ from lamindb_setup.core._settings_store import instance_settings_file
 from laminhub_rest.core.instance_collaborator import InstanceCollaboratorHandler
 from laminhub_rest.core.organization import OrganizationMemberHandler
 from sqlalchemy.exc import OperationalError as SQLAlchemy_OperationalError
-from supabase_functions.errors import FunctionsHttpError
+from supabase_auth.errors import AuthApiError
 
 
 def test_runs_locally():
@@ -259,7 +259,7 @@ def test_connect_instance_hub_corrupted_or_expired_credentials(
     ln_setup.settings.user.access_token = invalid_token
     correct_password = ln_setup.settings.user.password
     ln_setup.settings.user.password = "corrupted_password"
-    with pytest.raises(FunctionsHttpError):
+    with pytest.raises(AuthApiError):
         connect_instance_hub(
             owner="testadmin1",
             name=create_myinstance["name"],
@@ -279,6 +279,7 @@ def test_connect_instance_hub_corrupted_or_expired_credentials(
     # check that the access_token was written to the settings
     ln_setup.settings._user_settings = None
     assert ln_setup.settings.user.access_token == access_token
+    assert ln_setup.settings.user.asdict()["access_token"] == access_token
 
 
 def test_init_storage_with_non_existing_bucket(
