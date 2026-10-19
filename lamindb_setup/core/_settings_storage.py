@@ -364,6 +364,7 @@ class StorageSettings:
     def root(self) -> UPath:
         """Root storage location."""
         from ._aws_options import get_user_aws_options_manager
+        from ._gcp_options import get_user_gcp_options_manager
         from .upath import create_path
 
         if self._root is None:
@@ -373,6 +374,11 @@ class StorageSettings:
             # this is needed to be sure that the root always has nonexpired credentials
             # this just checks for time of the cached credentials in most cases
             return get_user_aws_options_manager().enrich_path(
+                self._root, access_token=self.access_token
+            )
+        elif getattr(self._root, "protocol", "") in {"gs", "gcs"}:
+            # same as s3: reattach the cached refreshable credentials
+            return get_user_gcp_options_manager().enrich_path(
                 self._root, access_token=self.access_token
             )
         return self._root
