@@ -849,6 +849,95 @@ def _access_aws_endpoint(
     return response.json()
 
 
+def access_gcp(path: str, access_token: str | None = None) -> dict[str, dict]:
+    if settings.user.handle != "anonymous" or access_token is not None:
+        api_url = call_with_fallback_auth(
+            _access_gcp_route, path=path, access_token=access_token
+        )
+    else:
+        api_url = call_with_fallback(_access_gcp_route, path=path)
+
+    storage_root_info: dict[str, dict] = {"credentials": {}, "accessibility": {}}
+    if not api_url:
+        # the storage is not managed, or its hub has no API url
+        return storage_root_info
+
+    try:
+        data = _access_gcp_endpoint(api_url, path, access_token=access_token)
+    except Exception as e:
+        # it might be that the user doesn't have access to the storage via hub
+        # but has access via local credentials
+        # so we don't throw an error here
+        logger.warning(f"storage credentials for {path} were not received: {e}")
+        return storage_root_info
+    if not data:
+        return storage_root_info
+
+    loaded_credentials = data["Credentials"]
+    loaded_accessibility = data["StorageAccessibility"]
+
+    credentials = storage_root_info["credentials"]
+    credentials["token"] = loaded_credentials["access_token"]
+    credentials["expiry_time"] = loaded_credentials["expiry"]
+
+    accessibility = storage_root_info["accessibility"]
+    accessibility["storage_root"] = loaded_accessibility["storageRoot"]
+    accessibility["is_managed"] = loaded_accessibility["isManaged"]
+    accessibility["extra_parameters"] = loaded_accessibility.get("extraParameters")
+
+    return storage_root_info
+
+
+def _access_gcp_route(*, path: str, client: Client) -> str | None:
+    # same lookup as AWS, but only the API url is used: there is no edge function for GCP
+    result = (
+        client.rpc(
+            "get_storage_api_info_from_path",
+            {"_path": path},
+            get=True,
+        )
+        .execute()
+        .data
+    )
+    logger.debug(f"called get_storage_api_info_from_path for {path}: {result}")
+    if not result:
+        # [] means that the storage is not managed
+        return None
+    api_url = result[0].get("api_url")
+    if not api_url:
+        return None
+    return api_url
+
+
+def _access_gcp_endpoint(
+    api_url: str,
+    path: str,
+    duration_seconds: int = 3600,  # max for a downscoped Cloud Storage token
+    access_token: str | None = None,
+):
+    # local is used in tests
+    url = "/gcs/credentials"
+    if os.getenv("LAMIN_ENV") != "local":
+        url = api_url + url
+
+    renew_token = False
+    if access_token is None and settings.user.handle != "anonymous":
+        access_token = settings.user.access_token
+        renew_token = True
+    logger.debug(f"calling {url}, path {path}, duration_seconds {duration_seconds}")
+    response = request_with_auth(
+        url,
+        "post",
+        access_token,
+        renew_token,
+        json={"path": path, "duration_seconds": duration_seconds},
+    )
+    status_code = response.status_code
+    if not (200 <= status_code < 300):
+        raise PermissionError(f"Access to {path} failed: {status_code} {response.text}")
+    return response.json()
+
+
 def access_aws_for_moving(
     source_path: str, target_path: str, access_token: str | None = None
 ) -> dict[str, dict | list[dict]]:

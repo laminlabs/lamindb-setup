@@ -7,6 +7,7 @@ from typing import TYPE_CHECKING
 from ._check_setup import _check_instance_setup
 from ._init_instance import register_user
 from .core._aws_options import reset_user_aws_options_cache
+from .core._gcp_options import reset_user_gcp_options_cache
 from .core._logger import logger
 from .core._settings import settings
 from .core._settings_load import load_user_settings
@@ -103,8 +104,9 @@ def login(
     # do this here because load_user overwrites current_user_settings_file
     previous_user_uid = current_user_uid()
 
-    # Clear previous user AWS cache before load_user() sets settings._user_settings = None
+    # Clear previous user cloud cache before load_user() sets settings._user_settings = None
     reset_user_aws_options_cache()
+    reset_user_gcp_options_cache()
 
     if api_key is None:
         if "@" in user:  # type: ignore
@@ -189,6 +191,7 @@ def logout():
     if current_user_settings_file().exists():
         current_user_settings_file().unlink()
         reset_user_aws_options_cache()  # reset aws options cache for the user
+        reset_user_gcp_options_cache()
         settings._user_settings = None
         logger.important("logged out")
     else:

@@ -30,6 +30,7 @@ from lamindb_setup.errors import StorageNotEmpty
 from ._asyncio_write_spin import repair_spurious_write_errors
 from ._aws_options import HOSTED_BUCKETS, get_user_aws_options_manager
 from ._deprecated import deprecated
+from ._gcp_options import get_user_gcp_options_manager
 from ._logger import logger
 from .canonical_suffix import CanonicalSuffix
 from .hashing import HASH_LENGTH, b16_to_b64, hash_from_hashes_list, hash_string
@@ -1153,6 +1154,10 @@ def create_path(path: AnyPathStr, access_token: str | None = None) -> UPath:
     if upath.protocol == "s3":
         # add managed credentials and other options for AWS s3 paths
         return get_user_aws_options_manager().enrich_path(upath, access_token)
+
+    if upath.protocol in {"gs", "gcs"}:
+        # add managed credentials for Google Cloud Storage paths
+        return get_user_gcp_options_manager().enrich_path(upath, access_token)
 
     if upath.protocol in {"http", "https"}:
         # this is needed because by default aiohttp drops a connection after 5 min
