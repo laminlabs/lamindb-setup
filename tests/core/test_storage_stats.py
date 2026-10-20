@@ -3,7 +3,6 @@ from __future__ import annotations
 from unittest.mock import Mock
 
 import pytest
-
 from lamindb_setup.core._aws_options import HOSTED_REGIONS
 from lamindb_setup.core._settings_storage import get_storage_region
 from lamindb_setup.core.upath import (
