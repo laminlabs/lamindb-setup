@@ -48,15 +48,15 @@ uv pip install --system git+https://github.com/laminlabs/bionty
     elif group == "docs":
         cmds = modules_deps.strip()
     elif group == "core":
-        # check the upper bound
+        # check the s3fs upper bound
         cmds = (
             modules_deps
-            + "uv pip install --system gcsfs==2026.9.0 s3fs==2026.9.0 huggingface_hub sqlalchemy"
+            + "uv pip install --system gcsfs s3fs==2026.9.0 huggingface_hub sqlalchemy"
         )
     elif group == "hub-prod":
         cmds = modules_deps.strip()
-        # check the upper bound
-        cmds += """\nuv pip install --system gcsfs==2026.9.0 s3fs==2026.9.0 huggingface_hub"""
+        # check the s3fs upper bound
+        cmds += """\nuv pip install --system gcsfs s3fs==2026.9.0 huggingface_hub"""
     elif group == "hub-local":
         cmds = modules_deps.strip()
         cmds += "\nuv pip install --system s3fs==2026.9.0"  # check the upper bound
