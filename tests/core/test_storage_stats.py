@@ -1,5 +1,8 @@
 from __future__ import annotations
 
+from unittest.mock import Mock
+
+import pytest
 from lamindb_setup.core._aws_options import HOSTED_REGIONS
 from lamindb_setup.core._settings_storage import get_storage_region
 from lamindb_setup.core.upath import (
@@ -101,6 +104,41 @@ def test_get_stat_dir_cloud_hf():
     assert hash == "YgK4yrGwOzZgTejMxR7Gnw"
     assert hash_type == "md5-d"
     assert size == 42767
+
+
+@pytest.mark.parametrize("protocol", ["s3", "gs", "memory"])
+@pytest.mark.parametrize(
+    ("entries", "expected_n_files"),
+    [
+        (
+            [
+                ("bucket/folder/", 0),
+                ("bucket/folder/nested/", 0),
+                ("bucket/folder/data.txt", 3),
+                ("bucket/folder/empty.txt", 0),
+                ("bucket/folder/nonempty/", 3),
+            ],
+            3,
+        ),
+        ([("bucket/folder/", 0), ("bucket/folder/nested/", 0)], 0),
+    ],
+)
+def test_get_stat_dir_cloud_excludes_folder_markers_from_count(
+    protocol, entries, expected_n_files
+):
+    path = Mock(protocol=protocol)
+    path.as_posix.return_value = f"{protocol}://bucket/folder"
+    path.fs.find.return_value = {
+        name: {
+            "name": name,
+            "size": size,
+            "ETag": '"d41d8cd98f00b204e9800998ecf8427e"',
+            "md5Hash": "1B2M2Y8AsgTpgAmY7PhCfg==",
+        }
+        for name, size in entries
+    }
+    _, _, _, n_files = get_stat_dir_cloud(path)
+    assert n_files == expected_n_files
 
 
 def test_get_stat_dir_cloud_http_resolves_missing_sizes_without_etag_coupling():
