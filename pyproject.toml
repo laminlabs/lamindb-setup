@@ -33,7 +33,7 @@ Home = "https://github.com/laminlabs/lamindb-setup"
 aws = [
     "aiobotocore[boto3]>=2.12.4,<4.0.0", # less problematic, supports urllib 2 via botocore bounds
     # exclude 2024.10.0 due to https://github.com/fsspec/s3fs/pull/910
-    # exclude 2026.2.0-2026.6.0 due to https://github.com/fsspec/s3fs/issues/1019
+    # exclude 2026.2-2026.6 due to https://github.com/fsspec/s3fs/issues/1019
     "s3fs>=2023.12.2,<=2026.9.0,!=2024.10.0,!=2026.2.*,!=2026.3.*,!=2026.4.*,!=2026.5.*,!=2026.6.*",
     "boto3" # aiobotocore 3 doesn't have boto3 extra anymore
 ]
