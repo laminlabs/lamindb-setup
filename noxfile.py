@@ -44,17 +44,22 @@ uv pip install --system git+https://github.com/laminlabs/bionty
             + "\nuv pip install --system ./laminhub/backend/services/aws/lambda_functions/lamindb/utils"
             + "\nuv pip install --system --no-deps ./laminhub/backend/services/instancedb/hubmodule"
         )
+        cmds += "\nuv pip install --system s3fs==2026.9.0"  # check the upper bound
     elif group == "docs":
         cmds = modules_deps.strip()
     elif group == "core":
-        cmds = modules_deps + "uv pip install --system gcsfs huggingface_hub sqlalchemy"
+        # check the s3fs upper bound
+        cmds = (
+            modules_deps
+            + "uv pip install --system gcsfs s3fs==2026.9.0 huggingface_hub sqlalchemy"
+        )
     elif group == "hub-prod":
-        # cmds = "git clone --depth 1 https://github.com/django/django\n"
-        # cmds += "uv pip install --system -e ./django\n"
         cmds = modules_deps.strip()
-        cmds += """\nuv pip install --system gcsfs huggingface_hub"""
+        # check the s3fs upper bound
+        cmds += """\nuv pip install --system gcsfs s3fs==2026.9.0 huggingface_hub"""
     elif group == "hub-local":
         cmds = modules_deps.strip()
+        cmds += "\nuv pip install --system s3fs==2026.9.0"  # check the upper bound
     elif group == "connectivity":
         cmds = modules_deps.strip()
     # current package
