@@ -4,6 +4,247 @@ import lamindb as ln
 import pytest
 
 
+@pytest.fixture
+def merge_records(request):
+    source = ln.Branch(name=request.node.name).save()
+    feature = ln.Feature(name=request.node.name, dtype=str, branch=source).save()
+    label = ln.ULabel(name=request.node.name, branch=source).save()
+    try:
+        yield source, ln.Branch.get(name="main"), feature, label
+    finally:
+        feature.delete(permanent=True)
+        label.delete(permanent=True)
+        source.delete(permanent=True)
+
+
+@pytest.mark.parametrize(
+    "restriction", ["space", "record", "block", "branch", "locked"]
+)
+def test_merge_preflight_checks_rls_before_writes(restriction, request):
+    from django.db import connection
+
+    if connection.vendor != "postgresql":
+        pytest.skip("PostgreSQL row-level security is required")
+    with connection.cursor() as cursor:
+        cursor.execute("SELECT rolsuper FROM pg_roles WHERE rolname = current_user")
+        if not cursor.fetchone()[0]:
+            pytest.skip("An isolated PostgreSQL superuser connection is required")
+
+    source, target, feature, label = request.getfixturevalue("merge_records")
+    restricted = feature
+    if restriction == "block":
+        record = ln.Record(name="merge-preflight-block", branch=source).save()
+        restricted = ln.models.RecordBlock(
+            record=record, content="restricted", kind="readme", branch=source
+        ).save()
+    elif restriction == "branch":
+        restricted = source
+    table = connection.ops.quote_name(restricted._meta.db_table)
+    role = connection.ops.quote_name(f"merge_preflight_{source.uid}")
+    condition = f"id <> {restricted.pk}"
+    grant_condition = f"id = {restricted.pk}"
+    if restriction == "space":
+        condition = f"space_id <> {restricted.space_id}"
+    elif restriction == "block":
+        parent_table = connection.ops.quote_name(ln.Record._meta.db_table)
+        parent = f"SELECT 1 FROM {parent_table} parent WHERE parent.id = record_id"
+        condition = f"EXISTS ({parent} AND parent.space_id <> {record.space_id})"
+        grant_condition = f"EXISTS ({parent} AND parent.id = {record.pk})"
+    elif restriction == "locked":
+        ln.Feature.objects.filter(pk=feature.pk).update(is_locked=True)
+        condition = "NOT is_locked"
+    updates = []
+
+    def capture_updates(execute, sql, params, many, context):
+        if sql.lstrip().upper().startswith("UPDATE "):
+            updates.append(sql)
+        return execute(sql, params, many, context)
+
+    with connection.cursor() as cursor:
+        cursor.execute(f"CREATE ROLE {role} NOLOGIN")
+        cursor.execute(f"GRANT USAGE ON SCHEMA public TO {role}")
+        cursor.execute(f"GRANT SELECT, UPDATE ON ALL TABLES IN SCHEMA public TO {role}")
+        cursor.execute(f"ALTER TABLE {table} ENABLE ROW LEVEL SECURITY")
+        cursor.execute(
+            f"CREATE POLICY merge_preflight_read ON {table} FOR SELECT TO {role} USING (true)"
+        )
+        cursor.execute(
+            f"CREATE POLICY merge_preflight_write ON {table} FOR UPDATE TO {role} "
+            f"USING ({condition}) WITH CHECK (true)"
+        )
+    try:
+        with connection.cursor() as cursor:
+            cursor.execute(f"SET ROLE {role}")
+        with connection.execute_wrapper(capture_updates):
+            with pytest.raises(PermissionError, match="write access") as error:
+                ln.setup.merge(source, target=target)
+        assert updates == []
+        assert restricted._meta.label in str(error.value)
+        if restriction != "block":
+            assert f"space '{restricted.space.name}'" in str(error.value)
+        for item in (feature, restricted, label):
+            item.refresh_from_db()
+        assert feature.branch_id == source.id
+        assert label.branch_id == source.id
+        if restriction != "branch":
+            assert restricted.branch_id == source.id
+        source.refresh_from_db()
+        assert source.status == "standalone"
+
+        # An individual grant can allow a record even without space write access.
+        with connection.cursor() as cursor:
+            cursor.execute("RESET ROLE")
+            if restriction == "locked":
+                ln.Feature.objects.filter(pk=feature.pk).update(is_locked=False)
+            else:
+                cursor.execute(
+                    f"CREATE POLICY merge_preflight_grant ON {table} FOR UPDATE TO {role} "
+                    f"USING ({grant_condition}) WITH CHECK (true)"
+                )
+            cursor.execute(f"SET ROLE {role}")
+        ln.setup.merge(source, target=target)
+        feature.refresh_from_db()
+        label.refresh_from_db()
+        source.refresh_from_db()
+        assert feature.branch_id == target.id
+        assert label.branch_id == target.id
+        assert source.status == "merged"
+        if restriction != "branch":
+            restricted.refresh_from_db()
+            assert restricted.branch_id == target.id
+    finally:
+        with connection.cursor() as cursor:
+            cursor.execute("RESET ROLE")
+            for policy in ("read", "write", "grant"):
+                cursor.execute(
+                    f"DROP POLICY IF EXISTS merge_preflight_{policy} ON {table}"
+                )
+            cursor.execute(f"ALTER TABLE {table} DISABLE ROW LEVEL SECURITY")
+            cursor.execute(f"DROP OWNED BY {role}")
+            cursor.execute(f"DROP ROLE {role}")
+        if restriction == "block":
+            record.delete(permanent=True)
+        if restriction == "locked":
+            ln.Feature.objects.filter(pk=feature.pk).update(is_locked=False)
+            feature.refresh_from_db()
+
+
+@pytest.mark.parametrize("failure_stage", ["reconciliation", "branch_status"])
+def test_merge_rolls_back_finalization_errors(monkeypatch, failure_stage):
+    from lamindb.models import _is_versioned
+
+    source = ln.Branch(name=f"merge-finalization-{failure_stage}").save()
+    target = ln.Branch.get(name="main")
+    original = ln.Transform(
+        key=f"merge-finalization-{failure_stage}", kind="pipeline", branch=target
+    ).save()
+    revision = ln.Transform(revises=original, kind="pipeline", branch=source).save()
+    reconcile = _is_versioned.reconcile_is_latest_within_branch
+    save = ln.Branch.save
+
+    def fail_reconciliation(model, **kwargs):
+        result = reconcile(model, **kwargs)
+        if model is ln.Transform:
+            raise RuntimeError("merge finalization failed")
+        return result
+
+    def fail_status_save(self, *args, **kwargs):
+        result = save(self, *args, **kwargs)
+        if self.pk == source.pk:
+            raise RuntimeError("merge finalization failed")
+        return result
+
+    try:
+        with monkeypatch.context() as patch:
+            if failure_stage == "reconciliation":
+                patch.setattr(
+                    _is_versioned,
+                    "reconcile_is_latest_within_branch",
+                    fail_reconciliation,
+                )
+            else:
+                patch.setattr(ln.Branch, "save", fail_status_save)
+            with pytest.raises(RuntimeError, match="merge finalization failed"):
+                ln.setup.merge(source, target=target)
+        source.refresh_from_db()
+        original.refresh_from_db()
+        revision.refresh_from_db()
+        assert source.status == "standalone"
+        assert original.is_latest
+        assert revision.is_latest
+        assert revision.branch_id == source.id
+    finally:
+        revision.delete(permanent=True)
+        original.delete(permanent=True)
+        source.delete(permanent=True)
+
+
+def test_merge_respects_callers_transaction(merge_records):
+    from django.db import transaction
+
+    source, target, feature, label = merge_records
+    with pytest.raises(RuntimeError, match="outer rollback"):
+        with transaction.atomic():
+            ln.setup.merge(source, target=target)
+            raise RuntimeError("outer rollback")
+    source.refresh_from_db()
+    for item in (feature, label):
+        item.refresh_from_db()
+        assert item.branch_id == source.id
+    assert source.status == "standalone"
+
+
+@pytest.mark.parametrize("restricted_model", ["Feature", "RecordBlock"])
+def test_merge_rolls_back_silently_skipped_updates(restricted_model, merge_records):
+    from django.db import connection
+
+    source, target, feature, label = merge_records
+    if restricted_model == "Feature":
+        restricted = feature
+    else:
+        record = ln.Record(name="merge-skipped-block", branch=source).save()
+        restricted = ln.models.RecordBlock(
+            record=record, content="restricted", kind="readme", branch=source
+        ).save()
+    table = connection.ops.quote_name(restricted._meta.db_table)
+    # Like an RLS UPDATE policy, the trigger silently skips a readable record.
+    with connection.cursor() as cursor:
+        if connection.vendor == "postgresql":
+            cursor.execute(
+                "CREATE FUNCTION test_merge_skip() RETURNS trigger LANGUAGE plpgsql AS $$ "
+                f"BEGIN IF OLD.id = {restricted.pk} THEN RETURN NULL; END IF; "
+                "RETURN NEW; END; $$"
+            )
+            cursor.execute(
+                f"CREATE TRIGGER test_merge_skip BEFORE UPDATE OF branch_id ON {table} "
+                "FOR EACH ROW EXECUTE FUNCTION test_merge_skip()"
+            )
+        else:
+            cursor.execute(
+                f"CREATE TEMP TRIGGER test_merge_skip BEFORE UPDATE OF branch_id ON {table} "
+                f"WHEN OLD.id = {restricted.pk} BEGIN SELECT RAISE(IGNORE); END"
+            )
+    try:
+        with pytest.raises(PermissionError, match="write access"):
+            ln.setup.merge(source, target=target)
+        for item in (feature, restricted, label):
+            item.refresh_from_db()
+            assert item.branch_id == source.id
+        source.refresh_from_db()
+        assert source.status == "standalone"
+    finally:
+        with connection.cursor() as cursor:
+            cursor.execute(
+                f"DROP TRIGGER test_merge_skip ON {table}"
+                if connection.vendor == "postgresql"
+                else "DROP TRIGGER test_merge_skip"
+            )
+            if connection.vendor == "postgresql":
+                cursor.execute("DROP FUNCTION test_merge_skip()")
+        if restricted_model == "RecordBlock":
+            record.delete(permanent=True)
+
+
 def test_merge_branch_into_main():
     """Merge a branch into main: create branch, add ULabel, switch to main, merge."""
     branch = ln.Branch(name="test_merge_branch").save()

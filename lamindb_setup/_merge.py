@@ -6,6 +6,8 @@ from .core._logger import logger
 from .core._settings import settings
 
 if TYPE_CHECKING:
+    from django.db.backends.utils import CursorWrapper
+    from django.db.models import Model
     from lamindb.models import Branch
 
 
@@ -26,10 +28,67 @@ def _resolve_branch(branch: str | Branch) -> Branch:
     return branch_record
 
 
+def _check_merge_permissions(
+    cursor: CursorWrapper, models: list[type[Model]], source: Branch
+) -> None:
+    """Check PostgreSQL update policies for every readable merge candidate."""
+    from lamindb import Space
+
+    checks = []
+    params = []
+    # The source branch must also be writable to mark it as merged.
+    candidates = [(model, "branch_id") for model in models] + [(type(source), "id")]
+    for model, column in candidates:
+        table = cursor.db.ops.quote_name(model._meta.db_table)
+        space = (
+            "space_id"
+            if any(field.column == "space_id" for field in model._meta.concrete_fields)
+            else "NULL::smallint"
+        )
+        # FOR UPDATE applies the database's UPDATE USING policies, including
+        # record grants, locks, and permissions inherited from parent records.
+        checks.append(
+            f"SELECT %s, {space}, COUNT(*) FROM {table} "
+            f"WHERE {column} = %s AND id NOT IN "
+            f"(SELECT id FROM {table} WHERE {column} = %s FOR UPDATE) GROUP BY 2"
+        )
+        params.extend([model._meta.label, source.id, source.id])
+    cursor.execute(" UNION ALL ".join(checks), params)
+    denied = cursor.fetchall()
+    if not denied:
+        return
+
+    space_ids = {space_id for _, space_id, _ in denied if space_id is not None}
+    space_names = dict(Space.objects.filter(id__in=space_ids).values_list("id", "name"))
+    details = []
+    for registry, space_id, count in denied:
+        location = (
+            f" in space '{space_names.get(space_id, space_id)}'"
+            if space_id is not None
+            else ""
+        )
+        details.append(
+            f"{registry}: {count} record{'s' if count != 1 else ''}{location}"
+        )
+    raise PermissionError(
+        f"Cannot merge branch '{source.name}': cannot update "
+        + "; ".join(details)
+        + ". Check write access and record locks."
+    )
+
+
 def merge(branch: str | Branch, *, target: str | Branch | None = None) -> None:
-    """Merge a source branch into a target branch."""
+    """Merge a source branch into a target branch atomically.
+
+    PostgreSQL update permissions are checked before moving any readable source
+    records. Any failure during the merge rolls back all changes.
+
+    Raises:
+        PermissionError: If readable source records cannot be moved. All changes
+            are rolled back and the source branch is left unmerged.
+    """
     from django.apps import apps
-    from django.db import DatabaseError, connection
+    from django.db import connection, transaction
     from lamindb.models import SQLRecord
     from lamindb.models._is_versioned import (
         IsVersioned,
@@ -62,33 +121,38 @@ def merge(branch: str | Branch, *, target: str | Branch | None = None) -> None:
     vendor = connection.vendor
     quoted_tables = [connection.ops.quote_name(m._meta.db_table) for m in models]
 
-    with connection.cursor() as cursor:
-        if vendor == "postgresql":
+    with transaction.atomic():
+        with connection.cursor() as cursor:
             statements = [
                 f"UPDATE {tbl} SET branch_id = %s WHERE branch_id = %s"
                 for tbl in quoted_tables
             ]
-            sql = "BEGIN; " + "; ".join(statements) + "; COMMIT;"
-            params = [target_branch.id, source.id] * len(quoted_tables)
-            try:
-                cursor.execute(sql, params)
-            except DatabaseError as e:
-                logger.error(f"Merge failed: {e}")
-                raise
-        else:
-            from django.db import transaction
+            params = [target_branch.id, source.id]
+            if vendor == "postgresql":
+                _check_merge_permissions(cursor, models, source)
+                cursor.execute("; ".join(statements), params * len(statements))
+            else:
+                for statement in statements:
+                    cursor.execute(statement, params)
 
-            with transaction.atomic():
-                for tbl in quoted_tables:
-                    cursor.execute(
-                        f"UPDATE {tbl} SET branch_id = %s WHERE branch_id = %s",
-                        [target_branch.id, source.id],
-                    )
+            # Permissions may change after preflight, and triggers can skip writes.
+            # Check every participating table before committing any changes.
+            remaining_records = " UNION ALL ".join(
+                f"SELECT 1 FROM {tbl} WHERE branch_id = %s" for tbl in quoted_tables
+            )
+            cursor.execute(
+                f"SELECT EXISTS({remaining_records})", [source.id] * len(quoted_tables)
+            )
+            if cursor.fetchone()[0]:
+                raise PermissionError(
+                    f"Cannot merge branch '{source.name}': some records could not be "
+                    "moved. Check write access to all source records."
+                )
 
-    versioned_models = [m for m in models if issubclass(m, IsVersioned)]
-    for model in versioned_models:
-        reconcile_is_latest_within_branch(model, branch_id=target_branch.id)
+        versioned_models = [m for m in models if issubclass(m, IsVersioned)]
+        for model in versioned_models:
+            reconcile_is_latest_within_branch(model, branch_id=target_branch.id)
 
-    source._status_code = -1  # merged
-    source.save(update_fields=["_status_code"])
+        source._status_code = -1  # merged
+        source.save(update_fields=["_status_code"])
     logger.important(f"merged branch '{source.name}' into '{target_branch.name}'")
