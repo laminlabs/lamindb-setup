@@ -1280,6 +1280,14 @@ def get_stat_file_cloud(stat: dict, protocol: str, accessor: str | None = None):
     return size, hash, hash_type
 
 
+# identifies directory markers in the object list
+# this is mainly for gs where fs.find(..., detail=True) returns directory markers
+def _is_dir_marker(object_stat: dict) -> bool:
+    if "size" not in object_stat or "name" not in object_stat:
+        return False
+    return object_stat["size"] == 0 and object_stat["name"].endswith("/")
+
+
 def get_stat_dir_cloud(path: UPath) -> tuple[int, str | None, str | None, int]:
     protocol = path.protocol
     if protocol in {"http", "https"}:
@@ -1309,9 +1317,10 @@ def get_stat_dir_cloud(path: UPath) -> tuple[int, str | None, str | None, int]:
     hashes = []
     n_files = 0
     for object in objects:
-        # Exclude folder markers from the count, preserving the existing hash.
-        if not (object["size"] == 0 and object["name"].endswith("/")):
-            n_files += 1
+        # exclude folder markers
+        if _is_dir_marker(object):
+            continue
+        n_files += 1
         if compute_list_hash:
             size, fhash, _ = get_stat_file_cloud(object, protocol, accessor)
             sizes.append(size)
