@@ -1383,6 +1383,10 @@ def check_storage_is_empty(
         if not root_string.endswith("/"):
             root_string += "/"
         directory_string = root_string + ".lamindb"
+    # find() can return directory markers. gcsfs includes zero-size
+    # directory entries, and S3 can store zero-byte keys ending in "/".
+    # Those are real objects, so they count when deciding whether the
+    # location can be deleted. File stats and synchronize_to skip them.
     objects = root_upath.fs.find(directory_string)
     if account_for_sqlite_file:
         # ignore exclusion dir for cloud sqlite
