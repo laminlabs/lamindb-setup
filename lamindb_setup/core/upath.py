@@ -1280,6 +1280,16 @@ def get_stat_file_cloud(stat: dict, protocol: str, accessor: str | None = None):
     return size, hash, hash_type
 
 
+# identifies directory markers in the object list
+# this is mainly for gs where fs.find(..., detail=True) returns directory markers
+def _is_dir_marker(object_stat: dict) -> bool:
+    if "type" in object_stat and object_stat["type"] == "directory":
+        return True
+    if "size" not in object_stat or "name" not in object_stat:
+        return False
+    return object_stat["size"] == 0 and object_stat["name"].endswith("/")
+
+
 def get_stat_dir_cloud(path: UPath) -> tuple[int, str | None, str | None, int]:
     protocol = path.protocol
     if protocol in {"http", "https"}:
@@ -1307,7 +1317,12 @@ def get_stat_dir_cloud(path: UPath) -> tuple[int, str | None, str | None, int]:
         compute_list_hash = False
     sizes = []
     hashes = []
+    n_files = 0
     for object in objects:
+        # exclude folder markers
+        if _is_dir_marker(object):
+            continue
+        n_files += 1
         if compute_list_hash:
             size, fhash, _ = get_stat_file_cloud(object, protocol, accessor)
             sizes.append(size)
@@ -1319,7 +1334,6 @@ def get_stat_dir_cloud(path: UPath) -> tuple[int, str | None, str | None, int]:
         else:
             sizes.append(object["size"])
     size = sum(sizes)
-    n_files = len(sizes)
     if compute_list_hash:
         hash, hash_type = hash_from_hashes_list(hashes), "md5-d"
     return size, hash, hash_type, n_files
