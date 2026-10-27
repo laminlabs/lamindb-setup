@@ -18,10 +18,10 @@ def merge_records(request):
 
 
 @pytest.mark.parametrize(
-    "restriction", ["space", "record", "block", "branch", "locked"]
+    "restriction", ["space", "record", "block", "branch", "locked", "target"]
 )
-def test_merge_preflight_checks_rls_before_writes(restriction, request):
-    from django.db import connection
+def test_merge_rolls_back_rls_restrictions(restriction, request):
+    from django.db import IntegrityError, ProgrammingError, connection
 
     if connection.vendor != "postgresql":
         pytest.skip("PostgreSQL row-level security is required")
@@ -33,14 +33,14 @@ def test_merge_preflight_checks_rls_before_writes(restriction, request):
     source, target, feature, label = request.getfixturevalue("merge_records")
     restricted = feature
     if restriction == "block":
-        record = ln.Record(name="merge-preflight-block", branch=source).save()
+        record = ln.Record(name="merge-restricted-block", branch=source).save()
         restricted = ln.models.RecordBlock(
             record=record, content="restricted", kind="readme", branch=source
         ).save()
     elif restriction == "branch":
         restricted = source
     table = connection.ops.quote_name(restricted._meta.db_table)
-    role = connection.ops.quote_name(f"merge_preflight_{source.uid}")
+    role = connection.ops.quote_name(f"merge_permissions_{source.uid}")
     condition = f"id <> {restricted.pk}"
     grant_condition = f"id = {restricted.pk}"
     if restriction == "space":
@@ -53,35 +53,33 @@ def test_merge_preflight_checks_rls_before_writes(restriction, request):
     elif restriction == "locked":
         ln.Feature.objects.filter(pk=feature.pk).update(is_locked=True)
         condition = "NOT is_locked"
-    updates = []
-
-    def capture_updates(execute, sql, params, many, context):
-        if sql.lstrip().upper().startswith("UPDATE "):
-            updates.append(sql)
-        return execute(sql, params, many, context)
-
+    check = "true"
+    if restriction == "target":
+        condition = "true"
+        check = f"branch_id <> {target.id}"
     with connection.cursor() as cursor:
         cursor.execute(f"CREATE ROLE {role} NOLOGIN")
         cursor.execute(f"GRANT USAGE ON SCHEMA public TO {role}")
         cursor.execute(f"GRANT SELECT, UPDATE ON ALL TABLES IN SCHEMA public TO {role}")
         cursor.execute(f"ALTER TABLE {table} ENABLE ROW LEVEL SECURITY")
         cursor.execute(
-            f"CREATE POLICY merge_preflight_read ON {table} FOR SELECT TO {role} USING (true)"
+            f"CREATE POLICY merge_permissions_read ON {table} FOR SELECT TO {role} USING (true)"
         )
         cursor.execute(
-            f"CREATE POLICY merge_preflight_write ON {table} FOR UPDATE TO {role} "
-            f"USING ({condition}) WITH CHECK (true)"
+            f"CREATE POLICY merge_permissions_write ON {table} FOR UPDATE TO {role} "
+            f"USING ({condition}) WITH CHECK ({check})"
         )
     try:
         with connection.cursor() as cursor:
             cursor.execute(f"SET ROLE {role}")
-        with connection.execute_wrapper(capture_updates):
-            with pytest.raises(PermissionError, match="write access") as error:
-                ln.setup.merge(source, target=target)
-        assert updates == []
-        assert restricted._meta.label in str(error.value)
-        if restriction != "block":
-            assert f"space '{restricted.space.name}'" in str(error.value)
+        if restriction == "branch":
+            error, message = PermissionError, "cannot update the source branch"
+        elif restriction == "target":
+            error, message = ProgrammingError, "row-level security policy"
+        else:
+            error, message = IntegrityError, "source records remain"
+        with pytest.raises(error, match=message):
+            ln.setup.merge(source, target=target)
         for item in (feature, restricted, label):
             item.refresh_from_db()
         assert feature.branch_id == source.id
@@ -98,7 +96,7 @@ def test_merge_preflight_checks_rls_before_writes(restriction, request):
                 ln.Feature.objects.filter(pk=feature.pk).update(is_locked=False)
             else:
                 cursor.execute(
-                    f"CREATE POLICY merge_preflight_grant ON {table} FOR UPDATE TO {role} "
+                    f"CREATE POLICY merge_permissions_grant ON {table} FOR UPDATE TO {role} "
                     f"USING ({grant_condition}) WITH CHECK (true)"
                 )
             cursor.execute(f"SET ROLE {role}")
@@ -117,7 +115,7 @@ def test_merge_preflight_checks_rls_before_writes(restriction, request):
             cursor.execute("RESET ROLE")
             for policy in ("read", "write", "grant"):
                 cursor.execute(
-                    f"DROP POLICY IF EXISTS merge_preflight_{policy} ON {table}"
+                    f"DROP POLICY IF EXISTS merge_permissions_{policy} ON {table}"
                 )
             cursor.execute(f"ALTER TABLE {table} DISABLE ROW LEVEL SECURITY")
             cursor.execute(f"DROP OWNED BY {role}")
@@ -192,7 +190,8 @@ def test_merge_handles_hidden_records(registry, hidden_branch, request):
             record.delete(permanent=True)
 
 
-def test_merge_preflight_requires_hidden_record_guard(request):
+@pytest.mark.parametrize("restricted", [False, True])
+def test_merge_requires_database_guard(restricted, request):
     from django.db import connection
 
     if connection.vendor != "postgresql":
@@ -208,8 +207,9 @@ def test_merge_preflight_requires_hidden_record_guard(request):
             "ALTER TABLE lamindb_branch DISABLE TRIGGER lamindb_require_empty_merged_branch"
         )
     try:
-        with connection.cursor() as cursor:
-            cursor.execute(f"SET ROLE {role}")
+        if restricted:
+            with connection.cursor() as cursor:
+                cursor.execute(f"SET ROLE {role}")
         with pytest.raises(PermissionError, match="migrate the instance"):
             ln.setup.merge(source, target=target)
     finally:
@@ -296,7 +296,7 @@ def test_merge_respects_callers_transaction(merge_records):
 
 @pytest.mark.parametrize("restricted_model", ["Feature", "RecordBlock"])
 def test_merge_rolls_back_silently_skipped_updates(restricted_model, merge_records):
-    from django.db import connection
+    from django.db import IntegrityError, connection
 
     source, target, feature, label = merge_records
     if restricted_model == "Feature":
@@ -325,7 +325,12 @@ def test_merge_rolls_back_silently_skipped_updates(restricted_model, merge_recor
                 f"WHEN OLD.id = {restricted.pk} BEGIN SELECT RAISE(IGNORE); END"
             )
     try:
-        with pytest.raises(PermissionError, match="write access"):
+        error, message = (
+            (IntegrityError, "source records remain")
+            if connection.vendor == "postgresql"
+            else (PermissionError, "write access")
+        )
+        with pytest.raises(error, match=message):
             ln.setup.merge(source, target=target)
         for item in (feature, restricted, label):
             item.refresh_from_db()

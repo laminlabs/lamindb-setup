@@ -6,8 +6,6 @@ from .core._logger import logger
 from .core._settings import settings
 
 if TYPE_CHECKING:
-    from django.db.backends.utils import CursorWrapper
-    from django.db.models import Model
     from lamindb.models import Branch
 
 
@@ -28,84 +26,17 @@ def _resolve_branch(branch: str | Branch) -> Branch:
     return branch_record
 
 
-def _check_merge_permissions(
-    cursor: CursorWrapper, models: list[type[Model]], source: Branch
-) -> None:
-    """Check PostgreSQL update policies for every readable merge candidate."""
-    from lamindb import Space
-
-    # RLS can hide source records from both preflight and the residual check.
-    # Restricted connections require the database's privileged completion guard.
-    cursor.execute(
-        "SELECT EXISTS (SELECT 1 FROM pg_trigger "
-        "WHERE tgrelid = %s::regclass "
-        "AND tgname = 'lamindb_require_empty_merged_branch' "
-        "AND tgenabled IN ('O', 'A')) "
-        "OR NOT EXISTS (SELECT 1 FROM unnest(%s::text[]) AS tables(name) "
-        "WHERE row_security_active(name::regclass))",
-        [type(source)._meta.db_table, [model._meta.db_table for model in models]],
-    )
-    if not cursor.fetchone()[0]:
-        raise PermissionError(
-            "Cannot merge safely with row-level security until the database is "
-            "updated. Ask an administrator to upgrade LaminDB and migrate the instance."
-        )
-
-    checks = []
-    params = []
-    # The source branch must also be writable to mark it as merged.
-    candidates = [(model, "branch_id") for model in models] + [(type(source), "id")]
-    for model, column in candidates:
-        table = cursor.db.ops.quote_name(model._meta.db_table)
-        space = (
-            "space_id"
-            if any(field.column == "space_id" for field in model._meta.concrete_fields)
-            else "NULL::smallint"
-        )
-        # FOR UPDATE applies the database's UPDATE USING policies, including
-        # record grants, locks, and permissions inherited from parent records.
-        checks.append(
-            f"SELECT %s, {space}, COUNT(*) FROM {table} "
-            f"WHERE {column} = %s AND id NOT IN "
-            f"(SELECT id FROM {table} WHERE {column} = %s FOR UPDATE) GROUP BY 2"
-        )
-        params.extend([model._meta.label, source.id, source.id])
-    cursor.execute(" UNION ALL ".join(checks), params)
-    denied = cursor.fetchall()
-    if not denied:
-        return
-
-    space_ids = {space_id for _, space_id, _ in denied if space_id is not None}
-    space_names = dict(Space.objects.filter(id__in=space_ids).values_list("id", "name"))
-    details = []
-    for registry, space_id, count in denied:
-        location = (
-            f" in space '{space_names.get(space_id, space_id)}'"
-            if space_id is not None
-            else ""
-        )
-        details.append(
-            f"{registry}: {count} record{'s' if count != 1 else ''}{location}"
-        )
-    raise PermissionError(
-        f"Cannot merge branch '{source.name}': cannot update "
-        + "; ".join(details)
-        + ". Check write access and record locks."
-    )
-
-
 def merge(branch: str | Branch, *, target: str | Branch | None = None) -> None:
     """Merge a source branch into a target branch atomically.
 
-    PostgreSQL update permissions are checked before moving readable source
-    records. A database guard also rejects completion if hidden source records
-    remain. Any failure during the merge rolls back all changes.
+    Any failure rolls back all changes. PostgreSQL requires a database guard
+    that rejects completion if any source records remain, including hidden ones.
 
     Raises:
-        PermissionError: If readable source records cannot be moved. All changes
-            are rolled back and the source branch is left unmerged.
-        django.db.IntegrityError: If the database detects hidden source records
-            remaining before the branch is marked merged.
+        PermissionError: If the PostgreSQL database needs migration, the source
+            branch cannot be updated, or records remain on SQLite.
+        django.db.DatabaseError: If the database rejects an update or detects
+            source records remaining before the branch is marked merged.
     """
     from django.apps import apps
     from django.db import connection, transaction
@@ -149,25 +80,46 @@ def merge(branch: str | Branch, *, target: str | Branch | None = None) -> None:
             ]
             params = [target_branch.id, source.id]
             if vendor == "postgresql":
-                _check_merge_permissions(cursor, models, source)
+                cursor.execute(
+                    "SELECT EXISTS (SELECT 1 FROM pg_trigger "
+                    "WHERE tgrelid = %s::regclass "
+                    "AND tgname = 'lamindb_require_empty_merged_branch' "
+                    "AND tgenabled IN ('O', 'A'))",
+                    [type(source)._meta.db_table],
+                )
+                if not cursor.fetchone()[0]:
+                    raise PermissionError(
+                        "Cannot merge safely until the database is updated. "
+                        "Ask an administrator to upgrade LaminDB and migrate the instance."
+                    )
+                # Serialize merges from this branch until the transaction completes.
+                cursor.execute(
+                    f"SELECT id FROM {connection.ops.quote_name(type(source)._meta.db_table)} "
+                    "WHERE id = %s FOR UPDATE",
+                    [source.id],
+                )
+                if cursor.fetchone() is None:
+                    raise PermissionError(
+                        f"Cannot merge branch '{source.name}': cannot update the source branch."
+                    )
                 cursor.execute("; ".join(statements), params * len(statements))
             else:
                 for statement in statements:
                     cursor.execute(statement, params)
 
-            # Permissions may change after preflight, and triggers can skip writes.
-            # Check every participating table before committing any changes.
-            remaining_records = " UNION ALL ".join(
-                f"SELECT 1 FROM {tbl} WHERE branch_id = %s" for tbl in quoted_tables
-            )
-            cursor.execute(
-                f"SELECT EXISTS({remaining_records})", [source.id] * len(quoted_tables)
-            )
-            if cursor.fetchone()[0]:
-                raise PermissionError(
-                    f"Cannot merge branch '{source.name}': some records could not be "
-                    "moved. Check write access to all source records."
+                # SQLite has no database completion guard.
+                remaining_records = " UNION ALL ".join(
+                    f"SELECT 1 FROM {tbl} WHERE branch_id = %s" for tbl in quoted_tables
                 )
+                cursor.execute(
+                    f"SELECT EXISTS({remaining_records})",
+                    [source.id] * len(quoted_tables),
+                )
+                if cursor.fetchone()[0]:
+                    raise PermissionError(
+                        f"Cannot merge branch '{source.name}': some records could not be "
+                        "moved. Check write access to all source records."
+                    )
 
         versioned_models = [m for m in models if issubclass(m, IsVersioned)]
         for model in versioned_models:
