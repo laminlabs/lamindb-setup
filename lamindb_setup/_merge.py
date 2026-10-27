@@ -31,12 +31,11 @@ def merge(branch: str | Branch, *, target: str | Branch | None = None) -> None:
 
     Any failure rolls back all changes. PostgreSQL requires a database guard
     that rejects completion if any source records remain, including hidden ones.
+    Database updates or the completion guard can raise `django.db.DatabaseError`.
 
     Raises:
         PermissionError: If the PostgreSQL database needs migration, the source
             branch cannot be updated, or records remain on SQLite.
-        django.db.DatabaseError: If the database rejects an update or detects
-            source records remaining before the branch is marked merged.
     """
     from django.apps import apps
     from django.db import connection, transaction
@@ -125,6 +124,11 @@ def merge(branch: str | Branch, *, target: str | Branch | None = None) -> None:
         for model in versioned_models:
             reconcile_is_latest_within_branch(model, branch_id=target_branch.id)
 
-        source._status_code = -1  # merged
-        source.save(update_fields=["_status_code"])
+        previous_status = source._status_code
+        try:
+            source._status_code = -1  # merged
+            source.save(update_fields=["_status_code"])
+        finally:
+            source._status_code = previous_status
+    source._status_code = -1  # Publish the new status only after a successful merge.
     logger.important(f"merged branch '{source.name}' into '{target_branch.name}'")

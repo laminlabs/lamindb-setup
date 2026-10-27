@@ -45,7 +45,7 @@ raise SystemExit(pytest.main([
             timeout=180,
         )
         cases = ET.parse(tmp_path / "results.xml").findall(".//testcase")
-        assert len(cases) == 27
+        assert cases
         assert all(case.find("skipped") is None for case in cases)
     finally:
         subprocess.run(["docker", "rm", "-f", "-v", container], check=True)

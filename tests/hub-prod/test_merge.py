@@ -167,6 +167,7 @@ def test_merge_handles_hidden_records(registry, hidden_branch, request):
         if hidden_branch == "source":
             with pytest.raises(IntegrityError, match="source records remain"):
                 ln.setup.merge(source, target=target)
+            assert source.status == "standalone"
         else:
             ln.setup.merge(source, target=target)
         with connection.cursor() as cursor:
@@ -234,6 +235,8 @@ def test_merge_rolls_back_finalization_errors(monkeypatch, failure_stage):
     from lamindb.models import _is_versioned
 
     source = ln.Branch(name=f"merge-finalization-{failure_stage}").save()
+    source.status = "draft"
+    source.save()
     target = ln.Branch.get(name="main")
     original = ln.Transform(
         key=f"merge-finalization-{failure_stage}", kind="pipeline", branch=target
@@ -266,10 +269,11 @@ def test_merge_rolls_back_finalization_errors(monkeypatch, failure_stage):
                 patch.setattr(ln.Branch, "save", fail_status_save)
             with pytest.raises(RuntimeError, match="merge finalization failed"):
                 ln.setup.merge(source, target=target)
+        assert source.status == "draft"
         source.refresh_from_db()
         original.refresh_from_db()
         revision.refresh_from_db()
-        assert source.status == "standalone"
+        assert source.status == "draft"
         assert original.is_latest
         assert revision.is_latest
         assert revision.branch_id == source.id
@@ -420,6 +424,7 @@ def test_merge_with_branch_objects():
     assert ulabel.branch == source_branch
 
     ln.setup.merge(source_branch, target=main_branch)
+    assert source_branch.status == "merged"
 
     ulabel.refresh_from_db()
     assert ulabel.branch == main_branch
