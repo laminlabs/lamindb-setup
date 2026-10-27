@@ -1283,6 +1283,8 @@ def get_stat_file_cloud(stat: dict, protocol: str, accessor: str | None = None):
 # identifies directory markers in the object list
 # this is mainly for gs where fs.find(..., detail=True) returns directory markers
 def _is_dir_marker(object_stat: dict) -> bool:
+    if "type" in object_stat and object_stat["type"] == "directory":
+        return True
     if "size" not in object_stat or "name" not in object_stat:
         return False
     return object_stat["size"] == 0 and object_stat["name"].endswith("/")
