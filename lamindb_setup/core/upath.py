@@ -10,6 +10,7 @@ import builtins
 import math
 import os
 import re
+import shutil
 import time
 import warnings
 from collections import defaultdict
@@ -517,6 +518,16 @@ def upload_from(
         return self
 
 
+# identifies directory markers in the object list
+# this is mainly for gs where fs.find(..., detail=True) returns directory markers
+def _is_dir_marker(object_stat: dict) -> bool:
+    if "type" in object_stat and object_stat["type"] == "directory":
+        return True
+    if "size" not in object_stat or "name" not in object_stat:
+        return False
+    return object_stat["size"] == 0 and object_stat["name"].endswith("/")
+
+
 def synchronize_to(
     origin: UPath,
     destination: Path,
@@ -584,6 +595,7 @@ def synchronize_to(
             for file, stat in origin.fs.find(
                 origin_str, detail=True, **stat_kwargs
             ).items()
+            if not _is_dir_marker(stat)
         }
         for cloud_path in cloud_stats:
             file_key = PurePosixPath(cloud_path).relative_to(origin.path).as_posix()
@@ -591,6 +603,20 @@ def synchronize_to(
     else:
         cloud_stats = {origin.path: get_modified(cloud_info)}
         local_paths.append(destination)
+
+    # No real files in the cloud folder. Leave an empty local directory.
+    if is_dir and not cloud_stats:
+        destination_is_dir = destination.is_dir()
+        if destination_is_dir and next(destination.iterdir(), None) is None:
+            return False
+        if just_check:
+            return True
+        if destination_is_dir:
+            shutil.rmtree(destination)
+        elif destination.exists():
+            destination.unlink()
+        destination.mkdir(parents=True)
+        return True
 
     local_paths_all: dict[Path, os.stat_result] = {}
     if destination.exists():
@@ -1280,16 +1306,6 @@ def get_stat_file_cloud(stat: dict, protocol: str, accessor: str | None = None):
     return size, hash, hash_type
 
 
-# identifies directory markers in the object list
-# this is mainly for gs where fs.find(..., detail=True) returns directory markers
-def _is_dir_marker(object_stat: dict) -> bool:
-    if "type" in object_stat and object_stat["type"] == "directory":
-        return True
-    if "size" not in object_stat or "name" not in object_stat:
-        return False
-    return object_stat["size"] == 0 and object_stat["name"].endswith("/")
-
-
 def get_stat_dir_cloud(path: UPath) -> tuple[int, str | None, str | None, int]:
     protocol = path.protocol
     if protocol in {"http", "https"}:
@@ -1367,6 +1383,10 @@ def check_storage_is_empty(
         if not root_string.endswith("/"):
             root_string += "/"
         directory_string = root_string + ".lamindb"
+    # find() can return directory markers. gcsfs includes zero-size
+    # directory entries, and S3 can store zero-byte keys ending in "/".
+    # Those are real objects, so they count when deciding whether the
+    # location can be deleted. File stats and synchronize_to skip them.
     objects = root_upath.fs.find(directory_string)
     if account_for_sqlite_file:
         # ignore exclusion dir for cloud sqlite
