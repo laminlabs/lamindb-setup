@@ -129,6 +129,106 @@ def test_merge_preflight_checks_rls_before_writes(restriction, request):
             feature.refresh_from_db()
 
 
+@pytest.mark.parametrize("registry", ["Feature", "RecordBlock"])
+@pytest.mark.parametrize("hidden_branch", ["source", "target"])
+def test_merge_handles_hidden_records(registry, hidden_branch, request):
+    from django.db import IntegrityError, connection
+
+    if connection.vendor != "postgresql":
+        pytest.skip("PostgreSQL row-level security is required")
+    source, target, feature, label = request.getfixturevalue("merge_records")
+    branch = source if hidden_branch == "source" else target
+    if registry == "Feature":
+        restricted = feature
+        restricted.branch = branch
+        restricted.save()
+    else:
+        record = ln.Record(name="merge-hidden-block", branch=branch).save()
+        restricted = ln.models.RecordBlock(
+            record=record, content="hidden", kind="readme", branch=branch
+        ).save()
+    table = connection.ops.quote_name(restricted._meta.db_table)
+    role = connection.ops.quote_name(f"merge_hidden_{source.uid}")
+    with connection.cursor() as cursor:
+        cursor.execute(f"CREATE ROLE {role} NOLOGIN")
+        cursor.execute(f"GRANT USAGE ON SCHEMA public TO {role}")
+        cursor.execute(f"GRANT SELECT, UPDATE ON ALL TABLES IN SCHEMA public TO {role}")
+        cursor.execute(f"ALTER TABLE {table} ENABLE ROW LEVEL SECURITY")
+        cursor.execute(
+            f"CREATE POLICY merge_hidden_read ON {table} FOR SELECT TO {role} "
+            f"USING (id <> {restricted.pk})"
+        )
+        cursor.execute(
+            f"CREATE POLICY merge_hidden_write ON {table} FOR UPDATE TO {role} "
+            "USING (true) WITH CHECK (true)"
+        )
+    try:
+        with connection.cursor() as cursor:
+            cursor.execute(f"SET ROLE {role}")
+        assert not type(restricted).objects.filter(pk=restricted.pk).exists()
+        if hidden_branch == "source":
+            with pytest.raises(IntegrityError, match="source records remain"):
+                ln.setup.merge(source, target=target)
+        else:
+            ln.setup.merge(source, target=target)
+        with connection.cursor() as cursor:
+            cursor.execute("RESET ROLE")
+        source.refresh_from_db()
+        assert source.status == (
+            "standalone" if hidden_branch == "source" else "merged"
+        )
+        for item in (feature, label, restricted):
+            item.refresh_from_db()
+            assert item.branch_id == branch.id
+    finally:
+        with connection.cursor() as cursor:
+            cursor.execute("RESET ROLE")
+            cursor.execute(f"DROP POLICY merge_hidden_read ON {table}")
+            cursor.execute(f"DROP POLICY merge_hidden_write ON {table}")
+            cursor.execute(f"ALTER TABLE {table} DISABLE ROW LEVEL SECURITY")
+            cursor.execute(f"DROP OWNED BY {role}")
+            cursor.execute(f"DROP ROLE {role}")
+        if registry == "RecordBlock":
+            record.delete(permanent=True)
+
+
+def test_merge_preflight_requires_hidden_record_guard(request):
+    from django.db import connection
+
+    if connection.vendor != "postgresql":
+        pytest.skip("PostgreSQL row-level security is required")
+    source, target, feature, label = request.getfixturevalue("merge_records")
+    role = connection.ops.quote_name(f"merge_unguarded_{source.uid}")
+    with connection.cursor() as cursor:
+        cursor.execute(f"CREATE ROLE {role} NOLOGIN")
+        cursor.execute(f"GRANT USAGE ON SCHEMA public TO {role}")
+        cursor.execute(f"GRANT SELECT, UPDATE ON ALL TABLES IN SCHEMA public TO {role}")
+        cursor.execute("ALTER TABLE lamindb_feature ENABLE ROW LEVEL SECURITY")
+        cursor.execute(
+            "ALTER TABLE lamindb_branch DISABLE TRIGGER lamindb_require_empty_merged_branch"
+        )
+    try:
+        with connection.cursor() as cursor:
+            cursor.execute(f"SET ROLE {role}")
+        with pytest.raises(PermissionError, match="migrate the instance"):
+            ln.setup.merge(source, target=target)
+    finally:
+        with connection.cursor() as cursor:
+            cursor.execute("RESET ROLE")
+            cursor.execute("ALTER TABLE lamindb_feature DISABLE ROW LEVEL SECURITY")
+            cursor.execute(
+                "ALTER TABLE lamindb_branch ENABLE TRIGGER lamindb_require_empty_merged_branch"
+            )
+            cursor.execute(f"DROP OWNED BY {role}")
+            cursor.execute(f"DROP ROLE {role}")
+    source.refresh_from_db()
+    feature.refresh_from_db()
+    label.refresh_from_db()
+    assert source.status == "standalone"
+    assert feature.branch_id == source.id
+    assert label.branch_id == source.id
+
+
 @pytest.mark.parametrize("failure_stage", ["reconciliation", "branch_status"])
 def test_merge_rolls_back_finalization_errors(monkeypatch, failure_stage):
     from lamindb.models import _is_versioned
@@ -248,6 +348,9 @@ def test_merge_rolls_back_silently_skipped_updates(restricted_model, merge_recor
 def test_merge_branch_into_main():
     """Merge a branch into main: create branch, add ULabel, switch to main, merge."""
     branch = ln.Branch(name="test_merge_branch").save()
+    annotation = ln.models.BranchBlock(
+        branch=branch, content="Keep this README", kind="readme"
+    ).save()
     assert branch.status == "standalone"
     ln.setup.switch(branch.name)
     assert ln.setup.settings.branch == branch
@@ -272,6 +375,8 @@ def test_merge_branch_into_main():
     # merged branch has status "merged"
     branch.refresh_from_db()
     assert branch.status == "merged"
+    annotation.refresh_from_db()
+    assert annotation.branch_id == branch.id
     # this is a merge call to check that branch.describe() works because it
     # has a custom describe method
     branch.describe(return_str=True)

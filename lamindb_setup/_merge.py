@@ -34,6 +34,23 @@ def _check_merge_permissions(
     """Check PostgreSQL update policies for every readable merge candidate."""
     from lamindb import Space
 
+    # RLS can hide source records from both preflight and the residual check.
+    # Restricted connections require the database's privileged completion guard.
+    cursor.execute(
+        "SELECT EXISTS (SELECT 1 FROM pg_trigger "
+        "WHERE tgrelid = %s::regclass "
+        "AND tgname = 'lamindb_require_empty_merged_branch' "
+        "AND tgenabled IN ('O', 'A')) "
+        "OR NOT EXISTS (SELECT 1 FROM unnest(%s::text[]) AS tables(name) "
+        "WHERE row_security_active(name::regclass))",
+        [type(source)._meta.db_table, [model._meta.db_table for model in models]],
+    )
+    if not cursor.fetchone()[0]:
+        raise PermissionError(
+            "Cannot merge safely with row-level security until the database is "
+            "updated. Ask an administrator to upgrade LaminDB and migrate the instance."
+        )
+
     checks = []
     params = []
     # The source branch must also be writable to mark it as merged.
@@ -80,12 +97,15 @@ def _check_merge_permissions(
 def merge(branch: str | Branch, *, target: str | Branch | None = None) -> None:
     """Merge a source branch into a target branch atomically.
 
-    PostgreSQL update permissions are checked before moving any readable source
-    records. Any failure during the merge rolls back all changes.
+    PostgreSQL update permissions are checked before moving readable source
+    records. A database guard also rejects completion if hidden source records
+    remain. Any failure during the merge rolls back all changes.
 
     Raises:
         PermissionError: If readable source records cannot be moved. All changes
             are rolled back and the source branch is left unmerged.
+        django.db.IntegrityError: If the database detects hidden source records
+            remaining before the branch is marked merged.
     """
     from django.apps import apps
     from django.db import connection, transaction
