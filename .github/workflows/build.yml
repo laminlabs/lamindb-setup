@@ -62,7 +62,9 @@ jobs:
           repository: laminlabs/laminhub
           token: ${{ secrets.GH_TOKEN_DEPLOY_LAMINAPP }}
           path: laminhub
-          ref: main
+          # The guarded merge tests require the companion hubmodule guard.
+          # Restore main after fix-partial-branch-merges is merged in LaminHub.
+          ref: cc7ae1f577d1fdc3c24e67338872a8a7008ca273
       - uses: actions/cache@v4
         with:
           path: ~/.cache/pre-commit
