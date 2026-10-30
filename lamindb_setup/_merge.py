@@ -30,15 +30,14 @@ def merge(branch: str | Branch, *, target: str | Branch | None = None) -> None:
     """Merge a source branch into a target branch atomically.
 
     Any failure rolls back all changes. PostgreSQL requires READ COMMITTED
-    semantics (also provided by READ UNCOMMITTED); snapshot isolation is rejected.
+    semantics (also provided by READ UNCOMMITTED). REPEATABLE READ and SERIALIZABLE
+    isolation raise `django.db.NotSupportedError`.
     PostgreSQL connections subject to row-level security require a hubmodule
     guard to detect hidden source records.
     Other connections check for remaining source records before completion.
     Database updates or the completion guard can raise `django.db.DatabaseError`.
 
     Raises:
-        django.db.NotSupportedError: If the PostgreSQL transaction uses
-            REPEATABLE READ or SERIALIZABLE isolation.
         PermissionError: If active row-level security requires a hubmodule update,
             the source branch cannot be updated, or source records remain.
     """
