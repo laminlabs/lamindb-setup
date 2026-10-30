@@ -79,6 +79,16 @@ def merge(branch: str | Branch, *, target: str | Branch | None = None) -> None:
             ]
             params = [target_branch.id, source.id]
             if vendor == "postgresql":
+                # Serialize source merges and prevent guard removal until commit.
+                cursor.execute(
+                    f"SELECT id FROM {connection.ops.quote_name(type(source)._meta.db_table)} "
+                    "WHERE id = %s FOR UPDATE",
+                    [source.id],
+                )
+                if cursor.fetchone() is None:
+                    raise PermissionError(
+                        f"Cannot merge branch '{source.name}': cannot update the source branch."
+                    )
                 cursor.execute(
                     "SELECT EXISTS (SELECT 1 FROM pg_trigger "
                     "WHERE tgrelid = %s::regclass "
@@ -90,16 +100,6 @@ def merge(branch: str | Branch, *, target: str | Branch | None = None) -> None:
                     raise PermissionError(
                         "Cannot merge safely until the database is updated. "
                         "Ask an administrator to upgrade LaminDB and migrate the instance."
-                    )
-                # Serialize merges from this branch until the transaction completes.
-                cursor.execute(
-                    f"SELECT id FROM {connection.ops.quote_name(type(source)._meta.db_table)} "
-                    "WHERE id = %s FOR UPDATE",
-                    [source.id],
-                )
-                if cursor.fetchone() is None:
-                    raise PermissionError(
-                        f"Cannot merge branch '{source.name}': cannot update the source branch."
                     )
                 cursor.execute("; ".join(statements), params * len(statements))
             else:

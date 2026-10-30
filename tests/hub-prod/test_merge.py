@@ -17,6 +17,54 @@ def merge_records(request):
         source.delete(permanent=True)
 
 
+def test_merge_prevents_concurrent_guard_removal(request):
+    from contextlib import closing
+
+    import psycopg2
+    from django.db import connection
+
+    if connection.vendor != "postgresql":
+        pytest.skip("PostgreSQL row-level security is required")
+    with connection.cursor() as cursor:
+        cursor.execute(
+            "SELECT EXISTS (SELECT 1 FROM pg_trigger "
+            "WHERE tgrelid = 'lamindb_branch'::regclass "
+            "AND tgname = 'lamindb_require_empty_merged_branch' "
+            "AND tgenabled IN ('O', 'A'))"
+        )
+        if not cursor.fetchone()[0]:
+            pytest.skip("The database merge guard is required")
+
+    source, target, feature, label = request.getfixturevalue("merge_records")
+    removal_attempted = False
+    with closing(psycopg2.connect(ln.setup.settings.instance.db)) as admin:
+
+        def remove_guard_after_check(execute, sql, params, many, context):
+            nonlocal removal_attempted
+            result = execute(sql, params, many, context)
+            if not removal_attempted and "FROM pg_trigger" in sql:
+                removal_attempted = True
+                # This is the same removal used by hubmodule deployment. The
+                # source lock must already protect the observed guard lifetime.
+                with admin, admin.cursor() as cursor:
+                    cursor.execute("SET LOCAL lock_timeout = '100ms'")
+                    with pytest.raises(psycopg2.errors.LockNotAvailable):
+                        cursor.execute(
+                            "DROP FUNCTION public.lamindb_require_empty_merged_branch() CASCADE"
+                        )
+            return result
+
+        with connection.execute_wrapper(remove_guard_after_check):
+            ln.setup.merge(source, target=target)
+
+    assert removal_attempted
+    source.refresh_from_db()
+    assert source.status == "merged"
+    for item in (feature, label):
+        item.refresh_from_db()
+        assert item.branch_id == target.id
+
+
 @pytest.mark.parametrize(
     "restriction", ["space", "record", "block", "branch", "locked", "target"]
 )
