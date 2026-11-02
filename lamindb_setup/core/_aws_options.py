@@ -37,11 +37,6 @@ def _keep_trailing_slash(path_str: str) -> str:
 PUBLIC_BUCKETS: tuple[str, ...] = ("cellxgene-data-public", "bionty-assets")
 
 
-# s3-comaptible endpoints managed by lamin
-# None means the standard aws s3 endpoint
-LAMIN_ENDPOINTS: tuple[str | None] = (None,)
-
-
 def _load_s3_anon_from_system_env() -> bool:
     """Load lamindb_s3_anon from system.env if it exists (avoids circular import)."""
     system_env = system_settings_file()
@@ -248,10 +243,9 @@ class AWSOptionsManager:
     def enrich_path(self, path: UPath, access_token: str | None = None) -> UPath:
         from upath import UPath
 
-        # ignore paths with non-lamin-managed endpoints
-        if (
-            endpoint_url := path.storage_options.get("endpoint_url", None)
-        ) not in LAMIN_ENDPOINTS:
+        # an explicit endpoint is not lamin-managed S3
+        endpoint_url = path.storage_options.get("endpoint_url", None)
+        if endpoint_url is not None:
             if "r2.cloudflarestorage.com" in endpoint_url:
                 # fixed_upload_size should always be True for R2
                 # this option is needed for correct uploads to R2
