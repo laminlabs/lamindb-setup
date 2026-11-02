@@ -67,13 +67,10 @@ def sanitize_root_user_input(root: AnyPathStr) -> UPath:
 
 
 def convert_sanitized_root_path_to_str(root_upath: UPath) -> str:
-    from ._aws_options import LAMIN_ENDPOINTS
-
     # embed endpoint_url into path string for storing and displaying
     if root_upath.protocol == "s3":
         endpoint_url = root_upath.storage_options.get("endpoint_url", None)
-        # LAMIN_ENDPOINTS include None
-        if endpoint_url not in LAMIN_ENDPOINTS:
+        if endpoint_url is not None:
             return f"s3://{root_upath.path.rstrip('/')}?endpoint_url={endpoint_url}"
     return root_upath.as_posix().rstrip("/")
 
