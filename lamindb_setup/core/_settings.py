@@ -330,11 +330,23 @@ class SetupSettings:
             idlike, name = self._home_space_path.read_text().split("\n")
         return idlike, name
 
+    def _get_configured_space(self) -> Space | None:
+        """Return the configured space, or `None` for the implicit `all` default.
+
+        A directory-specific selection takes precedence over the instance-wide
+        selection. An explicit selection of `all` also counts as configured.
+        """
+        if self._space_path.exists() or (
+            self.dev_dir is not None and self._home_space_path.exists()
+        ):
+            return self.space
+        return None
+
     @property
     # TODO: refactor so that it returns a BranchMock object
     # and we never need a DB request
     def space(self) -> Space:
-        """Default space."""
+        """Default space, falling back to `all` when no space is configured."""
         space_path = self._space_path
         if self._space_context_path != space_path:
             self._space = None
