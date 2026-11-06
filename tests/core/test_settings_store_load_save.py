@@ -6,6 +6,7 @@ vs optional fields, and additional (unknown) fields in the .env.
 
 from __future__ import annotations
 
+import sys
 from types import SimpleNamespace
 from typing import TYPE_CHECKING
 
@@ -27,6 +28,61 @@ if TYPE_CHECKING:
     from pathlib import Path
 
 PREFIX = "lamindb_instance_"
+
+
+@pytest.mark.parametrize(
+    ("in_dev_dir", "home_name", "local_name", "expected"),
+    [
+        (False, None, None, None),
+        (True, None, None, None),
+        (False, "Wetlab", None, "Wetlab"),
+        (True, "Wetlab", None, "Wetlab"),
+        (True, "Wetlab", "Analysis", "Analysis"),
+        (True, "Wetlab", "all", "all"),
+        (True, "all", None, "all"),
+    ],
+)
+def test_get_configured_space(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    in_dev_dir,
+    home_name,
+    local_name,
+    expected,
+):
+    """Distinguish implicit `all` from local or instance-wide selections."""
+    from lamindb_setup.core._settings import SetupSettings
+    from lamindb_setup.core._settings_store import local_current_space_file
+
+    records: dict[str | int, SimpleNamespace] = {
+        name: SimpleNamespace(uid=name, name=name)
+        for name in ("all", "Wetlab", "Analysis")
+    }
+    records[1] = records["all"]
+    monkeypatch.setitem(
+        sys.modules,
+        "lamindb",
+        SimpleNamespace(Space=SimpleNamespace(get=records.__getitem__)),
+    )
+    home = tmp_path / "home-space"
+    directory = tmp_path / "project"
+    monkeypatch.setattr(SetupSettings, "_home_space_path", property(lambda _: home))
+    monkeypatch.setattr(
+        SetupSettings, "dev_dir", property(lambda _: directory if in_dev_dir else None)
+    )
+    if home_name is not None:
+        home.write_text(f"{home_name}\n{home_name}")
+    if local_name is not None:
+        local = local_current_space_file(directory.resolve())
+        local.parent.mkdir(parents=True)
+        local.write_text(f"{local_name}\n{local_name}")
+    settings = SetupSettings()
+
+    # Reading the public default must not turn implicit `all` into a selection.
+    assert settings.space is records[expected or "all"]
+    configured = settings._get_configured_space()
+    assert configured is (None if expected is None else records[expected])
+
 
 # Sample .env content matching InstanceSettingsStore (current format).
 FULL_ENV_CONTENT = """lamindb_instance_owner=laminlabs
