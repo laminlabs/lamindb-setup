@@ -112,7 +112,10 @@ def _commit_if_open(connection, raw) -> None:
         return
     if status == TransactionStatus.INTRANS:
         try:
-            raw.commit()
+            # Deferred constraints fail here, outside the cursor that ran the SQL.
+            # Translate that into Django's IntegrityError or DatabaseError.
+            with connection.wrap_database_errors:
+                raw.commit()
         except Exception:
             _discard_connection(connection, raw)
             raise
@@ -147,6 +150,28 @@ def _execute_set_token(raw, token_value: str) -> None:
     with Cursor(raw) as cur:
         cur.execute("SELECT set_token(%s, true)", (token_value,))
         cur.fetchone()
+
+
+def _set_dbapi_rowcount(cursor, value: int) -> None:
+    dbapi_cursor = getattr(cursor, "cursor", cursor)
+    if hasattr(dbapi_cursor, "_rowcount"):
+        dbapi_cursor._rowcount = value
+
+
+def _execute_many_with_token(cursor, sql, params) -> None:
+    """Run one autocommit transaction per parameter set and sum the row counts.
+
+    psycopg's executemany() starts at 0 and adds each statement's affected rows,
+    including an empty parameter sequence. A plain execute() loop would leave
+    only the last statement's count.
+    """
+    total = 0
+    for param_set in params:
+        cursor.execute(sql, param_set)
+        rowcount = cursor.rowcount
+        if rowcount is not None and rowcount > 0:
+            total += rowcount
+    _set_dbapi_rowcount(cursor, total)
 
 
 def _run_commit_hooks(hooks) -> None:
@@ -264,11 +289,14 @@ class DBTokenManager:
             in_token_tx = getattr(connection, _LAMIN_TOKEN_TX, False)
             if in_token_tx or connection.in_atomic_block:
                 return execute(sql, params, many, context)
+            # set_autocommit(False) outside atomic() is a caller-managed
+            # transaction. Set the token inside it and leave commit to the caller.
+            if not connection.get_autocommit():
+                _execute_set_token(connection.connection, token.token)
+                return execute(sql, params, many, context)
             # Keep one autocommit transaction per parameter set.
             if many:
-                cursor = context["cursor"]
-                for param_set in params:
-                    cursor.execute(sql, param_set)
+                _execute_many_with_token(context["cursor"], sql, params)
                 return None
 
             # Resolve before BEGIN so a token refresh does not hold the transaction.
