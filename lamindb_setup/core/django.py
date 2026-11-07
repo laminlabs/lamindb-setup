@@ -13,7 +13,7 @@ import shutil
 from packaging import version
 from ..errors import CurrentInstanceNotConfigured
 from ._logger import logger
-from .db_token import DBToken, DBTokenManager, db_token_manager
+from ._db_token import DBToken, DBTokenManager, db_token_manager
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
@@ -377,7 +377,7 @@ def reset_django():
     connections.close_all()
 
     global db_token_manager
-    from . import db_token as db_token_module
+    from . import _db_token as db_token_module
 
     db_token_manager.reset()
 
