@@ -27,11 +27,15 @@ class _TokenAtomicBlock:
 
 
 def _in_atomic_block_is_property(connection) -> bool:
+    # Django 5.2 and 6 store in_atomic_block as a plain attribute and assign it
+    # in Atomic.__enter__/__exit__. This check is unused there. It covers an
+    # older Django where in_atomic_block was a read-only property of
+    # atomic_blocks; assigning it would raise, and appending the sentinel is
+    # enough to make the property true.
     return isinstance(getattr(type(connection), "in_atomic_block", None), property)
 
 
 def _set_in_atomic_block(connection, value: bool) -> None:
-    # Django 5.2 exposes this as a property of atomic_blocks. Django 6 stores it.
     if _in_atomic_block_is_property(connection):
         return
     connection.in_atomic_block = value
