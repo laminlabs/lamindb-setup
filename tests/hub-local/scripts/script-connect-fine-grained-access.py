@@ -7,7 +7,7 @@ import pytest
 from django.db import connection, transaction
 from django.db.utils import ProgrammingError
 from lamindb_setup.core._hub_core import access_db
-from lamindb_setup.core.django import db_token_manager
+from lamindb_setup.core.db_token import db_token_manager
 
 assert os.environ["LAMIN_ENV"] == "local"
 
