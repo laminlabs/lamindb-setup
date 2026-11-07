@@ -79,14 +79,15 @@ def _export_full_table(
 
     try:
         if ln_setup.settings.instance.dialect == "postgresql":
-            buffer = io.StringIO()
+            buffer = io.BytesIO()
             with connection.cursor() as cursor:
                 cursor.execute("SET statement_timeout = 0")
                 with cursor.copy(
                     f'COPY "{table_name}" TO STDOUT WITH (FORMAT CSV, HEADER TRUE)'
                 ) as copy:
                     for chunk in copy:
-                        buffer.write(chunk.decode())
+                        # psycopg 3 yields memoryview chunks, which have no decode().
+                        buffer.write(bytes(chunk))
             buffer.seek(0)
             # Prevent pandas from converting empty strings to float NaN (which PyArrow rejects)
             df = pd.read_csv(buffer, keep_default_na=False)
