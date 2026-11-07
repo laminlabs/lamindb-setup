@@ -212,7 +212,6 @@ def _run_autocommit_with_token(connection, token_value: str, operation):
     """
     from django.db.transaction import TransactionManagementError
 
-    connection.ensure_connection()
     raw = connection.connection
     sentinel, previous = _push_token_tx_view(connection)
     hook_start = len(connection.run_on_commit)
