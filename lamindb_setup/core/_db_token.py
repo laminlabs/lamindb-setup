@@ -132,10 +132,11 @@ def _commit_if_open(connection, raw) -> None:
     )
 
 
-def _begin(raw) -> None:
+def _begin(connection, raw) -> None:
     # Raw cursor: Django's cursor would re-enter the token wrapper.
-    with raw.cursor() as cur:
-        cur.execute("BEGIN")
+    with connection.wrap_database_errors:
+        with raw.cursor() as cur:
+            cur.execute("BEGIN")
 
 
 def _execute_set_token(connection, token_value: str) -> None:
@@ -218,7 +219,7 @@ def _run_autocommit_with_token(connection, token_value: str, operation):
     setattr(connection, _LAMIN_TOKEN_TX, True)
     hooks = []
     try:
-        _begin(raw)
+        _begin(connection, raw)
         try:
             _execute_set_token(connection, token_value)
             result = operation()
