@@ -82,10 +82,11 @@ def _export_full_table(
             buffer = io.StringIO()
             with connection.cursor() as cursor:
                 cursor.execute("SET statement_timeout = 0")
-                cursor.copy_expert(
-                    f'COPY "{table_name}" TO STDOUT WITH (FORMAT CSV, HEADER TRUE)',
-                    buffer,
-                )
+                with cursor.copy(
+                    f'COPY "{table_name}" TO STDOUT WITH (FORMAT CSV, HEADER TRUE)'
+                ) as copy:
+                    for chunk in copy:
+                        buffer.write(chunk.decode())
             buffer.seek(0)
             # Prevent pandas from converting empty strings to float NaN (which PyArrow rejects)
             df = pd.read_csv(buffer, keep_default_na=False)
@@ -322,10 +323,12 @@ def _import_registry(
                 if cursor.fetchone()[0] > 0:
                     raise ValueError(f"Table {table_name} already contains data")
 
-            cursor.copy_expert(
-                f"COPY \"{table_name}\" ({column_names}) FROM STDIN WITH (FORMAT CSV, DELIMITER E'\\t', NULL '\\N')",
-                buffer,
-            )
+            with cursor.copy(
+                "COPY "
+                f'"{table_name}" ({column_names}) '
+                "FROM STDIN WITH (FORMAT CSV, DELIMITER E'\\t', NULL '\\N')"
+            ) as copy:
+                copy.write(buffer.read())
     else:
         num_cols = len(df.columns)
         max_vars = 900  # SQLite has a limit of 999 variables per statement
