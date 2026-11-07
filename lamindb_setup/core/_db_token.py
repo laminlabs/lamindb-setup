@@ -138,18 +138,20 @@ def _begin(raw) -> None:
         cur.execute("BEGIN")
 
 
-def _execute_set_token(raw, token_value: str) -> None:
+def _execute_set_token(connection, token_value: str) -> None:
     """Send the token as a server-side bind parameter.
 
     psycopg.Cursor uses the extended query protocol. Django's cursor is a
     client-side cursor, which would paste the token into the query text.
     """
+    raw = connection.connection
     _require_psycopg3(raw)
     from psycopg import Cursor
 
-    with Cursor(raw) as cur:
-        cur.execute("SELECT set_token(%s, true)", (token_value,))
-        cur.fetchone()
+    with connection.wrap_database_errors:
+        with Cursor(raw) as cur:
+            cur.execute("SELECT set_token(%s, true)", (token_value,))
+            cur.fetchone()
 
 
 def _set_dbapi_rowcount(cursor, value: int) -> None:
@@ -175,13 +177,21 @@ def _execute_many_with_token(cursor, sql, params) -> None:
 
 
 def _run_commit_hooks(hooks) -> None:
+    import logging
+
+    # Lamin's logger.error() does not accept exc_info, which Logger.exception() passes.
+    commit_logger = logging.getLogger("django.db.backends")
     for _savepoint_ids, func, robust in hooks:
         if robust:
             try:
                 func()
-            except Exception:
-                logger.exception(
-                    "on_commit hook failed after the database token transaction"
+            except Exception as exc:
+                commit_logger.error(
+                    "Error calling %s in on_commit() during the database "
+                    "token transaction (%s).",
+                    getattr(func, "__qualname__", repr(func)),
+                    exc,
+                    exc_info=True,
                 )
         else:
             func()
@@ -211,7 +221,7 @@ def _run_autocommit_with_token(connection, token_value: str, operation):
     try:
         _begin(raw)
         try:
-            _execute_set_token(raw, token_value)
+            _execute_set_token(connection, token_value)
             result = operation()
         except BaseException:
             _rollback_or_close(connection, raw)
@@ -292,7 +302,7 @@ class DBTokenManager:
             # set_autocommit(False) outside atomic() is a caller-managed
             # transaction. Set the token inside it and leave commit to the caller.
             if not connection.get_autocommit():
-                _execute_set_token(connection.connection, token.token)
+                _execute_set_token(connection, token.token)
                 return execute(sql, params, many, context)
             # Keep one autocommit transaction per parameter set.
             if many:
@@ -342,7 +352,7 @@ class DBTokenManager:
                     return
                 try:
                     # Outermost block already opened the transaction.
-                    _execute_set_token(connection.connection, token_value)
+                    _execute_set_token(connection, token_value)
                 except BaseException:
                     # __exit__ does not run when __enter__ raises.
                     connection.needs_rollback = True
