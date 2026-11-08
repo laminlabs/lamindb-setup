@@ -6,7 +6,6 @@ import os
 import sys
 import importlib as il
 import gzip
-import jwt
 import time
 import threading
 from pathlib import Path
@@ -14,6 +13,7 @@ import shutil
 from packaging import version
 from ..errors import CurrentInstanceNotConfigured
 from ._logger import logger
+from ._db_token import DBToken, DBTokenManager, db_token_manager
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
@@ -65,142 +65,6 @@ def ensure_error_no_instance_wrapper(connection_name: str = "default") -> None:
     connection = get_connection(connection_name)
     if error_no_instance_wrapper not in connection.execute_wrappers:
         connection.execute_wrappers.insert(0, error_no_instance_wrapper)
-
-
-# db token that refreshes on access if needed
-class DBToken:
-    def __init__(
-        self, instance: InstanceSettings | dict, access_token: str | None = None
-    ):
-        self.instance = instance
-        self.access_token = access_token
-        # initialized in token_query
-        self._token: str | None = None
-        self._token_query: str | None = None
-        self._expiration: float | None = None
-        self._type: str | None = None
-
-    def _refresh_token(self):
-        from ._hub_core import access_db
-        from psycopg2.extensions import adapt
-
-        self._token = access_db(self.instance, self.access_token)
-        self._token_query = (
-            f"SELECT set_token({adapt(self._token).getquoted().decode()}, true);"
-        )
-        token_decoded = jwt.decode(self._token, options={"verify_signature": False})
-        self._expiration = token_decoded["exp"]
-        self._type = token_decoded["type"]
-
-    @property
-    def token_query(self) -> str:
-        # refresh token if needed
-        if self._token is None or time.time() >= self._expiration:  # type: ignore
-            self._refresh_token()
-
-        return self._token_query  # type: ignore
-
-
-# a class to manage jwt in dbs
-class DBTokenManager:
-    def __init__(self):
-        from django.db.transaction import Atomic
-
-        self.original_atomic_enter = Atomic.__enter__
-        self.atomic_is_patched = False
-
-        self.tokens: dict[str, DBToken] = {}
-
-    def set(self, token: DBToken, connection_name: str = "default"):
-        if connection_name in self.tokens:
-            return
-
-        from django.db.transaction import Atomic
-        from django.db.backends.signals import connection_created
-
-        def set_token_wrapper(execute, sql, params, many, context):
-            not_in_atomic_block = not context["connection"].in_atomic_block
-            # ignore atomic blocks
-            if not_in_atomic_block:
-                sql = token.token_query + sql
-            result = execute(sql, params, many, context)
-            # this ensures that psycopg3 in the current env doesn't break this wrapper
-            # psycopg3 returns a cursor
-            # psycopg3 fetching differs from psycopg2, it returns the output of all sql statements
-            # not only the last one as psycopg2 does. So we shift the cursor from set_token
-            if (
-                not_in_atomic_block
-                and result is not None
-                and hasattr(result, "nextset")
-            ):
-                result.nextset()
-            return result
-
-        get_connection(connection_name).execute_wrappers.append(set_token_wrapper)
-
-        def connection_callback(sender, connection, **kwargs):
-            if (
-                connection.alias == connection_name
-                and set_token_wrapper not in connection.execute_wrappers
-            ):
-                connection.execute_wrappers.append(set_token_wrapper)
-
-        dispatch_uid = f"dbtokenmanager:{id(self)}:{connection_name}"
-        # emitted when a database connection is established
-        # not when a database wrapper is created
-        connection_created.connect(
-            connection_callback, dispatch_uid=dispatch_uid, weak=False
-        )
-
-        self.tokens[connection_name] = token
-
-        if not self.atomic_is_patched:
-            # ensure we set the token only once for an outer atomic block
-            def __enter__(atomic):
-                self.original_atomic_enter(atomic)
-                connection_name = "default" if atomic.using is None else atomic.using
-                if connection_name in self.tokens:
-                    # here we don't use the connection from the closure
-                    # because Atomic is a single class to manage transactions for all connections
-                    connection = get_connection(connection_name)
-                    if len(connection.atomic_blocks) == 1:
-                        token = self.tokens[connection_name]
-                        # use raw psycopg2 connection here
-                        # atomic block ensures connection
-                        connection.connection.cursor().execute(token.token_query)
-
-            Atomic.__enter__ = __enter__
-
-            self.atomic_is_patched = True
-            logger.debug("django.db.transaction.Atomic.__enter__ has been patched")
-
-    def reset(self, connection_name: str = "default"):
-        if connection_name not in self.tokens:
-            return
-
-        from django.db.backends.signals import connection_created
-
-        connection = get_connection(connection_name)
-
-        connection.execute_wrappers = [
-            w
-            for w in connection.execute_wrappers
-            if getattr(w, "__name__", None) != "set_token_wrapper"
-        ]
-
-        dispatch_uid = f"dbtokenmanager:{id(self)}:{connection_name}"
-        connection_created.disconnect(dispatch_uid=dispatch_uid)
-
-        self.tokens.pop(connection_name, None)
-
-        if not self.tokens:
-            from django.db.transaction import Atomic
-
-            Atomic.__enter__ = self.original_atomic_enter
-            self.atomic_is_patched = False
-
-
-db_token_manager = DBTokenManager()
 
 
 def close_if_health_check_failed(self) -> None:
@@ -513,6 +377,7 @@ def reset_django():
     connections.close_all()
 
     global db_token_manager
+    from . import _db_token as db_token_module
 
     db_token_manager.reset()
 
@@ -535,6 +400,7 @@ def reset_django():
     il.invalidate_caches()
 
     db_token_manager = DBTokenManager()
+    db_token_module.db_token_manager = db_token_manager
 
     global IS_SETUP
     IS_SETUP = False

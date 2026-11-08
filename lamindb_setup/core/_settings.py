@@ -36,7 +36,7 @@ if TYPE_CHECKING:
     from lamindb.models import Branch, Space
 
     from lamindb_setup.core import InstanceSettings, StorageSettings, UserSettings
-    from lamindb_setup.core.django import DBToken, DBTokenManager
+    from lamindb_setup.core._db_token import DBToken, DBTokenManager
     from lamindb_setup.types import AnyPathStr
 
     from .upath import UPath
@@ -485,7 +485,7 @@ class SetupSettings:
 
     @property
     def _db_token_manager(self) -> DBTokenManager:
-        from lamindb_setup.core.django import db_token_manager
+        from lamindb_setup.core._db_token import db_token_manager
 
         return db_token_manager
 
