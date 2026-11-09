@@ -88,7 +88,7 @@ def test_get_configured_space(
         # Reading the public default must not turn implicit `all` into a selection.
         assert settings.space is records[expected or "all"]
     get_space.reset_mock()
-    configured = settings._get_configured_space()
+    configured = settings.get_configured_space()
     assert configured is (None if expected is None else records[expected])
     if expected is None:
         get_space.assert_not_called()
@@ -96,7 +96,7 @@ def test_get_configured_space(
 
     get_space.reset_mock()
     assert settings.space is records[expected or "all"]
-    assert settings._get_configured_space() is configured
+    assert settings.get_configured_space() is configured
     get_space.assert_not_called()
 
 
@@ -121,7 +121,7 @@ def test_space_cache_follows_configuration(tmp_path: Path, monkeypatch):
     assert settings.space is records["all"]
     for name in ("all", "Wetlab", "Analysis"):
         home.write_text(f"{name}\n{name}")
-        assert settings._get_configured_space() is records[name]
+        assert settings.get_configured_space() is records[name]
         assert settings.space is records[name]
 
     context.directory = tmp_path / "project"
@@ -129,17 +129,17 @@ def test_space_cache_follows_configuration(tmp_path: Path, monkeypatch):
     local.parent.mkdir(parents=True)
     local.write_text("Wetlab\nWetlab")
     assert settings.space is records["Wetlab"]
-    assert settings._get_configured_space() is records["Wetlab"]
+    assert settings.get_configured_space() is records["Wetlab"]
 
     local.unlink()
     assert settings.space is records["Analysis"]
     home.unlink()
-    assert settings._get_configured_space() is None
+    assert settings.get_configured_space() is None
     assert settings.space is records["all"]
 
     get_space.reset_mock()
     context.directory = None
-    assert settings._get_configured_space() is None
+    assert settings.get_configured_space() is None
     get_space.assert_not_called()
     assert settings.space is records["all"]
     get_space.assert_called_once_with(1)

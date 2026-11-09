@@ -332,7 +332,7 @@ class SetupSettings:
             idlike, name = self._home_space_path.read_text().split("\n")
         return idlike, name
 
-    def _get_configured_space(self) -> Space | None:
+    def get_configured_space(self) -> Space | None:
         """Return the configured space, or `None` for the implicit `all` default.
 
         A directory-specific selection takes precedence over the instance-wide
@@ -360,7 +360,7 @@ class SetupSettings:
     # and we never need a DB request
     def space(self) -> Space:
         """Default space, falling back to `all` when no space is configured."""
-        configured = self._get_configured_space()
+        configured = self.get_configured_space()
         if configured is not None:
             return configured
         return self._load_space(1)
