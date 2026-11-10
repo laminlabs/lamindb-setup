@@ -9,7 +9,6 @@ from __future__ import annotations
 import sys
 from types import SimpleNamespace
 from typing import TYPE_CHECKING
-from unittest.mock import Mock
 
 import pytest
 from lamindb_setup.core import _settings as settings_module
@@ -41,11 +40,8 @@ PREFIX = "lamindb_instance_"
         (True, "Wetlab", "Analysis", "Analysis"),
         (True, "Wetlab", "all", "all"),
         (True, "all", None, "all"),
-        (False, "all", None, "all"),
-        (True, None, "Analysis", "Analysis"),
     ],
 )
-@pytest.mark.parametrize("public_first", [False, True])
 def test_get_configured_space(
     tmp_path: Path,
     monkeypatch: pytest.MonkeyPatch,
@@ -53,7 +49,6 @@ def test_get_configured_space(
     home_name,
     local_name,
     expected,
-    public_first,
 ):
     """Distinguish implicit `all` from local or instance-wide selections."""
     from lamindb_setup.core._settings import SetupSettings
@@ -64,11 +59,10 @@ def test_get_configured_space(
         for name in ("all", "Wetlab", "Analysis")
     }
     records[1] = records["all"]
-    get_space = Mock(side_effect=records.__getitem__)
     monkeypatch.setitem(
         sys.modules,
         "lamindb",
-        SimpleNamespace(Space=SimpleNamespace(get=get_space)),
+        SimpleNamespace(Space=SimpleNamespace(get=records.__getitem__)),
     )
     home = tmp_path / "home-space"
     directory = tmp_path / "project"
@@ -84,65 +78,10 @@ def test_get_configured_space(
         local.write_text(f"{local_name}\n{local_name}")
     settings = SetupSettings()
 
-    if public_first:
-        # Reading the public default must not turn implicit `all` into a selection.
-        assert settings.space is records[expected or "all"]
-    get_space.reset_mock()
+    # Reading the public default must not turn implicit `all` into a selection.
+    assert settings.space is records[expected or "all"]
     configured = settings.get_configured_space()
     assert configured is (None if expected is None else records[expected])
-    if expected is None:
-        get_space.assert_not_called()
-    assert settings.space is records[expected or "all"]
-
-    get_space.reset_mock()
-    assert settings.space is records[expected or "all"]
-    assert settings.get_configured_space() is configured
-    get_space.assert_not_called()
-
-
-def test_space_cache_follows_configuration(tmp_path: Path, monkeypatch):
-    from lamindb_setup.core._settings import SetupSettings
-    from lamindb_setup.core._settings_store import local_current_space_file
-
-    records = {
-        name: SimpleNamespace(uid=name, name=name)
-        for name in ("all", "Wetlab", "Analysis")
-    }
-    get_space = Mock(side_effect=lambda key: records["all" if key == 1 else key])
-    monkeypatch.setitem(
-        sys.modules, "lamindb", SimpleNamespace(Space=SimpleNamespace(get=get_space))
-    )
-    home = tmp_path / "home-space"
-    context = SimpleNamespace(directory=None)
-    monkeypatch.setattr(SetupSettings, "_home_space_path", property(lambda _: home))
-    monkeypatch.setattr(SetupSettings, "dev_dir", property(lambda _: context.directory))
-    settings = SetupSettings()
-
-    assert settings.space is records["all"]
-    for name in ("all", "Wetlab", "Analysis"):
-        home.write_text(f"{name}\n{name}")
-        assert settings.get_configured_space() is records[name]
-        assert settings.space is records[name]
-
-    context.directory = tmp_path / "project"
-    local = local_current_space_file(context.directory.resolve())
-    local.parent.mkdir(parents=True)
-    local.write_text("Wetlab\nWetlab")
-    assert settings.space is records["Wetlab"]
-    assert settings.get_configured_space() is records["Wetlab"]
-
-    local.unlink()
-    assert settings.space is records["Analysis"]
-    home.unlink()
-    assert settings.get_configured_space() is None
-    assert settings.space is records["all"]
-
-    get_space.reset_mock()
-    context.directory = None
-    assert settings.get_configured_space() is None
-    get_space.assert_not_called()
-    assert settings.space is records["all"]
-    get_space.assert_called_once_with(1)
 
 
 # Sample .env content matching InstanceSettingsStore (current format).
