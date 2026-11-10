@@ -220,7 +220,6 @@ def test_connect_instance_hub(create_myinstance, create_testadmin1_session):
     instance, _ = _connect_instance_hub(
         owner=owner,
         name=name,
-        use_root_db_user=False,
         use_proxy_db=False,
         client=anon_client,
     )

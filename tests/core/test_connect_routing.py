@@ -285,7 +285,7 @@ def test_connect_rewrites_module_vars_only_after_reset(monkeypatch):
     monkeypatch.setattr(
         connect_instance,
         "validate_connection_state",
-        lambda owner, name, use_root_db_user=False: (False, False),
+        lambda owner, name: (False, False),
     )
     connect_instance.connect("owner/name", _reload_lamindb=True)
     assert rewrite_calls["n"] == 0
@@ -293,7 +293,7 @@ def test_connect_rewrites_module_vars_only_after_reset(monkeypatch):
     monkeypatch.setattr(
         connect_instance,
         "validate_connection_state",
-        lambda owner, name, use_root_db_user=False: (True, False),
+        lambda owner, name: (True, False),
     )
     connect_instance.connect("owner/name", _reload_lamindb=True)
     assert rewrite_calls["n"] == 1

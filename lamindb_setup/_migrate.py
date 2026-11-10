@@ -132,15 +132,7 @@ class migrate:
         cls, package_name: str | None = None, number: int | None = None
     ) -> None:
         """Deploy a migration."""
-        from lamindb_setup._connect_instance import connect
-
         isettings = settings.instance
-        is_managed_by_hub = isettings.is_managed_by_hub
-
-        if is_managed_by_hub and "root" not in isettings.db:
-            # ensure we connect with the root user
-            connect(use_root_db_user=True)
-            assert "root" in (instance_db := settings.instance.db), instance_db
         # this is needed to avoid connecting on importing apps inside setup_django process
         setup_django_disable_autoconnect = disable_auto_connect(setup_django)
         # this sets up django and deploys the migrations

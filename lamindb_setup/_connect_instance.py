@@ -140,7 +140,6 @@ def _connect_instance(
     db: str | None = None,
     allow_sqlite_clone_fallback: bool = False,
     raise_permission_error: bool = True,
-    use_root_db_user: bool = False,
     use_proxy_db: bool = False,
     access_token: str | None = None,
     raise_systemexit: bool = False,
@@ -169,7 +168,6 @@ def _connect_instance(
                 owner=owner,
                 name=name,
                 access_token=access_token,
-                use_root_db_user=use_root_db_user,
                 use_proxy_db=use_proxy_db,
             )
         else:
@@ -209,9 +207,7 @@ def _connect_instance(
                 if (schema_id := instance_result["schema_id"]) is None
                 else UUID(schema_id),
                 fine_grained_access=bool(instance_result["fine_grained_access"]),
-                db_permissions=instance_result.get("db_permissions", None)
-                if not use_root_db_user
-                else "write",
+                db_permissions=instance_result.get("db_permissions", None),
             )
         else:
             if hub_result != "anonymous-user":
@@ -310,7 +306,6 @@ def _configured_dev_dir_instance(marker_file: Path) -> str | None:
 
 def _connect_cli(
     instance: str,
-    use_root_db_user: bool = False,
     use_proxy_db: bool = False,
     here: bool = False,
     mute_here: bool = False,
@@ -343,7 +338,6 @@ def _connect_cli(
     isettings = _connect_instance(
         owner,
         name,
-        use_root_db_user=use_root_db_user,
         use_proxy_db=use_proxy_db,
         raise_systemexit=True,
     )
@@ -383,7 +377,7 @@ def _connect_cli(
 
 
 def validate_connection_state(
-    owner: str, name: str, use_root_db_user: bool = False, init: bool = False
+    owner: str, name: str, init: bool = False
 ) -> tuple[bool, bool]:
     """Inspect current setup state before connecting.
 
@@ -402,7 +396,6 @@ def validate_connection_state(
     if (
         settings.is_configured  # exists only for real instances, not for none/none
         and f"{owner}/{name}" == settings.instance.slug
-        and not use_root_db_user  # always re-connect for root db user
     ):
         already_connected = True
     else:
@@ -441,7 +434,6 @@ def connect(instance: str | None = None, **kwargs: Any) -> str | tuple | None:
     """
     # validate kwargs
     valid_kwargs = {
-        "use_root_db_user",
         "use_proxy_db",
         "_db",
         "_write_settings",
@@ -455,7 +447,6 @@ def connect(instance: str | None = None, **kwargs: Any) -> str | tuple | None:
         if kwarg not in valid_kwargs:
             raise TypeError(f"connect() got unexpected keyword argument '{kwarg}'")
 
-    use_root_db_user: bool = kwargs.get("use_root_db_user", False)
     use_proxy_db = kwargs.get("use_proxy_db", False)
     # _db is still needed because it is called in init
     _db: str | None = kwargs.get("_db", None)
@@ -484,18 +475,13 @@ def connect(instance: str | None = None, **kwargs: Any) -> str | tuple | None:
                 raise ValueError(
                     "No instance was connected through the CLI, pass a value to `instance` or connect via the CLI."
                 )
-            if use_root_db_user:
-                logger.warning("re-setting django")
-                reset_django()
-                did_reset_django = True
-                owner, name = isettings.owner, isettings.name
             if _db is not None and isettings.dialect == "postgresql":
                 isettings._db = _db
         else:
             owner, name = get_owner_name_from_identifier(instance)
             if _check_instance_setup() and not _test:
                 did_reset_django, suppress_connected_log = validate_connection_state(
-                    owner, name, use_root_db_user=use_root_db_user
+                    owner, name
                 )
             elif (
                 _write_settings
@@ -504,14 +490,13 @@ def connect(instance: str | None = None, **kwargs: Any) -> str | tuple | None:
             ):
                 disconnect(mute=True)
 
-        if instance is not None or use_root_db_user:
+        if instance is not None:
             try:
                 isettings = _connect_instance(
                     owner,
                     name,
                     db=_db,
                     access_token=access_token,
-                    use_root_db_user=use_root_db_user,
                     use_proxy_db=use_proxy_db,
                 )
             except InstanceNotFoundError as e:

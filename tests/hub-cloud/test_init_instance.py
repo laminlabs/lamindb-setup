@@ -76,7 +76,6 @@ def test_init_instance_postgres_default_name(get_hub_client):
     result = _connect_instance_hub(
         owner="testuser2",
         name=instance_name,
-        use_root_db_user=False,
         use_proxy_db=False,
         client=hub,
     )
