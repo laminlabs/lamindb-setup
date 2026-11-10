@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import threading
 import time
 from typing import TYPE_CHECKING
 
@@ -259,6 +260,7 @@ class DBToken:
         self._token: str | None = None
         self._expiration: float | None = None
         self._type: str | None = None
+        self._refresh_lock = threading.Lock()
 
     def _refresh_token(self):
         from ._hub_core import access_db
@@ -268,11 +270,17 @@ class DBToken:
         self._expiration = token_decoded["exp"]
         self._type = token_decoded["type"]
 
+    def _needs_refresh(self) -> bool:
+        return self._token is None or time.time() >= self._expiration  # type: ignore
+
     @property
     def token(self) -> str:
-        # refresh token if needed
-        if self._token is None or time.time() >= self._expiration:  # type: ignore
-            self._refresh_token()
+        # One refresh at a time. The second check skips the hub when the
+        # waiter arrives after another thread has already stored a new token.
+        if self._needs_refresh():
+            with self._refresh_lock:
+                if self._needs_refresh():
+                    self._refresh_token()
 
         return self._token  # type: ignore
 

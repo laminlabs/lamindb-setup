@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import threading
 import time
 
 import jwt
@@ -550,6 +551,41 @@ def test_db_token_refreshes_when_missing_or_expired(monkeypatch):
     assert token.token == encoded[0]
     token._expiration = time.time() - 1
     assert token.token == encoded[1]
+
+
+def test_db_token_refresh_is_single_flight(monkeypatch):
+    first_inside = threading.Event()
+    release_refresh = threading.Event()
+    calls = {"n": 0}
+
+    def access_db(_instance, _access_token):
+        calls["n"] += 1
+        first_inside.set()
+        assert release_refresh.wait(timeout=2)
+        return _jwt(60)
+
+    monkeypatch.setattr("lamindb_setup.core._hub_core.access_db", access_db)
+    token = DBToken({"id": "instance"})
+    result: dict[str, str] = {}
+
+    def read(slot: str) -> None:
+        result[slot] = token.token
+
+    first = threading.Thread(target=read, args=("a",))
+    second = threading.Thread(target=read, args=("b",))
+    first.start()
+    assert first_inside.wait(timeout=2)
+    second.start()
+    second.join(timeout=0.2)
+    assert second.is_alive()
+    assert calls["n"] == 1
+    release_refresh.set()
+    first.join(timeout=2)
+    second.join(timeout=2)
+    assert not first.is_alive()
+    assert not second.is_alive()
+    assert calls["n"] == 1
+    assert result["a"] == result["b"]
 
 
 def test_manager_registers_resets_and_sets_token_once(monkeypatch):
