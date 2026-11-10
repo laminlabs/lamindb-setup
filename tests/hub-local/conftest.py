@@ -34,9 +34,10 @@ from laminhub_rest.test.instance import create_instance
 from supabase_auth.errors import AuthApiError
 
 supabase_resources = _SupabaseLocalResources()
+_backend_api_key = pytest.StashKey[str]()
 
 
-def pytest_configure():
+def pytest_configure(config):
     # Use highest verbosity so the lamindb_setup logger emits DEBUG
     logger.set_verbosity(5)
 
@@ -50,8 +51,8 @@ def pytest_configure():
     # _remove_lamin_local_settings()
     start_supabase()
     LocalSeed.populate()
-    # reset user
-    del os.environ["LAMIN_API_KEY"]
+    # Keep the backend identity separate from the customer identities under test.
+    config.stash[_backend_api_key] = os.environ.pop("LAMIN_API_KEY")
     ln_setup.settings._user_settings = None
 
 
@@ -189,15 +190,16 @@ def create_myinstance(create_testadmin1_session):  # -> Dict
         fine_grained_access=True,
         client=admin_client,
     )
-    # non-fine-grained access db user
-    insert_db_user(
-        name="write",
-        db_user_name=db_user_name,
-        db_user_password=db_user_password,
-        instance_id=instance_id,
-        fine_grained_access=False,
-        client=admin_client,
-    )
+    # Legacy credentials are provisioned internally, not by instance admins.
+    with connect_central(service_role=True) as service_client:
+        insert_db_user(
+            name="write",
+            db_user_name=db_user_name,
+            db_user_password=db_user_password,
+            instance_id=instance_id,
+            fine_grained_access=False,
+            client=service_client,
+        )
     # the instance doesn't have fine_grained_access set to True yet
     instance = select_instance_by_name(
         account_id=ln_setup.settings.user._uuid,
@@ -209,15 +211,20 @@ def create_myinstance(create_testadmin1_session):  # -> Dict
 
 
 @pytest.fixture(scope="function")
-def create_instance_fine_grained_access(create_testadmin1_session):
+def create_instance_fine_grained_access(
+    create_testadmin1_session, request, monkeypatch
+):
     admin_client, usettings = create_testadmin1_session
 
-    instance = create_instance(
-        "instance_test",
-        client=admin_client,
-        connect=False,
-        organization_id=usettings._uuid,
-    )
+    # Only backend provisioning needs the seeded infrastructure API key.
+    with monkeypatch.context() as backend_env:
+        backend_env.setenv("LAMIN_API_KEY", request.config.stash[_backend_api_key])
+        instance = create_instance(
+            "instance_test",
+            client=admin_client,
+            connect=False,
+            organization_id=usettings._uuid,
+        )
 
     yield instance
 

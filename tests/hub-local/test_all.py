@@ -74,13 +74,11 @@ def test_db_user(
     instance_id_hex = create_myinstance["id"]
     instance_id = UUID(instance_id_hex)
 
-    # check non-fine-grained access db user
+    # Instance admins cannot retrieve legacy root credentials.
     db_user = select_db_user_by_instance(
         instance_id=instance_id_hex, client=admin_client, fine_grained_access=False
     )
-    assert db_user["name"] == "postgres"
-    assert db_user["password"] == "pwd"
-    assert db_user["type"] == "write"
+    assert db_user is None
     # check fine-grained access db user
     db_user = select_db_user_by_instance(
         instance_id=instance_id_hex, client=admin_client, fine_grained_access=True
