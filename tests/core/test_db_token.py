@@ -203,8 +203,11 @@ def test_require_psycopg3_rejects_other_drivers():
     class _OtherDriver:
         __module__ = "psycopg2.extensions"
 
-    with pytest.raises(RuntimeError, match="psycopg 3"):
+    with pytest.raises(RuntimeError, match="psycopg 3") as exc:
         _require_psycopg3(_OtherDriver())
+    message = str(exc.value)
+    assert "psycopg2" in message
+    assert 'pip install "psycopg[binary]>=3.1.12,<4"' in message
 
 
 def test_discard_connection_closes_and_survives_close_errors():
