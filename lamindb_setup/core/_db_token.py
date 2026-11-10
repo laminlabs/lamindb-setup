@@ -66,10 +66,14 @@ def _pop_token_tx_view(connection, sentinel, previous) -> None:
 
 
 def _require_psycopg3(raw) -> None:
-    if type(raw).__module__.split(".", 1)[0] != "psycopg":
+    driver = type(raw).__module__.split(".", 1)[0]
+    if driver != "psycopg":
         raise RuntimeError(
-            "Fine-grained database access requires the psycopg 3 connection "
-            "so the database token is sent as a bind parameter."
+            "Fine-grained database access requires a psycopg 3 connection "
+            "so the database token is sent as a bind parameter. This "
+            f"connection uses {driver}. Install psycopg 3, then restart "
+            "Python so Django opens connections with it:\n"
+            '    pip install "psycopg[binary]>=3.1.12,<4"'
         )
 
 
