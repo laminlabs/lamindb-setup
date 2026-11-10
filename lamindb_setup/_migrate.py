@@ -133,6 +133,9 @@ class migrate:
     ) -> None:
         """Deploy a migration."""
         isettings = settings.instance
+        # lambda migrations run on the hub; a manual deploy must use the root db user
+        if isettings.is_managed_by_hub:
+            assert "root" in isettings.db, isettings.db
         # this is needed to avoid connecting on importing apps inside setup_django process
         setup_django_disable_autoconnect = disable_auto_connect(setup_django)
         # this sets up django and deploys the migrations
