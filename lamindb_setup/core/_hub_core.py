@@ -592,7 +592,6 @@ def get_default_bucket_for_instance(
 def _connect_instance_hub(
     owner: str,  # account_handle
     name: str,  # instance_name
-    use_root_db_user: bool,
     use_proxy_db: bool,
     client: Client,
 ) -> tuple[dict, dict] | str:
@@ -645,22 +644,14 @@ def _connect_instance_hub(
 
     if instance["db_scheme"] is not None:
         db_user_name, db_user_password = None, None
-        if (
-            "db_user_name" in instance
-            and "db_user_password" in instance
-            and not use_root_db_user
-        ):
+        if "db_user_name" in instance and "db_user_password" in instance:
             db_user_name, db_user_password = (
                 instance["db_user_name"],
                 instance["db_user_password"],
             )
         else:
-            if use_root_db_user:
-                fine_grained_access = False
-            else:
-                fine_grained_access = bool(
-                    instance["fine_grained_access"]
-                )  # can be None
+            # fine_grained_access can be None
+            fine_grained_access = bool(instance["fine_grained_access"])
             db_user = select_db_user_by_instance(
                 instance["id"], fine_grained_access, client
             )
@@ -703,7 +694,6 @@ def connect_instance_hub(
     owner: str,  # account_handle
     name: str,  # instance_name
     access_token: str | None = None,
-    use_root_db_user: bool = False,
     use_proxy_db: bool = False,
 ) -> tuple[dict, dict] | str:
     if settings.user.handle != "anonymous" or access_token is not None:
@@ -711,7 +701,6 @@ def connect_instance_hub(
             _connect_instance_hub,
             owner=owner,
             name=name,
-            use_root_db_user=use_root_db_user,
             use_proxy_db=use_proxy_db,
             access_token=access_token,
         )
@@ -720,7 +709,6 @@ def connect_instance_hub(
             _connect_instance_hub,
             owner=owner,
             name=name,
-            use_root_db_user=use_root_db_user,
             use_proxy_db=use_proxy_db,
         )
 

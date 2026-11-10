@@ -20,16 +20,7 @@ ln_setup.login("testuser1")
 ```
 
 ```python
-ln_setup.connect(instance, use_root_db_user=True)
-```
-
-```python
-# double connect to check migration with django reset
-ln_setup.connect(instance, use_root_db_user=True)
-```
-
-```python
-assert "root" in ln_setup.settings.instance.db
+ln_setup.connect(instance)
 ```
 
 ```python

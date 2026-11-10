@@ -160,8 +160,6 @@ def export_db(
 ) -> None:
     """Export registry tables and many-to-many link tables to parquet files.
 
-    Ensure that you connect to postgres instances using `use_root_db_user=True`.
-
     Args:
         module_names: Module names to export (e.g., ["lamindb", "bionty", "pertdb"]).
             Defaults to "lamindb" if not provided.
