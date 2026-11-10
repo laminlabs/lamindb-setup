@@ -50,8 +50,8 @@ def pytest_configure():
     # _remove_lamin_local_settings()
     start_supabase()
     LocalSeed.populate()
-    # reset user
-    del os.environ["LAMIN_API_KEY"]
+    # Keep the seeded LAMIN_API_KEY for backend provisioning. Customer tests use
+    # their saved user settings and explicitly authenticated clients.
     ln_setup.settings._user_settings = None
 
 
@@ -189,15 +189,16 @@ def create_myinstance(create_testadmin1_session):  # -> Dict
         fine_grained_access=True,
         client=admin_client,
     )
-    # non-fine-grained access db user
-    insert_db_user(
-        name="write",
-        db_user_name=db_user_name,
-        db_user_password=db_user_password,
-        instance_id=instance_id,
-        fine_grained_access=False,
-        client=admin_client,
-    )
+    # Legacy credentials are provisioned internally, not by instance admins.
+    with connect_central(service_role=True) as service_client:
+        insert_db_user(
+            name="write",
+            db_user_name=db_user_name,
+            db_user_password=db_user_password,
+            instance_id=instance_id,
+            fine_grained_access=False,
+            client=service_client,
+        )
     # the instance doesn't have fine_grained_access set to True yet
     instance = select_instance_by_name(
         account_id=ln_setup.settings.user._uuid,

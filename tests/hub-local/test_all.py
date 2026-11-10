@@ -74,13 +74,11 @@ def test_db_user(
     instance_id_hex = create_myinstance["id"]
     instance_id = UUID(instance_id_hex)
 
-    # check non-fine-grained access db user
+    # Instance admins cannot retrieve legacy root credentials.
     db_user = select_db_user_by_instance(
         instance_id=instance_id_hex, client=admin_client, fine_grained_access=False
     )
-    assert db_user["name"] == "postgres"
-    assert db_user["password"] == "pwd"
-    assert db_user["type"] == "write"
+    assert db_user is None
     # check fine-grained access db user
     db_user = select_db_user_by_instance(
         instance_id=instance_id_hex, client=admin_client, fine_grained_access=True
@@ -103,16 +101,11 @@ def test_db_user(
     )
     assert db_collaborator is None
     # now add testreader1 as a collaborator
-    try:
-        OrganizationMemberHandler(admin_client).add(
-            organization_id=UUID(create_myinstance["account_id"]),
-            account_id=reader_settings._uuid,
-            role="member",
-        )
-    except KeyError:
-        # we don't set LAMIN_API_KEY, so broadcasting cache invalidation fails
-        # it should still be fine with adding to the organization
-        pass
+    OrganizationMemberHandler(admin_client).add(
+        organization_id=UUID(create_myinstance["account_id"]),
+        account_id=reader_settings._uuid,
+        role="member",
+    )
     try:
         InstanceCollaboratorHandler(admin_client).add(
             account_id=reader_settings._uuid,
