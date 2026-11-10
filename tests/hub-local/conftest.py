@@ -34,10 +34,9 @@ from laminhub_rest.test.instance import create_instance
 from supabase_auth.errors import AuthApiError
 
 supabase_resources = _SupabaseLocalResources()
-_backend_api_key = pytest.StashKey[str]()
 
 
-def pytest_configure(config):
+def pytest_configure():
     # Use highest verbosity so the lamindb_setup logger emits DEBUG
     logger.set_verbosity(5)
 
@@ -51,8 +50,8 @@ def pytest_configure(config):
     # _remove_lamin_local_settings()
     start_supabase()
     LocalSeed.populate()
-    # Keep the backend identity separate from the customer identities under test.
-    config.stash[_backend_api_key] = os.environ.pop("LAMIN_API_KEY")
+    # Keep the seeded LAMIN_API_KEY for backend provisioning. Customer tests use
+    # their saved user settings and explicitly authenticated clients.
     ln_setup.settings._user_settings = None
 
 
@@ -211,20 +210,15 @@ def create_myinstance(create_testadmin1_session):  # -> Dict
 
 
 @pytest.fixture(scope="function")
-def create_instance_fine_grained_access(
-    create_testadmin1_session, request, monkeypatch
-):
+def create_instance_fine_grained_access(create_testadmin1_session):
     admin_client, usettings = create_testadmin1_session
 
-    # Only backend provisioning needs the seeded infrastructure API key.
-    with monkeypatch.context() as backend_env:
-        backend_env.setenv("LAMIN_API_KEY", request.config.stash[_backend_api_key])
-        instance = create_instance(
-            "instance_test",
-            client=admin_client,
-            connect=False,
-            organization_id=usettings._uuid,
-        )
+    instance = create_instance(
+        "instance_test",
+        client=admin_client,
+        connect=False,
+        organization_id=usettings._uuid,
+    )
 
     yield instance
 
