@@ -14,24 +14,22 @@ def write_bionty_sources(isettings: InstanceSettings) -> None:
     import bionty
     import bionty.base as bionty_base
     from bionty._biorecord import list_biorecord_models
-    from bionty.base.dev._handle_sources import parse_sources_yaml
+    from bionty.base.dev._handle_sources import (
+        parse_currently_used_sources,
+        records_from_sources_yaml,
+    )
     from bionty.models import Source
 
     bionty_models = list_biorecord_models(bionty)
 
-    all_sources = parse_sources_yaml(bionty_base.settings.public_sources)
-    all_sources_dict = all_sources.to_dict(orient="records")
-
-    currently_used = (
-        bionty_base.display_currently_used_sources(mute=True)
-        .reset_index()
-        .set_index(["entity", "organism"])
-    )
+    all_sources = records_from_sources_yaml(bionty_base.settings.public_sources)
+    currently_used = parse_currently_used_sources(all_sources)
 
     all_records = []
-    for kwargs in all_sources_dict:
-        act = currently_used.loc[(kwargs["entity"], kwargs["organism"])].to_dict()
-        if (act["name"] == kwargs["name"]) and (act["version"] == kwargs["version"]):
+    for source in all_sources:
+        kwargs = dict(source)
+        current = currently_used[kwargs["entity"]][kwargs["organism"]]
+        if current.get(kwargs["name"]) == kwargs["version"]:
             kwargs["currently_used"] = True
 
         kwargs["run"] = None  # can't yet access tracking information
