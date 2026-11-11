@@ -26,6 +26,7 @@ def test_extract_from_path():
         ("reads.bam", ".bam"),
         ("variants.vcf", ".vcf"),
         ("store.h5", ".h5"),
+        ("table.lance", ".lance"),
         ("array.npy", ".npy"),
         ("model.onnx", ".onnx"),
         ("notebook.ipynb", ".ipynb"),

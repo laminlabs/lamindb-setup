@@ -216,6 +216,7 @@ SIMPLE_FORMATS = {
     # tabular / dataframes
     #
     ".parquet",
+    ".lance",
     ".xlsx",
     ".arrow",
     ".feather",
