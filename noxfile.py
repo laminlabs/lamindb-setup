@@ -31,7 +31,7 @@ def install(session: nox.Session, group: str) -> None:
     no_deps_packages = "git+https://github.com/laminlabs/pertdb git+https://github.com/laminlabs/lamin-cli"
     modules_deps = f"""uv pip install --system "git+https://github.com/laminlabs/lamindb[full]"
 uv pip install --system --no-deps {no_deps_packages}
-uv pip install --system git+https://github.com/laminlabs/bionty
+uv pip install --system git+https://github.com/laminlabs/bionty@pandas
 """
     if group == "hub-cloud":
         cmds = (
