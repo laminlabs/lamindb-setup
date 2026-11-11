@@ -91,6 +91,7 @@ class SetupSettings:
     _space = None  # do not have types here
     _branch_context_path: Path | None = None
     _space_context_path: Path | None = None
+    _space_idlike: int | str | None = None
 
     def _clear_instance_context_cache(self) -> None:
         """Clear cached instance context."""
@@ -98,6 +99,7 @@ class SetupSettings:
         self._space = None
         self._branch_context_path = None
         self._space_context_path = None
+        self._space_idlike = None
 
     @property
     def _instance_settings_path(self) -> Path:
@@ -317,8 +319,8 @@ class SetupSettings:
             return local_current_space_file(self.dev_dir.resolve())
         return self._home_space_path
 
-    def _read_space_idlike_name(self) -> tuple[int | str, str]:
-        idlike: str | int = 1
+    def _read_space_idlike_name(self) -> tuple[int | str | None, str]:
+        idlike: str | int | None = None
         name: str = "all"
         try:
             space_path = self._space_path
@@ -330,33 +332,38 @@ class SetupSettings:
             idlike, name = self._home_space_path.read_text().split("\n")
         return idlike, name
 
-    def _get_configured_space(self) -> Space | None:
+    def get_configured_space(self) -> Space | None:
         """Return the configured space, or `None` for the implicit `all` default.
 
         A directory-specific selection takes precedence over the instance-wide
         selection. An explicit selection of `all` also counts as configured.
         """
-        if self._space_path.exists() or (
-            self.dev_dir is not None and self._home_space_path.exists()
-        ):
-            return self.space
-        return None
+        space_path = self._space_path
+        if self._space_context_path != space_path:
+            self._space = None
+            self._space_context_path = space_path
+        idlike, _ = self._read_space_idlike_name()
+        if idlike is None:
+            return None
+        return self._load_space(idlike)
+
+    def _load_space(self, idlike: int | str) -> Space:
+        if self._space is None or self._space_idlike != idlike:
+            from lamindb import Space
+
+            self._space = Space.get(idlike)
+            self._space_idlike = idlike
+        return self._space
 
     @property
     # TODO: refactor so that it returns a BranchMock object
     # and we never need a DB request
     def space(self) -> Space:
         """Default space, falling back to `all` when no space is configured."""
-        space_path = self._space_path
-        if self._space_context_path != space_path:
-            self._space = None
-            self._space_context_path = space_path
-        if self._space is None:
-            from lamindb import Space
-
-            idlike, _ = self._read_space_idlike_name()
-            self._space = Space.get(idlike)
-        return self._space
+        configured = self.get_configured_space()
+        if configured is not None:
+            return configured
+        return self._load_space(1)
 
     @space.setter
     def space(self, value: str | Space) -> None:
@@ -378,6 +385,7 @@ class SetupSettings:
         self._space_path.write_text(f"{space_record.uid}\n{space_record.name}")
         self._space = space_record
         self._space_context_path = self._space_path
+        self._space_idlike = space_record.uid
 
     @property
     def is_connected(self) -> bool:

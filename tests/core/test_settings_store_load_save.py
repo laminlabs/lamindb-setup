@@ -80,7 +80,7 @@ def test_get_configured_space(
 
     # Reading the public default must not turn implicit `all` into a selection.
     assert settings.space is records[expected or "all"]
-    configured = settings._get_configured_space()
+    configured = settings.get_configured_space()
     assert configured is (None if expected is None else records[expected])
 
 
