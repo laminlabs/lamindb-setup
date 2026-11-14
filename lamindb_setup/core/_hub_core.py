@@ -1033,6 +1033,7 @@ def access_db(
             renew_token = True
     else:
         renew_token = False
+
     # local is used in tests
     url = f"/instances/{instance_id}/db_token"
     if os.getenv("LAMIN_ENV") != "local":
@@ -1042,7 +1043,7 @@ def access_db(
             )
         url = instance_api_url + url
 
-    response = request_with_auth(url, "get", access_token, renew_token)  # type: ignore
+    response = request_with_auth(url, "get", access_token, renew_token)
     status_code = response.status_code
     if not (200 <= status_code < 300):
         raise PermissionError(
