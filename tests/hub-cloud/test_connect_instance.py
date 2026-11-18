@@ -4,13 +4,15 @@ import os
 
 import lamindb_setup as ln_setup
 import pytest
+from lamincentral.client import SupabaseClientWrapper
 from lamindb_setup._connect_instance import InstanceNotFoundError
 from lamindb_setup.core._hub_client import connect_hub_with_auth
 from lamindb_setup.core._hub_core import connect_instance_hub, get_instance_slug_by_uid
 from lamindb_setup.core._hub_crud import select_instance_by_name, update_instance
 from lamindb_setup.core._settings import MainBranchMock
-from laminhub_rest.core.legacy._instance_collaborator import InstanceCollaboratorHandler
-from postgrest.exceptions import APIError
+from laminhub_rest.core.account import AccountHandler
+from laminhub_rest.core.instance import InstanceHandler
+from laminhub_rest.core.instance_collaborator import InstanceCollaboratorHandler
 
 
 def test_connect_pass_none_disconnected():
@@ -39,19 +41,19 @@ def test_connect_after_revoked_access():
     # can't currently test this on staging as I'm missing the accounts
     if os.getenv("LAMIN_ENV") == "prod":
         ln_setup.login("testuser1")
-        admin_hub = connect_hub_with_auth()
+        admin_hub = SupabaseClientWrapper(connect_hub_with_auth())
+        instance = InstanceHandler(admin_hub).get_by_identifier(
+            "testuser1", "static-test-instance-private-sqlite"
+        )
+        account = AccountHandler(admin_hub).get_by_handle("testuser2")
         collaborator_handler = InstanceCollaboratorHandler(admin_hub)
-        try:
-            # if a previous test run failed, this will
-            # error with a violation of a unique constraint
-            collaborator_handler.add_by_slug(
-                "testuser1/static-test-instance-private-sqlite",
-                "testuser2",
-                "write",
-                skip_insert_user_table=True,
+        # a previous failed run may already have added this collaborator
+        if not collaborator_handler.exists(instance.id, account_id=account.id):
+            collaborator_handler.add(
+                instance.id,
+                account_id=account.id,
+                role="write",
             )
-        except APIError:
-            pass
         ln_setup.login("testuser2")
         ln_setup.connect(
             "https://lamin.ai/testuser1/static-test-instance-private-sqlite", _test=True
@@ -60,9 +62,7 @@ def test_connect_after_revoked_access():
             ln_setup.settings.instance.storage.root_as_str
             == "s3://lamindb-setup-private-bucket"
         )
-        collaborator_handler.delete_by_slug(
-            "testuser1/static-test-instance-private-sqlite", "testuser2"
-        )
+        collaborator_handler.remove(instance.id, account_id=account.id)
         # make the instance private
         with pytest.raises(InstanceNotFoundError):
             ln_setup.connect(
