@@ -13,6 +13,7 @@ from lamindb_setup.core._settings import MainBranchMock
 from laminhub_rest.core.account import AccountHandler
 from laminhub_rest.core.instance import InstanceHandler
 from laminhub_rest.core.instance_collaborator import InstanceCollaboratorHandler
+from laminhub_rest.core.organization import OrganizationMemberHandler
 
 
 def test_connect_pass_none_disconnected():
@@ -47,30 +48,45 @@ def test_connect_after_revoked_access():
         )
         account = AccountHandler(admin_hub).get_by_handle("testuser2")
         collaborator_handler = InstanceCollaboratorHandler(admin_hub)
-        # a previous failed run may already have added this collaborator
-        if not collaborator_handler.exists(instance.id, account_id=account.id):
-            collaborator_handler.add(
-                instance.id,
-                account_id=account.id,
-                role="write",
+        organization_handler = OrganizationMemberHandler(admin_hub)
+        # access_instance insert requires the account to already belong to the
+        # instance organization. A guest membership is enough and is not access.
+        created_membership = not organization_handler.exists(
+            instance.account_id, account.id
+        )
+        if created_membership:
+            organization_handler.add(
+                instance.account_id,
+                account.id,
+                role="guest",
             )
-        ln_setup.login("testuser2")
-        ln_setup.connect(
-            "https://lamin.ai/testuser1/static-test-instance-private-sqlite", _test=True
-        )
-        assert (
-            ln_setup.settings.instance.storage.root_as_str
-            == "s3://lamindb-setup-private-bucket"
-        )
-        collaborator_handler.remove(instance.id, account_id=account.id)
-        # make the instance private
-        with pytest.raises(InstanceNotFoundError):
+        try:
+            # a previous failed run may already have added this collaborator
+            if not collaborator_handler.exists(instance.id, account_id=account.id):
+                collaborator_handler.add(
+                    instance.id,
+                    account_id=account.id,
+                    role="write",
+                )
+            ln_setup.login("testuser2")
             ln_setup.connect(
                 "https://lamin.ai/testuser1/static-test-instance-private-sqlite",
                 _test=True,
             )
-
-        admin_hub.auth.sign_out(options={"scope": "local"})
+            assert (
+                ln_setup.settings.instance.storage.root_as_str
+                == "s3://lamindb-setup-private-bucket"
+            )
+            collaborator_handler.remove(instance.id, account_id=account.id)
+            with pytest.raises(InstanceNotFoundError):
+                ln_setup.connect(
+                    "https://lamin.ai/testuser1/static-test-instance-private-sqlite",
+                    _test=True,
+                )
+        finally:
+            if created_membership:
+                organization_handler.remove(instance.account_id, account.id)
+            admin_hub.auth.sign_out(options={"scope": "local"})
 
 
 def test_connect_after_private_public_switch():
