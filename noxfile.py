@@ -99,6 +99,8 @@ def build(session: nox.Session, group: str, lamin_env: str):
         run(session, f"pytest {COVERAGE_ARGS} ./tests/hub-prod", env=env)
         run(session, f"pytest -s {COVERAGE_ARGS} ./docs/hub-prod", env=env)
     elif group == "hub-cloud":
+        # Docs are a separate pytest root, so they do not load tests/hub-cloud/conftest.py.
+        env["EXTERNAL_CACHE_DISABLED"] = "true"
         run(session, f"pytest {COVERAGE_ARGS} ./tests/hub-cloud", env=env)
         run(session, f"pytest -s {COVERAGE_ARGS} ./docs/hub-cloud", env=env)
 
