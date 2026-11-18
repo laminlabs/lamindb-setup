@@ -208,26 +208,16 @@ assert ln_setup.settings.user.handle == "testuser2"
 account_id = ln_setup.settings.user._uuid
 
 try:
-    try:
-        organization_member_handler.add(
-            organization_id=organization_id,
-            account_id=account_id,
-            role="member",
-        )
-    except KeyError:
-        # we don't set LAMIN_API_KEY, so broadcasting cache invalidation fails
-        # it should still be fine with adding to the organization
-        pass
-    try:
-        InstanceCollaboratorHandler(admin_hub).add(
-            account_id=account_id,
-            instance_id=instance_id,
-            role="write",
-        )
-    except TypeError:
-        # the above failes in the mid due to no resource_db_server associated with the instance
-        # but still adds the collaborator
-        pass
+    organization_member_handler.add(
+        organization_id=organization_id,
+        account_id=account_id,
+        role="member",
+    )
+    InstanceCollaboratorHandler(admin_hub).add(
+        account_id=account_id,
+        instance_id=instance_id,
+        role="write",
+    )
 
     # although technically a user doesn't have to be a collaborator to insert into storage table
     set_managed_storage("./storage4", host="testuser2-laptop")
@@ -237,15 +227,10 @@ try:
         ln_setup.delete("testuser1/test-add-managed-storage", force=True)
 
 finally:
-    try:
-        organization_member_handler.remove(
-            organization_id=organization_id,
-            account_id=account_id,
-        )
-    except KeyError:
-        # we don't set LAMIN_API_KEY, so broadcasting cache invalidation fails
-        # it should still be fine with deletion from the organization
-        pass
+    organization_member_handler.remove(
+        organization_id=organization_id,
+        account_id=account_id,
+    )
     admin_hub.auth.sign_out(options={"scope": "local"})
 ```
 

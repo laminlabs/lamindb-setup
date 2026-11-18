@@ -35,7 +35,6 @@ from lamindb_setup.core._settings_storage import init_storage as init_storage_ba
 from lamindb_setup.core._settings_store import instance_settings_file
 from laminhub_rest.core.instance_collaborator import InstanceCollaboratorHandler
 from laminhub_rest.core.organization import OrganizationMemberHandler
-from sqlalchemy.exc import OperationalError as SQLAlchemy_OperationalError
 from supabase_functions.errors import FunctionsHttpError
 
 
@@ -106,17 +105,11 @@ def test_db_user(
         account_id=reader_settings._uuid,
         role="member",
     )
-    try:
-        InstanceCollaboratorHandler(admin_client).add(
-            account_id=reader_settings._uuid,
-            instance_id=instance_id,
-            role="read",
-        )
-    except SQLAlchemy_OperationalError:
-        # the function above tries to write to the db
-        # but the db for this instance is dummy
-        # the insertion in the supabase table succeeds anyways
-        pass
+    InstanceCollaboratorHandler(admin_client).add(
+        account_id=reader_settings._uuid,
+        instance_id=instance_id,
+        role="read",
+    )
     # check that this was successful and can be read by the reader
     db_collaborator = select_collaborator(
         instance_id=instance_id_hex,
