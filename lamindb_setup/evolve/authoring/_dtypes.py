@@ -36,11 +36,6 @@ from collections.abc import Mapping
 from dataclasses import dataclass
 from typing import TYPE_CHECKING, Literal, Never, get_args, get_origin, overload
 
-if TYPE_CHECKING:
-    import bionty.models
-    import lamindb.models
-
-
 # `CatDType` is `Annotated`: the first argument is the registry type, the
 # second is a `*Cat` metadata instance.  Aliasing `Annotated` is what lets a
 # *value* (`RecordCat(type__uid="123")`) sit inside `[...]` and still type-check.
@@ -962,50 +957,55 @@ def require_dtype_wrapper(dtype: object) -> None:
 
 
 if TYPE_CHECKING:
-    # Executable specification: these annotations mirror the supported syntax and
-    # are type-checked by `ty` so the grammar cannot silently regress.
-    _s0: DType[int]
-    _s1: DType[float]
-    _s2: DType[bool]
-    _s3: DType[str]
-    _s4: DType[datetime.date]
-    _s5: DType[datetime.datetime]
-    _s6: DType[dict[str, str]]
-    _s7: DType[pathlib.Path]
-    _s8: DType[url]
-    _s9: DType[num]
-    _s10: DType[path]
-    _s11: ListDType[int]
-    _c0: CatDType[
-        lamindb.models.Record,
-        RecordCat(type__uid="123", schema__uid="456", is_type=True),
-    ]
-    _c1: CatDType[lamindb.models.Artifact, ArtifactCat(schema__uid="123")]
-    _c2: CatDType[
-        bionty.models.Organism,
-        OrganismCat(name_field="name", source__uid="123"),
-    ]
-    _c3: CatDType[
-        lamindb.models.Project,
-        DangerousCat(some_future_filter="x"),
-    ]
-    # union categoricals (cat[A|B]) -- no cat_filters, optional field selectors.
-    _u0: CatDType[lamindb.models.ULabel | lamindb.models.Record, UnionCat()]
-    _u1: CatDType[
-        bionty.models.CellType | bionty.models.CellLine,
-        UnionCat(fields={bionty.models.CellType: "uid"}),
-    ]
-    # a list of a categorical (list[cat[...]]); its filters are inlined into the
-    # dtype string at staging time (lamindb's cat_filters= rejects nested dtypes).
-    _lc0: ListDType[CatDType[lamindb.models.Record, RecordCat(type__uid="123")]]
-    _lc1: ListDType[CatDType[bionty.models.Organism, OrganismCat(source__uid="123")]]
 
-    _d0 = LaminDType(int)
-    _d1 = LaminDType("num")
-    _d2 = LaminDType(num)
-    _d3 = LaminDType([lamindb.models.Record, bionty.models.Gene])
+    def _check_dtype_examples() -> None:
+        import bionty.models
+        import lamindb.models
 
-    x: type[num] = num
+        # Executable specification: these annotations mirror the supported syntax and
+        # are type-checked by `ty` so the grammar cannot silently regress.
+        _s0: DType[int]
+        _s1: DType[float]
+        _s2: DType[bool]
+        _s3: DType[str]
+        _s4: DType[datetime.date]
+        _s5: DType[datetime.datetime]
+        _s6: DType[dict[str, str]]
+        _s7: DType[pathlib.Path]
+        _s8: DType[url]
+        _s9: DType[num]
+        _s10: DType[path]
+        _s11: ListDType[int]
+        _c0: CatDType[
+            lamindb.models.Record,
+            RecordCat(type__uid="123", schema__uid="456", is_type=True),
+        ]
+        _c1: CatDType[lamindb.models.Artifact, ArtifactCat(schema__uid="123")]
+        _c2: CatDType[
+            bionty.models.Organism,
+            OrganismCat(name_field="name", source__uid="123"),
+        ]
+        _c3: CatDType[
+            lamindb.models.Project,
+            DangerousCat(some_future_filter="x"),
+        ]
+        # union categoricals (cat[A|B]) -- no cat_filters, optional field selectors.
+        _u0: CatDType[lamindb.models.ULabel | lamindb.models.Record, UnionCat()]
+        _u1: CatDType[
+            bionty.models.CellType | bionty.models.CellLine,
+            UnionCat(fields={bionty.models.CellType: "uid"}),
+        ]
+        # a list of a categorical (list[cat[...]]); its filters are inlined into the
+        # dtype string at staging time (lamindb's cat_filters= rejects nested dtypes).
+        _lc0: ListDType[CatDType[lamindb.models.Record, RecordCat(type__uid="123")]]
+        _lc1: ListDType[CatDType[bionty.models.Organism, OrganismCat(source__uid="123")]]
+
+        _d0 = LaminDType(int)
+        _d1 = LaminDType("num")
+        _d2 = LaminDType(num)
+        _d3 = LaminDType([lamindb.models.Record, bionty.models.Gene])
+
+        x: type[num] = num
 
 
 # === Canonical dtype strings =================================================
