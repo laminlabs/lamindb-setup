@@ -998,14 +998,16 @@ if TYPE_CHECKING:
         # a list of a categorical (list[cat[...]]); its filters are inlined into the
         # dtype string at staging time (lamindb's cat_filters= rejects nested dtypes).
         _lc0: ListDType[CatDType[lamindb.models.Record, RecordCat(type__uid="123")]]
-        _lc1: ListDType[CatDType[bionty.models.Organism, OrganismCat(source__uid="123")]]
+        _lc1: ListDType[
+            CatDType[bionty.models.Organism, OrganismCat(source__uid="123")]
+        ]
 
         _d0 = LaminDType(int)
         _d1 = LaminDType("num")
         _d2 = LaminDType(num)
         _d3 = LaminDType([lamindb.models.Record, bionty.models.Gene])
 
-        x: type[num] = num
+        _num_type: type[num] = num
 
 
 # === Canonical dtype strings =================================================
