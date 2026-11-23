@@ -63,7 +63,8 @@ uv pip install --system git+https://github.com/laminlabs/bionty
     elif group == "connectivity":
         cmds = modules_deps.strip()
     # current package
-    cmds += """\nuv pip install --system -e '.[aws,dev]'"""
+    extras = "aws,dev,evolve" if group == "core" else "aws,dev"
+    cmds += f"\nuv pip install --system -e '.[{extras}]'"
 
     # above downgrades django
     if group == "hub-local":
@@ -127,6 +128,8 @@ def core(session: nox.Session):
     del os.environ["AWS_ACCESS_KEY_ID"]
     del os.environ["AWS_SECRET_ACCESS_KEY"]
     run(session, f"pytest {COVERAGE_ARGS} ./tests/core", env=os.environ)
+    # Evolve installs a process-wide network guard during pytest collection.
+    run(session, f"pytest {COVERAGE_ARGS} ./tests/evolve", env=os.environ)
 
 
 @nox.session
@@ -150,9 +153,3 @@ def docs(session: nox.Session):
     # lndocs strips numeric prefixes only from ipynb files.
     convert_executable_md_files()
     build_docs(session, strip_prefix=True, strict=True)
-
-
-@nox.session
-def evolve(session):
-    """Run the isolated evolution suite with the matching development packages installed."""
-    session.run("python", "-m", "pytest", "tests/evolve", *session.posargs)
