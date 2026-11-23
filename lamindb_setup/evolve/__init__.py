@@ -5,7 +5,7 @@ during apply. For a first change, follow :doc:`manage-schemas`.
 
 Access this API through LaminDB::
 
-    from lamindb import evolve
+    from lamindb.setup import evolve
 
 The implementation lives in `lamindb_setup.evolve`, which can also be imported
 directly. Generated plans use that import to avoid LaminDB's normal

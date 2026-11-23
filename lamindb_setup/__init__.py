@@ -6,7 +6,7 @@ Several functions in the `setup` API have a matching command in the :doc:`docs:c
 Guide: :doc:`docs:setup`.
 
 For plan-based metadata changes, see :doc:`manage-schemas` and the
-:mod:`lamindb.evolve` reference.
+:mod:`lamindb.setup.evolve` reference.
 
 Basic operations
 ----------------
@@ -42,6 +42,7 @@ Migration management
    :toctree:
 
    migrate
+   evolve
 
 """
 
