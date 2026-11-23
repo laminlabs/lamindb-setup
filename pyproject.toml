@@ -30,6 +30,12 @@ dependencies = [
 Home = "https://github.com/laminlabs/lamindb-setup"
 
 [project.optional-dependencies]
+evolve = [
+    "pyyaml",
+    "pip",  # capture the environment when applying plans
+    "rich",
+    "typing_extensions>=4.12",
+]
 aws = [
     "aiobotocore[boto3]>=2.12.4,<4.0.0", # less problematic, supports urllib 2 via botocore bounds
     # exclude 2024.10.0 due to https://github.com/fsspec/s3fs/pull/910
@@ -149,6 +155,7 @@ lint.ignore = [
 convention = "google"
 
 [tool.ruff.lint.per-file-ignores]
+"lamindb_setup/evolve/**/*.py" = ["TID252"]  # retain the package-internal imports
 "docs/*" = ["I", "B018", "B017"]
 "tests/*" = ["D"]
 "*/__init__.py" = ["F401"]
@@ -166,3 +173,17 @@ omit = [
     "**/core/_logger.py",
     "**/core/_colors.py",
 ]
+
+# Evolution uses Python 3.11; the setup parent continues to support Python 3.10.
+[tool.ruff.per-file-target-version]
+"lamindb_setup/evolve/**/*.py" = "py311"
+"tests/evolve/**/*.py" = "py311"
+
+[tool.mypy]
+# Use qualified names for the evolution test modules and their local overrides.
+explicit_package_bases = true
+
+# Retain the incorporated engine's optional-type checking policy in its namespace.
+[[tool.mypy.overrides]]
+module = ["lamindb_setup.evolve.*", "tests.evolve.*"]
+strict_optional = false

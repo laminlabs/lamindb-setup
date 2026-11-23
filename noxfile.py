@@ -150,3 +150,9 @@ def docs(session: nox.Session):
     # lndocs strips numeric prefixes only from ipynb files.
     convert_executable_md_files()
     build_docs(session, strip_prefix=True, strict=True)
+
+
+@nox.session
+def evolve(session):
+    """Run the isolated evolution suite with the matching development packages installed."""
+    session.run("python", "-m", "pytest", "tests/evolve", *session.posargs)
