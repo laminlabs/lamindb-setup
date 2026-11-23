@@ -68,13 +68,6 @@ def test_fields_are_exposed_as_feature_attributes() -> None:
     assert _BasicSchema.b is _BasicSchema.schema.features[1]
 
 
-def test_features_mapping_is_deprecated() -> None:
-    with pytest.warns(FutureWarning, match="deprecated"):
-        mapping = _BasicSchema.features
-    assert set(mapping) == {"a", "b"}
-    assert mapping["a"] is _BasicSchema.a
-
-
 _DEFAULT_FT = FeatureType("BasicFeature")
 
 

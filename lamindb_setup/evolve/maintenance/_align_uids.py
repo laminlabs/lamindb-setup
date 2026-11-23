@@ -218,7 +218,7 @@ class SourceIdentity:
     `tracked` and `seeded` map a plan's name to `{natural key: uid}`, read
     from the source's lock files and verified against the live source instance.
     `looked_up` counts the seeded objects whose uid was read from the instance
-    itself, because the source lock predates the lock's `seeded` section.
+    itself, when the source lock has no entry for that seed.
     """
 
     slug: str

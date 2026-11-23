@@ -234,7 +234,7 @@ def run_missing_exports(
 
 def _missing_for_instance(
     instance: InstanceConfig,
-    constructed: dict[str, tuple[Plan, Path]],
+    constructed: dict[str, tuple[Plan, Path, ModuleType]],
     load_errors: dict[str, str],
     connect: Callable[[str], str],
     read_lock: Callable[[Path, str], LockFile | None],
@@ -257,14 +257,14 @@ def _missing_for_instance(
         if ref.target in load_errors:
             inst.errors.append(f"{ref.target}: {load_errors[ref.target]}")
             continue
-        plan_obj, plan_file = constructed[ref.target]
+        plan_obj, plan_file, module = constructed[ref.target]
         lock = read_lock(plan_file, slug)
         if lock is None:
             inst.skipped_plans.append(ref.target)
             continue
         plan_var = ref.var or plan_obj.name
         plan_tracked, plan_refs = _external_refs_for_plan(
-            plan_obj, plan_file, plan_var, lock
+            plan_obj, module, plan_var, lock
         )
         tracked_uids |= plan_tracked
         already_exported |= set(plan_refs)

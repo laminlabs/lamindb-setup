@@ -57,7 +57,7 @@ __all__ = [
 # Non-type records are the vocabulary *values* behind a record type (the options
 # in a sheet's dropdown).  Tracking them was write-only: nothing on the read
 # side ever observed them (introspection reads `is_type=True` only, so
-# `prune-dangling` and the CI drift check never see them), while their `name`
+# `repair dangling` and the CI drift check never see them), while their `name`
 # counted as structural -- so a value renamed on the instance turned every plan
 # carrying it into a hard `DriftError`, repairable only by repeating
 # `ctx.moved` in each dependent plan.  Seeding them keeps vocabularies in

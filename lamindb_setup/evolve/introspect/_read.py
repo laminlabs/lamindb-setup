@@ -175,7 +175,7 @@ class InstanceContents:
     deleted_record_uids: set[str] = field(default_factory=set)
     """Uids of trashed records (`ln.Record` with `branch_id == -1`).
 
-    Lets a consumer (e.g. verify-dtypes) tell a record dtype that references a
+    Lets a consumer (e.g. repair dtypes) tell a record dtype that references a
     trashed record type apart from one that references a record type that does
     not exist at all.
     """

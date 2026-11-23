@@ -2,7 +2,7 @@
 
 Deleting a feature saturates at the trash, and trashing detaches nothing: the
 value rows stay keyed to the feature.  Nothing reaches them afterwards -- every
-lookup that goes through a live feature misses them, `prune-dangling` only
+lookup that goes through a live feature misses them, `repair dangling` only
 walks structural references, and a feature of the same name declared later is a
 different record with a different uid -- yet `get_values()` still reports them
 on the rows they annotate.  That is the state this finds.

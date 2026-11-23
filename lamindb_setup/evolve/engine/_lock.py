@@ -20,7 +20,7 @@ from dataclasses import dataclass, field
 from pathlib import Path
 from typing import TYPE_CHECKING, Any, get_origin
 
-from ..core import SEED_ONLY_KINDS, LaminSchemasError, Promise
+from ..core import LaminSchemasError, Promise
 
 if TYPE_CHECKING:
     from collections.abc import Iterable
@@ -46,27 +46,11 @@ class LockFileError(LaminSchemasError):
 
     A lock is the recorded state of an apply, so reading it wrongly is worse
     than not reading it: every later decision -- adopt, update, delete -- is
-    taken against it.  Both unreadable shapes (corrupt content, and a version
-    written by a newer release whose fields may mean something else) therefore
-    refuse rather than fall back to a default, which would silently look like a
-    plan whose objects have never been created.
+    taken against it. Corrupt files and unsupported versions are refused.
     """
 
 
-# Version 6 records the uid of every seeded (seed-only) object in a separate,
-# identity-only `seeded` section, so the uids can be pinned and aligned across
-# instances (see :mod:`._alignment`).  Version 5 stopped recording the objects a
-# prerequisite plan owns (see `Plan.inherited_dependencies`).  Version 4
-# stopped recording non-type records (see `SEED_ONLY_KINDS`).
-# Version 3 records dtypes in their canonical string form (no repr()-quoting of
-# ResolvedDType strings, and categoricals compared by registry).  Version 2
-# added the per-object `remote_snapshot`/`remote_hash` fields used to tell
-# remote-side drift apart from intentional local plan edits.
 LOCK_VERSION = 6
-
-# Paths already warned about this run, so a lock read more than once (e.g. by
-# both preview and apply) emits its migration notice only once.
-_MIGRATION_WARNED: set[str] = set()
 
 
 def _package_version() -> str:
@@ -335,8 +319,7 @@ def serialize_existing(
         # about whether it has a schema -- a sheet demoted to a plain record
         # type still has one until the apply drops it, and one attached outside
         # the plan turns a record type into a sheet.  `None` is recorded too,
-        # telling a record type without a schema apart from a lock written
-        # before the key was.
+        # so the snapshot explicitly records an unbound schema.
         snap["schema"] = _existing_uid(getattr(existing, "schema", None))
 
     if kind == "Feature":
@@ -379,8 +362,7 @@ def serialize_existing(
         # than on the member links, so it is not covered by the member list either.
         # Read straight from the already-loaded aux (no query), and recorded only
         # when set, for the same reason as `optionals`: a schema without an
-        # index keeps the key absent, so its snapshot is unchanged from the ones
-        # recorded before the index was tracked.
+        # index keeps the key absent.
         index_uid = getattr(existing, "_index_feature_uid", None)
         if index_uid is not None:
             snap["index"] = str(index_uid)
@@ -427,8 +409,7 @@ class LockEntry:
     `remote_snapshot` is a canonical snapshot of the live LaminDB record as it
     looked at the last successful apply (see :func:`serialize_existing`), and
     `remote_hash` is its :func:`remote_state_hash`.  Together they let the next
-    apply tell remote-side drift apart from intentional local plan edits.  Both
-    are `None` for lock files written before version 2.
+    apply tell remote-side drift apart from intentional local plan edits.
     """
 
     key: str
@@ -482,13 +463,6 @@ class LockFile:
     lamindb_version: str = field(default_factory=_package_version)
     objects: dict[str, LockEntry] = field(default_factory=dict)
     seeded: dict[str, str] = field(default_factory=dict)
-    # The on-disk version this lock was read at, when :meth:`_migrate` had to
-    # bring it forward.  `None` for a lock that was already current or was
-    # built in memory.  Kept out of :meth:`to_json`: it describes this read, not
-    # the file.  Consulted by plan-aware code that has to treat a legacy lock's
-    # contents differently and cannot express the rule inside :meth:`_migrate`
-    # (see :func:`~lamindb_setup.evolve.engine._apply.forget_unowned_legacy_entries`).
-    migrated_from: int | None = field(default=None, compare=False)
 
     def entry_for(self, key: str) -> LockEntry | None:
         """Return the recorded entry for `key` if present."""
@@ -527,6 +501,11 @@ class LockFile:
 
     @classmethod
     def from_json(cls, data: dict[str, Any]) -> LockFile:
+        version = data.get("version")
+        if type(version) is not int or version != LOCK_VERSION:
+            raise LockFileError(
+                f"Unsupported lock version {version!r}; expected {LOCK_VERSION}."
+            )
         objects = {
             key: LockEntry.from_json(key, value)
             for key, value in data.get("objects", {}).items()
@@ -536,7 +515,6 @@ class LockFile:
             raise TypeError(f"'seeded' must map keys to uids, got {seeded!r}")
         return cls(
             plan=data.get("plan", ""),
-            version=data.get("version", LOCK_VERSION),
             lamindb_version=data.get("lamindb_version", _package_version()),
             objects=objects,
             seeded={str(key): str(uid) for key, uid in seeded.items()},
@@ -545,10 +523,6 @@ class LockFile:
     @classmethod
     def read(cls, path: str | Path) -> LockFile | None:
         """Read a lock file from `path`, or return `None` if it does not exist.
-
-        A lock written by an older version is migrated in memory (its dtype
-        encodings are canonicalized) and a warning is emitted advising a
-        re-apply, which rewrites the file in the current format.
 
         The two ways a lock can be unreadable are refused rather than guessed
         at, because both would otherwise be acted on as if the file said
@@ -573,18 +547,7 @@ class LockFile:
                 f"{p} does not contain a lock object (found "
                 f"{type(data).__name__}). Restore it from version control."
             )
-        lock = cls._from_json_checked(data, p)
-        if lock.version > LOCK_VERSION:
-            raise LockFileError(
-                f"{p} was written by a newer LaminDB schema evolution (lock version "
-                f"{lock.version}; this installation understands {LOCK_VERSION}). "
-                "Lock versions change what the recorded fields mean, so reading it "
-                "here would compare the plan against misread state and could delete "
-                "or re-create objects wrongly. Upgrade lamindb-setup and re-run."
-            )
-        if lock.version < LOCK_VERSION:
-            lock._migrate(p)
-        return lock
+        return cls._from_json_checked(data, p)
 
     @classmethod
     def _from_json_checked(cls, data: dict[str, Any], path: Path) -> LockFile:
@@ -596,61 +559,13 @@ class LockFile:
         """
         try:
             return cls.from_json(data)
+        except LockFileError as exc:
+            raise LockFileError(f"{path}: {exc}") from exc
         except (KeyError, TypeError, AttributeError) as exc:
             raise LockFileError(
                 f"{path} is a lock file with a malformed entry ({exc!r}). Restore "
                 "it from version control."
             ) from exc
-
-    def _migrate(self, path: Path) -> None:
-        """Bring a legacy lock up to :data:`LOCK_VERSION` in memory and warn to re-apply.
-
-        Canonicalizes legacy dtype encodings (v3) and drops the entries of the
-        kinds that are no longer tracked (v4, see :data:`SEED_ONLY_KINDS`).  The
-        v6 `seeded` section is purely additive: a legacy lock simply has none,
-        and the next apply records it.
-        Dropping them here rather than leaving them to
-        :meth:`~lamindb_setup.evolve.engine._apply.ApplyContext.apply_removals` is what
-        makes the transition silent: an entry the plan no longer records would
-        otherwise read as an object dropped from the plan and be deleted.
-
-        The v5 change -- no longer recording the objects a prerequisite plan owns
-        -- needs the same treatment for the same reason, but cannot be done here
-        because it depends on which objects the *plan* declares, which this class
-        knows nothing about.  :attr:`migrated_from` carries the on-disk version
-        forward so :func:`~lamindb_setup.evolve.engine._apply.forget_unowned_legacy_entries`
-        can apply it where the plan is in hand.
-        """
-        from ..authoring import canonical_dtype_str
-        from ..console import stderr_console
-
-        previous = self.version
-        self.objects = {
-            key: entry
-            for key, entry in self.objects.items()
-            if entry.kind not in SEED_ONLY_KINDS
-        }
-        for entry in self.objects.values():
-            if entry.kind != "Feature":
-                continue
-            dtype = entry.config.get("dtype")
-            if isinstance(dtype, str):
-                entry.config["dtype"] = canonical_dtype_str(dtype)
-        self.version = LOCK_VERSION
-        self.migrated_from = previous
-        key = str(path.resolve())
-        if key in _MIGRATION_WARNED:
-            return
-        _MIGRATION_WARNED.add(key)
-        try:
-            rel = path.resolve().relative_to(Path.cwd())
-        except ValueError:
-            rel = path
-        stderr_console().print(
-            f"[yellow]warning:[/yellow] lock file [bold]{rel}[/bold] is outdated "
-            f"(v{previous} < v{LOCK_VERSION}), migrated in memory; re-apply to "
-            f"rewrite it.",
-        )
 
     def write(self, path: str | Path) -> None:
         """Write the lock file to `path` as indented, sorted JSON.

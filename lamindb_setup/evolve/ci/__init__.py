@@ -26,7 +26,6 @@ from ._apply import CIApplyError, run_apply
 from ._config import CIConfig, ConfigError, InstanceConfig, PlanRef, load_config
 from ._drift import DriftResult, InstanceDriftResult, run_drift_detection
 from ._markdown import (
-    GITHUB_ISSUE_MAX_CHARS,
     render_drift_report,
     render_missing_exports_report,
     render_report,
@@ -44,7 +43,6 @@ from ._pr import PRReport, run_pr_check
 from ._verify import VerifyResult, verify_config
 
 __all__ = [
-    "GITHUB_ISSUE_MAX_CHARS",
     "BlockedObject",
     "CIApplyError",
     "CIConfig",

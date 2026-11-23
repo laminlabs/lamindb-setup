@@ -15,6 +15,8 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 from typing import TYPE_CHECKING
 
+from ..engine import sibling_lock_paths
+
 if TYPE_CHECKING:
     from pathlib import Path
 
@@ -38,16 +40,6 @@ class VerifyResult:
         return not self.orphans and not self.ignored_with_locks
 
 
-def _lock_files(plan_file: Path) -> list[Path]:
-    """Return every lock file belonging to `plan_file` (per-instance + legacy)."""
-    stem = plan_file.stem
-    return sorted(
-        p
-        for p in plan_file.parent.glob(f"{stem}*.lock")
-        if p.name == f"{stem}.lock" or p.name.startswith(f"{stem}.")
-    )
-
-
 def verify_config(config: CIConfig) -> VerifyResult:
     """Check that every committed plan is referenced or explicitly ignored.
 
@@ -69,7 +61,7 @@ def verify_config(config: CIConfig) -> VerifyResult:
             result.referenced.append(plan_file)
         elif resolved in ignored:
             result.ignored.append(plan_file)
-            locks = _lock_files(plan_file)
+            locks = list(sibling_lock_paths(plan_file).values())
             if locks:
                 result.ignored_with_locks[plan_file] = locks
         else:

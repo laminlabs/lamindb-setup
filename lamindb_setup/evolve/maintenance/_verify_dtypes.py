@@ -399,7 +399,7 @@ def _build_renderable(plan: VerifyDtypesPlan, title: str) -> Any:
 def render_verify_dtypes(
     plan: VerifyDtypesPlan, *, title: str, color: bool = False
 ) -> str:
-    """Render the verify-dtypes plan as a terraform-like string."""
+    """Render the repair dtypes plan as a terraform-like string."""
     from rich.console import Console
 
     buffer = io.StringIO()
@@ -414,7 +414,7 @@ def render_verify_dtypes(
 
 
 def print_verify_dtypes(plan: VerifyDtypesPlan, *, title: str) -> None:
-    """Print the verify-dtypes plan to stdout with color."""
+    """Print the repair dtypes plan to stdout with color."""
     from rich.console import Console
 
     Console().print(_build_renderable(plan, title))

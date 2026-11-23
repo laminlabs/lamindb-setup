@@ -18,6 +18,7 @@ from lamindb_setup.evolve.authoring._plan import (
     create_plan,
 )
 from lamindb_setup.evolve.engine._loader import (
+    PlanImportError,
     PlanTargetError,
     StemUidError,
     import_plan_module,
@@ -91,9 +92,7 @@ def test_absolute_cross_directory_import_resolves(tmp_path: Path) -> None:
     assert sys.modules["plans.b.plan_y"].y_plan is module.y_plan
 
 
-def test_transitive_bare_sibling_import_resolves(tmp_path: Path) -> None:
-    # The plan's own directory stays on sys.path, so a bare sibling import
-    # inside a plan reached by an absolute import keeps working.
+def test_nested_bare_sibling_import_fails(tmp_path: Path) -> None:
     (tmp_path / "pyproject.toml").write_text("[project]\n", encoding="utf-8")
     _write_plan(tmp_path / "plans" / "plan_c.py", "c_plan")
     _write_plan(
@@ -107,10 +106,8 @@ def test_transitive_bare_sibling_import_resolves(tmp_path: Path) -> None:
         header="from plans.plan_b import b_plan  # noqa: F401\n",
     )
 
-    module = import_plan_module(entry)
-
-    assert module.__name__ == "plans.plan_a"
-    assert module.b_plan.name == "b_plan"
+    with pytest.raises(PlanImportError, match="plan_c.*project root"):
+        import_plan_module(entry)
 
 
 def test_entry_target_and_imported_plan_are_one_module(tmp_path: Path) -> None:
@@ -249,8 +246,8 @@ def test_falls_back_when_the_dotted_name_is_another_module(tmp_path: Path) -> No
     assert sys.modules["json"] is json
 
 
-def test_warns_when_a_plan_file_is_loaded_under_two_names(
-    tmp_path: Path, capsys: pytest.CaptureFixture[str]
+def test_rejects_a_plan_loaded_under_two_names(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
     # A bare sibling import reaches the file through the plan directory rather
     # than the root, so it executes a second copy under a second name.
@@ -262,14 +259,10 @@ def test_warns_when_a_plan_file_is_loaded_under_two_names(
         header="from plan_a import a_plan\n",
     )
 
-    module_a = import_plan_module(shared)
-    capsys.readouterr()
-    module_b = import_plan_module(other)
-
-    err = capsys.readouterr().err
-    assert str(shared) in err
-    assert "plan_a, plans.plan_a" in err
-    assert module_b.a_plan is not module_a.a_plan
+    monkeypatch.syspath_prepend(str(shared.parent))
+    import_plan_module(shared)
+    with pytest.raises(PlanImportError, match="plans.plan_a.*instead of 'plan_a'"):
+        import_plan_module(other)
 
 
 # --- from a target to the plans a command acts on ---------------------------

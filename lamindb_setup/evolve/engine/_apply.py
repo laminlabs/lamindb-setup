@@ -299,9 +299,6 @@ _APPLIED_KEYS: dict[str, frozenset[str]] = {
 # keys are one property to every gate (see :meth:`ApplyContext._dtype_edit_drift`).
 _FEATURE_DTYPE_KEYS: tuple[str, ...] = ("dtype", "cat_filters")
 
-# How a lock written before list dtypes were recorded in full spells every
-# `list[...]` dtype, whatever its element type.
-_LOSSY_LIST_DTYPE = "list"
 
 # Kinds whose deletion can take more than the object itself: lamindb's trash
 # cascades from a type to everything typed by it, and a schema left behind by the
@@ -778,12 +775,9 @@ def _plan_change_refusal(kind: str, name: Any, key: str, lines: list[str]) -> st
     return f"cannot change {what} ({key}) in place:\n  " + "\n  ".join(lines)
 
 
-# Remote-snapshot keys a lock written before they were tracked does not record,
-# so their absence says nothing about the value the instance had (the remote
-# drift check skips them likewise, see `ApplyContext._check_remote_drift`).
-_LATER_SNAPSHOT_KEYS: frozenset[str] = frozenset(
-    {"schema", "slots", "optionals", "features", "index"}
-)
+# The writer omits these keys when a schema has no slots, optional members,
+# or index. Reconciliation handles those additions against the live schema.
+_OMITTED_WHEN_EMPTY = frozenset({"slots", "optionals", "index"})
 
 # The plan configuration keys behind a refused property, where they are not the
 # property's own name: a feature's dtype is its bare dtype and its filters.
@@ -795,8 +789,7 @@ class _ChangeOrigin:
     """What a lock entry says about who moved a property plan and instance disagree on.
 
     `lock_config` and `stored` are the plan's configuration and the
-    instance's snapshot as the lock recorded them at the last apply
-    (`stored` is `None` for a lock written before snapshots were);
+    instance's snapshot, if captured at the last apply;
     `plan_config` and `current` are the plan's and the instance's now (see
     :func:`serialize_config` and :func:`serialize_existing`).  Without a lock
     entry there is no origin at all (`None` where one is taken).
@@ -816,7 +809,7 @@ class _ChangeOrigin:
         stored = self.stored
         if (
             stored is not None
-            and (name in stored or name not in _LATER_SNAPSHOT_KEYS)
+            and (name in stored or name not in _OMITTED_WHEN_EMPTY)
             and stored.get(name) != self.current.get(name)
         ):
             return True
@@ -1983,10 +1976,7 @@ class ApplyContext:
         # because identity -- not the natural key -- is what makes an object the
         # *same* declaration the prerequisite plan owns.
         self.borrowed_ids: set[int] = borrowed_ids or set()
-        # The natural keys of those objects.  Needed separately because two
-        # things address an object by key rather than by identity: the removal
-        # pass, which reads entries an older version of this package wrote for
-        # borrowed objects, and the uid pinning in :meth:`locked_uid`.
+        # Only the owning plan may pin or remove these keys.
         self.borrowed_keys: set[str] = borrowed_keys or set()
         # The prerequisite plan declaring each borrowed object, keyed like
         # `borrowed_ids`, so a missing one can name the plan to apply first.
@@ -2278,12 +2268,7 @@ class ApplyContext:
     def locked_uid(self, key: str) -> str | None:
         """Return the uid recorded in the lock for `key` if any.
 
-        A borrowed key is answered with `None` even when the lock does record
-        a uid for it: a lock written before borrowed objects stopped being
-        tracked still pins one, and honouring it would resolve the prerequisite
-        plan's object by an address this plan no longer maintains -- including a
-        uid the prerequisite has since destroyed and re-created.  The owning
-        plan's lock remains the one that pins it.
+        The owning plan pins a borrowed object.
         """
         if self.lock is None or key in self.borrowed_keys:
             return None
@@ -5840,9 +5825,6 @@ class ApplyContext:
         descriptive properties is recorded as a loud `DRIFT` warning and left
         for :meth:`_reconcile` to auto-correct back to the plan.
 
-        Entries from lock files written before version 2 have no recorded
-        snapshot; the live remote is then trusted as the baseline.
-
         `current` may supply `existing`'s already-computed snapshot (see
         :func:`serialize_existing`) so it is not re-serialized here; when
         `None` it is computed lazily.  `baseline` and `desired` are the
@@ -5886,23 +5868,9 @@ class ApplyContext:
                 # Derived from the granular fields and the member list, both of
                 # which are compared explicitly; ignore the opaque digest.
                 continue
-            if name == "schema" and "schema" not in stored:
-                # Pre-schema-snapshot lock: a record type's was not recorded,
-                # so an absent key cannot say whether it had one.
-                continue
-            if name == "slots" and "slots" not in stored:
-                # Pre-slots-snapshot lock: a composite's slots were not recorded.
-                continue
-            if kind == "Schema" and name == "optionals" and "optionals" not in stored:
-                # Pre-optionals-snapshot lock: an absent key cannot say whether
-                # the schema had optional members, and the only transition it
-                # can hide -- the instance *gaining* one -- is a widening the
-                # taxonomy classifies as SAFE anyway.
+            if name in _OMITTED_WHEN_EMPTY and name not in stored:
                 continue
             if kind == "Schema" and name == "features":
-                if "features" not in stored:
-                    # Pre-feature-snapshot lock: nothing to compare against.
-                    continue
                 stored_f = set(stored.get(name) or [])
                 current_f = set(current.get(name) or [])
                 removed = sorted(stored_f - current_f)
@@ -5929,12 +5897,6 @@ class ApplyContext:
                 f"lock recorded {stored.get(name)!r}"
             )
             if kind == "Schema" and name == "index":
-                if "index" not in stored:
-                    # Recorded before the index was tracked, or while the schema
-                    # had none: the snapshot cannot say which.  Nothing is missed
-                    # -- the reconcile diffs the plan's index against the
-                    # instance's either way.
-                    continue
                 if current.get(name) == desired_index:
                     drifted(
                         "the index was already changed outside the plan to the "
@@ -6057,9 +6019,7 @@ class ApplyContext:
         replacement.  A member the plan has *also* stopped declaring is real
         structural drift and still refuses.
 
-        Requires the lock's configuration to carry a `features` list; one
-        written before schema members were recorded there cannot answer the
-        question and keeps the conservative refusal.
+        A recorded member list is required to establish which members the plan owned.
         """
         if baseline is None or desired is None or "features" not in baseline:
             return False
@@ -6090,8 +6050,7 @@ class ApplyContext:
 
         A structural difference is *not* an in-place edit, however, when the
         live instance already holds the plan's desired value: the lock baseline
-        is merely stale (e.g. written before the property was tracked, or after
-        the value was fixed out of band).  In that case applying the plan
+        is merely stale (e.g. the value was fixed out of band).  In that case applying the plan
         changes nothing on the instance -- no already-validated record is
         affected -- so the divergence is accepted and the lock is refreshed by
         :meth:`_record` instead of raising.  Identity metadata
@@ -6247,14 +6206,6 @@ class ApplyContext:
         holds and the one the plan asks for in full, as the diff shows a dtype
         change -- or nothing when the edit may proceed.
         """
-        if baseline.get("dtype") == _LOSSY_LIST_DTYPE and str(
-            config.get("dtype") or ""
-        ).startswith("list["):
-            # A lock written before list dtypes were recorded in full says only
-            # `list`, which cannot tell what the plan changes.  The dtype is left
-            # to :meth:`_reconcile`, which diffs it against the instance, and the
-            # lock records it in full from then on.
-            baseline = {**baseline, "dtype": config.get("dtype")}
         changed = [
             name
             for name in _FEATURE_DTYPE_KEYS
@@ -8485,17 +8436,7 @@ class ApplyContext:
         so the handoff of ownership between plans managed against the same
         instance is visible rather than silent.
 
-        Entries of a seed-only kind (:data:`~lamindb_setup.evolve.core.SEED_ONLY_KINDS`)
-        are skipped: a lock written before those kinds stopped being tracked
-        still lists them, and they would otherwise all read as removals on the
-        first apply after the upgrade.  :meth:`LockFile._migrate` drops them on
-        read, so this only covers a lock whose version field is absent.
-
-        Entries for a *borrowed* object are skipped for the same reason: a lock
-        written before the objects inherited from `depends_on` stopped being
-        tracked still records them, and deleting a prerequisite plan's objects
-        because this plan no longer locks them would be the worst possible
-        reading of the change.  They simply drop out of the rebuilt lock.
+        Seed-only and borrowed objects are outside this plan's deletion scope.
 
         The deletion itself saturates at the trash (see
         :func:`~lamindb_setup.evolve.engine._trash.delete_object`).  Dropping the object
@@ -9998,7 +9939,7 @@ class ApplyContext:
         feature is left declaring a soft-deleted member.  That is invisible to
         the diff (:func:`~lamindb_setup.evolve.engine._trash.is_live` drops it
         from the member list), silently changes what the schema validates, and is
-        what `prune-dangling` then reports the schema itself as dangling for.
+        what `repair dangling` then reports the schema itself as dangling for.
 
         Three kinds of holder are not in the way:
 
@@ -10556,59 +10497,6 @@ def _rewrite_key_refs(value: Any, old: str, new: str) -> Any:
     return value
 
 
-def forget_unowned_legacy_entries(
-    lock: LockFile, own_keys: set[str], *, moved_from: Iterable[str] = ()
-) -> list[str]:
-    """Drop the entries a pre-v5 lock recorded for objects this plan does not own.
-
-    Before `LOCK_VERSION` 5 a plan's lock recorded every object of the plans it
-    `depends_on`.  Those entries have to *disappear*, not be deleted: they
-    describe objects another plan manages, and
-    :meth:`ApplyContext.apply_removals` would otherwise read each one as an
-    object dropped from this plan and delete it by its recorded uid.
-
-    :attr:`ApplyContext.borrowed_keys` already exempts the ones the prerequisite
-    still declares at the same address, but that is not enough on its own: it is
-    built from the prerequisite's *current* declarations, while the lock records
-    the state at the last apply.  An upstream object that has since been renamed
-    or dropped is in the lock and not in `borrowed_keys`, and deleting it is
-    exactly the data loss this whole change set exists to prevent -- for a rename
-    the recorded uid still resolves, to the record the owner just renamed.
-
-    So for a legacy lock the rule is the safe one: anything this plan does not
-    currently declare is forgotten.  That is deliberately blunt.  An object the
-    plan genuinely owned and dropped *in the same change* as the upgrade is
-    forgotten too, and leaks rather than being deleted -- a leak an operator can
-    see and clean up, against a deletion they cannot undo.  It costs one apply:
-    the rebuilt lock is v5 and contains only owned keys, after which
-    :meth:`ApplyContext.apply_removals` is exact again.
-
-    `moved_from` are the *previous* addresses this plan declares via
-    `ctx.moved`, which are by construction absent from `own_keys` -- that set
-    holds the plan's current keys, and a rename is precisely the case where the
-    two differ.  They are exempt, along with the descendants a rename of a
-    `*Type` carries with it (see :func:`_rekey_prefix`), because forgetting one
-    would leave :func:`_apply_moves_to_lock` nothing to re-key: the rename would
-    silently degrade to a delete + create, losing the object's uid, and any
-    schema referencing it would read as having dropped a member.
-
-    Returns the keys dropped, for reporting.  A no-op for a current lock.
-    """
-    if lock.migrated_from is None or lock.migrated_from >= 5:
-        return []
-    prefixes = tuple(moved_from)
-
-    def _keep(key: str) -> bool:
-        return key in own_keys or any(
-            key == old or key.startswith(old + "/") for old in prefixes
-        )
-
-    dropped = [key for key in lock.objects if not _keep(key)]
-    for key in dropped:
-        del lock.objects[key]
-    return dropped
-
-
 def _rewrite_borrowed_move_refs(
     lock: LockFile, specs: Iterable[tuple[str, str]]
 ) -> None:
@@ -10863,9 +10751,7 @@ def compute_changes(
     moved_keys: set[str] = set()
     move_outcome = MoveOutcome()
     borrowed_moves = plan.inherited_moves
-    if lock is not None and (
-        plan.ctx.moves or borrowed_moves or lock.migrated_from is not None
-    ):
+    if lock is not None and (plan.ctx.moves or borrowed_moves):
         # Re-key a copy so declared moves never mutate the caller's lock: the
         # preview and apply passes reuse the same on-disk lock, and each must
         # start from the un-migrated baseline.
@@ -10876,18 +10762,6 @@ def compute_changes(
             (_old_key_for(natural_key(mv.obj), mv.from_), natural_key(mv.obj))
             for mv in plan.ctx.moves
         ]
-        # Before anything else: a lock written before v5 lists the objects of the
-        # plans this one depends on, and those entries must be forgotten rather
-        # than read as removals.  The previous addresses of this plan's own moves
-        # are not among its current keys and must survive to be re-keyed below.
-        forgotten = forget_unowned_legacy_entries(
-            lock, own_keys, moved_from=[old for old, _new in own_specs]
-        )
-        if forgotten and report is not None:
-            report(
-                f"Forgetting {len(forgotten)} lock entr"
-                f"{'y' if len(forgotten) == 1 else 'ies'} owned by a prerequisite plan"
-            )
         if borrowed_moves:
             _rewrite_borrowed_move_refs(
                 lock,

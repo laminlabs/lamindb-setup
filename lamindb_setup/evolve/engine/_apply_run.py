@@ -153,21 +153,6 @@ def render_sheet_export_outcome(outcome: SheetExportOutcome) -> list[str]:
     return notes
 
 
-def _warn_legacy_lock(plan_file: Path, lock_file: Path) -> None:
-    """Warn if a pre-per-instance `<plan>.lock` exists but the new one does not.
-
-    Such a legacy lock has no recorded instance and is ignored; the new
-    per-instance lock starts empty and re-adopts existing objects by natural key.
-    """
-    legacy = plan_file.with_suffix(".lock")
-    if legacy.exists() and legacy != lock_file and not lock_file.exists():
-        echo(
-            f"Warning: ignoring legacy lock file {legacy} (no instance binding); "
-            f"writing a per-instance lock to {lock_file}.",
-            err=True,
-        )
-
-
 def apply_one(
     plan_obj: Plan,
     plan_file: Path,
@@ -271,7 +256,6 @@ def apply_one(
 
     lock_file = lock_path(plan_file, instance_slug)
     lock = LockFile.read(lock_file)
-    _warn_legacy_lock(plan_file, lock_file)
     # Read fresh for every plan, so an instance applied earlier in the same run
     # has already written the uids this one is created with.
     sibling_uids = read_sibling_uids(plan_file, plan_obj, instance_slug)

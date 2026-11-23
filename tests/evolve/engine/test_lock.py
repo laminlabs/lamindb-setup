@@ -173,66 +173,16 @@ def test_lockentry_roundtrips_remote_snapshot_and_hash(tmp_path: Path) -> None:
     assert entry.remote_hash == remote_state_hash(snapshot)
 
 
-def test_read_drops_record_entries_from_an_outdated_lock(tmp_path: Path) -> None:
-    """A pre-v4 lock loses its record entries on read.
+@pytest.mark.parametrize("fields", [{}, {"version": 5}, {"version": LOCK_VERSION + 1}])
+def test_read_rejects_unsupported_or_missing_version(
+    tmp_path: Path, fields: dict
+) -> None:
+    from lamindb_setup.evolve.engine._lock import LockFileError
 
-    Non-type records are no longer tracked, so a lock written before that still
-    lists them.  Dropping them on read rather than leaving them for
-    `apply_removals` is what keeps the upgrade silent: an entry the plan no
-    longer records otherwise reads as an object dropped from the plan.
-    """
-    path = tmp_path / "p.lock"
-    path.write_text(
-        json.dumps(
-            {
-                "plan": "p",
-                "version": 3,
-                "objects": {
-                    "RecordType:rt": {
-                        "key": "RecordType:rt",
-                        "kind": "RecordType",
-                        "name": "rt",
-                        "uid": "abc123456789",
-                    },
-                    "RecordType:rt/Record:value": {
-                        "key": "RecordType:rt/Record:value",
-                        "kind": "Record",
-                        "name": "value",
-                        "uid": "def123456789",
-                    },
-                },
-            }
-        ),
-        encoding="utf-8",
-    )
-
-    loaded = LockFile.read(path)
-    assert loaded is not None
-    assert loaded.version == LOCK_VERSION
-    assert loaded.entry_for("RecordType:rt") is not None
-    assert loaded.entry_for("RecordType:rt/Record:value") is None
-
-
-def test_lockfile_reads_version_1_without_snapshot_fields() -> None:
-    # A pre-version-2 lock has no remote_snapshot/remote_hash on its entries.
-    legacy = {
-        "version": 1,
-        "lamindb_version": "0.0.0",
-        "plan": "p",
-        "objects": {
-            "FeatureType:ft": {
-                "kind": "FeatureType",
-                "name": "ft",
-                "uid": "abc123456789",
-                "config": {"kind": "FeatureType", "name": "ft"},
-            }
-        },
-    }
-    lock = LockFile.from_json(legacy)
-    entry = lock.entry_for("FeatureType:ft")
-    assert entry is not None
-    assert entry.remote_snapshot is None
-    assert entry.remote_hash is None
+    path = tmp_path / "plan.lock"
+    path.write_text(json.dumps({"plan": "p", "objects": {}, **fields}))
+    with pytest.raises(LockFileError, match="Unsupported lock version"):
+        LockFile.read(path)
 
 
 def test_remote_state_hash_is_order_independent() -> None:
@@ -290,19 +240,6 @@ def test_write_failure_preserves_existing_lock(
     assert path.read_text(encoding="utf-8") == original
     siblings = [p.name for p in path.parent.iterdir() if p.name != path.name]
     assert siblings == []
-
-
-def test_read_refuses_a_lock_written_by_a_newer_release(tmp_path: Path) -> None:
-    """A newer lock's fields may mean something else; misreading them deletes objects."""
-    from lamindb_setup.evolve.engine._lock import LOCK_VERSION, LockFileError
-
-    path = tmp_path / "plan.lock"
-    path.write_text(
-        json.dumps({"plan": "p", "version": LOCK_VERSION + 1, "objects": {}})
-    )
-
-    with pytest.raises(LockFileError, match="written by a newer"):
-        LockFile.read(path)
 
 
 def test_read_reports_a_corrupt_lock_instead_of_a_json_error(tmp_path: Path) -> None:

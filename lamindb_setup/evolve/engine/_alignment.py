@@ -54,7 +54,6 @@ def sibling_lock_paths(
     The inverse of :func:`._lock.lock_path`: `plan_foo.acme-prod.lock` is the
     lock of `plan_foo.py` against `acme-prod`.  `exclude` drops one slug,
     typically the instance being applied to, whose lock is read separately.
-    The legacy instance-less `plan_foo.lock` has no slug and is never listed.
     """
     stem = plan_file.stem
     found: dict[str, Path] = {}

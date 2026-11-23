@@ -135,7 +135,7 @@ class DriftResult:
 
 
 def _external_refs_for_plan(
-    plan_obj: Plan, plan_file: Path, plan_var: str, lock: LockFile
+    plan_obj: Plan, module: ModuleType, plan_var: str, lock: LockFile
 ) -> tuple[set[str], dict[str, ExternalRef]]:
     """Return `(tracked_uids, external_refs)` for one applied plan.
 
@@ -158,7 +158,6 @@ def _external_refs_for_plan(
     exports_cls = type(exports)
     if exports_cls.__name__ == "PlanExports":
         return tracked_uids, refs
-    module = plan_file.stem
     for field_name in get_type_hints(exports_cls):
         obj = getattr(exports, field_name, None)
         if obj is None:
@@ -168,7 +167,7 @@ def _external_refs_for_plan(
             continue
         refs[uid] = ExternalRef(
             uid=uid,
-            module=module,
+            module=module.__name__,
             plan_var=plan_var,
             exports_cls=exports_cls.__name__,
             field=field_name,
@@ -254,16 +253,16 @@ def _construct_plans(
     config: CIConfig,
     load_plan: Callable[[str], tuple[Plan, Path, ModuleType]],
     report: Callable[[str], None] | None = None,
-) -> tuple[dict[str, tuple[Plan, Path]], dict[str, str]]:
+) -> tuple[dict[str, tuple[Plan, Path, ModuleType]], dict[str, str]]:
     """Construct every configured plan once, before any instance is connected.
 
     Returns `(constructed, errors)` keyed by plan target: `constructed` maps a
-    target to its `(plan, path)` and `errors` maps a target to the message of
+    target to its `(plan, path, module)` and `errors` maps a target to the message of
     a load failure.  Constructing all plans up front -- while lamindb is not yet
     imported -- is required because connecting to an instance imports lamindb,
     after which the plan-construction guard rejects any further plan.
     """
-    constructed: dict[str, tuple[Plan, Path]] = {}
+    constructed: dict[str, tuple[Plan, Path, ModuleType]] = {}
     errors: dict[str, str] = {}
     for instance in config.instances:
         for ref in instance.plans:
@@ -272,18 +271,18 @@ def _construct_plans(
             if report is not None:
                 report(f"Loading {ref.target}")
             try:
-                plan_obj, plan_file, _module = load_plan(ref.load_target)
+                loaded = load_plan(ref.load_target)
             except Exception as exc:
                 errors[ref.target] = str(exc)
                 continue
-            constructed[ref.target] = (plan_obj, plan_file)
+            constructed[ref.target] = loaded
     return constructed, errors
 
 
 def _drift_for_instance(
     instance: InstanceConfig,
     out_dir: Path,
-    constructed: dict[str, tuple[Plan, Path]],
+    constructed: dict[str, tuple[Plan, Path, ModuleType]],
     load_errors: dict[str, str],
     connect: Callable[[str], str],
     introspect: Callable[..., IntrospectionResult],
@@ -313,7 +312,7 @@ def _drift_for_instance(
         if ref.target in load_errors:
             drift.errors.append(f"{ref.target}: {load_errors[ref.target]}")
             continue
-        plan_obj, plan_file = constructed[ref.target]
+        plan_obj, plan_file, module = constructed[ref.target]
         lock = read_lock(plan_file, slug)
         if lock is None:
             drift.skipped_plans.append(ref.target)
@@ -321,7 +320,7 @@ def _drift_for_instance(
         loaded.append((ref.target, plan_obj, plan_file))
         plan_var = ref.var or plan_obj.name
         plan_tracked, plan_refs = _external_refs_for_plan(
-            plan_obj, plan_file, plan_var, lock
+            plan_obj, module, plan_var, lock
         )
         tracked_uids |= plan_tracked
         external_refs.update(plan_refs)

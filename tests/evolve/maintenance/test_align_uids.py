@@ -258,11 +258,10 @@ def test_lock_round_trips_the_seeded_section(tmp_path: Path) -> None:
 
 def test_lock_without_seeded_section_is_read_as_empty(tmp_path: Path) -> None:
     path = tmp_path / "p.acme.lock"
-    path.write_text(json.dumps({"version": 5, "plan": "p", "objects": {}}))
+    path.write_text(json.dumps({"version": LOCK_VERSION, "plan": "p", "objects": {}}))
     lock = LockFile.read(path)
     assert lock is not None
     assert lock.seeded == {}
-    assert lock.migrated_from == 5
     assert "seeded" not in lock.to_json()
 
 
@@ -1583,7 +1582,7 @@ def test_read_source_identity_verifies_the_lock_against_the_source(
     }
     assert identity.lock_files == [source_lock]
 
-    # A lock predating the seeded section: the value is looked up live.
+    # A seed missing from the current lock is looked up on the source.
     lock = LockFile.read(source_lock)
     assert lock is not None
     lock.seeded = {}

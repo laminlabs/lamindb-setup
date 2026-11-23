@@ -3,7 +3,7 @@
 Two features (or two schemas) that share the same `type` parent — or that both
 have no parent — *and* the same name are duplicates: LaminDB addresses such an
 object by its (name, type) natural key, so a second one with the same key is an
-accident that should not exist.  `remove-duplicates` groups every live feature
+accident that should not exist.  `repair duplicates` groups every live feature
 and schema by (kind, parent, name), and for any group with more than one member
 keeps the most recently created object and marks the older ones for deletion.
 

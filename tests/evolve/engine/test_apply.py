@@ -60,13 +60,12 @@ from lamindb_setup.evolve.engine._apply import (
     SpaceNotFoundError,
     compute_changes,
     forget_missing,
-    forget_unowned_legacy_entries,
     plan_natural_keys,
     prefetch_plans,
     write_lock,
 )
 from lamindb_setup.evolve.engine._loader import plan_target
-from lamindb_setup.evolve.engine._lock import LockEntry, LockFile, natural_key
+from lamindb_setup.evolve.engine._lock import LockFile, natural_key
 from lamindb_setup.evolve.render import render_changes, render_changes_markdown
 
 if TYPE_CHECKING:
@@ -2118,8 +2117,8 @@ def test_a_property_the_plan_still_declares_as_locked_is_drift() -> None:
     assert origin.is_drift("flexible")
 
 
-def test_a_later_snapshot_key_absent_from_the_lock_proves_nothing() -> None:
-    # A lock recording no index may predate the index being tracked.
+def test_an_unset_snapshot_index_does_not_establish_drift() -> None:
+    # The writer omits the index when none is set.
     origin = _origin(
         lock={},
         plan={"index": "FeatureType:ft/Feature:barcode"},
@@ -3114,36 +3113,6 @@ def test_declarative_gene_categorical_roundtrips(
 
     # Re-apply the very same plan: no drift, nothing to change.
     reapplied = compute_changes(_gene_cat_plan, mode=ApplyMode.APPLY, lock=lock)
-    assert {c.action for c in reapplied.changes} == {Action.NO_CHANGE}
-
-
-@pytest.mark.parametrize("instance", ["bionty"], indirect=True)
-def test_declarative_gene_cat_reapply_against_legacy_lock(
-    instance: TestInstanceInfo,
-    ln: LamindbModuleType,
-    bt: BiontyModuleType,
-    tmp_path: Path,
-) -> None:
-    # Reproduces the CI "configuration drift" for a declarative
-    # cat[bionty.Gene.symbol] feature whose lock was written by an older version
-    # that stored the single categorical as the registry class path
-    # ('bionty.models.Gene'). The instance already holds the plan's dtype, so a
-    # re-apply must be a clean no-op -- not a drift failure.
-    _gene_cat_none_plan.reset()
-    applied = compute_changes(_gene_cat_none_plan, mode=ApplyMode.APPLY, lock=None)
-    feat = ln.Feature.get(name="genetic_perturbation", is_type=False)
-    assert feat.dtype_as_str == "cat[bionty.Gene.symbol]"
-
-    lock = _persist_lock(applied, _gene_cat_none_plan, tmp_path / "gene.lock")
-
-    key = "FeatureType:BioSampleFeatureType/Feature:genetic_perturbation"
-    entry = lock.entry_for(key)
-    assert entry is not None
-    # Simulate a lock written by an older version: a single categorical was
-    # recorded as the registry class import path rather than a cat[...] string.
-    entry.config["dtype"] = "bionty.models.Gene"
-
-    reapplied = compute_changes(_gene_cat_none_plan, mode=ApplyMode.APPLY, lock=lock)
     assert {c.action for c in reapplied.changes} == {Action.NO_CHANGE}
 
 
@@ -4361,27 +4330,6 @@ def test_schema_without_optionals_keeps_the_key_out_of_the_snapshot(
     assert {c.action for c in again.changes} == {Action.NO_CHANGE}
 
 
-def test_lock_predating_the_optionals_snapshot_does_not_warn(
-    instance: TestInstanceInfo, ln: LamindbModuleType, tmp_path: Path
-) -> None:
-    # An older lock recorded no `optionals` key at all.  Its absence cannot
-    # say whether the schema had optional members, and the only transition it
-    # can hide (the instance *gaining* one) is a widening, so the entry must be
-    # accepted quietly rather than reported as a remote change.
-    applied = compute_changes(_optional_schema_plan, mode=ApplyMode.APPLY, lock=None)
-    lock = _persist_lock(applied, _optional_schema_plan, tmp_path / "opt.lock")
-
-    entry = next(e for e in lock.objects.values() if e.kind == "Schema")
-    assert entry.remote_snapshot is not None
-    del entry.remote_snapshot["optionals"]
-    entry.remote_hash = None
-
-    ctx = compute_changes(_optional_schema_plan, mode=ApplyMode.PLAN, lock=lock)
-    change = {c.kind: c for c in ctx.changes}["Schema"]
-    assert change.action is Action.NO_CHANGE
-    assert change.warnings == []
-
-
 def test_apply_adds_feature_to_existing_schema(
     instance: TestInstanceInfo, ln: LamindbModuleType
 ) -> None:
@@ -5051,7 +4999,7 @@ def test_deleting_a_feature_another_schema_declares_is_refused(
 ) -> None:
     # Trashing detaches nothing, so deleting a feature a schema outside the plan
     # still declares leaves that schema validating against a soft-deleted member
-    # -- invisible to the diff, and what prune-dangling then condemns the schema
+    # -- invisible to the diff, and what repair dangling then condemns the schema
     # itself for.
     applied = compute_changes(_removal_v1_plan, mode=ApplyMode.APPLY, lock=None)
     lock = _persist_lock(applied, _removal_v1_plan, tmp_path / "rm.lock")
@@ -5545,47 +5493,6 @@ def test_removals_never_delete_a_record_the_run_resolved_to() -> None:
 
     with pytest.raises(DriftError, match="'RecordType:X' \\(uid 'u1'\\) is the record"):
         ctx.apply_removals()
-
-
-def _legacy_list_lock(lock: LockFile) -> LockFile:
-    """`lock` as a release before list dtypes were recorded in full wrote it."""
-    entry = lock.entry_for("FeatureType:ls_ft/Feature:ls_col")
-    assert entry is not None
-    entry.config["dtype"] = "list"
-    return lock
-
-
-def test_a_legacy_list_lock_is_refreshed_without_a_change(
-    instance: TestInstanceInfo, ln: LamindbModuleType, tmp_path: Path
-) -> None:
-    _ls_str_plan.reset()
-    applied = compute_changes(_ls_str_plan, mode=ApplyMode.APPLY, lock=None)
-    lock = _legacy_list_lock(_persist_lock(applied, _ls_str_plan, tmp_path / "ls.lock"))
-    _ls_str_plan.reset()
-
-    ctx = compute_changes(_ls_str_plan, mode=ApplyMode.APPLY, lock=lock)
-
-    assert {c.action for c in ctx.changes} == {Action.NO_CHANGE}
-    entry = ctx.build_lock(_ls_str_plan.name).entry_for(
-        "FeatureType:ls_ft/Feature:ls_col"
-    )
-    assert entry is not None
-    assert entry.config["dtype"] == "list[str]"
-
-
-def test_a_legacy_list_lock_leaves_an_element_change_to_the_instance_diff(
-    instance: TestInstanceInfo, ln: LamindbModuleType, tmp_path: Path
-) -> None:
-    # A bare `list` cannot say what the plan changes, so the change is judged
-    # against the instance, as it was before: `int -> str` widens the element.
-    _ls_int_plan.reset()
-    applied = compute_changes(_ls_int_plan, mode=ApplyMode.APPLY, lock=None)
-    lock = _legacy_list_lock(_persist_lock(applied, _ls_int_plan, tmp_path / "ls.lock"))
-    _ls_str_plan.reset()
-
-    compute_changes(_ls_str_plan, mode=ApplyMode.APPLY, lock=lock)
-
-    assert ln.Feature.get(name="ls_col", is_type=False).dtype_as_str == "list[str]"
 
 
 def test_a_list_element_narrowing_is_seen_in_the_lock(
@@ -6926,29 +6833,6 @@ def test_borrowed_object_renamed_by_its_owner_is_not_deleted_downstream(
     assert [f.name for f in schema.features.all()] == ["dep_renamed"]
 
 
-def test_legacy_lock_entries_for_borrowed_objects_are_dropped_not_deleted(
-    instance: TestInstanceInfo, ln: LamindbModuleType, shared_plans: None
-) -> None:
-    """A lock written before borrowed objects stopped being tracked still lists them."""
-    compute_changes(_owner_plan, mode=ApplyMode.APPLY, lock=None)
-    owner_ctx = compute_changes(_owner_plan, mode=ApplyMode.APPLY, lock=None)
-    borrower_ctx = compute_changes(_borrower_plan, mode=ApplyMode.APPLY, lock=None)
-
-    # forge the old shape: the borrower's lock carrying the owner's objects too
-    legacy = borrower_ctx.build_lock(_borrower_plan.name)
-    legacy.objects.update(owner_ctx.build_lock(_owner_plan.name).objects)
-    assert "FeatureType:dep_ft/Feature:dep_unused" in legacy.objects
-
-    again = compute_changes(_borrower_plan, mode=ApplyMode.APPLY, lock=legacy)
-
-    assert not [c for c in again.changes if c.action is Action.DELETE]
-    assert ln.Feature.filter(name="dep_unused", is_type=False).one_or_none() is not None
-    # and they are gone from the rebuilt lock
-    assert sorted(again.build_lock(_borrower_plan.name).objects) == [
-        "Schema:BorrowerSchema"
-    ]
-
-
 def test_borrowed_object_replaced_by_its_owner_relinks_downstream_schema(
     instance: TestInstanceInfo, ln: LamindbModuleType, shared_plans: None
 ) -> None:
@@ -6978,195 +6862,3 @@ def test_borrowed_object_replaced_by_its_owner_relinks_downstream_schema(
     schema = ln.Schema.filter(name="BorrowerSchema").one_or_none()
     assert schema is not None
     assert [str(f.uid) for f in schema.features.all()] == [str(new.uid)]
-
-
-def _pre_v5_lock(owner_ctx: Any, borrower_ctx: Any, path: Path) -> LockFile:
-    """A real pre-v5 lock file: the borrower's, also carrying the owner's objects."""
-    import json
-
-    legacy = borrower_ctx.build_lock(_borrower_plan.name)
-    legacy.objects.update(owner_ctx.build_lock(_owner_plan.name).objects)
-    legacy.version = 4
-    path.write_text(json.dumps(legacy.to_json()), encoding="utf-8")
-    read = LockFile.read(path)
-    assert read is not None and read.migrated_from == 4
-    return read
-
-
-def test_pre_v5_lock_forgets_an_upstream_object_the_owner_renamed(
-    instance: TestInstanceInfo,
-    ln: LamindbModuleType,
-    shared_plans: None,
-    tmp_path: Path,
-) -> None:
-    """The worst case of the upgrade: a legacy entry whose key has since moved.
-
-    `borrowed_keys` cannot exempt it -- that set is built from the owner's
-    *current* declarations -- so without the version gate the entry reads as a
-    removal and deletes by its recorded uid, which after an in-place rename is
-    the record the owner just renamed.
-    """
-    owner = compute_changes(_owner_plan, mode=ApplyMode.APPLY, lock=None)
-    owner_lock = owner.build_lock(_owner_plan.name)
-    borrower = compute_changes(_borrower_plan, mode=ApplyMode.APPLY, lock=None)
-    legacy = _pre_v5_lock(owner, borrower, tmp_path / "legacy.lock")
-    assert "FeatureType:dep_ft/Feature:dep_used" in legacy.objects
-    original_uid = ln.Feature.get(name="dep_used", is_type=False).uid
-
-    _redeclare_owner(name="dep_renamed", moved_from="dep_used")
-    compute_changes(_owner_plan, mode=ApplyMode.APPLY, lock=owner_lock)
-
-    again = compute_changes(_borrower_plan, mode=ApplyMode.APPLY, lock=legacy)
-
-    assert not [c for c in again.changes if c.action is Action.DELETE]
-    survivor = ln.Feature.filter(name="dep_renamed", is_type=False).one_or_none()
-    assert survivor is not None and survivor.uid == original_uid
-    # one apply completes the transition: the rebuilt lock holds only own keys
-    assert sorted(again.build_lock(_borrower_plan.name).objects) == [
-        "Schema:BorrowerSchema"
-    ]
-
-
-def test_pre_v5_lock_does_not_delete_an_upstream_object_dropped_by_its_owner(
-    instance: TestInstanceInfo,
-    ln: LamindbModuleType,
-    shared_plans: None,
-    tmp_path: Path,
-) -> None:
-    owner = compute_changes(_owner_plan, mode=ApplyMode.APPLY, lock=None)
-    borrower = compute_changes(_borrower_plan, mode=ApplyMode.APPLY, lock=None)
-    legacy = _pre_v5_lock(owner, borrower, tmp_path / "legacy.lock")
-    assert "FeatureType:dep_ft/Feature:dep_unused" in legacy.objects
-
-    # the owner stops declaring dep_unused, but has not applied that yet: the
-    # borrower must not be the one to delete it
-    _redeclare_owner(drop_unused=True)
-    again = compute_changes(_borrower_plan, mode=ApplyMode.APPLY, lock=legacy)
-
-    assert not [c for c in again.changes if c.action is Action.DELETE]
-    assert ln.Feature.filter(name="dep_unused", is_type=False).one_or_none() is not None
-
-
-def test_forget_unowned_legacy_entries_is_a_no_op_for_a_current_lock() -> None:
-    lock = LockFile(plan="p")
-    lock.add(LockEntry(key="Schema:S", kind="Schema", name="S", uid="abc123456789"))
-    assert forget_unowned_legacy_entries(lock, own_keys=set()) == []
-    assert "Schema:S" in lock.objects
-
-    lock.migrated_from = 4
-    assert forget_unowned_legacy_entries(lock, own_keys=set()) == ["Schema:S"]
-    assert lock.objects == {}
-
-
-def test_forget_unowned_legacy_entries_keeps_a_declared_move_source() -> None:
-    """A `ctx.moved` source is never an own key -- that is what a rename means."""
-    lock = LockFile(plan="p", migrated_from=4)
-    lock.add(
-        LockEntry(key="FeatureType:ft", kind="FeatureType", name="ft", uid="a" * 8)
-    )
-    lock.add(
-        LockEntry(
-            key="FeatureType:ft/Feature:species",
-            kind="Feature",
-            name="species",
-            uid="b" * 12,
-        )
-    )
-    lock.add(LockEntry(key="Schema:Other", kind="Schema", name="Other", uid="c" * 16))
-
-    dropped = forget_unowned_legacy_entries(
-        lock,
-        own_keys={"FeatureType:ft", "FeatureType:ft/Feature:organism"},
-        moved_from=["FeatureType:ft/Feature:species"],
-    )
-
-    assert dropped == ["Schema:Other"]
-    assert sorted(lock.objects) == [
-        "FeatureType:ft",
-        "FeatureType:ft/Feature:species",
-    ]
-
-
-def test_forget_unowned_legacy_entries_keeps_a_moved_types_children() -> None:
-    """Renaming a `*Type` re-keys its subtree, so the subtree must survive too."""
-    lock = LockFile(plan="p", migrated_from=4)
-    lock.add(
-        LockEntry(key="FeatureType:old", kind="FeatureType", name="old", uid="a" * 8)
-    )
-    lock.add(
-        LockEntry(
-            key="FeatureType:old/Feature:x", kind="Feature", name="x", uid="b" * 12
-        )
-    )
-
-    dropped = forget_unowned_legacy_entries(
-        lock,
-        own_keys={"FeatureType:new", "FeatureType:new/Feature:x"},
-        moved_from=["FeatureType:old"],
-    )
-
-    assert dropped == []
-    assert sorted(lock.objects) == ["FeatureType:old", "FeatureType:old/Feature:x"]
-
-
-# --- renaming an own object while upgrading a pre-v5 lock --------------------
-
-_rename_state: dict[str, Any] = {"name": "species", "moved_from": None}
-
-
-@create_plan
-def _legacy_rename_plan(ctx: PlanContext, exports: None) -> None:
-    ft = FeatureType("LegacyRenameFeatureType")
-    feature = Feature(_rename_state["name"], dtype=LaminDType(str), type=ft)
-    Schema(name="LegacyRenameSchema", features=[feature])
-    if _rename_state["moved_from"] is not None:
-        ctx.moved(feature, _rename_state["moved_from"])
-
-
-@pytest.fixture
-def legacy_rename_plan() -> Iterator[None]:
-    _rename_state.update({"name": "species", "moved_from": None})
-    _legacy_rename_plan.reset()
-    yield
-    _rename_state.update({"name": "species", "moved_from": None})
-    _legacy_rename_plan.reset()
-
-
-def test_pre_v5_lock_still_renames_an_object_the_plan_owns(
-    instance: TestInstanceInfo,
-    ln: LamindbModuleType,
-    legacy_rename_plan: None,
-    tmp_path: Path,
-) -> None:
-    """The legacy forget must not eat the address a declared move re-keys.
-
-    Forgetting is keyed on the plan's *current* declarations, and a rename is
-    exactly where the recorded address is not among them.  Dropping it leaves
-    `ctx.moved` nothing to match, so the rename degrades to delete + create --
-    and the schema, whose member list still records the old key, reads as having
-    dropped a feature and refuses with drift.
-    """
-    import json
-
-    first = compute_changes(_legacy_rename_plan, mode=ApplyMode.APPLY, lock=None)
-    legacy = first.build_lock(_legacy_rename_plan.name)
-    legacy.version = 4
-    path = tmp_path / "legacy.lock"
-    path.write_text(json.dumps(legacy.to_json()), encoding="utf-8")
-    read = LockFile.read(path)
-    assert read is not None and read.migrated_from == 4
-    original_uid = ln.Feature.get(name="species", is_type=False).uid
-
-    _rename_state.update({"name": "organism", "moved_from": "species"})
-    _legacy_rename_plan.reset()
-
-    again = compute_changes(_legacy_rename_plan, mode=ApplyMode.APPLY, lock=read)
-
-    feature_change = next(c for c in again.changes if c.kind == "Feature")
-    assert feature_change.action is Action.MOVE
-    assert not [c for c in again.changes if c.action is Action.DELETE]
-    renamed = ln.Feature.filter(name="organism", is_type=False).one_or_none()
-    assert renamed is not None and renamed.uid == original_uid
-    assert ln.Feature.filter(name="species", is_type=False).one_or_none() is None
-    schema = ln.Schema.get(name="LegacyRenameSchema")
-    assert [str(f.uid) for f in schema.features.all()] == [str(original_uid)]

@@ -94,10 +94,6 @@ Each field is exposed as its emitted :class:`Feature` and
 `ExperimentFeatures.feature_type` is the emitted :class:`FeatureType`; no
 :class:`Schema` is built.  The features are reusable in a :class:`SchemaModel`.
 
-.. deprecated::
-    `MyExperiment.features` (the `dict` of field name to `Feature`) is
-    deprecated; access features as class attributes instead.  It still works
-    but emits a :class:`FutureWarning`.
 """
 
 from __future__ import annotations
@@ -105,7 +101,6 @@ from __future__ import annotations
 import inspect
 import sys
 import types
-import warnings
 from dataclasses import dataclass
 from typing import Any, ClassVar, TypedDict, Union, get_args, get_origin
 
@@ -692,28 +687,10 @@ class SchemaModelMeta(type):
         schema = Schema(**schema_kwargs)
 
         # Expose each field as its emitted Feature and attach the built schema.
-        # The private `_features` mapping backs the deprecated `features`
-        # accessor on the metaclass.
         for attr, feat in features.items():
             setattr(cls, attr, feat)
         setattr(cls, "schema", schema)
-        setattr(cls, "_features", features)
         return cls
-
-    @property
-    def features(cls) -> dict[str, Feature[Any]]:
-        """Deprecated mapping of field name to :class:`Feature`.
-
-        Access features as class attributes instead (e.g. `MyModel.my_field`).
-        """
-        warnings.warn(
-            "SchemaModel.features is deprecated; access features as class "
-            "attributes (e.g. MyModel.my_field) instead.",
-            FutureWarning,
-            stacklevel=2,
-        )
-        features: dict[str, Feature[Any]] = cls.__dict__["_features"]
-        return features
 
     @staticmethod
     def _read_config(name: str, namespace: dict[str, Any]) -> SchemaConfig:
@@ -737,7 +714,6 @@ class SchemaModel(metaclass=SchemaModelMeta):
     """Declarative base class for schemas (see the module docstring)."""
 
     schema: ClassVar[Schema]
-    _features: ClassVar[dict[str, Feature[Any]]]
 
 
 class FeatureGroupMeta(type):

@@ -475,21 +475,6 @@ def test_the_dry_run_previews_a_swap_onto_taken_content(
         _preview(_TWINS_SWAPPED, lock, allow_data_validated_changes=True)
 
 
-def test_a_legacy_lock_without_slots_still_applies_a_slot_change(
-    instance: TestInstanceInfo, ln: LamindbModuleType, tmp_path: Path
-) -> None:
-    lock = _locked(_OBS_VAR, tmp_path)
-    entry = lock.entry_for("Schema:CsC")
-    assert entry is not None and entry.remote_snapshot is not None
-    entry.remote_snapshot.pop("slots")
-    entry.remote_hash = None
-
-    ctx = _apply(_OBS, lock)
-
-    assert "slot 'var' removed" in _details(ctx)
-    assert _slots(ln) == {"obs": "CsObs1"}
-
-
 def test_a_slot_removed_outside_the_plan_is_a_safe_remote_change(
     instance: TestInstanceInfo, ln: LamindbModuleType, tmp_path: Path
 ) -> None:

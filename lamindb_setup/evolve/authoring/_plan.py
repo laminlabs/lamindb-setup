@@ -1,11 +1,4 @@
-"""Planning utilities to collect schema setup without materializing in LaminDB.
-
-The primitives a plan is built out of -- :class:`~lamindb_setup.evolve.core.Promise`,
-:class:`~lamindb_setup.evolve.core.Materializable` and the dependency types -- live in
-:mod:`lamindb_setup.evolve.core`, which both this layer and the engine share.  They
-are re-exported here because this is where they used to be and plan files import
-them from here.
-"""
+"""Planning utilities to collect schema setup without materializing in LaminDB."""
 
 from __future__ import annotations
 
@@ -26,9 +19,7 @@ from ..core import (
     SEED_ONLY_KINDS,
     Dependency,
     DependencyDAG,
-    DependencyMeta,
     Materializable,
-    Promise,
     active_collector,
     collecting,
 )
@@ -46,12 +37,7 @@ __all__ = [
     "PlanContext",
     "PlanExports",
     "PlanNotFinalizedError",
-    "Promise",
-    "Materializable",
     "Moved",
-    "Dependency",
-    "DependencyDAG",
-    "DependencyMeta",
     "create_plan",
     "plan_declaration_blocker",
 ]

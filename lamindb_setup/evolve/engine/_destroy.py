@@ -263,9 +263,10 @@ def _record_attributes(record: Any) -> dict[str, Any]:
     """
     attrs: dict[str, Any] = {}
     for name in _REFERENCE_ATTRS:
-        if not hasattr(record, name):
-            continue
-        value = getattr(record, name)
+        if name == "dtype" and hasattr(type(record), "dtype_as_str"):
+            value = record.dtype_as_str
+        else:
+            value = getattr(record, name, None)
         if value is None:
             continue
         attrs[name] = value
@@ -895,8 +896,7 @@ def plan_held_references(
     filtered in SQL to those that are, or belong to, such an object (see
     :func:`_owner_paths`), so only the plan-managed rows are fetched, never the
     whole relation.  The blocking references not returned are held by objects
-    no plan manages.  The targets' own uids are ignored: a legacy lock may
-    still record its prerequisites' objects.
+    no plan manages.  The targets themselves are excluded from the referencing rows.
     """
     target_uids = {target.uid for target in destroy_plan.targets}
     uids = [uid for uid in managing if uid not in target_uids]

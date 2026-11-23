@@ -32,10 +32,7 @@ The root is the first of:
 `.git` as the last marker keeps module names aligned with the git-root-relative
 paths that :mod:`lamindb_setup.evolve.engine._track` derives transform keys from.
 
-The plan's own directory stays on `sys.path` as well, so a bare sibling import
-(`from plan_other import ...`) keeps resolving.  That is the one remaining way
-a file ends up under two names, and :func:`import_plan_module` warns when it
-happens.
+Nested plans import siblings by their package-qualified name or a relative import.
 
 On top of that sits the layer that turns the `path/to/plan.py:plan_variable`
 targets a command (or a `lamin_schemas.yml` entry) is given into the plans it
@@ -85,12 +82,6 @@ _CONFIG_MARKER = "lamin_schemas.yml"
 _ROOT_MARKERS = (_CONFIG_MARKER, "pyproject.toml", ".git")
 
 _root_override: Path | None = None
-
-# Directories plans were imported from, the search space of the shadowing scan.
-_import_dirs: set[str] = set()
-
-# Files already reported as loaded under several module names.
-_warned_shadowed: set[str] = set()
 
 
 class ProjectRootError(LaminSchemasError):
@@ -256,43 +247,25 @@ def _import_by_location(path: Path) -> ModuleType:
     return module
 
 
-def _warn_shadowed_plan_modules() -> None:
-    """Warn when one plan file is loaded under two module names.
-
-    A bare sibling import (`from plan_other import ...`) resolves through the
-    plan's own directory rather than the project root, so it can reach a file
-    that is also loaded under its canonical dotted name.  Both copies then run,
-    and the objects of one are not the objects of the other -- exactly the split
-    the dotted name exists to prevent.  Saying so out loud is the deprecation
-    path for the bare form.
-
-    Only files under a directory this run imported a plan from are considered,
-    so the scan cannot report an unrelated library that aliases a module of its
-    own; aliases of the *same* module object (`os.path` and `posixpath`) are
-    not a split and are ignored.  Each file is reported once.
-    """
-    by_file: dict[str, dict[int, str]] = {}
-    # A snapshot: reading `__file__` can run a module's lazy `__getattr__`,
-    # which may import and so resize sys.modules mid-iteration.
-    loaded = list(sys.modules.items())
-    for name, module in loaded:
-        file = getattr(module, "__file__", None)
-        if file is None or file in _warned_shadowed:
+def _reject_shadowed_plan_modules(root: Path) -> None:
+    """Reject noncanonical imports of nested plans."""
+    directory = os.path.join(root, "")
+    # An explicit PYTHONPATH or the working directory can still make a nested
+    # plan importable by its bare name. Catch that even on its first import.
+    for name, module in sys.modules.copy().items():
+        if module is None or name.startswith("_lamin_schema_plan_"):
             continue
-        if not any(file.startswith(directory) for directory in _import_dirs):
+        file = vars(module).get("__file__")
+        if not isinstance(file, str) or not file.startswith(directory):
             continue
-        by_file.setdefault(file, {})[id(module)] = name
-    for file, names in by_file.items():
-        if len(names) < 2:
+        path = Path(file)
+        if path.stem != name.rsplit(".", 1)[-1] or path.parent == root:
             continue
-        _warned_shadowed.add(file)
-        print(
-            f"Warning: {file} is loaded under several module names "
-            f"({', '.join(sorted(names.values()))}); it was executed once per "
-            "name, so every object it declares exists several times over. "
-            "Import it by its path relative to the project root everywhere.",
-            file=sys.stderr,
-        )
+        canonical = _dotted_name(path, root)
+        if canonical and canonical != name and _defined_plan_vars(module):
+            raise PlanImportError(
+                f"Import {file} as {canonical!r} instead of {name!r}."
+            )
 
 
 def import_plan_module(path: Path) -> ModuleType:
@@ -309,14 +282,19 @@ def import_plan_module(path: Path) -> ModuleType:
     """
     resolved = path.resolve()
     root = project_root(resolved)
-    # Trailing separator: the scan below matches files by directory prefix.
-    _import_dirs.update({os.path.join(root, ""), os.path.join(resolved.parent, "")})
-    with _dir_on_syspath(root), _dir_on_syspath(resolved.parent):
-        dotted = _dotted_name(resolved, root)
-        module = _import_dotted(dotted, resolved) if dotted is not None else None
-        if module is None:
-            module = _import_by_location(resolved)
-    _warn_shadowed_plan_modules()
+    try:
+        with _dir_on_syspath(root):
+            dotted = _dotted_name(resolved, root)
+            module = _import_dotted(dotted, resolved) if dotted is not None else None
+            if module is None:
+                module = _import_by_location(resolved)
+    except ModuleNotFoundError as exc:
+        raise PlanImportError(
+            f"Could not import {resolved}: {exc}. "
+            f"Import sibling plans relative to the project root {root} "
+            "or use a package-relative import."
+        ) from exc
+    _reject_shadowed_plan_modules(root)
     return module
 
 

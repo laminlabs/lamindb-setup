@@ -37,11 +37,6 @@ _MAX_OBJECTS_PER_GROUP = 25
 # Cap on objects listed per plan in the export suggestions block.
 _MAX_EXPORT_OBJECTS = 25
 
-# GitHub truncates issue bodies at 65536 characters; pass this as `max_chars` to
-# render a compact report that drops the verbose collapsible diff/summary blocks
-# so the headline counts and export suggestions survive.
-GITHUB_ISSUE_MAX_CHARS = 65536
-
 _MARKER = "<!-- lamin-schemas-ci -->"
 
 _ACTION_SYMBOL = {
@@ -313,8 +308,7 @@ def render_drift_report(result: DriftResult, *, max_chars: int | None = None) ->
     When `max_chars` is set and the full report would exceed it, the verbose
     collapsible blocks (untracked-objects hierarchy and per-plan diffs) are
     dropped so the headline, per-instance counts, and export suggestions survive
-    GitHub's issue-body truncation. Pass :data:`GITHUB_ISSUE_MAX_CHARS` to fit a
-    GitHub issue.
+    truncation.
     """
     full = _render_drift_report(result, verbose=True)
     if max_chars is None or len(full) <= max_chars:

@@ -2,7 +2,7 @@
 
 When an object is moved to the trash (`branch_id == -1`) LaminDB keeps the
 objects that referenced it intact, leaving them pointing at a target that is no
-longer live.  `prune-dangling` finds every live feature, schema or record that
+longer live.  `repair dangling` finds every live feature, schema or record that
 still references a gone object — through its `type`, a schema's members,
 index feature or slots, or a record's schema — and trashes them too.  A target
 counts as gone when it was trashed *or* when it no longer exists anywhere in the
