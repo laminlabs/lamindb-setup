@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from pathlib import Path
 
 import pytest
@@ -117,7 +117,7 @@ def test_synchronize_to_marker_only_just_check_leaves_files(tmp_path: Path):
 
 def test_synchronize_to_skips_markers_and_downloads_real_file(tmp_path: Path):
     destination = tmp_path / "local"
-    mtime = datetime(2024, 1, 2, tzinfo=timezone.utc)
+    mtime = datetime(2024, 1, 2, tzinfo=UTC)
     listing = {
         "bucket/folder": {"name": "bucket/folder", "size": 0, "type": "directory"},
         "bucket/folder/nested/": {"name": "bucket/folder/nested/", "size": 0},

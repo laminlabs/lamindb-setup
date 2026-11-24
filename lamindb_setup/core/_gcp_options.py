@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import threading
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from typing import TYPE_CHECKING, Any
 
 if TYPE_CHECKING:
@@ -24,17 +24,13 @@ def _normalize_gs_root(path_str: str) -> str:
 
 
 def _expiry_to_naive_utc(expiry: str | datetime) -> datetime:
-    """Return a naive UTC expiry.
-
-    `google.auth` compares expiry with a naive UTC clock. Aware values are
-    converted; `Z` is accepted on Python 3.10, whose `fromisoformat` rejects it.
-    """
+    """Return a naive UTC expiry for comparison with the `google.auth` clock."""
     if isinstance(expiry, datetime):
         parsed = expiry
     else:
-        parsed = datetime.fromisoformat(str(expiry).replace("Z", "+00:00"))
+        parsed = datetime.fromisoformat(expiry)
     if parsed.tzinfo is not None:
-        parsed = parsed.astimezone(timezone.utc).replace(tzinfo=None)
+        parsed = parsed.astimezone(UTC).replace(tzinfo=None)
     return parsed
 
 

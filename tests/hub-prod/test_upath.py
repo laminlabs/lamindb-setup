@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from pathlib import Path
 
 import botocore
@@ -136,7 +136,7 @@ def test_s3_fs_for_moving():
     fs = fs_for_moving("s3://lamindata", "s3://lamin-site-assets")
     assert fs is fs_for_moving("s3://lamin-site-assets", "s3://lamindata")
     credentials = fs.session._credentials
-    credentials._expiry_time = datetime(2000, 1, 1, tzinfo=timezone.utc)
+    credentials._expiry_time = datetime(2000, 1, 1, tzinfo=UTC)
     assert credentials.refresh_needed()
     # corrupt to check that refresh is applied before any access
     credentials._access_key = "INVALID"

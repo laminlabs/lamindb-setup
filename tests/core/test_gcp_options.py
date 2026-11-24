@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta
 from types import SimpleNamespace
 from unittest.mock import MagicMock, patch
 
@@ -67,7 +67,7 @@ def hub_user(monkeypatch):
 
 
 def _past_expiry() -> datetime:
-    return datetime.now(timezone.utc).replace(tzinfo=None) - timedelta(minutes=10)
+    return datetime.now(UTC).replace(tzinfo=None) - timedelta(minutes=10)
 
 
 def test_enrich_path_caches_credentials_for_a_managed_root(managed_gcp):

@@ -4,7 +4,7 @@ import json
 import os
 import warnings
 from contextlib import contextmanager
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from typing import Literal
 from urllib.request import urlretrieve
 
@@ -188,8 +188,8 @@ def _warn_if_api_key_expiring(api_key_expires_at: str) -> None:
     if expires_at is None:
         return
     if expires_at.tzinfo is None:
-        expires_at = expires_at.replace(tzinfo=timezone.utc)
-    days_left = (expires_at - datetime.now(timezone.utc)).days
+        expires_at = expires_at.replace(tzinfo=UTC)
+    days_left = (expires_at - datetime.now(UTC)).days
     if 0 <= days_left <= _API_KEY_EXPIRY_WARNING_DAYS:
         day_word = "day" if days_left == 1 else "days"
         logger.warning(f"API key expires in {days_left} {day_word}")

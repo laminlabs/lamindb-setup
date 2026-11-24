@@ -14,7 +14,7 @@ import shutil
 import time
 import warnings
 from collections import defaultdict
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from itertools import chain, islice
 from pathlib import Path, PosixPath, PurePosixPath, WindowsPath
 from typing import TYPE_CHECKING, Any, Literal
@@ -715,7 +715,7 @@ def modified(self) -> datetime | None:
     """Return modified time stamp."""
     mtime = self.fs.modified(str(self))
     if mtime.tzinfo is None:
-        mtime = mtime.replace(tzinfo=timezone.utc)
+        mtime = mtime.replace(tzinfo=UTC)
     return mtime.astimezone().replace(tzinfo=None)
 
 
