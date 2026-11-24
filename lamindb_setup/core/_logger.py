@@ -33,7 +33,7 @@
 
 import logging
 import sys
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta
 from logging import CRITICAL, DEBUG, ERROR, INFO, WARNING, getLevelName
 
 # sys.stdout inside jupyter doesn't have reconfigure
@@ -210,7 +210,7 @@ class RootLogger(logging.RootLogger):
                 this gets displayed as well
             extra: Additional values you can specify in `msg` like `{time_passed}`.
         """
-        now = datetime.now(timezone.utc)
+        now = datetime.now(UTC)
         time_passed: timedelta = None if time is None else now - time  # type: ignore
         extra = {
             **(extra or {}),

@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import json
 import os
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta
 
 import lamindb_setup as ln_setup
 import pytest
@@ -29,7 +29,7 @@ def test_login():
 def test_login_api_key():
     ln_setup.login("testuser1")
     # obtain API key
-    expires_at = datetime.now(tz=timezone.utc) + timedelta(days=1)
+    expires_at = datetime.now(tz=UTC) + timedelta(days=1)
     api_key = create_api_key(
         {
             "expires_at": expires_at.strftime("%Y-%m-%d"),

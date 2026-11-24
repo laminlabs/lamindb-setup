@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta
 from unittest.mock import MagicMock, patch
 
 import pytest
@@ -12,7 +12,7 @@ from lamindb_setup.core._hub_client import (
 from lamindb_setup.errors import ApiKeyError, ApiKeyExpired, ApiKeyNotFound
 from supabase_functions.errors import FunctionsHttpError
 
-NOW = datetime(2026, 8, 25, 17, 23, 14, 401936, tzinfo=timezone.utc)
+NOW = datetime(2026, 8, 25, 17, 23, 14, 401936, tzinfo=UTC)
 
 
 def _supabase_expires_at(days: int) -> str:

@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from functools import wraps
 from typing import TYPE_CHECKING
 
@@ -105,7 +105,7 @@ class Locker:
         # always convert to the local timezone before returning
         # assume in utc if the time zone is not specified
         if mtime.tzinfo is None:
-            mtime = mtime.replace(tzinfo=timezone.utc)
+            mtime = mtime.replace(tzinfo=UTC)
         return mtime.astimezone().replace(tzinfo=None)
 
     def _msg_on_counter(self, user):
