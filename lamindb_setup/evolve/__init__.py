@@ -107,8 +107,6 @@ over the environment.
 variable. Keep it stable when editing the plan.
 """
 
-from lamindb_setup import __version__ as __version__
-
 # --- building blocks and data migrations ---
 # --- dtypes ---
 # --- declarative authoring surface ---

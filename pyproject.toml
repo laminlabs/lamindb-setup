@@ -174,10 +174,6 @@ omit = [
     "**/core/_colors.py",
 ]
 
-[tool.mypy]
-# Use qualified names for the evolution test modules and their local overrides.
-explicit_package_bases = true
-
 # Retain the incorporated engine's optional-type checking policy in its namespace.
 [[tool.mypy.overrides]]
 module = ["lamindb_setup.evolve.*", "tests.evolve.*"]
