@@ -6,12 +6,17 @@ vs optional fields, and additional (unknown) fields in the .env.
 
 from __future__ import annotations
 
+import os
+import stat
+import subprocess
 import sys
+from contextlib import contextmanager
 from types import SimpleNamespace
 from typing import TYPE_CHECKING
 
 import pytest
 from lamindb_setup.core import _settings as settings_module
+from lamindb_setup.core import _settings_save as settings_save_module
 from lamindb_setup.core._settings import settings
 from lamindb_setup.core._settings_load import (
     load_instance_settings,
@@ -102,7 +107,11 @@ lamindb_instance_is_clone=False
 """
 
 
-def test_settings_env_full_roundtrip(tmp_path: Path) -> None:
+@pytest.mark.parametrize("existing_mode", [None, 0o600, 0o644, 0o666])
+@pytest.mark.parametrize("umask", [0o000, 0o022, 0o077])
+def test_settings_env_full_roundtrip(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, existing_mode, umask
+) -> None:
     """Read full .env, load to store, serialize via InstanceSettings save, load again."""
     env_file = tmp_path / "current_instance.env"
     env_file.write_text(FULL_ENV_CONTENT)
@@ -110,7 +119,33 @@ def test_settings_env_full_roundtrip(tmp_path: Path) -> None:
     store1 = InstanceSettingsStore.from_env_file(env_file, PREFIX)
     settings = setup_instance_from_store(store1)
     saved_file = tmp_path / "saved.env"
-    save_instance_settings(settings, saved_file)
+    if existing_mode is not None:
+        saved_file.write_text("old settings")
+        saved_file.chmod(existing_mode)
+
+    @contextmanager
+    def checked_open(*args, **kwargs):
+        with open(*args, **kwargs) as file:
+            if os.name == "posix" and existing_mode is None:
+                assert stat.S_IMODE(os.fstat(file.fileno()).st_mode) == 0o600
+            write = file.write
+
+            def checked_write(value):
+                if os.name == "posix":
+                    assert stat.S_IMODE(os.fstat(file.fileno()).st_mode) == 0o600
+                return write(value)
+
+            monkeypatch.setattr(file, "write", checked_write)
+            yield file
+
+    monkeypatch.setattr(settings_save_module, "open", checked_open, raising=False)
+    previous_umask = os.umask(umask)
+    try:
+        save_instance_settings(settings, saved_file)
+    finally:
+        os.umask(previous_umask)
+    if os.name == "posix":
+        assert stat.S_IMODE(saved_file.stat().st_mode) == 0o600
 
     store2 = InstanceSettingsStore.from_env_file(saved_file, PREFIX)
 
@@ -123,6 +158,27 @@ def test_settings_env_full_roundtrip(tmp_path: Path) -> None:
     assert store2.api_url == store1.api_url
     assert store2.schema_id == store1.schema_id
     assert store2.db_permissions == store1.db_permissions == "public"
+
+
+@pytest.mark.skipif(os.name != "posix", reason="POSIX file permissions")
+@pytest.mark.parametrize("existing_mode", [None, 0o755, 0o700])
+def test_settings_directory_permissions(tmp_path: Path, existing_mode) -> None:
+    directory = tmp_path / ".lamin"
+    if existing_mode is not None:
+        directory.mkdir()
+        directory.chmod(existing_mode)
+    subprocess.run(
+        [
+            sys.executable,
+            "-c",
+            "import os; os.umask(0); import lamindb_setup.core._settings_store",
+        ],
+        env={**os.environ, "LAMIN_SETTINGS_DIR": str(tmp_path)},
+        check=True,
+        capture_output=True,
+        text=True,
+    )
+    assert stat.S_IMODE(directory.stat().st_mode) == 0o700
 
 
 def test_settings_env_missing_required_field_raises(tmp_path: Path) -> None:

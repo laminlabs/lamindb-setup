@@ -17,7 +17,9 @@ else:
     settings_dir = Path.home() / ".lamin"
 
 try:
-    settings_dir.mkdir(parents=True, exist_ok=True)
+    settings_dir.mkdir(parents=True, exist_ok=True, mode=0o700)
+    if os.name == "posix":
+        settings_dir.chmod(0o700)
 except Exception as e:
     logger.warning(f"Failed to create lamin settings directory at {settings_dir}: {e}")
 

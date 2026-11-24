@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import os
 from pathlib import Path
 from typing import TYPE_CHECKING, Any, get_args, get_type_hints
 from uuid import UUID
@@ -52,7 +53,12 @@ def save_settings(
     type_hints: dict[str, Any],
     prefix: str,
 ):
-    with open(settings_file, "w") as f:
+    with open(
+        settings_file, "w", opener=lambda path, flags: os.open(path, flags, 0o600)
+    ) as f:
+        # Existing files also need private permissions before writing secrets.
+        if os.name == "posix":
+            os.fchmod(f.fileno(), 0o600)
         for store_key, type_ in type_hints.items():
             type_ = _coerce_type_for_write(type_)
             if "__" not in store_key:
