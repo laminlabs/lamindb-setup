@@ -144,13 +144,8 @@ DEFAULT = DefaultFill()
 class MigrationError(LaminSchemasError):
     """Raised when a data migration fails to relocate every value.
 
-    A migration is expected to move *all* of a feature's stored values into the
-    store the new dtype uses, as labels it admits; if any value is left stranded
-    -- in the old store, or as a link to a label outside the new dtype's
-    registries or filters (see
-    :func:`lamindb_setup.evolve.engine._drift_data.feature_stranded_value_count`)
-    -- the apply raises this so the enclosing `transaction.atomic()` rolls the
-    half-migrated state back.
+    Applying the plan rolls back if values remain in the old store or point
+    to labels outside the new dtype's registries or filters.
     """
 
 
@@ -158,8 +153,7 @@ class WriteStrategy(enum.Enum):
     """How a relocation wrote the replacement annotations.
 
     A `str -> cat[...]` relocation writes the link rows itself when the target
-    store has the shape :func:`~lamindb_setup.evolve.engine._migrations._plan_link_writes`
-    knows how to build, and otherwise falls back to lamindb's `add_values`,
+    store supports batched link writes. Otherwise it uses lamindb's `add_values`,
     which re-resolves the feature and runs a curator per annotated object.  The
     choice is invisible in the resulting data -- both end with the same link
     rows -- so the migration records which one it took.
@@ -177,8 +171,7 @@ class MigrationReport:
     renders :meth:`summary` into the change details, so a `plan` dry-run shows
     *what the migration did to the data* ("12 matched, 3 mapped, 2 dropped")
     rather than only whether it left values stranded.  A hand-written migration
-    may ignore it entirely; the helpers in
-    :mod:`lamindb_setup.evolve.engine._migrations` populate it.
+    may leave it empty. The built-in migration helpers populate it.
 
     `kept` counts values left as they were because the new dtype already
     admits them, `matched` those that resolved against an existing target directly,
@@ -189,7 +182,7 @@ class MigrationReport:
     record took over from the plan, and `relocated` the annotations moved off a
     record the plan drops.  `notes` carries free-form lines appended with
     :meth:`note`.  `write_strategy` records which write path a relocation took
-    (see :class:`WriteStrategy`), which the resulting data does not reveal.
+    (see :class:`~lamindb_setup.evolve.authoring._migrations.WriteStrategy`).
     """
 
     kept: int = 0
@@ -446,9 +439,8 @@ class SchemaRemovalContext:
 class RecordUpdateContext:
     """What a :class:`DataMigration` attached to a *seeded* record receives.
 
-    A plan seeds its records (see
-    :data:`~lamindb_setup.evolve.core.SEED_ONLY_KINDS`): once one exists, the
-    plan's edits to it are ignored.  Declaring an update opts one into them::
+    A plan seeds its records. To apply edits to an existing record, declare
+    an update::
 
         ctx.migrate(record, update_record())
 
@@ -499,10 +491,9 @@ class SheetExportContext:
 
     The fourth narrowing a plan can declare a migration for, and the only one
     whose subject is not stored *in* the database.  A sheet export is a CSV
-    already written to storage (see :mod:`lamindb_setup.evolve.engine._sheet_exports`);
-    renaming a member, retyping one, or adding a required one leaves that file
-    describing the schema as it was, while its `schema` foreign key claims it
-    still validates.
+    already written to storage. Renaming or retyping a member, or adding a
+    required one, leaves the file describing the previous schema even though
+    its `schema` foreign key points to the updated schema.
 
     `schema` is the live LaminDB `Schema`, already reconciled to the plan,
     and `exports` the snapshots the change invalidated -- each naming its sheet,
@@ -554,7 +545,7 @@ class SheetExportContext:
         Returns the saved artifact, which is the *existing* one when the rows
         hash to the content already stored -- lamindb deduplicates by hash, so an
         export that did not actually change gains no version, and nothing is
-        recorded in :attr:`written`.  That is the property a declaration relies on
+        recorded in `written`.  That is the property a declaration relies on
         to be safe to leave in a plan forever.
 
         The same deduplication has two failure modes, because its lookup is
@@ -568,10 +559,9 @@ class SheetExportContext:
           change and its revert, say).  Nothing promotes that row, so the head
           would keep its stale content while this reported a re-export.  The
           family already holds the right bytes, so the fix is to re-point it --
-          recorded in :attr:`promotions` and applied *after* the merge, since it
+          recorded in `promotions` and applied *after* the merge, since it
           touches the instance's own branch and must not become visible before
-          the run is known to be good (see
-          :func:`~lamindb_setup.evolve.engine._sheet_exports.promote_head`).
+          the run succeeds.
 
         An artifact already on the instance's own branch is otherwise left alone.
         Moving it here would take a live artifact *off* the branch every query
@@ -825,42 +815,32 @@ class DataMigration:
     For a member removal it is refused on a `maximal_set` schema, which is
     precisely the kind that does not tolerate an undeclared member.
 
-    `narrowing` names the block the migration answers (:data:`MEMBER_REQUIRED`,
-    :data:`MEMBER_ADDED`, :data:`MEMBER_REMOVAL`, :data:`STALE_EXPORTS`,
-    :data:`INDEX_CHANGE`, :data:`FLEXIBLE_CHANGE`, :data:`ROWS_REMOVAL`,
-    :data:`VALIDATED_REMOVAL` or :data:`NULLABILITY`), so a declaration cannot
-    unblock a narrowing it does nothing about -- a schema commonly takes several
-    at once.  Empty (the default, and what a hand-written migration gets) means it
-    answers whichever narrowing it is declared for.
+    `narrowing` identifies the change this migration handles. Examples include
+    `member_required`, `member_added`, `member_removal`, `stale_exports`,
+    `index_change`, `flexible_change`, `rows_removal`, `validated_removal`,
+    and `nullability`. A custom migration with an empty `narrowing` handles
+    the change it is attached to.
 
-    `index_name_conflict` only means something for an :data:`INDEX_CHANGE`: when
-    a sheet using the schema has rows whose `Record.name` and value for the new
-    index feature both exist and differ, lamindb has to pick one of them --
-    `"keep_name"` or `"keep_feature"`.  Without a choice the apply refuses and
-    names the rows rather than letting lamindb prompt for it on stdin.
+    For an index change, `index_name_conflict` chooses which value to keep when
+    a row's name and its new index value differ (`"keep_name"` or
+    `"keep_feature"`). Applying the plan stops on a conflict without a choice.
 
-    `merges` only means something for a :data:`MERGE_SCHEMA`: the uid or
-    natural key of the live schema whose content the plan schema takes over.
-    `detaches` likewise names the schemas a :data:`DETACH_MEMBER` removes a
-    deleted feature from.  `updates` names the :data:`RECORD_ASPECTS` a
-    :data:`RECORD_UPDATE` writes (empty: all of them), and `relocates_to` the
-    record -- a plan `Record`, a natural key or a uid -- a
-    :data:`RECORD_REMOVAL` moves the dropped record's annotations onto.
+    `merges` identifies the live schema to merge by UID or natural key.
+    `detaches` lists the schemas from which to remove a deleted feature.
+    `updates` selects which aspects of a seeded record to update (values,
+    description, or reference). An empty selection updates all three.
 
-    `relocation` names what a removal declaration moves onto `relocates_to`
-    -- a plan object, a natural key, a uid, or `None` for no type at all --
-    instead of letting the trash take it (see :data:`RELOCATIONS`): a deleted
-    record type's rows, a deleted schema's datasets, a deleted type's children.
-    `narrower` lets a `revalidate_against` point the datasets at a schema
-    that admits less than the deleted one did.
+    For a removal, `relocation` identifies what to move (rows, datasets, or
+    children). `relocates_to` identifies their destination by plan object,
+    natural key, or UID. Use `None` for an untyped destination. Set `narrower`
+    to allow a more restrictive replacement schema when revalidating datasets.
 
-    `targets` are what the migration may be declared for (see
-    :class:`DeclarationTarget`), which finalizing the plan checks every
-    `ctx.migrate` against -- so `validate` refuses, say, a schema backfill
-    attached to a feature.  It defaults to the narrowing's entry in
-    :data:`DECLARATION_TARGETS`; the dtype helpers, which name no narrowing,
-    pass :data:`DTYPE_CHANGE_TARGETS`.  `None` -- what a hand-written
-    migration naming no narrowing gets -- leaves the declaration unchecked.
+    .. attribute:: targets
+
+       The :class:`DeclarationTarget` entries allowed by this migration.
+       Defaults to the targets for the selected narrowing. Plan validation
+       checks them before apply. A custom migration with no narrowing or
+       explicit targets skips this check.
 
     A migration never *creates* the objects it maps into, so they must already
     exist when it runs.  The engine guarantees that by running every declared
@@ -954,7 +934,7 @@ class DataMigration:
 
 @dataclass
 class Migrated:
-    """A migration declared for `obj` via :meth:`PlanContext.migrate`.
+    """A migration declared for `obj` via :meth:`~lamindb_setup.evolve.PlanContext.migrate`.
 
     `obj` is a plan object, or the natural key of one the plan no longer
     contains -- the only way to address a feature the plan is deleting, which by

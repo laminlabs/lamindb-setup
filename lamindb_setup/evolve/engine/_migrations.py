@@ -79,7 +79,7 @@ A null is never *stored*.  lamindb has no such thing: `add_values` skips a
 every dtype alike.  So a value rewritten to null has its stored row deleted, and
 a member backfilled with null gets no row at all; the difference from a plain
 drop is that the migration *answered* for it, which it says with
-:meth:`~lamindb_setup.evolve.authoring._migrations.MemberMigrationContext.accept_null` so
+:meth:`~lamindb_setup.evolve.MemberMigrationContext.accept_null` so
 the engine does not read the empty row as a backfill that missed.
 
 Targets are never created
@@ -2295,7 +2295,7 @@ def backfill_members(
     key, and the JSON stores are `NOT NULL` -- so an un-annotated row is what a
     null member looks like, whatever its dtype.  The row is instead declared
     settled with
-    :meth:`~lamindb_setup.evolve.authoring._migrations.MemberMigrationContext.accept_null`,
+    :meth:`~lamindb_setup.evolve.MemberMigrationContext.accept_null`,
     which is what exempts it from the engine's post-check; a row merely left
     alone (the callable returning `None`) still fails the apply.
 
@@ -2310,7 +2310,7 @@ def backfill_members(
     yet -- it is running precisely because the row does not, and a row missing
     two required members would have its first repair rejected for still missing
     the second.  One annotation is one row in the feature's value table, so it is
-    written there directly (see :func:`_annotate`).
+    written there directly.
     """
     resolve = value if callable(value) else (lambda member, row: value)
     labels: dict[Any, Any] = {}
@@ -2865,7 +2865,7 @@ def clear_member_values(
     idempotent once its member is gone.
 
     Only the rows *this* schema validates are touched (see
-    :meth:`~lamindb_setup.evolve.authoring._migrations.MemberRemovalContext.carrying`).  The
+    :meth:`~lamindb_setup.evolve.MemberRemovalContext.carrying`).  The
     same feature may hold values on rows some *other* schema validates, and those
     are that schema's business -- deleting them here would invalidate it.
 
@@ -3356,7 +3356,7 @@ def clear_nonmember_annotations(context: FlexibleChangeContext, /) -> None:
     """Remove what the flexible match annotated on the artifacts a schema curated.
 
     Brings every artifact
-    :meth:`~lamindb_setup.evolve.authoring._migrations.FlexibleChangeContext.nonmember_columns`
+    :meth:`~lamindb_setup.evolve.FlexibleChangeContext.nonmember_columns`
     lists to what curating it against the schema with `flexible` off records:
 
     * the slot's recorded columns are re-pointed to a schema of the member columns

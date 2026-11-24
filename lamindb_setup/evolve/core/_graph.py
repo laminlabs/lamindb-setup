@@ -128,10 +128,8 @@ class Promise(Generic[R, T]):
     def resolve(self, ctx: MaterializeContext) -> R:
         """Resolve to the concrete uid, materializing the underlying object.
 
-        `ctx` threads the active :class:`MaterializeContext` so the underlying
-        object is materialized once and shares the apply-wide cache and lock
-        state.  Callers outside an apply run pass a context of their own
-        (:meth:`~lamindb_setup.evolve.engine._apply.ApplyContext.standalone`).
+        `ctx` supplies the cache and lock state shared by the apply run.
+        Callers outside a run supply their own context.
         """
         if self._value is None:
             self._value = self._func(self._arg, ctx)

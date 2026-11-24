@@ -227,12 +227,9 @@ class Record(Materializable):
     def get(self, ctx: MaterializeContext) -> ln.Record | None:
         """Read-only lookup of the materialized record.
 
-        Records are seeded rather than tracked (see
-        :data:`~lamindb_setup.evolve.core.SEED_ONLY_KINDS`): the lock never pins
-        them, but the uid it remembers for them (or the one another instance's
-        lock records) is tried first, and the match is otherwise by name and
-        parent type.  A name is therefore mandatory, which the plan checks when
-        it is finalized.
+        Records are seeded. The lookup tries the UID from this instance's lock
+        or another instance's lock, then matches by name and parent type.
+        Finalizing the plan checks that a name was provided.
         """
         import lamindb as ln
 

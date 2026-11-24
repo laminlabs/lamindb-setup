@@ -13,17 +13,20 @@ Plans
 
 .. autosummary::
    :toctree: .
+   :template: autosummary/base.rst
 
    create_plan
    Plan
    PlanContext
    PlanExports
+   PlanDeclarationError
 
 Declarations
 ------------
 
 .. autosummary::
    :toctree: .
+   :template: autosummary/base.rst
 
    FeatureType
    Feature
@@ -38,6 +41,7 @@ Typed models and dtypes
 
 .. autosummary::
    :toctree: .
+   :template: autosummary/base.rst
 
    SchemaModel
    SchemaConfig
@@ -46,7 +50,17 @@ Typed models and dtypes
    ListDType
    RecordCat
    ULabelCat
+   ResolvedDType
+   get_dtype
+   inline_cat_filters
 
+.. data:: CatDType
+
+   Annotate a registry type with the filters for a categorical feature.
+
+.. data:: DEFAULT_NAME_FIELD
+
+   Default lookup field for each categorical registry.
 .. autofunction:: feature
 
 Data migrations
@@ -72,6 +86,88 @@ with `lamin evolve plan --preview-migrations` before applying it.
    revalidate_against
    revalidate_rows
    reexport_sheets
+   accept_non_null
+   accept_index_change
+   accept_flexible_change
+   drop_member_values
+   keep_member_values
+   drop_nonmember_annotations
+   keep_stale_exports
+   keep_values
+   keep_validated
+   keep_rows
+   move_rows
+   adopt_children
+   update_record
+   drop_record
+
+.. data:: NULL
+
+   Fill with null. The feature must be nullable.
+
+.. data:: DEFAULT
+
+   Fill with the feature's default value, or null if it is nullable and has no default.
+
+Custom migrations
+-----------------
+
+The change being applied determines which context the migration receives.
+
+.. autosummary::
+   :toctree: .
+
+   DeclarationTarget
+   MemberMigrationContext
+   MemberRemovalContext
+   IndexChangeContext
+   FlexibleChangeContext
+   FeatureRemovalContext
+   RecordTypeRemovalContext
+   SchemaRemovalContext
+   RecordUpdateContext
+   RecordRemovalContext
+   backfill_members
+   clear_values
+   clear_member_values
+   clear_nonmember_annotations
+   relocate_to_records
+   relocate_to_str
+   rewrite_values
+
+.. class:: SheetExportContext
+   :canonical: lamindb_setup.evolve.authoring._migrations.SheetExportContext
+
+   A custom sheet migration receives the updated `schema` and its stale
+   `exports` after the apply transaction commits. Call :meth:`write` for
+   each export that needs a new version. The export branch is merged once
+   all migrations succeed.
+
+   .. autoproperty:: SheetExportContext.branch
+
+   .. automethod:: SheetExportContext.write
+
+Plan result types
+-----------------
+
+.. autosummary::
+   :toctree: .
+   :template: autosummary/base.rst
+
+   SpaceUID
+   ~lamindb_setup.evolve.core._uids.FeatureUID
+   ~lamindb_setup.evolve.core._uids.RecordUID
+   ~lamindb_setup.evolve.core._uids.SchemaUID
+   ~lamindb_setup.evolve.core._graph.Promise
+   ~lamindb_setup.evolve.core._graph.Dependency
+   ~lamindb_setup.evolve.core._graph.DependencyDAG
+   ~lamindb_setup.evolve.authoring._plan.Moved
+   ~lamindb_setup.evolve.authoring._migrations.Migrated
+   ~lamindb_setup.evolve.authoring._migrations.WriteStrategy
+
+.. autoclass:: lamindb_setup.evolve.authoring._plan.E
+
+.. autoclass:: lamindb_setup.evolve.authoring._dtypes.T
 
 Environment variables
 ---------------------

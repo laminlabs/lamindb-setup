@@ -25,6 +25,7 @@ from typing_extensions import TypeVar
 
 from ..core import Promise
 
+#: The Python type represented by a feature dtype.
 T = TypeVar("T")
 
 import datetime
@@ -925,10 +926,8 @@ class LaminDType(Generic[T]):
     def dtype(self) -> Any:
         """The underlying dtype, re-resolved against the connected instance.
 
-        Categorical dtypes name their registry by FQN internally (see
-        :func:`_to_dtype_spec`); accessing this property re-imports the class
-        from the *currently* connected instance, so it never returns a class
-        object left stale by a previous connection.
+        Categorical dtypes store the registry's qualified name. Reading this
+        property resolves the class against the current connection.
         """
         return _resolve_dtype_spec(self._spec)
 

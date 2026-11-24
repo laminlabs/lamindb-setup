@@ -6,6 +6,7 @@ from typing import Any, Generic
 
 from typing_extensions import TypeVar
 
+#: The type of exports returned by a plan.
 E = TypeVar("E", bound="PlanExports", default="PlanExports")
 
 import inspect
@@ -86,7 +87,7 @@ class Moved:
 
     `obj` is the object at its *new* address; `from_` is its previous name
     (a bare leaf name) or a full previous natural key.  See
-    :meth:`PlanContext.moved`.
+    :meth:`~lamindb_setup.evolve.PlanContext.moved`.
     """
 
     obj: Materializable
@@ -211,8 +212,7 @@ class PlanContext:
         misdeclared one offline with a
         :class:`~lamindb_setup.evolve.authoring._declarations.PlanDeclarationError`:
         a helper attached to a kind of target it does not answer for (the shapes
-        above, see :attr:`DataMigration.targets
-        <lamindb_setup.evolve.authoring._migrations.DataMigration.targets>`; a
+        above, see :attr:`~lamindb_setup.evolve.DataMigration.targets`; a
         natural key may stand in for an object, as for a schema no plan
         manages), a string that is not a natural key, and a removal declared for
         the key of an object this plan or a prerequisite still declares.  A
@@ -358,8 +358,8 @@ class Plan(ABC, Generic[E]):
         """Return the name of the module that defines this plan, if known.
 
         Used to tell plans declared in a file apart from plans merely imported
-        into it.  Defaults to the module of the plan's own class; subclasses
-        such as :class:`_FunctionPlan` override this to point at the user code.
+        into it. By default this is the module of the plan's class. For a
+        decorated plan, it is the module that defines the function.
         """
         return type(self).__module__
 
@@ -437,7 +437,7 @@ class Plan(ABC, Generic[E]):
         *references*.  They still have to be resolved -- a schema cannot link a
         borrowed feature without it -- but they are the prerequisite plan's to
         manage, so `apply` adopts them without recording them in this plan's
-        lock (see :meth:`~lamindb_setup.evolve.engine._apply.ApplyContext._borrow`).
+        lock.
         """
         own = {id(dep.obj) for dep in self.own_dependencies}
         return DependencyDAG(
@@ -704,18 +704,18 @@ class _FunctionPlan(Plan[E], Generic[E]):
 @overload
 def create_plan(
     func: Callable[[PlanContext, E], None],
-) -> _FunctionPlan[E]: ...
+) -> Plan[E]: ...
 
 
 @overload
 def create_plan(
     func: Callable[[PlanContext, None], None],
-) -> _FunctionPlan[PlanExports]: ...
+) -> Plan[PlanExports]: ...
 
 
 def create_plan(
     func: Callable[..., None],
-) -> _FunctionPlan[Any]:
+) -> Plan[Any]:
     """Turn a declaration function into a :class:`Plan`.
 
     The function takes a :class:`PlanContext` and an `exports` argument
