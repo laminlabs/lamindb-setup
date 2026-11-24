@@ -9,7 +9,7 @@ authors = [{name = "Lamin Labs", email = "open-source@lamin.ai"}]
 readme = "README.md"
 dynamic = ["version", "description"]
 dependencies = [
-    "python-dotenv",
+    "python-dotenv>=1.2.3",
     "django>=5.2,<5.3",
     "dj_database_url>=1.3,<3",
     "django-pgtrigger",  # 30kB pure python, no dependencies
