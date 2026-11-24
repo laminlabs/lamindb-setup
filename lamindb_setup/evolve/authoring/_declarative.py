@@ -1,4 +1,3 @@
-# Source behavior retained; host-repository lint exceptions.
 # ruff: noqa: B010
 """Declarative, pydantic-style authoring surface for schemas.
 

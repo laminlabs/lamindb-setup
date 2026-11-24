@@ -1,4 +1,3 @@
-# Source behavior retained; host-repository lint exceptions.
 # ruff: noqa: TC003
 """Typed, lamindb-independent wrapper around lamindb's Dtype system.
 

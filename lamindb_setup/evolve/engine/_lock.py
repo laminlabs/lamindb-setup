@@ -1,4 +1,3 @@
-# Source behavior retained; host-repository lint exceptions.
 # ruff: noqa: PTH105, PTH108
 """Lock file format and configuration serialization for plans.
 

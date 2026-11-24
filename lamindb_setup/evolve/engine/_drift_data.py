@@ -1,4 +1,3 @@
-# Source behavior retained; host-repository lint exceptions.
 """Data-aware overrides of the drift taxonomy.
 
 The pure taxonomy in :mod:`lamindb_setup.evolve.engine._drift` refuses a change whenever

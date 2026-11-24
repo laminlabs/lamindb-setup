@@ -1,4 +1,3 @@
-# Source behavior retained; host-repository lint exceptions.
 # ruff: noqa: TC003
 """Tear down the objects a plan created, after checking for external references.
 

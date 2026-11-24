@@ -1,4 +1,3 @@
-# Source behavior retained; host-repository lint exceptions.
 # ruff: noqa: B904
 """UID helpers for LaminDB identifiers.
 

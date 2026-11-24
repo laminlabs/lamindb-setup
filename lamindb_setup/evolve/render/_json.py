@@ -1,4 +1,3 @@
-# Source behavior retained; host-repository lint exceptions.
 # ruff: noqa: TC001
 """JSON rendering of a plan summary.
 

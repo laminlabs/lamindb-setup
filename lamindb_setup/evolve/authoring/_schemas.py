@@ -1,4 +1,3 @@
-# Source behavior retained; host-repository lint exceptions.
 # ruff: noqa: TC001
 """Thin lamindb-independent wrapper around lamindb's Schema system, with better type checking and error messages."""
 

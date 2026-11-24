@@ -1,4 +1,3 @@
-# Source behavior retained; host-repository lint exceptions.
 # ruff: noqa: PTH118
 """Import plan files under the module name a project root gives them.
 

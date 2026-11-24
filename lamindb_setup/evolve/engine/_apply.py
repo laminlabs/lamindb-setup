@@ -1,4 +1,3 @@
-# Source behavior retained; host-repository lint exceptions.
 # ruff: noqa: TC003
 """Apply plans against a LaminDB instance with terraform-like state tracking.
 
