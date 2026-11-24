@@ -165,6 +165,7 @@ def test_database_url_components(value: str | None) -> None:
     assert dsn.user == value
     assert dsn.password == value
     assert dsn.database == (value or "")
+    assert dsn.host == "db.example.invalid"
     for url in (
         dsn,
         LaminDsn.build(
