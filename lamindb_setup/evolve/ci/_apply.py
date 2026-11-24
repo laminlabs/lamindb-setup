@@ -23,7 +23,6 @@ from ..core import LaminSchemasError
 if TYPE_CHECKING:
     from collections.abc import Callable, Mapping, Sequence
     from types import ModuleType
-    from typing import Unpack
 
     from ..authoring import Plan
     from ._config import CIConfig, InstanceConfig, PlanRef
@@ -341,7 +340,7 @@ def _apply_instance(
 
 def _refs_dependencies_first(
     refs: Sequence[PlanRef],
-    loaded: Mapping[str, tuple[Plan, Unpack[tuple[Any, ...]]]],  # noqa: UP044 - keep install-time parsing on Python 3.10
+    loaded: Mapping[str, tuple[Plan, *tuple[Any, ...]]],
 ) -> list[PlanRef]:
     """Order `refs` so each comes after the listed plans its plan depends on.
 

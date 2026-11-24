@@ -174,11 +174,6 @@ omit = [
     "**/core/_colors.py",
 ]
 
-# Evolution uses Python 3.11; the setup parent continues to support Python 3.10.
-[tool.ruff.per-file-target-version]
-"lamindb_setup/evolve/**/*.py" = "py311"
-"tests/evolve/**/*.py" = "py311"
-
 [tool.mypy]
 # Use qualified names for the evolution test modules and their local overrides.
 explicit_package_bases = true

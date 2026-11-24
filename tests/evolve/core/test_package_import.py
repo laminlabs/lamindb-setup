@@ -98,20 +98,3 @@ for slug in ({first.slug!r}, {second.slug!r}):
         SUPABASE_ANON_KEY="pytest",
     )
     assert result.returncode == 0, result.stderr
-
-
-def test_evolve_reports_its_python_requirement_before_loading_modules(tmp_path):
-    result = _python(
-        """import lamindb_setup
-sys.version_info = (3, 10, 0)
-try:
-    import lamindb_setup.evolve
-except ImportError as exc:
-    assert "requires Python 3.11" in str(exc)
-else:
-    raise AssertionError("Expected the evolution Python version check")
-assert "lamindb_setup.evolve.authoring" not in sys.modules
-""",
-        tmp_path,
-    )
-    assert result.returncode == 0, result.stderr

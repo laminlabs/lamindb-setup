@@ -107,11 +107,6 @@ over the environment.
 variable. Keep it stable when editing the plan.
 """
 
-import sys
-
-if sys.version_info < (3, 11):  # noqa: UP036 - setup itself still supports Python 3.10
-    raise ImportError("lamindb_setup.evolve requires Python 3.11 or newer.")
-
 from lamindb_setup import __version__ as __version__
 
 # --- building blocks and data migrations ---
