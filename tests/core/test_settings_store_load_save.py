@@ -7,6 +7,7 @@ vs optional fields, and additional (unknown) fields in the .env.
 from __future__ import annotations
 
 import sys
+from itertools import product
 from types import SimpleNamespace
 from typing import TYPE_CHECKING
 
@@ -28,6 +29,17 @@ if TYPE_CHECKING:
     from pathlib import Path
 
 PREFIX = "lamindb_instance_"
+
+LITERAL_VALUES = [
+    "plain",
+    " café # comment ",
+    "${T5_MISSING:-fallback}",
+    "value\nlamindb_instance_db=postgresql://attacker.invalid/replaced",
+    *(
+        f"value{left}{right}"
+        for left, right in product(('"', "\\", "\n", "\r", "${T5_SECRET}"), repeat=2)
+    ),
+]
 
 
 @pytest.mark.parametrize(
@@ -102,12 +114,18 @@ lamindb_instance_is_clone=False
 """
 
 
-def test_settings_env_full_roundtrip(tmp_path: Path) -> None:
+@pytest.mark.parametrize("value", LITERAL_VALUES)
+def test_settings_env_full_roundtrip(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, value: str
+) -> None:
     """Read full .env, load to store, serialize via InstanceSettings save, load again."""
     env_file = tmp_path / "current_instance.env"
     env_file.write_text(FULL_ENV_CONTENT)
 
     store1 = InstanceSettingsStore.from_env_file(env_file, PREFIX)
+    monkeypatch.setenv("T5_SECRET", "dummy-secret-marker")
+    monkeypatch.delenv("T5_MISSING", raising=False)
+    store1.api_url = value
     settings = setup_instance_from_store(store1)
     saved_file = tmp_path / "saved.env"
     save_instance_settings(settings, saved_file)
@@ -123,6 +141,53 @@ def test_settings_env_full_roundtrip(tmp_path: Path) -> None:
     assert store2.api_url == store1.api_url
     assert store2.schema_id == store1.schema_id
     assert store2.db_permissions == store1.db_permissions == "public"
+    assert store2.db == store1.db
+
+
+@pytest.mark.parametrize(
+    "value",
+    [None, "", "%2F", "%252F", "/db?host=other.invalid&port=1", *LITERAL_VALUES],
+)
+def test_database_url_components(value: str | None) -> None:
+    import dj_database_url
+    from lamindb_setup.core._hub_utils import LaminDsn
+    from psycopg.conninfo import conninfo_to_dict
+
+    dsn = LaminDsn.build(
+        scheme="postgresql",
+        user=value,
+        password=value,
+        host="db.example.invalid",
+        port=5432,
+        database=value,
+        query="sslmode=require",
+    )
+    assert dsn.user == value
+    assert dsn.password == value
+    assert dsn.database == (value or "")
+    for url in (
+        dsn,
+        LaminDsn.build(
+            scheme=dsn.scheme,
+            user=dsn.user,
+            password=dsn.password,
+            host=dsn.host,
+            port=dsn.port,
+            database=dsn.database,
+            query="sslmode=require",
+        ),
+    ):
+        parsed = conninfo_to_dict(url)
+        django = dj_database_url.parse(url)
+        assert parsed["host"] == django["HOST"] == "db.example.invalid"
+        assert parsed["port"] == str(django["PORT"]) == "5432"
+        assert parsed["sslmode"] == django["OPTIONS"]["sslmode"] == "require"
+        for field, django_field in (
+            ("user", "USER"),
+            ("password", "PASSWORD"),
+            ("dbname", "NAME"),
+        ):
+            assert parsed.get(field, "") == django[django_field] == (value or "")
 
 
 def test_settings_env_missing_required_field_raises(tmp_path: Path) -> None:
@@ -175,18 +240,25 @@ def test_settings_env_optional_field_explicit_null_succeeds(tmp_path: Path) -> N
     assert store.api_url is None
 
 
-def test_settings_env_additional_fields_ignored(tmp_path: Path) -> None:
+@pytest.mark.parametrize("value", ["plain", "${T5_SECRET}", "${T5_MISSING:-fallback}"])
+def test_settings_env_additional_fields_ignored(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, value: str
+) -> None:
     """Additional (unknown) keys in .env are ignored on load; load succeeds."""
     extra_content = (
         FULL_ENV_CONTENT.strip()
+        + f"\nlamindb_instance_api_url={value}"
         + "\nlamindb_instance_extra_field=foo\nlamindb_instance_another=bar\n"
     )
     env_file = tmp_path / "extra_fields.env"
     env_file.write_text(extra_content)
+    monkeypatch.setenv("T5_SECRET", "dummy-secret-marker")
+    monkeypatch.delenv("T5_MISSING", raising=False)
 
     store = InstanceSettingsStore.from_env_file(env_file, PREFIX)
     assert store.owner == "laminlabs"
     assert store.name == "lamindata"
+    assert store.api_url == value
     # Extra keys are not on the store; no error.
     assert not hasattr(store, "extra_field")
     assert not hasattr(store, "another")

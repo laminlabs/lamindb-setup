@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from typing import Any, ClassVar
-from urllib.parse import urlparse, urlunparse
+from urllib.parse import quote, unquote, urlparse, urlunparse
 
 from pydantic import BaseModel, Field, GetCoreSchemaHandler
 from pydantic_core import CoreSchema, core_schema
@@ -44,11 +44,13 @@ class LaminDsn(str):
 
     @property
     def user(self) -> str | None:
-        return urlparse(self).username
+        user = urlparse(self).username
+        return unquote(user) if user is not None else None
 
     @property
     def password(self) -> str | None:
-        return urlparse(self).password
+        password = urlparse(self).password
+        return unquote(password) if password is not None else None
 
     @property
     def host(self) -> str | None:
@@ -60,7 +62,7 @@ class LaminDsn(str):
 
     @property
     def database(self) -> str:
-        return urlparse(self).path.lstrip("/")
+        return unquote(urlparse(self).path.lstrip("/"))
 
     @property
     def scheme(self) -> str:
@@ -83,12 +85,12 @@ class LaminDsn(str):
         if port is not None:
             netloc = f"{netloc}:{port}"
         if user is not None:
-            auth = user
+            auth = quote(user, safe="")
             if password is not None:
-                auth = f"{auth}:{password}"
+                auth = f"{auth}:{quote(password, safe='')}"
             netloc = f"{auth}@{netloc}"
 
-        path = f"/{database}" if database else ""
+        path = f"/{quote(database, safe='')}" if database else ""
 
         url = urlunparse((scheme, netloc, path, "", query or "", fragment or ""))
         return cls(url)

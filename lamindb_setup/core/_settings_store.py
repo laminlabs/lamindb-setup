@@ -189,7 +189,7 @@ def _load_env_to_kwargs(
     prefix: str,
 ) -> dict[str, Any]:
     path = Path(path) if isinstance(path, str) else path
-    raw = dotenv_values(path)
+    raw = dotenv_values(path, interpolate=False)
     type_hints = get_type_hints(cls)
     flds = {f.name: f for f in fields(cls)}
     optional = {

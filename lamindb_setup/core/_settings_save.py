@@ -85,6 +85,14 @@ def save_settings(
                     value = value.hex
                 else:
                     value = type_(value)
+                if isinstance(value, str):
+                    value = (
+                        value.replace("\\", "\\\\")
+                        .replace('"', '\\"')
+                        .replace("\n", "\\n")
+                        .replace("\r", "\\r")
+                    )
+                    value = f'"{value}"'
                 f.write(f"{prefix}{store_key}={value}\n")
 
 
