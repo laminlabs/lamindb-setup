@@ -39,7 +39,9 @@ Migration management
    :toctree:
 
    migrate
-   evolve
+
+See `Schema plan authoring <https://docs.lamin.ai/schema-plan-authoring>`_
+for the Python API used in plan files.
 
 """
 

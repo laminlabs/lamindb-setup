@@ -1,15 +1,10 @@
-"""Declare, review, and apply an instance's metadata schema.
+"""Declare features, schemas, and records in a schema evolution plan.
 
-Plans describe features, schemas, and records; the engine materializes them
-during apply. For a first change, follow :doc:`manage-schemas`.
+Import plan declarations before connecting to an instance::
 
-Access this API through LaminDB::
+    from lamindb_setup.evolve import create_plan
 
-    from lamindb.setup import evolve
-
-The implementation lives in `lamindb_setup.evolve`, which can also be imported
-directly. Generated plans use that import to avoid LaminDB's normal
-auto-connection on import. Define plans before connecting to an instance.
+Use the `lamin evolve` CLI to validate, preview, and apply the plan.
 
 Internal subpackages may change without notice.
 
