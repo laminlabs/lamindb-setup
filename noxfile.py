@@ -128,7 +128,11 @@ def core(session: nox.Session):
     del os.environ["AWS_ACCESS_KEY_ID"]
     del os.environ["AWS_SECRET_ACCESS_KEY"]
     run(session, f"pytest {COVERAGE_ARGS} ./tests/core", env=os.environ)
-    run(session, f"pytest {COVERAGE_ARGS} ./tests/evolve", env=os.environ)
+
+
+@nox.session
+def evolve(session: nox.Session):
+    run(session, f"pytest {COVERAGE_ARGS} ./tests/evolve")
 
 
 @nox.session
