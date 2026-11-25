@@ -307,3 +307,41 @@ def test_a_record_types_schema_is_snapshotted_whatever_the_plan_calls_it(
     with_schema = record(SimpleNamespace(uid="schemaUID0000001"))
     assert serialize_existing(with_schema, kind)["schema"] == "schemaUID0000001"
     assert serialize_existing(record(None), kind)["schema"] is None
+
+
+def test_lock_uids_preserve_unknown_kinds_and_invalid_values() -> None:
+    from lamindb_setup.evolve.core import FeatureUID
+
+    uid = "Ab12Cd34Ef56"
+    assert isinstance(lock_mod.coerce_uid(uid, "Feature"), FeatureUID)
+    assert type(lock_mod.coerce_uid(uid, "OtherKind")) is str
+    assert lock_mod.coerce_uid("short", "Feature") == "short"
+
+
+def test_lock_snapshots_when_package_or_model_metadata_is_unavailable(
+    monkeypatch,
+) -> None:
+    from importlib import metadata
+    from types import SimpleNamespace
+    from unittest.mock import Mock
+
+    monkeypatch.setattr(
+        metadata, "version", Mock(side_effect=metadata.PackageNotFoundError)
+    )
+    assert lock_mod._package_version() == "unknown"
+    feature = SimpleNamespace(name="status", dtype="str")
+    assert lock_mod.serialize_existing(feature, "Feature")["dtype"] == "str"
+    record_type = SimpleNamespace(_aux={"ss": 1}, space=SimpleNamespace(uid="space"))
+    assert (
+        lock_mod.serialize_existing(record_type, "RecordType")["single_space_uid"]
+        == "space"
+    )
+    assert "slots" not in lock_mod.serialize_existing(
+        SimpleNamespace(pk=None), "Schema", members=[]
+    )
+    assert (
+        lock_mod._dtype_repr(SimpleNamespace(dtype=[int, float], dtype_str="num"))
+        == "num"
+    )
+    assert lock_mod._dtype_repr(SimpleNamespace(dtype=42)) == "42"
+    assert lock_mod._jsonify(("a", "b")) == repr(("a", "b"))

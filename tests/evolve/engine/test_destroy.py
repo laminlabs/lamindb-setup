@@ -125,6 +125,9 @@ def test_compute_destroy_reports_missing_when_nothing_applied(
 ) -> None:
     destroy_plan = compute_destroy(_destroy_plan, lock=None)
 
+    rendered = render_destroy(destroy_plan, title="Before apply")
+    assert "'destroy_col'  (not in instance)" in rendered
+    assert "3 not present" in rendered
     assert destroy_plan.targets == []
     assert {m.kind for m in destroy_plan.missing} == {
         "FeatureType",
@@ -461,7 +464,13 @@ def test_destroy_plan_references_limit_bounds_the_listing(
 
     # `head` slices the query rather than loading every referencing row.
     assert len(detail.head(2)) == 2
+    assert detail.head(0) == [] and destroy_plan.references(limit=0) == []
     assert detail._records is None
+    records = detail.records
+    assert detail.head(2) == records[:2]
+    assert "referenced by 5 Schema" in render_destroy(
+        destroy_plan, title="Before destroy"
+    )
 
 
 def test_destroy_plan_describes_link_records_by_record_and_value(
@@ -725,10 +734,22 @@ def test_delete_references_removes_blocking_records(
 
 
 def test_render_destroy_lists_targets(
-    instance: TestInstanceInfo, ln: LamindbModuleType
+    instance: TestInstanceInfo,
+    ln: LamindbModuleType,
+    capsys: pytest.CaptureFixture[str],
 ) -> None:
+    from lamindb_setup.evolve.engine._destroy import print_destroy
+
     compute_changes(_destroy_plan, mode=ApplyMode.APPLY, lock=None)
-    destroy_plan = compute_destroy(_destroy_plan, lock=None)
+    progress: list[str] = []
+    destroy_plan = compute_destroy(_destroy_plan, lock=None, report=progress.append)
+    assert progress == [
+        "Finalizing plan",
+        "Prefetching instance state",
+        "Scanning for external references",
+    ]
+    print_destroy(destroy_plan, title="Destroy: test")
+    assert "3 to delete" in capsys.readouterr().out
 
     text = render_destroy(destroy_plan, title="Destroy: test")
     assert "Destroy: test" in text
@@ -815,3 +836,171 @@ def test_execute_destroy_rolls_back_on_failure(
     assert ln.Feature.filter(name="destroy_col", is_type=False).one_or_none()
     assert ln.Feature.filter(name="destroy_ft", is_type=True).one_or_none()
     assert ln.Schema.filter(name="DestroySchema").one_or_none()
+
+
+def test_delete_references_retries_a_protected_parent_after_its_child(ln) -> None:
+    from django.db.models import ProtectedError
+    from lamindb_setup.evolve.engine._destroy import (
+        DestroyPlan,
+        DestroyTarget,
+        ReferenceDetail,
+    )
+
+    parent = ln.Record(name="external type", is_type=True).save()
+    child = ln.Record(name="external member", type=parent).save()
+    detail = ReferenceDetail("Record", "records", 1, _records=[parent])
+    target = DestroyTarget("Feature:x", "Feature", "x", "target", None, [detail])
+    plan = DestroyPlan("test", [target])
+    with pytest.raises(ProtectedError):
+        delete_references(plan)
+    assert ln.Record.objects.filter(pk=parent.pk).exists()
+    detail._records = [parent, child, parent]
+    detail.count = 3
+    assert delete_references(plan) == 2
+    assert not ln.Record.objects.filter(
+        name__in=["external type", "external member"]
+    ).exists()
+
+
+def test_hidden_many_to_many_destroy_scan_counts_only_external_records(ln) -> None:
+    from django.db import connection, models
+    from django.test.utils import isolate_apps
+    from lamindb_setup.evolve.engine import _destroy as destroy
+
+    with isolate_apps("lamindb"):
+
+        class Item(models.Model):
+            peers = models.ManyToManyField("self")
+
+            class Meta:
+                app_label = "lamindb"
+
+        with connection.schema_editor() as editor:
+            editor.create_model(Item)
+        try:
+            target, sibling, external = Item.objects.bulk_create(
+                [Item(), Item(), Item()]
+            )
+            target.peers.add(sibling, external)
+            relations = destroy._model_relations(Item)
+            (relation,) = [rel for rel in relations if rel.relation == "peers"]
+            assert relation.m2m_query_name is None
+            item = destroy.DestroyTarget("Item:t", "Item", "t", "t", target)
+            unit = destroy._ScanUnit(relation, [item], [target.pk])
+            destroy._run_scan_unit(unit, {Item: {sibling.pk}})
+            (blocked,) = item.references
+            assert blocked.count == 1 and blocked.records == [external]
+        finally:
+            with connection.schema_editor() as editor:
+                editor.delete_model(Item)
+
+
+def test_destroy_reporting_handles_count_only_and_partial_reference_metadata(
+    ln, tmp_path: Path
+) -> None:
+    from types import SimpleNamespace
+
+    from lamindb_setup.evolve.engine import _destroy as destroy
+
+    with pytest.raises(ValueError, match="same length"):
+        compute_destroy_group([_destroy_plan], locks=[])
+    detail = destroy.ReferenceDetail("Link", "incoming", count=2)
+    item = destroy.DestroyTarget("Feature:x", "Feature", "x", "x", None, [detail])
+    plan = destroy.DestroyPlan("test", [item])
+    assert detail.head(2) == [] and plan.total_references == 2
+    assert plan_held_references(plan, {"outside": ()}) == []
+    assert destroy._record_attributes(SimpleNamespace(record=None)) == {}
+    assert destroy._record_attributes(
+        SimpleNamespace(value=SimpleNamespace(uid="guid"))
+    ) == {"value": "guid"}
+    assert destroy._owner_paths(ln.Artifact) == []
+    assert destroy._display_path(tmp_path) == str(tmp_path)
+
+
+def test_destroy_skips_cascaded_references_and_preserves_untrashable_ones() -> None:
+    from unittest.mock import Mock
+
+    from lamindb_setup.evolve.engine import _destroy as destroy
+
+    child = Mock(pk=2, branch_id=1)
+    parent = Mock(pk=1, branch_id=1)
+    parent.delete.side_effect = lambda **kwargs: setattr(child, "pk", None)
+    detail = destroy.ReferenceDetail(
+        "Record", "references", 2, _records=[parent, child]
+    )
+    item = destroy.DestroyTarget(
+        "Record:target", "Record", "target", "target", None, [detail]
+    )
+    plan = destroy.DestroyPlan("test", [item])
+    assert delete_references(plan) == 1
+    child.delete.assert_not_called()
+    parent.delete.side_effect = ValueError("cannot trash")
+    assert trash_references(plan) == (0, 1)
+    parent.delete.assert_called_with(permanent=False)
+
+
+def test_repoint_preserves_conflicting_links_and_reports_database_refusal(
+    ln, monkeypatch
+) -> None:
+    from django.db import connection, models
+    from django.test.utils import isolate_apps
+    from lamindb_setup.evolve.core import LaminSchemasError
+    from lamindb_setup.evolve.engine import _repoint
+
+    with isolate_apps("lamindb"):
+
+        class Annotation(models.Model):
+            owner = models.ForeignKey(ln.Record, models.CASCADE)
+            key = models.CharField(max_length=20)
+            value = models.IntegerField()
+
+            class Meta:
+                app_label = "lamindb"
+                constraints = [
+                    models.UniqueConstraint(
+                        fields=["owner", "key"], name="test_owner_key"
+                    ),
+                    models.UniqueConstraint(
+                        fields=["owner", "value"],
+                        condition=models.Q(value__gt=0),
+                        name="test_positive_value",
+                    ),
+                ]
+
+        fk = Annotation._meta.get_field("owner")
+        # The test registry is isolated from the installed app registry.
+        monkeypatch.setattr(
+            _repoint, "referencing_fields", lambda _: [(Annotation, fk)]
+        )
+        old, new = [ln.Record(name=name).save() for name in ("old owner", "new owner")]
+        with connection.schema_editor() as editor:
+            editor.create_model(Annotation)
+        try:
+            left = Annotation.objects.create(owner=old, key="measurement", value=1)
+            right = Annotation.objects.create(owner=new, key="measurement", value=2)
+            with pytest.raises(LaminSchemasError, match="record different things"):
+                _repoint.repoint_references(ln.Record, old.pk, new.pk)
+            right.key, right.value = "other key", 1
+            right.save()
+            with pytest.raises(LaminSchemasError, match="refused by the database"):
+                _repoint.repoint_references(ln.Record, old.pk, new.pk)
+            left.refresh_from_db()
+            assert left.owner_id == old.pk and Annotation.objects.count() == 2
+        finally:
+            with connection.schema_editor() as editor:
+                editor.delete_model(Annotation)
+
+
+def test_destroy_schedules_a_repeated_dependency_only_once(ln) -> None:
+    from unittest.mock import Mock
+
+    compute_changes(_destroy_plan, mode=ApplyMode.APPLY, lock=None)
+    expected = compute_destroy(_destroy_plan)
+    deps = list(_destroy_plan.dependencies)
+    plan = Mock(spec=Plan, ctx=_destroy_plan.ctx, own_dependencies=deps)
+    plan.name = _destroy_plan.name
+    plan.dependencies = [*deps, deps[0]]
+
+    actual = compute_destroy(plan)
+    assert [t.uid for t in actual.targets] == [t.uid for t in expected.targets]
+    assert actual.is_safe and not actual.missing

@@ -11,7 +11,7 @@ from typing import TYPE_CHECKING
 
 import pytest
 from lamindb_setup.evolve.ci._config import ConfigError, load_config
-from lamindb_setup.evolve.ci._markdown import render_report
+from lamindb_setup.evolve.ci._markdown import render_report, render_verify_report
 from lamindb_setup.evolve.ci._pr import (
     ChangeRecord,
     DeploymentDiff,
@@ -466,14 +466,17 @@ def test_render_report_with_changes() -> None:
                 changes=[
                     ChangeRecord(
                         action="create", kind="Feature", name="col", uid="uid1"
-                    )
+                    ),
+                    ChangeRecord(
+                        action="move", kind="Feature", name="renamed", uid="uid2"
+                    ),
                 ],
             )
         ],
     )
     md = render_report(report)
     assert "pending changes" in md
-    assert "1 to create, 0 to update, 0 to delete" in md
+    assert "1 to create, 0 to update, 0 to delete, 1 to move" in md
     assert "+ Feature 'col'  uid1" in md
     assert report.has_changes
     assert not report.has_errors
@@ -907,11 +910,18 @@ def test_run_pr_check_blocks_diff_when_an_unchanged_sibling_is_invalid(
     assert report.has_errors
 
 
-def test_run_pr_check_records_validation_failure(tmp_path: Path) -> None:
+@pytest.mark.parametrize("stage", ["load", "finalize"])
+def test_run_pr_check_records_validation_failure(tmp_path: Path, stage: str) -> None:
     cfg = load_config(_config_two_instances(tmp_path))
 
+    class InvalidPlan(_FakePlan):
+        def finalize(self) -> None:
+            raise ValueError("bad declaration")
+
     def fake_load(target: str) -> tuple[_FakePlan, Path, object]:
-        raise RuntimeError("cannot import plan")
+        if stage == "load":
+            raise RuntimeError("cannot import plan")
+        return InvalidPlan(), tmp_path / "plan.py", object()
 
     connected: list[str] = []
 
@@ -923,6 +933,8 @@ def test_run_pr_check_records_validation_failure(tmp_path: Path) -> None:
     )
     assert all(not v.ok for v in report.validations)
     assert report.has_errors
+    expected = "cannot import plan" if stage == "load" else "bad declaration"
+    assert {v.error for v in report.validations} == {expected}
     # no plan validated, so no instance connection is attempted
     assert connected == []
 
@@ -2208,6 +2220,7 @@ def test_verify_config_flags_orphan(tmp_path: Path) -> None:
     assert [p.name for p in result.orphans] == ["plan_b.py"]
     assert [p.name for p in result.referenced] == ["plan_a.py"]
     assert not result.ok
+    assert "❌ `plan_b.py`" in render_verify_report(result)
 
 
 def test_verify_config_ignored_plan_passes(tmp_path: Path) -> None:
@@ -2218,6 +2231,10 @@ def test_verify_config_ignored_plan_passes(tmp_path: Path) -> None:
     assert result.orphans == []
     assert [p.name for p in result.ignored] == ["plan_b.py"]
     assert result.ok
+    assert (
+        "Every committed plan is referenced or explicitly ignored"
+        in render_verify_report(result)
+    )
 
 
 def test_verify_config_ignored_plan_with_lock_fails(tmp_path: Path) -> None:
@@ -2228,6 +2245,7 @@ def test_verify_config_ignored_plan_with_lock_fails(tmp_path: Path) -> None:
     result = verify_config(load_config(config))
     assert not result.ok
     assert [p.name for p in result.ignored_with_locks] == ["plan_b.py"]
+    assert "`plan_b.py`: `plan_b.a-b.lock`" in render_verify_report(result)
 
 
 def test_run_apply_ignores_removed_changed_plan(tmp_path: Path) -> None:
@@ -3185,3 +3203,320 @@ def test_run_pr_check_rehearses_the_unchanged_plans_ci_apply_applies(
         "changed ones, failed: up: map_to_records cannot map 'gamma'"
     )
     assert report.has_errors
+
+
+@pytest.mark.parametrize(
+    ("document", "message"),
+    [
+        ("instances: [", "could not parse"),
+        ("[]", "top-level mapping"),
+        ("instances: []", "non-empty 'instances'"),
+        ("instances: [demo]", "must be a mapping"),
+        (
+            "instances: [{slug: demo, plans: [false]}]",
+            "plan entry must be a non-empty string",
+        ),
+        ("ignored_plans: true", "must be a list of strings"),
+        ("project_root: 42", "project_root.*non-empty string"),
+    ],
+)
+def test_invalid_config_reports_where_to_fix_it(
+    tmp_path: Path, document: str, message: str
+) -> None:
+    config = _write(tmp_path, "lamin_schemas.yml", document)
+    with pytest.raises(ConfigError, match=message):
+        load_config(config)
+
+
+def test_drift_report_keeps_independent_errors_from_the_same_instance(
+    tmp_path: Path,
+) -> None:
+    from lamindb_setup.evolve.ci._drift import run_drift_detection
+
+    cfg = load_config(_drift_config(tmp_path))
+
+    def load(target: str):
+        if target.endswith(":a"):
+            raise ValueError("invalid declaration")
+        return _FakePlan(), tmp_path / "plan_b.py", object()
+
+    def introspect(*args, **kwargs):
+        raise PermissionError("cannot read instance")
+
+    def compute(*args, **kwargs):
+        raise ValueError("invalid snapshot")
+
+    progress: list[str] = []
+    result = run_drift_detection(
+        cfg,
+        tmp_path,
+        load_plan=load,
+        connect=lambda slug: slug,
+        introspect=introspect,
+        compute=compute,
+        read_lock=lambda *args: _FakeLock([]),
+        report=progress.append,
+    )
+    (instance,) = result.instances
+    assert result.has_errors
+    assert any(
+        "plan_a.py:a" in error and "invalid declaration" in error
+        for error in instance.errors
+    )
+    assert "introspection failed: cannot read instance" in instance.errors
+    (diff,) = instance.diffs
+    assert not diff.ok and diff.error == "invalid snapshot"
+    assert any("Diffing" in message for message in progress)
+
+
+def test_failed_instance_is_reported_by_pr_check_and_export_discovery(
+    tmp_path: Path,
+) -> None:
+    from lamindb_setup.evolve.ci._markdown import render_missing_exports_report
+    from lamindb_setup.evolve.ci._missing_exports import run_missing_exports
+
+    cfg = load_config(_config_two_instances(tmp_path))
+
+    def connect(slug: str) -> str:
+        if slug == "acme/dev":
+            raise ConnectionError("instance offline")
+        return slug.replace("/", "-")
+
+    def load(target: str):
+        return _FakePlan(), tmp_path / target.split(":")[0], object()
+
+    report = run_pr_check(
+        cfg, load_plan=load, connect=connect, compute=lambda *args, **kwargs: []
+    )
+    assert [(d.instance_slug, d.ok) for d in report.diffs] == [
+        ("acme/dev", False),
+        ("acme/dev", False),
+        ("acme/prod", True),
+    ]
+    assert all("instance offline" in (d.error or "") for d in report.diffs if not d.ok)
+    exports = run_missing_exports(
+        cfg,
+        load_plan=load,
+        connect=connect,
+        read_lock=lambda *args: None,
+        reconstruct=lambda *args: _ReconPlan([], []),
+    )
+    assert exports.has_errors and exports.instances[0].errors == [
+        "connection failed: instance offline"
+    ]
+    assert not exports.instances[1].has_errors
+
+    markdown = render_missing_exports_report(exports)
+    assert "connection failed: instance offline" in markdown
+    assert (
+        "No lock file for" in markdown
+        and "Nothing to export for this instance" in markdown
+    )
+
+
+def test_missing_exports_reports_both_load_and_reconstruction_errors(
+    tmp_path: Path,
+) -> None:
+    from lamindb_setup.evolve.ci._missing_exports import run_missing_exports
+
+    def load(target: str):
+        if target.endswith(":a"):
+            raise ValueError("bad plan")
+        return _FakePlan(), tmp_path / "plan_b.py", object()
+
+    def reconstruct(*args):
+        raise ValueError("unsupported schema")
+
+    cfg = load_config(_drift_config(tmp_path))
+    report = run_missing_exports(
+        cfg,
+        load_plan=load,
+        connect=lambda s: s,
+        read_lock=lambda *args: _FakeLock([]),
+        reconstruct=reconstruct,
+    )
+    assert report.has_errors
+    (instance,) = report.instances
+    assert instance.errors == [
+        "plan_a.py:a: bad plan",
+        "reconstruction failed: unsupported schema",
+    ]
+
+
+def test_drift_passes_the_plan_export_name_for_a_locked_object(tmp_path: Path) -> None:
+    from lamindb_setup.evolve.ci._drift import run_drift_detection
+
+    _write(
+        tmp_path,
+        "shared.py",
+        """
+from lamindb_setup.evolve import FeatureType, PlanContext, PlanExports, create_plan
+
+class Shared(PlanExports):
+    parent: FeatureType
+    new: FeatureType
+    unset: FeatureType
+
+@create_plan
+def shared(ctx: PlanContext, exports: Shared) -> None:
+    exports.parent = FeatureType("parent")
+    exports.new = FeatureType("new")
+""",
+    )
+    config = load_config(
+        _write(
+            tmp_path,
+            "lamin_schemas.yml",
+            "instances: [{slug: org/dev, plans: [shared.py]}]",
+        )
+    )
+    lock = _KeyedLock({"FeatureType:parent": ("parentUid", "FeatureType", "parent")})
+
+    def introspect(instance, output, *, external_refs, **kwargs):
+        (export,) = external_refs.values()
+        assert (export.module, export.plan_var, export.exports_cls, export.field) == (
+            "shared",
+            "shared",
+            "Shared",
+            "parent",
+        )
+        assert export.uid == "parentUid"
+        return _FakeIntroResult(output, reconstructed=0, errors=[])
+
+    report = run_drift_detection(
+        config,
+        tmp_path,
+        connect=lambda slug: slug,
+        read_lock=lambda *args: lock,
+        introspect=introspect,
+        compute=lambda *args: [],
+    )
+    assert not report.has_errors, report.instances[0].errors
+
+
+def test_ci_apply_keeps_previous_reports_when_a_sheet_export_fails(
+    tmp_path: Path,
+) -> None:
+    from lamindb_setup.evolve.ci._apply import run_apply
+    from lamindb_setup.evolve.engine._apply import SheetExportOutcome
+    from lamindb_setup.evolve.engine._apply_run import SheetExportError
+
+    cfg = load_config(_drift_config(tmp_path))
+
+    def apply(plan_obj, plan_file, *args, **kwargs):
+        if plan_file.name == "plan_a.py":
+            return "first plan applied"
+        raise SheetExportError(
+            SheetExportOutcome(error=OSError("storage unavailable")),
+            section="second plan applied, export failed",
+        )
+
+    with pytest.raises(SheetExportError, match="storage unavailable") as exc:
+        run_apply(
+            cfg,
+            output_format=OutputFormat.markdown,
+            load_plan=lambda target: (
+                _FakePlan(),
+                Path(target.split(":")[0]),
+                object(),
+            ),
+            connect=lambda slug: slug,
+            require_stem_uid=lambda *args: "stemuid01234",
+            ensure_pushed=lambda *args: None,
+            apply_one=apply,
+        )
+    assert exc.value.sections == [
+        "first plan applied",
+        "second plan applied, export failed",
+    ]
+
+
+def test_capped_reports_show_omissions_and_requirements(monkeypatch) -> None:
+    from lamindb_setup.evolve.ci import _markdown as md
+    from lamindb_setup.evolve.ci._drift import (
+        DriftResult,
+        ExportSuggestion,
+        ExportSuggestionObject,
+        InstanceDriftResult,
+    )
+    from lamindb_setup.evolve.render import ObjectInfo
+
+    monkeypatch.setattr(md, "_MAX_EXPORT_OBJECTS", 1)
+    monkeypatch.setattr(md, "_MAX_OBJECTS_PER_GROUP", 2)
+    suggestions = [
+        ExportSuggestionObject(
+            uid=f"uid{i}", kind="Feature", name=f"col{i}", references=1
+        )
+        for i in range(2)
+    ]
+    objects = [
+        ObjectInfo(0, "FeatureType", "parent"),
+        ObjectInfo(1, "Feature", "child", parent_id=0, requires=[3]),
+        ObjectInfo(2, "Feature", "other", parent_id=0),
+        ObjectInfo(3, "RecordType", "source"),
+    ]
+    instance = InstanceDriftResult(
+        slug="demo",
+        untracked_objects=4,
+        summary=_untracked_summary(objects),
+        export_suggestions=[ExportSuggestion("p.py", "p", suggestions)],
+    )
+    assert md._object_lines(objects[0], _untracked_summary(objects), 0, [0]) == []
+    report = md.render_drift_report(DriftResult(instances=[instance]))
+    assert "_requires_" in report and "source" in report
+    assert report.count("… 1 more") == 2
+    monkeypatch.setattr(md, "_MAX_CHANGES_PER_DIFF", 1)
+    changes = [
+        ChangeRecord(
+            action="no_change",
+            kind="Feature",
+            name=f"col{i}",
+            uid="uid",
+            uid_misalignment="different uid",
+        )
+        for i in range(2)
+    ]
+    diff = DeploymentDiff(
+        instance_slug="demo", plan_target="plan.py", ok=True, changes=changes
+    )
+    assert "| ... | 1 more | |" in render_report(PRReport(diffs=[diff]))
+
+
+def test_unknown_plan_reference_and_unloaded_ref_order(tmp_path: Path) -> None:
+    from lamindb_setup.evolve.ci._apply import _refs_dependencies_first
+    from lamindb_setup.evolve.ci._pr import _find_ref
+
+    config = load_config(_drift_config(tmp_path))
+    refs = config.instances[0].plans
+    assert _refs_dependencies_first(refs, {}) == refs
+    with pytest.raises(KeyError, match="unknown.py"):
+        _find_ref(config, "unknown.py")
+
+
+def test_missing_exports_reports_a_tracked_reference_with_no_lock_owner(
+    tmp_path: Path, monkeypatch
+) -> None:
+    from lamindb_setup.evolve.ci import _drift
+    from lamindb_setup.evolve.ci._missing_exports import run_missing_exports
+
+    # Exercise the attribution step when discovery returns a UID absent from the locks.
+    monkeypatch.setattr(
+        _drift, "_external_refs_for_plan", lambda *args: ({"owned", "orphan"}, {})
+    )
+    result = run_missing_exports(
+        load_config(_drift_config(tmp_path)),
+        load_plan=lambda target: (
+            _FakePlan(),
+            tmp_path / target.split(":")[0],
+            object(),
+        ),
+        connect=lambda slug: slug,
+        read_lock=lambda *args: _KeyedLock({"Feature:x": ("owned", "Feature", "x")}),
+        reconstruct=lambda *args: _ReconPlan([_ReconSpec({"owned", "orphan"})], []),
+    )
+
+    (instance,) = result.instances
+    assert [obj.uid for group in instance.groups for obj in group.objects] == ["owned"]
+    assert instance.errors == [
+        "1 referenced tracked object(s) are owned by no configured plan lock and cannot be attributed"
+    ]

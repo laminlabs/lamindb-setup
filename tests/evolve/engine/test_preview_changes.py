@@ -11,7 +11,7 @@ its post-check -- and rolls all of it back.
 from __future__ import annotations
 
 from pathlib import Path
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
 
 import pytest
 from lamindb_setup.evolve import (
@@ -187,3 +187,37 @@ def test_provisional_promises_forget_only_what_they_resolved() -> None:
 
     assert kept.resolve(None) == "kept-1"  # type: ignore[arg-type]
     assert provisional.resolve(None) == "provisional-3"  # type: ignore[arg-type]
+
+
+def test_ci_rehearsal_reports_the_migration_and_rolls_back(
+    ln: LamindbModuleType, tmp_path: Path
+) -> None:
+    from types import ModuleType
+
+    from lamindb_setup.evolve.authoring._plan import Plan
+    from lamindb_setup.evolve.ci._config import load_config
+    from lamindb_setup.evolve.ci._pr import run_pr_check
+    from lamindb_setup.evolve.engine._lock import lock_path
+
+    path = tmp_path / "plan.py"
+    path.touch()
+    config_file = tmp_path / "lamin_schemas.yml"
+    config_file.write_text("instances: [{slug: org/dev, plans: [plan.py]}]")
+    lock = _seed(ln, tmp_path, "alpha", "beta")
+    lock.write(lock_path(path, "org-dev"))
+
+    def load_plan(_target: str) -> tuple[Plan[Any], Path, ModuleType]:
+        return _as_vocabulary, path, ModuleType("plan")
+
+    report = run_pr_check(
+        load_config(config_file),
+        preview_migrations=True,
+        load_plan=load_plan,
+        connect=lambda _: "org-dev",
+    )
+    (diff,) = report.diffs
+    assert diff.ok, diff.error
+    assert any(
+        change.name == "pv_x" and change.action == "update" for change in diff.changes
+    )
+    assert _untouched(ln)

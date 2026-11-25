@@ -273,3 +273,10 @@ def test_spatialdata_slot_key_parity(
 ) -> None:
     pytest.importorskip("spatialdata")
     _check_parity(ln, "SpatialData", _spatialdata())
+
+
+def test_slot_on_unknown_object_type_is_refused() -> None:
+    from lamindb_setup.evolve.authoring._schemas import validate_slot_keys
+
+    with pytest.raises(ValueError, match="not valid for otype"):
+        validate_slot_keys("Other", {"data": None})  # type: ignore[arg-type,dict-item]

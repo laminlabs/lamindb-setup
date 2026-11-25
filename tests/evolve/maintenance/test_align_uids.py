@@ -250,6 +250,11 @@ def test_lock_round_trips_the_seeded_section(tmp_path: Path) -> None:
     assert read is not None
     assert read.version == LOCK_VERSION == 6
     assert read.seeded == {"RecordType:rt/Record:v": "a" * 16}
+    siblings = SiblingUids.from_locks({"acme": read})
+    assert siblings.recorded("RecordType:rt/Record:v", seeded=True) == {
+        "acme": "a" * 16
+    }
+    assert siblings.recorded("RecordType:rt/Record:v") == {}
     assert read.remove("RecordType:rt/Record:v")
     assert not read.is_empty
     assert read.remove("RecordType:rt")

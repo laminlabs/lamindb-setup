@@ -459,3 +459,192 @@ def test_inherited_dependencies_requires_a_finalized_plan() -> None:
 
     with pytest.raises(PlanNotFinalizedError):
         _ = _p.inherited_dependencies
+
+
+def test_uid_promises_match_saved_declarations_and_lock_metadata(ln) -> None:
+    from lamindb_setup.evolve.engine._apply import ApplyContext
+    from lamindb_setup.evolve.engine._lock import serialize_config, serialize_existing
+
+    ctx = ApplyContext.standalone()
+    with FeatureType("assay features") as feature_type:
+        feature = Feature("concentration", dtype=LaminDType(float), type=feature_type)
+    with SchemaType("assay schemas") as schema_type:
+        schema = Schema(
+            name="Concentrations",
+            features=[feature],
+            type=schema_type,
+            description="Concentration measurements",
+            coerce=True,
+        )
+    with RecordType("assays", description="assay records") as record_type:
+        record = Record(
+            "assay A",
+            type=record_type,
+            description="first assay",
+            reference="A1",
+            reference_type="accession",
+        )
+    for declaration in (feature_type, feature, schema, record):
+        promise = declaration.uid
+        assert declaration.name in repr(promise)
+        assert promise.resolve(ctx) == declaration.materialize(ctx).uid
+    for model, kind, keys in [
+        (record, "Record", ("description", "reference", "reference_type")),
+        (record_type, "RecordType", ("description",)),
+        (schema, "Schema", ("description", "coerce")),
+    ]:
+        config = serialize_config(model)
+        snapshot = serialize_existing(model.materialize(ctx), kind)
+        for key in keys:
+            assert snapshot[key] == config[key] == getattr(model, key)
+
+
+def test_plan_cycles_and_repeated_prerequisites() -> None:
+    @create_plan
+    def first(ctx: PlanContext, exports: None) -> None:
+        pass
+
+    @create_plan
+    def second(ctx: PlanContext, exports: None) -> None:
+        pass
+
+    with pytest.raises(PlanNotFinalizedError, match="finalized"):
+        _ = first.ctx
+    with pytest.raises(ValueError, match="depend on itself"):
+        first.add_plan_dependency(first)
+    second.add_plan_dependency(first)
+    second.add_plan_dependency(first)
+    assert second.depends_on == (first,)
+    first.add_plan_dependency(second)
+    with pytest.raises(RuntimeError, match="circular plan dependency"):
+        second.finalize()
+
+
+def test_create_plan_reports_invalid_function_signatures() -> None:
+    def no_exports(ctx: PlanContext) -> None:
+        pass
+
+    def wrong_exports(ctx: PlanContext, exports: int) -> None:
+        pass
+
+    def bad_prerequisite(
+        ctx: PlanContext,
+        exports: None,
+        base: Plan[_ExampleExports] = 1,  # type: ignore[assignment]
+    ) -> None:
+        pass
+
+    for fn, message in [
+        (no_exports, "second positional"),
+        (wrong_exports, "not annotated with"),
+        (bad_prerequisite, "default"),
+    ]:
+        with pytest.raises(TypeError, match=message):
+            create_plan(fn)  # type: ignore[call-overload]
+
+
+def test_transitive_prerequisite_is_listed_once_when_also_declared_directly() -> None:
+    @create_plan
+    def root(ctx: PlanContext, exports: None) -> None:
+        FeatureType("shared")
+
+    @create_plan
+    def left(ctx: PlanContext, exports: None) -> None:
+        FeatureType("left")
+
+    @create_plan
+    def right(ctx: PlanContext, exports: None) -> None:
+        FeatureType("right")
+
+    left.add_plan_dependency(root)
+    right.add_plan_dependency(root)
+    right.add_plan_dependency(left)
+    right.finalize()
+    assert [
+        obj.name
+        for dep in right.dependencies
+        if isinstance(obj := dep.obj, FeatureType)
+    ] == ["shared", "left", "right"]
+
+
+def test_callable_plan_and_nested_finalization() -> None:
+    from functools import partial, update_wrapper
+
+    from lamindb_setup.evolve.core._graph import Dependency
+    from lamindb_setup.evolve.engine._loader import co_applied_prerequisite_keys
+
+    def body(ctx, exports, *args, **kwargs):
+        shared = FeatureType("shared")
+        active = Plan.active()
+        assert active is not None
+        active.add_dependency(Dependency(shared))
+
+    # An unresolved return annotation does not invalidate the exports annotation.
+    body.__annotations__ = {"exports": type(None), "return": "OptionalPluginType"}
+    shared_plan = create_plan(update_wrapper(partial(body), body))
+    shared_plan.finalize()
+    assert len(shared_plan.dependencies) == 1
+    assert shared_plan.name == "body"
+
+    @create_plan
+    def nested(ctx: PlanContext, exports: None) -> None:
+        shared_plan.finalize()
+
+    shared_plan.reset()
+    with pytest.raises(RuntimeError, match="nested plans"):
+        nested.finalize()
+    nested.add_plan_dependency(shared_plan)
+
+    @create_plan
+    def top(ctx: PlanContext, exports: None) -> None:
+        pass
+
+    top.add_plan_dependency(shared_plan)
+    top.add_plan_dependency(nested)
+    assert co_applied_prerequisite_keys([shared_plan, nested, top])[-1] == {
+        "FeatureType:shared"
+    }
+
+
+def test_custom_plan_and_dependency_graph_contracts() -> None:
+    from lamindb_setup.evolve.core._graph import (
+        Dependency,
+        DependencyDAG,
+        DependencyMeta,
+        Materializable,
+        Promise,
+    )
+
+    class CustomPlan(Plan[PlanExports]):
+        @property
+        def _exports_cls(self):
+            return PlanExports
+
+        def run(self, ctx, exports):
+            pass
+
+    custom = CustomPlan("custom")
+    assert custom.defining_module == __name__
+    item = Materializable()
+    for operation in (item.stage, item.get):
+        with pytest.raises(NotImplementedError):
+            operation(None)
+    promise = Promise(item, lambda obj, ctx: obj)
+    assert "lambda" in repr(promise)
+    assert list(DependencyMeta._iter_materializables([promise])) == [item]
+    graph = DependencyDAG([Dependency(item, requires=[item])])
+    with pytest.raises(ValueError, match="circular dependency"):
+        graph.ordered()
+
+
+def test_record_type_post_save_clears_only_the_plan_exclusion(ln) -> None:
+    from lamindb_setup.evolve.engine._apply import ApplyContext
+
+    ctx = ApplyContext.standalone()
+    saved = RecordType("in scope", exclude_children_from_plans=True).commit(ctx)
+    assert saved._aux["_excludeChildrenFromPlans"] == 1
+    saved._aux["descriptionHint"] = "keep"
+    saved.save()
+    RecordType("in scope")._post_save(ctx, saved)
+    saved.refresh_from_db()
+    assert saved._aux == {"descriptionHint": "keep"}

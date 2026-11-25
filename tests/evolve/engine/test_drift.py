@@ -508,3 +508,21 @@ def test_a_record_type_only_loses_a_schema_safely(
 
 def test_a_sheet_never_loses_its_schema_safely() -> None:
     assert classify("Sheet", "schema", "schemaUID00000001", None) is Verdict.BLOCKED
+
+
+def test_scalar_set_values_and_change_ownership() -> None:
+    from lamindb_setup.evolve.authoring._declarations import describe_target
+    from lamindb_setup.evolve.core import Action, ChangeItem
+    from lamindb_setup.evolve.engine._drift import _as_set
+
+    assert _as_set("kg") == {"kg"}
+    assert describe_target("Feature:weight") == "'Feature:weight'"
+    for action, borrowed, own in [
+        (Action.CREATE, False, True),
+        (Action.CREATE, True, False),
+        (Action.NO_CHANGE, False, False),
+    ]:
+        change = ChangeItem(
+            1, "Feature:x", "Feature", "x", action, "uid", borrowed=borrowed
+        )
+        assert change.is_own_change is own

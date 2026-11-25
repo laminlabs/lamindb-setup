@@ -445,3 +445,53 @@ def test_union_spec_captures_each_member(
         ),
     )
     assert dt.dtype == [ln.ULabel, ln.Record]
+
+
+def test_annotation_markers_and_python_type_normalization() -> None:
+    from pathlib import Path
+    from typing import Annotated
+
+    from lamindb_setup.evolve import DType, ListDType, get_dtype
+
+    for marker in (DType, ListDType):
+        with pytest.raises(TypeError, match="annotation-only"):
+            marker()
+    assert get_dtype(Path).dtype == "path"
+    assert get_dtype(dict[str, str]).dtype == get_dtype(dict).dtype
+    with pytest.raises(ValueError, match="Unsupported simple dtype"):
+        get_dtype(complex)
+    with pytest.raises(ValueError, match="metadata argument"):
+        get_dtype(Annotated[str, "unit"])
+    with pytest.raises(ValueError, match="not applicable"):
+        LaminDType(int, is_type=True)
+
+
+def test_custom_registry_filters_preserve_unknown_registry_and_nested_values() -> None:
+    from lamindb_setup.evolve.authoring._dtypes import (
+        DangerousCat,
+        UnionCat,
+        canonical_dtype_str,
+        dtype_filter_terms,
+    )
+
+    filters = DangerousCat(name_field="symbol", source__uid="uid1", absent=None)
+    assert filters.name_field == "symbol" and filters.as_cat_filters() == {
+        "source__uid": "uid1"
+    }
+    assert UnionCat().as_cat_filters() == {}
+    unknown = "cat[plugin.Measurement[labels=[x,y]]]"
+    assert canonical_dtype_str(unknown) == unknown
+    assert canonical_dtype_str(None) is None
+    assert canonical_dtype_str("") == ""
+    assert dtype_filter_terms("cat[Record[labels=[x,y],is_type=True]]") == {
+        "Record": frozenset({"labels=[x,y]", "is_type=True"})
+    }
+
+
+def test_invalid_dtype_spec_and_single_member_union_are_rejected() -> None:
+    from lamindb_setup.evolve.authoring import _dtypes
+
+    with pytest.raises(ValueError, match="unknown dtype spec"):
+        _dtypes._resolve_dtype_spec(("invalid", int))
+    with pytest.raises(ValueError, match="at least two"):
+        _dtypes._resolve_union_cat(int | None, (_dtypes.UnionCat(),))

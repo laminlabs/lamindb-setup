@@ -476,3 +476,45 @@ def test_load_all_plans_rejects_implicit_and_explicit_aliases(
 
     with pytest.raises(PlanTargetError, match="listed more than once"):
         load_all_plans(targets)
+
+
+def test_list_all_plans_and_select_each_by_name(tmp_path: Path) -> None:
+    from lamindb_setup.evolve.engine._loader import load_plans_in_file
+
+    path = _write_plan(tmp_path / "several.py", "first")
+    path.write_text(path.read_text() + _PLAN_CODE.format(name="second"))
+    with pytest.raises(PlanTargetError, match="several plans .*first, second"):
+        load_plan(str(path))
+    found = load_plans_in_file(path)
+    assert [plan.name for plan, _, _ in found] == ["first", "second"]
+    assert load_all_plans([f"{path}:first", f"{path}:second"]) == found
+    assert require_stem_uid(found[0][2], path) == "testUID00001"
+
+    empty = tmp_path / "empty.py"
+    empty.write_text("value = 1\n")
+    with pytest.raises(PlanTargetError, match="no Plan defined"):
+        load_plans_in_file(empty)
+    with pytest.raises(PlanTargetError, match="no Plan defined"):
+        load_plan(str(empty))
+    broken = tmp_path / "broken.py"
+    broken.write_text("from missing_plan_package import feature\n")
+    with pytest.raises(PlanTargetError, match="missing_plan_package"):
+        load_plans_in_file(broken)
+
+
+def test_import_fallbacks_for_files_outside_the_project_root(
+    tmp_path: Path, monkeypatch
+) -> None:
+    from types import ModuleType
+
+    from lamindb_setup.evolve.engine import _loader
+
+    path = tmp_path / "isolated.py"
+    assert _loader._dotted_name(path, tmp_path / "project") is None
+    assert _loader._import_dotted("absent_schema_plan", path) is None
+    monkeypatch.setitem(
+        sys.modules, "existing_schema_plan", ModuleType("existing_schema_plan")
+    )
+    assert _loader._import_dotted("existing_schema_plan", path) is None
+    with pytest.raises(PlanImportError, match="could not import"):
+        _loader._import_by_location(tmp_path / "plan.txt")

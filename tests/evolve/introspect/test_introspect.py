@@ -1196,8 +1196,15 @@ def test_introspect_excludes_runtime_children_of_flagged_root(
 
 
 def test_read_instance_invokes_tracker_per_loop(
-    instance: TestInstanceInfo, ln: LamindbModuleType
+    instance: TestInstanceInfo, ln: LamindbModuleType, monkeypatch: pytest.MonkeyPatch
 ) -> None:
+    from lamindb_setup.evolve.introspect import _read
+
+    monkeypatch.setattr(_read, "_BATCH_SIZE", 1)
+    first = ln.Feature(name="batch_a", dtype="str").save()
+    first.add_synonym("alias1")
+    first.add_synonym("alias2")
+    second = ln.Feature(name="batch_b", dtype="str").save()
     seen: list[tuple[str, int]] = []
 
     def tracker(sequence: object, description: str) -> object:
@@ -1205,7 +1212,22 @@ def test_read_instance_invokes_tracker_per_loop(
         seen.append((description, len(items)))
         return items
 
-    read_instance(track=tracker)
+    sheet = ln.Record(name="Batched sheets", is_type=True).save()
+    sheet.settings.single_space = True
+    sheet.save()
+    contents = read_instance(track=tracker)
+    saved_sheet = next(
+        record for record in contents.record_types if record.uid == sheet.uid
+    )
+    assert saved_sheet.single_space_uid == sheet.space.uid
+    assert {f.uid for f in contents.features if f.name.startswith("batch_")} == {
+        first.uid,
+        second.uid,
+    }
+    assert set(next(f.synonyms for f in contents.features if f.uid == first.uid)) == {
+        "alias1",
+        "alias2",
+    }
 
     assert [description for description, _ in seen] == [
         "Reading feature types",
@@ -1270,11 +1292,17 @@ def test_introspect_reconstructs_record_typed_dtype(
     feature = next(spec for spec in plan.specs if spec.name == "compound")
     assert feature.payload["dtype"].registry_expr == "ln.Record"
     assert feature.payload["dtype"].type_uid == record_type.uid
+    source = render_source(
+        plan, description="typed", func="typed", stem_uid="abcd12345678"
+    )
+    assert "type__uid=rt_compound.uid" in source
 
 
 def test_introspect_reconstructs_union_dtype(
     instance: TestInstanceInfo, ln: LamindbModuleType
 ) -> None:
+    from lamindb_setup.evolve.introspect._summary import build_reconstructed_summary
+
     ln.Feature(name="either", dtype=[ln.ULabel, ln.Record]).save()
 
     plan = build_plan(read_instance())
@@ -1289,6 +1317,10 @@ def test_introspect_reconstructs_union_dtype(
     )
     compile(source, "<generated>", "exec")
     assert "LaminDType([ln.ULabel, ln.Record])" in source
+
+    summary = build_reconstructed_summary(plan, title="Instance", name="my_plan")
+    obj = next(o for o in summary.objects if o.name == "either")
+    assert "dtype=cat[ln.ULabel|ln.Record]" in obj.details
 
 
 @pytest.mark.parametrize("instance", ["bionty,pertdb"], indirect=True)
@@ -1385,3 +1417,317 @@ def test_introspect_reports_unreconstructable_dtype(
     assert not result.ok
     assert any("label" in error for error in result.errors)
     assert output.exists()  # the plan is still written for inspection
+
+
+def test_reconstructed_plan_preserves_schema_and_feature_settings() -> None:
+    from lamindb_setup.evolve.introspect._summary import build_reconstructed_summary
+
+    contents = _simple_contents()
+    contents.feature_types.append(FeatureTypeInfo("child_ft", "Child", "uft1"))
+    feature = contents.features[1]
+    feature.type_uid = "child_ft"
+    feature.synonyms = ["counts", "values"]
+    feature.unit = "mg"
+    feature.default_value = [1, 2]
+    feature.coerce = True
+    contents.schema_types.append(
+        SchemaTypeInfo("child_st", "ChildSchema", "child group", "ust1")
+    )
+    schema = contents.schemas[0]
+    schema.type_uid = "child_st"
+    schema.description = "measurements"
+    schema.otype = "DataFrame"
+    schema.index_feature_uid = "uf1"
+    schema.flexible = schema.coerce = schema.ordered_set = schema.maximal_set = True
+    schema.minimal_set = False
+    contents.record_types.append(
+        RecordTypeInfo("nested", "Nested records", None, "urt1", None)
+    )
+    contents.record_types[0].description = "record group"
+    contents.record_types[1].description = "data sheet"
+    contents.record_types[1].exclude_children = True
+
+    plan = build_plan(contents)
+    assert not plan.errors
+    source = render_source(
+        plan, description="Measurements", func="measurements", stem_uid="abcd12345678"
+    )
+    compile(source, "<generated>", "exec")
+    for value in (
+        "type=ft_group",
+        "type=st_schemas",
+        'synonyms=["counts", "values"]',
+        'unit="mg"',
+        "default_value=[1, 2]",
+        'RecordType("Nested records", type=rt_records)',
+        "index=f_col_str",
+        'description="measurements"',
+        "flexible=True",
+        "coerce=True",
+        "minimal_set=False",
+        "ordered_set=True",
+        "maximal_set=True",
+        'description="child group"',
+        'description="record group"',
+        'description="data sheet"',
+        "exclude_children_from_plans=True",
+    ):
+        assert value in source
+    summary = build_reconstructed_summary(plan, title="Source", name="measurements")
+    details = {obj.name: obj.details for obj in summary.objects}
+    assert (
+        "otype='DataFrame'" in details["Sheet1"] and "features=2" in details["Sheet1"]
+    )
+    assert "nullable=False" in details["nums"]
+
+
+@pytest.mark.parametrize(
+    ("dtype", "message"),
+    [
+        (None, "has no dtype"),
+        ("cat[UnknownRegistry]", "categorical"),
+        ("cat[Record]", "Record"),
+        ("cat[ULabel[unknown=value]]", "filter"),
+    ],
+)
+def test_unrepresentable_feature_does_not_hide_other_objects(
+    dtype: str | None, message: str
+) -> None:
+    contents = _simple_contents()
+    contents.features[0].dtype_str = dtype
+    plan = build_plan(contents)
+    assert any(message in error for error in plan.errors)
+    assert any(obj.uid == "uf2" for obj in plan.specs)
+    assert all(obj.uid != "uf1" for obj in plan.specs)
+
+
+def test_scaffold_can_be_loaded_and_a_manual_file_gets_one_stem_uid(
+    tmp_path: Path,
+) -> None:
+    from lamindb_setup.evolve.engine._loader import StemUidError
+    from lamindb_setup.evolve.introspect._template import (
+        add_stem_uid_to_plan,
+        plan_slug,
+        render_plan,
+    )
+
+    with pytest.raises(ValueError, match="alphanumeric"):
+        plan_slug("!!")
+    path = tmp_path / "plan.py"
+    with pytest.raises(StemUidError, match="does not exist"):
+        add_stem_uid_to_plan(path)
+    path.write_text("# manually maintained plan\n")
+    uid = add_stem_uid_to_plan(path)
+    with pytest.raises(StemUidError, match="already defines"):
+        add_stem_uid_to_plan(path)
+    assert path.read_text().count(uid) == 1
+    for minimal in (True, False):
+        source = render_plan(plan_slug("Lab records"), "records", uid, minimal=minimal)
+        compile(source, str(path), "exec")
+        assert f'PLAN_TRANSFORM_STEM_UID = "{uid}"' in source
+        assert "def records(" in source
+
+
+@pytest.mark.parametrize(
+    ("returncode", "stdout", "stderr", "expected"),
+    [
+        (0, 'connecting\n{"changes": []}\n\n', "", {"changes": []}),
+        (0, "not a report\n", "", {"error": "could not parse verification output"}),
+        (1, "loading", "could not import plan", {"error": "could not import plan"}),
+    ],
+)
+def test_verification_reports_subprocess_failures_and_ignores_progress(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    returncode: int,
+    stdout: str,
+    stderr: str,
+    expected: dict,
+) -> None:
+    import subprocess
+
+    from lamindb_setup.evolve.introspect import _verify
+
+    result = subprocess.CompletedProcess([], returncode, stdout, stderr)
+    monkeypatch.setattr(subprocess, "run", lambda *args, **kwargs: result)
+    assert (
+        _verify.run_verification(tmp_path / "plan.py", "plan", "test/demo") == expected
+    )
+
+
+@pytest.mark.parametrize(
+    ("itype", "expected"),
+    [
+        ("SQLRecord", "ln.models.SQLRecord"),
+        ("User.handle", "ln.User.handle"),
+        ("User.name.extra", None),
+        ("bionty.Gene.field.extra", None),
+    ],
+)
+def test_schema_index_registry_is_reconstructed_or_reported(
+    itype: str, expected: str | None
+) -> None:
+    contents = _simple_contents()
+    contents.schemas[0].itype = itype
+    contents.schemas[0].feature_uids = []
+    plan = build_plan(contents)
+    if expected is None:
+        assert any(f"unsupported itype: {itype!r}" in error for error in plan.errors)
+    else:
+        assert not plan.errors
+        source = render_source(
+            plan, description="schema", func="schema", stem_uid="abcd12345678"
+        )
+        assert f"itype={expected}" in source
+
+
+def test_colliding_names_produce_distinct_variables_in_generated_source() -> None:
+    contents = _simple_contents()
+    contents.features[0].name = "cell-count"
+    contents.features[1].name = "cell count"
+    plan = build_plan(contents)
+    variables = {spec.varname for spec in plan.specs if spec.kind == "Feature"}
+    assert variables == {"f_cell_count", "f_cell_count_2"}
+    source = render_source(
+        plan, description="counts", func="counts", stem_uid="abcd12345678"
+    )
+    compile(source, "<generated>", "exec")
+    assert "features=[f_cell_count" in source and "f_cell_count_2" in source
+
+
+def test_verification_lists_changes_without_applying_them(
+    instance, ln, tmp_path: Path, capsys
+) -> None:
+    from lamindb_setup.evolve.introspect import _verify
+
+    path = tmp_path / "new_plan.py"
+    path.write_text(
+        "from lamindb_setup.evolve import FeatureType, PlanContext, create_plan\n"
+        "@create_plan\n"
+        "def plan(ctx: PlanContext, exports: None) -> None:\n"
+        "    FeatureType('new group')\n"
+    )
+    assert _verify.main([]) == 2
+    assert "usage:" in capsys.readouterr().err
+    report = _verify.run_verification(path, "plan", instance.slug)
+    assert "error" not in report, report
+    assert report["counts"]["create"] == 1
+    assert report["changes"] == [
+        {"action": "create", "object": "FeatureType 'new group'"}
+    ]
+    assert not ln.Feature.filter(name="new group").exists()
+
+
+@pytest.mark.parametrize(
+    ("components", "message"),
+    [
+        ([], "unsupported dtype"),
+        ([{"registry_str": "UnknownRegistry"}], "unsupported categorical registry"),
+        (
+            [
+                {
+                    "registry_str": "Record",
+                    "field_str": "uid",
+                    "filter_str": "type__uid=abc",
+                }
+            ],
+            "field dtype with a type uid",
+        ),
+        (
+            [{"registry_str": "ULabel", "filter_str": "broken="}],
+            "unparsable categorical filters",
+        ),
+        (
+            [
+                {"registry_str": "ULabel", "type_uid": "typed"},
+                {"registry_str": "Record"},
+            ],
+            "union dtypes with filters",
+        ),
+    ],
+)
+def test_unrepresentable_categorical_components_are_reported(
+    ln, monkeypatch, components, message
+) -> None:
+    from lamindb.models import feature as feature_module
+
+    # Exercise the boundary with lamindb's registry parser independently of its version.
+    monkeypatch.setattr(feature_module, "parse_dtype", lambda dtype: components)
+    contents = _simple_contents()
+    contents.features[0].dtype_str = "cat[ULabel]"
+    plan = build_plan(contents)
+    assert any(message in error for error in plan.errors)
+    assert not any(spec.uid == "uf1" for spec in plan.specs)
+
+
+def test_reconstructed_categorical_options_and_anonymous_slot_names() -> None:
+    from lamindb_setup.evolve.introspect._render import _dtype_expr, _render_object
+    from lamindb_setup.evolve.introspect._reverse import (
+        DtypeInfo,
+        ObjectSpec,
+        _assign_varnames,
+        _toposort,
+    )
+    from lamindb_setup.evolve.introspect._summary import _dtype_label
+
+    dtype = DtypeInfo(
+        registry_expr="ln.Artifact",
+        field_name="uid",
+        filters={"schema__uid": "s1", "is_type": "False"},
+    )
+    assert (
+        _dtype_expr(dtype, {"s1": "measurement"})
+        == "LaminDType(ln.Artifact.uid, schema__uid=measurement.uid, is_type=False)"
+    )
+    assert _dtype_label(dtype) == "ln.Artifact.uid"
+    assert _dtype_label(DtypeInfo(registry_expr="ln.Record")) == "ln.Record"
+    union = DtypeInfo(
+        is_list=True, union_members=[("ln.Artifact", "uid"), ("ln.Record", None)]
+    )
+    assert _dtype_expr(union, {}) == "LaminDType(list[[ln.Artifact.uid, ln.Record]])"
+    assert _dtype_label(DtypeInfo()) == "?"
+    specs = [
+        ObjectSpec(str(i), "Schema", None, payload=payload)
+        for i, payload in enumerate(
+            ({"otype": "DataFrame"}, {"itype_expr": "plugin.custom"}, {})
+        )
+    ]
+    _assign_varnames(specs)
+    assert [spec.varname for spec in specs] == ["s_dataframe", "s_custom", "s_schema"]
+    specs[0].deps = {specs[1].uid}
+    specs[1].deps = {specs[0].uid}
+    with pytest.raises(RuntimeError, match="cyclic"):
+        _toposort({spec.uid: spec for spec in specs})
+    with pytest.raises(ValueError, match="unknown object kind"):
+        _render_object(ObjectSpec("x", "Unknown", "mystery"), {})
+
+
+def test_read_handles_sparse_metadata_and_typed_schema_members(ln, bt) -> None:
+    from pathlib import Path
+    from types import SimpleNamespace
+
+    from lamindb_setup.evolve.introspect import _read
+    from lamindb_setup.evolve.introspect._run import IntrospectionResult
+
+    sparse = SimpleNamespace(_dtype_str="int")
+    assert _read._created_by(sparse) is None and _read._created_at(sparse) is None
+    assert _read._created_at(SimpleNamespace(created_at="2024-01-01")) == "2024-01-01"
+    assert _read._synonyms(["old name"]) == ["old name"]
+    assert _read._dtype_str(sparse) == "int"
+    schema = ln.Schema(
+        name="Gene index", itype=bt.Gene.ensembl_gene_id, maximal_set=True
+    ).save()
+    composite = ln.Schema(name="Dataset", otype="AnnData", slots={"var": schema}).save()
+    # Composite is also a persisted itype in instances that predate the current writer.
+    ln.Schema.objects.filter(pk=composite.pk).update(itype="Composite")
+    by_uid = {item.uid: item for item in read_instance().schemas}
+    assert by_uid[schema.uid].feature_uids == []
+    assert by_uid[composite.uid].slots == {"var": schema.uid}
+    result = IntrospectionResult(
+        output=Path("unused"),
+        func="p",
+        stem_uid="u",
+        reconstructed=0,
+        skipped_unnamed_schemas=0,
+    )
+    assert result.actionable_changes == 0

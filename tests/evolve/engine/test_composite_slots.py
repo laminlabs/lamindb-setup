@@ -135,6 +135,9 @@ def test_removing_a_slot_applies_in_place(
 def test_adding_a_slot_to_a_composite_that_validated_nothing_takes_the_flag(
     instance: TestInstanceInfo, ln: LamindbModuleType, tmp_path: Path
 ) -> None:
+    from lamindb_setup.evolve.engine._lock import serialize_existing
+    from lamindb_setup.evolve.introspect._read import read_instance
+
     lock = _locked(_OBS, tmp_path)
 
     with pytest.raises(DriftError) as excinfo:
@@ -148,6 +151,17 @@ def test_adding_a_slot_to_a_composite_that_validated_nothing_takes_the_flag(
 
     assert "slot 'var' \u2192 'Schema:CsVar'" in _details(ctx)
     assert _slots(ln) == {"obs": "CsObs1", "var": "CsVar"}
+
+    composite = ln.Schema.get(name="CsC")
+    snapshot = serialize_existing(composite, "Schema")
+    reconstructed = next(
+        schema for schema in read_instance().schemas if schema.uid == composite.uid
+    )
+    assert (
+        reconstructed.slots
+        == snapshot["slots"]
+        == {k: v.uid for k, v in composite.slots.items()}
+    )
 
 
 def test_accept_slot_change_adds_a_slot(

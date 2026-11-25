@@ -30,6 +30,7 @@ from lamindb_setup.evolve import (
     fill_missing,
     keep_member_values,
     keep_values,
+    reexport_sheets,
 )
 from lamindb_setup.evolve.authoring._declarative import (
     SchemaConfig,
@@ -62,6 +63,7 @@ from lamindb_setup.evolve.engine._apply import (
     forget_missing,
     plan_natural_keys,
     prefetch_plans,
+    run_sheet_export_migrations,
     write_lock,
 )
 from lamindb_setup.evolve.engine._loader import plan_target
@@ -909,7 +911,7 @@ _member_drop_max_kept = _member_drop_plan(
 _member_drop_max_dropped = _member_drop_plan(
     member=False,
     maximal=True,
-    migrations=[drop_member_values(feature="mdrop_doomed")],
+    migrations=[drop_member_values(feature="mdrop_doomed"), reexport_sheets()],
     name="mdrop_max_dropped",
 )
 
@@ -4848,6 +4850,9 @@ def test_dropping_the_feature_from_the_plan_clears_its_values_first(
 def test_maximal_set_removal_is_refused_by_keeping_and_allowed_by_dropping(
     instance: TestInstanceInfo, ln: LamindbModuleType, tmp_path: Path
 ) -> None:
+    from lamindb_setup.evolve.authoring._migrations import SheetExportContext
+    from lamindb_setup.evolve.engine import _sheet_exports as exports
+
     # `maximal_set` forbids a member the schema does not declare, so leaving the
     # values in place is the one resolution it cannot accept -- while deleting
     # them removes the very thing it objects to.
@@ -4855,6 +4860,15 @@ def test_maximal_set_removal_is_refused_by_keeping_and_allowed_by_dropping(
     applied = compute_changes(_member_drop_max_v1, mode=ApplyMode.APPLY, lock=None)
     lock = _persist_lock(applied, _member_drop_max_v1, tmp_path / "mmax.lock")
     _seed_mdrop_rows(ln, ("carries", True))
+
+    sheet = ln.Record.get(name="mdrop_sheet", is_type=True)
+    previous = sheet.to_artifact()
+    assert exports.sheet_exports([sheet]) == {sheet.pk: [(sheet, previous)]}
+    ln.Artifact.objects.filter(pk=previous.pk).update(description="edited after export")
+    assert exports.sheet_exports([sheet]) == {sheet.pk: [(sheet, previous)]}
+    assert exports.export_column_ids(previous) == {
+        f.pk for f in sheet.schema.members.all()
+    }
 
     _member_drop_max_kept.reset()
     with pytest.raises(DriftError, match="maximal_set schema") as excinfo:
@@ -4866,6 +4880,38 @@ def test_maximal_set_removal_is_refused_by_keeping_and_allowed_by_dropping(
     assert {c.kind: c for c in ctx.changes}["Schema"].action is Action.UPDATE
     schema = ln.Schema.get(name="MDropSchema", is_type=False)
     assert {m.name for m in schema.members.all()} == {"mdrop_keep"}
+
+    abandoned = exports.branch_name_for(_member_drop_max_dropped.name, "previous")
+    branch = exports.open_branch(abandoned, description="unfinished re-export")
+    assert exports.open_branch(abandoned, description="retry").pk == branch.pk
+    outcome = run_sheet_export_migrations(
+        ctx.pending_sheet_exports,
+        plan_name=_member_drop_max_dropped.name,
+        run_uid="test",
+    )
+    assert outcome.ok, outcome.error
+    assert outcome.written == 1
+    latest = ln.Artifact.get(key=previous.key)
+    assert latest.stem_uid == previous.stem_uid and latest.uid != previous.uid
+    assert "mdrop_doomed" in previous.load() and "mdrop_doomed" not in latest.load()
+    assert outcome.closed == [abandoned]
+
+    current = exports.SheetExport(sheet, latest)
+    retry = SheetExportContext(
+        schema,
+        [current],
+        reexport=exports.reexport,
+        current_branch=exports.current_branch,
+        branch_factory=lambda: exports.open_branch("retry-dedup", description="Retry"),
+    )
+    assert retry.write(current).pk == latest.pk
+    assert not retry.written and not retry.promotions
+    exports.promote_head(latest, previous)
+    assert ln.Artifact.get(key=previous.key).uid == previous.uid
+    latest.refresh_from_db()
+    assert not latest.is_latest
+    assert retry.write(exports.SheetExport(sheet, previous)).pk == latest.pk
+    assert retry.promotions == [(previous, latest)] and not retry.written
 
 
 def test_plan_mode_previews_the_drop_without_touching_the_values(
@@ -5648,15 +5694,41 @@ def test_apply_one_raises_apply_failed_when_rolled_back(
 
 
 def test_apply_one_failure_report_lists_the_unchanged_objects_too(
-    instance: TestInstanceInfo,
-    ln: LamindbModuleType,
-    tmp_path: Path,
-    monkeypatch: pytest.MonkeyPatch,
+    tmp_path: Path, request: pytest.FixtureRequest, monkeypatch: pytest.MonkeyPatch
 ) -> None:
-    import lamindb_setup.evolve.engine._apply as apply_module
-    import lamindb_setup.evolve.engine._track as track_module
-    from lamindb_setup.evolve.engine import ApplyFailedError
+    import subprocess
 
+    import lamindb_setup.evolve.engine._apply as apply_module
+    from lamindb_setup.evolve.console import OutputFormat
+    from lamindb_setup.evolve.engine import ApplyFailedError, apply_one
+    from lamindb_setup.evolve.engine._loader import load_plan
+    from lamindb_setup.evolve.engine._track import (
+        ensure_all_committed_and_pushed,
+        verified_session,
+    )
+    from lamindb_setup.evolve.introspect._template import add_stem_uid_to_plan
+
+    def git(*args: str) -> None:
+        subprocess.run(["git", *args], cwd=tmp_path, check=True, capture_output=True)
+
+    git("init", "-b", "main")
+    source = tmp_path / "tracked_plan.py"
+    source.write_text(
+        "from lamindb_setup.evolve import Feature, FeatureType, LaminDType, PlanContext, create_plan\n"
+        "@create_plan\n"
+        "def plan(ctx: PlanContext, exports: None):\n"
+        "    Feature('apply_col', dtype=LaminDType(str), type=FeatureType('apply_ft'))\n"
+    )
+    stem_uid = add_stem_uid_to_plan(source)
+    git("add", source.name)
+    git("config", "user.name", "Test")
+    git("config", "user.email", "test@example.org")
+    git("commit", "--no-gpg-sign", "-m", "Add plan")
+    git("clone", "--local", ".", "checkout")
+    plan, path, module = load_plan(str(tmp_path / "checkout" / source.name))
+    # Plan files must be imported before the fixture connects to the instance.
+    ln = request.getfixturevalue("ln")
+    monkeypatch.setenv("LAMIN_SCHEMA_EVOLUTION_TRACK_PREFIX", "plans")
     real_compute_changes = apply_module.compute_changes
 
     def fail_on_apply(plan: Any, *, mode: ApplyMode, **kwargs: Any) -> Any:
@@ -5664,20 +5736,35 @@ def test_apply_one_failure_report_lists_the_unchanged_objects_too(
             raise RuntimeError("boom")
         return real_compute_changes(plan, mode=mode, **kwargs)
 
-    reports: list[str] = []
-    monkeypatch.setattr(apply_module, "compute_changes", fail_on_apply)
-    monkeypatch.setattr(
-        track_module,
-        "attach_operation_report",
-        lambda run, text, **kwargs: reports.append(text),
-    )
     ln.Feature(name="apply_ft", is_type=True, dtype=None).save()  # type: ignore[arg-type]
 
-    with pytest.raises(ApplyFailedError):
-        _apply_one_untracked(tmp_path / "plan_apply.py", confirm=None)
+    def apply() -> None:
+        apply_one(
+            plan,
+            path,
+            module.PLAN_TRANSFORM_STEM_UID,
+            ln.setup.settings.instance.slug,
+            ln.setup.settings.instance.slug.replace("/", "-"),
+            claimed_keys=set(),
+            confirm=None,
+            output_format=OutputFormat.markdown,
+        )
 
-    # The report records what the run attempted, unlike the terminal diff.
-    (report,) = reports
+    with verified_session(ensure_all_committed_and_pushed([path])):
+        with monkeypatch.context() as patch:
+            patch.setattr(apply_module, "compute_changes", fail_on_apply)
+            with pytest.raises(ApplyFailedError, match="boom"):
+                apply()
+    apply()
+
+    applied = ln.Feature.get(name="apply_col").run
+    failed = ln.Run.filter(transform=applied.transform).exclude(pk=applied.pk).one()
+    assert applied.status == "completed"
+    assert failed.status == "errored"
+    assert applied.transform.key == f"plans/{source.name}"
+    assert applied.transform.stem_uid == stem_uid
+    assert failed.report.run == failed
+    report = failed.report.cache().read_text()
     assert "\n    FeatureType 'apply_ft'  " in report
     assert "\n  + Feature 'apply_col'  " in report
     assert "1 unchanged" in report
@@ -6862,3 +6949,220 @@ def test_borrowed_object_replaced_by_its_owner_relinks_downstream_schema(
     schema = ln.Schema.filter(name="BorrowerSchema").one_or_none()
     assert schema is not None
     assert [str(f.uid) for f in schema.features.all()] == [str(new.uid)]
+
+
+@pytest.mark.parametrize("format_name", ["terminal", "json"])
+def test_apply_reports_export_failure_after_committing_the_plan(
+    instance: TestInstanceInfo,
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    capsys: pytest.CaptureFixture[str],
+    format_name: str,
+) -> None:
+    from lamindb_setup.evolve.console import OutputFormat
+    from lamindb_setup.evolve.engine import _apply, apply_one
+    from lamindb_setup.evolve.engine._apply_run import SheetExportError
+    from lamindb_setup.evolve.engine._lock import lock_path
+
+    outcome = _apply.SheetExportOutcome(
+        branch=SimpleNamespace(name="retry-export"), error=OSError("disk full")
+    )
+    monkeypatch.setattr(
+        _apply, "run_sheet_export_migrations", lambda *args, **kwargs: outcome
+    )
+    path = tmp_path / "plan.py"
+    _apply_plan.reset()
+    with pytest.raises(SheetExportError, match="disk full") as exc:
+        apply_one(
+            _apply_plan,
+            path,
+            "stemUID00001",
+            "acc/inst",
+            "slug",
+            claimed_keys=set(),
+            confirm=None,
+            output_format=OutputFormat(format_name),
+            track=_untracked,
+        )
+    assert lock_path(path, "slug").is_file()
+    assert exc.value.outcome is outcome
+    if format_name == "terminal":
+        assert exc.value.section is None
+        assert "retry-export" in capsys.readouterr().err
+    else:
+        import json
+
+        assert exc.value.section is not None
+        assert any(
+            "retry-export" in note for note in json.loads(exc.value.section)["notes"]
+        )
+
+
+def test_sheet_export_report_identifies_the_outstanding_version_family() -> None:
+    from lamindb_setup.evolve.engine._apply import SheetExportOutcome
+    from lamindb_setup.evolve.engine._apply_run import render_sheet_export_outcome
+
+    old = SimpleNamespace(uid="old", key="sheet.csv")
+    new = SimpleNamespace(uid="new", key="sheet.csv")
+    outcome = SheetExportOutcome(
+        branch=SimpleNamespace(name="exports"),
+        merged=True,
+        promotions=[(new, old), (old, new)],
+        promoted=1,
+        error=OSError("database unavailable"),
+    )
+    summary, pending = render_sheet_export_outcome(outcome)
+    assert "only 1 of 2" in summary
+    assert "'sheet.csv': promote uid 'new' over the current head 'old'" in pending
+    outcome.error = None
+    outcome.promoted = 2
+    outcome.written = 1
+    outcome.closed = ["previous-attempt"]
+    (summary,) = render_sheet_export_outcome(outcome)
+    assert (
+        "re-exported 1" in summary
+        and "restored 2" in summary
+        and "previous-attempt" in summary
+    )
+    empty = SheetExportOutcome(branch=outcome.branch, merged=True)
+    assert "No sheet export needed rewriting" in render_sheet_export_outcome(empty)[0]
+
+
+def test_sheet_export_with_unrecorded_columns_and_with_a_preserved_snapshot(
+    ln: LamindbModuleType, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    from django.db import DatabaseError
+    from lamindb_setup.evolve.engine import _sheet_exports as exports
+
+    sheet = ln.Record(name="Measurements", is_type=True).save()
+    artifact = SimpleNamespace(pk=11, key="sheet.csv")
+    schema = ln.Schema(
+        name="Measurement schema",
+        features=[ln.Feature(name="required", dtype="int").save()],
+    ).save()
+    options = dict(
+        member_ids={1, 2},
+        previous_ids={1},
+        required_ids={1, 2},
+        added_required=["new"],
+        newly_required=["existing"],
+        maximal=True,
+        changed_features={3: "old column renamed"},
+        index_change="index change",
+    )
+    monkeypatch.setattr(exports, "export_columns", lambda *_: (None, False))
+    (unknown,) = exports.stale_exports(schema, [(sheet, artifact)], **options)
+    assert "columns it carries are not recorded" in unknown.describe()
+    assert "no column for 1 required member" in unknown.describe()
+    assert "no column for new required 'new'" in unknown.describe()
+    assert "'existing' was still optional" in unknown.describe()
+    assert "written before the index change" in unknown.describe()
+    (known,) = exports.stale_exports(
+        schema, [(sheet, artifact)], recorded_columns={11: {1, 2, 3}}, **options
+    )
+    assert "maximal_set schema no longer declares" in known.describe()
+    assert "old column renamed" in known.describe()
+    assert "columns it carries are not recorded" not in known.describe()
+
+    def unavailable():
+        raise DatabaseError("metadata unavailable")
+
+    monkeypatch.setattr(exports, "_live_exports", unavailable)
+    assert exports.sheet_export_index() is None
+    assert exports.sheet_exports([sheet]) is None
+    assert exports.sheet_exports([]) == {}
+
+
+def test_export_column_evidence_and_unmatched_sheet() -> None:
+    from unittest.mock import Mock
+
+    from lamindb_setup.evolve.engine import _sheet_exports as exports
+
+    artifact = Mock(key="elsewhere.csv", description="edited")
+    sheet = SimpleNamespace(name="Samples", uid="sheet")
+    assert exports._sheet_for(artifact, [sheet]) is None
+    link = artifact._links_schema.filter.return_value.first
+    link.return_value = None
+    assert exports.export_columns(artifact, sheet) == (None, False)
+    columns = SimpleNamespace(pk=7, members=None)
+    link.return_value = SimpleNamespace(schema=columns)
+    assert exports.export_columns(artifact, sheet) == (None, False)
+    columns.members = Mock()
+    columns.members.all.return_value = [SimpleNamespace(pk=11)]
+    columns.index = SimpleNamespace(pk=12)
+    assert exports.export_columns(artifact, sheet) == ({11, 12}, True)
+
+
+def test_schema_collision_and_unknown_shape_guards(ln) -> None:
+    from lamindb_setup.evolve.core._lamindb_api import DEFAULT_MODELS
+    from lamindb_setup.evolve.engine._apply import ApplyContext
+    from lamindb_setup.evolve.engine._schema_collisions import classify, find_collisions
+
+    group = ln.Schema(name="Schema group", is_type=True).save()
+    assert "it is a schema type" in classify(group, managed=False).blockers
+    assert find_collisions(ln.Schema, {}, using="default") == {}
+    assert (
+        DEFAULT_MODELS.schema_content_hash(
+            object(),
+            features=[],
+            index=None,
+            optionals=[],
+            slots={},
+            flexible=False,
+            coerce=False,
+            minimal_set=True,
+            ordered_set=False,
+            maximal_set=False,
+        )
+        is None
+    )
+    with pytest.raises(ValueError, match="features or slots or itype"):
+        Schema(features=[])
+    anonymous = Schema(features=[Feature("x", dtype=LaminDType(int))])
+    assert anonymous.get(ApplyContext.standalone()) is None
+
+
+def test_non_strict_uid_mismatch_is_reported_before_confirmation_and_on_empty_apply(
+    ln, tmp_path: Path, capsys
+) -> None:
+    from lamindb_setup.evolve.console import OutputFormat
+    from lamindb_setup.evolve.engine import apply_one
+    from lamindb_setup.evolve.engine._lock import LockEntry, LockFile, lock_path
+
+    path = tmp_path / "plan.py"
+    origin = LockFile(plan=_apply_plan.name)
+    other_uid = "SomeOtherUid"
+    origin.add(
+        LockEntry(
+            key="FeatureType:apply_ft",
+            kind="FeatureType",
+            name="apply_ft",
+            uid=other_uid,
+        )
+    )
+    origin.write(lock_path(path, "other"))
+    ln.Feature(name="apply_ft", is_type=True).save()
+    _apply_plan.reset()
+
+    def confirm(_):
+        assert other_uid in capsys.readouterr().err
+        return True
+
+    assert _apply_one_untracked(path, strict_uids=False, confirm=confirm)
+    _apply_plan.reset()
+    apply_one(
+        _apply_plan,
+        path,
+        "stemUID00001",
+        "acc/inst",
+        "slug",
+        claimed_keys=set(),
+        confirm=None,
+        strict_uids=False,
+        output_format=OutputFormat.terminal,
+        track=_untracked,
+    )
+    output = capsys.readouterr().out
+    assert other_uid in output and "No changes. Instance is up to date." in output
+    document = _apply_one_untracked(path, strict_uids=False, confirm=None)
+    assert document is not None and other_uid in document and "Applied:" in document

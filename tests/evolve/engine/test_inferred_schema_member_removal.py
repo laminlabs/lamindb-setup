@@ -394,3 +394,35 @@ def test_a_schema_deleted_with_its_feature_does_not_block_it(
 
     assert ln.Feature.filter(name="im_x", is_type=False).one_or_none() is None
     assert ln.Schema.filter(name="IMSchema").one_or_none() is None
+
+
+def test_inferred_schema_save_failure_identifies_the_schema_and_deleted_feature(
+    ln: LamindbModuleType, tmp_path: Path, writable_storage: None, monkeypatch
+) -> None:
+    from django.db import transaction
+    from lamindb.errors import ValidationError
+    from lamindb_setup.evolve.engine import _inferred_schemas as inferred_schemas
+
+    lock = _seed(tmp_path)
+    _, schema = _curate(ln, "im/failure.parquet", ["im_a", "im_b", "im_c", "im_x"])
+    monkeypatch.setattr(inferred_schemas, "_NAMED_ARTIFACTS", 0)
+    assert "1 more" in inferred_schemas._named_artifacts(schema)
+
+    original_save = ln.Schema.save
+
+    def refuse_inferred_save(current, *args, **kwargs):
+        if current.pk == schema.pk:
+            raise ValidationError("invalid member change")
+        return original_save(current, *args, **kwargs)
+
+    monkeypatch.setattr(ln.Schema, "save", refuse_inferred_save)
+    with (
+        pytest.raises(ValidationError, match="invalid member change") as exc,
+        transaction.atomic(),
+    ):
+        _run(_DROP_X, lock, ApplyMode.APPLY)
+    assert any(
+        schema.uid in note and "1 deleted feature" in note
+        for note in exc.value.__notes__
+    )
+    assert "im_x" in _member_names(_fresh(ln, schema))

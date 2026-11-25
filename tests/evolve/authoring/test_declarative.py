@@ -1070,3 +1070,99 @@ def test_reuse_rejects_non_default_name_field_mismatch(
                 default_feature_type=FeatureType("reuse_ft2"),
             )
             genetic_perturbation: Feature[bt.models.Gene] = shared
+
+
+def test_schema_model_propagates_constraints_and_reuses_an_optional_field() -> None:
+    shared = Feature("quantity", dtype=LaminDType(int))
+
+    class Measurements(SchemaModel):
+        schema_config = SchemaConfig(
+            name="Measurements",
+            description="Lab measurements",
+            space_uid=SpaceUID("abcdEF12abcd"),
+            ordered_set=True,
+            minimal_set=False,
+            maximal_set=True,
+        )
+        quantity: Feature[int] | None = shared
+
+    schema = Measurements.schema
+    assert schema.optionals == [shared]
+    assert schema.description == "Lab measurements"
+    assert schema.space_uid == "abcdEF12abcd"
+    assert (schema.ordered_set, schema.minimal_set, schema.maximal_set) == (
+        True,
+        False,
+        True,
+    )
+
+
+@pytest.mark.parametrize(
+    ("base", "key"), [(SchemaModel, "schema_config"), (FeatureGroup, "group_config")]
+)
+def test_declarative_config_requires_a_mapping(base, key) -> None:
+    with pytest.raises(TypeError, match=key + " must be"):
+        type("Broken", (base,), {key: []})
+
+
+def test_runtime_schema_annotations_and_invalid_field_assignments() -> None:
+    def model(**attrs):
+        return type(
+            "Dynamic",
+            (SchemaModel,),
+            {
+                "schema_config": {"name": "Dynamic"},
+                "__annotations__": {"sample": Feature[str]},
+                **attrs,
+            },
+        )
+
+    dynamic = model(__doc__="Features\n--------\nsample\n\n    Specimen name.\n")
+    assert dynamic.sample.description == "Specimen name."
+    with pytest.raises(TypeError, match="may only be assigned"):
+        model(sample="literal")
+    with pytest.raises(NotImplementedError, match="Subclassing"):
+        type("Derived", (_ExperimentFeatures,), {})
+    reused = Feature("renamed", dtype=LaminDType(str))
+    with pytest.raises(ValueError, match="uplicate"):
+        type(
+            "Duplicate",
+            (SchemaModel,),
+            {
+                "schema_config": {"name": "Duplicate"},
+                "__annotations__": {"first": Feature[str], "renamed": Feature[str]},
+                "first": feature(name="renamed"),
+                "renamed": reused,
+            },
+        )
+
+
+def test_nested_filter_values_compare_by_contents() -> None:
+    from lamindb_setup.evolve.authoring._declarative import _cat_filter_value
+
+    a = {"name__in": ["a", "b"], "is_type": True}
+    b = {"is_type": True, "name__in": ("a", "b")}
+    assert _cat_filter_value(a) == _cat_filter_value(b)
+    assert _cat_filter_value(a) != _cat_filter_value({**a, "name__in": ["b"]})
+
+
+def test_declarative_metaclasses_ignore_unrelated_base_classes_and_reject_bad_arity():
+    from types import GenericAlias
+
+    from lamindb_setup.evolve.authoring._declarative import (
+        FeatureGroupMeta,
+        SchemaModelMeta,
+    )
+
+    for meta in (SchemaModelMeta, FeatureGroupMeta):
+        plain = meta("Plain", (), {})
+        assert not hasattr(plain, "schema")
+    with pytest.raises(TypeError, match="exactly one type argument"):
+        type(
+            "Invalid",
+            (SchemaModel,),
+            {
+                "schema_config": {"name": "Invalid"},
+                "__annotations__": {"field": GenericAlias(Feature, (str, int))},
+            },
+        )

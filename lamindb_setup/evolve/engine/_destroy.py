@@ -344,7 +344,7 @@ def _m2m_reverse_query_name(field: Any) -> str | None:
     caller falls back to a per-target accessor count.
     """
     remote = getattr(field, "remote_field", None)
-    if remote is not None and getattr(remote, "is_hidden", lambda: False)():
+    if remote is not None and remote.hidden:
         return None
     try:
         return field.related_query_name()

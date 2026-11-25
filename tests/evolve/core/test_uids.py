@@ -83,3 +83,21 @@ def test_the_package_imports_without_lamin_utils() -> None:
         [sys.executable, "-c", code], capture_output=True, text=True, check=False
     )
     assert result.returncode == 0, result.stderr
+
+
+def test_uid_rejects_invalid_registry_and_length() -> None:
+    from lamindb_setup.evolve.core import FeatureUID
+
+    with pytest.raises(ValueError, match="Unsupported registry"):
+        UID("Ab12Cd34Ef56", registry="Unknown")
+    with pytest.raises(ValueError, match="must be 12 characters"):
+        FeatureUID("short")
+    with pytest.raises(ValueError, match="does not match expected"):
+        FeatureUID("Ab12Cd34Ef56", registry="lamindb.models.record.Record")
+    with pytest.raises(ValueError, match="UID length"):
+        UID("short")
+
+
+def test_uid_requires_a_string() -> None:
+    with pytest.raises(TypeError, match="must be a string"):
+        UID(123)  # type: ignore[arg-type]

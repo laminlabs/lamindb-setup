@@ -40,9 +40,6 @@ Migration management
 
    migrate
 
-See `Schema plan authoring <https://docs.lamin.ai/schema-plan-authoring>`_
-for the Python API used in plan files.
-
 """
 
 __version__ = "1.29.1"  # denote a release candidate for 0.1.0 with 0.1rc1

@@ -1326,3 +1326,84 @@ def test_links_into_a_subtype_of_the_new_type_are_admitted(
     feat = ln.Feature.get(name="vocab", is_type=False)
     assert feat.dtype_as_str == f"cat[Record[{_type_uid(ln, 'P')}]]"
     assert feat.links_recordrecord.get().value == gamma
+
+
+@pytest.mark.parametrize(
+    ("setting", "value", "message"),
+    [
+        ("updates", ("unknown",), "updates must be among"),
+        ("index_name_conflict", "skip", "index_name_conflict must be one of"),
+        ("relocation", "invalid", "relocation must be one of"),
+    ],
+)
+def test_migration_rejects_unknown_resolution(setting, value, message) -> None:
+    with pytest.raises(ValueError, match=message):
+        DataMigration(name="fix metadata", migrate=lambda ctx: None, **{setting: value})
+
+
+def test_lamindb_dtype_adapter_handles_unknown_dtypes_and_resolves_index_names(
+    ln,
+) -> None:
+    from lamindb_setup.evolve.core._lamindb_api import DEFAULT_MODELS
+
+    assert DEFAULT_MODELS.parse_dtype("cat[NotARegistry]") is None
+    assert DEFAULT_MODELS.itype_str(object()) is None
+    assert DEFAULT_MODELS.cat_filter_lookups("source__uid=sample") == {
+        "source__uid": "sample"
+    }
+    assert DEFAULT_MODELS.cat_filter_lookups("broken=") is None
+    index = ln.Feature(name="sample id", dtype=str)
+    assert DEFAULT_MODELS.index_value_as_record_name("A01", index) == "A01"
+    assert DEFAULT_MODELS.index_value_as_record_name(None, index) is None
+    with pytest.raises(TypeError, match="sample id"):
+        DEFAULT_MODELS.index_value_as_record_name(12, index)
+
+
+def test_migration_contexts_expose_affected_links_and_adopt_stranded_exports() -> None:
+    from types import SimpleNamespace
+    from unittest.mock import Mock
+
+    from lamindb_setup.evolve.authoring._migrations import (
+        FlexibleChangeContext,
+        RecordRemovalContext,
+        SheetExportContext,
+    )
+
+    record = object()
+    links = Mock(return_value=["link"])
+    assert RecordRemovalContext(record, value_links=links).links() == ["link"]
+    links.assert_called_once_with(record)
+    schema = object()
+    columns = Mock(return_value=["column"])
+    assert FlexibleChangeContext(
+        schema, True, False, recorded_nonmembers=columns
+    ).nonmember_columns() == ["column"]
+    columns.assert_called_once_with(schema)
+
+    branch = SimpleNamespace(id=3)
+    parked = Mock(pk=7, is_latest=True, branch_id=2)
+    export = SimpleNamespace(artifact=SimpleNamespace(pk=6))
+    ctx = SheetExportContext(
+        schema,
+        [export],
+        branch_factory=lambda: branch,
+        reexport=lambda *args, **kwargs: parked,
+        current_branch=lambda: SimpleNamespace(id=1),
+    )
+    assert ctx.write(export) is parked
+    parked.save.assert_called_once_with()
+    assert parked.branch is branch and ctx.written == [parked]
+
+
+def test_unsupported_categorical_link_shape_falls_back_to_standard_writer(
+    ln, monkeypatch
+):
+    from lamindb.models import _feature_manager
+    from lamindb_setup.evolve.core._lamindb_api import DEFAULT_MODELS
+
+    monkeypatch.setattr(
+        _feature_manager,
+        "get_categorical_link_info",
+        lambda *args, **kwargs: (ln.Record, "value", None),
+    )
+    assert DEFAULT_MODELS.categorical_link(ln.Record, ln.ULabel, instance=None) is None
