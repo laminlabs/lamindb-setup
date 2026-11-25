@@ -4,9 +4,699 @@ import lamindb as ln
 import pytest
 
 
+@pytest.fixture
+def merge_records(request):
+    source = ln.Branch(name=request.node.name).save()
+    feature = ln.Feature(name=request.node.name, dtype=str, branch=source).save()
+    label = ln.ULabel(name=request.node.name, branch=source).save()
+    try:
+        yield source, ln.Branch.get(name="main"), feature, label
+    finally:
+        feature.delete(permanent=True)
+        label.delete(permanent=True)
+        source.delete(permanent=True)
+
+
+@pytest.fixture
+def without_merge_guard():
+    from django.db import connection
+
+    if connection.vendor != "postgresql":
+        pytest.skip("PostgreSQL row-level security is required")
+    with connection.cursor() as cursor:
+        cursor.execute(
+            "SELECT tgenabled FROM pg_trigger "
+            "WHERE tgrelid = 'lamindb_branch'::regclass "
+            "AND tgname = 'lamindb_require_empty_merged_branch'"
+        )
+        guard = cursor.fetchone()
+        active = guard is not None and guard[0] in ("O", "A")
+        if active:
+            cursor.execute(
+                "ALTER TABLE lamindb_branch DISABLE TRIGGER lamindb_require_empty_merged_branch"
+            )
+    try:
+        yield
+    finally:
+        if active:
+            enable = "ENABLE ALWAYS" if guard[0] == "A" else "ENABLE"
+            with connection.cursor() as cursor:
+                cursor.execute(
+                    f"ALTER TABLE lamindb_branch {enable} TRIGGER lamindb_require_empty_merged_branch"
+                )
+
+
+@pytest.fixture
+def unloaded_branch_table(request):
+    from django.db import connection
+
+    if connection.vendor != "postgresql":
+        pytest.skip("PostgreSQL membership discovery is required")
+    source, *_ = request.getfixturevalue("merge_records")
+    table = connection.ops.quote_name(f"merge_unloaded_{source.uid}")
+    with connection.cursor() as cursor:
+        cursor.execute(
+            f"CREATE TABLE {table} (id integer PRIMARY KEY, "
+            "branch_id integer REFERENCES lamindb_branch(id), "
+            "created_on_id integer REFERENCES lamindb_branch(id))"
+        )
+    try:
+        yield table
+    finally:
+        with connection.cursor() as cursor:
+            cursor.execute(f"DROP TABLE {table}")
+
+
+@pytest.mark.parametrize("isolation", ["REPEATABLE READ", "SERIALIZABLE"])
+def test_merge_rejects_stale_guard_state(
+    isolation, unloaded_branch_table, merge_records
+):
+    from contextlib import closing
+
+    import psycopg2
+    from django.db import NotSupportedError, connection, transaction
+
+    source, target, feature, label = merge_records
+    with connection.cursor() as cursor:
+        cursor.execute(
+            "SELECT tgenabled FROM pg_trigger "
+            "WHERE tgrelid = 'lamindb_branch'::regclass "
+            "AND tgname = 'lamindb_require_empty_merged_branch'"
+        )
+        guard = cursor.fetchone()
+        if guard is None or guard[0] not in ("O", "A"):
+            pytest.skip("The database merge guard is required")
+        cursor.execute(
+            f"INSERT INTO {unloaded_branch_table} VALUES (1, %s, %s)",
+            [source.id, source.id],
+        )
+    disabled = False
+    try:
+        with transaction.atomic():
+            with connection.cursor() as cursor:
+                cursor.execute(f"SET TRANSACTION ISOLATION LEVEL {isolation}")
+                cursor.execute("SELECT 1")  # Fix the snapshot before guard removal.
+            with (
+                closing(psycopg2.connect(ln.setup.settings.instance.db)) as admin,
+                admin,
+                admin.cursor() as cursor,
+            ):
+                cursor.execute("SET LOCAL lock_timeout = '3s'")
+                cursor.execute(
+                    "ALTER TABLE lamindb_branch DISABLE TRIGGER lamindb_require_empty_merged_branch"
+                )
+            disabled = True
+            with connection.cursor() as cursor:
+                cursor.execute(
+                    "SELECT tgenabled FROM pg_trigger "
+                    "WHERE tgrelid = 'lamindb_branch'::regclass "
+                    "AND tgname = 'lamindb_require_empty_merged_branch'"
+                )
+                assert cursor.fetchone()[0] == guard[0]
+            with pytest.raises(NotSupportedError, match="READ COMMITTED transaction"):
+                ln.setup.merge(source, target=target)
+            assert source.status == "standalone"
+        source.refresh_from_db()
+        assert source.status == "standalone"
+        for item in (feature, label):
+            item.refresh_from_db()
+            assert item.branch_id == source.id
+    finally:
+        if disabled:
+            enable = "ENABLE ALWAYS" if guard[0] == "A" else "ENABLE"
+            with connection.cursor() as cursor:
+                cursor.execute(
+                    f"ALTER TABLE lamindb_branch {enable} TRIGGER lamindb_require_empty_merged_branch"
+                )
+
+
+@pytest.mark.parametrize(
+    "isolation",
+    ["READ COMMITTED", "READ UNCOMMITTED", "REPEATABLE READ", "SERIALIZABLE"],
+)
+def test_merge_checks_records_committed_after_snapshot(
+    isolation, unloaded_branch_table, merge_records
+):
+    from contextlib import closing
+
+    import psycopg2
+    from django.db import IntegrityError, NotSupportedError, connection, transaction
+
+    source, target, feature, label = merge_records
+    with transaction.atomic():
+        with connection.cursor() as cursor:
+            cursor.execute(f"SET TRANSACTION ISOLATION LEVEL {isolation}")
+            cursor.execute("SELECT 1")  # Fix the snapshot before the concurrent insert.
+        with (
+            closing(psycopg2.connect(ln.setup.settings.instance.db)) as admin,
+            admin,
+            admin.cursor() as cursor,
+        ):
+            cursor.execute("SET LOCAL lock_timeout = '3s'")
+            cursor.execute(
+                f"INSERT INTO {unloaded_branch_table} VALUES (1, %s, %s)",
+                [source.id, source.id],
+            )
+        if isolation in ("REPEATABLE READ", "SERIALIZABLE"):
+            error, message = NotSupportedError, "READ COMMITTED transaction"
+        else:
+            error, message = (
+                (IntegrityError, PermissionError),
+                "source records remain|some records could not be moved",
+            )
+        with pytest.raises(error, match=message):
+            ln.setup.merge(source, target=target)
+        assert source.status == "standalone"
+    source.refresh_from_db()
+    assert source.status == "standalone"
+    for item in (feature, label):
+        item.refresh_from_db()
+        assert item.branch_id == source.id
+    with connection.cursor() as cursor:
+        cursor.execute(f"SELECT branch_id FROM {unloaded_branch_table}")
+        assert cursor.fetchall() == [(source.id,)]
+
+
+def test_merge_prevents_concurrent_guard_removal(request):
+    from contextlib import closing
+
+    import psycopg2
+    from django.db import connection
+
+    if connection.vendor != "postgresql":
+        pytest.skip("PostgreSQL row-level security is required")
+    with connection.cursor() as cursor:
+        cursor.execute(
+            "SELECT EXISTS (SELECT 1 FROM pg_trigger "
+            "WHERE tgrelid = 'lamindb_branch'::regclass "
+            "AND tgname = 'lamindb_require_empty_merged_branch' "
+            "AND tgenabled IN ('O', 'A'))"
+        )
+        if not cursor.fetchone()[0]:
+            pytest.skip("The database merge guard is required")
+
+    source, target, feature, label = request.getfixturevalue("merge_records")
+    removal_attempted = False
+    with closing(psycopg2.connect(ln.setup.settings.instance.db)) as admin:
+
+        def remove_guard_after_check(execute, sql, params, many, context):
+            nonlocal removal_attempted
+            result = execute(sql, params, many, context)
+            if not removal_attempted and "FROM pg_trigger" in sql:
+                removal_attempted = True
+                # This is the same removal used by hubmodule deployment. The
+                # source lock must already protect the observed guard lifetime.
+                with admin, admin.cursor() as cursor:
+                    cursor.execute("SET LOCAL lock_timeout = '100ms'")
+                    with pytest.raises(psycopg2.errors.LockNotAvailable):
+                        cursor.execute(
+                            "DROP FUNCTION public.lamindb_require_empty_merged_branch() CASCADE"
+                        )
+            return result
+
+        with connection.execute_wrapper(remove_guard_after_check):
+            ln.setup.merge(source, target=target)
+
+    assert removal_attempted
+    source.refresh_from_db()
+    assert source.status == "merged"
+    for item in (feature, label):
+        item.refresh_from_db()
+        assert item.branch_id == target.id
+
+
+@pytest.mark.parametrize(
+    "restriction", ["space", "record", "block", "branch", "locked", "target"]
+)
+def test_merge_rolls_back_rls_restrictions(restriction, request):
+    from django.db import IntegrityError, ProgrammingError, connection
+
+    if connection.vendor != "postgresql":
+        pytest.skip("PostgreSQL row-level security is required")
+    with connection.cursor() as cursor:
+        cursor.execute("SELECT rolsuper FROM pg_roles WHERE rolname = current_user")
+        if not cursor.fetchone()[0]:
+            pytest.skip("An isolated PostgreSQL superuser connection is required")
+
+    source, target, feature, label = request.getfixturevalue("merge_records")
+    restricted = feature
+    if restriction == "block":
+        record = ln.Record(name="merge-restricted-block", branch=source).save()
+        restricted = ln.models.RecordBlock(
+            record=record, content="restricted", kind="readme", branch=source
+        ).save()
+    elif restriction == "branch":
+        restricted = source
+    table = connection.ops.quote_name(restricted._meta.db_table)
+    role = connection.ops.quote_name(f"merge_permissions_{source.uid}")
+    condition = f"id <> {restricted.pk}"
+    grant_condition = f"id = {restricted.pk}"
+    if restriction == "space":
+        condition = f"space_id <> {restricted.space_id}"
+    elif restriction == "block":
+        parent_table = connection.ops.quote_name(ln.Record._meta.db_table)
+        parent = f"SELECT 1 FROM {parent_table} parent WHERE parent.id = record_id"
+        condition = f"EXISTS ({parent} AND parent.space_id <> {record.space_id})"
+        grant_condition = f"EXISTS ({parent} AND parent.id = {record.pk})"
+    elif restriction == "locked":
+        ln.Feature.objects.filter(pk=feature.pk).update(is_locked=True)
+        condition = "NOT is_locked"
+    check = "true"
+    if restriction == "target":
+        condition = "true"
+        check = f"branch_id <> {target.id}"
+    with connection.cursor() as cursor:
+        cursor.execute(f"CREATE ROLE {role} NOLOGIN")
+        cursor.execute(f"GRANT USAGE ON SCHEMA public TO {role}")
+        cursor.execute(f"GRANT SELECT, UPDATE ON ALL TABLES IN SCHEMA public TO {role}")
+        cursor.execute(f"ALTER TABLE {table} ENABLE ROW LEVEL SECURITY")
+        cursor.execute(
+            f"CREATE POLICY merge_permissions_read ON {table} FOR SELECT TO {role} USING (true)"
+        )
+        cursor.execute(
+            f"CREATE POLICY merge_permissions_write ON {table} FOR UPDATE TO {role} "
+            f"USING ({condition}) WITH CHECK ({check})"
+        )
+    try:
+        with connection.cursor() as cursor:
+            cursor.execute(f"SET ROLE {role}")
+        if restriction == "branch":
+            error, message = PermissionError, "cannot update the source branch"
+        elif restriction == "target":
+            error, message = ProgrammingError, "row-level security policy"
+        else:
+            error, message = IntegrityError, "source records remain"
+        with pytest.raises(error, match=message):
+            ln.setup.merge(source, target=target)
+        for item in (feature, restricted, label):
+            item.refresh_from_db()
+        assert feature.branch_id == source.id
+        assert label.branch_id == source.id
+        if restriction != "branch":
+            assert restricted.branch_id == source.id
+        source.refresh_from_db()
+        assert source.status == "standalone"
+
+        # An individual grant can allow a record even without space write access.
+        with connection.cursor() as cursor:
+            cursor.execute("RESET ROLE")
+            if restriction == "locked":
+                ln.Feature.objects.filter(pk=feature.pk).update(is_locked=False)
+            else:
+                cursor.execute(
+                    f"CREATE POLICY merge_permissions_grant ON {table} FOR UPDATE TO {role} "
+                    f"USING ({grant_condition}) WITH CHECK (true)"
+                )
+            cursor.execute(f"SET ROLE {role}")
+        ln.setup.merge(source, target=target)
+        feature.refresh_from_db()
+        label.refresh_from_db()
+        source.refresh_from_db()
+        assert feature.branch_id == target.id
+        assert label.branch_id == target.id
+        assert source.status == "merged"
+        if restriction != "branch":
+            restricted.refresh_from_db()
+            assert restricted.branch_id == target.id
+    finally:
+        with connection.cursor() as cursor:
+            cursor.execute("RESET ROLE")
+            for policy in ("read", "write", "grant"):
+                cursor.execute(
+                    f"DROP POLICY IF EXISTS merge_permissions_{policy} ON {table}"
+                )
+            cursor.execute(f"ALTER TABLE {table} DISABLE ROW LEVEL SECURITY")
+            cursor.execute(f"DROP OWNED BY {role}")
+            cursor.execute(f"DROP ROLE {role}")
+        if restriction == "block":
+            record.delete(permanent=True)
+        if restriction == "locked":
+            ln.Feature.objects.filter(pk=feature.pk).update(is_locked=False)
+            feature.refresh_from_db()
+
+
+@pytest.mark.parametrize("registry", ["Feature", "RecordBlock"])
+@pytest.mark.parametrize("hidden_branch", ["source", "target"])
+def test_merge_handles_hidden_records(registry, hidden_branch, request):
+    from django.db import IntegrityError, connection
+
+    if connection.vendor != "postgresql":
+        pytest.skip("PostgreSQL row-level security is required")
+    source, target, feature, label = request.getfixturevalue("merge_records")
+    branch = source if hidden_branch == "source" else target
+    if registry == "Feature":
+        restricted = feature
+        restricted.branch = branch
+        restricted.save()
+    else:
+        record = ln.Record(name="merge-hidden-block", branch=branch).save()
+        restricted = ln.models.RecordBlock(
+            record=record, content="hidden", kind="readme", branch=branch
+        ).save()
+    table = connection.ops.quote_name(restricted._meta.db_table)
+    role = connection.ops.quote_name(f"merge_hidden_{source.uid}")
+    with connection.cursor() as cursor:
+        cursor.execute(f"CREATE ROLE {role} NOLOGIN")
+        cursor.execute(f"GRANT USAGE ON SCHEMA public TO {role}")
+        cursor.execute(f"GRANT SELECT, UPDATE ON ALL TABLES IN SCHEMA public TO {role}")
+        cursor.execute(f"ALTER TABLE {table} ENABLE ROW LEVEL SECURITY")
+        cursor.execute(
+            f"CREATE POLICY merge_hidden_read ON {table} FOR SELECT TO {role} "
+            f"USING (id <> {restricted.pk})"
+        )
+        cursor.execute(
+            f"CREATE POLICY merge_hidden_write ON {table} FOR UPDATE TO {role} "
+            "USING (true) WITH CHECK (true)"
+        )
+    try:
+        with connection.cursor() as cursor:
+            cursor.execute(f"SET ROLE {role}")
+        assert not type(restricted).objects.filter(pk=restricted.pk).exists()
+        if hidden_branch == "source":
+            with pytest.raises(IntegrityError, match="source records remain"):
+                ln.setup.merge(source, target=target)
+            assert source.status == "standalone"
+        else:
+            ln.setup.merge(source, target=target)
+        with connection.cursor() as cursor:
+            cursor.execute("RESET ROLE")
+        source.refresh_from_db()
+        assert source.status == (
+            "standalone" if hidden_branch == "source" else "merged"
+        )
+        for item in (feature, label, restricted):
+            item.refresh_from_db()
+            assert item.branch_id == branch.id
+    finally:
+        with connection.cursor() as cursor:
+            cursor.execute("RESET ROLE")
+            cursor.execute(f"DROP POLICY merge_hidden_read ON {table}")
+            cursor.execute(f"DROP POLICY merge_hidden_write ON {table}")
+            cursor.execute(f"ALTER TABLE {table} DISABLE ROW LEVEL SECURITY")
+            cursor.execute(f"DROP OWNED BY {role}")
+            cursor.execute(f"DROP ROLE {role}")
+        if registry == "RecordBlock":
+            record.delete(permanent=True)
+
+
+@pytest.mark.parametrize(
+    "access", ["restricted", "superuser", "owner", "force_owner", "bypass"]
+)
+def test_merge_requires_guard_only_for_active_rls(without_merge_guard, access, request):
+    from django.db import connection
+
+    source, target, feature, label = request.getfixturevalue("merge_records")
+    role = connection.ops.quote_name(f"merge_unguarded_{source.uid}")
+    with connection.cursor() as cursor:
+        cursor.execute(
+            "SELECT pg_get_userbyid(relowner) FROM pg_class WHERE oid = 'lamindb_feature'::regclass"
+        )
+        original_owner = connection.ops.quote_name(cursor.fetchone()[0])
+        cursor.execute(
+            f"CREATE ROLE {role} NOLOGIN" + (" BYPASSRLS" if access == "bypass" else "")
+        )
+        cursor.execute(f"GRANT USAGE ON SCHEMA public TO {role}")
+        cursor.execute(f"GRANT SELECT, UPDATE ON ALL TABLES IN SCHEMA public TO {role}")
+        cursor.execute("ALTER TABLE lamindb_feature ENABLE ROW LEVEL SECURITY")
+        if access in ("owner", "force_owner"):
+            cursor.execute(f"ALTER TABLE lamindb_feature OWNER TO {role}")
+        if access == "force_owner":
+            cursor.execute("ALTER TABLE lamindb_feature FORCE ROW LEVEL SECURITY")
+    try:
+        if access != "superuser":
+            with connection.cursor() as cursor:
+                cursor.execute(f"SET ROLE {role}")
+        if access in ("restricted", "force_owner"):
+            with pytest.raises(PermissionError, match="update hubmodule"):
+                ln.setup.merge(source, target=target)
+        else:
+            ln.setup.merge(source, target=target)
+    finally:
+        with connection.cursor() as cursor:
+            cursor.execute("RESET ROLE")
+            cursor.execute("ALTER TABLE lamindb_feature NO FORCE ROW LEVEL SECURITY")
+            cursor.execute("ALTER TABLE lamindb_feature DISABLE ROW LEVEL SECURITY")
+            if access in ("owner", "force_owner"):
+                cursor.execute(f"ALTER TABLE lamindb_feature OWNER TO {original_owner}")
+            cursor.execute(f"DROP OWNED BY {role}")
+            cursor.execute(f"DROP ROLE {role}")
+    source.refresh_from_db()
+    for item in (feature, label):
+        item.refresh_from_db()
+        assert item.branch_id == (
+            source.id if access in ("restricted", "force_owner") else target.id
+        )
+    assert source.status == (
+        "standalone" if access in ("restricted", "force_owner") else "merged"
+    )
+
+
+@pytest.mark.parametrize("row_security", ["on", "off"])
+def test_merge_without_guard_checks_unloaded_tables(
+    without_merge_guard, merge_records, row_security
+):
+    from django.db import connection, transaction
+
+    source, target, feature, label = merge_records
+    table = connection.ops.quote_name(f"merge_unloaded_{source.uid}")
+    with connection.cursor() as cursor:
+        cursor.execute(
+            f"CREATE TABLE {table} (id integer PRIMARY KEY, "
+            "branch_id integer REFERENCES lamindb_branch(id), "
+            "created_on_id integer REFERENCES lamindb_branch(id))"
+        )
+        cursor.execute(
+            f"INSERT INTO {table} VALUES (1, %s, %s)", [source.id, source.id]
+        )
+    try:
+        with transaction.atomic():
+            with connection.cursor() as cursor:
+                cursor.execute(
+                    "SELECT set_config('row_security', %s, true)", [row_security]
+                )
+            with pytest.raises(
+                PermissionError, match="some records could not be moved"
+            ):
+                ln.setup.merge(source, target=target)
+            assert source.status == "standalone"
+            for item in (feature, label):
+                item.refresh_from_db()
+                assert item.branch_id == source.id
+            with connection.cursor() as cursor:
+                cursor.execute("SHOW row_security")
+                assert cursor.fetchone()[0] == row_security
+                cursor.execute(f"DELETE FROM {table}")
+            ln.setup.merge(source, target=target)
+            assert source.status == "merged"
+            with connection.cursor() as cursor:
+                cursor.execute("SHOW row_security")
+                assert cursor.fetchone()[0] == row_security
+        source.refresh_from_db()
+        assert source.status == "merged"
+        for item in (feature, label):
+            item.refresh_from_db()
+            assert item.branch_id == target.id
+    finally:
+        with connection.cursor() as cursor:
+            cursor.execute(f"DROP TABLE {table}")
+
+
+def test_merge_without_guard_rejects_rls_enabled_during_merge(
+    without_merge_guard, merge_records
+):
+    from contextlib import closing
+
+    import psycopg2
+    from django.db import ProgrammingError, connection, transaction
+
+    source, target, feature, label = merge_records
+    role = connection.ops.quote_name(f"merge_rls_change_{source.uid}")
+    enabled = False
+
+    def enable_rls(execute, sql, params, many, context):
+        nonlocal enabled
+        if not enabled and sql.lstrip().upper().startswith("UPDATE "):
+            with (
+                closing(psycopg2.connect(ln.setup.settings.instance.db)) as admin,
+                admin,
+                admin.cursor() as cursor,
+            ):
+                cursor.execute("SET LOCAL lock_timeout = '3s'")
+                cursor.execute("ALTER TABLE lamindb_feature ENABLE ROW LEVEL SECURITY")
+            enabled = True
+        return execute(sql, params, many, context)
+
+    with connection.cursor() as cursor:
+        cursor.execute(f"CREATE ROLE {role} NOLOGIN")
+        cursor.execute(f"GRANT USAGE ON SCHEMA public TO {role}")
+        cursor.execute(f"GRANT SELECT, UPDATE ON ALL TABLES IN SCHEMA public TO {role}")
+    try:
+        with connection.cursor() as cursor:
+            cursor.execute(f"SET ROLE {role}")
+        with transaction.atomic():
+            with connection.cursor() as cursor:
+                cursor.execute("SHOW row_security")
+                previous = cursor.fetchone()[0]
+            with connection.execute_wrapper(enable_rls):
+                with pytest.raises(ProgrammingError, match="row-level security"):
+                    ln.setup.merge(source, target=target)
+            assert enabled
+            with connection.cursor() as cursor:
+                cursor.execute("SHOW row_security")
+                assert cursor.fetchone()[0] == previous
+    finally:
+        with connection.cursor() as cursor:
+            cursor.execute("RESET ROLE")
+            cursor.execute("ALTER TABLE lamindb_feature DISABLE ROW LEVEL SECURITY")
+            cursor.execute(f"DROP OWNED BY {role}")
+            cursor.execute(f"DROP ROLE {role}")
+    source.refresh_from_db()
+    assert source.status == "standalone"
+    for item in (feature, label):
+        item.refresh_from_db()
+        assert item.branch_id == source.id
+
+
+@pytest.mark.parametrize("failure_stage", ["reconciliation", "branch_status"])
+def test_merge_rolls_back_finalization_errors(monkeypatch, failure_stage):
+    from lamindb.models import _is_versioned
+
+    source = ln.Branch(name=f"merge-finalization-{failure_stage}").save()
+    source.status = "draft"
+    source.save()
+    target = ln.Branch.get(name="main")
+    original = ln.Transform(
+        key=f"merge-finalization-{failure_stage}", kind="pipeline", branch=target
+    ).save()
+    revision = ln.Transform(revises=original, kind="pipeline", branch=source).save()
+    reconcile = _is_versioned.reconcile_is_latest_within_branch
+    save = ln.Branch.save
+
+    def fail_reconciliation(model, **kwargs):
+        result = reconcile(model, **kwargs)
+        if model is ln.Transform:
+            raise RuntimeError("merge finalization failed")
+        return result
+
+    def fail_status_save(self, *args, **kwargs):
+        result = save(self, *args, **kwargs)
+        if self.pk == source.pk:
+            raise RuntimeError("merge finalization failed")
+        return result
+
+    try:
+        with monkeypatch.context() as patch:
+            if failure_stage == "reconciliation":
+                patch.setattr(
+                    _is_versioned,
+                    "reconcile_is_latest_within_branch",
+                    fail_reconciliation,
+                )
+            else:
+                patch.setattr(ln.Branch, "save", fail_status_save)
+            with pytest.raises(RuntimeError, match="merge finalization failed"):
+                ln.setup.merge(source, target=target)
+        assert source.status == "draft"
+        source.refresh_from_db()
+        original.refresh_from_db()
+        revision.refresh_from_db()
+        assert source.status == "draft"
+        assert original.is_latest
+        assert revision.is_latest
+        assert revision.branch_id == source.id
+    finally:
+        revision.delete(permanent=True)
+        original.delete(permanent=True)
+        source.delete(permanent=True)
+
+
+def test_merge_respects_callers_transaction(merge_records):
+    from django.db import transaction
+
+    source, target, feature, label = merge_records
+    with pytest.raises(RuntimeError, match="outer rollback"):
+        with transaction.atomic():
+            ln.setup.merge(source, target=target)
+            raise RuntimeError("outer rollback")
+    source.refresh_from_db()
+    for item in (feature, label):
+        item.refresh_from_db()
+        assert item.branch_id == source.id
+    assert source.status == "standalone"
+
+
+@pytest.mark.parametrize("restricted_model", ["Feature", "RecordBlock"])
+def test_merge_rolls_back_silently_skipped_updates(restricted_model, merge_records):
+    from django.db import IntegrityError, connection
+
+    source, target, feature, label = merge_records
+    if restricted_model == "Feature":
+        restricted = feature
+    else:
+        record = ln.Record(name="merge-skipped-block", branch=source).save()
+        restricted = ln.models.RecordBlock(
+            record=record, content="restricted", kind="readme", branch=source
+        ).save()
+    table = connection.ops.quote_name(restricted._meta.db_table)
+    # Like an RLS UPDATE policy, the trigger silently skips a readable record.
+    with connection.cursor() as cursor:
+        if connection.vendor == "postgresql":
+            cursor.execute(
+                "CREATE FUNCTION test_merge_skip() RETURNS trigger LANGUAGE plpgsql AS $$ "
+                f"BEGIN IF OLD.id = {restricted.pk} THEN RETURN NULL; END IF; "
+                "RETURN NEW; END; $$"
+            )
+            cursor.execute(
+                f"CREATE TRIGGER test_merge_skip BEFORE UPDATE OF branch_id ON {table} "
+                "FOR EACH ROW EXECUTE FUNCTION test_merge_skip()"
+            )
+        else:
+            cursor.execute(
+                f"CREATE TEMP TRIGGER test_merge_skip BEFORE UPDATE OF branch_id ON {table} "
+                f"WHEN OLD.id = {restricted.pk} BEGIN SELECT RAISE(IGNORE); END"
+            )
+    try:
+        guarded = False
+        if connection.vendor == "postgresql":
+            with connection.cursor() as cursor:
+                cursor.execute(
+                    "SELECT EXISTS (SELECT 1 FROM pg_trigger "
+                    "WHERE tgrelid = 'lamindb_branch'::regclass "
+                    "AND tgname = 'lamindb_require_empty_merged_branch' "
+                    "AND tgenabled IN ('O', 'A'))"
+                )
+                guarded = cursor.fetchone()[0]
+        error, message = (
+            (IntegrityError, "source records remain")
+            if guarded
+            else (PermissionError, "write access")
+        )
+        with pytest.raises(error, match=message):
+            ln.setup.merge(source, target=target)
+        for item in (feature, restricted, label):
+            item.refresh_from_db()
+            assert item.branch_id == source.id
+        source.refresh_from_db()
+        assert source.status == "standalone"
+    finally:
+        with connection.cursor() as cursor:
+            cursor.execute(
+                f"DROP TRIGGER test_merge_skip ON {table}"
+                if connection.vendor == "postgresql"
+                else "DROP TRIGGER test_merge_skip"
+            )
+            if connection.vendor == "postgresql":
+                cursor.execute("DROP FUNCTION test_merge_skip()")
+        if restricted_model == "RecordBlock":
+            record.delete(permanent=True)
+
+
 def test_merge_branch_into_main():
     """Merge a branch into main: create branch, add ULabel, switch to main, merge."""
     branch = ln.Branch(name="test_merge_branch").save()
+    annotation = ln.models.BranchBlock(
+        branch=branch, content="Keep this README", kind="readme"
+    ).save()
     assert branch.status == "standalone"
     ln.setup.switch(branch.name)
     assert ln.setup.settings.branch == branch
@@ -31,6 +721,8 @@ def test_merge_branch_into_main():
     # merged branch has status "merged"
     branch.refresh_from_db()
     assert branch.status == "merged"
+    annotation.refresh_from_db()
+    assert annotation.branch_id == branch.id
     # this is a merge call to check that branch.describe() works because it
     # has a custom describe method
     branch.describe(return_str=True)
@@ -69,6 +761,7 @@ def test_merge_with_branch_objects():
     assert ulabel.branch == source_branch
 
     ln.setup.merge(source_branch, target=main_branch)
+    assert source_branch.status == "merged"
 
     ulabel.refresh_from_db()
     assert ulabel.branch == main_branch

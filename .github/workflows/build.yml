@@ -62,7 +62,9 @@ jobs:
           repository: laminlabs/laminhub
           token: ${{ secrets.GH_TOKEN_DEPLOY_LAMINAPP }}
           path: laminhub
-          ref: main
+          # The guarded merge tests require the companion hubmodule guard.
+          # Restore main after fix-partial-branch-merges is merged in LaminHub.
+          ref: cc7ae1f577d1fdc3c24e67338872a8a7008ca273
       - uses: actions/cache@v4
         with:
           path: ~/.cache/pre-commit
@@ -232,8 +234,11 @@ jobs:
                 '3.13'
                 }}
       - run: pip install git+https://github.com/laminlabs/laminci
-      - run: uv pip install --system git+https://github.com/laminlabs/lamin-cli
-      - run: uv pip install --system git+https://github.com/laminlabs/lamindb pandas pandera
+      # Resolve the CLI and core together so both use their GitHub sources.
+      - run: >-
+          uv pip install --system
+          git+https://github.com/laminlabs/lamin-cli
+          git+https://github.com/laminlabs/lamindb pandas pandera
       - run: uv pip install --system git+https://github.com/laminlabs/laminprofiler
       - run: uv pip install --system -e .
       - run: lamin login
