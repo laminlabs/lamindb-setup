@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import json
 
+import pytest
 from lamindb_setup.evolve.authoring._dtypes import LaminDType
 from lamindb_setup.evolve.authoring._features import Feature, FeatureType
 from lamindb_setup.evolve.authoring._plan import (
@@ -68,12 +69,11 @@ def test_plan_summary_is_abstract() -> None:
     assert issubclass(TerminalPlanSummary, PlanSummary)
     assert issubclass(HtmlPlanSummary, PlanSummary)
     assert issubclass(MarkdownPlanSummary, PlanSummary)
-    try:
+    with pytest.raises(TypeError):
         PlanSummary()  # type: ignore[abstract]
-    except TypeError:
-        pass
-    else:  # pragma: no cover
-        raise AssertionError("PlanSummary should not be instantiable")
+    model = build_summary_model(_base_plan, "Plan summary")
+    with pytest.raises(NotImplementedError, match="implement _render"):
+        PlanSummary._render(TerminalPlanSummary(), model)
 
 
 def test_summary_model_includes_parent_plans_and_dag() -> None:

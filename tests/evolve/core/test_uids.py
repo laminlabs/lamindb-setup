@@ -51,6 +51,10 @@ def test_uid_stores_version_for_versioned_registry() -> None:
     assert value.stem == "Ab12Cd34Ef56Gh78"
     assert value.version == "000A"
 
+    value._uid_stem_length = None
+    assert value.stem == str(value)
+    assert value.version is None
+
 
 @pytest.mark.parametrize("value", ["!" * 12, "é" * 12])
 def test_uid_without_registry_rejects_non_base62(value: str) -> None:

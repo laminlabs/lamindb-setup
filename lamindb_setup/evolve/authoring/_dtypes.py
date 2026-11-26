@@ -592,10 +592,9 @@ def get_dtype(annotation: Any) -> ResolvedDType:
             # `CatDType[A | B, UnionCat(...)]` -- a union of registries (cat[A|B]).
             if len(non_none) >= 2:
                 return _resolve_union_cat(base, annotation.__metadata__)
-            if not non_none:
-                raise ValueError(
-                    f"A categorical annotation needs a registry member, got: {base!r}"
-                )
+            assert non_none, (
+                f"A categorical annotation needs a registry member, got: {base!r}"
+            )
             # `CatDType[A | None, ACat(...)]` -- an optional single categorical:
             # drop the `None` and resolve the sole member as a plain cat.
             base = non_none[0]

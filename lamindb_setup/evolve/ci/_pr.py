@@ -517,8 +517,9 @@ def run_pr_check(
         with rehearse() if preview_migrations else nullcontext():
             for target in _track(order, stage):
                 entry = loaded[target]
+                # Both the diff and rehearsal orders contain only validated plans.
                 if entry is None:
-                    continue
+                    continue  # pragma: no cover
                 reported = target in diff_targets
                 if failed is not None:
                     if reported:

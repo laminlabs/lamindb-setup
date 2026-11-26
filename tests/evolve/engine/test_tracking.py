@@ -92,6 +92,21 @@ def test_git_sync_restores_origin_after_failure(
     assert repo.git("config", "--local", "--get-regexp", "^url\\.").returncode == 1
 
 
+def test_git_sync_leaves_origin_alone_without_an_ssh_base(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    from unittest.mock import Mock
+
+    origin = "git@example.org:owner/plans.git"
+    run = Mock(return_value=subprocess.CompletedProcess([], 0, stdout=origin))
+    repo = tracking.GitRepo(tmp_path, run)
+    monkeypatch.setattr(tracking, "_git_url_bases", lambda url: None)
+
+    with repo.https_origin_with_ssh_insteadof() as remote:
+        assert remote == "https://example.org/owner/plans"
+    run.assert_called_once_with(["config", "--get", "remote.origin.url"], tmp_path)
+
+
 def test_operation_tracks_same_transform_and_records_interrupt(ln, monkeypatch):
     monkeypatch.setenv(tracking.TRACK_PREFIX_ENV_VAR, "maintenance")
     assert tracking.track_prefix() == "maintenance"

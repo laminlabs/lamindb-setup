@@ -105,6 +105,10 @@ def test_schema_optional_that_is_a_member_is_accepted() -> None:
 def test_plan_is_abstract() -> None:
     with pytest.raises(TypeError):
         Plan("test")  # type: ignore[abstract]
+    with pytest.raises(NotImplementedError, match="_exports_cls"):
+        Plan._exports_cls.__get__(example_exports_plan)
+    with pytest.raises(NotImplementedError, match="implement run"):
+        Plan.run(example_exports_plan, PlanContext(), _ExampleExports())
 
 
 def test_summary_describes_everything_without_materializing() -> None:
@@ -197,12 +201,17 @@ def test_plan_populates_declared_exports() -> None:
     assert exports.schema_0.name == "MySchema"
 
 
-def test_exports_requires_finalized_plan() -> None:
+def test_exports_requires_finalization_and_an_exports_object() -> None:
     @create_plan
     def _p(ctx: PlanContext, exports: _ExampleExports) -> None:
         pass
 
     with pytest.raises(PlanNotFinalizedError):
+        _ = _p.exports
+
+    _p.finalize()
+    _p._exports = None
+    with pytest.raises(AttributeError, match="plan '_p' does not declare exports"):
         _ = _p.exports
 
 

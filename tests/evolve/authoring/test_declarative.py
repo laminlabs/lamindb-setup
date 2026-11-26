@@ -461,11 +461,13 @@ def test_new_dtype_categorical_form_is_resolved(
     assert feat.dtype.cat_filters == {"type__uid": "uTEST00000000"}
 
 
-def test_union_marker_requires_an_actual_registry_union(
+def test_categorical_markers_require_registry_members(
     instance: TestInstanceInfo, ln: LamindbModuleType
 ) -> None:
     with pytest.raises(ValueError, match="union of at least two"):
         get_dtype(CatDType[ln.Record, UnionCat()])
+    with pytest.raises(ValueError, match="registry"):
+        get_dtype(CatDType[None, ULabelCat()])
 
 
 def test_new_dtype_list_of_categorical_is_resolved(
