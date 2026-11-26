@@ -29,6 +29,7 @@ Modules & settings
    settings
    core
    django
+   evolve
    errors
    types
 

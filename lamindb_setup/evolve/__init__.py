@@ -1,4 +1,4 @@
-"""Declare features, schemas, and records in a schema evolution plan.
+"""Schema evolution.
 
 Import plan declarations before connecting to an instance::
 
@@ -7,6 +7,8 @@ Import plan declarations before connecting to an instance::
 Use the `lamin evolve` CLI to validate, preview, and apply the plan.
 
 Internal subpackages may change without notice.
+
+.. currentmodule:: lamindb_setup.evolve
 
 Plans
 -----
