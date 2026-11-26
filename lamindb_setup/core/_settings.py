@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import errno
 import os
 import sys
 from importlib.util import find_spec
@@ -42,10 +43,7 @@ if TYPE_CHECKING:
     from .upath import UPath
 
 
-DEFAULT_CACHE_DIR = Path(user_cache_dir(appname="lamindb", appauthor="laminlabs"))
-
-
-def _default_cache_dir():
+def _default_cache_dir() -> UPath:
     from .upath import UPath
 
     return UPath(user_cache_dir(appname="lamindb", appauthor="laminlabs"))
@@ -66,6 +64,23 @@ def _process_cache_path(cache_path: AnyPathStr | None) -> UPath | None:
     return cache_dir
 
 
+def _resolve_cache_dir(cache_dir: UPath) -> Path:
+    from .upath import LocalPathClasses
+
+    if not isinstance(cache_dir, LocalPathClasses):
+        raise ValueError("cache dir should be a local path.")
+    # A file:// UPath resolves lexically. Use its native path to follow symlinks.
+    path = cache_dir.path
+    try:
+        return Path(os.path.realpath(path, strict=True))
+    except (FileNotFoundError, NotADirectoryError, PermissionError):
+        return Path(os.path.realpath(path))
+    except OSError as e:
+        if e.errno != errno.ELOOP:
+            raise
+        raise ValueError(f"Cache directory contains a symlink loop: {cache_dir}") from e
+
+
 # returned by settings.branch for none/none instance
 class MainBranchMock:
     id = 1
@@ -84,7 +99,7 @@ class SetupSettings:
     _auto_connect_path: Path = settings_dir / "auto_connect"
     _private_django_api_path: Path = settings_dir / "private_django_api"
 
-    _cache_dir: Path | None = None
+    _cache_dir: UPath | None = None
     modules_warning: str | None = None
 
     _branch = None  # do not have types here
@@ -475,11 +490,11 @@ class SetupSettings:
             cache_dir = UPath(os.environ["LAMIN_CACHE_DIR"])
             if not cache_dir.is_absolute():
                 raise ValueError("LAMIN_CACHE_DIR must be a valid absolute path.")
+            cache_dir = UPath(_resolve_cache_dir(cache_dir))
         elif self._cache_dir is None:
             cache_path = load_cache_path_from_settings()
-            cache_dir = _process_cache_path(cache_path)
-            if cache_dir is None:
-                cache_dir = _default_cache_dir()
+            cache_dir = _process_cache_path(cache_path) or _default_cache_dir()
+            cache_dir = UPath(_resolve_cache_dir(cache_dir))
             self._cache_dir = cache_dir
         else:
             cache_dir = self._cache_dir
@@ -592,7 +607,7 @@ class SetupPaths:
                     local_key = local_key.removeprefix(protocol + "://")
             else:
                 local_key = cache_key
-            cache_dir = settings.cache_dir
+            cache_dir = settings.cache_dir.resolve()
             local_filepath = (cache_dir / local_key).resolve()
             # a key containing ".." or an absolute key would otherwise
             # resolve to a path outside the cache directory
