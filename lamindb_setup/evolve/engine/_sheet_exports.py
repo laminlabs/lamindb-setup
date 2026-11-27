@@ -194,9 +194,8 @@ def sheet_exports(sheets: list[Any]) -> dict[Any, list[tuple[Any, Any]]] | None:
     for sheet in sheets:
         for prefix in EXPORT_DESCRIPTION_PREFIXES:
             marker |= Q(description__startswith=f"{prefix}{sheet.uid}")
-        if name := getattr(sheet, "name", None):
-            for prefix in EXPORT_KEY_PREFIXES:
-                marker |= Q(key__startswith=f"{prefix}{name}.")
+        name = sheet.name or sheet.uid
+        marker |= Q(key__contains=f"/{name}.")
     try:
         found: dict[Any, list[tuple[Any, Any]]] = {}
         for artifact in _live_exports().filter(marker).order_by("pk"):
@@ -247,10 +246,19 @@ def _sheet_for(artifact: Any, sheets: list[Any]) -> Any | None:
                 if str(sheet.uid) == uid:
                     return sheet
     key = getattr(artifact, "key", None) or ""
+    if not key.startswith(EXPORT_KEY_PREFIXES):
+        return None
     for sheet in sheets:
-        name = getattr(sheet, "name", None)
-        if name and key.startswith(tuple(f"{p}{name}." for p in EXPORT_KEY_PREFIXES)):
+        name = sheet.name or sheet.uid
+        filename = f"{name}{artifact.suffix}"
+        if any(key == prefix + filename for prefix in EXPORT_KEY_PREFIXES):
             return sheet
+        if key.startswith("lamindb_record_exports/") and key.endswith("/" + filename):
+            # LaminDB includes parent types to distinguish equally named sheets.
+            chain = [*reversed(sheet.query_types()), sheet]
+            path = "/".join(node.name or node.uid for node in chain)
+            if key == f"lamindb_record_exports/{path}{artifact.suffix}":
+                return sheet
     return None
 
 

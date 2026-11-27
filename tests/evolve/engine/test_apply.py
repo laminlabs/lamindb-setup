@@ -4866,6 +4866,18 @@ def test_maximal_set_removal_is_refused_by_keeping_and_allowed_by_dropping(
     assert exports.sheet_exports([sheet]) == {sheet.pk: [(sheet, previous)]}
     ln.Artifact.objects.filter(pk=previous.pk).update(description="edited after export")
     assert exports.sheet_exports([sheet]) == {sheet.pk: [(sheet, previous)]}
+    # Exports written on either side of the hierarchy change remain discoverable.
+    stored = ln.Artifact.objects.filter(pk=previous.pk)
+    for key in (
+        "sheet_exports/mdrop_sheet.csv",
+        "lamindb_record_exports/mdrop_sheet.csv",
+        "lamindb_record_exports/mdrop_rt/mdrop_sheet.csv",
+    ):
+        stored.update(key=key)
+        assert exports.sheet_exports([sheet]) == {sheet.pk: [(sheet, previous)]}
+    stored.update(key="lamindb_record_exports/other_type/mdrop_sheet.csv")
+    assert exports.sheet_exports([sheet]) == {}
+    stored.update(key=previous.key)
     assert exports.export_column_ids(previous) == {
         f.pk for f in sheet.schema.members.all()
     }

@@ -730,7 +730,7 @@ def create_plan(
             Feature("measurement", dtype=LaminDType(float))
 
     Use `lamin evolve init` to create a plan file with the imports and stable
-    transform UID required by the CLI. See :doc:`manage-schemas`.
+    transform UID required by the CLI. See the `Manage schemas guide <https://docs.lamin.ai/manage-schemas>`_.
     """
     exports_cls = _FunctionPlan.extract_exports_cls(func)
     return _FunctionPlan(func, exports_cls)
