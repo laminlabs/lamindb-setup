@@ -104,10 +104,13 @@ jobs:
       - run: pip install "laminci@git+https://x-access-token:${{ secrets.LAMIN_BUILD_DOCS }}@github.com/laminlabs/laminci"
       - run: nox -s "install(group='core')"
       - run: nox -s lint
-      - run: nox -s core
+      - name: Run core tests
+        run: nox -s core
         env:
           TMP_AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
           TMP_AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+      - name: Run evolve tests
+        run: nox -s evolve
       - uses: actions/upload-artifact@v4
         with:
           name: coverage--core
