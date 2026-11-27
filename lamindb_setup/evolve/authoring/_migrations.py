@@ -57,7 +57,7 @@ from typing import TYPE_CHECKING, Any, Literal
 from ..core import LaminSchemasError
 
 if TYPE_CHECKING:
-    from collections.abc import Callable
+    from typing import Callable  # noqa: UP035 - resolvable by the docs theme
 
     from ..core import Materializable
 
@@ -487,7 +487,7 @@ class RecordRemovalContext:
 
 @dataclass
 class SheetExportContext:
-    """What a :class:`DataMigration` attached to a schema with *stale exports* receives.
+    """Context for rewriting stale sheet exports after a schema migration.
 
     The fourth narrowing a plan can declare a migration for, and the only one
     whose subject is not stored *in* the database.  A sheet export is a CSV

@@ -20,6 +20,14 @@ Change management
 .. autofunction:: switch
 .. autofunction:: merge
 
+Schema evolution
+----------------
+
+.. autosummary::
+   :toctree:
+
+   evolve
+
 Modules & settings
 ------------------
 
@@ -29,7 +37,6 @@ Modules & settings
    settings
    core
    django
-   evolve
    errors
    types
 

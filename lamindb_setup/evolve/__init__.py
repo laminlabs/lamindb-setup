@@ -13,11 +13,16 @@ Internal subpackages may change without notice.
 Plans
 -----
 
+Define a :class:`Plan` and declare its reusable outputs with :class:`PlanExports`.
+
 .. autosummary::
    :toctree: .
-   :template: autosummary/base.rst
+   :template: {reference_dir}/plans.rst
 
    create_plan
+
+.. autosummary::
+
    Plan
    PlanContext
    PlanExports
@@ -26,12 +31,17 @@ Plans
 Declarations
 ------------
 
+Declare features and group them into a :class:`Schema`, :class:`RecordType`, or :class:`Sheet`.
+
 .. autosummary::
    :toctree: .
-   :template: autosummary/base.rst
+   :template: {reference_dir}/declarations.rst
+
+   Feature
+
+.. autosummary::
 
    FeatureType
-   Feature
    SchemaType
    Schema
    RecordType
@@ -41,41 +51,42 @@ Declarations
 Typed models and dtypes
 -----------------------
 
+Use Python type annotations and :func:`feature` to describe schema fields.
+
 .. autosummary::
    :toctree: .
-   :template: autosummary/base.rst
+   :template: {reference_dir}/models.rst
 
    SchemaModel
+
+.. autosummary::
+
    SchemaConfig
    LaminDType
    DType
    ListDType
+   CatDType
+   DEFAULT_NAME_FIELD
    RecordCat
    ULabelCat
    ResolvedDType
    get_dtype
    inline_cat_filters
-
-.. data:: CatDType
-
-   Annotate a registry type with the filters for a categorical feature.
-
-.. data:: DEFAULT_NAME_FIELD
-
-   Default lookup field for each categorical registry.
-.. autofunction:: feature
+   feature
 
 Data migrations
 ---------------
 
-Attach a migration to its target with :meth:`PlanContext.migrate`. Preview it
-with `lamin evolve plan --preview-migrations` before applying it.
+Use :func:`fill_nulls`, :func:`map_values`, and other helpers to migrate existing data.
 
 .. autosummary::
    :toctree: .
+   :template: {reference_dir}/data-migrations.rst
 
    DataMigration
-   MigrationContext
+
+.. autosummary::
+
    MigrationReport
    MigrationError
    fill_nulls
@@ -102,22 +113,21 @@ with `lamin evolve plan --preview-migrations` before applying it.
    adopt_children
    update_record
    drop_record
-
-.. data:: NULL
-
-   Fill with null. The feature must be nullable.
-
-.. data:: DEFAULT
-
-   Fill with the feature's default value, or null if it is nullable and has no default.
+   NULL
+   DEFAULT
 
 Custom migrations
 -----------------
 
-The change being applied determines which context the migration receives.
+Write custom migration logic with helpers such as :func:`backfill_members`.
 
 .. autosummary::
    :toctree: .
+   :template: {reference_dir}/custom-migrations.rst
+
+   MigrationContext
+
+.. autosummary::
 
    DeclarationTarget
    MemberMigrationContext
@@ -127,6 +137,7 @@ The change being applied determines which context the migration receives.
    FeatureRemovalContext
    RecordTypeRemovalContext
    SchemaRemovalContext
+   SheetExportContext
    RecordUpdateContext
    RecordRemovalContext
    backfill_members
@@ -137,24 +148,10 @@ The change being applied determines which context the migration receives.
    relocate_to_str
    rewrite_values
 
-.. class:: SheetExportContext
-   :canonical: lamindb_setup.evolve.authoring._migrations.SheetExportContext
-
-   A custom sheet migration receives the updated `schema` and its stale
-   `exports` after the apply transaction commits. Call :meth:`write` for
-   each export that needs a new version. The export branch is merged once
-   all migrations succeed.
-
-   .. autoproperty:: SheetExportContext.branch
-
-   .. automethod:: SheetExportContext.write
-
 Plan result types
 -----------------
 
 .. autosummary::
-   :toctree: .
-   :template: autosummary/base.rst
 
    SpaceUID
    ~lamindb_setup.evolve.core._uids.FeatureUID
@@ -166,10 +163,6 @@ Plan result types
    ~lamindb_setup.evolve.authoring._plan.Moved
    ~lamindb_setup.evolve.authoring._migrations.Migrated
    ~lamindb_setup.evolve.authoring._migrations.WriteStrategy
-
-.. autoclass:: lamindb_setup.evolve.authoring._plan.E
-
-.. autoclass:: lamindb_setup.evolve.authoring._dtypes.T
 
 Environment variables
 ---------------------
@@ -200,17 +193,20 @@ over the environment.
 variable. Keep it stable when editing the plan.
 """
 
+from pathlib import Path as _Path
+from typing import TYPE_CHECKING
+
+from . import authoring as _authoring
+
 # --- building blocks and data migrations ---
 # --- dtypes ---
 # --- declarative authoring surface ---
 # --- plan authoring ---
 from .authoring import (
     DEFAULT,
-    DEFAULT_NAME_FIELD,
     NULL,
     ArtifactCat,
     BiologicCat,
-    CatDType,
     CellLineCat,
     CellMarkerCat,
     CellTypeCat,
@@ -339,6 +335,22 @@ from .engine import (
     wrap_in_list,
     wrap_values,
 )
+
+# Both the standalone and combined docs build these topic pages from this package.
+if __doc__:
+    __doc__ = __doc__.replace(
+        "{reference_dir}", str(_Path(__file__).with_name("_reference"))
+    )
+
+if TYPE_CHECKING:
+    # Preserve Annotated's special meaning for type checkers.
+    from .authoring import CatDType
+else:
+    #: Annotate a registry type with the filters for a categorical feature.
+    CatDType = _authoring.CatDType
+
+#: Default lookup field for each categorical registry.
+DEFAULT_NAME_FIELD = _authoring.DEFAULT_NAME_FIELD
 
 __all__ = [
     "ArtifactCat",
