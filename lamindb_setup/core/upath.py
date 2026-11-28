@@ -7,7 +7,6 @@
 from __future__ import annotations
 
 import builtins
-import math
 import os
 import re
 import shutil
@@ -34,7 +33,13 @@ from ._deprecated import deprecated
 from ._gcp_options import get_user_gcp_options_manager
 from ._logger import logger
 from .canonical_suffix import CanonicalSuffix
-from .hashing import HASH_LENGTH, b16_to_b64, hash_from_hashes_list, hash_string
+from .hashing import (
+    HASH_LENGTH,
+    b16_to_b64,
+    hash_from_hashes_list,
+    hash_string,
+    s3_chunk_size,
+)
 
 if TYPE_CHECKING:
     from collections.abc import Callable
@@ -496,14 +501,8 @@ def upload_from(
                 destination += "/"
             cleanup_cache = True
     elif protocol == "s3" and "chunksize" not in kwargs:
-        size = local_path.stat().st_size
-        MiB = 1024**2
-        DEFAULT_CHUNKSIZE = 50 * MiB  # so in s3fs
-        if size / DEFAULT_CHUNKSIZE > 10000:  # should be no more than 10k parts for s3
-            raw = math.ceil(size / 10000)
-            step = 5 * MiB
-            rounded = math.ceil(raw / step) * step
-            kwargs["chunksize"] = rounded
+        # the same part size as in hash_file() so that the ETag matches the hash
+        kwargs["chunksize"] = s3_chunk_size(local_path.stat().st_size)
 
     self.fs.upload(source, destination, recursive=create_folder, **kwargs)
 

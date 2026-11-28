@@ -13,6 +13,7 @@ from __future__ import annotations
 import base64
 import hashlib
 import json
+import math
 from concurrent.futures import ThreadPoolExecutor
 from typing import TYPE_CHECKING
 
@@ -85,10 +86,66 @@ def hash_string(string: str) -> str:
     return to_b64_str(hashlib.md5(string.encode("utf-8")).digest())[:HASH_LENGTH]
 
 
+MiB = 1024**2
+
+
+def s3_chunk_size(file_size: int) -> int:
+    """Part size for a multipart upload to S3 through `upload_from()`.
+
+    50 MiB as in s3fs, raised in steps of 5 MiB if the file would otherwise
+    need more than the 10,000 parts that S3 allows.
+    """
+    chunk_size = 50 * MiB
+    if file_size > 10_000 * chunk_size:
+        step = 5 * MiB
+        chunk_size = math.ceil(math.ceil(file_size / 10_000) / step) * step
+    return chunk_size
+
+
 def hash_file(
     file_path: Path,
     file_size: int | None = None,
-    chunk_size: int | None = 50 * 1024 * 1024,
+    chunk_size: int | None = None,
+) -> tuple[int, str, str]:
+    """Hash the full content of a file, reproducing the S3 ETag.
+
+    Files smaller than two chunks get the md5 of their content (type `"md5"`),
+    larger files the md5 of the md5 digests of all chunks (type
+    `"md5-{n_chunks}"`), which is what S3 computes for an upload with
+    `upload_from()`.
+
+    Args:
+        file_path: Path to a local file.
+        file_size: Size of the file, if already known.
+        chunk_size: Defaults to the part size of `upload_from()`,
+            see `s3_chunk_size()`.
+    """
+    with open(file_path, "rb") as fp:
+        if file_size is None:
+            fp.seek(0, 2)
+            file_size = fp.tell()
+            fp.seek(0, 0)
+        if chunk_size is None:
+            chunk_size = s3_chunk_size(file_size)
+        if file_size < 2 * chunk_size:  # s3fs uploads this in a single part
+            digest = hashlib.file_digest(fp, "md5").digest()
+            hash_type = "md5"
+        else:
+            chunk_digests = []
+            while chunk := fp.read(chunk_size):
+                chunk_digests.append(hashlib.md5(chunk).digest())
+            digest = hashlib.md5(b"".join(chunk_digests)).digest()
+            hash_type = f"md5-{len(chunk_digests)}"
+    return file_size, to_b64_str(digest)[:HASH_LENGTH], hash_type
+
+
+# the hash_file() of earlier versions, which only covers the first and the last
+# chunk of larger files ("sha1-fl"); keep it for about a year so that records
+# saved with it can be found and updated
+def hash_file_legacy(
+    file_path: Path,
+    file_size: int | None = None,
+    chunk_size: int | None = 50 * MiB,
 ) -> tuple[int, str, str]:
     with open(file_path, "rb") as fp:
         if file_size is None:
@@ -115,7 +172,8 @@ def hash_dir(path: Path) -> tuple[int, str, str, int]:
     files = (subpath for subpath in path.rglob("*") if subpath.is_file())
 
     def hash_size(file):
-        size, hash, _ = hash_file(file)
+        # the per-file hashes of earlier versions keep "md5-d" unchanged
+        size, hash, _ = hash_file_legacy(file)
         return hash, size
 
     try:
